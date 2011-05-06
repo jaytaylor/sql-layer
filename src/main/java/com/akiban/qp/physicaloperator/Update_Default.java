@@ -23,6 +23,15 @@ import java.util.List;
 
 public final class Update_Default extends PhysicalOperator {
 
+    // Object interface
+
+    @Override
+    public String toString() {
+        return String.format("%s(%s -> %s)", getClass().getSimpleName(), inputOperator, updateLambdaBindable);
+    }
+
+    // constructor
+
     public Update_Default(PhysicalOperator inputOperator, Bindable<UpdateLambda> updateLambdaBindable) {
         ArgumentValidation.notNull("update lambda", updateLambdaBindable);
         if (!inputOperator.cursorAbilitiesInclude(CursorAbility.MODIFY)) {
@@ -44,6 +53,12 @@ public final class Update_Default extends PhysicalOperator {
     @Override
     public List<PhysicalOperator> getInputOperators() {
         return Collections.singletonList(inputOperator);
+    }
+
+    @Override
+    public String describePlan()
+    {
+        return describePlan(inputOperator);
     }
 
     // Object state

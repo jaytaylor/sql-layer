@@ -28,6 +28,14 @@ import java.util.Set;
 
 class Extract_Default extends PhysicalOperator
 {
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        return String.format("%s(%s)", getClass().getSimpleName(), extractTypes);
+    }
+
     // PhysicalOperator interface
 
     @Override
@@ -37,11 +45,10 @@ class Extract_Default extends PhysicalOperator
     }
 
     @Override
-    public String toString()
+    public String describePlan()
     {
-        return String.format("%s(%s)", getClass().getSimpleName(), extractTypes);
+        return describePlan(inputOperator);
     }
-
 
     // GroupScan_Default interface
 

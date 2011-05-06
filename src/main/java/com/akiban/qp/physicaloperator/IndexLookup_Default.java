@@ -26,6 +26,14 @@ import java.util.List;
 
 class IndexLookup_Default extends PhysicalOperator
 {
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        return String.format("%s(%s limit %s)", getClass().getSimpleName(), groupTable.getName().getTableName(), limit);
+    }
+
     // PhysicalOperator interface
 
     @Override
@@ -48,9 +56,9 @@ class IndexLookup_Default extends PhysicalOperator
     }
 
     @Override
-    public String toString()
+    public String describePlan()
     {
-        return String.format("%s(%s limit %s)", getClass().getSimpleName(), groupTable, limit);
+        return describePlan(inputOperator);
     }
 
     // IndexLookup_Default interface
@@ -167,7 +175,6 @@ class IndexLookup_Default extends PhysicalOperator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
-            this.adapter = adapter;
             this.indexInput = input;
             this.groupCursor = adapter.newGroupCursor(groupTable);
         }
@@ -180,7 +187,6 @@ class IndexLookup_Default extends PhysicalOperator
 
         // Object state
 
-        private final StoreAdapter adapter;
         private final Cursor indexInput;
         private final RowHolder<Row> indexRow = new RowHolder<Row>();
         private GroupCursor groupCursor;

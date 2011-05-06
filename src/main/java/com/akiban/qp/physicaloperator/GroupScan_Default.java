@@ -17,24 +17,38 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 
 class GroupScan_Default extends PhysicalOperator
 {
-    // PhysicalOperator interface
+    // Object interface
 
     @Override
-    public Cursor cursor(StoreAdapter adapter, Bindings bindings) {
+    public String toString()
+    {
+        StringBuilder buffer = new StringBuilder();
+        buffer.append(getClass().getSimpleName());
+        buffer.append('(');
+        buffer.append(groupTable.getName().getTableName());
+        if (indexKeyRangeBindable != null) {
+            buffer.append(" range");
+        }
+        if (reverse) {
+            buffer.append(" reverse");
+        }
+        buffer.append(' ');
+        buffer.append(limit);
+        buffer.append(')');
+        return buffer.toString();
+    }
+
+    // PhysicalOperator interface
+
+    public Cursor cursor(StoreAdapter adapter, Bindings bindings)
+    {
         Cursor cursor = new Execution(adapter, indexKeyRangeBindable.bindTo(bindings));
         assert cursor.cursorAbilitiesInclude(CursorAbility.MODIFY) : "cursor must be modifiable";
         return cursor;
-    }
-
-    @Override
-    public String toString() 
-    {
-        return String.format("%s(%s limit %s)", getClass().getSimpleName(), groupTable, limit);
     }
 
     @Override
