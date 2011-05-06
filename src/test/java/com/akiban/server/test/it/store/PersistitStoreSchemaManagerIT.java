@@ -51,8 +51,6 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
 
     private final static List<String> AIS_CREATE_STATEMENTS = readAisSchema();
     private final static String SCHEMA = "my_schema";
-
-    private int base;
     private SchemaManager manager;
 
     @Override
@@ -71,14 +69,6 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
     @Before
     public void setUp() throws Exception {
         manager = serviceManager().getSchemaManager();
-        base = manager.getAis(session()).getUserTables().size();
-        assertTablesInSchema(SCHEMA);
-        assertDDLS();
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        assertEquals("user tables in AIS", base, manager.getAis(session()).getUserTables().size());
         assertTablesInSchema(SCHEMA);
         assertDDLS();
     }
@@ -97,6 +87,7 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
 
     @Test
     public void testDeleteOneDefinition() throws Exception {
+        final int startSize = getAIS().getUserTables().size();
         createTableDef(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
 
         assertTablesInSchema(SCHEMA, "one");
@@ -104,7 +95,7 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
                    "create table `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
         AkibanInformationSchema ais = getAIS();
-        assertEquals("ais size", base + 1, ais.getUserTables().size());
+        assertEquals("ais size", startSize + 1, ais.getUserTables().size());
         UserTable table = ais.getUserTable(SCHEMA, "one");
         assertEquals("number of index", 1, table.getIndexes().size());
         Index index = table.getIndexes().iterator().next();
@@ -181,6 +172,7 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
 
     @Test
     public void testDeleteDefinitionTwoTablesOneGroupDeleteParent() throws Exception {
+        final int startSize = getAIS().getUserTables().size();
         createTableDef(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
 
         assertTablesInSchema(SCHEMA, "one");
@@ -196,7 +188,7 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
                    "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibandb");
 
         AkibanInformationSchema ais = getAIS();
-        assertEquals("ais size", base + 2, ais.getUserTables().size());
+        assertEquals("ais size", startSize + 2, ais.getUserTables().size());
         UserTable table = ais.getUserTable(SCHEMA, "two");
         assertEquals("number of index", 2, table.getIndexes().size());
         Index primaryIndex = table.getIndex(Index.PRIMARY_KEY_CONSTRAINT);
