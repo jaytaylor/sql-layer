@@ -26,13 +26,16 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
@@ -51,9 +54,6 @@ import com.akiban.server.service.config.Property;
 import com.akiban.util.MySqlStatementSplitter;
 
 public final class PersistitStoreSchemaManagerIT extends ITBase {
-
-    private final static List<String> AIS_CREATE_STATEMENTS = readAisSchema();
-
     private final static String SCHEMA = "my_schema";
     private final static String VOL2_PREFIX = "foo_schema";
     private final static String VOL3_PREFIX = "bar_schema";
@@ -80,7 +80,6 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
         return schemaManager.getTableDefinition(session(), schema, table);
     }
     
-
     @Override
     protected Collection<Property> startupConfigProperties() {
         // Set up multi-volume treespace policy so we can be sure schema is properly distributed.
@@ -98,7 +97,6 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
     public void setUp() throws Exception {
         schemaManager = serviceManager().getSchemaManager();
         assertTablesInSchema(SCHEMA);
-        assertDDLS();
     }
 
     @Test
@@ -344,28 +342,5 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
             actual.add(def.getTableName());
         }
         assertEquals("tables in: " + schema, expected, actual);
-    }
-
-    private void assertDDLS(String... statements) throws Exception{
-        final List<String> actual = new ArrayList<String>();
-        actual.addAll(AIS_CREATE_STATEMENTS);
-        for(String s : statements) {
-            actual.add(s + ';');
-        }
-        final List<String> expected = schemaManager.schemaStrings(session(), false);
-        assertEquals("DDLs", expected, actual);
-    }
-    
-    private static List<String> readAisSchema() {
-        final List<String> ddlList = new ArrayList<String>();
-        ddlList.add("create schema if not exists `akiban_information_schema`;");
-        final BufferedReader reader = new BufferedReader(new InputStreamReader(
-                AkServer.class.getClassLoader()
-                        .getResourceAsStream("akiban_information_schema.ddl")));
-        for (String statement : (new MySqlStatementSplitter(reader))) {
-            final String canonical = SchemaDef.canonicalStatement(statement);
-            ddlList.add(canonical);
-        }
-        return ddlList;
     }
 }
