@@ -3,6 +3,12 @@ package com.akiban.ais.model.aisb2;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class AISBBasedBuilder
 {
@@ -39,11 +45,25 @@ public class AISBBasedBuilder
             if (aisb.akibanInformationSchema().getUserTable(schema, table) != null) {
                 throw new IllegalArgumentException(String.format("table %s.%s already defined", schema, table));
             }
+            String groupName = groupName(table);
             this.schema = schema;
             this.userTable = table;
             aisb.userTable(schema, table);
+            aisb.createGroup(groupName, schema, String.format("_akiban_%s_%s", schema, table));
+            aisb.addTableToGroup(groupName, schema, table);
+            tablesPerGroup.put(groupName, 1);
+            tablesToGroups.put(TableName.create(schema, table), groupName);
             uTableColumnPos = 0;
             return this;
+        }
+
+        private String groupName(String table) {
+            int n = 0;
+            String groupName = table;
+            while (groupNames.contains(groupName)) {
+                groupName = String.format("%s$%d", table, n);
+            }
+            return groupName;
         }
 
         // NewuserTableBuilder interface
@@ -65,7 +85,7 @@ public class AISBBasedBuilder
 
         private NewUserTableBuilder colLong(String name, boolean nullable, boolean autoIncrement) {
             checkUsable();
-            aisb.column(schema, userTable, name, ++uTableColumnPos, "INTEGER", 10L, null, nullable, autoIncrement, null, null);
+            aisb.column(schema, userTable, name, ++uTableColumnPos, "INT", 10L, null, nullable, autoIncrement, null, null);
             return this;
         }
 
@@ -131,6 +151,9 @@ public class AISBBasedBuilder
             this.referencesTable = table;
             aisb.index(this.schema, this.userTable, fkIndexName, false, "KEY");
             aisb.joinTables(fkJoinName, schema, table, this.schema, this.userTable);
+
+            String fkGroupName = tablesToGroups.get(TableName.create(referencesSchema, referencesTable));
+            aisb.moveTreeToGroup(this.schema, this.userTable, fkGroupName, fkJoinName);
             return this;
         }
 
@@ -154,6 +177,9 @@ public class AISBBasedBuilder
         public ActualBuilder() {
             aisb = new AISBuilder();
             usable = true;
+            groupNames = new HashSet<String>();
+            tablesPerGroup = new HashMap<String, Integer>();
+            tablesToGroups = new HashMap<TableName, String>();
         }
 
         // private
@@ -179,6 +205,10 @@ public class AISBBasedBuilder
         private String referencesTable;
 
         private boolean usable;
+
+        private final Set<String> groupNames;
+        private final Map<String,Integer> tablesPerGroup;
+        private final Map<TableName,String> tablesToGroups;
 
         // constants
 

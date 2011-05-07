@@ -1,6 +1,6 @@
 package com.akiban.ais.model.aisb2;
 
-public interface NewAkibanJoinBuilder {
+public interface NewAkibanJoinBuilder extends NewUserTableBuilder {
     /**
      * Adds a child -&gt; parent column pair to this join.
      *

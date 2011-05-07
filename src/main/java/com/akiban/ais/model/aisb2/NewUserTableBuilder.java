@@ -1,6 +1,6 @@
 package com.akiban.ais.model.aisb2;
 
-public interface NewUserTableBuilder {
+public interface NewUserTableBuilder extends NewAISBuilder {
     /**
      * Joins this table to another one, using the default schema
      * @param table the table to join to
