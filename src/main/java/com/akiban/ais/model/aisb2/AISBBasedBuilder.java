@@ -10,71 +10,72 @@ public class AISBBasedBuilder
 
     @Override
     public AkibanInformationSchema ais() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return aisb.akibanInformationSchema();
     }
 
     @Override
     public NewAISBuilder defaultSchema(String schema) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        this.schema = schema;
+        return this;
     }
 
     @Override
     public NewUserTableBuilder userTable(String table) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return userTable(schema, table); // TODO
     }
 
     @Override
     public NewUserTableBuilder userTable(String schema, String table) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return this; // TODO
     }
 
     // NewuserTableBuilder interface
 
     @Override
     public NewAkibanJoinBuilder joinTo(String table) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return joinTo(schema, table);
     }
 
     @Override
     public NewAkibanJoinBuilder joinTo(String schema, String table) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return this; // TODO
     }
 
     @Override
     public NewUserTableBuilder colLong(String name) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return this; // TODO
     }
 
     @Override
     public NewUserTableBuilder colString(String name, int length) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return this; // TODO
     }
 
     @Override
     public NewUserTableBuilder pk(String... columns) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return this; // TODO
     }
 
     @Override
     public NewUserTableBuilder uniqueKey(String indexName, String... columns) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return this; // TODO
     }
 
     @Override
     public NewUserTableBuilder key(String indexName, String... columns) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return this; // TODO
     }
 
     // NewAkibanJoinBuilder
 
     @Override
     public NewAkibanJoinBuilder on(String childColumn, String parentColumn) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return this; // TODO
     }
 
     @Override
     public NewAkibanJoinBuilder and(String childColumn, String parentColumn) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return this; // TODO
     }
 
     // AISBBasedBuilder interface
@@ -86,4 +87,5 @@ public class AISBBasedBuilder
     // object state
 
     private final AISBuilder aisb;
+    private String schema;
 }
