@@ -24,7 +24,6 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.ConstantValueBindable;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.NoLimit;
@@ -76,15 +75,15 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
         final PhysicalOperator scanOp;
         if (rowDef.getPKIndexDef() != null && rowDef.getPKIndexDef().isHKeyEquivalent()) {
-            scanOp = API.groupScan_Default(groupTable, false, NoLimit.instance(), ConstantValueBindable.of(range));
+            scanOp = API.groupScan_Default(groupTable, false, NoLimit.instance(), range);
         }
         else {
             Index index = userTable.getIndex("PRIMARY");
-            PhysicalOperator indexScan = indexScan_Default(index, false, ConstantValueBindable.of(range));
+            PhysicalOperator indexScan = indexScan_Default(index, false, range);
             scanOp = indexLookup_Default(indexScan, groupTable);
         }
 
-        Update_Default updateOp = new Update_Default(scanOp, ConstantValueBindable.of(updateLambda));
+        Update_Default updateOp = new Update_Default(scanOp, updateLambda);
 
         Cursor updateCursor = emptyBindings(adapter, updateOp);
         Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);

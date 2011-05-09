@@ -23,7 +23,6 @@ import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.ConstantValueBindable;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
@@ -128,7 +127,7 @@ public class PhysicalOperatorIT extends ITBase
         };
 
         PhysicalOperator groupScan = groupScan_Default(coi);
-        PhysicalOperator updateOperator = new Update_Default(groupScan, ConstantValueBindable.of(updateLambda));
+        PhysicalOperator updateOperator = new Update_Default(groupScan, updateLambda);
         Cursor updateCursor = emptyBindings(adapter, updateOperator);
         int nexts = 0;
         updateCursor.open(UNDEF_BINDINGS);
@@ -350,7 +349,7 @@ public class PhysicalOperatorIT extends ITBase
         IndexBound lo = indexBound(userTable(order), row(order, 2, "jack"), columnSelector(idxOrderSalesman));
         IndexBound hi = indexBound(userTable(order), row(order, 2, "tom"), columnSelector(idxOrderSalesman));
         IndexKeyRange range = indexKeyRange(lo, true, hi, false);
-        PhysicalOperator indexScan = indexScan_Default(idxOrderSalesman, false, ConstantValueBindable.of(range));
+        PhysicalOperator indexScan = indexScan_Default(idxOrderSalesman, false, range);
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
         String[] expected = new String[]{"{1,(long)2,2,(long)22}",
                                          "{1,(long)1,2,(long)11}"};
@@ -363,7 +362,7 @@ public class PhysicalOperatorIT extends ITBase
         Index idxOrderSalesman = index(order, "salesman");
         IndexBound tom = indexBound(userTable(order), row(order, 2, "tom"), columnSelector(idxOrderSalesman));
         IndexKeyRange matchTom = indexKeyRange(tom, true, tom, true);
-        PhysicalOperator indexScan = indexScan_Default(idxOrderSalesman, false, ConstantValueBindable.of(matchTom));
+        PhysicalOperator indexScan = indexScan_Default(idxOrderSalesman, false, matchTom);
         PhysicalOperator indexLookup = indexLookup_Default(indexScan, coi);
         RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
                                    row(itemRowType, 211L, 21L),

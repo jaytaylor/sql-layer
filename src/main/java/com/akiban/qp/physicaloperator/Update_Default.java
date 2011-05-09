@@ -27,19 +27,19 @@ public final class Update_Default extends PhysicalOperator {
 
     @Override
     public String toString() {
-        return String.format("%s(%s -> %s)", getClass().getSimpleName(), inputOperator, updateLambdaBindable);
+        return String.format("%s(%s -> %s)", getClass().getSimpleName(), inputOperator, updateLambda);
     }
 
     // constructor
 
-    public Update_Default(PhysicalOperator inputOperator, Bindable<UpdateLambda> updateLambdaBindable) {
-        ArgumentValidation.notNull("update lambda", updateLambdaBindable);
+    public Update_Default(PhysicalOperator inputOperator, UpdateLambda updateLambda) {
+        ArgumentValidation.notNull("update lambda", updateLambda);
         if (!inputOperator.cursorAbilitiesInclude(CursorAbility.MODIFY)) {
             throw new IllegalArgumentException("input operator must be modifiable: " + inputOperator.getClass());
         }
         
         this.inputOperator = inputOperator;
-        this.updateLambdaBindable = updateLambdaBindable;
+        this.updateLambda = updateLambda;
     }
 
     // PhysicalOperator interface
@@ -47,7 +47,7 @@ public final class Update_Default extends PhysicalOperator {
     @Override
     public Cursor cursor(StoreAdapter adapter, Bindings bindings) {
         Cursor inputCursor = inputOperator.cursor(adapter, bindings);
-        return new Execution(inputCursor, updateLambdaBindable.bindTo(bindings));
+        return new Execution(inputCursor, updateLambda);
     }
 
     @Override
@@ -64,7 +64,7 @@ public final class Update_Default extends PhysicalOperator {
     // Object state
 
     private final PhysicalOperator inputOperator;
-    private final Bindable<UpdateLambda> updateLambdaBindable;
+    private final UpdateLambda updateLambda;
 
     // Inner classes
 

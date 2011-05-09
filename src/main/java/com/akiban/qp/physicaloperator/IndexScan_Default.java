@@ -27,7 +27,7 @@ class IndexScan_Default extends PhysicalOperator
     @Override
     public String toString()
     {
-        return String.format("%s(%s %s%s)", getClass().getSimpleName(), index, indexKeyRangeBindable, reverse ? " reverse" : "");
+        return String.format("%s(%s %s%s)", getClass().getSimpleName(), index, indexKeyRange, reverse ? " reverse" : "");
     }
 
     // PhysicalOperator interface
@@ -35,16 +35,16 @@ class IndexScan_Default extends PhysicalOperator
     @Override
     public Cursor cursor(StoreAdapter adapter, Bindings bindings)
     {
-        return new Execution(adapter, indexKeyRangeBindable.bindTo(bindings));
+        return new Execution(adapter, indexKeyRange);
     }
 
     // IndexScan_Default interface
 
-    public IndexScan_Default(Index index, boolean reverse, Bindable<IndexKeyRange> indexKeyRangeBindable)
+    public IndexScan_Default(Index index, boolean reverse, IndexKeyRange indexKeyRange)
     {
         this.index = index;
         this.reverse = reverse;
-        this.indexKeyRangeBindable = indexKeyRangeBindable;
+        this.indexKeyRange = indexKeyRange;
     }
 
     // Class state
@@ -55,7 +55,7 @@ class IndexScan_Default extends PhysicalOperator
 
     private final Index index;
     private final boolean reverse;
-    private final Bindable<IndexKeyRange> indexKeyRangeBindable;
+    private final IndexKeyRange indexKeyRange;
 
     // Inner classes
 
