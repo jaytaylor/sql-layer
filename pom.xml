@@ -218,6 +218,7 @@
                             <portNames>
                                 <portName>akserver.port</portName>
                                 <portName>debug.port</portName>
+                                <portName>akserver.postgres.port</portName>
                             </portNames>
                         </configuration>
                     </execution>
@@ -294,7 +295,7 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <version>2.6</version>
             <configuration>
-                <argLine>-Xmx512m -Xms128m -Dakserver.port=${akserver.port} ${akiban.test.extraJvmArgs}</argLine>
+                <argLine>-Xmx512m -Xms128m -Dakserver.port=${akserver.port} -Dakserver.postgres.port=${akserver.postgres.port} ${akiban.test.extraJvmArgs}</argLine>
                 <includes>
                     <include>**/*Test.java</include>
                     <include>**/*Test?.java</include>
