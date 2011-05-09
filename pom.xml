@@ -295,7 +295,17 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <version>2.6</version>
             <configuration>
-                <argLine>-Xmx512m -Xms128m -Dakserver.port=${akserver.port} -Dakserver.postgres.port=${akserver.postgres.port} ${akiban.test.extraJvmArgs}</argLine>
+                <systemProperties>
+                    <property>
+                        <name>akserver.port</name>
+                        <value>${akserver.port}</value>
+                    </property>
+                    <property>
+                        <name>akserver.postgres.port</name>
+                        <value>${akserver.postgres.port}</value>
+                    </property>
+                </systemProperties>
+                <argLine>-Xmx512m -Xms128m ${akiban.test.extraJvmArgs}</argLine>
                 <includes>
                     <include>**/*Test.java</include>
                     <include>**/*Test?.java</include>
@@ -305,25 +315,37 @@
                 </excludes>
             </configuration>
         </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.7.2</version>
-                <executions>
-                    <execution>
-                        <id>integration-test</id>
-                        <goals>
-                            <goal>integration-test</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>verify</id>
-                        <goals>
-                            <goal>verify</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <version>2.7.2</version>
+            <configuration>
+                <systemProperties>
+                    <property>
+                        <name>akserver.port</name>
+                        <value>${akserver.port}</value>
+                    </property>
+                    <property>
+                        <name>akserver.postgres.port</name>
+                        <value>${akserver.postgres.port}</value>
+                    </property>
+                </systemProperties>
+            </configuration>
+            <executions>
+                <execution>
+                    <id>integration-test</id>
+                    <goals>
+                        <goal>integration-test</goal>
+                    </goals>
+                </execution>
+                <execution>
+                    <id>verify</id>
+                    <goals>
+                        <goal>verify</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
         <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>findbugs-maven-plugin</artifactId>

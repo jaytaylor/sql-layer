@@ -138,6 +138,9 @@ public class PostgresServerIT extends ITBase
     @Before
     public void openConnection() throws Exception {
         int port = serviceManager().getPostgresService().getPort();
+        if (port < 0) {
+            throw new Exception("akserver.postgres.port is not set.");
+        }
         String url = String.format(CONNECTION_URL, port);
         Class.forName(DRIVER_NAME);
         connection = DriverManager.getConnection(url, USER_NAME, USER_PASSWORD);
