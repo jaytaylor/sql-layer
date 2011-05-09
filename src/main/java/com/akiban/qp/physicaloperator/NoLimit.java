@@ -13,18 +13,24 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.api.dml;
+package com.akiban.qp.physicaloperator;
 
-import com.akiban.message.ErrorCode;
-import com.akiban.server.InvalidOperationException;
+import com.akiban.qp.row.RowBase;
 
-public final class NoSuchRowException extends DMLException {
+public final class NoLimit implements Limit {
 
-    public NoSuchRowException(String message) {
-        super(ErrorCode.NO_SUCH_ROW, message);
+    private static final Limit INSTANCE = new NoLimit();
+
+    public static Limit instance() {
+        return INSTANCE;
     }
 
-    public NoSuchRowException(InvalidOperationException e) {
-    super(e);
+    private NoLimit() {
+        // private ctor
+    }
+
+    @Override
+    public boolean limitReached(RowBase row) {
+        return false;
     }
 }

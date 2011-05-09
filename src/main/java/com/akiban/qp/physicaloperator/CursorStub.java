@@ -13,18 +13,23 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.api.dml;
+package com.akiban.qp.physicaloperator;
 
-import com.akiban.message.ErrorCode;
-import com.akiban.server.InvalidOperationException;
+import com.akiban.qp.row.Row;
 
-public final class NoSuchRowException extends DMLException {
-
-    public NoSuchRowException(String message) {
-        super(ErrorCode.NO_SUCH_ROW, message);
+public abstract class CursorStub implements Cursor {
+    @Override
+    public void removeCurrentRow() {
+        throw new UnsupportedOperationException();
     }
 
-    public NoSuchRowException(InvalidOperationException e) {
-    super(e);
+    @Override
+    public void updateCurrentRow(Row newRow) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ModifiableCursorBackingStore backingStore() {
+        throw new UnsupportedOperationException();
     }
 }

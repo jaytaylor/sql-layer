@@ -55,7 +55,7 @@ public class PersistitAdapter extends StoreAdapter
     {
         GroupCursor cursor;
         try {
-            cursor = new PersistitGroupCursor(this, groupTable, reverse, indexKeyRange);
+            cursor = new ModifiablePersistitGroupCursor(this, groupTable, reverse, indexKeyRange);
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }
@@ -121,7 +121,7 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     public void updateIndex(IndexDef indexDef, RowBase oldRow, RowBase newRow, Key hKey)
-        throws PersistitAdapterException
+        throws PersistitAdapterException, DuplicateKeyException
     {
         RowDef rowDef = indexDef.getRowDef();
         RowData oldRowData = rowData(rowDef, oldRow);
@@ -129,8 +129,6 @@ public class PersistitAdapter extends StoreAdapter
         try {
             persistit.updateIndex(session, indexDef, rowDef, oldRowData, newRowData, hKey);
         } catch (PersistitException e) {
-            throw new PersistitAdapterException(e);
-        } catch (DuplicateKeyException e) {
             throw new PersistitAdapterException(e);
         }
     }

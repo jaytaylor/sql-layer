@@ -456,4 +456,39 @@ public class SchemaDefToAisTest {
         assertEquals(Arrays.asList("id"), pkDef.getColumnNames());
         assertEquals(true, pkDef.getColumns().get(0).descending);
     }
+
+    @Test
+    public void parseIntoExistingAis() throws Exception {
+        final String ddl1 = "create table test.t1(id int key) engine=akibandb;";
+        final String ddl2_1 = "create table test.t2(id int key) engine=akibandb;";
+        final String ddl2_2 = "create table test.t3(id int key, t1id int, constraint __akiban foreign key(t1id) references t1(id)) engine=akibandb;";
+        final AkibanInformationSchema ais = buildAISfromString(ddl1);
+        final SchemaDef sd = SchemaDef.parseSchema(ddl2_1 + ddl2_2);
+        final SchemaDefToAis sd2AIS = new SchemaDefToAis(sd, ais,  true);
+        assertSame(ais, sd2AIS.getAis());
+        final UserTable t1 = ais.getUserTable("test", "t1");
+        assertNotNull(t1);
+        final UserTable t2 = ais.getUserTable("test", "t2");
+        assertNotNull(t2);
+        final UserTable t3 = ais.getUserTable("test", "t3");
+        assertNotNull(t3);
+        assertSame(t1.getGroup(), t3.getGroup());
+    }
+
+    @Test
+    public void overloadedGroupNameExistingAIS() throws Exception {
+        final String ddl1 = "CREATE TABLE `s1`.one (idOne int, PRIMARY KEY (idOne)) engine=akibandb;";
+        final AkibanInformationSchema ais = buildAISfromString(ddl1);
+        final String ddl2 = "CREATE TABLE `s2`.one (idOne int, PRIMARY KEY (idOne)) engine=akibandb;";
+        final SchemaDefToAis sd2AIS = new SchemaDefToAis(SchemaDef.parseSchema(ddl2), ais,  true);
+        assertSame(ais, sd2AIS.getAis());
+        assertEquals("user tables", 2, ais.getUserTables().size());
+        assertEquals("group tables", 2, ais.getGroupTables().size());
+        UserTable s1 = ais.getUserTable("s1", "one");
+        UserTable s2 = ais.getUserTable("s2", "one");
+        assertNotNull("s1", s1);
+        assertNotNull("s2", s2);
+        assertSame("s1 group's root", s1, ais.getGroup("one").getGroupTable().getRoot());
+        assertSame("s2 group's root", s2, ais.getGroup("one$0").getGroupTable().getRoot());
+    }
 }

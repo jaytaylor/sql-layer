@@ -17,10 +17,11 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.physicaloperator.CursorAbility;
 import com.akiban.qp.physicaloperator.CursorUpdateException;
-import com.akiban.qp.physicaloperator.ModifiableCursor;
 import com.akiban.qp.physicaloperator.ModifiableCursorBackingStore;
 import com.akiban.qp.row.HKey;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -29,6 +30,7 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
+import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.exception.PersistitException;
 import com.persistit.Key;
@@ -38,7 +40,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor implements ModifiableCursor {
+public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor {
 
     private final ModifiableCursorBackingStore backingStore = new ModifiableCursorBackingStore() {
         @Override
@@ -52,6 +54,11 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
         }
     };
 
+    @Override
+    public boolean cursorAbilitiesInclude(CursorAbility ability) {
+        return CursorAbility.MODIFY.equals(ability) || super.cursorAbilitiesInclude(ability);
+    }
+
     public ModifiablePersistitGroupCursor(PersistitAdapter adapter,
                                           GroupTable groupTable,
                                           boolean reverse,
@@ -61,7 +68,7 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
     }
 
     @Override
-    public void updateCurrentRow(RowBase newRow) {
+    public void updateCurrentRow(Row newRow) {
         RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
         RowData currentRowData = currentRow.get().rowData();
         RowDef rowDef = currentRow.get().rowDef();
@@ -190,6 +197,8 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
             try {
                 adapter.updateIndex(indexDef, oldRow, newRow, hKey);
             } catch (PersistitAdapterException e) {
+                throw new CursorUpdateException(e);
+            } catch (DuplicateKeyException e) {
                 throw new CursorUpdateException(e);
             }
         }

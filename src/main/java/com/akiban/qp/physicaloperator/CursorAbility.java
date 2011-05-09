@@ -13,18 +13,8 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.api.dml;
+package com.akiban.qp.physicaloperator;
 
-import com.akiban.message.ErrorCode;
-import com.akiban.server.InvalidOperationException;
-
-public final class NoSuchRowException extends DMLException {
-
-    public NoSuchRowException(String message) {
-        super(ErrorCode.NO_SUCH_ROW, message);
-    }
-
-    public NoSuchRowException(InvalidOperationException e) {
-    super(e);
-    }
+public enum CursorAbility {
+    MODIFY
 }

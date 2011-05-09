@@ -21,7 +21,6 @@ import java.util.SortedMap;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.service.session.Session;
-import com.persistit.exception.PersistitException;
 
 /**
  * A SchemaManager implementation updates, maintains and supplied schema (DDL)
@@ -29,15 +28,15 @@ import com.persistit.exception.PersistitException;
  * uniquely identifies a version of a table definition) to a record that
  * contains the schema name, table name and canonical version of the create
  * table statement.
- * 
+ *
  * To support schema evolution, every version of a table definition has a new,
  * unique tableId. Thus creating a new table definition under the same name as
  * an existing one will allocate a new, unique tableId and retain the old
  * definition. This way data stored under the previous definition can be
  * interpreted and transformed into a row of the new format.
- * 
+ *
  * @author peter
- * 
+ *
  */
 public interface SchemaManager {
 
@@ -61,17 +60,6 @@ public interface SchemaManager {
             String statement, boolean useOldId) throws Exception;
 
     /**
-     * Delete the table definition for the specified tableId. This method does
-     * not disturb other table definition versions having the same table and
-     * schema names.
-     * 
-     * @param tableId
-     * @throws Exception
-     */
-    void deleteTableDefinition(Session session, final int tableId)
-            throws Exception;
-
-    /**
      * Delete all table definitions associated with the specified schema and
      * table names.
      * 
@@ -79,18 +67,7 @@ public interface SchemaManager {
      * @param tableName
      * @throws Exception
      */
-    void deleteTableDefinition(Session session, String schemaName,
-            String tableName) throws Exception;
-
-    /**
-     * Delete all versions of all table definitions for the specified schema
-     * name.
-     * 
-     * @param schemaName
-     * @throws Exception
-     */
-    void deleteSchemaDefinition(Session session, String schemaName)
-            throws Exception;
+    void deleteTableDefinition(Session session, String schemaName, String tableName) throws Exception;
 
     /**
      * Get the most recently updated version of the table definition for a
@@ -103,18 +80,6 @@ public interface SchemaManager {
      */
     TableDefinition getTableDefinition(Session session, String schemaName,
             String tableName) throws Exception;
-
-    /**
-     * Returns a List of all the table definitions for a table identified by
-     * schema and table name. If there are none, returns an empty list.
-     * 
-     * @param schemaName
-     * @param tableName
-     * @return
-     * @throws Exception
-     */
-    List<TableDefinition> getTableDefinitionHistory(Session session,
-            String schemaName, String tableName) throws Exception;
 
     /**
      * Returns SortedMap sorted by table name of all the table definitions

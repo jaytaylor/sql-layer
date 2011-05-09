@@ -17,7 +17,6 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 
 class GroupScan_Default extends PhysicalOperator
@@ -45,10 +44,16 @@ class GroupScan_Default extends PhysicalOperator
 
     // PhysicalOperator interface
 
-    @Override
     public Cursor cursor(StoreAdapter adapter, Bindings bindings)
     {
-        return new Execution(adapter, indexKeyRangeBindable.bindTo(bindings));
+        Cursor cursor = new Execution(adapter, indexKeyRangeBindable.bindTo(bindings));
+        assert cursor.cursorAbilitiesInclude(CursorAbility.MODIFY) : "cursor must be modifiable";
+        return cursor;
+    }
+
+    @Override
+    public boolean cursorAbilitiesInclude(CursorAbility ability) {
+        return CursorAbility.MODIFY.equals(ability) || super.cursorAbilitiesInclude(ability);
     }
 
     // GroupScan_Default interface
@@ -107,6 +112,38 @@ class GroupScan_Default extends PhysicalOperator
         {
             outputRow(null);
             cursor.close();
+        }
+
+        @Override
+        public void removeCurrentRow() {
+            checkHasRow();
+            cursor.removeCurrentRow();
+            outputRow(null);
+        }
+
+        @Override
+        public void updateCurrentRow(Row newRow) {
+            checkHasRow();
+            cursor.updateCurrentRow(newRow);
+            outputRow(newRow);
+        }
+
+        @Override
+        public ModifiableCursorBackingStore backingStore() {
+            return super.backingStore();
+        }
+
+        @Override
+        public boolean cursorAbilitiesInclude(CursorAbility ability) {
+            return cursor.cursorAbilitiesInclude(ability);
+        }
+
+        // private
+
+        private void checkHasRow() {
+            if (!hasCachedRow()) {
+                throw new IllegalStateException("no cached row available");
+            }
         }
 
         // Execution interface

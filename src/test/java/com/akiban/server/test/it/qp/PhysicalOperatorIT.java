@@ -19,15 +19,14 @@ import com.akiban.ais.model.*;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.persistitadapter.ModifiablePersistitGroupCursor;
+import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.physicaloperator.ConstantValueBindable;
 import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.ModifiableCursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.UpdateCursor;
 import com.akiban.qp.physicaloperator.UpdateLambda;
+import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -40,6 +39,7 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Before;
 import org.junit.Test;
@@ -97,14 +97,17 @@ public class PhysicalOperatorIT extends ITBase
                           createNewRow(item, 221L, 22L),
                           createNewRow(item, 222L, 22L)};
         writeRows(db);
-        adapter = new PersistitAdapter(schema, (PersistitStore) store(), session());
+        Store plainStore = store();
+        OperatorStore operatorStore = (OperatorStore) plainStore;
+        PersistitStore persistitStore = operatorStore.getPersistitStore();
+        adapter = new PersistitAdapter(schema, persistitStore, session());
     }
 
     @Test
     public void basicUpdate() throws Exception {
         adapter.setTransactional(false);
-        ModifiableCursor groupCursor = new ModifiablePersistitGroupCursor(adapter, coi, false, null);
-        Cursor updateCursor = new UpdateCursor(groupCursor, new UpdateLambda() {
+
+        UpdateLambda updateLambda = new UpdateLambda() {
             @Override
             public boolean rowIsApplicable(Row row) {
                 return row.rowType().equals(customerRowType);
@@ -117,7 +120,11 @@ public class PhysicalOperatorIT extends ITBase
                 name = name + name;
                 return new OverlayingRow(original).overlay(1, name);
             }
-        });
+        };
+
+        PhysicalOperator groupScan = groupScan_Default(coi);
+        PhysicalOperator updateOperator = new Update_Default(groupScan, ConstantValueBindable.of(updateLambda));
+        Cursor updateCursor = emptyBindings(adapter, updateOperator);
         int nexts = 0;
         updateCursor.open();
         while (updateCursor.next()) {
@@ -127,7 +134,6 @@ public class PhysicalOperatorIT extends ITBase
         adapter.commitAllTransactions();
         assertEquals("invocations of next()", db.length, nexts);
 
-        PhysicalOperator groupScan = groupScan_Default(coi);
         Cursor executable = emptyBindings(adapter, groupScan);
         RowBase[] expected = new RowBase[]{
                 row(customerRowType, 1L, "XYZXYZ"),

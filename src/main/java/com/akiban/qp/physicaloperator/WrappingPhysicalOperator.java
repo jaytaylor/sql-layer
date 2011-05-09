@@ -13,18 +13,22 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.api.dml;
+package com.akiban.qp.physicaloperator;
 
-import com.akiban.message.ErrorCode;
-import com.akiban.server.InvalidOperationException;
+public final class WrappingPhysicalOperator extends PhysicalOperator {
+    private final Cursor cursor;
 
-public final class NoSuchRowException extends DMLException {
-
-    public NoSuchRowException(String message) {
-        super(ErrorCode.NO_SUCH_ROW, message);
+    public WrappingPhysicalOperator(Cursor cursor) {
+        this.cursor = cursor;
     }
 
-    public NoSuchRowException(InvalidOperationException e) {
-    super(e);
+    @Override
+    public Cursor cursor(StoreAdapter adapter, Bindings bindings) {
+        return cursor;
+    }
+
+    @Override
+    public boolean cursorAbilitiesInclude(CursorAbility ability) {
+        return cursor.cursorAbilitiesInclude(ability);
     }
 }
