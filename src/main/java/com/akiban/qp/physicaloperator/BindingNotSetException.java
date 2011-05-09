@@ -17,11 +17,15 @@ package com.akiban.qp.physicaloperator;
 
 public final class BindingNotSetException extends RuntimeException
 {
-    public BindingNotSetException(Throwable cause) {
-        super(cause);
+    public BindingNotSetException(Throwable cause, int position) {
+        super(message(position), cause);
     }
 
-    public BindingNotSetException(String message) {
-        super(message);
+    public BindingNotSetException(int position) {
+        super(message(position));
+    }
+
+    private static String message(int position) {
+        return "binding not set at index " + position;
     }
 }
