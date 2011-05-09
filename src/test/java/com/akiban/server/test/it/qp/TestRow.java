@@ -15,6 +15,7 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.RowType;
@@ -31,7 +32,7 @@ public class TestRow extends AbstractRow
     }
 
     @Override
-    public Object field(int i)
+    public Object field(int i, Bindings bindings)
     {
         return fields[i];
     }

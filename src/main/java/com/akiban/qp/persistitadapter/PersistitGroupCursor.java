@@ -18,6 +18,7 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.CursorAbility;
 import com.akiban.qp.physicaloperator.CursorStub;
 import com.akiban.qp.physicaloperator.GroupCursor;
@@ -58,7 +59,7 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
     // Cursor interface
 
     @Override
-    public void open()
+    public void open(Bindings bindings)
     {
         assert exchange == null;
         try {
@@ -66,7 +67,7 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
             groupScan =
                 hKeyRange == null && hKey == null ? new FullScan() :
                 hKeyRange == null ? new HKeyAndDescendentsScan(hKey) :
-                hKeyRange.unbounded() ? new FullScan() : new HKeyRangeAndDescendentsScan(hKeyRange);
+                hKeyRange.unbounded() ? new FullScan() : new HKeyRangeAndDescendentsScan(hKeyRange, bindings);
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
@@ -296,11 +297,11 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
             }
         }
 
-        HKeyRangeAndDescendentsScan(IndexKeyRange hKeyRange) throws PersistitException
+        HKeyRangeAndDescendentsScan(IndexKeyRange hKeyRange, Bindings bindings) throws PersistitException
         {
             UserTable table = (hKeyRange.lo() == null ? hKeyRange.hi() : hKeyRange.lo()).table();
             RowDef rowDef = (RowDef) table.rowDef();
-            hKeyRangeFilter = adapter.filterFactory.computeHKeyFilter(exchange.getKey(), rowDef, hKeyRange);
+            hKeyRangeFilter = adapter.filterFactory.computeHKeyFilter(exchange.getKey(), rowDef, hKeyRange, bindings);
             if (reverse) {
                 firstDirection = Key.LTEQ;
                 subsequentDirection = Key.LT;

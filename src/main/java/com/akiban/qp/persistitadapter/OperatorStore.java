@@ -23,11 +23,13 @@ import com.akiban.message.ErrorCode;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.API;
+import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.ConstantValueBindable;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.NoLimit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.physicaloperator.UpdateLambda;
 import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.row.Row;
@@ -98,7 +100,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
     private static void runCursor(RowData oldRowData, RowDef rowDef, Cursor updateCursor)
             throws DuplicateKeyException, NoSuchRowException
     {
-        updateCursor.open();
+        updateCursor.open(UndefBindings.only());
         try {
             try {
                 if (!updateCursor.next()) {
@@ -173,7 +175,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         }
 
         @Override
-        public Row applyUpdate(Row original) {
+        public Row applyUpdate(Row original, Bindings bindings) {
             // TODO
             // ideally we'd like to use an OverlayingRow, but ModifiablePersistitGroupCursor requires
             // a PersistitGroupRow if an hkey changes
@@ -190,7 +192,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
                     newRow.put(i, newRowData.toObject(rowDef, i));
                 }
                 else {
-                    newRow.put(i, original.field(i));
+                    newRow.put(i, original.field(i, bindings));
                 }
             }
             return PersistitGroupRow.newPersistitGroupRow(adapter, newRow.toRowData());

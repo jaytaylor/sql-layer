@@ -123,9 +123,9 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         // Cursor interface
 
         @Override
-        public void open()
+        public void open(Bindings bindings)
         {
-            input.open();
+            input.open(bindings);
         }
 
         @Override

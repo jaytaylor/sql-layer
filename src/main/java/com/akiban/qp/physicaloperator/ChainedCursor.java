@@ -25,8 +25,8 @@ public abstract class ChainedCursor implements Cursor {
     }
 
     @Override
-    public void open() {
-        input.open();
+    public void open(Bindings bindings) {
+        input.open(bindings);
     }
 
     @Override

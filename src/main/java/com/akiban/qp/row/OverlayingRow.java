@@ -15,16 +15,11 @@
 
 package com.akiban.qp.row;
 
+import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.util.Undef;
 
 public final class OverlayingRow extends AbstractRow {
-
-    private static final Object UNDEF = new Object() {
-        @Override
-        public String toString() {
-            return "UNDEF";
-        }
-    };
     private final Row underlying;
     private final Object[] overlays;
 
@@ -32,7 +27,7 @@ public final class OverlayingRow extends AbstractRow {
         this.underlying = underlying;
         this.overlays = new Object[underlying.rowType().nFields()];
         for (int i=0; i < overlays.length; ++i) {
-            overlays[i] = UNDEF;
+            overlays[i] = Undef.only();
         }
     }
     public OverlayingRow overlay(int index, Object object) {
@@ -46,8 +41,8 @@ public final class OverlayingRow extends AbstractRow {
     }
 
     @Override
-    public Object field(int i) {
-        return overlays[i] == UNDEF ? underlying.field(i) : overlays[i];
+    public Object field(int i, Bindings bindings) {
+        return Undef.isUndefined(overlays[i]) ? underlying.field(i, bindings) : overlays[i];
     }
 
     @Override

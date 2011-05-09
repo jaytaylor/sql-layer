@@ -84,9 +84,9 @@ class GroupScan_Default extends PhysicalOperator
         // Cursor interface
 
         @Override
-        public void open()
+        public void open(Bindings bindings)
         {
-            cursor.open();
+            cursor.open(bindings);
         }
 
         @Override

@@ -89,9 +89,9 @@ class IndexLookup_Default extends PhysicalOperator
         // Cursor interface
 
         @Override
-        public void open()
+        public void open(Bindings bindings)
         {
-            indexInput.open();
+            indexInput.open(bindings);
             advanceIndex();
         }
 
@@ -133,7 +133,7 @@ class IndexLookup_Default extends PhysicalOperator
             if (indexInput.next()) {
                 indexRow.set(indexInput.currentRow());
                 groupCursor.rebind(this.indexRow.get().hKey());
-                groupCursor.open();
+                groupCursor.open(UndefBindings.only());
                 if (groupCursor.next()) {
                     Row currentRow = groupCursor.currentRow();
                     if (limit.limitReached(currentRow)) {

@@ -21,6 +21,7 @@ import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.server.FieldDef;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
@@ -35,18 +36,18 @@ import java.util.List;
 
 class PersistitFilterFactory
 {
-    public KeyFilter computeIndexFilter(Key key, IndexDef indexDef, IndexKeyRange keyRange)
+    public KeyFilter computeIndexFilter(Key key, IndexDef indexDef, IndexKeyRange keyRange, Bindings bindings)
     {
         int[] fields = indexDef.getFields();
         KeyFilter.Term[] terms = new KeyFilter.Term[fields.length];
         for (int index = 0; index < fields.length; index++) {
-            terms[index] = computeKeyFilterTerm(key, indexDef.getRowDef(), keyRange, fields[index]);
+            terms[index] = computeKeyFilterTerm(key, indexDef.getRowDef(), keyRange, fields[index], bindings);
         }
         key.clear();
         return new KeyFilter(terms, terms.length, Integer.MAX_VALUE);
     }
 
-    public KeyFilter computeHKeyFilter(Key key, RowDef leafRowDef, IndexKeyRange keyRange)
+    public KeyFilter computeHKeyFilter(Key key, RowDef leafRowDef, IndexKeyRange keyRange, Bindings bindings)
     {
         KeyFilter.Term[] terms = new KeyFilter.Term[leafRowDef.getHKeyDepth()];
         HKey hKey = leafRowDef.userTable().hKey();
@@ -72,7 +73,7 @@ class PersistitFilterFactory
                 List<Column> matchingColumns = segmentColumn.equivalentColumns();
                 for (int m = 0; filterTerm == KeyFilter.ALL && m < matchingColumns.size(); m++) {
                     Column column = matchingColumns.get(m);
-                    filterTerm = computeKeyFilterTerm(key, leafRowDef, keyRange, column.getPosition());
+                    filterTerm = computeKeyFilterTerm(key, leafRowDef, keyRange, column.getPosition(), bindings);
                 }
                 terms[t++] = filterTerm;
             }
@@ -89,7 +90,8 @@ class PersistitFilterFactory
     // For use by this class
 
     // Returns a KeyFilter term if the specified field of either the start or
-    private KeyFilter.Term computeKeyFilterTerm(Key key, RowDef rowDef, IndexKeyRange keyRange, int fieldIndex)
+    private KeyFilter.Term computeKeyFilterTerm(Key key, RowDef rowDef, IndexKeyRange keyRange,
+                                                int fieldIndex, Bindings bindings)
     {
         if (fieldIndex < 0 || fieldIndex >= rowDef.getFieldCount()) {
             return KeyFilter.ALL;
@@ -97,13 +99,13 @@ class PersistitFilterFactory
         RowData start = null;
         boolean hasStart = false;
         if (keyRange.lo() != null) {
-            start = rowData(keyRange.lo());
+            start = rowData(keyRange.lo(), bindings);
             hasStart = keyRange.lo().columnSelector().includesColumn(fieldIndex);
         }
         RowData end = null;
         boolean hasEnd = false;
         if (keyRange.hi() != null) {
-            end = rowData(keyRange.hi());
+            end = rowData(keyRange.hi(), bindings);
             hasEnd = keyRange.hi().columnSelector().includesColumn(fieldIndex);
         }
         if (!hasStart && !hasEnd) {
@@ -134,13 +136,13 @@ class PersistitFilterFactory
         fieldDef.getEncoding().toKey(fieldDef, rowData, key);
     }
 
-    private RowData rowData(IndexBound bound)
+    private RowData rowData(IndexBound bound, Bindings bindings)
     {
         if (bound.row() instanceof PersistitGroupRow) {
             return ((PersistitGroupRow)bound.row()).rowData();
         }
         RowDef rowDef = (RowDef) bound.table().rowDef();
-        return adapter.rowData(rowDef, bound.row());
+        return adapter.rowData(rowDef, bound.row(), bindings);
     }
 
     // Object state

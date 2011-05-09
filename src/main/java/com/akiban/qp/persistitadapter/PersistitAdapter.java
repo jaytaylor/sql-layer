@@ -18,6 +18,7 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.GroupCursor;
 import com.akiban.qp.physicaloperator.StoreAdapter;
@@ -97,7 +98,7 @@ public class PersistitAdapter extends StoreAdapter
         return new PersistitIndexRow(this, indexRowType);
     }
 
-    public RowData rowData(RowDef rowDef, RowBase row) {
+    public RowData rowData(RowDef rowDef, RowBase row, Bindings bindings) {
         if (row instanceof PersistitGroupRow) {
             return ((PersistitGroupRow)row).rowData();
         }
@@ -105,7 +106,7 @@ public class PersistitAdapter extends StoreAdapter
         NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
 
         for(int i=0; i < row.rowType().nFields(); ++i) {
-            niceRow.put(i, row.field(i));
+            niceRow.put(i, row.field(i, bindings));
         }
         return niceRow.toRowData();
     }
@@ -120,12 +121,12 @@ public class PersistitAdapter extends StoreAdapter
         return transact(persistit.getExchange(session, null, (IndexDef) index.indexDef()));
     }
 
-    public void updateIndex(IndexDef indexDef, RowBase oldRow, RowBase newRow, Key hKey)
+    public void updateIndex(IndexDef indexDef, RowBase oldRow, RowBase newRow, Key hKey, Bindings bindings)
         throws PersistitAdapterException, DuplicateKeyException
     {
         RowDef rowDef = indexDef.getRowDef();
-        RowData oldRowData = rowData(rowDef, oldRow);
-        RowData newRowData = rowData(rowDef, newRow);
+        RowData oldRowData = rowData(rowDef, oldRow, bindings);
+        RowData newRowData = rowData(rowDef, newRow, bindings);
         try {
             persistit.updateIndex(session, indexDef, rowDef, oldRowData, newRowData, hKey);
         } catch (PersistitException e) {

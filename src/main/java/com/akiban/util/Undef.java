@@ -13,15 +13,22 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.row;
+package com.akiban.util;
 
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.rowtype.RowType;
+public final class Undef {
 
-public interface RowBase
-{
-    RowType rowType();
-    Object field(int i, Bindings bindings);
-    HKey hKey();
-    boolean ancestorOf(RowBase that);
+    public static Object only() {
+        return INSTANCE;
+    }
+
+    public static boolean isUndefined(Object possiblyUndef) {
+        return INSTANCE == possiblyUndef;
+    }
+
+    private static final Undef INSTANCE = new Undef();
+
+    @Override
+    public String toString() {
+        return "?";
+    }
 }

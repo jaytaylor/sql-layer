@@ -15,20 +15,16 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.util.Undef;
+
 public final class ArrayBindings implements Bindings {
-    private static final Object UNDEF = new Object() {
-        @Override
-        public String toString() {
-            return "undef";
-        }
-    };
 
     private final Object[] bindings;
 
     public ArrayBindings(int count) {
         bindings = new Object[count];
         for (int i=0; i < count; ++i) {
-            bindings[i] = UNDEF;
+            bindings[i] = Undef.only();
         }
     }
 
@@ -44,7 +40,7 @@ public final class ArrayBindings implements Bindings {
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new BindingNotSetException(e);
         }
-        if (value == UNDEF) {
+        if (Undef.isUndefined(value)) {
             throw new BindingNotSetException("binding not set at index " + index);
         }
         return value;

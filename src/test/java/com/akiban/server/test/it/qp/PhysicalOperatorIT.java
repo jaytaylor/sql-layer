@@ -22,9 +22,11 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
+import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.ConstantValueBindable;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.physicaloperator.UpdateLambda;
 import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.row.OverlayingRow;
@@ -55,6 +57,9 @@ import static org.junit.Assert.fail;
 
 public class PhysicalOperatorIT extends ITBase
 {
+
+    private static final Bindings UNDEF_BINDINGS = UndefBindings.only();
+
     @Before
     public void before() throws InvalidOperationException
     {
@@ -114,8 +119,8 @@ public class PhysicalOperatorIT extends ITBase
             }
 
             @Override
-            public Row applyUpdate(Row original) {
-                String name = (String) original.field(1);
+            public Row applyUpdate(Row original, Bindings bindings) {
+                String name = (String) original.field(1, bindings); // TODO eventually use Expression for this
                 name = name.toUpperCase();
                 name = name + name;
                 return new OverlayingRow(original).overlay(1, name);
@@ -126,7 +131,7 @@ public class PhysicalOperatorIT extends ITBase
         PhysicalOperator updateOperator = new Update_Default(groupScan, ConstantValueBindable.of(updateLambda));
         Cursor updateCursor = emptyBindings(adapter, updateOperator);
         int nexts = 0;
-        updateCursor.open();
+        updateCursor.open(UNDEF_BINDINGS);
         while (updateCursor.next()) {
             ++nexts;
         }
@@ -471,7 +476,7 @@ public class PhysicalOperatorIT extends ITBase
     {
         int count;
         try {
-            cursor.open();
+            cursor.open(UNDEF_BINDINGS);
             count = 0;
             List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
             while (cursor.next()) {
@@ -496,7 +501,7 @@ public class PhysicalOperatorIT extends ITBase
     {
         int count;
         try {
-            cursor.open();
+            cursor.open(UNDEF_BINDINGS);
             count = 0;
             List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
             while (cursor.next()) {
@@ -515,8 +520,8 @@ public class PhysicalOperatorIT extends ITBase
     {
         boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
         for (int i = 0; equal && i < actual.rowType().nFields(); i++) {
-            Object expectedField = expected.field(i);
-            Object actualField = actual.field(i);
+            Object expectedField = expected.field(i, UNDEF_BINDINGS);
+            Object actualField = actual.field(i, UNDEF_BINDINGS);
             equal = expectedField.equals(actualField);
         }
         return equal;

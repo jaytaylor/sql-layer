@@ -71,13 +71,22 @@ public final class Update_Default extends PhysicalOperator {
     private class Execution extends ChainedCursor {
 
         private final UpdateLambda updateLambda;
+        private Bindings bindings;
 
         public Execution(Cursor input, UpdateLambda updateLambda) {
             super(input);
             this.updateLambda = updateLambda;
+            this.bindings = UndefBindings.only();
         }
 
         // Cursor interface
+
+
+        @Override
+        public void open(Bindings bindings) {
+            super.open(bindings);
+            this.bindings = bindings;
+        }
 
         @Override
         public boolean next() {
@@ -86,7 +95,7 @@ public final class Update_Default extends PhysicalOperator {
                 if (!updateLambda.rowIsApplicable(row)) {
                     return true;
                 }
-                Row currentRow = updateLambda.applyUpdate(row);
+                Row currentRow = updateLambda.applyUpdate(row, bindings);
                 input.updateCurrentRow(currentRow);
                 return true;
             }
