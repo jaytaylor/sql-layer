@@ -114,8 +114,7 @@ public class API
     }
 
     public static Cursor emptyBindings(StoreAdapter adapter, PhysicalOperator physicalOperator) {
-        Bindings empty = new ArrayBindings(0);
-        return physicalOperator.cursor(adapter, empty);
+        return physicalOperator.cursor(adapter);
     }
 
     private static final Limit NO_LIMIT = new Limit()

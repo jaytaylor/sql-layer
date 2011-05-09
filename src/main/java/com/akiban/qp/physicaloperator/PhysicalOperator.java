@@ -37,7 +37,7 @@ public abstract class PhysicalOperator
         return Collections.emptyList();
     }
 
-    public abstract Cursor cursor(StoreAdapter adapter, Bindings bindings);
+    public abstract Cursor cursor(StoreAdapter adapter);
 
     public boolean cursorAbilitiesInclude(CursorAbility ability) {
         return false;

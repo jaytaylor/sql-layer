@@ -43,9 +43,9 @@ class AncestorLookup_Default extends PhysicalOperator
     // PhysicalOperator interface
 
     @Override
-    public Cursor cursor(StoreAdapter adapter, Bindings bindings)
+    public Cursor cursor(StoreAdapter adapter)
     {
-        return new Execution(adapter, inputOperator.cursor(adapter, bindings));
+        return new Execution(adapter, inputOperator.cursor(adapter));
     }
 
     @Override
