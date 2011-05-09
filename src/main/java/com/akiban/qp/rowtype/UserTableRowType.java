@@ -93,7 +93,7 @@ public class UserTableRowType extends RowType
 
     public UserTableRowType(Schema schema, UserTable table)
     {
-        super(schema, ((RowDef) table.rowDef()).getOrdinal(), Ancestry.of(table));
+        super(schema, table.getTableId(), Ancestry.of(table));
         this.table = table;
     }
 
