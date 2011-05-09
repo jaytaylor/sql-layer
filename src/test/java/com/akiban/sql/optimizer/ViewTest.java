@@ -30,29 +30,29 @@ import java.util.Collection;
 @RunWith(Parameterized.class)
 public class ViewTest extends OptimizerTestBase
 {
-  public static final File RESOURCE_DIR = 
-    new File(OptimizerTestBase.RESOURCE_DIR, "view");
+    public static final File RESOURCE_DIR = 
+        new File(OptimizerTestBase.RESOURCE_DIR, "view");
 
-  @Parameters
-  public static Collection<Object[]> statements() throws Exception {
-    return sqlAndExpected(RESOURCE_DIR);
-  }
+    @Parameters
+    public static Collection<Object[]> statements() throws Exception {
+        return sqlAndExpected(RESOURCE_DIR);
+    }
 
-  public ViewTest(String caseName, String sql, String expected) {
-    super(caseName, sql, expected);
-  }
+    public ViewTest(String caseName, String sql, String expected) {
+        super(caseName, sql, expected);
+    }
 
-  @Before
-  public void loadDDL() throws Exception {
-    loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
-    loadView(new File(RESOURCE_DIR, "view-1.ddl"));
-  }
+    @Before
+    public void loadDDL() throws Exception {
+        loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
+        loadView(new File(RESOURCE_DIR, "view-1.ddl"));
+    }
 
-  @Test
-  public void testView() throws Exception {
-    StatementNode stmt = parser.parseStatement(sql);
-    binder.bind(stmt);
-    assertEqualsWithoutHashes(caseName, expected, getTree(stmt));
-  }
+    @Test
+    public void testView() throws Exception {
+        StatementNode stmt = parser.parseStatement(sql);
+        binder.bind(stmt);
+        assertEqualsWithoutHashes(caseName, expected, getTree(stmt));
+    }
 
 }

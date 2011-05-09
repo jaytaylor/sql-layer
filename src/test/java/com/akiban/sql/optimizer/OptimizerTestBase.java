@@ -42,43 +42,43 @@ import java.io.StringWriter;
 @Ignore
 public class OptimizerTestBase extends ASTTransformTestBase
 {
-  protected OptimizerTestBase(String caseName, String sql, String expected) {
-    super(caseName, sql, expected);
-  }
+    protected OptimizerTestBase(String caseName, String sql, String expected) {
+        super(caseName, sql, expected);
+    }
 
-  public static final File RESOURCE_DIR = 
-    new File("src/test/resources/"
-             + OptimizerTestBase.class.getPackage().getName().replace('.', '/'));
+    public static final File RESOURCE_DIR = 
+        new File("src/test/resources/"
+                 + OptimizerTestBase.class.getPackage().getName().replace('.', '/'));
 
-  // Base class has all possible transformers for convenience.
-  protected AISBinder binder;
-  protected AISTypeComputer typeComputer;
-  protected BooleanNormalizer booleanNormalizer;
-  protected SubqueryFlattener subqueryFlattener;
-  protected Grouper grouper;
+    // Base class has all possible transformers for convenience.
+    protected AISBinder binder;
+    protected AISTypeComputer typeComputer;
+    protected BooleanNormalizer booleanNormalizer;
+    protected SubqueryFlattener subqueryFlattener;
+    protected Grouper grouper;
 
-  @Before
-  public void makeTransformers() throws Exception {
-    parser = new SQLParser();
-    parser.setNodeFactory(new BindingNodeFactory(parser.getNodeFactory()));
-    unparser = new BoundNodeToString();
-    typeComputer = new AISTypeComputer();
-    booleanNormalizer = new BooleanNormalizer(parser);
-    subqueryFlattener = new SubqueryFlattener(parser);
-    grouper = new Grouper(parser);
-  }
+    @Before
+    public void makeTransformers() throws Exception {
+        parser = new SQLParser();
+        parser.setNodeFactory(new BindingNodeFactory(parser.getNodeFactory()));
+        unparser = new BoundNodeToString();
+        typeComputer = new AISTypeComputer();
+        booleanNormalizer = new BooleanNormalizer(parser);
+        subqueryFlattener = new SubqueryFlattener(parser);
+        grouper = new Grouper(parser);
+    }
 
-  protected void loadSchema(File schema) throws Exception {
-    String sql = fileContents(schema);
-    SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
-    SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
-    AkibanInformationSchema ais = toAis.getAis();
-    binder = new AISBinder(ais, "user");
-  }
+    protected void loadSchema(File schema) throws Exception {
+        String sql = fileContents(schema);
+        SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
+        SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
+        AkibanInformationSchema ais = toAis.getAis();
+        binder = new AISBinder(ais, "user");
+    }
 
-  protected void loadView(File view) throws Exception {
-    String sql = fileContents(view);
-    binder.addView(new ViewDefinition(sql, parser));
-  }
+    protected void loadView(File view) throws Exception {
+        String sql = fileContents(view);
+        binder.addView(new ViewDefinition(sql, parser));
+    }
 
 }

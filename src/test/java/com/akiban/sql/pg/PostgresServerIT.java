@@ -51,147 +51,147 @@ import java.util.List;
 @RunWith(Parameterized.class)
 public class PostgresServerIT extends ITBase
 {
-  public static final File RESOURCE_DIR = 
-    new File("src/test/resources/"
-             + PostgresServerIT.class.getPackage().getName().replace('.', '/'));
+    public static final File RESOURCE_DIR = 
+        new File("src/test/resources/"
+                 + PostgresServerIT.class.getPackage().getName().replace('.', '/'));
 
-  public static final String SCHEMA_NAME = "user";
-  public static final String DRIVER_NAME = "org.postgresql.Driver";
-  public static final String CONNECTION_URL = "jdbc:postgresql://localhost:15432/user";
-  public static final String USER_NAME = "user";
-  public static final String USER_PASSWORD = "user";
+    public static final String SCHEMA_NAME = "user";
+    public static final String DRIVER_NAME = "org.postgresql.Driver";
+    public static final String CONNECTION_URL = "jdbc:postgresql://localhost:15432/user";
+    public static final String USER_NAME = "user";
+    public static final String USER_PASSWORD = "user";
 
-  @Override
-  protected Collection<Property> startupConfigProperties() {
-    // ServiceManagerImpl.CUSTOM_LOAD_SERVICE
-    return Collections.singleton(new Property(Property.parseKey("akserver.services.customload"),
-                                              PostgresServerManager.class.getName()));
-  }
-
-  @Before
-  public void loadDatabase() throws Exception {
-    loadSchemaFile(new File(RESOURCE_DIR, "schema.ddl"));
-    for (File data : RESOURCE_DIR.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
-      loadDataFile(data);
+    @Override
+    protected Collection<Property> startupConfigProperties() {
+        // ServiceManagerImpl.CUSTOM_LOAD_SERVICE
+        return Collections.singleton(new Property(Property.parseKey("akserver.services.customload"),
+                                                  PostgresServerManager.class.getName()));
     }
-  }
 
-  protected void loadSchemaFile(File file) throws Exception {
-    Reader rdr = null;
-    try {
-      rdr = new FileReader(file);
-      BufferedReader brdr = new BufferedReader(rdr);
-      String tableName = null;
-      List<String> tableDefinition = new ArrayList<String>();
-      while (true) {
-        String line = brdr.readLine();
-        if (line == null) break;
-        line = line.trim();
-        if (line.startsWith("CREATE TABLE "))
-          tableName = line.substring(13);
-        else if (line.startsWith("("))
-          tableDefinition.clear();
-        else if (line.startsWith(")"))
-          createTable(SCHEMA_NAME, tableName, 
-                      tableDefinition.toArray(new String[tableDefinition.size()]));
-        else {
-          if (line.endsWith(","))
-            line = line.substring(0, line.length() - 1);
-          tableDefinition.add(line);
+    @Before
+    public void loadDatabase() throws Exception {
+        loadSchemaFile(new File(RESOURCE_DIR, "schema.ddl"));
+        for (File data : RESOURCE_DIR.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
+            loadDataFile(data);
         }
-      }
     }
-    finally {
-      if (rdr != null) {
+
+    protected void loadSchemaFile(File file) throws Exception {
+        Reader rdr = null;
         try {
-          rdr.close();
+            rdr = new FileReader(file);
+            BufferedReader brdr = new BufferedReader(rdr);
+            String tableName = null;
+            List<String> tableDefinition = new ArrayList<String>();
+            while (true) {
+                String line = brdr.readLine();
+                if (line == null) break;
+                line = line.trim();
+                if (line.startsWith("CREATE TABLE "))
+                    tableName = line.substring(13);
+                else if (line.startsWith("("))
+                    tableDefinition.clear();
+                else if (line.startsWith(")"))
+                    createTable(SCHEMA_NAME, tableName, 
+                                tableDefinition.toArray(new String[tableDefinition.size()]));
+                else {
+                    if (line.endsWith(","))
+                        line = line.substring(0, line.length() - 1);
+                    tableDefinition.add(line);
+                }
+            }
         }
-        catch (IOException ex) {
+        finally {
+            if (rdr != null) {
+                try {
+                    rdr.close();
+                }
+                catch (IOException ex) {
+                }
+            }
         }
-      }
     }
-  }
 
-  protected void loadDataFile(File file) throws Exception {
-    String tableName = file.getName().replace(".dat", "");
-    int tableId = tableId(SCHEMA_NAME, tableName);
-    Reader rdr = null;
-    try {
-      rdr = new FileReader(file);
-      BufferedReader brdr = new BufferedReader(rdr);
-      while (true) {
-        String line = brdr.readLine();
-        if (line == null) break;
-        String[] cols = line.split("\t");
-        NewRow row = new NiceRow(tableId);
-        for (int i = 0; i < cols.length; i++)
-          row.put(i, cols[i]);
-        dml().writeRow(session(), row);
-      }
-    }
-    finally {
-      if (rdr != null) {
+    protected void loadDataFile(File file) throws Exception {
+        String tableName = file.getName().replace(".dat", "");
+        int tableId = tableId(SCHEMA_NAME, tableName);
+        Reader rdr = null;
         try {
-          rdr.close();
+            rdr = new FileReader(file);
+            BufferedReader brdr = new BufferedReader(rdr);
+            while (true) {
+                String line = brdr.readLine();
+                if (line == null) break;
+                String[] cols = line.split("\t");
+                NewRow row = new NiceRow(tableId);
+                for (int i = 0; i < cols.length; i++)
+                    row.put(i, cols[i]);
+                dml().writeRow(session(), row);
+            }
         }
-        catch (IOException ex) {
+        finally {
+            if (rdr != null) {
+                try {
+                    rdr.close();
+                }
+                catch (IOException ex) {
+                }
+            }
         }
-      }
     }
-  }
 
-  protected Connection connection;
+    protected Connection connection;
 
-  @Before
-  public void openConnection() throws Exception {
-    Class.forName(DRIVER_NAME);
-    connection = DriverManager.getConnection(CONNECTION_URL, USER_NAME, USER_PASSWORD);
-  }
-
-  @After
-  public void closeConnection() {
-    if (connection != null) {
-      try {
-        connection.close();
-      }
-      catch (SQLException ex) {
-      }
-      connection = null;
+    @Before
+    public void openConnection() throws Exception {
+        Class.forName(DRIVER_NAME);
+        connection = DriverManager.getConnection(CONNECTION_URL, USER_NAME, USER_PASSWORD);
     }
-  }
 
-  @Parameters
-  public static Collection<Object[]> queries() throws Exception {
-    return TestBase.sqlAndExpected(RESOURCE_DIR);
-  }
-
-  protected String caseName, sql, expected;
-
-  public PostgresServerIT(String caseName, String sql, String expected) {
-    this.caseName = caseName;
-    this.sql = sql.trim();
-    this.expected = expected;
-  }
-
-  @Test
-  public void testQuery() throws Exception {
-    StringBuilder data = new StringBuilder();
-    PreparedStatement stmt = connection.prepareStatement(sql);
-    ResultSet rs = stmt.executeQuery();
-    ResultSetMetaData md = rs.getMetaData();
-    for (int i = 1; i <= md.getColumnCount(); i++) {
-      if (i > 1) data.append('\t');
-      data.append(md.getColumnName(i));
+    @After
+    public void closeConnection() {
+        if (connection != null) {
+            try {
+                connection.close();
+            }
+            catch (SQLException ex) {
+            }
+            connection = null;
+        }
     }
-    data.append('\n');
-    while (rs.next()) {
-      for (int i = 1; i <= md.getColumnCount(); i++) {
-        if (i > 1) data.append('\t');
-        data.append(rs.getString(i));
-      }
-      data.append('\n');
+
+    @Parameters
+    public static Collection<Object[]> queries() throws Exception {
+        return TestBase.sqlAndExpected(RESOURCE_DIR);
     }
-    stmt.close();
-    assertEquals("Difference in " + caseName, expected, data.toString());
-  }
+
+    protected String caseName, sql, expected;
+
+    public PostgresServerIT(String caseName, String sql, String expected) {
+        this.caseName = caseName;
+        this.sql = sql.trim();
+        this.expected = expected;
+    }
+
+    @Test
+    public void testQuery() throws Exception {
+        StringBuilder data = new StringBuilder();
+        PreparedStatement stmt = connection.prepareStatement(sql);
+        ResultSet rs = stmt.executeQuery();
+        ResultSetMetaData md = rs.getMetaData();
+        for (int i = 1; i <= md.getColumnCount(); i++) {
+            if (i > 1) data.append('\t');
+            data.append(md.getColumnName(i));
+        }
+        data.append('\n');
+        while (rs.next()) {
+            for (int i = 1; i <= md.getColumnCount(); i++) {
+                if (i > 1) data.append('\t');
+                data.append(rs.getString(i));
+            }
+            data.append('\n');
+        }
+        stmt.close();
+        assertEquals("Difference in " + caseName, expected, data.toString());
+    }
 }

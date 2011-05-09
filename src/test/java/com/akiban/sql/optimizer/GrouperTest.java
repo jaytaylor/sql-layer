@@ -30,36 +30,36 @@ import java.util.Collection;
 @RunWith(Parameterized.class)
 public class GrouperTest extends OptimizerTestBase
 {
-  public static final File RESOURCE_DIR = 
-    new File(OptimizerTestBase.RESOURCE_DIR, "group");
+    public static final File RESOURCE_DIR = 
+        new File(OptimizerTestBase.RESOURCE_DIR, "group");
 
-  @Parameters
-  public static Collection<Object[]> statements() throws Exception {
-    return sqlAndExpected(RESOURCE_DIR);
-  }
+    @Parameters
+    public static Collection<Object[]> statements() throws Exception {
+        return sqlAndExpected(RESOURCE_DIR);
+    }
 
-  public GrouperTest(String caseName, String sql, String expected) {
-    super(caseName, sql, expected);
-  }
+    public GrouperTest(String caseName, String sql, String expected) {
+        super(caseName, sql, expected);
+    }
 
-  @Before
-  public void loadDDL() throws Exception {
-    loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
-    loadView(new File(RESOURCE_DIR, "view-1.ddl"));
-  }
+    @Before
+    public void loadDDL() throws Exception {
+        loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
+        loadView(new File(RESOURCE_DIR, "view-1.ddl"));
+    }
 
-  @Test
-  public void testGroup() throws Exception {
-    StatementNode stmt = parser.parseStatement(sql);
-    binder.bind(stmt);
-    stmt = booleanNormalizer.normalize(stmt);
-    typeComputer.compute(stmt);
-    stmt = subqueryFlattener.flatten(stmt);
-    grouper.group(stmt);
-    grouper.rewrite(stmt);
-    assertEqualsWithoutPattern(caseName,
-                               expected.trim(), unparser.toString(stmt), 
-                               "_G_\\d+");
-  }
+    @Test
+    public void testGroup() throws Exception {
+        StatementNode stmt = parser.parseStatement(sql);
+        binder.bind(stmt);
+        stmt = booleanNormalizer.normalize(stmt);
+        typeComputer.compute(stmt);
+        stmt = subqueryFlattener.flatten(stmt);
+        grouper.group(stmt);
+        grouper.rewrite(stmt);
+        assertEqualsWithoutPattern(caseName,
+                                   expected.trim(), unparser.toString(stmt), 
+                                   "_G_\\d+");
+    }
 
 }

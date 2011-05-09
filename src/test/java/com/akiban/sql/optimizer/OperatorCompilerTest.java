@@ -45,59 +45,59 @@ import java.util.Collection;
 @RunWith(Parameterized.class)
 public class OperatorCompilerTest extends TestBase
 {
-  public static final File RESOURCE_DIR = 
-    new File(OptimizerTestBase.RESOURCE_DIR, "operator");
-  
-  protected SQLParser parser;
-  protected OperatorCompiler compiler;
+    public static final File RESOURCE_DIR = 
+        new File(OptimizerTestBase.RESOURCE_DIR, "operator");
+    
+    protected SQLParser parser;
+    protected OperatorCompiler compiler;
 
-  @Before
-  public void makeCompiler() throws Exception {
-    parser = new SQLParser();
-    AkibanInformationSchema ais = loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
-    // This just needs to be enough to keep from UserTableRowType
-    // constructor from getting NPE.
-    int tableId = 0;
-    for (UserTable userTable : ais.getUserTables().values()) {
-      new RowDef(userTable, new TableStatus(++tableId));
-    }
-    compiler = new TestOperatorCompiler(parser, ais, "user");
-  }
-
-  protected static AkibanInformationSchema loadSchema(File schema) throws Exception {
-    String sql = fileContents(schema);
-    SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
-    SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
-    return toAis.getAis();
-  }
-
-  static class TestOperatorCompiler extends OperatorCompiler {
-    public TestOperatorCompiler(SQLParser parser, 
-                                AkibanInformationSchema ais, String defaultSchemaName) {
-      super(parser, ais, defaultSchemaName);
+    @Before
+    public void makeCompiler() throws Exception {
+        parser = new SQLParser();
+        AkibanInformationSchema ais = loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
+        // This just needs to be enough to keep from UserTableRowType
+        // constructor from getting NPE.
+        int tableId = 0;
+        for (UserTable userTable : ais.getUserTables().values()) {
+            new RowDef(userTable, new TableStatus(++tableId));
+        }
+        compiler = new TestOperatorCompiler(parser, ais, "user");
     }
 
-    @Override
-    protected Row getIndexRow(Index index, Object[] keys) {
-      IndexRowType rowType = schema.indexRowType(index);
-      return new TestRow(rowType, keys);
+    protected static AkibanInformationSchema loadSchema(File schema) throws Exception {
+        String sql = fileContents(schema);
+        SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
+        SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
+        return toAis.getAis();
     }
-  }
 
-  @Parameters
-  public static Collection<Object[]> statements() throws Exception {
-    return sqlAndExpected(RESOURCE_DIR);
-  }
+    static class TestOperatorCompiler extends OperatorCompiler {
+        public TestOperatorCompiler(SQLParser parser, 
+                                    AkibanInformationSchema ais, String defaultSchemaName) {
+            super(parser, ais, defaultSchemaName);
+        }
 
-  public OperatorCompilerTest(String caseName, String sql, String expected) {
-    super(caseName, sql, expected);
-  }
+        @Override
+        protected Row getIndexRow(Index index, Object[] keys) {
+            IndexRowType rowType = schema.indexRowType(index);
+            return new TestRow(rowType, keys);
+        }
+    }
 
-  @Test
-  public void testOperator() throws Exception {
-    StatementNode stmt = parser.parseStatement(sql);
-    OperatorCompiler.Result result = compiler.compile((CursorNode)stmt);
-    assertEqualsWithoutHashes(caseName, expected, result.toString());
-  }
+    @Parameters
+    public static Collection<Object[]> statements() throws Exception {
+        return sqlAndExpected(RESOURCE_DIR);
+    }
+
+    public OperatorCompilerTest(String caseName, String sql, String expected) {
+        super(caseName, sql, expected);
+    }
+
+    @Test
+    public void testOperator() throws Exception {
+        StatementNode stmt = parser.parseStatement(sql);
+        OperatorCompiler.Result result = compiler.compile((CursorNode)stmt);
+        assertEqualsWithoutHashes(caseName, expected, result.toString());
+    }
 
 }

@@ -23,33 +23,33 @@ import com.akiban.ais.model.Table;
  */
 public class TableBinding 
 {
-  private Table table;
-  private GroupBinding groupBinding;
-    
-  public TableBinding(Table table) {
-    this.table = table;
-  }
+    private Table table;
+    private GroupBinding groupBinding;
+        
+    public TableBinding(Table table) {
+        this.table = table;
+    }
 
-  public TableBinding(TableBinding other) {
-    this.table = other.table;
-    this.groupBinding = other.groupBinding; // TODO: Or null?
-  }
+    public TableBinding(TableBinding other) {
+        this.table = other.table;
+        this.groupBinding = other.groupBinding; // TODO: Or null?
+    }
 
-  public Table getTable() {
-    return table;
-  }
+    public Table getTable() {
+        return table;
+    }
 
-  public String toString() {
-    if (groupBinding == null)
-      return table.toString();
-    else
-      return table.toString() + " in " + groupBinding.toString();
-  }
+    public String toString() {
+        if (groupBinding == null)
+            return table.toString();
+        else
+            return table.toString() + " in " + groupBinding.toString();
+    }
 
-  public GroupBinding getGroupBinding() {
-    return groupBinding;
-  }
-  public void setGroupBinding(GroupBinding groupBinding) {
-    this.groupBinding = groupBinding;
-  }
+    public GroupBinding getGroupBinding() {
+        return groupBinding;
+    }
+    public void setGroupBinding(GroupBinding groupBinding) {
+        this.groupBinding = groupBinding;
+    }
 }

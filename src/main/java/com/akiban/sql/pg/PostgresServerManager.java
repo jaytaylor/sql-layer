@@ -27,35 +27,35 @@ import java.util.*;
  * <code>JVM_OPTS="-Dakserver.services.customload=com.akiban.sql.pg.PostgresServerManager" $AKIBAN_SERVER_HOME/bin/akserver -f</code>
 */
 public class PostgresServerManager implements PostgresService, Service<PostgresService> {
-  private PostgresServer server = null;
+    private PostgresServer server = null;
 
-  public PostgresServerManager() {
-  }
-
-  /*** Service<PostgresService> ***/
-
-  public PostgresService cast() {
-    return this;
-  }
-
-  public Class<PostgresService> castClass() {
-    return PostgresService.class;
-  }
-
-  public void start() throws Exception {
-    server = new PostgresServer(PostgresServer.DEFAULT_PORT);
-    server.start();
-  }
-
-  public void stop() throws Exception {
-    if (server != null) {
-      server.stop();
-      server = null;
+    public PostgresServerManager() {
     }
-  }
 
-  public void crash() throws Exception {
-    stop();
-  }
+    /*** Service<PostgresService> ***/
+
+    public PostgresService cast() {
+        return this;
+    }
+
+    public Class<PostgresService> castClass() {
+        return PostgresService.class;
+    }
+
+    public void start() throws Exception {
+        server = new PostgresServer(PostgresServer.DEFAULT_PORT);
+        server.start();
+    }
+
+    public void stop() throws Exception {
+        if (server != null) {
+            server.stop();
+            server = null;
+        }
+    }
+
+    public void crash() throws Exception {
+        stop();
+    }
 
 }

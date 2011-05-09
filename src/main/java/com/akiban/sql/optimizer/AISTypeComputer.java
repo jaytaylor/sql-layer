@@ -28,23 +28,23 @@ import java.util.*;
 /** Calculate types from schema information. */
 public class AISTypeComputer extends TypeComputer
 {
-  public AISTypeComputer() {
-  }
-  
-  protected DataTypeDescriptor computeType(ValueNode node) throws StandardException {
-    switch (node.getNodeType()) {
-    case NodeTypes.COLUMN_REFERENCE:
-      return columnReference((ColumnReference)node);
-    default:
-      return super.computeType(node);
+    public AISTypeComputer() {
     }
-  }
+    
+    protected DataTypeDescriptor computeType(ValueNode node) throws StandardException {
+        switch (node.getNodeType()) {
+        case NodeTypes.COLUMN_REFERENCE:
+            return columnReference((ColumnReference)node);
+        default:
+            return super.computeType(node);
+        }
+    }
 
-  protected DataTypeDescriptor columnReference(ColumnReference node) 
-      throws StandardException {
-    ColumnBinding columnBinding = (ColumnBinding)node.getUserData();
-    assert (columnBinding != null) : "column is not bound yet";
-    return columnBinding.getType();
-  }
+    protected DataTypeDescriptor columnReference(ColumnReference node) 
+            throws StandardException {
+        ColumnBinding columnBinding = (ColumnBinding)node.getUserData();
+        assert (columnBinding != null) : "column is not bound yet";
+            return columnBinding.getType();
+    }
 
 }

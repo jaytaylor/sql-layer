@@ -65,8 +65,8 @@ public abstract class PostgresStatement
       Column col = columns.get(i);
       PostgresType type = types.get(i);
       messenger.writeString(col.getName()); // attname
-      messenger.writeInt(0);              // attrelid
-      messenger.writeShort(0);            // attnum
+      messenger.writeInt(0);    // attrelid
+      messenger.writeShort(0);  // attnum
       messenger.writeInt(type.getOid()); // atttypid
       messenger.writeShort(type.getLength()); // attlen
       messenger.writeInt(type.getModifier()); // atttypmod

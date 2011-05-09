@@ -39,40 +39,40 @@ import java.util.Collection;
 @RunWith(Parameterized.class)
 public class BoundNodeToStringTest extends TestBase
 {
-  public static final File RESOURCE_DIR =
-    new File(OptimizerTestBase.RESOURCE_DIR, "unparser");
+    public static final File RESOURCE_DIR =
+        new File(OptimizerTestBase.RESOURCE_DIR, "unparser");
 
-  protected SQLParser parser;
-  protected BoundNodeToString unparser;
-  protected AISBinder binder;
+    protected SQLParser parser;
+    protected BoundNodeToString unparser;
+    protected AISBinder binder;
 
-  @Before
-  public void before() throws Exception {
-    parser = new SQLParser();
-    unparser = new BoundNodeToString();
-    unparser.setUseBindings(true);
+    @Before
+    public void before() throws Exception {
+        parser = new SQLParser();
+        unparser = new BoundNodeToString();
+        unparser.setUseBindings(true);
 
-    String sql = fileContents(new File(RESOURCE_DIR, "schema.ddl"));
-    SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
-    SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
-    AkibanInformationSchema ais = toAis.getAis();
-    binder = new AISBinder(ais, "user");
-  }
+        String sql = fileContents(new File(RESOURCE_DIR, "schema.ddl"));
+        SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
+        SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
+        AkibanInformationSchema ais = toAis.getAis();
+        binder = new AISBinder(ais, "user");
+    }
 
-  @Parameters
-  public static Collection<Object[]> statements() throws Exception {
-    return sqlAndExpected(RESOURCE_DIR);
-  }
+    @Parameters
+    public static Collection<Object[]> statements() throws Exception {
+        return sqlAndExpected(RESOURCE_DIR);
+    }
 
-  public BoundNodeToStringTest(String caseName, String sql, String expected) {
-    super(caseName, sql, expected);
-  }
+    public BoundNodeToStringTest(String caseName, String sql, String expected) {
+        super(caseName, sql, expected);
+    }
 
-  @Test
-  public void testBound() throws Exception {
-    StatementNode stmt = parser.parseStatement(sql);
-    binder.bind(stmt);
-    assertEquals(expected, unparser.toString(stmt));
-  }
+    @Test
+    public void testBound() throws Exception {
+        StatementNode stmt = parser.parseStatement(sql);
+        binder.bind(stmt);
+        assertEquals(expected, unparser.toString(stmt));
+    }
 
 }

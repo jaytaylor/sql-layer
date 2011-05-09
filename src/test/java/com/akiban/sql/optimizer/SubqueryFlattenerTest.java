@@ -30,33 +30,33 @@ import java.util.Collection;
 @RunWith(Parameterized.class)
 public class SubqueryFlattenerTest extends OptimizerTestBase
 {
-  public static final File RESOURCE_DIR = 
-    new File(OptimizerTestBase.RESOURCE_DIR, "flatten");
+    public static final File RESOURCE_DIR = 
+        new File(OptimizerTestBase.RESOURCE_DIR, "flatten");
 
-  @Parameters
-  public static Collection<Object[]> statements() throws Exception {
-    return sqlAndExpected(RESOURCE_DIR);
-  }
+    @Parameters
+    public static Collection<Object[]> statements() throws Exception {
+        return sqlAndExpected(RESOURCE_DIR);
+    }
 
-  public SubqueryFlattenerTest(String caseName, String sql, String expected) {
-    super(caseName, sql, expected);
-  }
+    public SubqueryFlattenerTest(String caseName, String sql, String expected) {
+        super(caseName, sql, expected);
+    }
 
-  @Before
-  public void loadDDL() throws Exception {
-    loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
-    loadView(new File(RESOURCE_DIR, "view-1.ddl"));
-    ((BoundNodeToString)unparser).setUseBindings(true);
-  }
+    @Before
+    public void loadDDL() throws Exception {
+        loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
+        loadView(new File(RESOURCE_DIR, "view-1.ddl"));
+        ((BoundNodeToString)unparser).setUseBindings(true);
+    }
 
-  @Test
-  public void testFlatten() throws Exception {
-    StatementNode stmt = parser.parseStatement(sql);
-    binder.bind(stmt);
-    stmt = booleanNormalizer.normalize(stmt);
-    typeComputer.compute(stmt);
-    stmt = subqueryFlattener.flatten(stmt);
-    assertEquals(expected.trim(), unparser.toString(stmt));
-  }
+    @Test
+    public void testFlatten() throws Exception {
+        StatementNode stmt = parser.parseStatement(sql);
+        binder.bind(stmt);
+        stmt = booleanNormalizer.normalize(stmt);
+        typeComputer.compute(stmt);
+        stmt = subqueryFlattener.flatten(stmt);
+        assertEquals(expected.trim(), unparser.toString(stmt));
+    }
 
 }

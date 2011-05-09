@@ -36,64 +36,64 @@ import java.io.IOException;
  */
 public class PostgresOperatorStatement extends PostgresStatement
 {
-  private StoreAdapter store;
-  private PhysicalOperator resultOperator;
-  private RowType resultRowType;
-  private int[] resultColumnOffsets;
+    private StoreAdapter store;
+    private PhysicalOperator resultOperator;
+    private RowType resultRowType;
+    private int[] resultColumnOffsets;
 
-  public PostgresOperatorStatement(StoreAdapter store,
-                                   PhysicalOperator resultOperator,
-                                   RowType resultRowType,
-                                   List<Column> resultColumns,
-                                   int[] resultColumnOffsets) {
-    super(resultColumns);
-    this.store = store;
-    this.resultOperator = resultOperator;
-    this.resultRowType = resultRowType;
-    this.resultColumnOffsets = resultColumnOffsets;
-  }
-  
-  public int execute(PostgresMessenger messenger, Session session, int maxrows)
-      throws IOException, StandardException {
-    Bindings bindings = new ArrayBindings(0);
-    Cursor cursor = resultOperator.cursor(store, bindings);
-    int nrows = 0;
-    try {
-      cursor.open();
-      List<Column> columns = getColumns();
-      List<PostgresType> types = getTypes();
-      int ncols = columns.size();
-      while (cursor.next()) {
-        Row row = cursor.currentRow();
-        if (row.rowType() == resultRowType) {
-          messenger.beginMessage(PostgresMessenger.DATA_ROW_TYPE);
-          messenger.writeShort(ncols);
-          for (int i = 0; i < ncols; i++) {
-            Column column = columns.get(i);
-            Object field = row.field(resultColumnOffsets[i]);
-            PostgresType type = types.get(i);
-            byte[] value = type.encodeValue(field, column, 
-                                            messenger.getEncoding(),
-                                            isColumnBinary(i));
-            if (value == null) {
-              messenger.writeInt(-1);
-            }
-            else {
-              messenger.writeInt(value.length);
-              messenger.write(value);
-            }
-          }
-          messenger.sendMessage();
-          nrows++;
-          if ((maxrows > 0) && (nrows >= maxrows))
-            break;
-        }
-      }
-    } 
-    finally {
-      cursor.close();
+    public PostgresOperatorStatement(StoreAdapter store,
+                                     PhysicalOperator resultOperator,
+                                     RowType resultRowType,
+                                     List<Column> resultColumns,
+                                     int[] resultColumnOffsets) {
+        super(resultColumns);
+        this.store = store;
+        this.resultOperator = resultOperator;
+        this.resultRowType = resultRowType;
+        this.resultColumnOffsets = resultColumnOffsets;
     }
-    return nrows;
-  }
+    
+    public int execute(PostgresMessenger messenger, Session session, int maxrows)
+            throws IOException, StandardException {
+        Bindings bindings = new ArrayBindings(0);
+        Cursor cursor = resultOperator.cursor(store, bindings);
+        int nrows = 0;
+        try {
+            cursor.open();
+            List<Column> columns = getColumns();
+            List<PostgresType> types = getTypes();
+            int ncols = columns.size();
+            while (cursor.next()) {
+                Row row = cursor.currentRow();
+                if (row.rowType() == resultRowType) {
+                    messenger.beginMessage(PostgresMessenger.DATA_ROW_TYPE);
+                    messenger.writeShort(ncols);
+                    for (int i = 0; i < ncols; i++) {
+                        Column column = columns.get(i);
+                        Object field = row.field(resultColumnOffsets[i]);
+                        PostgresType type = types.get(i);
+                        byte[] value = type.encodeValue(field, column, 
+                                                        messenger.getEncoding(),
+                                                        isColumnBinary(i));
+                        if (value == null) {
+                            messenger.writeInt(-1);
+                        }
+                        else {
+                            messenger.writeInt(value.length);
+                            messenger.write(value);
+                        }
+                    }
+                    messenger.sendMessage();
+                    nrows++;
+                    if ((maxrows > 0) && (nrows >= maxrows))
+                        break;
+                }
+            }
+        } 
+        finally {
+            cursor.close();
+        }
+        return nrows;
+    }
 
 }

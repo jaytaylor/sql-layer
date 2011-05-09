@@ -28,24 +28,24 @@ import java.util.Collection;
 @RunWith(Parameterized.class)
 public class AISBinderTest extends OptimizerTestBase
 {
-  public static final File RESOURCE_DIR = 
-    new File(OptimizerTestBase.RESOURCE_DIR, "binding");
+    public static final File RESOURCE_DIR = 
+        new File(OptimizerTestBase.RESOURCE_DIR, "binding");
 
-  @Parameters
-  public static Collection<Object[]> statements() throws Exception {
-    return sqlAndExpected(RESOURCE_DIR);
-  }
+    @Parameters
+    public static Collection<Object[]> statements() throws Exception {
+        return sqlAndExpected(RESOURCE_DIR);
+    }
 
-  public AISBinderTest(String caseName, String sql, String expected) {
-    super(caseName, sql, expected);
-  }
+    public AISBinderTest(String caseName, String sql, String expected) {
+        super(caseName, sql, expected);
+    }
 
-  @Test
-  public void testBinding() throws Exception {
-    loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
-    StatementNode stmt = parser.parseStatement(sql);
-    binder.bind(stmt);
-    assertEqualsWithoutHashes(caseName, expected, getTree(stmt));
-  }
+    @Test
+    public void testBinding() throws Exception {
+        loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
+        StatementNode stmt = parser.parseStatement(sql);
+        binder.bind(stmt);
+        assertEqualsWithoutHashes(caseName, expected, getTree(stmt));
+    }
 
 }

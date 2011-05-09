@@ -22,23 +22,23 @@ import com.akiban.ais.model.Group;
  */
 public class GroupBinding 
 {
-  private Group group;
-  private String correlationName;
-    
-  public GroupBinding(Group group, String correlationName) {
-    this.group = group;
-    this.correlationName = correlationName;
-  }
+    private Group group;
+    private String correlationName;
+        
+    public GroupBinding(Group group, String correlationName) {
+        this.group = group;
+        this.correlationName = correlationName;
+    }
 
-  public Group getGroup() {
-    return group;
-  }
+    public Group getGroup() {
+        return group;
+    }
 
-  public String getCorrelationName() {
-    return correlationName;
-  }
+    public String getCorrelationName() {
+        return correlationName;
+    }
 
-  public String toString() {
-    return group.toString() + " AS " + correlationName;
-  }
+    public String toString() {
+        return group.toString() + " AS " + correlationName;
+    }
 }

@@ -48,39 +48,39 @@ import java.util.*;
 public class PostgresOperatorCompiler extends OperatorCompiler
                                       implements PostgresStatementCompiler
 {
-  private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorCompiler.class);
+    private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorCompiler.class);
 
-  private PersistitAdapter adapter;
+    private PersistitAdapter adapter;
 
-  public PostgresOperatorCompiler(SQLParser parser, 
-                                  AkibanInformationSchema ais, String defaultSchemaName,
-                                  Session session, ServiceManager serviceManager) {
-    super(parser, ais, defaultSchemaName);
-    PersistitStore persistitStore = ((OperatorStore)
-                                     serviceManager.getStore()).getPersistitStore();
-    adapter = new PersistitAdapter(schema, persistitStore, session);
-  }
-
-  @Override
-  public PostgresStatement compile(CursorNode cursor, int[] paramTypes)
-      throws StandardException {
-    Result result = compile(cursor);
-
-    logger.warn("Operator:\n{}", result);
-
-    return new PostgresOperatorStatement(adapter, 
-                                         result.getResultOperator(),
-                                         result.getResultRowType(),
-                                         result.getResultColumns(),
-                                         result.getResultColumnOffsets());
-  }
-
-  protected Row getIndexRow(Index index, Object[] keys) {
-    NiceRow niceRow = new NiceRow(index.getTable().getTableId());
-    for (int i = 0; i < keys.length; i++) {
-      niceRow.put(index.getColumns().get(i).getColumn().getPosition(), keys[i]);
+    public PostgresOperatorCompiler(SQLParser parser, 
+                                    AkibanInformationSchema ais, String defaultSchemaName,
+                                    Session session, ServiceManager serviceManager) {
+        super(parser, ais, defaultSchemaName);
+        PersistitStore persistitStore = ((OperatorStore)
+                                         serviceManager.getStore()).getPersistitStore();
+        adapter = new PersistitAdapter(schema, persistitStore, session);
     }
-    return PersistitGroupRow.newPersistitGroupRow(adapter, niceRow.toRowData());
-  }
+
+    @Override
+    public PostgresStatement compile(CursorNode cursor, int[] paramTypes)
+            throws StandardException {
+        Result result = compile(cursor);
+
+        logger.warn("Operator:\n{}", result);
+
+        return new PostgresOperatorStatement(adapter, 
+                                             result.getResultOperator(),
+                                             result.getResultRowType(),
+                                             result.getResultColumns(),
+                                             result.getResultColumnOffsets());
+    }
+
+    protected Row getIndexRow(Index index, Object[] keys) {
+        NiceRow niceRow = new NiceRow(index.getTable().getTableId());
+        for (int i = 0; i < keys.length; i++) {
+            niceRow.put(index.getColumns().get(i).getColumn().getPosition(), keys[i]);
+        }
+        return PersistitGroupRow.newPersistitGroupRow(adapter, niceRow.toRowData());
+    }
 
 }

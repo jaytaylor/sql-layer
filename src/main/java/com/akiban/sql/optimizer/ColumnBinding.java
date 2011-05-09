@@ -33,74 +33,74 @@ import com.akiban.ais.model.Type;
  */
 public class ColumnBinding 
 {
-  private FromTable fromTable;
-  private Column column;
-  private ResultColumn resultColumn;
-    
-  public ColumnBinding(FromTable fromTable, Column column) {
-    this.fromTable = fromTable;
-    this.column = column;
-  }
-  public ColumnBinding(FromTable fromTable, ResultColumn resultColumn) {
-    this.fromTable = fromTable;
-    this.resultColumn = resultColumn;
-  }
-
-  public FromTable getFromTable() {
-    return fromTable;
-  }
-
-  public Column getColumn() {
-    return column;
-  }
-
-  public ResultColumn getResultColumn() {
-    return resultColumn;
-  }
-
-  public DataTypeDescriptor getType() throws StandardException {
-    if (resultColumn != null) {
-      return resultColumn.getType();
+    private FromTable fromTable;
+    private Column column;
+    private ResultColumn resultColumn;
+        
+    public ColumnBinding(FromTable fromTable, Column column) {
+        this.fromTable = fromTable;
+        this.column = column;
     }
-    else {
-      Type aisType = column.getType();
-      TypeId typeId = TypeId.getBuiltInTypeId(aisType.name().toUpperCase());
-      if (typeId == null)
-        typeId = TypeId.getSQLTypeForJavaType(aisType.name());
-      boolean nullable = column.getNullable();
-      switch (aisType.nTypeParameters()) {
-      case 0:
-        return new DataTypeDescriptor(typeId, nullable);
-      case 1:
-        return new DataTypeDescriptor(typeId, nullable, 
-                                      column.getTypeParameter1().intValue());
-      case 2:
-        return new DataTypeDescriptor(typeId,
-                                      column.getTypeParameter1().intValue(), 
-                                      column.getTypeParameter2().intValue(),
-                                      nullable, 
-                                      // TODO: max width
-                                      -1);
-      default:
-        assert false;
-        return new DataTypeDescriptor(typeId, nullable);
-      }
+    public ColumnBinding(FromTable fromTable, ResultColumn resultColumn) {
+        this.fromTable = fromTable;
+        this.resultColumn = resultColumn;
     }
-  }
 
-  public String toString() {
-    StringBuffer result = new StringBuffer();
-    if (resultColumn != null) {
-      result.append(resultColumn.getClass().getName());
-      result.append('@');
-      result.append(Integer.toHexString(resultColumn.hashCode()));
+    public FromTable getFromTable() {
+        return fromTable;
     }
-    else
-      result.append(column);
-    result.append(" from ");
-    result.append(fromTable.getClass().getName());
-    result.append('@');
-    result.append(Integer.toHexString(fromTable.hashCode()));
-    return result.toString();
-  }
+
+    public Column getColumn() {
+        return column;
+    }
+
+    public ResultColumn getResultColumn() {
+        return resultColumn;
+    }
+
+    public DataTypeDescriptor getType() throws StandardException {
+        if (resultColumn != null) {
+            return resultColumn.getType();
+        }
+        else {
+            Type aisType = column.getType();
+            TypeId typeId = TypeId.getBuiltInTypeId(aisType.name().toUpperCase());
+            if (typeId == null)
+                typeId = TypeId.getSQLTypeForJavaType(aisType.name());
+            boolean nullable = column.getNullable();
+            switch (aisType.nTypeParameters()) {
+            case 0:
+                return new DataTypeDescriptor(typeId, nullable);
+            case 1:
+                return new DataTypeDescriptor(typeId, nullable, 
+                                              column.getTypeParameter1().intValue());
+            case 2:
+                return new DataTypeDescriptor(typeId,
+                                              column.getTypeParameter1().intValue(), 
+                                              column.getTypeParameter2().intValue(),
+                                              nullable, 
+                                              // TODO: max width
+                                              -1);
+            default:
+                assert false;
+                return new DataTypeDescriptor(typeId, nullable);
+            }
+        }
+    }
+
+    public String toString() {
+        StringBuffer result = new StringBuffer();
+        if (resultColumn != null) {
+            result.append(resultColumn.getClass().getName());
+            result.append('@');
+            result.append(Integer.toHexString(resultColumn.hashCode()));
+        }
+        else
+            result.append(column);
+        result.append(" from ");
+        result.append(fromTable.getClass().getName());
+        result.append('@');
+        result.append(Integer.toHexString(fromTable.hashCode()));
+        return result.toString();
+    }
 }

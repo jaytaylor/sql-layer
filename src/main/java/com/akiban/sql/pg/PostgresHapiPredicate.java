@@ -21,49 +21,49 @@ import com.akiban.server.api.HapiPredicate;
 
 public class PostgresHapiPredicate implements HapiPredicate
 {
-  private Column column;
-  private Operator op;
-  private String value;
-  private int parameterIndex;
+    private Column column;
+    private Operator op;
+    private String value;
+    private int parameterIndex;
 
-  public PostgresHapiPredicate(Column column, Operator op, String value) {
-    this.column = column;
-    this.op = op;
-    this.value = value;
-    this.parameterIndex = -1;
-  }
+    public PostgresHapiPredicate(Column column, Operator op, String value) {
+        this.column = column;
+        this.op = op;
+        this.value = value;
+        this.parameterIndex = -1;
+    }
 
-  public PostgresHapiPredicate(Column column,
-                               Operator op, int parameterIndex) {
-    this.column = column;
-    this.op = op;
-    this.parameterIndex = parameterIndex;
-  }
+    public PostgresHapiPredicate(Column column,
+                                 Operator op, int parameterIndex) {
+        this.column = column;
+        this.op = op;
+        this.parameterIndex = parameterIndex;
+    }
 
-  public PostgresHapiPredicate(PostgresHapiPredicate other, String value) {
-    this.column = other.column;
-    this.op = other.op;
-    this.value = value;
-    this.parameterIndex = -1;
-  }
-                               
-  public TableName getTableName() {
-    return column.getUserTable().getName();
-  }
+    public PostgresHapiPredicate(PostgresHapiPredicate other, String value) {
+        this.column = other.column;
+        this.op = other.op;
+        this.value = value;
+        this.parameterIndex = -1;
+    }
+                                                             
+    public TableName getTableName() {
+        return column.getUserTable().getName();
+    }
 
-  public String getColumnName() {
-    return column.getName();
-  }
+    public String getColumnName() {
+        return column.getName();
+    }
 
-  public Operator getOp() {
-    return op;
-  }
+    public Operator getOp() {
+        return op;
+    }
 
-  public String getValue() {
-    return value;
-  }
+    public String getValue() {
+        return value;
+    }
 
-  public int getParameterIndex() {
-    return parameterIndex;
-  }
+    public int getParameterIndex() {
+        return parameterIndex;
+    }
 }
