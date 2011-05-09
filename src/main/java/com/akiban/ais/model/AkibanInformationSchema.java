@@ -129,7 +129,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
 
     public synchronized UserTable getUserTable(int tableId)
     {
-        ensureUserTablesByIdExists();
+        ensureTableIdLookup();
         return userTablesById.get(tableId);
     }
 
@@ -141,6 +141,12 @@ public class AkibanInformationSchema implements Serializable, Traversable
     public GroupTable getGroupTable(final TableName tableName)
     {
         return groupTables.get(tableName);
+    }
+
+    public GroupTable getGroupTable(int tableId)
+    {
+        ensureTableIdLookup();
+        return groupTablesById.get(tableId);
     }
 
     public Collection<Type> getTypes()
@@ -449,12 +455,18 @@ public class AkibanInformationSchema implements Serializable, Traversable
         userTablesById = null;
     }
 
-    private void ensureUserTablesByIdExists()
+    private void ensureTableIdLookup()
     {
         if (userTablesById == null) {
             userTablesById = new HashMap<Integer, UserTable>();
             for (UserTable userTable : userTables.values()) {
                 userTablesById.put(userTable.getTableId(), userTable);
+            }
+        }
+        if (groupTablesById == null) {
+            groupTablesById = new HashMap<Integer, GroupTable>();
+            for (GroupTable groupTable : groupTables.values()) {
+                groupTablesById.put(groupTable.getTableId(), groupTable);
             }
         }
     }
@@ -467,6 +479,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
     private Map<String, Group> groups = new TreeMap<String, Group>();
     private Map<TableName, UserTable> userTables = new TreeMap<TableName, UserTable>();
     private Map<Integer, UserTable> userTablesById = null;
+    private Map<Integer, GroupTable> groupTablesById = null;
     private Map<TableName, GroupTable> groupTables = new TreeMap<TableName, GroupTable>();
     private Map<String, Join> joins = new TreeMap<String, Join>();
     private Map<String, Type> types = new TreeMap<String, Type>();

@@ -112,11 +112,6 @@ public final class BasicDMLFunctionsTest {
         }
 
         @Override
-        public int getRepeatedRows() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public long getDeliveredBytes() {
             throw new UnsupportedOperationException();
         }
@@ -140,6 +135,12 @@ public final class BasicDMLFunctionsTest {
         public void outputToMessage(boolean outputToMessage)
         {
             assert outputToMessage;
+        }
+
+        @Override
+        public boolean checksLimit()
+        {
+            return false;
         }
     }
 

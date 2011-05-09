@@ -36,10 +36,13 @@ public final class JsonOutputter implements HapiOutputter
     }
 
     @Override
-    public void output(HapiProcessedGetRequest request, Iterable<RowData> rows, OutputStream outputStream)
+    public void output(HapiProcessedGetRequest request,
+                       boolean hKeyOrdered,
+                       Iterable<RowData> rows,
+                       OutputStream outputStream)
         throws IOException
     {
-        new Request(request, rows, outputStream).run();
+        new Request(request, hKeyOrdered, rows, outputStream).run();
     }
 
     private static final JsonOutputter INSTANCE = new JsonOutputter();
@@ -47,13 +50,19 @@ public final class JsonOutputter implements HapiOutputter
 
     private static class Request
     {
-        public Request(HapiProcessedGetRequest request, Iterable<RowData> rows, OutputStream outputStream)
+        public Request(HapiProcessedGetRequest request,
+                       boolean hKeyOrdered,
+                       Iterable<RowData> rows,
+                       OutputStream outputStream)
             throws IOException
         {
             this.ais = request.akibanInformationSchema();
-            queryRoot = queryRoot(request);
+            queryRoot = rootTable(request);
             genealogist = new RowDataGenealogist(queryRoot, projectedTables(request));
-            this.input = new UnOrphaningIterator<RowData>(rows.iterator(), genealogist);
+            this.input = new UnOrphaningIterator<RowData>(new AncestorDiscoveryIterator(predicateTable(request),
+                                                          hKeyOrdered,
+                                                          rows.iterator()),
+                                                   genealogist);
             this.output = new PrintWriter(outputStream);
             this.appender = AkibanAppender.of(outputStream, this.output);
         }
@@ -69,9 +78,14 @@ public final class JsonOutputter implements HapiOutputter
             output.flush();
         }
 
-        private UserTable queryRoot(HapiProcessedGetRequest request)
+        private UserTable rootTable(HapiProcessedGetRequest request)
         {
             return ais.getUserTable(request.getSchema(), request.getTable());
+        }
+
+        private UserTable predicateTable(HapiProcessedGetRequest request)
+        {
+            return ais.getUserTable(request.getUsingTable());
         }
 
         private Set<UserTable> projectedTables(HapiProcessedGetRequest request)

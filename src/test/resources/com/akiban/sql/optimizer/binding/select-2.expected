@@ -1,0 +1,72 @@
+com.akiban.sql.parser.CursorNode@79de256f
+name: null
+updateMode: UNSPECIFIED
+statementType: SELECT
+resultSet: 	
+	com.akiban.sql.parser.SelectNode@676bd8ea
+	isDistinct: false
+	resultColumns: 		
+		com.akiban.sql.parser.ResultColumnList@596e1fb1
+
+		[0]:		
+		com.akiban.sql.parser.ResultColumn@4ce2cb55
+		exposedName: X
+		name: X
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@3d9360e2
+			columnName: X
+			tableName: null
+			type: null
+			userData: t1.x from com.akiban.sql.parser.FromBaseTable@52c05d3b
+		[1]:		
+		com.akiban.sql.parser.ResultColumn@16bdb503
+		exposedName: Y
+		name: Y
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@b6e39f
+			columnName: Y
+			tableName: null
+			type: null
+			userData: t1.y from com.akiban.sql.parser.FromBaseTable@52c05d3b
+	fromList: 		
+		com.akiban.sql.parser.FromList@6719dc16
+
+		[0]:		
+		com.akiban.sql.parser.FromBaseTable@52c05d3b
+		tableName: T1
+		updateOrDelete: null
+		null
+		correlation Name: null
+		null
+		userData: user.t1
+		[1]:		
+		com.akiban.sql.parser.FromBaseTable@5328f6ee
+		tableName: T2
+		updateOrDelete: null
+		null
+		correlation Name: TT
+		TT
+		userData: user.t2
+	whereClause: 		
+		com.akiban.sql.parser.BinaryRelationalOperatorNode@266bade9
+		operator: >
+		methodName: greaterThan
+		type: null
+		leftOperand: 			
+			com.akiban.sql.parser.ColumnReference@6766afb3
+			columnName: Y
+			tableName: T1
+			type: null
+			userData: t1.y from com.akiban.sql.parser.FromBaseTable@52c05d3b
+		rightOperand: 			
+			com.akiban.sql.parser.ColumnReference@69945ce
+			columnName: W
+			tableName: TT
+			type: null
+			userData: t2.w from com.akiban.sql.parser.FromBaseTable@5328f6ee

@@ -41,7 +41,8 @@ class Expected
                               int predicateTable,
                               Column predicateColumn,
                               HapiPredicate.Operator comparison,
-                              long literal) throws HapiRequestException, IOException
+                              long literal,
+                              boolean indexOrdered) throws HapiRequestException, IOException
     {
         List<NewRow> queryResult = new ArrayList<NewRow>();
         // Find rows belonging to predicate table
@@ -53,13 +54,13 @@ class Expected
         }
         // Fill in ancestors and descendents
         List<NewRow> relatives = new ArrayList<NewRow>();
-        for (NewRow row : test.db) {
-            if (!ancestorTypeOf(row.getTableId(), rootTable)) {
+        for (NewRow dbRow : test.db) {
+            if (!ancestorTypeOf(dbRow.getTableId(), rootTable)) {
                 boolean rowAdded = false;
                 for (Iterator<NewRow> q = queryResult.iterator(); !rowAdded && q.hasNext();) {
                     NewRow resultRow = q.next();
-                    if (ancestorOf(resultRow, row) || ancestorOf(row, resultRow)) {
-                        relatives.add(row);
+                    if (ancestorOf(resultRow, dbRow) || ancestorOf(dbRow, resultRow)) {
+                        relatives.add(dbRow);
                         rowAdded = true;
                     }
                 }
@@ -68,14 +69,42 @@ class Expected
         queryResult.addAll(relatives);
         // Sort
         test.sort(queryResult);
+        // If predicate table != root table, then ancestors of rows in predicate table have to be repeated for each
+        // row of predicate table
+        if (predicateTable != rootTable) {
+            List<NewRow> extendedQueryResult = new ArrayList<NewRow>();
+            NewRow[] ancestors = new NewRow[2];
+            for (NewRow row : queryResult) {
+                int rowDepth = depth(row.getTableId());
+                if (ancestorTypeOf(row.getTableId(), predicateTable)) {
+                    ancestors[rowDepth] = row;
+                } else if (ancestorTypeOf(predicateTable, row.getTableId())) {
+                    extendedQueryResult.add(row);
+                } else {
+                    assert row.getTableId() == predicateTable : row;
+                    int depth = depth(row.getTableId());
+                    for (int i = depth(rootTable); i < depth; i++) {
+                        if (ancestors[i] != null && ancestorOf(ancestors[i], row)) {
+                            extendedQueryResult.add(ancestors[i]);
+                        }
+                    }
+                    extendedQueryResult.add(row);
+                }
+            }
+            queryResult = extendedQueryResult;
+        }
         // Convert to RowData, filling in hkey segment at which each row differs from its predecessor
         List<RowData> rowDatas = new ArrayList<RowData>();
         NewRow previousRow = null;
         for (NewRow row : queryResult) {
             int differSegment = 0;
             if (previousRow != null) {
-                differSegment = test.hKey(previousRow).differSegment(test.hKey(row));
-                assertTrue(differSegment > 0);
+                int rowTableDepth = depth(row.getTableId());
+                if (rowTableDepth < depth(predicateTable)) {
+                    differSegment = rowTableDepth == 0 ? 0 : hKeyDepth(row.getTableId());
+                } else {
+                    differSegment = test.hKey(previousRow).differSegment(test.hKey(row));
+                }
             }
             RowData rowData = row.toRowData();
             rowData.differsFromPredecessorAtKeySegment(differSegment);
@@ -84,9 +113,11 @@ class Expected
         }
         // Generate json string
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(10000);
-        test.outputter.output(new DefaultProcessedRequest(test.request, test.ddlFunctions().getAIS(test.testSession())),
-                         rowDatas,
-                         outputStream);
+        test.outputter.output(new DefaultProcessedRequest(test.request,
+                                                          test.ddlFunctions().getAIS(test.testSession())),
+                              !indexOrdered,
+                              rowDatas,
+                              outputStream);
         return new String(outputStream.toByteArray());
     }
 
@@ -168,6 +199,24 @@ class Expected
             ancestorType = yType == test.itemTable;
         }
         return ancestorType;
+    }
+
+    private int depth(int type)
+    {
+        return
+            type == test.customerTable ? 0 :
+            type == test.orderTable ? 1 :
+            type == test.itemTable ? 2 :
+            type == test.addressTable ? 1 : -1;
+    }
+
+    private int hKeyDepth(int type)
+    {
+        return
+            type == test.customerTable ? 0 :
+            type == test.orderTable ? 2 :
+            type == test.itemTable ? 4 :
+            type == test.addressTable ? 2 : -1;
     }
 
     private RCTortureIT test;

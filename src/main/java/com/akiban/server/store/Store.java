@@ -25,6 +25,7 @@ import com.akiban.server.RowDef;
 import com.akiban.server.RowDefCache;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.message.ScanRowsRequest;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
@@ -70,9 +71,14 @@ public interface Store extends Service<Store> {
      * @deprecated This constructor is ambiguous and may not return the expected rows. Fields from <code>start</code>
      * and <code>end</code> that are <code>NULL</code> are considered to be <b>unset</b>.
      */
-    RowCollector newRowCollector(final Session session, final int rowDefId,
-            final int indexId, final int scanFlags, final RowData start,
-            final RowData end, final byte[] columnBitMap) throws Exception;
+    RowCollector newRowCollector(Session session,
+                                 int rowDefId,
+                                 int indexId,
+                                 int scanFlags,
+                                 RowData start,
+                                 RowData end,
+                                 byte[] columnBitMap,
+                                 ScanLimit scanLimit) throws Exception;
 
     /**
      * Create a new RowCollector.
@@ -87,10 +93,16 @@ public interface Store extends Service<Store> {
      * @param end RowData containing values to stop the scan at.
      * @param endColumns ColumnSelector indicating which fields are set in <code>end</code>
      */
-    RowCollector newRowCollector(Session session, int scanFlags, final int rowDefId,
-            int indexId, byte[] columnBitMap, RowData start, ColumnSelector startColumns,
-            RowData end, ColumnSelector endColumns) throws Exception;
-
+    RowCollector newRowCollector(Session session,
+                                 int scanFlags,
+                                 int rowDefId,
+                                 int indexId,
+                                 byte[] columnBitMap,
+                                 RowData start,
+                                 ColumnSelector startColumns,
+                                 RowData end,
+                                 ColumnSelector endColumns,
+                                 ScanLimit scanLimit) throws Exception;
     /**
      * Get the previously saved RowCollector for the specified tableId. Used in
      * processing the ScanRowsMoreRequest message.

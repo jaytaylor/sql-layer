@@ -24,6 +24,7 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.util.AkibanAppender;
+import com.persistit.Key;
 
 /**
  * Represent one or more rows of table data. The backing store is a byte array
@@ -103,13 +104,15 @@ public class RowData {
     private int rowStart;
     private int rowEnd;
 
+    private Key hKey;
+
     // In an hkey-ordered sequence of RowData objects, adjacent hkeys indicate how the corresponding RowDatas
     // relate to one another -- the second one can be a child of the first, a descendent, have a common ancestor,
     // etc. The essential information is captured by differsFromPredecessorAtKeySegment, which identifies the
     // hkey segment number at which this RowData's hkey differed from that of the previous RowData.
     // This field is declared transient to indicate that this value is not copied into a message carrying a
     // RowData.
-    private transient int differsFromPredecessorAtKeySegment;
+    private transient int differsFromPredecessorAtKeySegment = -1;
 
     public RowData() {
 
@@ -370,6 +373,9 @@ public class RowData {
         RowData copy = new RowData(copyBytes);
         copy.prepareRow(0);
         copy.differsFromPredecessorAtKeySegment = differsFromPredecessorAtKeySegment;
+        if (hKey != null) {
+            copy.hKey = new Key(hKey);
+        }
         return copy;
     }
 
@@ -616,6 +622,16 @@ public class RowData {
     public void differsFromPredecessorAtKeySegment(int differsFromPredecessorAtKeySegment)
     {
         this.differsFromPredecessorAtKeySegment = differsFromPredecessorAtKeySegment;
+    }
+
+    public Key hKey()
+    {
+        return hKey;
+    }
+
+    public void hKey(Key hKey)
+    {
+        this.hKey = hKey;
     }
 
     public static int nullRowBufferSize(RowDef rowDef)

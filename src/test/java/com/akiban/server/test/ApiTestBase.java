@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import junit.framework.Assert;
@@ -243,6 +244,10 @@ public class ApiTestBase {
     }
 
     protected final PersistitStore persistitStore() {
+        Store store = store();
+        if (store instanceof OperatorStore) {
+            return ((OperatorStore)store).getPersistitStore();
+        }
         return (PersistitStore) sm.getStore();
     }
     

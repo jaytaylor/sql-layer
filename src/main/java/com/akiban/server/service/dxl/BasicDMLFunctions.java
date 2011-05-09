@@ -263,6 +263,10 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             }
 
             @Override
+            public void dropScanLimit() {
+            }
+
+            @Override
             public boolean scanAllColumns() {
                 return true;
             }
@@ -273,15 +277,20 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             throws NoSuchTableException, NoSuchColumnException,
             NoSuchIndexException, GenericInvalidOperationException {
         try {
-            return store().newRowCollector(session,
-                                           request.getScanFlags(),
-                                           request.getTableId(),
-                                           request.getIndexId(),
-                                           request.getColumnBitMap(),
-                                           request.getStart(),
-                                           request.getStartColumns(),
-                                           request.getEnd(),
-                                           request.getEndColumns());
+            RowCollector rowCollector = store().newRowCollector(session,
+                                                                request.getScanFlags(),
+                                                                request.getTableId(),
+                                                                request.getIndexId(),
+                                                                request.getColumnBitMap(),
+                                                                request.getStart(),
+                                                                request.getStartColumns(),
+                                                                request.getEnd(),
+                                                                request.getEndColumns(),
+                                                                request.getScanLimit());
+            if (rowCollector.checksLimit()) {
+                request.dropScanLimit();
+            }
+            return rowCollector;
         } catch (RowDefNotFoundException e) {
             throw new NoSuchTableException(request.getTableId(), e);
         } catch (Exception e) {
@@ -595,11 +604,12 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             while (!cursor.isFinished()) {
                 scanHooks.loopStartHook();
                 RowData rowData = rc.collectNextRow();
-                if (rowData == null || limit.limitReached(rowData)) {
+                if (rowData == null || (!rc.checksLimit() && limit.limitReached(rowData))) {
                     cursor.setFinished();
                 }
                 else {
-                    output.addRow(rowData);
+                    // Copy rowData because further query processing will reuse underlying buffer.
+                    output.addRow(rowData.copy());
                 }
             }
         }

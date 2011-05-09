@@ -22,6 +22,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 {
     public abstract boolean isUserTable();
 
+    @Override
     public String toString()
     {
         return tableName.toString();

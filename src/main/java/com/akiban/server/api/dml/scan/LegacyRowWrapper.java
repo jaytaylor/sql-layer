@@ -147,15 +147,27 @@ public final class LegacyRowWrapper extends NewRow
     @Override
     public String toString()
     {
-        return niceRow().toString();
+        // niceRow().toString() would be simpler, but there's a side-effect: If rowData != null, then
+        // the rowData is converted to a NiceRow and rowData is set to null.
+        return
+            rowData == null && niceRow == null ? "null" :
+            rowData == null ? niceRow.toString() :
+            rowData.toString(rowDef);
     }
 
-    private NiceRow niceRow()
+    public NiceRow niceRow()
     {
         if (niceRow == null) {
             niceRow = (NiceRow) NiceRow.fromRowData(rowData, rowDef);
             rowData = null;
         }
         return niceRow;
+    }
+
+    // Allows a LegacyRowWrapper to be used for a RowData acting as a container of rows of any type.
+    public void setRowDef(int rowDefId)
+    {
+        rowDef = NewRow.rowDef(rowDefId);
+        niceRow = null;
     }
 }

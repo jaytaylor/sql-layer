@@ -21,7 +21,7 @@ import java.util.Set;
 public class ScanAllRequest extends ScanAllRange implements ScanRequest {
     private final int indexId;
     private final int scanFlags;
-    private final ScanLimit limit;
+    private ScanLimit limit;
 
     public ScanAllRequest(int tableId, Set<Integer> columnIds) {
         this(tableId, columnIds, 0, null);
@@ -60,5 +60,11 @@ public class ScanAllRequest extends ScanAllRange implements ScanRequest {
     @Override
     public ScanLimit getScanLimit() {
         return limit;
+    }
+
+    @Override
+    public void dropScanLimit()
+    {
+        limit = ScanLimit.NONE;
     }
 }

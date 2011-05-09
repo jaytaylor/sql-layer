@@ -165,6 +165,7 @@ public class IndexDef implements TreeLink {
     public IndexDef(String treeName, RowDef rowDef, Index index)
     {
         this.index = index;
+        index.indexDef(this);
         this.treeName = treeName;
         this.rowDef = rowDef;
         this.fields = new int[index.getColumns().size()];

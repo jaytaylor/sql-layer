@@ -104,7 +104,7 @@ public class Index implements Serializable, ModelNames, Traversable
     @Override
     public String toString()
     {
-        return "Index(" + indexName + ": " + table + ")";
+        return "Index(" + table + "." + indexName + columns + ")";
     }
 
     public Map<String, Object> map()
@@ -209,6 +209,49 @@ public class Index implements Serializable, ModelNames, Traversable
         traversePreOrder(visitor);
     }
 
+    public Object indexDef()
+    {
+        return indexDef;
+    }
+
+    public void indexDef(Object indexDef)
+    {
+        assert indexDef.getClass().getName().equals("com.akiban.server.IndexDef") : indexDef.getClass();
+        this.indexDef = indexDef;
+    }
+
+    public Index userTableIndex()
+    {
+        Index userTableIndex = null;
+        if (table.isUserTable()) {
+            userTableIndex = this;
+        } else {
+            List<Column> userColumns = new ArrayList<Column>();
+            UserTable userTable = null;
+            for (IndexColumn indexColumn : getColumns()) {
+                Column userColumn = indexColumn.getColumn().getUserColumn();
+                userColumns.add(userColumn);
+                if (userTable == null) {
+                    userTable = userColumn.getUserTable();
+                } else {
+                    assert userTable == userColumn.getUserTable() : userColumn;
+                }
+            }
+            assert userTable != null;
+            for (Index index : userTable.getIndexesIncludingInternal()) {
+                List<Column> indexColumns = new ArrayList<Column>();
+                for (IndexColumn indexColumn : index.getColumns()) {
+                    indexColumns.add(indexColumn.getColumn());
+                }
+                if (userColumns.equals(indexColumns)) {
+                    userTableIndex = index;
+                }
+            }
+            assert userTableIndex != null;
+        }
+        return userTableIndex;
+    }
+
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
 
     private Table table;
@@ -220,4 +263,7 @@ public class Index implements Serializable, ModelNames, Traversable
     private List<IndexColumn> columns;
     private boolean columnsFrozen = false;
     private transient HKey hKey;
+    // It really is an IndexDef, but declaring it that way creates trouble for AIS. We don't want to pull in
+    // all the RowDef stuff and have it visible to GWT.
+    private transient /* IndexDef */ Object indexDef;
 }

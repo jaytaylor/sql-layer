@@ -42,7 +42,10 @@ public final class DummyOutputter implements HapiOutputter, JmxManageable {
     private DummyOutputter() {}
 
     @Override
-    public void output(HapiProcessedGetRequest request, Iterable<RowData> rows, OutputStream outputStream) throws IOException {
+    public void output(HapiProcessedGetRequest request,
+                       boolean hKeyOrdered,
+                       Iterable<RowData> rows,
+                       OutputStream outputStream) throws IOException {
         outputStream.write(string.get().getBytes());
     }
 

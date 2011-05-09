@@ -63,6 +63,8 @@ public class RowDefCache {
     
     private int hashCode;
 
+    private AkibanInformationSchema ais;
+
     {
         LATEST = this;
     }
@@ -145,6 +147,7 @@ public class RowDefCache {
      * @param ais
      */
     public synchronized void setAIS(final AkibanInformationSchema ais) {
+        this.ais = ais;
         for (final UserTable table : ais.getUserTables().values()) {
             putRowDef(createUserTableRowDef(ais, table));
         }
@@ -158,6 +161,11 @@ public class RowDefCache {
             LOG.debug(toString());
         }
         hashCode = cacheMap.hashCode();
+    }
+
+    public AkibanInformationSchema ais()
+    {
+        return ais;
     }
 
     /**

@@ -1,0 +1,113 @@
+{
+"comment" : ["See spec file: ",
+    "https://spreadsheets.google.com/a/akiban.com/ccc?key=0AiGr_XWdHm0edFNSaFZwUXd5SnAtOHlDcTJyOEUzdXc",
+    "This test plan has a couple modifications from that spec:",
+    "   - no orphan rows",
+    "   - giving customer id=9 an address"
+],
+
+"setup" : {
+    "processors_default" : [ "scanrows" ],
+    "schema" : "coi",
+    "tables" : [
+        [ "customer",
+            "cid int key",
+            "name varchar(32)",
+            "address char(20)"
+        ],
+
+        [ "orders",
+            "oid int key",
+            "c_id int",
+            "when varchar(10)",
+            "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (c_id) REFERENCES customer(cid)",
+            "KEY (when)"
+        ],
+
+        [ "item",
+            "iid int key",
+            "o_id int",
+            "sku int",
+            "CONSTRAINT __akiban_i FOREIGN KEY __akiban_i (o_id) REFERENCES orders(oid)"
+        ],
+
+        [ "address",
+            "aid int key",
+            "c_id int",
+            "street varchar(32)",
+            "CONSTRAINT __akiban_a FOREIGN KEY __akiban_a (c_id) REFERENCES customer(cid)"
+        ]
+    ],
+    "write_rows" : {
+        "customer"  : [ [11, "Alpha", "Mrs"],
+                        [19, "Bravo", "Miss"],
+                        [18, "Charlie", "Mr"],
+                        [30, "Devo", "Akron"],
+                        [31, "Elvis", "Chelsea"],
+                        [32, "Floyd", "Wall"]
+        ],
+        "orders"    : [ [21, 11, "1/1/2001"],
+                        [22, 11, "2/2/2002"],
+                        [23, 18, "2/2/2002"],
+                        [300, 30, "3/3/2003"]
+        ],
+        "item"      : [ [31, 21, 1111],
+                        [32, 23, 2222],
+                        [3000, 300, 3333]
+        ],
+        "address"   : [ [41, 11, "500 Harrison"],
+                        [42, 19, "1 Akiban Way"],
+                        [300, 30, "Ohio"]
+        ]
+    }
+},
+
+"tests" : {
+    "nonunique from predicate's parent" : {
+        "processors"    : ["scanrows"],
+
+        "get"           : "coi:customer:(orders)when='2%2F2%2F2002'",
+        "expect result" :
+        {
+            "@customer" :
+            [
+                {
+                    "address" : "Mrs",
+                    "cid" : 11,
+                    "name" : "Alpha",
+                    "@orders" :
+                    [
+                        {
+                            "oid" : 22,
+                            "c_id" : 11,
+                            "when" : "2/2/2002",
+                            "@item" : []
+                        }
+                    ]
+                },
+                {
+                    "cid" : 18,
+                    "name" : "Charlie",
+                    "address" : "Mr",
+                    "@orders" :
+                    [
+                        {
+                            "oid" : 23,
+                            "c_id" : 18,
+                            "when" : "2/2/2002",
+                            "@item" : [
+                                {
+                                    "iid" : 32,
+                                    "o_id" : 23,
+                                    "sku" : 2222
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
+
+}

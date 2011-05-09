@@ -24,7 +24,9 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.server.api.dml.DuplicateKeyException;
+import com.akiban.server.api.dml.scan.ScanLimit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -173,17 +175,25 @@ public class PersistitStore implements Store {
         }
     }
 
+    public Key getKey(Session session) throws PersistitException
+    {
+        return treeService.getKey(session);
+    }
+
     public void releaseExchange(final Session session, final Exchange exchange) {
         treeService.releaseExchange(session, exchange);
     }
 
     // Given a RowData for a table, construct an hkey for a row in the table.
     // For a table that does not contain its own hkey, this method uses the
-    // parent join
-    // columns as needed to find the hkey of the parent table.
-    long constructHKey(Session session, Exchange hEx, RowDef rowDef,
-            RowData rowData, boolean insertingRow) throws PersistitException,
-            InvalidOperationException {
+    // parent join columns as needed to find the hkey of the parent table.
+    public long constructHKey(Session session,
+                              Exchange hEx,
+                              RowDef rowDef,
+                              RowData rowData,
+                              boolean insertingRow)
+    throws PersistitException, InvalidOperationException
+    {
         // Initialize the hkey being constructed
         long uniqueId = -1;
         Key hKey = hEx.getKey();
@@ -304,7 +314,7 @@ public class PersistitStore implements Store {
      * @param rowData
      * @param indexDef
      */
-    void constructIndexKey(Key iKey, RowData rowData, IndexDef indexDef,
+    public static void constructIndexKey(Key iKey, RowData rowData, IndexDef indexDef,
             Key hKey) throws PersistitException {
         IndexDef.H2I[] fassoc = indexDef.indexKeyFields();
         iKey.clear();
@@ -330,8 +340,8 @@ public class PersistitStore implements Store {
      * @param indexKey
      * @param indexDef
      */
-    void constructHKeyFromIndexKey(final Key hKey, final Key indexKey,
-            final IndexDef indexDef) {
+    public void constructHKeyFromIndexKey(final Key hKey, final Key indexKey, final IndexDef indexDef)
+    {
         final IndexDef.I2H[] fassoc = indexDef.hkeyFields();
         hKey.clear();
         for (int index = 0; index < fassoc.length; index++) {
@@ -349,6 +359,33 @@ public class PersistitStore implements Store {
             }
         }
     }
+
+/*
+    public void constructRowDataFromIndexKey(Key indexKey, IndexDef indexDef, RowData rowData)
+    {
+        // Make sure that rowData is big enough
+        assert rowData.getBytes().length >= RowData.MINIMUM_RECORD_LENGTH + Key.MAX_KEY_LENGTH;
+        // Set null flags for fields not in index
+        BitSet nullMap = new BitSet();
+        RowDef rowDef = indexDef.getRowDef();
+        for (int i = 0; i < rowDef.getFieldCount(); i++) {
+            nullMap.set(i, true);
+        }
+        for (int fieldPosition : indexDef.getFields()) {
+            nullMap.set(fieldPosition, false);
+        }
+        rowData.setupNullMap(nullMap, 0, 0, rowDef.getFieldCount());
+        // TODO: Set null flags for null values in indexKey
+        // Copy non-null fields from indexKey to rowData
+        for (int fieldPosition : indexDef.getFields()) {
+            indexKey.indexTo(fieldPosition);
+            int indexKeyFrom = indexKey.getIndex();
+            indexKey.indexTo(fieldPosition + 1);
+            int indexKeyTo = indexKey.getIndex();
+            rowData.copyBytesFrom(indexKey.getEncodedBytes(), indexKeyFrom, indexKeyTo, fieldPosition);
+        }
+    }
+*/
 
     /**
      * Given an indexDef, construct the corresponding hkey containing nulls.
@@ -389,12 +426,12 @@ public class PersistitStore implements Store {
         }
     }
 
-    void appendKeyField(final Key key, final FieldDef fieldDef,
+    static void appendKeyField(final Key key, final FieldDef fieldDef,
             final RowData rowData) {
         fieldDef.getEncoding().toKey(fieldDef, rowData, key);
     }
 
-    private void appendKeyFieldFromKey(final Key fromKey, final Key toKey,
+    static private void appendKeyFieldFromKey(final Key fromKey, final Key toKey,
             final int depth) {
         fromKey.indexTo(depth);
         int from = fromKey.getIndex();
@@ -1000,21 +1037,30 @@ public class PersistitStore implements Store {
     }
 
     @Override
-    public RowCollector newRowCollector(Session session, int rowDefId,
-            int indexId, int scanFlags, RowData start, RowData end,
-            byte[] columnBitMap) throws InvalidOperationException,
-            PersistitException
+    public RowCollector newRowCollector(Session session,
+                                        int rowDefId,
+                                        int indexId,
+                                        int scanFlags,
+                                        RowData start,
+                                        RowData end,
+                                        byte[] columnBitMap,
+                                        ScanLimit scanLimit) throws Exception
     {
-        return newRowCollector(session, scanFlags, rowDefId, indexId, columnBitMap,
-                               start, null, end, null);
+        return newRowCollector(session, scanFlags, rowDefId, indexId, columnBitMap, start, null, end, null, scanLimit);
     }
 
     @Override
-    public RowCollector newRowCollector(Session session, int scanFlags,
-            int rowDefId, int indexId, byte[] columnBitMap,
-            RowData start, ColumnSelector startColumns,
-            RowData end, ColumnSelector endColumns) throws InvalidOperationException,
-            PersistitException
+    public RowCollector newRowCollector(Session session,
+                                        int scanFlags,
+                                        int rowDefId,
+                                        int indexId,
+                                        byte[] columnBitMap,
+                                        RowData start,
+                                        ColumnSelector startColumns,
+                                        RowData end,
+                                        ColumnSelector endColumns,
+                                        ScanLimit scanLimit)
+        throws InvalidOperationException, PersistitException
     {
         NEW_COLLECTOR_TAP.in();
         if(start != null && startColumns == null) {
@@ -1024,8 +1070,17 @@ public class PersistitStore implements Store {
             endColumns = createNonNullFieldSelector(end);
         }
         RowDef rowDef = checkRequest(rowDefId, start, startColumns, end, endColumns);
-        RowCollector rc = new PersistitStoreRowCollector(session, this, scanFlags,
-            rowDef, indexId, columnBitMap, start, startColumns, end, endColumns);
+        RowCollector rc = OperatorBasedRowCollector.newCollector(session,
+                                                                 this,
+                                                                 scanFlags,
+                                                                 rowDef,
+                                                                 indexId,
+                                                                 columnBitMap,
+                                                                 start,
+                                                                 startColumns,
+                                                                 end,
+                                                                 endColumns,
+                                                                 scanLimit);
         NEW_COLLECTOR_TAP.out();
         return rc;
     }
@@ -1078,7 +1133,6 @@ public class PersistitStore implements Store {
         indexManager.analyzeTable(session, rowDef);
     }
 
-    // ---------------------------------
     boolean hasNullIndexSegments(final RowData rowData, final IndexDef indexDef) {
         assert indexDef.getRowDef().getRowDefId() == rowData.getRowDefId();
         for (int i : indexDef.getFields()) {
@@ -1146,7 +1200,7 @@ public class PersistitStore implements Store {
         }
     }
 
-    void updateIndex(final Session session, final IndexDef indexDef,
+    public void updateIndex(final Session session, final IndexDef indexDef,
             final RowDef rowDef, final RowData oldRowData,
             final RowData newRowData, final Key hkey) throws PersistitException, DuplicateKeyException {
 
@@ -1178,7 +1232,7 @@ public class PersistitStore implements Store {
         releaseExchange(session, iEx);
     }
 
-    boolean bytesEqual(final byte[] a, final int aoffset, final int asize,
+    static boolean bytesEqual(final byte[] a, final int aoffset, final int asize,
             final byte[] b, final int boffset, final int bsize) {
         if (asize != bsize) {
             return false;
@@ -1191,7 +1245,7 @@ public class PersistitStore implements Store {
         return true;
     }
 
-    boolean fieldsEqual(final RowDef rowDef, final RowData a, final RowData b,
+    public static boolean fieldsEqual(final RowDef rowDef, final RowData a, final RowData b,
             final int[] fieldIndexes) {
         for (int index = 0; index < fieldIndexes.length; index++) {
             final int fieldIndex = fieldIndexes[index];
@@ -1301,12 +1355,7 @@ public class PersistitStore implements Store {
             }
             int indexKeyCount = 0;
             try {
-                final PersistitStoreRowCollector rc = (PersistitStoreRowCollector) newRowCollector(
-                        session, rowDef.getRowDefId(), 0, 0, rowData, rowData,
-                        columnBitMap);
-                // final KeyFilter hFilter = rc.getHFilter();
-                final Exchange hEx = rc.getHExchange();
-
+                Exchange hEx = getExchange(session, rowDef, null);
                 hEx.getKey().clear();
                 // while (hEx.traverse(Key.GT, hFilter, Integer.MAX_VALUE)) {
                 while (hEx.next(true)) {

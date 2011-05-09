@@ -23,6 +23,7 @@ import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.IndexDef;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
@@ -136,8 +137,8 @@ public class Scanrows implements HapiProcessor {
             return index.getTable();
         }
 
-        int indexId() {
-            return index.getIndexId();
+        Index index() {
+            return index;
         }
 
         byte[] columnBitmap() {
@@ -253,7 +254,7 @@ public class Scanrows implements HapiProcessor {
                     range.end(),
                     range.endColumns(),
                     range.columnBitmap(),
-                    range.indexId(),
+                    range.index().getIndexId(),
                     range.scanFlagsInt(),
                     configureLimit(ais, request));
             List<RowData> rows = null;
@@ -265,10 +266,11 @@ public class Scanrows implements HapiProcessor {
                 }
             }
 
-            outputter.output(
-                    new DefaultProcessedRequest(request, ais),
-                    rows,
-                    outputStream
+            IndexDef indexDef = (IndexDef) range.index().indexDef();
+            outputter.output(new DefaultProcessedRequest(request, ais),
+                             indexDef.isHKeyEquivalent(),
+                             rows,
+                             outputStream
             );
 
         } catch (InvalidOperationException e) {

@@ -67,7 +67,7 @@ public class AkServerAisSource extends Source {
         nullBounds.createRow(rowDef, new Object[0]);
         final RowCollector rowCollector = store.newRowCollector(session, rowDef
                 .getRowDefId(), 0, 0, nullBounds, nullBounds, new byte[] {
-                (byte) 0xFF, (byte) 0xFF });
+                (byte) 0xFF, (byte) 0xFF }, null);
         final ByteBuffer buffer = ByteBuffer.allocate(65536);
         final RowData row = new RowData(buffer.array());
         while (rowCollector.hasMore()) {

@@ -42,6 +42,7 @@ public class EmptyRows implements HapiProcessor {
         try {
             outputter.output(
                     new DummyProcessedRequest(request),
+                    true,
                     new ArrayList<RowData>(),
                     outputStream);
         } catch (IOException e) {

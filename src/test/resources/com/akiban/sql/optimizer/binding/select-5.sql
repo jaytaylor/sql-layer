@@ -1,0 +1,1 @@
+SELECT x, x2 FROM t1, (SELECT x AS not_x, y AS x2 FROM t1) AS t2

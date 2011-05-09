@@ -40,7 +40,7 @@ import com.akiban.server.service.ServiceManagerImpl;
  * and hash should take its TableId into consideration.</p>
  */
 public abstract class NewRow {
-    protected final RowDef rowDef;
+    protected RowDef rowDef;
 
     /**
      * Gets the RowDef for the row.

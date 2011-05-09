@@ -28,6 +28,8 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import com.akiban.server.service.jmx.JmxManageable;
+import com.persistit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,12 +40,6 @@ import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
-import com.persistit.Exchange;
-import com.persistit.Persistit;
-import com.persistit.Transaction;
-import com.persistit.Tree;
-import com.persistit.Volume;
-import com.persistit.VolumeSpecification;
 import com.persistit.exception.InvalidVolumeSpecificationException;
 import com.persistit.exception.PersistitException;
 
@@ -306,6 +302,12 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         final TreeCache cache = populateTreeCache(link);
         Tree tree = cache.getTree();
         return getExchange(session, tree);
+    }
+
+    @Override
+    public Key getKey(Session session) throws PersistitException
+    {
+        return new Key(getDb());
     }
 
     @Override

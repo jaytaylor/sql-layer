@@ -21,5 +21,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public interface HapiOutputter {
-    void output(HapiProcessedGetRequest request, Iterable<RowData> rows, OutputStream outputStream) throws IOException;
+    void output(HapiProcessedGetRequest request,
+                boolean hKeyOrdered,
+                Iterable<RowData> rows,
+                OutputStream outputStream) throws IOException;
 }

@@ -312,13 +312,10 @@ public class UserTable extends Table
         return true;
     }
 
-    public int hKeyColumnCount()
+    public UserTable parentTable()
     {
-        int count = 0;
-        for (HKeySegment segment : hKey().segments()) {
-            count += segment.columns().size();
-        }
-        return count;
+        Join join = getParentJoin();
+        return join == null ? null : join.getParent();
     }
 
     @SuppressWarnings("unused")

@@ -33,7 +33,10 @@ public final class RowDataStringOutputter implements HapiOutputter {
     private RowDataStringOutputter() {}
     
     @Override
-    public void output(HapiProcessedGetRequest request, Iterable<RowData> rows, OutputStream outputStream) throws IOException {
+    public void output(HapiProcessedGetRequest request,
+                       boolean hKeyOrdered,
+                       Iterable<RowData> rows,
+                       OutputStream outputStream) throws IOException {
         PrintWriter writer = new PrintWriter(outputStream);
         for (RowData data : rows) {
             String toString = data.toString(request.getRowDef(data.getRowDefId()));

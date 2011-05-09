@@ -45,8 +45,8 @@ public class PersistitAdapter
         this.store = store;
         this.task = task;
         UserTable leafTable = task.table();
-        hKeyFieldDefs = new FieldDef[leafTable.hKeyColumnCount()];
-        hKey = new Object[leafTable.hKeyColumnCount()];
+        hKeyFieldDefs = new FieldDef[leafTable.hKey().nColumns()];
+        hKey = new Object[leafTable.hKey().nColumns()];
         HKey leafHKey = leafTable.hKey();
         int nHKeySegments = leafHKey.segments().size();
         ordinals = new int[nHKeySegments];

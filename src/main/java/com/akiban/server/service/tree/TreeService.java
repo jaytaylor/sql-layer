@@ -18,11 +18,7 @@ package com.akiban.server.service.tree;
 import com.akiban.server.TableStatusCache;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
-import com.persistit.Exchange;
-import com.persistit.Persistit;
-import com.persistit.Transaction;
-import com.persistit.Tree;
-import com.persistit.Volume;
+import com.persistit.*;
 import com.persistit.exception.PersistitException;
 
 /**
@@ -53,6 +49,8 @@ public interface TreeService extends Service<TreeService> {
             throws PersistitException;
 
     Exchange getExchange(Session session, Tree tree) throws PersistitException;
+
+    Key getKey(Session session) throws PersistitException;
 
     void releaseExchange(Session session, Exchange exchange);
 
