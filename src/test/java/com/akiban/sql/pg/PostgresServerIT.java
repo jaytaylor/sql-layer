@@ -57,15 +57,14 @@ public class PostgresServerIT extends ITBase
 
     public static final String SCHEMA_NAME = "user";
     public static final String DRIVER_NAME = "org.postgresql.Driver";
-    public static final String CONNECTION_URL = "jdbc:postgresql://localhost:15432/user";
+    public static final String CONNECTION_URL = "jdbc:postgresql://localhost:25432/user";
     public static final String USER_NAME = "user";
     public static final String USER_PASSWORD = "user";
 
     @Override
     protected Collection<Property> startupConfigProperties() {
-        // ServiceManagerImpl.CUSTOM_LOAD_SERVICE
-        return Collections.singleton(new Property(Property.parseKey("akserver.services.customload"),
-                                                  PostgresServerManager.class.getName()));
+        return Collections.singleton(new Property(Property.parseKey("akserver.postgres.port"),
+                                                  "25432"));
     }
 
     @Before

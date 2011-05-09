@@ -30,9 +30,7 @@ import java.util.*;
  * Also keeps global state for shutdown and inter-connection communication like cancel.
 */
 public class PostgresServer implements Runnable {
-    public static final int DEFAULT_PORT = 15432; // Real one is 5432
-    
-    private int port = DEFAULT_PORT;
+    private int port;
     private ServerSocket socket = null;
     private boolean running = false;
     private Map<Integer,PostgresServerConnection> connections =

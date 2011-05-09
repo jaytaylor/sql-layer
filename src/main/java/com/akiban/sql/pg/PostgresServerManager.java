@@ -16,6 +16,8 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.service.Service;
+import com.akiban.server.service.ServiceManager;
+import com.akiban.server.service.ServiceManagerImpl;
 
 import java.net.*;
 import java.io.*;
@@ -27,9 +29,11 @@ import java.util.*;
  * <code>JVM_OPTS="-Dakserver.services.customload=com.akiban.sql.pg.PostgresServerManager" $AKIBAN_SERVER_HOME/bin/akserver -f</code>
 */
 public class PostgresServerManager implements PostgresService, Service<PostgresService> {
+    private ServiceManager serviceManager;
     private PostgresServer server = null;
 
     public PostgresServerManager() {
+        this.serviceManager = ServiceManagerImpl.get();
     }
 
     /*** Service<PostgresService> ***/
@@ -43,8 +47,12 @@ public class PostgresServerManager implements PostgresService, Service<PostgresS
     }
 
     public void start() throws Exception {
-        server = new PostgresServer(PostgresServer.DEFAULT_PORT);
-        server.start();
+        String portString = serviceManager.getConfigurationService()
+            .getProperty("akserver.postgres.port", "");
+        if (portString.length() > 0) {
+            server = new PostgresServer(Integer.parseInt(portString));
+            server.start();
+        }
     }
 
     public void stop() throws Exception {
