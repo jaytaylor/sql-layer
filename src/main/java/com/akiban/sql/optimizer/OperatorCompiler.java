@@ -119,7 +119,7 @@ public abstract class OperatorCompiler
         protected static void explainPlan(PhysicalOperator operator, 
                                           StringBuilder into, int depth) {
             for (int i = 0; i < depth; i++)
-                into.append("    ");
+                into.append("  ");
             into.append(operator);
             into.append("\n");
             for (PhysicalOperator inputOperator : operator.getInputOperators()) {
