@@ -1,0 +1,1 @@
+SELECT user.parent.NAME AS PNAME, user.child.NAME AS CNAME FROM user.parent, user.child WHERE (user.parent.NAME = 'foo') AND ((user.parent.ID = user.child.PID) AND true)

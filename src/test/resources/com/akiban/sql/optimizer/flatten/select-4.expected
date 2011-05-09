@@ -1,0 +1,1 @@
+SELECT user.child.NAME AS NAME FROM user.child WHERE (user.child.PID > ANY (SELECT user.parent.ID AS ID FROM user.parent WHERE (user.parent.NAME > 'foo') AND true)) AND true
