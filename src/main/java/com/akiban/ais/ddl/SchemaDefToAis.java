@@ -213,7 +213,9 @@ public class SchemaDefToAis {
         // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
         int offset = 1;
         for(UserTable table : ais.getUserTables().values()) {
-            offset = Math.max(offset, table.getTableId() + 1);
+            if(!table.getName().getSchemaName().equals("akiban_information_schema")) {
+                offset = Math.max(offset, table.getTableId() + 1);
+            }
         }
         return offset;
     }
