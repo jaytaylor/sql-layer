@@ -49,6 +49,7 @@ import java.util.Collections;
 import java.util.List;
 
 @RunWith(Parameterized.class)
+@org.junit.Ignore
 public class PostgresServerIT extends ITBase
 {
     public static final File RESOURCE_DIR = 
