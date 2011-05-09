@@ -98,8 +98,14 @@ public class PhysicalOperatorIT extends ITBase
                           createNewRow(item, 222L, 22L)};
         writeRows(db);
         Store plainStore = store();
-        OperatorStore operatorStore = (OperatorStore) plainStore;
-        PersistitStore persistitStore = operatorStore.getPersistitStore();
+        final PersistitStore persistitStore;
+        if (plainStore instanceof OperatorStore) {
+            OperatorStore operatorStore = (OperatorStore) plainStore;
+            persistitStore = operatorStore.getPersistitStore();
+        }
+        else {
+            persistitStore = (PersistitStore) plainStore;
+        }
         adapter = new PersistitAdapter(schema, persistitStore, session());
     }
 
