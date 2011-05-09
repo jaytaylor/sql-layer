@@ -25,6 +25,7 @@ import com.akiban.sql.parser.CursorNode;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 
+import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 
@@ -55,9 +56,9 @@ public class PostgresOperatorCompiler extends OperatorCompiler
                                   AkibanInformationSchema ais, String defaultSchemaName,
                                   Session session, ServiceManager serviceManager) {
     super(parser, ais, defaultSchemaName);
-    adapter = new PersistitAdapter(schema,
-                                   (PersistitStore)serviceManager.getStore(),
-                                   session);
+    PersistitStore persistitStore = ((OperatorStore)
+                                     serviceManager.getStore()).getPersistitStore();
+    adapter = new PersistitAdapter(schema, persistitStore, session);
   }
 
   @Override
