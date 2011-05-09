@@ -80,6 +80,7 @@ class Select_HKeyOrdered extends PhysicalOperator
         public void open(Bindings bindings)
         {
             input.open(bindings);
+            this.bindings = bindings;
         }
 
         @Override
@@ -91,7 +92,7 @@ class Select_HKeyOrdered extends PhysicalOperator
                 Row inputRow = input.currentRow();
                 if (inputRow.rowType() == predicateRowType) {
                     // New row of predicateRowType
-                    if ((Boolean) predicate.evaluate(inputRow)) {
+                    if ((Boolean) predicate.evaluate(inputRow, bindings)) {
                         selectedRow.set(inputRow);
                         outputRow(selectedRow.get());
                     }
@@ -131,5 +132,7 @@ class Select_HKeyOrdered extends PhysicalOperator
         private final Cursor input;
         // selectedRow is the last input row with type = predicateRowType.
         private final RowHolder<Row> selectedRow = new RowHolder<Row>();
+
+        private Bindings bindings;
     }
 }

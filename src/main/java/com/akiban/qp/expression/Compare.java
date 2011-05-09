@@ -15,6 +15,7 @@
 
 package com.akiban.qp.expression;
 
+import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.RowBase;
 
 class Compare implements Expression
@@ -22,9 +23,9 @@ class Compare implements Expression
     // Predicate interface
 
     @Override
-    public Object evaluate(RowBase row)
+    public Object evaluate(RowBase row, Bindings bindings)
     {
-        int c = ((Comparable) left.evaluate(row)).compareTo(right.evaluate(row));
+        int c = ((Comparable) left.evaluate(row, bindings)).compareTo(right.evaluate(row, bindings));
         switch (comparison) {
             case EQ:
                 return c == 0;

@@ -15,6 +15,7 @@
 
 package com.akiban.qp.expression;
 
+import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.RowBase;
 
 class Literal implements Expression
@@ -22,7 +23,7 @@ class Literal implements Expression
     // Expression interface
 
     @Override
-    public Object evaluate(RowBase row)
+    public Object evaluate(RowBase row, Bindings ignored)
     {
         return value;
     }
