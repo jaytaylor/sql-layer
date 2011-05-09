@@ -113,10 +113,6 @@ public class API
         return new Extract_Default(schema, inputOperator, extractTypes);
     }
 
-    public static Cursor emptyBindings(StoreAdapter adapter, PhysicalOperator physicalOperator) {
-        return physicalOperator.cursor(adapter);
-    }
-
     private static final Limit NO_LIMIT = new Limit()
     {
 

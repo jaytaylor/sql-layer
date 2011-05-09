@@ -48,7 +48,6 @@ import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Transaction;
 
-import static com.akiban.qp.physicaloperator.API.emptyBindings;
 import static com.akiban.qp.physicaloperator.API.indexLookup_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
 
@@ -85,7 +84,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
         Update_Default updateOp = new Update_Default(scanOp, updateLambda);
 
-        Cursor updateCursor = emptyBindings(adapter, updateOp);
+        Cursor updateCursor = updateOp.cursor(adapter);
         Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
         try {
             transaction.begin();

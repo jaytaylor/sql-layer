@@ -245,7 +245,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         }
         LOG.info("Execution plan:\n{}", rootOperator.describePlan());
         // Executable stuff
-        cursor = emptyBindings(adapter, rootOperator);
+        cursor = rootOperator.cursor(adapter);
         cursor.open(UndefBindings.only());
         closed = !cursor.next();
     }
