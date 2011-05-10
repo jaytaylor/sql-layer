@@ -297,7 +297,7 @@
             <configuration>
                 <systemPropertyVariables>
                     <akserver.port>${akserver.port}</akserver.port>
-                    <akserver.postgres.port>${akserver.port}</akserver.postgres.port>
+                    <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
                 </systemPropertyVariables>
                 <argLine>-Xmx512m -Xms128m ${akiban.test.extraJvmArgs}</argLine>
                 <includes>
@@ -316,7 +316,7 @@
             <configuration>
                 <systemPropertyVariables>
                     <akserver.port>${akserver.port}</akserver.port>
-                    <akserver.postgres.port>${akserver.port}</akserver.postgres.port>
+                    <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
                 </systemPropertyVariables>
             </configuration>
             <executions>

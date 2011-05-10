@@ -60,6 +60,7 @@ public class PostgresServerConnection implements Runnable
     private AkibanInformationSchema ais;
     private SQLParser parser;
     private PostgresStatementCompiler compiler;
+    private Thread thread;
 
     public PostgresServerConnection(PostgresServer server, Socket socket, 
                                     int pid, int secret) {
@@ -71,7 +72,8 @@ public class PostgresServerConnection implements Runnable
 
     public void start() {
         running = true;
-        new Thread(this).start();
+        thread = new Thread(this);
+        thread.start();
     }
 
     public void stop() {
@@ -81,6 +83,15 @@ public class PostgresServerConnection implements Runnable
             socket.close();
         }
         catch (IOException ex) {
+        }
+        if (thread != null) {
+            try {
+                // Wait a bit, but don't hang up shutdown if thread is wedged.
+                thread.join(500);
+            }
+            catch (InterruptedException ex) {
+            }
+            thread = null;
         }
     }
 

@@ -35,6 +35,7 @@ public class PostgresServer implements Runnable {
     private boolean running = false;
     private Map<Integer,PostgresServerConnection> connections =
         new HashMap<Integer,PostgresServerConnection>();
+    private Thread thread;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
@@ -46,7 +47,8 @@ public class PostgresServer implements Runnable {
         running in its own thread. */
     public void start() {
         running = true;
-        new Thread(this).start();
+        thread = new Thread(this);
+        thread.start();
     }
 
     /** Called from the main thread to shutdown a server. */
@@ -73,6 +75,16 @@ public class PostgresServer implements Runnable {
         }
         for (PostgresServerConnection connection : conns) {
             connection.stop();
+        }
+
+        if (thread != null) {
+            try {
+                // Wait a bit, but don't hang up shutdown if thread is wedged.
+                thread.join(500);
+            }
+            catch (InterruptedException ex) {
+            }
+            thread = null;
         }
     }
 
