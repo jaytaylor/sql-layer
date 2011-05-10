@@ -15,9 +15,10 @@
 
 package com.akiban.qp.expression;
 
+import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.RowBase;
 
 public interface Expression
 {
-    Object evaluate(RowBase row);
+    Object evaluate(RowBase row, Bindings bindings);
 }

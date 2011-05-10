@@ -17,9 +17,13 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.util.Undef;
 
+import java.util.Arrays;
+
 public final class ArrayBindings implements Bindings {
 
     private final Object[] bindings;
+
+    // ArrayBindings interface
 
     public ArrayBindings(int count) {
         bindings = new Object[count];
@@ -33,15 +37,22 @@ public final class ArrayBindings implements Bindings {
     }
 
     @Override
+    public String toString() {
+        return "ArrayBindings" + Arrays.toString(bindings); 
+    }
+
+    // Bindings interface
+
+    @Override
     public Object get(int index) {
         final Object value;
         try {
             value = bindings[index];
         } catch (ArrayIndexOutOfBoundsException e) {
-            throw new BindingNotSetException(e);
+            throw new BindingNotSetException(e, index);
         }
         if (Undef.isUndefined(value)) {
-            throw new BindingNotSetException("binding not set at index " + index);
+            throw new BindingNotSetException(index);
         }
         return value;
     }

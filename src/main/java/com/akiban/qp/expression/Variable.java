@@ -18,32 +18,45 @@ package com.akiban.qp.expression;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.RowBase;
 
-class Literal implements Expression
-{
+final class Variable implements Expression {
+
     // Expression interface
 
     @Override
-    public Object evaluate(RowBase row, Bindings ignored)
-    {
-        return value;
+    public Object evaluate(RowBase row, Bindings bindings) {
+        return bindings.get(position);
+    }
+
+    // Object interface
+
+    @Override
+    public String toString() {
+        return String.format("Variable(pos=%d)", position);
     }
 
     @Override
-    public String toString()
-    {
-        return getClass().getSimpleName() + "(" +
-            ((value == null) ? "NULL" : value.toString()) +
-            ")";
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Variable variable = (Variable) o;
+
+        return position == variable.position;
+
     }
 
-    // Literal interface
+    @Override
+    public int hashCode() {
+        return position;
+    }
 
-    Literal(Object value)
-    {
-        this.value = value;
+    // Variable interface
+
+    public Variable(int position) {
+        this.position = position;
     }
 
     // Object state
 
-    private final Object value;
+    private final int position;
 }
