@@ -26,6 +26,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
+import com.akiban.util.Tap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +43,9 @@ import java.util.*;
 public class PostgresServerConnection implements Runnable
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresServerConnection.class);
+
+    private final static Tap parserTap = Tap.add(new Tap.Count("sql: parse"));
+    private final static Tap optimizerTap = Tap.add(new Tap.Count("sql: optimize"));
 
     private PostgresServer server;
     private boolean running = false, ignoreUntilSync = false;
@@ -301,10 +305,25 @@ public class PostgresServerConnection implements Runnable
             messenger.sendMessage();
         }
         else {
-            for (StatementNode stmt : parser.parseStatements(sql)) {
+            List<StatementNode> stmts;
+            try {
+                parserTap.in();
+                stmts = parser.parseStatements(sql);
+            }
+            finally {
+                parserTap.out();
+            }
+            for (StatementNode stmt : stmts) {
                 if (!(stmt instanceof CursorNode))
                     throw new StandardException("Not a SELECT");
-                PostgresStatement pstmt = compiler.compile((CursorNode)stmt, null);
+                PostgresStatement pstmt;
+                try {
+                    optimizerTap.in();
+                    pstmt = compiler.compile((CursorNode)stmt, null);
+                }
+                finally {
+                    optimizerTap.out();
+                }
                 pstmt.sendRowDescription(messenger);
                 int nrows = pstmt.execute(messenger, session, -1);
 
@@ -325,14 +344,25 @@ public class PostgresServerConnection implements Runnable
             paramTypes[i] = messenger.readInt();
         logger.info("Parse: {}", sql);
 
-        StatementNode stmt = parser.parseStatement(sql);
-        if (stmt instanceof CursorNode) {
-            PostgresStatement pstmt = compiler.compile((CursorNode)stmt, paramTypes);
-            preparedStatements.put(stmtName, pstmt);
+        StatementNode stmt;
+        try {
+            parserTap.in();
+            stmt = parser.parseStatement(sql);
         }
-        else
+        finally {
+            parserTap.out();
+        }
+        if (!(stmt instanceof CursorNode))
             throw new StandardException("Not a SELECT");
-
+        PostgresStatement pstmt;
+        try {
+            optimizerTap.in();
+            pstmt = compiler.compile((CursorNode)stmt, paramTypes);
+        }
+        finally {
+            optimizerTap.out();
+        }
+        preparedStatements.put(stmtName, pstmt);
         messenger.beginMessage(PostgresMessenger.PARSE_COMPLETE_TYPE);
         messenger.sendMessage();
     }
