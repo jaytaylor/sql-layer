@@ -114,7 +114,9 @@ public class PostgresServerConnection implements Runnable
         }
     }
 
-    protected void topLevel() throws IOException {
+    protected enum ErrorMode { NONE, SIMPLE, EXTENDED };
+
+    protected void topLevel() throws IOException, StandardException {
         logger.info("Connect from {}" + socket.getRemoteSocketAddress());
         messenger.readMessage(false);
         processStartupMessage();
@@ -125,6 +127,7 @@ public class PostgresServerConnection implements Runnable
                     continue;
                 ignoreUntilSync = false;
             }
+            ErrorMode errorMode = ErrorMode.NONE;
             try {
                 switch (type) {
                 case -1:                                    // EOF
@@ -137,18 +140,23 @@ public class PostgresServerConnection implements Runnable
                     processPasswordMessage();
                     break;
                 case PostgresMessenger.QUERY_TYPE:
+                    errorMode = ErrorMode.SIMPLE;
                     processQuery();
                     break;
                 case PostgresMessenger.PARSE_TYPE:
+                    errorMode = ErrorMode.EXTENDED;
                     processParse();
                     break;
                 case PostgresMessenger.BIND_TYPE:
+                    errorMode = ErrorMode.EXTENDED;
                     processBind();
                     break;
                 case PostgresMessenger.DESCRIBE_TYPE:
+                    errorMode = ErrorMode.EXTENDED;
                     processDescribe();
                     break;
                 case PostgresMessenger.EXECUTE_TYPE:
+                    errorMode = ErrorMode.EXTENDED;
                     processExecute();
                     break;
                 case PostgresMessenger.CLOSE_TYPE:
@@ -163,15 +171,21 @@ public class PostgresServerConnection implements Runnable
             }
             catch (StandardException ex) {
                 logger.warn("Error in query", ex);
-                messenger.beginMessage(PostgresMessenger.ERROR_RESPONSE_TYPE);
-                messenger.write('S');
-                messenger.writeString("ERROR");
-                // TODO: Could dummy up an SQLSTATE, etc.
-                messenger.write('M');
-                messenger.writeString(ex.getMessage());
-                messenger.write(0);
-                messenger.sendMessage(true);
-                ignoreUntilSync = true;
+                if (errorMode == ErrorMode.NONE) throw ex;
+                {
+                    messenger.beginMessage(PostgresMessenger.ERROR_RESPONSE_TYPE);
+                    messenger.write('S');
+                    messenger.writeString("ERROR");
+                    // TODO: Could dummy up an SQLSTATE, etc.
+                    messenger.write('M');
+                    messenger.writeString(ex.getMessage());
+                    messenger.write(0);
+                    messenger.sendMessage(true);
+                }
+                if (errorMode == ErrorMode.EXTENDED)
+                    ignoreUntilSync = true;
+                else
+                    readyForQuery();
             }
         }
         server.removeConnection(pid);
