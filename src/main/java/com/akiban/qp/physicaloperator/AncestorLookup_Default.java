@@ -25,8 +25,7 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static java.lang.Math.max;
 
@@ -72,15 +71,28 @@ class AncestorLookup_Default extends PhysicalOperator
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
         this.rowType = rowType;
-        this.ancestorTypes = ancestorTypes;
+        this.ancestorTypes = new ArrayList<RowType>(ancestorTypes);
+        // Sort by depth
+        Collections.sort(this.ancestorTypes,
+                         new Comparator<RowType>()
+                         {
+                             @Override
+                             public int compare(RowType x, RowType y)
+                             {
+                                 UserTable xTable = ((UserTableRowType) x).userTable();
+                                 UserTable yTable = ((UserTableRowType) y).userTable();
+                                 return xTable.getDepth() - yTable.getDepth();
+                             }
+                         });
         int maxTypeId = -1;
         for (RowType missingType : ancestorTypes) {
             maxTypeId = max(maxTypeId, missingType.typeId());
         }
-        this.ancestorTypeDepth = new int[maxTypeId + 1];
-        for (RowType missingType : ancestorTypes) {
+        this.ancestorTypeDepth = new int[ancestorTypes.size()];
+        int a = 0;
+        for (RowType missingType : this.ancestorTypes) {
             UserTable userTable = ((UserTableRowType) missingType).userTable();
-            this.ancestorTypeDepth[missingType.typeId()] = userTable.getDepth() + 1;
+            this.ancestorTypeDepth[a++] = userTable.getDepth() + 1;
         }
     }
 
@@ -149,14 +161,11 @@ class AncestorLookup_Default extends PhysicalOperator
             assert pending.isEmpty();
             HKey hKey = row.hKey();
             int nSegments = hKey.segments();
-            for (int i = 1; i < ancestorTypeDepth.length; i++) {
-                if (ancestorTypeDepth[i] > 0) {
-                    int depth = ancestorTypeDepth[i];
-                    hKey.useSegments(depth);
-                    readAncestorRow(hKey);
-                    if (ancestorRow.isNotNull()) {
-                        pending.add(ancestorRow.get());
-                    }
+            for (Integer depth : ancestorTypeDepth) {
+                hKey.useSegments(depth);
+                readAncestorRow(hKey);
+                if (ancestorRow.isNotNull()) {
+                    pending.add(ancestorRow.get());
                 }
             }
             // Restore the hkey to its original state
