@@ -23,7 +23,7 @@ import org.junit.Test;
 public final class BadTableStatRequestIT extends ITBase {
     @Test(expected= NoSuchTableException.class)
     public void noTablesDefined() throws InvalidOperationException {
-        dml().getTableStatistics(session(), 1, false);
+        dml().getTableStatistics(session(), -1, false);
     }
 
     @Test(expected= NoSuchTableException.class)

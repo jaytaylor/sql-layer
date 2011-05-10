@@ -185,27 +185,4 @@ public final class TruncateTableIT extends ITBase {
         List<NewRow> rows = scanAll(new ScanAllRequest(tableId, null));
         assertEquals("Rows scanned", 0, rows.size());
     }
-
-    // Ultimate problem was misinterpreting blob(100). Delete test instead of update if it breaks (e.g. due to rowdata
-    // changes) as there are tests elsewhere confirming proper handling of blob(L)
-    @Test
-    public void bug717210() throws InvalidOperationException {
-
-        int tableId = createTable("test", "t", "c1 BLOB(100)");
-        final RowDef rowDef = rowDefCache().getRowDef("test.t");
-        final byte id = (byte)rowDef.getRowDefId();
-        assertEquals(id, rowDef.getRowDefId());
-
-        // Row data is malformed due to adapter saying it is a tinyblob and server saying it is a blob
-        final byte[] rawData = new byte[]{34, 0, 0, 0, 65, 66, 2, 0, id,  0,  0,  0,  0,  4, 0, 0, 0,
-                                           0, 0, 0, 0,  0, 0,  0, 3, 49, 50, 51, 66, 65, 34, 0, 0, 0};
-        assertEquals(34, rawData.length);
-        final LegacyRowWrapper newRow = new LegacyRowWrapper(new RowData(rawData));
-        newRow.toRowData().prepareRow(0);
-        writeRows(newRow);
-        expectRowCount(tableId, 1);
-
-        // This no longer attempts to convert the RowData to a string so the being malformed is "ok"
-        dml().truncateTable(session(), tableId);
-    }
 }

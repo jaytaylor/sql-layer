@@ -26,8 +26,11 @@ import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.ddl.DuplicateTableNameException;
 import com.akiban.server.api.ddl.JoinToMultipleParentsException;
+import com.akiban.server.api.ddl.JoinToUnknownTableException;
 import com.akiban.server.api.ddl.JoinToWrongColumnsException;
 import com.akiban.server.api.ddl.ParseException;
+import com.akiban.server.api.ddl.ProtectedTableDDLException;
+import com.akiban.server.api.ddl.UnsupportedCharsetException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedIndexSizeException;
@@ -45,19 +48,16 @@ import static org.junit.Assert.assertTrue;
 
 
 public final class CreateTableIT extends ITBase {
-    // TODO: ENUM/SET parsing and AIS support (unsupported for Halo)
-    @Test
-    public void bug686972() throws InvalidOperationException {
+    @Test // bug686972
+    public void enumAndSetTypes() throws InvalidOperationException {
         createExpectException(UnsupportedDataTypeException.class, "test", "t", "c1 enum('a','b','c')");
         createExpectException(UnsupportedDataTypeException.class, "test", "t", "c1 ENUM('a','b','c')");
         createExpectException(UnsupportedDataTypeException.class, "test", "t", "c1 set('a','b','c')");
         createExpectException(UnsupportedDataTypeException.class, "test", "t", "c1 SET('a','b','c')");
-        // Expand test when supporting ENUM and SEt
     }
 
-    // Using 'text' as a column identifier causes parse error
-    @Test
-    public void bug687146() throws InvalidOperationException {
+    @Test // bug687146
+    public void textAsIdentifier() throws InvalidOperationException {
         int tid = createTable("test", "t", "entry int primary key, text varchar (2000)");
         writeRows(createNewRow(tid, 1, "foo"),
                   createNewRow(tid, 2, "bar"));
@@ -66,66 +66,52 @@ public final class CreateTableIT extends ITBase {
                        createNewRow(tid, 2L, "bar"));
     }
 
-
-    // Column or table comment causes parse error
-    @Test
-    public void bug687220() throws InvalidOperationException {
+    @Test // bug687220
+    public void tableAndColumnComments() throws InvalidOperationException {
         createTable("test", "t1", "id int key COMMENT 'Column comment activate'");
         ddl().createTable(session(), "test", "create table t2(id int key) COMMENT='A table comment'");
         tableId("test", "t2");
     }
 
-    // Initial auto increment value is incorrect
-    @Test
-    public void bug696169() throws Exception {
+    @Test // bug696169
+    public void initialAutoIncrementValue() throws Exception {
         ddl().createTable(session(), "test", "CREATE TABLE t(c1 INT AUTO_INCREMENT KEY) AUTO_INCREMENT=10");
         final int tid = tableId("test", "t");
         // This value gets sent as last_row_id so everything lines up on the adapter, where all auto_inc stuff is done
         assertEquals(9, store().getTableStatistics(session(), tid).getAutoIncrementValue());
     }
 
-    // FIXED data type causes parse error
-    @Test
-    public void bug696321() throws InvalidOperationException {
+    @Test // bug696321
+    public void fixedType() throws InvalidOperationException {
         createCheckColumnDrop("c1 FIXED NULL", Types.DECIMAL, 10L, 0L);
     }
 
-    // REAL data type causes NPE
-    @Test
-    public void bug696325() throws InvalidOperationException {
+    @Test // bug696325
+    public void realType() throws InvalidOperationException {
         createCheckColumnDrop("c1 REAL(1,0) NULL", Types.DOUBLE, 1L, 0L);
     }
 
-    // Short create statement causes StringIndexOutOfBoundsException from SchemaDef.canonicalStatement
-    @Test
-    public void bug705920() throws InvalidOperationException {
+    @Test // bug705920
+    public void shortDDLStatements() throws InvalidOperationException {
         createTable("test", "t", "c1 int"); // Bug case
         createTable("x", "y", "z int");     // As short as you could get
     }
 
-    // TODO: BIT data type support (unsupported for Halo)
-    @Test
-    public void bug705980() throws InvalidOperationException {
+    @Test // bug705980
+    public void bitType() throws InvalidOperationException {
         createExpectException(UnsupportedDataTypeException.class, "test", "t", "c1 bit(8)");
         createExpectException(UnsupportedDataTypeException.class, "test", "t", "c1 BIT(8)");
-        // Expand test when supporting BIT (min, max, default type param, etc)
     }
     
-    // CHAR(0) data type fails, assert during AIS construction
-    @Test
-    public void bug705993() throws InvalidOperationException {
+    @Test // bug705993
+    public void charTypeWithZeroLength() throws InvalidOperationException {
         int tid = createCheckColumn("c1 CHAR(0) NULL", Types.CHAR, 0L, null);
-        // We support a superset of the inserts for CHAR(0) compared to MySQL, which should be OK
-        writeRows(createNewRow(tid, "", -1L),
-                  createNewRow(tid, null, -1L));
-        expectFullRows(tid,
-                       createNewRow(tid, ""),
-                       createNewRow(tid, (Object)null));
+        writeRows(createNewRow(tid, "", -1L), createNewRow(tid, null, -1L));
+        expectFullRows(tid, createNewRow(tid, ""), createNewRow(tid, (Object)null));
     }
 
-    // SERIAL data types are parse errors
-    @Test
-    public void bug706008() throws InvalidOperationException {
+    @Test // bug706008
+    public void serialType() throws InvalidOperationException {
         // SERIAL => BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE.
         final int tid1 = createCheckColumn("c1 SERIAL", Types.U_BIGINT, null, null);
         final Table table1 = getUserTable(tid1);
@@ -148,9 +134,8 @@ public final class CreateTableIT extends ITBase {
         createCheckColumnDrop("c1 bigint SERIAL DEFAULT VALUE", Types.BIGINT, null, null);
     }
 
-    // CREATE TABLE .. LIKE .. is parse error
-    @Test
-    public void bug706344() throws InvalidOperationException {
+    @Test // bug706344
+    public void createTableLike() throws InvalidOperationException {
         createTable("test", "src", "c1 INT NOT NULL AUTO_INCREMENT, c2 CHAR(10) NULL, PRIMARY KEY(c1)");
         ddl().createTable(session(), "test", "CREATE TABLE dst LIKE src");
         final int tid = tableId("test", "dst");
@@ -191,18 +176,16 @@ public final class CreateTableIT extends ITBase {
         }
     }
 
-    // CREATE TABLE .. SELECT .. FROM .. is parse error
-    // Note: Fixing would require parsing/computing the result column set of any valid SELECT statement
-    @Test(expected=ParseException.class)
-    public void bug706347() throws InvalidOperationException {
+    @Test(expected=ParseException.class) // bug706347
+    public void createTableAsSelect() throws InvalidOperationException {
+        // Note: Fixing would require parsing/computing the result column set of any valid SELECT statement
         int tid1 = createTable("test", "src", "c1 INT NOT NULL AUTO_INCREMENT, c2 INT NULL, PRIMARY KEY(c1))");
         ddl().createTable(session(), "test", "create table dst(c1 INT NOT NULL AUTO_INCREMENT, PRIMARY KEY(c1)) SELECT c1,c2 FROM src");
         int tid2 = tableId("test", "dst");
     }
 
-    // BLOB(L) always created as type blob
-    @Test
-    public void bug717842() throws InvalidOperationException {
+    @Test // bug717842
+    public void blobParameterDeterminesType() throws InvalidOperationException {
         createCheckColumnDrop("c1 blob(0)", Types.BLOB, null, null);
         createCheckColumnDrop("c1 blob(1)", Types.TINYBLOB, null, null);
         createCheckColumnDrop("c1 blob(255)", Types.TINYBLOB, null, null);
@@ -212,7 +195,6 @@ public final class CreateTableIT extends ITBase {
         createCheckColumnDrop("c1 blob(16777215)", Types.MEDIUMBLOB, null, null);
         createCheckColumnDrop("c1 blob(16777216)", Types.LONGBLOB, null, null);
         createCheckColumnDrop("c1 blob(4294967295)", Types.LONGBLOB, null, null);
-        
         // Text should be the same
         createCheckColumnDrop("c1 text(0)", Types.TEXT, null, null);
         createCheckColumnDrop("c1 text(1)", Types.TINYTEXT, null, null);
@@ -226,14 +208,14 @@ public final class CreateTableIT extends ITBase {
     }
     
     @Test
-    public void charTypeDefaultParameter() throws InvalidOperationException {
+    public void charDefaultParameter() throws InvalidOperationException {
         int tid = createCheckColumn("c1 CHAR NULL", Types.CHAR, 1L, null);
         writeRows(createNewRow(tid, "a", -1L));
         expectFullRows(tid, createNewRow(tid, "a"));
     }
 
     @Test
-    public void charTypeWithParameter() throws InvalidOperationException {
+    public void charWithParameter() throws InvalidOperationException {
         int tid = createCheckColumn("c1 CHAR(5) NULL", Types.CHAR, 5L, null);
         writeRows(createNewRow(tid, "a", -1L),
                   createNewRow(tid, "abc", -1L),
@@ -253,7 +235,7 @@ public final class CreateTableIT extends ITBase {
     }
 
     @Test
-    public void realTypeDefaultParam() throws InvalidOperationException {
+    public void realColumnTypeDefaultParam() throws InvalidOperationException {
         createCheckColumn("c1 REAL NULL", Types.DOUBLE, null, null);
     }
 
@@ -293,13 +275,13 @@ public final class CreateTableIT extends ITBase {
     }
 
     @Test
-    public void boolTypeAliases() throws InvalidOperationException {
+    public void boolTypeAreAliases() throws InvalidOperationException {
         createCheckColumnDrop("c1 bool", Types.TINYINT, null, null);
         createCheckColumnDrop("c1 boolean", Types.TINYINT, null, null);
     }
 
     @Test
-    public void nationalCharTypeAliases() throws InvalidOperationException {
+    public void nationalCharTypeAreAliases() throws InvalidOperationException {
         int tid = createCheckColumn("c1 nchar(2)", Types.CHAR, 2L, null);
         assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
         ddl().dropTable(session(), tableName(tid));
@@ -337,26 +319,23 @@ public final class CreateTableIT extends ITBase {
         createExpectException(UnsupportedDataTypeException.class, "test", "t8", "c1 multipolygon");
     }
 
-    // DOUBLE PRECISION alias
-    @Test
-    public void bug724021() throws InvalidOperationException {
+    @Test // bug724021
+    public void doublePrecisionType() throws InvalidOperationException {
         createCheckColumnDrop("c1 DOUBLE PRECISION", Types.DOUBLE, null, null);
         createCheckColumnDrop("c1 DOUBLE PRECISION(10,5)", Types.DOUBLE, 10L, 5L);
         createCheckColumnDrop("c1 DOUBLE PRECISION(1,0) NOT NULL", Types.DOUBLE, 1L, 0L);
     }
 
-    // default charset on table results in invalid DDL regeneration
-    @Test
-    public void bug725100() throws InvalidOperationException {
+    @Test // bug725100
+    public void tableDefaultCharset() throws InvalidOperationException {
         ddl().createTable(session(), "test", "create table t(id int key) default charset=utf8");
         final int tid = tableId("test", "t");
         assertEquals("create table `test`.`t`(`id` int, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8",
                      new DDLGenerator().createTable(getUserTable(tid)));
     }
 
-    // Akiban foreign key to non-primary key column is allowed
-    @Test(expected=JoinToWrongColumnsException.class)
-    public void bug727749() throws InvalidOperationException {
+    @Test(expected=JoinToWrongColumnsException.class) // bug727749
+    public void joinToNonPrimaryKey() throws InvalidOperationException {
         createTable("test", "p", "id int key, wrongInt int");
         createTable("test", "c", "id int key, pid int, constraint __akiban foreign key(pid) references p(wrongInt)");
     }
@@ -381,32 +360,28 @@ public final class CreateTableIT extends ITBase {
                     "id int key, pid1 int, pid2 int, constraint __akiban foreign key(pid1,pid2) references p1(ID1,iD2)");
     }
 
-    // Table with two akiban foreign keys is reported poorly
-    @Test(expected=JoinToMultipleParentsException.class)
-    public void bug727754() throws InvalidOperationException {
+    @Test(expected=JoinToMultipleParentsException.class) // bug727754
+    public void joinToMultipleParents() throws InvalidOperationException {
         createTable("test", "p1", "id int key");
         createTable("test", "p2", "id int key");
         createTable("test", "c", "id int key, p1id int, constraint __akiban1 foreign key(p1id) references p1(id),"+
                                              "p2id int, constraint __akiban2 foreign key(p2id) references p2(id)");
     }
 
-    // Akiban foreign key with differing parent/child columns
-    @Test(expected= JoinToWrongColumnsException.class)
-    public void bug728003() throws InvalidOperationException {
+    @Test(expected= JoinToWrongColumnsException.class) // bug728003
+    public void joinColumnTypesMustMatch() throws InvalidOperationException {
         createTable("test", "p", "id varchar(32) key");
         createTable("test", "c", "id int key, pid int, constraint __akiban foreign key(pid) references p(id)");
     }
 
-    @Test
-    public void unsupportedIndexTypes() throws InvalidOperationException {
-        // bug737692
+    @Test // bug737692
+    public void blobAndTextTypeIndexes() throws InvalidOperationException {
         createExpectException(UnsupportedIndexDataTypeException.class, "test", "t", "c1 blob, key(c1(100)))");
         createExpectException(UnsupportedIndexDataTypeException.class, "test", "t", "c1 text, key(c1(100)))");
     }
 
-    @Test
+    @Test // bug705543
     public void createDuplicateTable() throws InvalidOperationException {
-        // bug705543
         createTable("test", "t", "c1 int key");
         createExpectException(DuplicateTableNameException.class, "test", "t", "c1 int key");
         createExpectException(DuplicateTableNameException.class, "test", "t", "c1 bigint key");
@@ -414,14 +389,13 @@ public final class CreateTableIT extends ITBase {
         createExpectException(DuplicateTableNameException.class, "test", "t", "c1 int key, c2 varchar(32)");
     }
 
-    @Test
+    @Test // bug713387
     public void pkeyTooLarge() throws InvalidOperationException {
-        // bug713387
         createExpectException(UnsupportedIndexSizeException.class, "test", "t", "id varchar(2050) key");
     }
 
-    @Test
-    public void bug760202() throws InvalidOperationException {
+    @Test // bug760202
+    public void prefixIndexes() throws InvalidOperationException {
         // Prefixes on unique not supported, expect rejection until they are
         createExpectException(UnsupportedIndexSizeException.class, "test", "t", "v varchar(10), unique index(v(3))");
         // Allow non-unique as we will still be correct, just storing more than required
@@ -430,6 +404,60 @@ public final class CreateTableIT extends ITBase {
         createExpectException(UnsupportedIndexSizeException.class, "test", "t3", "v varchar(2050), index(v(128))");
     }
 
+    @Test
+    public void ddlWithNoEngineIsAkiban() throws InvalidOperationException {
+        ddl().createTable(session(), "test", "create table zebra(id int key);");
+        final Table table = getUserTable("test", "zebra");
+        assertNotNull("test.zebra exists", table);
+        assertEquals("akibandb", table.getEngine());
+    }
+
+    @Test
+    public void columnsWithUTF8Charset() throws InvalidOperationException {
+        final int tid = createTable("test", "t1",
+                                    "id int key, c1 varchar(85) character set UTF8, c2 varchar(86) character set utf8");
+        final Table t1 = getUserTable(tid);
+        final Column c1Col = t1.getColumn("c1");
+        assertEquals("UTF8", c1Col.getCharsetAndCollation().charset());
+        assertEquals(Integer.valueOf(1), c1Col.getPrefixSize());
+        final Column c2Col = t1.getColumn("c2");
+        assertEquals("utf8", c2Col.getCharsetAndCollation().charset());
+        assertEquals(Integer.valueOf(2), c2Col.getPrefixSize());
+    }
+
+    @Test(expected=JoinToUnknownTableException.class)
+    public void cannotJoinToSelf() throws InvalidOperationException {
+        createTable("test", "one",
+                    "id int key, self_id int, CONSTRAINT __akiban FOREIGN KEY(self_id) REFERENCES one(id))");
+    }
+
+    @Test(expected=UnsupportedCharsetException.class)
+    public void unknownTableCharset() throws InvalidOperationException {
+        ddl().createTable(session(), "test", "create table t(id int key) engine=akibandb default charset=banana;");
+    }
+
+    @Test(expected=UnsupportedCharsetException.class)
+    public void unknownColumnCharset() throws InvalidOperationException {
+        ddl().createTable(session(), "test", "create table t(name varchar(32) charset utf42) engine=akibandb");
+    }
+
+    @Test(expected=ProtectedTableDDLException.class)
+    public void joinToAISTable() throws InvalidOperationException {
+        createTable("test", "t", "id int key, tid int",
+                    "CONSTRAINT __akiban FOREIGN KEY(tid) REFERENCES akiban_information_schema.tables(table_id))");
+    }
+
+    @Test(expected=JoinToWrongColumnsException.class)
+    public void joinToUnknownParentColumn() throws InvalidOperationException {
+        createTable("test", "p", "id int key");
+        createTable("test", "c", "id int key, pid int, CONSTRAINT __akiban FOREIGN KEY(pid) REFERENCES p(wrong))");
+    }
+
+    @Test(expected=JoinToUnknownTableException.class)
+    public void joinToUnknownParentTable() throws InvalidOperationException {
+        createTable("test", "c", "id int key, pid int, CONSTRAINT __akiban FOREIGN KEY(pid) REFERENCES p(id))");
+    }
+        
     private void createExpectException(Class c, String schema, String table, String definition) {
         try {
             createTable(schema, table, definition);
@@ -459,4 +487,3 @@ public final class CreateTableIT extends ITBase {
         ddl().dropTable(session(), tableName(tid));
     }
 }
-

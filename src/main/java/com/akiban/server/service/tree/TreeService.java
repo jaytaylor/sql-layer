@@ -29,8 +29,6 @@ import com.persistit.exception.PersistitException;
  */
 public interface TreeService extends Service<TreeService> {
 
-    final static int AIS_BASE_TABLE_ID = 1000000000;
-
     final static int MAX_TABLES_PER_VOLUME = 100000;
 
     final static String SCHEMA_TREE_NAME = "_schema_";
