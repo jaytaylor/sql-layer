@@ -295,16 +295,10 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <version>2.6</version>
             <configuration>
-                <systemProperties>
-                    <property>
-                        <name>akserver.port</name>
-                        <value>${akserver.port}</value>
-                    </property>
-                    <property>
-                        <name>akserver.postgres.port</name>
-                        <value>${akserver.postgres.port}</value>
-                    </property>
-                </systemProperties>
+                <systemPropertyVariables>
+                    <akserver.port>${akserver.port}</akserver.port>
+                    <akserver.postgres.port>${akserver.port}</akserver.postgres.port>
+                </systemPropertyVariables>
                 <argLine>-Xmx512m -Xms128m ${akiban.test.extraJvmArgs}</argLine>
                 <includes>
                     <include>**/*Test.java</include>
@@ -320,16 +314,10 @@
             <artifactId>maven-failsafe-plugin</artifactId>
             <version>2.7.2</version>
             <configuration>
-                <systemProperties>
-                    <property>
-                        <name>akserver.port</name>
-                        <value>${akserver.port}</value>
-                    </property>
-                    <property>
-                        <name>akserver.postgres.port</name>
-                        <value>${akserver.postgres.port}</value>
-                    </property>
-                </systemProperties>
+                <systemPropertyVariables>
+                    <akserver.port>${akserver.port}</akserver.port>
+                    <akserver.postgres.port>${akserver.port}</akserver.postgres.port>
+                </systemPropertyVariables>
             </configuration>
             <executions>
                 <execution>
@@ -367,6 +355,7 @@
                     <exclude>**/*.ddl</exclude>
                     <exclude>**/*.json</exclude>
                     <exclude>**/*.sql</exclude>
+                    <exclude>**/*.expected</exclude>
                     <exclude>.idea/**</exclude>
                     <exclude>.bzrignore</exclude>
                     <exclude>velocity.log</exclude>
