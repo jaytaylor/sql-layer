@@ -29,6 +29,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.test.it.ITBase;
 import com.persistit.KeyFilter;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -51,6 +52,7 @@ public final class PersistitFilterFactoryIT extends ITBase {
         }
     }
 
+    @Ignore("780614")
     @Test
     public void coiScanOnI() throws Exception {
         RememberingFilterFactoryHook hook = new RememberingFilterFactoryHook();
