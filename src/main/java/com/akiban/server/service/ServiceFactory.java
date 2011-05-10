@@ -23,6 +23,7 @@ import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.network.NetworkService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.sql.pg.PostgresService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 
@@ -43,6 +44,8 @@ public interface ServiceFactory
     Service<Store> storeService();
 
     Service<MemcacheService> memcacheService();
+
+    Service<PostgresService> postgresService();
 
     Service<DXLService> dxlService();
 
