@@ -378,6 +378,7 @@
                     <exclude>**/*.json</exclude>
                     <exclude>**/*.sql</exclude>
                     <exclude>**/*.expected</exclude>
+                    <exclude>src/test/bin/*.sh</exclude>
                     <exclude>.idea/**</exclude>
                     <exclude>.bzrignore</exclude>
                     <exclude>velocity.log</exclude>

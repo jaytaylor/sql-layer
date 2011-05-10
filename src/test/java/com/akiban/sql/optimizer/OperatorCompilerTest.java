@@ -55,13 +55,7 @@ public class OperatorCompilerTest extends TestBase
     public void makeCompiler() throws Exception {
         parser = new SQLParser();
         AkibanInformationSchema ais = loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
-        // This just needs to be enough to keep from UserTableRowType
-        // constructor from getting NPE.
-        int tableId = 0;
-        for (UserTable userTable : ais.getUserTables().values()) {
-            new RowDef(userTable, new TableStatus(++tableId));
-        }
-        compiler = new TestOperatorCompiler(parser, ais, "user");
+        compiler = TestOperatorCompiler.create(parser, ais, "user");
     }
 
     protected static AkibanInformationSchema loadSchema(File schema) throws Exception {
@@ -71,9 +65,22 @@ public class OperatorCompilerTest extends TestBase
         return toAis.getAis();
     }
 
-    static class TestOperatorCompiler extends OperatorCompiler {
-        public TestOperatorCompiler(SQLParser parser, 
-                                    AkibanInformationSchema ais, String defaultSchemaName) {
+    public static class TestOperatorCompiler extends OperatorCompiler {
+        public static OperatorCompiler create(SQLParser parser, 
+                                              AkibanInformationSchema ais, 
+                                              String defaultSchemaName) {
+            // This just needs to be enough to keep from UserTableRowType
+            // constructor from getting NPE.
+            int tableId = 0;
+            for (UserTable userTable : ais.getUserTables().values()) {
+                new RowDef(userTable, new TableStatus(++tableId));
+            }
+            return new TestOperatorCompiler(parser, ais, "user");
+        }
+
+        private TestOperatorCompiler(SQLParser parser, 
+                                     AkibanInformationSchema ais, 
+                                     String defaultSchemaName) {
             super(parser, ais, defaultSchemaName);
         }
 
