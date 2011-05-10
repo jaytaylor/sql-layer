@@ -26,6 +26,7 @@ import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
@@ -179,13 +180,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             throw new IllegalArgumentException(String.format("start row def id: %s, end row def id: %s",
                                                              start.getRowDefId(), end.getRowDefId()));
         }
-        synchronized (SCHEMA_LOCK) {
-            AkibanInformationSchema newAIS = store.getRowDefCache().ais();
-            if (newAIS != ais) {
-                ais = newAIS;
-                schema = new Schema(ais);
-            }
-        }
         OperatorBasedRowCollector rowCollector =
             rowDef.isUserTable()
             // HAPI query root table = predicate table
@@ -218,6 +212,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     
     protected OperatorBasedRowCollector(PersistitStore store, Session session)
     {
+        this.schema = SchemaCache.globalSchema(store.getRowDefCache().ais());
         this.adapter = new PersistitAdapter(schema, store, session);
         this.rowCollectorId = idCounter.getAndIncrement();
     }
@@ -329,13 +324,11 @@ public abstract class OperatorBasedRowCollector implements RowCollector
 
     private static final AtomicLong idCounter = new AtomicLong(0);
     private static final Logger LOG = LoggerFactory.getLogger(OperatorBasedRowCollector.class);
-    private static final Object SCHEMA_LOCK = new Object();
-    private static AkibanInformationSchema ais;
-    protected static Schema schema;
 
     // Object state
 
     private long rowCollectorId;
+    protected final Schema schema;
     protected PersistitAdapter adapter;
     protected UserTable queryRootTable;
     protected UserTableRowType queryRootType;
