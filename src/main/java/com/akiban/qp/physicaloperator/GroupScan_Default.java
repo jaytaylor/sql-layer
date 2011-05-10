@@ -44,7 +44,8 @@ class GroupScan_Default extends PhysicalOperator
 
     // PhysicalOperator interface
 
-    public Cursor cursor(StoreAdapter adapter)
+    @Override
+    protected Cursor cursor(StoreAdapter adapter)
     {
         Cursor cursor = new Execution(adapter, indexKeyRange);
         assert cursor.cursorAbilitiesInclude(CursorAbility.MODIFY) : "cursor must be modifiable";

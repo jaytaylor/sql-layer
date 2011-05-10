@@ -31,6 +31,7 @@ import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.physicaloperator.UpdateLambda;
 import com.akiban.qp.physicaloperator.Update_Default;
+import com.akiban.qp.physicaloperator.UsablePhysicalOperator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.InvalidOperationException;
@@ -84,7 +85,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
         Update_Default updateOp = new Update_Default(scanOp, updateLambda);
 
-        Cursor updateCursor = updateOp.cursor(adapter);
+        Cursor updateCursor = UsablePhysicalOperator.wrappedCursor(updateOp, adapter);
         Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
         try {
             transaction.begin();

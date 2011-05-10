@@ -45,7 +45,7 @@ public final class Update_Default extends PhysicalOperator {
     // PhysicalOperator interface
 
     @Override
-    public Cursor cursor(StoreAdapter adapter) {
+    protected Cursor cursor(StoreAdapter adapter) {
         Cursor inputCursor = inputOperator.cursor(adapter);
         return new Execution(inputCursor, updateLambda);
     }

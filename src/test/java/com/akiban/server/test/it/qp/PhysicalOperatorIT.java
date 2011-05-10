@@ -28,6 +28,7 @@ import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.physicaloperator.UpdateLambda;
 import com.akiban.qp.physicaloperator.Update_Default;
+import com.akiban.qp.physicaloperator.UsablePhysicalOperator;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -134,7 +135,7 @@ public class PhysicalOperatorIT extends ITBase
 
         PhysicalOperator groupScan = groupScan_Default(coi);
         PhysicalOperator updateOperator = new Update_Default(groupScan, updateLambda);
-        Cursor updateCursor = updateOperator.cursor(adapter);
+        Cursor updateCursor = UsablePhysicalOperator.wrappedCursor(updateOperator, adapter);
         int nexts = 0;
         updateCursor.open(UNDEF_BINDINGS);
         while (updateCursor.next()) {
@@ -144,7 +145,7 @@ public class PhysicalOperatorIT extends ITBase
         adapter.commitAllTransactions();
         assertEquals("invocations of next()", db.length, nexts);
 
-        Cursor executable = groupScan.cursor(adapter);
+        Cursor executable = UsablePhysicalOperator.wrappedCursor(groupScan, adapter);
         RowBase[] expected = new RowBase[]{
                 row(customerRowType, 1L, "XYZXYZ"),
                 row(orderRowType, 11L, 1L, "ori"),
@@ -168,7 +169,7 @@ public class PhysicalOperatorIT extends ITBase
     public void testGroupScan() throws Exception
     {
         PhysicalOperator groupScan = groupScan_Default(coi);
-        Cursor executable = groupScan.cursor(adapter);
+        Cursor executable = UsablePhysicalOperator.wrappedCursor(groupScan, adapter);
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
                                    row(orderRowType, 11L, 1L, "ori"),
                                    row(itemRowType, 111L, 11L),
@@ -200,7 +201,7 @@ public class PhysicalOperatorIT extends ITBase
                                    row(orderRowType, 22L, 2L, "jack"),
                                    row(itemRowType, 221L, 22L),
                                    row(itemRowType, 222L, 22L)};
-        compareRows(expected, select.cursor(adapter));
+        compareRows(expected, UsablePhysicalOperator.wrappedCursor(select, adapter));
     }
 
     @Test
@@ -221,7 +222,7 @@ public class PhysicalOperatorIT extends ITBase
                                    row(flattenType, 2L, "abc", 22L, 2L, "jack"),
                                    row(itemRowType, 221L, 22L),
                                    row(itemRowType, 222L, 22L)};
-        compareRows(expected, flatten.cursor(adapter));
+        compareRows(expected, UsablePhysicalOperator.wrappedCursor(flatten, adapter));
     }
 
     @Test
@@ -239,7 +240,7 @@ public class PhysicalOperatorIT extends ITBase
                                    row(flattenCOIType, 2L, "abc", 21L, 2L, "tom", 212L, 21L),
                                    row(flattenCOIType, 2L, "abc", 22L, 2L, "jack", 221L, 22L),
                                    row(flattenCOIType, 2L, "abc", 22L, 2L, "jack", 222L, 22L)};
-        compareRows(expected, flattenCOI.cursor(adapter));
+        compareRows(expected, UsablePhysicalOperator.wrappedCursor(flattenCOI, adapter));
     }
 
     @Test
@@ -250,7 +251,7 @@ public class PhysicalOperatorIT extends ITBase
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
         String[] expected = new String[]{"{1,(long)2}",
                                          "{1,(long)1}"};
-        compareRenderedHKeys(expected, indexScan.cursor(adapter));
+        compareRenderedHKeys(expected, UsablePhysicalOperator.wrappedCursor(indexScan, adapter));
     }
 
     @Test
@@ -263,7 +264,7 @@ public class PhysicalOperatorIT extends ITBase
                                          "{1,(long)2,2,(long)22}",
                                          "{1,(long)1,2,(long)11}",
                                          "{1,(long)2,2,(long)21}"};
-        compareRenderedHKeys(expected, indexScan.cursor(adapter));
+        compareRenderedHKeys(expected, UsablePhysicalOperator.wrappedCursor(indexScan, adapter));
     }
 
     @Test
@@ -284,7 +285,7 @@ public class PhysicalOperatorIT extends ITBase
                                    row(orderRowType, 21L, 2L, "tom"),
                                    row(itemRowType, 211L, 21L),
                                    row(itemRowType, 212L, 21L)};
-        compareRows(expected, indexLookup.cursor(adapter));
+        compareRows(expected, UsablePhysicalOperator.wrappedCursor(indexLookup, adapter));
     }
 
     @Test
@@ -309,7 +310,7 @@ public class PhysicalOperatorIT extends ITBase
                                    row(orderRowType, 21L, 2L, "tom"),
                                    row(itemRowType, 211L, 21L),
                                    row(itemRowType, 212L, 21L)};
-        compareRows(expected, exhume.cursor(adapter));
+        compareRows(expected, UsablePhysicalOperator.wrappedCursor(exhume, adapter));
     }
 
     @Test
@@ -345,7 +346,7 @@ public class PhysicalOperatorIT extends ITBase
                                    row(customerRowType, 2L, "abc"),
                                    row(orderRowType, 22L, 2L, "jack"),
                                    row(itemRowType, 222L, 22L)};
-        compareRows(expected, exhume.cursor(adapter));
+        compareRows(expected, UsablePhysicalOperator.wrappedCursor(exhume, adapter));
     }
 
     @Test
@@ -359,7 +360,7 @@ public class PhysicalOperatorIT extends ITBase
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
         String[] expected = new String[]{"{1,(long)2,2,(long)22}",
                                          "{1,(long)1,2,(long)11}"};
-        compareRenderedHKeys(expected,indexScan.cursor(adapter));
+        compareRenderedHKeys(expected,UsablePhysicalOperator.wrappedCursor(indexScan, adapter));
     }
 
     @Test
@@ -373,7 +374,7 @@ public class PhysicalOperatorIT extends ITBase
         RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
                                    row(itemRowType, 211L, 21L),
                                    row(itemRowType, 212L, 21L)};
-        compareRows(expected, indexLookup.cursor(adapter));
+        compareRows(expected, UsablePhysicalOperator.wrappedCursor(indexLookup, adapter));
 
     }
 

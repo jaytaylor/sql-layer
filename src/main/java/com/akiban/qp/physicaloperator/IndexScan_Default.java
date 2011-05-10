@@ -33,7 +33,7 @@ class IndexScan_Default extends PhysicalOperator
     // PhysicalOperator interface
 
     @Override
-    public Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(StoreAdapter adapter)
     {
         return new Execution(adapter, indexKeyRange);
     }

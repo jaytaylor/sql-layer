@@ -23,7 +23,7 @@ public final class WrappingPhysicalOperator extends PhysicalOperator {
     }
 
     @Override
-    public Cursor cursor(StoreAdapter adapter) {
+    protected Cursor cursor(StoreAdapter adapter) {
         return cursor;
     }
 
