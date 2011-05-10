@@ -104,7 +104,7 @@ public class PostgresServerConnection implements Runnable
     }
 
     protected void topLevel() throws IOException {
-        logger.warn("Connect from {}" + socket.getRemoteSocketAddress());
+        logger.info("Connect from {}" + socket.getRemoteSocketAddress());
         messenger.readMessage(false);
         processStartupMessage();
         while (running) {
@@ -177,7 +177,7 @@ public class PostgresServerConnection implements Runnable
             return;
         default:
             this.version = version;
-            logger.warn("Version {}.{}", (version >> 16), (version & 0xFFFF));
+            logger.debug("Version {}.{}", (version >> 16), (version & 0xFFFF));
         }
         properties = new Properties();
         while (true) {
@@ -186,7 +186,7 @@ public class PostgresServerConnection implements Runnable
             String value = messenger.readString();
             properties.put(param, value);
         }
-        logger.warn("Properties: {}", properties);
+        logger.debug("Properties: {}", properties);
         String enc = properties.getProperty("client_encoding");
         if (enc != null) {
             if ("UNICODE".equals(enc))
@@ -230,7 +230,7 @@ public class PostgresServerConnection implements Runnable
     protected void processPasswordMessage() throws IOException {
         String user = properties.getProperty("user");
         String pass = messenger.readString();
-        logger.warn("Login {}/{}", user, pass);
+        logger.info("Login {}/{}", user, pass);
         Properties status = new Properties();
         // This is enough to make the JDBC driver happy.
         status.put("client_encoding", properties.getProperty("client_encoding", "UNICODE"));
@@ -267,7 +267,7 @@ public class PostgresServerConnection implements Runnable
 
     protected void processQuery() throws IOException, StandardException {
         String sql = messenger.readString();
-        logger.warn("Query: {}", sql);
+        logger.info("Query: {}", sql);
         if (!sql.equals(ODBC_LO_TYPE_QUERY)) {
             StatementNode stmt = parser.parseStatement(sql);
             if (!(stmt instanceof CursorNode))
@@ -293,7 +293,7 @@ public class PostgresServerConnection implements Runnable
         int[] paramTypes = new int[nparams];
         for (int i = 0; i < nparams; i++)
             paramTypes[i] = messenger.readInt();
-        logger.warn("Parse: {}", sql);
+        logger.info("Parse: {}", sql);
 
         StatementNode stmt = parser.parseStatement(sql);
         if (stmt instanceof CursorNode) {

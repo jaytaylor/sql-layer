@@ -70,7 +70,7 @@ public class PostgresOperatorCompiler extends OperatorCompiler
             throws StandardException {
         Result result = compile(cursor);
 
-        logger.warn("Operator:\n{}", result);
+        logger.debug("Operator:\n{}", result);
 
         return new PostgresOperatorStatement(adapter, 
                                              result.getResultOperator(),

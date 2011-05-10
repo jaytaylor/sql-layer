@@ -66,13 +66,18 @@ public class PostgresServer implements Runnable {
             }
         }
 
-        for (PostgresServerConnection connection : connections.values()) {
+        Collection<PostgresServerConnection> conns;
+        synchronized (this) {
+            // Get a copy so they can remove themselves from stop().
+            conns = new ArrayList<PostgresServerConnection>(connections.values());
+        }
+        for (PostgresServerConnection connection : conns) {
             connection.stop();
         }
     }
 
     public void run() {
-        logger.warn("Postgres server listening on port {}", port);
+        logger.debug("Postgres server listening on port {}", port);
         int pid = 0;
         Random rand = new Random();
         try {
@@ -106,10 +111,10 @@ public class PostgresServer implements Runnable {
         }
     }
 
-    public PostgresServerConnection getConnection(int pid) {
+    public synchronized PostgresServerConnection getConnection(int pid) {
         return connections.get(pid);
     }
-    public void removeConnection(int pid) {
+    public synchronized void removeConnection(int pid) {
         connections.remove(pid);
     }
 
