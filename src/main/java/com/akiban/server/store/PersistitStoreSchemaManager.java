@@ -207,12 +207,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     if (ex.clear().append(BY_ID).append(Key.AFTER).previous()) {
                         tableId = ex.getKey().indexTo(1).decodeInt() + 1;
                     } else {
-                        // No tables from user yet, only AIS ones exist
-                        int maxId = 1;
-                        for (TableDefinition def : aisSchema) {
-                            maxId = Math.max(maxId, def.getTableId());
-                        }
-                        tableId = maxId + 1;
+                        // First user table, start at 1 (0 special on adapter)
+                        tableId = 1;
                     }
                     ex.getValue().putNull();
                     ex.clear().append(BY_ID).append(tableId).store();

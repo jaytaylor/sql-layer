@@ -317,6 +317,25 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
         assertTrue("timestamp changed", first != second);
     }
 
+    @Test
+    public void tableIDsAreLow() throws Exception {
+        // TODO: Delete this test, only confirming temporarily desired behavior
+        // Purely testing initial table IDs start at 1 and don't change when adding new tables
+        // Partly required by com.akiban.qp.physicaloperator.AcenstorLookup_Default creating an array sized by max table id
+        createTableDef(SCHEMA, T1_DDL);
+        assertTablesInSchema(SCHEMA, T1_NAME);
+        assertEquals("t1 id", 1, getUserTable(SCHEMA, T1_NAME).getTableId().intValue());
+        createTableDef(SCHEMA, T2_DDL);
+        assertTablesInSchema(SCHEMA, T1_NAME, T2_NAME);
+        assertEquals("t1 id", 1, getUserTable(SCHEMA, T1_NAME).getTableId().intValue());
+        assertEquals("t2 id", 2, getUserTable(SCHEMA, T2_NAME).getTableId().intValue());
+        createTableDef(SCHEMA, T3_CHILD_T1_DDL);
+        assertTablesInSchema(SCHEMA, T1_NAME, T2_NAME, T3_CHILD_T1_NAME);
+        assertEquals("t1 id", 1, getUserTable(SCHEMA, T1_NAME).getTableId().intValue());
+        assertEquals("t2 id", 2, getUserTable(SCHEMA, T2_NAME).getTableId().intValue());
+        assertEquals("t3 id", 3, getUserTable(SCHEMA, T3_CHILD_T1_NAME).getTableId().intValue());
+    }
+
     /**
      * Assert that the given tables in the given schema has the, and only the, given tables. Also
      * confirm each table exists in the AIS and has a definition.
