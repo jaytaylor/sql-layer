@@ -23,6 +23,7 @@ import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.BufferedLegacyOutputRouter;
 import com.akiban.server.api.dml.scan.ConcurrentScanAndUpdateException;
@@ -194,7 +195,7 @@ public final class MultiScanUpdateIT extends ITBase {
                 assertTrue("saw updated row: " + oldRow, get(oldRow, 0, Long.class) <= MAX_ID);
                 NewRow newRow = new NiceRow(oldRow);
                 updateColumn.updateInPlace(newRow);
-                dml().updateRow(session(), oldRow, newRow, ALL_COLUMNS);
+                dml().updateRow(session(), oldRow, newRow, ConstantColumnSelector.ALL_ON);
             }
         } catch (ConcurrentScanAndUpdateRuntimeException e) {
             assertEquals("calls to scanSome", 2, scanIterator.getScanSomeCalls());

@@ -69,7 +69,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
         UserTable userTable = ais.getUserTable(oldRowData.getRowDefId());
         GroupTable groupTable = userTable.getGroup().getGroupTable();
-        IndexBound bound = new IndexBound(userTable, oldRow, new ConstantColumnSelector(true));
+        IndexBound bound = new IndexBound(userTable, oldRow, ConstantColumnSelector.ALL_ON);
         IndexKeyRange range = new IndexKeyRange(bound, true, bound, true);
 
         final PhysicalOperator scanOp;

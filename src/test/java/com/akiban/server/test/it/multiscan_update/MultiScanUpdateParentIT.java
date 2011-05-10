@@ -16,6 +16,7 @@
 package com.akiban.server.test.it.multiscan_update;
 
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.scan.ConcurrentScanAndUpdateException;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.test.it.ITBase;
@@ -76,7 +77,7 @@ public final class MultiScanUpdateParentIT extends ITBase {
                     session(),
                     createNewRow(oId, 2, 2),
                     createNewRow(oId, 2, 3),
-                    ALL_COLUMNS
+                    ConstantColumnSelector.ALL_ON
             );
         } catch (InvalidOperationException e) {
             throw new TestException(e);
@@ -99,7 +100,7 @@ public final class MultiScanUpdateParentIT extends ITBase {
                     session(),
                     createNewRow(cId, 3),
                     createNewRow(cId, 4),
-                    ALL_COLUMNS
+                    ConstantColumnSelector.ALL_ON
             );
         } catch (InvalidOperationException e) {
             throw new TestException(e);
