@@ -1,0 +1,1 @@
+SELECT user.t1.X AS X, user.t1.Y AS Y FROM user.t1, user.t2 AS TT WHERE user.t1.Y > TT.W

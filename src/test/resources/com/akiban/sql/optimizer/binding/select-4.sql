@@ -1,0 +1,1 @@
+SELECT COALESCE(x,z) FROM t1

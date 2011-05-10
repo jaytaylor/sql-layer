@@ -1,0 +1,91 @@
+com.akiban.sql.parser.CursorNode@851052d
+name: null
+updateMode: UNSPECIFIED
+statementType: SELECT
+resultSet: 	
+	com.akiban.sql.parser.SelectNode@54281d4b
+	isDistinct: false
+	resultColumns: 		
+		com.akiban.sql.parser.ResultColumnList@19e3118a
+
+		[0]:		
+		com.akiban.sql.parser.ResultColumn@a94884d
+		exposedName: _SQL_COL_1
+		name: _SQL_COL_1
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.BinaryArithmeticOperatorNode@1d807ca8
+			operator: +
+			methodName: plus
+			type: null
+			leftOperand: 				
+				com.akiban.sql.parser.BinaryArithmeticOperatorNode@5e7808b9
+				operator: +
+				methodName: plus
+				type: null
+				leftOperand: 					
+					com.akiban.sql.parser.ColumnReference@1a84da23
+					columnName: X
+					tableName: null
+					type: null
+					userData: t1.x from com.akiban.sql.parser.FromBaseTable@a39ab89
+				rightOperand: 					
+					com.akiban.sql.parser.ColumnReference@1d3c468a
+					columnName: Y
+					tableName: null
+					type: null
+					userData: t1.y from com.akiban.sql.parser.FromBaseTable@a39ab89
+			rightOperand: 				
+				com.akiban.sql.parser.ColumnReference@603b1d04
+				columnName: Z
+				tableName: null
+				type: null
+				userData: t1.z from com.akiban.sql.parser.FromBaseTable@a39ab89
+	fromList: 		
+		com.akiban.sql.parser.FromList@48ee22f7
+
+		[0]:		
+		com.akiban.sql.parser.FromBaseTable@a39ab89
+		tableName: T1
+		updateOrDelete: null
+		null
+		correlation Name: null
+		null
+		userData: user.t1
+	whereClause: 		
+		com.akiban.sql.parser.AndNode@502cb49d
+		operator: and
+		methodName: and
+		type: null
+		leftOperand: 			
+			com.akiban.sql.parser.BinaryRelationalOperatorNode@2705d88a
+			operator: >
+			methodName: greaterThan
+			type: null
+			leftOperand: 				
+				com.akiban.sql.parser.ColumnReference@70cb6009
+				columnName: X
+				tableName: null
+				type: null
+				userData: t1.x from com.akiban.sql.parser.FromBaseTable@a39ab89
+			rightOperand: 				
+				com.akiban.sql.parser.NumericConstantNode@380e28b9
+				value: 0
+				type: INTEGER NOT NULL
+		rightOperand: 			
+			com.akiban.sql.parser.BinaryRelationalOperatorNode@2993a66f
+			operator: >
+			methodName: greaterThan
+			type: null
+			leftOperand: 				
+				com.akiban.sql.parser.ColumnReference@1c93d6bc
+				columnName: Y
+				tableName: null
+				type: null
+				userData: t1.y from com.akiban.sql.parser.FromBaseTable@a39ab89
+			rightOperand: 				
+				com.akiban.sql.parser.CharConstantNode@2df6df4c
+				value: foo
+				type: CHAR(3) NOT NULL
