@@ -130,6 +130,9 @@ public class PostgresServerConnection implements Runnable
                 case -1:                                    // EOF
                     stop();
                     break;
+                case PostgresMessenger.SYNC_TYPE:
+                    readyForQuery();
+                    break;
                 case PostgresMessenger.PASSWORD_MESSAGE_TYPE:
                     processPasswordMessage();
                     break;
@@ -147,9 +150,6 @@ public class PostgresServerConnection implements Runnable
                     break;
                 case PostgresMessenger.EXECUTE_TYPE:
                     processExecute();
-                    break;
-                case PostgresMessenger.SYNC_TYPE:
-                    processSync();
                     break;
                 case PostgresMessenger.CLOSE_TYPE:
                     processClose();
@@ -175,6 +175,12 @@ public class PostgresServerConnection implements Runnable
             }
         }
         server.removeConnection(pid);
+    }
+
+    protected void readyForQuery() throws IOException {
+        messenger.beginMessage(PostgresMessenger.READY_FOR_QUERY_TYPE);
+        messenger.writeByte('I'); // Idle ('T' -> xact open; 'E' -> xact abort)
+        messenger.sendMessage(true);
     }
 
     protected void processStartupMessage() throws IOException {
@@ -266,11 +272,7 @@ public class PostgresServerConnection implements Runnable
             messenger.writeInt(secret);
             messenger.sendMessage();
         }
-        {
-            messenger.beginMessage(PostgresMessenger.READY_FOR_QUERY_TYPE);
-            messenger.writeByte('I'); // Idle ('T' -> xact open; 'E' -> xact abort)
-            messenger.sendMessage(true);
-        }
+        readyForQuery();
     }
 
     // ODBC driver sends this at the start; returning no rows is fine (and normal).
@@ -279,27 +281,30 @@ public class PostgresServerConnection implements Runnable
     protected void processQuery() throws IOException, StandardException {
         String sql = messenger.readString();
         logger.info("Query: {}", sql);
-        if (!sql.equals(ODBC_LO_TYPE_QUERY)) {
-            StatementNode stmt = parser.parseStatement(sql);
-            if (!(stmt instanceof CursorNode))
-                throw new StandardException("Not a SELECT");
-            PostgresStatement pstmt = compiler.compile((CursorNode)stmt, null);
-            pstmt.sendRowDescription(messenger);
-            int nrows = pstmt.execute(messenger, session, -1);
+        if (sql.equals(ODBC_LO_TYPE_QUERY)) {
+            messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+            messenger.writeString("SELECT");
+            messenger.sendMessage();
         }
-        messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
-        messenger.writeString("SELECT");
-        messenger.sendMessage();
-        messenger.beginMessage(PostgresMessenger.READY_FOR_QUERY_TYPE);
-        messenger.writeByte('I');
-        messenger.sendMessage(true);
+        else {
+            for (StatementNode stmt : parser.parseStatements(sql)) {
+                if (!(stmt instanceof CursorNode))
+                    throw new StandardException("Not a SELECT");
+                PostgresStatement pstmt = compiler.compile((CursorNode)stmt, null);
+                pstmt.sendRowDescription(messenger);
+                int nrows = pstmt.execute(messenger, session, -1);
+
+                messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+                messenger.writeString("SELECT");
+                messenger.sendMessage();
+            }
+        }
+        readyForQuery();
     }
 
     protected void processParse() throws IOException, StandardException {
         String stmtName = messenger.readString();
         String sql = messenger.readString();
-        // TODO: $n might be out of order.
-        sql = sql.replaceAll("\\$.", "?");
         short nparams = messenger.readShort();
         int[] paramTypes = new int[nparams];
         for (int i = 0; i < nparams; i++)
@@ -399,12 +404,6 @@ public class PostgresServerConnection implements Runnable
         messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
         messenger.writeString("SELECT");
         messenger.sendMessage();
-    }
-
-    protected void processSync() throws IOException {
-        messenger.beginMessage(PostgresMessenger.READY_FOR_QUERY_TYPE);
-        messenger.writeByte('I'); // Idle ('T' -> xact open; 'E' -> xact abort)
-        messenger.sendMessage(true);
     }
 
     protected void processClose() throws IOException {
