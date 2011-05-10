@@ -23,11 +23,12 @@ import com.akiban.message.ErrorCode;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.API;
-import com.akiban.qp.physicaloperator.ConstantValueBindable;
+import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.NoLimit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.physicaloperator.UpdateLambda;
 import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.row.Row;
@@ -47,7 +48,6 @@ import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Transaction;
 
-import static com.akiban.qp.physicaloperator.API.emptyBindings;
 import static com.akiban.qp.physicaloperator.API.indexLookup_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
 
@@ -74,17 +74,17 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
         final PhysicalOperator scanOp;
         if (rowDef.getPKIndexDef() != null && rowDef.getPKIndexDef().isHKeyEquivalent()) {
-            scanOp = API.groupScan_Default(groupTable, false, NoLimit.instance(), ConstantValueBindable.of(range));
+            scanOp = API.groupScan_Default(groupTable, false, NoLimit.instance(), range);
         }
         else {
             Index index = userTable.getIndex("PRIMARY");
-            PhysicalOperator indexScan = indexScan_Default(index, false, ConstantValueBindable.of(range));
+            PhysicalOperator indexScan = indexScan_Default(index, false, range);
             scanOp = indexLookup_Default(indexScan, groupTable);
         }
 
-        Update_Default updateOp = new Update_Default(scanOp, ConstantValueBindable.of(updateLambda));
+        Update_Default updateOp = new Update_Default(scanOp, updateLambda);
 
-        Cursor updateCursor = emptyBindings(adapter, updateOp);
+        Cursor updateCursor = updateOp.cursor(adapter);
         Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
         try {
             transaction.begin();
@@ -98,7 +98,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
     private static void runCursor(RowData oldRowData, RowDef rowDef, Cursor updateCursor)
             throws DuplicateKeyException, NoSuchRowException
     {
-        updateCursor.open();
+        updateCursor.open(UndefBindings.only());
         try {
             try {
                 if (!updateCursor.next()) {
@@ -173,7 +173,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         }
 
         @Override
-        public Row applyUpdate(Row original) {
+        public Row applyUpdate(Row original, Bindings bindings) {
             // TODO
             // ideally we'd like to use an OverlayingRow, but ModifiablePersistitGroupCursor requires
             // a PersistitGroupRow if an hkey changes
@@ -190,7 +190,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
                     newRow.put(i, newRowData.toObject(rowDef, i));
                 }
                 else {
-                    newRow.put(i, original.field(i));
+                    newRow.put(i, original.field(i, bindings));
                 }
             }
             return PersistitGroupRow.newPersistitGroupRow(adapter, newRow.toRowData());

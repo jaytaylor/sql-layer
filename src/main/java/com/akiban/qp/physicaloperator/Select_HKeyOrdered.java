@@ -36,9 +36,9 @@ class Select_HKeyOrdered extends PhysicalOperator
     // PhysicalOperator interface
 
     @Override
-    public Cursor cursor(StoreAdapter adapter, Bindings bindings)
+    public Cursor cursor(StoreAdapter adapter)
     {
-        return new Execution(adapter, inputOperator.cursor(adapter, bindings));
+        return new Execution(adapter, inputOperator.cursor(adapter));
     }
 
     @Override
@@ -77,9 +77,9 @@ class Select_HKeyOrdered extends PhysicalOperator
         // Cursor interface
 
         @Override
-        public void open()
+        public void open(Bindings bindings)
         {
-            input.open();
+            input.open(bindings);
         }
 
         @Override

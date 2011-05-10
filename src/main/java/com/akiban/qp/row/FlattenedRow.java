@@ -15,6 +15,7 @@
 
 package com.akiban.qp.row;
 
+import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
 
@@ -37,13 +38,13 @@ public class FlattenedRow extends AbstractRow
     }
 
     @Override
-    public Object field(int i)
+    public Object field(int i, Bindings bindings)
     {
         Object field;
         if (i < nParentFields) {
-            field = parent.get().field(i);
+            field = parent.get().field(i, bindings);
         } else {
-            field = child.get().field(i - nParentFields);
+            field = child.get().field(i - nParentFields, bindings);
         }
         return field;
     }

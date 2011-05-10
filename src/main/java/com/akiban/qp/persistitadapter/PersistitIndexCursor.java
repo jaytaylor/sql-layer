@@ -15,6 +15,7 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.CursorAbility;
 import com.akiban.qp.physicaloperator.CursorStub;
 import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
@@ -33,7 +34,7 @@ class PersistitIndexCursor extends CursorStub
     // Cursor interface
 
     @Override
-    public void open()
+    public void open(Bindings bindings)
     {
         assert exchange == null;
         try {
@@ -42,7 +43,7 @@ class PersistitIndexCursor extends CursorStub
             throw new PersistitAdapterException(e);
         }
         if (keyRange != null) {
-            indexFilter = adapter.filterFactory.computeIndexFilter(exchange.getKey(), indexDef(), keyRange);
+            indexFilter = adapter.filterFactory.computeIndexFilter(exchange.getKey(), indexDef(), keyRange, bindings);
         }
     }
 

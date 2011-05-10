@@ -43,9 +43,9 @@ class AncestorLookup_Default extends PhysicalOperator
     // PhysicalOperator interface
 
     @Override
-    public Cursor cursor(StoreAdapter adapter, Bindings bindings)
+    public Cursor cursor(StoreAdapter adapter)
     {
-        return new Execution(adapter, inputOperator.cursor(adapter, bindings));
+        return new Execution(adapter, inputOperator.cursor(adapter));
     }
 
     @Override
@@ -103,9 +103,9 @@ class AncestorLookup_Default extends PhysicalOperator
         // Cursor interface
 
         @Override
-        public void open()
+        public void open(Bindings bindings)
         {
-            input.open();
+            input.open(bindings);
         }
 
         @Override
@@ -179,7 +179,7 @@ class AncestorLookup_Default extends PhysicalOperator
         {
             try {
                 ancestorCursor.rebind(hKey);
-                ancestorCursor.open();
+                ancestorCursor.open(UndefBindings.only());
                 if (ancestorCursor.next()) {
                     Row retrievedRow = ancestorCursor.currentRow();
                     // Retrieved row might not actually what we were looking for -- not all ancestors are present,

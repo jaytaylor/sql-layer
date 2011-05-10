@@ -20,7 +20,7 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.Limit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.ConstantValueBindable;
+import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
@@ -227,10 +227,10 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         PhysicalOperator rootOperator;
         if (useIndex) {
             PhysicalOperator indexScan =
-                indexScan_Default(predicateIndex, descending, ConstantValueBindable.of(indexKeyRange));
+                indexScan_Default(predicateIndex, descending, indexKeyRange);
             rootOperator = indexLookup_Default(indexScan, groupTable, limit);
         } else {
-            rootOperator = groupScan_Default(groupTable, descending, limit, ConstantValueBindable.of(indexKeyRange));
+            rootOperator = groupScan_Default(groupTable, descending, limit, indexKeyRange);
         }
         // Fill in ancestors above predicate
         if (queryRootType != predicateType) {
@@ -245,8 +245,8 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         }
         LOG.info("Execution plan:\n{}", rootOperator.describePlan());
         // Executable stuff
-        cursor = emptyBindings(adapter, rootOperator);
-        cursor.open();
+        cursor = rootOperator.cursor(adapter);
+        cursor.open(UndefBindings.only());
         closed = !cursor.next();
     }
 

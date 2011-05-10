@@ -15,6 +15,7 @@
 
 package com.akiban.qp.expression;
 
+import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.RowBase;
 
 class Field implements Expression
@@ -24,7 +25,7 @@ class Field implements Expression
     @Override
     public Object evaluate(RowBase row)
     {
-        return row.field(position);
+        return row.field(position, UndefBindings.only()); // TODO evaluate needs to take a Bindings, too
     }
 
     @Override

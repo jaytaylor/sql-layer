@@ -56,10 +56,10 @@ public class PostgresOperatorStatement extends PostgresStatement
     public int execute(PostgresMessenger messenger, Session session, int maxrows)
             throws IOException, StandardException {
         Bindings bindings = new ArrayBindings(0);
-        Cursor cursor = resultOperator.cursor(store, bindings);
+        Cursor cursor = resultOperator.cursor(store);
         int nrows = 0;
         try {
-            cursor.open();
+            cursor.open(bindings);
             List<Column> columns = getColumns();
             List<PostgresType> types = getTypes();
             int ncols = columns.size();
@@ -70,7 +70,7 @@ public class PostgresOperatorStatement extends PostgresStatement
                     messenger.writeShort(ncols);
                     for (int i = 0; i < ncols; i++) {
                         Column column = columns.get(i);
-                        Object field = row.field(resultColumnOffsets[i]);
+                        Object field = row.field(resultColumnOffsets[i], bindings);
                         PostgresType type = types.get(i);
                         byte[] value = type.encodeValue(field, column, 
                                                         messenger.getEncoding(),

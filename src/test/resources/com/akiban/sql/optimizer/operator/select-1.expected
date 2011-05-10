@@ -1,1 +1,1 @@
-GroupScan_Default(_akiban_customers range NO LIMIT)
+GroupScan_Default(_akiban_customers NO LIMIT)

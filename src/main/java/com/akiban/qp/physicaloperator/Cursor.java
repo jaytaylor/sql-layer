@@ -23,7 +23,7 @@ public interface Cursor
     /**
      * Starts a complete scan of the underlying table or index.
      */
-    void open();
+    void open(Bindings bindings);
 
     /**
      * Advances to the next row of the underlying table or index.

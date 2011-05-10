@@ -17,10 +17,11 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.CursorAbility;
 import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.ModifiableCursorBackingStore;
-import com.akiban.qp.row.HKey;
+import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.row.RowHolder;
@@ -42,12 +43,15 @@ import java.util.Map;
 
 public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor {
 
+    // TODO does everthing that uses this need to take a Bindings?
+    private static final Bindings UNDEF_BINDINGS = UndefBindings.only();
+    
     private final ModifiableCursorBackingStore backingStore = new ModifiableCursorBackingStore() {
         @Override
         public void addRow(RowBase newRow) {
             try {
                 RowDef rowDef = null; // let's hope this is a PersistitGroupRow, so that we don't get a NPE!
-                adapter().persistit.writeRow(adapter().session, adapter().rowData(rowDef, newRow));
+                adapter().persistit.writeRow(adapter().session, adapter().rowData(rowDef, newRow, UNDEF_BINDINGS));
             } catch (Exception e) {
                 throw new CursorUpdateException(e);
             }
@@ -72,7 +76,7 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor {
         RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
         RowData currentRowData = currentRow.get().rowData();
         RowDef rowDef = currentRow.get().rowDef();
-        RowData newRowData = adapter().rowData(rowDef, newRow);
+        RowData newRowData = adapter().rowData(rowDef, newRow, UNDEF_BINDINGS);
 
         if (updateWouldChangeHKey(rowDef, currentRowData, newRowData)) {
             removeCurrentRow();
@@ -99,7 +103,7 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor {
     private void updateGroup(RowBase newRow) {
         RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
         RowDef rowDef = currentRow.get().rowDef();
-        RowData rowData = adapter().rowData(rowDef, newRow);
+        RowData rowData = adapter().rowData(rowDef, newRow, UNDEF_BINDINGS);
         try {
             adapter().persistit.packRowData(exchange(), rowDef, rowData);
             exchange().store();
@@ -120,7 +124,7 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor {
             adapter().persistit.constructHKey(
                     adapter().session, exchange(),
                     rowDef,
-                    adapter().rowData(rowDef, current),
+                    adapter().rowData(rowDef, current, UNDEF_BINDINGS),
                     false
             );
         } catch (Exception e) {
@@ -195,7 +199,7 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor {
 
         public void update(RowBase oldRow, Key hKey, RowBase newRow) {
             try {
-                adapter.updateIndex(indexDef, oldRow, newRow, hKey);
+                adapter.updateIndex(indexDef, oldRow, newRow, hKey, UNDEF_BINDINGS);
             } catch (PersistitAdapterException e) {
                 throw new CursorUpdateException(e);
             } catch (DuplicateKeyException e) {

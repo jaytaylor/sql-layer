@@ -15,6 +15,8 @@
 
 package com.akiban.qp.row;
 
+import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.rowtype.RowType;
 
 public abstract class AbstractRow implements Row
@@ -25,7 +27,7 @@ public abstract class AbstractRow implements Row
     public abstract RowType rowType();
 
     @Override
-    public abstract Object field(int i);
+    public abstract Object field(int i, Bindings bindings);
 
     @Override
     public abstract HKey hKey();
@@ -67,7 +69,7 @@ public abstract class AbstractRow implements Row
         builder.append(this.getClass().getSimpleName()).append('[');
         final int fieldsCount = rowType().nFields();
         for (int i=0; i < fieldsCount; ++i) {
-            builder.append(field(i));
+            builder.append(field(i, UndefBindings.only()));
             if(i+1 < fieldsCount) {
                 builder.append(',').append(' ');
             }

@@ -16,6 +16,7 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -44,7 +45,7 @@ public class PersistitIndexRow extends AbstractRow
     }
 
     @Override
-    public Object field(int i)
+    public Object field(int i, Bindings bindings)
     {
 /*
         IndexDef indexDef = indexDef();

@@ -30,7 +30,7 @@ class GroupScan_Default extends PhysicalOperator
         buffer.append(getClass().getSimpleName());
         buffer.append('(');
         buffer.append(groupTable.getName().getTableName());
-        if (indexKeyRangeBindable != null) {
+        if (indexKeyRange != null) {
             buffer.append(" range");
         }
         if (reverse) {
@@ -44,9 +44,9 @@ class GroupScan_Default extends PhysicalOperator
 
     // PhysicalOperator interface
 
-    public Cursor cursor(StoreAdapter adapter, Bindings bindings)
+    public Cursor cursor(StoreAdapter adapter)
     {
-        Cursor cursor = new Execution(adapter, indexKeyRangeBindable.bindTo(bindings));
+        Cursor cursor = new Execution(adapter, indexKeyRange);
         assert cursor.cursorAbilitiesInclude(CursorAbility.MODIFY) : "cursor must be modifiable";
         return cursor;
     }
@@ -58,15 +58,12 @@ class GroupScan_Default extends PhysicalOperator
 
     // GroupScan_Default interface
 
-    public GroupScan_Default(GroupTable groupTable,
-                             boolean reverse,
-                             Limit limit,
-                             Bindable<IndexKeyRange> indexKeyRangeBindable)
+    public GroupScan_Default(GroupTable groupTable, boolean reverse, Limit limit, IndexKeyRange indexKeyRange)
     {
         this.groupTable = groupTable;
         this.reverse = reverse;
         this.limit = limit;
-        this.indexKeyRangeBindable = indexKeyRangeBindable;
+        this.indexKeyRange = indexKeyRange;
     }
 
     // Object state
@@ -74,7 +71,7 @@ class GroupScan_Default extends PhysicalOperator
     private final GroupTable groupTable;
     private final boolean reverse;
     private final Limit limit;
-    private final Bindable<IndexKeyRange> indexKeyRangeBindable;
+    private final IndexKeyRange indexKeyRange;
 
     // Inner classes
 
@@ -84,9 +81,9 @@ class GroupScan_Default extends PhysicalOperator
         // Cursor interface
 
         @Override
-        public void open()
+        public void open(Bindings bindings)
         {
-            cursor.open();
+            cursor.open(bindings);
         }
 
         @Override

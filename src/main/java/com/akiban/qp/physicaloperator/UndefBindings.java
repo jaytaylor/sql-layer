@@ -15,6 +15,23 @@
 
 package com.akiban.qp.physicaloperator;
 
-public interface Bindable<T> {
-    T bindTo(Bindings bindings);
+import com.akiban.util.Undef;
+
+public final class UndefBindings implements Bindings {
+
+    private static final UndefBindings INSTANCE = new UndefBindings();
+
+    public static Bindings only() {
+        return INSTANCE;
+    }
+
+    @Override
+    public Object get(int index) {
+        return Undef.only();
+    }
+
+    @Override
+    public String toString() {
+        return "UndefinedBindings";
+    }
 }

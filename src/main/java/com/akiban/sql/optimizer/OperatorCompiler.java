@@ -37,7 +37,6 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import static com.akiban.qp.expression.API.*;
 
-import com.akiban.qp.physicaloperator.ConstantValueBindable;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import static com.akiban.qp.physicaloperator.API.*;
 
@@ -169,8 +168,7 @@ public abstract class OperatorCompiler
         }
         else {
             IndexKeyRange indexKeyRange = getIndexKeyRange(index, indexConditions);
-            PhysicalOperator indexOperator = indexScan_Default(index, false,
-                                                               ConstantValueBindable.of(indexKeyRange));
+            PhysicalOperator indexOperator = indexScan_Default(index, false, indexKeyRange);
             resultOperator = indexLookup_Default(indexOperator, groupTable);
             // All selected rows above this need to be output by hkey left
             // segment random access.
