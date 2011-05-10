@@ -344,6 +344,7 @@
                     <exclude>**/*.ddl</exclude>
                     <exclude>**/*.json</exclude>
                     <exclude>**/*.sql</exclude>
+                    <exclude>src/test/bin/*.sh</exclude>
                     <exclude>.idea/**</exclude>
                     <exclude>.bzrignore</exclude>
                     <exclude>velocity.log</exclude>
