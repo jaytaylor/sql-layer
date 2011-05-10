@@ -31,6 +31,10 @@ public class AISBBasedBuilder
         return new ActualBuilder();
     }
 
+    public static NewAISBuilder create(String defaultSchema) {
+        return new ActualBuilder().defaultSchema(defaultSchema);
+    }
+
     private static class ActualBuilder implements NewAISBuilder, NewUserTableBuilder, NewAkibanJoinBuilder {
 
         // ActualBuilder interface

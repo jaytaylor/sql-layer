@@ -57,4 +57,10 @@ public final class ArgumentValidation {
             throw new IllegalArgumentException(String.format("%s must be < %d; was %d", argName, max, i));
         }
     }
+
+    public static void isEQ(String oneName, int one, String twoName, int two) {
+        if (one != two) {
+            throw new IllegalArgumentException(String.format("%s(%d) != %s(%d)", oneName, one, twoName, two));
+        }
+    }
 }
