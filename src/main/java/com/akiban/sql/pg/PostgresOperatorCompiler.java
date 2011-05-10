@@ -30,12 +30,12 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 
 import com.akiban.qp.row.Row;
-
 import com.akiban.server.api.dml.scan.NiceRow;
 
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.store.Store;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,8 +56,12 @@ public class PostgresOperatorCompiler extends OperatorCompiler
                                     AkibanInformationSchema ais, String defaultSchemaName,
                                     Session session, ServiceManager serviceManager) {
         super(parser, ais, defaultSchemaName);
-        PersistitStore persistitStore = ((OperatorStore)
-                                         serviceManager.getStore()).getPersistitStore();
+        Store store = serviceManager.getStore();
+        PersistitStore persistitStore;
+        if (store instanceof OperatorStore)
+            persistitStore = ((OperatorStore)store).getPersistitStore();
+        else
+            persistitStore = (PersistitStore)store;
         adapter = new PersistitAdapter(schema, persistitStore, session);
     }
 
