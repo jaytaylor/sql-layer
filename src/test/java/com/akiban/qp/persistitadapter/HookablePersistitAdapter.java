@@ -13,10 +13,19 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.pg;
+package com.akiban.qp.persistitadapter;
 
-/** The service interface for the PostgreSQL server. */
-public interface PostgresService {
-    /** Get the port on which the server is listening. */
-    public int getPort();
+import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.service.session.Session;
+import com.akiban.server.store.PersistitStore;
+
+public final class HookablePersistitAdapter extends PersistitAdapter {
+
+    public interface FilterFactoryHook extends PersistitFilterFactory.InternalHook {
+        // empty interface; just promoting visibility
+    }
+
+    public HookablePersistitAdapter(Schema schema, PersistitStore persistit, Session session, FilterFactoryHook hook) {
+        super(schema, persistit, session, hook);
+    }
 }
