@@ -33,7 +33,8 @@ import static junit.framework.Assert.assertTrue;
 
 public class ScanFlagsIT extends ITBase
 {
-/* Useful in profiling
+/*
+    // Useful in profiling
     @Test
     public void testSameQueryManyTimes() throws InvalidOperationException
     {

@@ -78,6 +78,22 @@ public class HKey
         return false;
     }
 
+    public synchronized int[] keyDepth()
+    {
+        if (keyDepth == null) {
+            keyDepth = new int[segments.size() + 1];
+            int hKeySegments = segments.size();
+            for (int hKeySegment = 0; hKeySegment <= hKeySegments; hKeySegment++) {
+                this.keyDepth[hKeySegment] =
+                    hKeySegment == 0
+                    ? 0
+                    // + 1 to account for the ordinal
+                    : keyDepth[hKeySegment - 1] + 1 + segments.get(hKeySegment - 1).columns().size();
+            }
+        }
+        return keyDepth;
+    }
+
     public HKey()
     {}
 
@@ -85,4 +101,7 @@ public class HKey
 
     private Table table;
     private List<HKeySegment> segments = new ArrayList<HKeySegment>();
+    // keyDepth[n] is the number of key segments (ordinals + key values) comprising an hkey of n parts.
+    // E.g. keyDepth[1] for the hkey of the root segment.
+    private transient int[] keyDepth;
 }

@@ -58,16 +58,9 @@ public class PostgresServerIT extends ITBase
 
     public static final String SCHEMA_NAME = "user";
     public static final String DRIVER_NAME = "org.postgresql.Driver";
-    public static final String CONNECTION_URL = "jdbc:postgresql://localhost:15432/user";
+    public static final String CONNECTION_URL = "jdbc:postgresql://localhost:%d/user";
     public static final String USER_NAME = "user";
     public static final String USER_PASSWORD = "user";
-
-    @Override
-    protected Collection<Property> startupConfigProperties() {
-        // ServiceManagerImpl.CUSTOM_LOAD_SERVICE
-        return Collections.singleton(new Property(Property.parseKey("akserver.services.customload"),
-                                                  PostgresServerManager.class.getName()));
-    }
 
     @Before
     public void loadDatabase() throws Exception {
@@ -145,8 +138,13 @@ public class PostgresServerIT extends ITBase
 
     @Before
     public void openConnection() throws Exception {
+        int port = serviceManager().getPostgresService().getPort();
+        if (port < 0) {
+            throw new Exception("akserver.postgres.port is not set.");
+        }
+        String url = String.format(CONNECTION_URL, port);
         Class.forName(DRIVER_NAME);
-        connection = DriverManager.getConnection(CONNECTION_URL, USER_NAME, USER_PASSWORD);
+        connection = DriverManager.getConnection(url, USER_NAME, USER_PASSWORD);
     }
 
     @After

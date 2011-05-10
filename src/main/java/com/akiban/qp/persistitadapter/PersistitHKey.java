@@ -38,7 +38,7 @@ class PersistitHKey implements HKey
 
     public int segments()
     {
-        return hKeyMetadata.segments().size();
+        return hKeySegments;
     }
 
     public void useSegments(int segments)
@@ -84,18 +84,9 @@ class PersistitHKey implements HKey
 
     public PersistitHKey(PersistitAdapter adapter, com.akiban.ais.model.HKey hKeyMetadata)
     {
-        this.adapter = adapter;
-        this.hKeyMetadata = hKeyMetadata;
         this.hKey = new Key(adapter.persistit.getDb());
-        this.keyDepth = new int[hKeyMetadata.segments().size() + 1];
-        int hKeySegments = hKeyMetadata.segments().size();
-        for (int hKeySegment = 0; hKeySegment <= hKeySegments; hKeySegment++) {
-            this.keyDepth[hKeySegment] =
-                hKeySegment == 0
-                ? 0
-                // + 1 to account for the ordinal
-                : this.keyDepth[hKeySegment - 1] + 1 + hKeyMetadata.segments().get(hKeySegment - 1).columns().size();
-        }
+        this.hKeySegments = hKeyMetadata.segments().size();
+        this.keyDepth = hKeyMetadata.keyDepth();
     }
 
     // For use by this package
@@ -107,9 +98,8 @@ class PersistitHKey implements HKey
 
     // Object state
 
-    private final PersistitAdapter adapter;
-    private final com.akiban.ais.model.HKey hKeyMetadata;
-    private Key hKey;
+    private final Key hKey;
+    private final int hKeySegments;
     private int hKeySize;
     // Identifies the persistit key depth for the ith hkey segment, 1 <= i <= #hkey segments.
     private final int[] keyDepth;

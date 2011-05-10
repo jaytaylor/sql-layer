@@ -1076,12 +1076,14 @@ public class SchemaDef {
      * 
      */
     public static class CName implements Comparable<CName> {
-        private String schema;
-        private String name;
+        private final String schema;
+        private final String name;
+        private final boolean schemaWasDerived;
 
         CName(final String schema, final String name) {
             this.schema = schema;
             this.name = name;
+            this.schemaWasDerived = false;
         }
 
         CName(final SchemaDef schemaDef, final String schema, final String name) {
@@ -1096,6 +1098,7 @@ public class SchemaDef {
             }
             this.schema = schemaName;
             this.name = name;
+            this.schemaWasDerived = (schema == null);
         }
 
         @Override
@@ -1144,6 +1147,10 @@ public class SchemaDef {
 
         public String getName() {
             return name;
+        }
+
+        public boolean getSchemaWasDerived() {
+            return schemaWasDerived;
         }
     }
 

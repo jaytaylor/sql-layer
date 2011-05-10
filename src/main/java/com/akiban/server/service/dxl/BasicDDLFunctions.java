@@ -91,7 +91,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ioe,
                     ParseException.class,
+                    ProtectedTableDDLException.class,
+                    UnsupportedCharsetException.class,
                     UnsupportedDataTypeException.class,
+                    JoinToUnknownTableException.class,
                     JoinToWrongColumnsException.class,
                     JoinToMultipleParentsException.class,
                     DuplicateTableNameException.class,

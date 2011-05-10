@@ -17,6 +17,7 @@ package com.akiban.ais.ddl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
 import java.io.BufferedReader;
@@ -491,4 +492,18 @@ public class SchemaDefToAisTest {
         assertSame("s1 group's root", s1, ais.getGroup("one").getGroupTable().getRoot());
         assertSame("s2 group's root", s2, ais.getGroup("one$0").getGroupTable().getRoot());
     }
+
+    @Test
+    public void masterSchemaNameNoUseStatement() throws Exception {
+        final String ddl1 = "create table one(id int key) engine=akibandb;";
+        final String ddl2 = "create table foo.two(id int key) engine=akibandb;";
+        final SchemaDef schemaDef = new SchemaDef();
+        schemaDef.setMasterSchemaName("test");
+        schemaDef.parseCreateTable(ddl1);
+        schemaDef.parseCreateTable(ddl2);
+        final AkibanInformationSchema ais = new SchemaDefToAis(schemaDef, true).getAis();
+        assertNotNull("test.one exists", ais.getUserTable("test", "one"));
+        assertNotNull("foo.two exists", ais.getUserTable("foo", "two"));
+    }
+
 }

@@ -30,6 +30,8 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.session.SessionServiceImpl;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.service.tree.TreeServiceImpl;
+import com.akiban.sql.pg.PostgresService;
+import com.akiban.sql.pg.PostgresServerManager;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.PersistitStoreSchemaManager;
@@ -47,6 +49,7 @@ public class DefaultServiceFactory implements ServiceFactory {
     private Service<Store> storeService;
     private Service<SchemaManager> schemaService;
     private Service<MemcacheService> memcacheService;
+    private Service<PostgresService> postgresService;
     private Service<DXLService> dxlService;
     private Service<SessionService> sessionService;
     
@@ -119,6 +122,16 @@ public class DefaultServiceFactory implements ServiceFactory {
             memcacheService = new MemcacheServiceImpl();
         }
         return memcacheService;
+    }
+
+    @Override
+    public Service<PostgresService> postgresService()
+    {
+        if (postgresService == null)
+        {
+            postgresService = new PostgresServerManager();
+        }
+        return postgresService;
     }
 
     @Override
