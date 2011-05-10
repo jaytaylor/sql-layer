@@ -4,7 +4,7 @@
     <groupId>com.akiban</groupId>
     <artifactId>akiban-server</artifactId>
     <packaging>jar</packaging>
-    <version>0.3.1-SNAPSHOT</version>
+    <version>0.4.1-SNAPSHOT</version>
     <name>akiban-server</name>
     <properties>
         <!-- this is the default version number, hudson job sets this to the official number -->
@@ -101,7 +101,12 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-persistit-core</artifactId>
-            <version>2.3.1-SNAPSHOT</version>
+            <version>2.3.2-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.akiban</groupId>
+            <artifactId>akiban-sql-parser</artifactId>
+            <version>0.0.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
@@ -148,6 +153,19 @@
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>5.1.6</version>
+        </dependency>
+        <dependency>
+            <groupId>com.akiban</groupId>
+            <artifactId>akiban-sql-parser</artifactId>
+            <version>0.0.2-SNAPSHOT</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>9.0-801.jdbc4</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>
