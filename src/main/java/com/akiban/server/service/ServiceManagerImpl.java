@@ -34,6 +34,7 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.stats.StatisticsService;
 import com.akiban.server.service.stats.StatisticsServiceImpl;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.sql.pg.PostgresService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.util.Exceptions;
@@ -109,6 +110,11 @@ public class ServiceManagerImpl implements ServiceManager
     @Override
     public MemcacheService getMemcacheService() {
         return getService(MemcacheService.class);
+    }
+
+    @Override
+    public PostgresService getPostgresService() {
+        return getService(PostgresService.class);
     }
 
     @Override
@@ -217,6 +223,7 @@ public class ServiceManagerImpl implements ServiceManager
         loadCustomServices(jmxRegistry);
         startAndPut(factory.memcacheService(), jmxRegistry);
         startAndPut(factory.networkService(), jmxRegistry);
+        startAndPut(factory.postgresService(), jmxRegistry);
         afterStart();
     }
 
