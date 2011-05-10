@@ -35,7 +35,8 @@ public abstract class UsablePhysicalOperator extends PhysicalOperator {
     }
 
     public static Cursor wrappedCursor(PhysicalOperator root, StoreAdapter adapter) {
-        return of(root).cursor(adapter);
+        // if all they need is the wrapped cursor, create it directly
+        return new WrappingCursor(root.cursor(adapter));
     }
 
     // inner classes
