@@ -26,7 +26,6 @@ import com.akiban.server.FieldDef;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
-import com.akiban.server.api.dml.ColumnSelector;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 
@@ -36,6 +35,10 @@ import java.util.List;
 
 class PersistitFilterFactory
 {
+    interface InternalHook {
+        void reportKeyFilter(KeyFilter keyFilter);
+    }
+
     public KeyFilter computeIndexFilter(Key key, IndexDef indexDef, IndexKeyRange keyRange, Bindings bindings)
     {
         int[] fields = indexDef.getFields();
@@ -44,7 +47,11 @@ class PersistitFilterFactory
             terms[index] = computeKeyFilterTerm(key, indexDef.getRowDef(), keyRange, fields[index], bindings);
         }
         key.clear();
-        return new KeyFilter(terms, terms.length, Integer.MAX_VALUE);
+        KeyFilter keyFilter = new KeyFilter(terms, terms.length, Integer.MAX_VALUE);
+        if (hook != null) {
+            hook.reportKeyFilter(keyFilter);
+        }
+        return keyFilter;
     }
 
     public KeyFilter computeHKeyFilter(Key key, RowDef leafRowDef, IndexKeyRange keyRange, Bindings bindings)
@@ -79,12 +86,17 @@ class PersistitFilterFactory
             }
         }
         key.clear();
-        return new KeyFilter(terms, terms.length, terms.length);
+        KeyFilter keyFilter = new KeyFilter(terms, terms.length, terms.length);
+        if (hook != null) {
+            hook.reportKeyFilter(keyFilter);
+        }
+        return keyFilter;
     }
 
-    public PersistitFilterFactory(PersistitAdapter adapter)
+    PersistitFilterFactory(PersistitAdapter adapter, InternalHook hook)
     {
         this.adapter = adapter;
+        this.hook = hook;
     }
 
     // For use by this class
@@ -148,4 +160,5 @@ class PersistitFilterFactory
     // Object state
 
     private final PersistitAdapter adapter;
+    private final InternalHook hook;
 }

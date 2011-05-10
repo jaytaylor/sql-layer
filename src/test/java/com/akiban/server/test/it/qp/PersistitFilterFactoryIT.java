@@ -17,7 +17,7 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.persistitadapter.HookablePersistitAdapter;
 import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.NoLimit;
@@ -28,6 +28,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.test.it.ITBase;
+import com.persistit.KeyFilter;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -36,8 +37,23 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 public final class PersistitFilterFactoryIT extends ITBase {
+
+    private static class RememberingFilterFactoryHook implements HookablePersistitAdapter.FilterFactoryHook {
+        private final List<KeyFilter> list = new ArrayList<KeyFilter>();
+
+        @Override
+        public void reportKeyFilter(KeyFilter keyFilter) {
+            list.add(keyFilter);
+        }
+
+        public List<KeyFilter> list() {
+            return list;
+        }
+    }
+
     @Test
     public void coiScanOnI() throws Exception {
+        RememberingFilterFactoryHook hook = new RememberingFilterFactoryHook();
         int cTable = createTable("schema", "customers", "cid int key");
         int oTable = createTable("schema", "orders", "oid int key, cid int",
                 "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o(cid) REFERENCES customers(cid)");
@@ -61,8 +77,14 @@ public final class PersistitFilterFactoryIT extends ITBase {
                 NoLimit.instance(),
                 range
         );
-        Cursor groupCursor = groupScan.cursor(new PersistitAdapter(schema, persistitStore(), session()));
+        Cursor groupCursor = groupScan.cursor(new HookablePersistitAdapter(schema, persistitStore(), session(), hook));
         groupCursor.open(UndefBindings.only());
+
+        List<KeyFilter> filters = hook.list();
+        assertEquals("key filters generated", 1, filters.size());
+        KeyFilter keyFilter = filters.get(0);
+        assertSame("second term", KeyFilter.ALL, keyFilter.getTerm(1));
+
         List<Row> rows = new ArrayList<Row>();
         while (groupCursor.next()) {
             rows.add( groupCursor.currentRow() );
