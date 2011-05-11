@@ -17,12 +17,16 @@ package com.akiban.server.test.it.alter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
@@ -379,5 +383,69 @@ public final class CreateIndexesIT extends AlterTestBase {
         // Check that we can still get old rows
         List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
         assertEquals("Rows scanned", 4, rows.size());
+    }
+
+    @Test
+    public void oneIndexCheckIDs() throws InvalidOperationException {
+        int tId = createTable("test", "t", "id int key, foo int");
+
+        AkibanInformationSchema ais = createAISWithTable(tId);
+        addIndexToAIS(ais, "test", "t", "foo", new String[]{"foo"}, false);
+        ddl().createIndexes(session(), getAllIndexes(ais));
+        updateAISGeneration();
+        final Table table = getUserTable("test", "t");
+        assertEquals("index count", 2, table.getIndexes().size()); // pk, foo
+        checkIndexIDsInGroup(table.getGroup());
+    }
+
+    @Test
+    public void twoIndexesAtOnceCheckIDs() throws InvalidOperationException {
+        int tId = createTable("test", "t", "id int key, foo int, bar int");
+
+        AkibanInformationSchema ais = createAISWithTable(tId);
+        addIndexToAIS(ais, "test", "t", "foo", new String[]{"foo"}, false);
+        addIndexToAIS(ais, "test", "t", "bar", new String[]{"bar"}, false);
+        ddl().createIndexes(session(), getAllIndexes(ais));
+        updateAISGeneration();
+        final Table table = getUserTable("test", "t");
+        assertEquals("index count", 3, table.getIndexes().size()); // pk, foo, bar
+        checkIndexIDsInGroup(table.getGroup());
+    }
+
+    @Test
+    public void twoIndexSeparatelyCheckIDs() throws InvalidOperationException {
+        int tId = createTable("test", "t", "id int key, foo int, bar int");
+
+        final AkibanInformationSchema ais1 = createAISWithTable(tId);
+        addIndexToAIS(ais1, "test", "t", "foo", new String[]{"foo"}, false);
+        ddl().createIndexes(session(), getAllIndexes(ais1));
+        updateAISGeneration();
+        final Table table1 = getUserTable("test", "t");
+        assertEquals("index count", 2, table1.getIndexes().size()); // pk, foo
+        checkIndexIDsInGroup(table1.getGroup());
+
+        final AkibanInformationSchema ais2 = createAISWithTable(tId);
+        addIndexToAIS(ais2, "test", "t", "bar", new String[]{"bar"}, false);
+        ddl().createIndexes(session(), getAllIndexes(ais2));
+        updateAISGeneration();
+        final Table table2 = getUserTable("test", "t");
+        assertEquals("index count", 3, table2.getIndexes().size()); // pk, foo, bar
+        checkIndexIDsInGroup(table2.getGroup());
+    }
+
+    private void checkIndexIDsInGroup(Group group) {
+        final Map<Integer,Index> idMap = new TreeMap<Integer,Index>();
+        for(UserTable table : ddl().getAIS(session()).getUserTables().values()) {
+            if(table.getGroup().equals(group)) {
+                for(Index index : table.getIndexesIncludingInternal()) {
+                    final Integer id = index.getIndexId();
+                    final Index prevIndex = idMap.get(id);
+                    if(prevIndex != null) {
+                        Assert.fail(String.format("%s and %s have the same ID: %d", index, prevIndex, id));
+                    }
+                    idMap.put(id, index);
+                }
+            }
+        }
     }
 }

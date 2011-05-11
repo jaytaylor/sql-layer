@@ -285,8 +285,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         final Table newTable = newAIS.getTable(tableName);
 
         // All OK, add to current table
+        Integer curId = SchemaDefToAis.findMaxIndexIDInGroup(newAIS, newTable.getGroup());
+        assert curId != null : newTable;
         for(Index idx : indexes) {
-            Index newIndex = Index.create(newAIS, newTable, idx.getIndexName().getName(), -1,
+            Index newIndex = Index.create(newAIS, newTable, idx.getIndexName().getName(), ++curId,
                                           idx.isUnique(), idx.getConstraint());
 
             for(IndexColumn idxCol : idx.getColumns()) {
