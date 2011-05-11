@@ -64,7 +64,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     @Override
     public boolean collectNextRow(ByteBuffer payload) throws Exception
     {
-        checkOpen();
         boolean wroteToPayload = false;
         if (!closed) {
             currentRow.set(cursor.currentRow());
@@ -91,7 +90,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     @Override
     public RowData collectNextRow() throws Exception
     {
-        checkOpen();
         RowData rowData = null;
         if (!closed) {
             currentRow.set(cursor.currentRow());
@@ -118,7 +116,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     @Override
     public void close()
     {
-        checkOpen();
         if (!closed) {
             currentRow.set(null);
             cursor.close();
@@ -230,12 +227,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         this.schema = SchemaCache.globalSchema(store.getRowDefCache().ais());
         this.adapter = new PersistitAdapter(schema, store, session);
         this.rowCollectorId = idCounter.getAndIncrement();
-    }
-
-    private void checkOpen() {
-        if (!hasMore()) {
-            throw new IllegalStateException("RowCollector is not open");
-        }
     }
 
     private void createPlan(ScanLimit scanLimit, boolean singleRow, boolean descending, boolean deep)
