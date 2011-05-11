@@ -122,7 +122,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     static final int MAX_INDEX_STORAGE_SIZE = Key.MAX_KEY_LENGTH - 32;
 
     /**
-     * Maximum size for an ordinal value as stored with the HKey. Note that the
+     * Maximum size for an ordinal value as stored with the HKey. Note that this
      * <b>must match</b> the EWIDTH_XXX definition from {@link Key}, where XXX
      * is the return type of {@link RowDef#getOrdinal()}. Currently this is
      * int and {@link Key#EWIDTH_INT}.
@@ -161,7 +161,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     public TableName createTableDefinition(final Session session,
             final String defaultSchemaName, final String statement,
             final boolean useOldId) throws Exception {
-        final TreeService treeService = serviceManager.getTreeService();
         String canonical = SchemaDef.canonicalStatement(statement);
         SchemaDef schemaDef = parseTableStatement(defaultSchemaName, canonical);
         SchemaDef.UserTableDef tableDef = schemaDef.getCurrentTable();
@@ -199,54 +198,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                             tableName));
         }
 
-        Exchange ex = null;
-        final Transaction transaction = treeService.getTransaction(session);
-        int retries = MAX_TRANSACTION_RETRY_COUNT;
-        for (;;) {
-            ex = treeService.getExchange(session,
-                    treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
-            transaction.begin();
-            try {
-                final AkibanInformationSchema newAIS = constructAIS(schemaDef);
-                final UserTable newTable = newAIS.getUserTable(schemaName, tableName);
-                validateIndexSizes(newTable);
+        final AkibanInformationSchema newAIS = constructAIS(schemaDef);
+        final UserTable newTable = newAIS.getUserTable(schemaName, tableName);
+        validateIndexSizes(newTable);
 
-                ex.clear().append(BY_NAME).append(schemaName).append(tableName);
-                ex.append(newTable.getTableId().intValue());
-                ex.getValue().put(canonical);
-                ex.store();
-
-                byteBuffer.clear();
-                new TableSubsetWriter(new MessageTarget(byteBuffer)) {
-                    @Override
-                    public boolean shouldSaveTable(Table table) {
-                        return table.getName().getSchemaName().equals(schemaName);
-                    }
-                }.save(newAIS);
-                byteBuffer.flip();
-
-                ex.clear().append(BY_AIS);
-                ex.getValue().clear();
-                ex.getValue().putByteArray(byteBuffer.array(), byteBuffer.position(), byteBuffer.limit());
-                ex.store();
-
-                transaction.commit(new DefaultCommitListener() {
-                    @Override
-                    public void committed() {
-                        commitAIS(newAIS, transaction.getCommitTimestamp());
-                    }
-                }, forceToDisk);
-                
-                return new TableName(schemaName, tableName);
-            } catch (RollbackException e) {
-                if (--retries < 0) {
-                    throw new TransactionFailedException();
-                }
-            } finally {
-                transaction.end();
-                treeService.releaseExchange(session, ex);
-            }
-        }
+        commitAISChange(session, newAIS, schemaName, newTable, canonical);
+        
+        return newTable.getName();
     }
 
     @Override
@@ -313,32 +271,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
         new AISBuilder(newAIS).generateGroupTableIndexes(newTable.getGroup());
 
-        Exchange ex = null;
-        final TreeService treeService = serviceManager.getTreeService();
-        final Transaction transaction = treeService.getTransaction(session);
-        int retries = MAX_TRANSACTION_RETRY_COUNT;
-        for(;;) {
-            ex = treeService.getExchange(session,
-                                         treeService.treeLink(tableName.getSchemaName(), SCHEMA_TREE_NAME));
-            transaction.begin();
-            try {
-                transaction.commit(new DefaultCommitListener() {
-                    @Override
-                    public void committed() {
-                        commitAIS(newAIS, transaction.getCommitTimestamp());
-                    }
-                }, forceToDisk);
-                
-                return;
-            } catch (RollbackException e) {
-                if(--retries < 0) {
-                    throw new TransactionFailedException();
-                }
-            } finally {
-                transaction.end();
-                treeService.releaseExchange(session, ex);
-            }
-        }
+        commitAISChange(session, newAIS, tableName.getSchemaName(), null, null);
     }
 
     @Override
@@ -360,32 +293,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         newTable.removeIndexes(indexesToDrop);
         new AISBuilder(newAIS).generateGroupTableIndexes(newTable.getGroup());
 
-        Exchange ex = null;
-        final TreeService treeService = serviceManager.getTreeService();
-        final Transaction transaction = treeService.getTransaction(session);
-        int retries = MAX_TRANSACTION_RETRY_COUNT;
-        for(;;) {
-            ex = treeService.getExchange(session,
-                                         treeService.treeLink(tableName.getSchemaName(), SCHEMA_TREE_NAME));
-            transaction.begin();
-            try {
-                transaction.commit(new DefaultCommitListener() {
-                    @Override
-                    public void committed() {
-                        commitAIS(newAIS, transaction.getCommitTimestamp());
-                    }
-                }, forceToDisk);
-
-                return;
-            } catch (RollbackException e) {
-                if(--retries < 0) {
-                    throw new TransactionFailedException();
-                }
-            } finally {
-                transaction.end();
-                treeService.releaseExchange(session, ex);
-            }
-        }
+        commitAISChange(session, newAIS, tableName.getSchemaName(), null, null);
     }
 
     /**
@@ -1021,6 +929,68 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     String.format("Table `%s`.`%s` index `%s` exceeds maximum key size",
                                   table.getName().getSchemaName(), table.getName().getTableName(),
                                   index.getIndexName().getName()));
+            }
+        }
+    }
+
+    /**
+     * Internal helper intended to be called to finalize any AIS change. This includes create, delete,
+     * alter, etc. This currently updates the {@link TreeService#SCHEMA_TREE_NAME} for a given schema,
+     * rebuilds the {@link #rowDefCache}, and sets the {@link #ais} variable.
+     * @param session Session to run under
+     * @param newAIS The new AIS to store in the {@link #BY_AIS} key range <b>and</b> commit as {@link #ais}.
+     * @param schemaName The schema the change affected
+     * @param newTable <b>If non-null</b>, store in the {@link #BY_NAME} key range.
+     * @param originalDDL The original DDL to store if newTable was specified.
+     * @throws Exception
+     */
+    private void commitAISChange(final Session session, final AkibanInformationSchema newAIS, final String schemaName,
+                                 final Table newTable, final String originalDDL) throws Exception
+    {
+        byteBuffer.clear();
+        new TableSubsetWriter(new MessageTarget(byteBuffer)) {
+            @Override
+            public boolean shouldSaveTable(Table table) {
+                return table.getName().getSchemaName().equals(schemaName);
+            }
+        }.save(newAIS);
+        byteBuffer.flip();
+
+        final TreeService treeService = serviceManager.getTreeService();
+        final Transaction transaction = treeService.getTransaction(session);
+        int retries = MAX_TRANSACTION_RETRY_COUNT;
+        for(;;) {
+            final Exchange ex = treeService.getExchange(session, treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
+            transaction.begin();
+            try {
+                if(newTable != null) {
+                    ex.clear().append(BY_NAME).append(schemaName).append(newTable.getName().getTableName());
+                    ex.append(newTable.getTableId().intValue());
+                    ex.getValue().put(originalDDL);
+                    ex.store();
+                }
+
+                ex.clear().append(BY_AIS);
+                ex.getValue().clear();
+                ex.getValue().putByteArray(byteBuffer.array(), byteBuffer.position(), byteBuffer.limit());
+                ex.store();
+
+                transaction.commit(new DefaultCommitListener() {
+                    @Override
+                    public void committed() {
+                        commitAIS(newAIS, transaction.getCommitTimestamp());
+                    }
+                }, forceToDisk);
+
+                break; // Success
+                
+            } catch (RollbackException e) {
+                if (--retries < 0) {
+                    throw new TransactionFailedException();
+                }
+            } finally {
+                transaction.end();
+                treeService.releaseExchange(session, ex);
             }
         }
     }
