@@ -15,11 +15,7 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.api.common.NoSuchTableException;
-import com.akiban.server.util.RowDefNotFoundException;
 
 import java.util.List;
 
@@ -38,7 +34,7 @@ public abstract class UsablePhysicalOperator extends PhysicalOperator {
 
     public static Cursor wrappedCursor(PhysicalOperator root, StoreAdapter adapter) {
         // if all they need is the wrapped cursor, create it directly
-        return new WrappingCursor(root.cursor(adapter));
+        return new TopLevelWrappingCursor(root.cursor(adapter));
     }
 
     // inner classes
@@ -49,7 +45,7 @@ public abstract class UsablePhysicalOperator extends PhysicalOperator {
 
         @Override
         public Cursor cursor(StoreAdapter adapter) {
-            return new WrappingCursor(root.cursor(adapter));
+            return new TopLevelWrappingCursor(root.cursor(adapter));
         }
 
         // PhysicalOperator interface
@@ -92,93 +88,4 @@ public abstract class UsablePhysicalOperator extends PhysicalOperator {
         private final PhysicalOperator root;
     }
 
-    private static class WrappingCursor extends ChainedCursor {
-
-        // Cursor interface
-
-        @Override
-        public void open(Bindings bindings) {
-            try {
-                super.open(bindings);
-            } catch (RuntimeException e) {
-                throw launder(e);
-            }
-        }
-
-        @Override
-        public boolean next() {
-            try {
-                return super.next();
-            } catch (RuntimeException e) {
-                throw launder(e);
-            }
-        }
-
-        @Override
-        public void close() {
-            try {
-                super.close();
-            } catch (RuntimeException e) {
-                throw launder(e);
-            }
-        }
-
-        @Override
-        public Row currentRow() {
-            try {
-                return super.currentRow();
-            } catch (RuntimeException e) {
-                throw launder(e);
-            }
-        }
-
-        @Override
-        public void removeCurrentRow() {
-            try {
-                super.removeCurrentRow();
-            } catch (RuntimeException e) {
-                throw launder(e);
-            }
-        }
-
-        @Override
-        public void updateCurrentRow(Row newRow) {
-            try {
-                super.updateCurrentRow(newRow);
-            } catch (RuntimeException e) {
-                throw launder(e);
-            }
-        }
-
-        @Override
-        public ModifiableCursorBackingStore backingStore() {
-            final ModifiableCursorBackingStore delegate = super.backingStore();
-            return new ModifiableCursorBackingStore() {
-                @Override
-                public void addRow(RowBase newRow) {
-                    try {
-                        delegate.addRow(newRow);
-                    } catch (RuntimeException e) {
-                        throw launder(e);
-                    }
-                }
-            };
-        }
-
-        // WrappingCursor interface
-
-        private WrappingCursor(Cursor input) {
-            super(input);
-        }
-
-        // private methods
-
-        private static RuntimeException launder(RuntimeException exception) {
-            if (exception.getClass().equals(RowDefNotFoundException.class)) {
-                RowDefNotFoundException casted = (RowDefNotFoundException) exception;
-                throw new NoSuchTableException(casted.getId(), casted);
-            }
-            return exception;
-        }
-    }
 }
