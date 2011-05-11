@@ -180,13 +180,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             throw new IllegalArgumentException(String.format("start row def id: %s, end row def id: %s",
                                                              start.getRowDefId(), end.getRowDefId()));
         }
-        synchronized (SCHEMA_LOCK) {
-            AkibanInformationSchema newAIS = store.getRowDefCache().ais();
-            if (newAIS != ais) {
-                ais = newAIS;
-                schema = new Schema(ais);
-            }
-        }
         OperatorBasedRowCollector rowCollector =
             rowDef.isUserTable()
             // HAPI query root table = predicate table
@@ -333,9 +326,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
 
     private static final AtomicLong idCounter = new AtomicLong(0);
     private static final Logger LOG = LoggerFactory.getLogger(OperatorBasedRowCollector.class);
-    private static final Object SCHEMA_LOCK = new Object();
-    private static AkibanInformationSchema ais;
-    protected static Schema schema;
 
     // Object state
 
