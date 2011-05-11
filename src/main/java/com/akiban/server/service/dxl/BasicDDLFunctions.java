@@ -333,24 +333,24 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         
         for(Index idx : indexesToAdd) {
             sb.append("index=(");
-            sb.append(idx.getIndexName());
+            sb.append(idx.getIndexName().getName());
             sb.append(")");
         }
-        
+
+        final String indexString = sb.toString();
         try {
-            // Trigger build of new index trees
-            store().buildIndexes(session, sb.toString(), false);
+            store().buildIndexes(session, indexString, false);
         } catch(Exception e) {
-            // TODO: Rollback failure
-            /*
+            // Try and roll back
+            List<String> indexNames = new ArrayList<String>(indexesToAdd.size());
+            for(Index idx : indexesToAdd) {
+                indexNames.add(idx.getIndexName().getName());
+            }
             try {
-                // Delete whatever was inserted, roll back table change
-                store().deleteIndexes(session, indexString);
-                schemaManager().createTableDefinition(session, schemaName, originalDDL, true);
+                dropIndexes(session, table.getName(), indexNames);
             } catch(Exception e2) {
                 logger.error("Exception while rolling back failed createIndex : " + indexString, e2);
             }
-            */
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ioe, DuplicateKeyException.class);
             throw new GenericInvalidOperationException(ioe);
