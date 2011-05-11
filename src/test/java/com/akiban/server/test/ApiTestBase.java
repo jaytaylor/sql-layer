@@ -38,8 +38,8 @@ import java.util.TreeSet;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.persistitadapter.OperatorStore;
-import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.scan.ScanFlag;
+import com.akiban.util.Undef;
 import junit.framework.Assert;
 
 import org.junit.After;
@@ -50,7 +50,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDefCache;
-import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.service.config.Property;
 import com.akiban.server.service.memcache.HapiProcessorFactory;
@@ -86,7 +85,7 @@ import com.akiban.server.service.session.Session;
  * various convenience testing methods.</p>
  */
 public class ApiTestBase {
-    protected final static Object UNDEF = new Object();
+    protected final static Object UNDEF = Undef.only();
 
     public static class ListRowOutput implements RowOutput {
         private final List<NewRow> rows = new ArrayList<NewRow>();
@@ -116,8 +115,6 @@ public class ApiTestBase {
             ListUtils.truncate(rows, mark);
         }
     }
-
-    public final static ColumnSelector ALL_COLUMNS = new ConstantColumnSelector(true);
 
     protected static class TestServiceServiceFactory extends UnitTestServiceFactory {
 
@@ -385,6 +382,14 @@ public class ApiTestBase {
 
     protected static <T> Set<T> set(T... items) {
         return new HashSet<T>(Arrays.asList(items));
+    }
+
+    protected static <T> T[] array(@SuppressWarnings("unused" /* compile check only */ )Class<T> ofClass, T... items) {
+        return items;
+    }
+
+    protected static Object[] objArray(Object... items) {
+        return array(Object.class, items);
     }
 
     protected static <T> T get(NewRow row, int field, Class<T> castAs) {

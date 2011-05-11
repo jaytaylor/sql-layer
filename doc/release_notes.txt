@@ -1,175 +1,144 @@
-Release Notes - Halo RC2 Release Notes
-v.0.3, released April 25, 2011
+Release Notes
+
+v.0.4, released May 9, 2011
+
 What's new, what you should know, and what you've been asking about the latest version of Akiban.
-Release Notes Introduction to Akiban
-The Akiban solution is comprised of the following projects: Akiban Server
-Akiban SQL Engine Akiban Adapter for MySQL Akiban PersistIT Akiban Studio
-What's New in Akiban 0.3 What is v0.3 Intended For?
-What is v0.3 NOT Intended For? System Requirements
-Dependencies Java
-Downloading and Installing Directory Structure Akiban Studio URL
-Known Issues Troubleshooting
-Port conflicts Existing Tomcat installation Tomcat Crashed!
-Resources
+
+    Release Notes
+        Introduction to Akiban
+        The Akiban Architecture:
+        What's New in Akiban 0.4
+            What is v0.4 Intended For?
+            What is v0.4 NOT Intended For?
+        System Requirements
+        Dependencies
+            Java
+        Downloading and Installing
+            Directory Structure
+            Akiban Studio URL
+        Known Issues
+        Troubleshooting
+            Port conflicts
+            Existing Tomcat installation
+            Tomcat Crashed!
+        Resources
+
 Introduction to Akiban
-Akiban’s data-grouping(TM) technology is a new approach for relational systems to deal with the complexity of scaled-out database schemas. It enables pre-computing of joins, which reduces and in many cases eliminates the high costs of these operations. That leads to transformational advances in performance and scalability, especially for complex operational queries. Akiban’s solutions can be deployed incrementally, without the disruption and risk of a full database replacement. They use only industry standard protocols and access mechanisms - including SQL - and therefore require only minimal changes to existing database applications.
-Akiban provides the following features and benefits:
-Frictionless adoption as a MySQL slave Easy integration as a storage engine plugin to MySQL Simple access using the memcache protocol together with Akiban's Data API Developer-friendly output via a nested JSON string
-The Akiban solution is comprised of the following projects: Akiban Server
+
+A new approach for relational systems to deal with the complexity of scaled-out database schemas.
+
+Akiban's technology enables pre-computing of joins, which reduces and in many cases eliminates the high costs of these operations. That leads to transformational advances in performance and scalability, especially for complex operational queries. Akiban’s solutions can be deployed incrementally, without the disruption and risk of a full database replacement. They use only industry standard protocols and access mechanisms - including SQL - and therefore require only minimal changes to existing database applications.
+
+Akiban’s Table-Grouping(TM) technology is a new approach for relational systems to deal with the complexity of scaled-out database schemas that the following features and benefits:
+
+    Frictionless adoption as a MySQL slave
+    Easy integration as a storage engine plugin to MySQL
+    Simple access using the memcache protocol together with Akiban's Data API
+    Developer-friendly output via a nested JSON string
+
+The Akiban Architecture:
+
+The suite is made up of the following projects:
+
+Akiban Server:
 Akiban Server is the base component of the Akiban architecture. It arranges relational data in real time into table groups, allowing for very efficient query access. It offers an operator framework for query execution against the grouped data which supports direct access as well as full transactional SQL semantics.
-Akiban SQL Engine
+
+Akiban SQL Engine:
 The SQL Engine provides rich and fast SQL access to the Akiban Server.
-Akiban Adapter for MySQL
+
+Akiban Adapter for MySQL:
 The adapter replicates MySQL data into the Akiban Server in real time.
-Akiban PersistIT
-A compact, fast Java btree with a unique hybrid update approach.
-Akiban Studio
+
+Akiban PersistIT:
+A compact, fast Java btree for Akiban Server, with a unique hybrid update approach.
+
+Akiban Studio:
 An intuitive UI tool designed to analyze existing MySQL schemas and problem queries, design grouping, deploy and monitor Akiban Server.
-What's New in Akiban 0.3
-The RC2 release was focused on delivering support for synchronization of data access (similar to isolation levels in relational databases), more complete correctness tests, and usability improvements. The following bugs were fixed in the 0.3 release:
-Bug Number	Subject
-705543	create table on an already-existing table functions like broken alter
-707617	Provide "try this" prescriptive advice when a connection fails
-715968	Extend KeyUpdate tests
-717456	MemcacheServiceImpl needs a bigger error message when its port is already taken
-718985	Transaction isolation failure in stress8txn
-723397	akiban FK information not showing up in the MySQL.I_S
-732095	Disable use of Float/Double/Real as index columns
-732871	updating indexed column during scan produces bogus results
-732950	drop index needs to be thread-safe with scans
-736943	mechanism for publishing packages needs to be redone
-741283	Doing group by index column which contains nulls causes infinite loop
-742031	Handle MYSQL 5.0 or older when calling Show Plugins
-744387	NewRow Java Date conversion wrong
-744400	scanning + updating in a single transaction can lead to trouble
-745840	Deploy script should remove unsupported indexes
-746749	Update package install documentation
-687209	Incorrect names for constraints during SHOW CREATE TABLE (due to AIS?)
-703136	duplicate key exceptions break rowcount
-712189	CREATE UNIQUE INDEX fails
-713387	Large Insert on Indexed Column Triggers Unknown Error Message
-720922	DDL strings are stripped too aggressively
-723426	Create unique index does not check existing rows
-726809	Verify the error mapping for disconnected error
-732108	Add akiban MTR tests for BOOL type
-732755	Refresh Server does not pass on AKIBANDB status to already opened databases
-734931	Dashboard text should be more concise
-736516	Hapi FETCHROWS processor is broken
-736928	DateTime values are incorrect through Hapi
-736940 737618 740266 742029 746746 752082 754670 694784 702001 707570 724520 732786 734940 686985 761120 704121 746561 693457 731657 736984 724021 714830 717247 735684 767731 768048 693403 716126 742580 751864 767785 731238 767754 689866 733003 727418 687376 706325 706341
-overridden revnos cause redundant RPMs
-ConcurrencyAtomicsMT needs timing fixes
-Duplicate database tabs are created if server type changes
-Dashboard is not first if server uses IP address
-DDL concurrency atomics need testing
-ConcurrentDDLAtomicsMT.scanWhileDroppingIndex needs rethinking
-dropping an index and then scanning on it can produce a NPE on RowCollector's ctor
-Replace the build ais script in test/sql
-With auto-refresh, need to have the AISresponse return the schema version
-child exists without parent, when queried via memcache
-ScanBufferTooSmallIT has been disabled
-Refresh Server needs to close pages for databases that no longer exist
-Deploy Groups page needs to support displaying pending and previous deployments
-Migration should proceed if there are non-fatal errors
-Unlinked Tables panel should provide more DND feedback
-Cserver bind/listen on port should occur only after all startup tasks are complete
-NiceRow.fromRowData doesn't handle \0 correctly
-AIS binary and object model versioning
-mysql slave status reporting error after slave stop is issued
-Adapter reports Stale AIS errors
-DOUBLE PRECISION needs support
-Add verify connection to Akian Server method from MySQL
-Request a Akiban Server status message
-message compendium in the wiki needs update
-uniquness not checked for secondary indexes on update
-Corrupt zero-length journal file
-Add PersistIT backup capability
-Float/Double/Real keys are not supported
-can scanSome ever return true?
-Change unsupported schema behavior
-getExchange breaks for PK indexes with cascading PKs
-Highlight Tables doesn't highlight root table
-clean up KeuUpdateIT, KeyUpdateCascadingKeysIT
-Remove the akiban_objects as the group table schema
-null fields when scanning an index during a drop table
-DESC keyword in primary key definition is not parsed correctly
-DDL/DMLFunctions need transaction support
-Create TEMPORARY table needs support
-CREATE table PARTITION options not supported
-712663
-ALTER TABLE ADD PRIMARY KEY fails
-754986
-Integer field containing -1 gets lost through Hapi
-What is v0.3 Intended For?
-Akiban 0.3 is a product release beta intended to showcase the benefits of Akiban's data-grouping(TM) technology and the ability for Akiban to act as a replicated slave.
-What is v0.3 NOT Intended For?
-As you will see in the Known Issues section below, there are issues surrounding concurrency and data correctness that make this release inappropriate for a production deployment.
+
+Mailing List:http://groups.google.com/group/akiban-server
+What's New in Akiban 0.4
+
+The Halo release is the first major product release milestone for Akiban.  With this release we have delivered:
+
+    A relational, ACID-compliant database that implements Table-Grouping technology to eliminate the cost of joins
+    A soon-to-be open-source offering, hosted on LaunchPad
+    A MySQL storage engine designed to
+        accelerate problem queries
+        simplify adoption by providing replication slave integration
+        improve application performance simply through a memcached-based access language delivering JSON output
+
+What is v0.4 Intended For?
+
+Akiban Server v0.4 is intended to enable design partners and early adopters to evaluate the benefits of Table-Grouping(TM) in a MySQL replication environment.
+What is v0.4 NOT Intended For?
+
+Akiban Server v0.4 is not intended for production deployments at this time.
 System Requirements
+Operating System Version 	CentOS 5.4 or higher, Ubuntu 10.04
+Architecture 	x64
+MySQL Version 	5.5.8 (standalone or replicated slave) available here
+Disk Space 	1.33 x grouped table size*
+
 * TIP: See the MySQL documentation for OPTIMIZE TABLE for more information on how to determine table size
-Dependencies Java
+Dependencies
+Java
+
 The only dependency when installing Akiban server from packages is Java. Akiban recommends the Sun Java (java6 for CentOS - which must be downloaded from Oracle's website for CentOS - http://www.oracle.com/technetwork/java/javase/downloads/index.html, and sun-java6-jre on Ubuntu) distribution to maximize performance.
+
 On Ubuntu, the java packages require the following lines in /etc/apt/sources.list be uncommented (note that the distribution, e.g. lucid, depends on which Ubuntu version you are running):
+deb http://archive.canonical.com/ubuntu lucid partner
+deb-src http://archive.canonical.com/ubuntu lucid partner
+
 If installing from source, Maven is required.
 Downloading and Installing
+
 Downloading and Installing Akiban is simple. This page contains all of the relevant details (will be updated to reflect akiban.com URL), whereas the basic installation procedure is detailed below:
 Directory Structure
+
 After performing the installation, the following directory structure will be installed:
-Operating System Version
-CentOS 5.4 or higher, Ubuntu 10.04
-Architecture
-x64
-MySQL Version
-5.5.8 (standalone or replicated slave) available here
-Disk Space
-1.33 x grouped table size*
-deb http://archive.canonical.com/ubuntu lucid partner deb-src http://archive.canonical.com/ubuntu lucid partner
-Directory Name
-Purpose
-/etc/akiban
-configuration files
-/usr/sbin
-any admin binaries/scripts we have
-/usr/bin
-any command line tools for users we have
-/usr/share/akiban
-all akiban jar files (persistit, server)
-/usr/share/doc/akiban
-man pages, license information
-/etc/init.d/akiban-server
-startup script for akiban server
-/var/lib/akiban
-akiban data files
-/var/lib/tomcat6
-tomcat data files
-/var/log/akiban
-akiban log files
-/var/log/tomcat6
-tomcat log files
-/var/run/akiban
-pid files
+Directory Name 	Purpose
+/etc/akiban 	configuration files
+/usr/sbin 	any admin binaries/scripts we have
+/usr/bin 	any command line tools for users we have
+/usr/share/akiban 	all akiban jar files (persistit, server)
+/usr/share/doc/akiban 	man pages, license information
+/etc/init.d/akiban-server 	startup script for akiban server
+/var/lib/akiban 	akiban data files
+/var/lib/tomcat6 	tomcat data files
+/var/log/akiban 	akiban log files
+/var/log/tomcat6 	tomcat log files
+/var/run/akiban 	pid files
 Akiban Studio URL
+
 To access Akiban Studio, enter the following URL in a web browser:
+http://localhost:8080/akiban-studio
 Known Issues
+
 Summary of high-level known issues:
-Explicit transactions are not currently supported Known issues should be reviewed to determine which ALTER TABLE operations are not currently supported Akiban Studio limitations:
-Information is currently not persisted to disk. Any operations that are performed should be saved or deployed prior to exiting Akiban Studio. Once a group is deployed, tables may be added to the group, but grouped tables cannot be altered nor can tables be removed from a group without dropping and recreating the group.
-Troubleshooting Port conflicts
+
+    Explicit transactions are not currently supported
+    Known issues should be reviewed to determine which ALTER TABLE operations are not currently supported
+    Akiban Studio limitations:
+        Information is currently not persisted to disk. Any operations that are performed should be saved or deployed prior to exiting Akiban Studio.
+        Once a group is deployed, tables may be added to the group, but grouped tables cannot be altered nor can tables be removed from a group without dropping and recreating the group.
+
+Issue 	Description
+BIT, BLOB and ENUM/SET datatypes not supported 	Attempting to create or group tables with BIT, BLOB or ENUM/SET datatypes will return an error
+YEAR(2) as index may return incorrect results 	See this MySQL Bug report (http://bugs.mysql.com/bug.php?id=49478) for more details
+Troubleshooting
+Port conflicts
+
 In some cases, one of the default ports assigned to an Akiban process will already be assigned to a running process. The easiest way to identify the conflict, and to identify the free ports on a system is to run the netstat command:
-Then refer to the Akiban documentation on configuration options to adjust the ports used by Akiban processes. Existing Tomcat installation
+netstat --tcp --listening --programs
+
+Then refer to the Akiban documentation on configuration options to adjust the ports used by Akiban processes.
+Existing Tomcat installation
+
 Akiban Studio can be installed in an existing Tomcat deployment, but in most cases you will prefer to keep it separate. See the Tomcat documentation
 Tomcat Crashed!
-http://localhost:8080/akiban-studio
-Issue (links to bug definition on LaunchPad)
-Description
-BIT datatype not supported
-The BIT datatype is not currently supported
-BLOB unsupported as table key
-BLOB datatype not currently supported as a table key
-ENUM/SET datatypes not supported
-The ENUM and SET datatypes are not currently supported
-YEAR(2) as index returns incorrect results
-Creating an index on a Year(2) column currently returns incorrect results
-netstat --tcp --listening --programs
+
 See the Tomcat documentation
 Resources
-We will be uploading product documentation to http://www.akiban.com soon! Until then, if you have any questions or feedback for us, please don't hesitate to email support@akiban.com.
+
+We will be uploading product documentation to http://www.akiban.com soon!
+Until then, if you have any questions or feedback for us, please don't hesitate to email support@akiban.com.

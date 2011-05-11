@@ -32,7 +32,7 @@ import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.physicaloperator.UpdateLambda;
 import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
@@ -61,7 +61,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
     {
         PersistitStore persistitStore = getPersistitStore();
         AkibanInformationSchema ais = persistitStore.getRowDefCache().ais();
-        PersistitAdapter adapter = new PersistitAdapter(schema(ais), persistitStore, session);
+        PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), persistitStore, session);
 
         PersistitGroupRow oldRow = PersistitGroupRow.newPersistitGroupRow(adapter, oldRowData);
         RowDef rowDef = persistitStore.getRowDefCache().rowDef(oldRowData.getRowDefId());
@@ -69,7 +69,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
         UserTable userTable = ais.getUserTable(oldRowData.getRowDefId());
         GroupTable groupTable = userTable.getGroup().getGroupTable();
-        IndexBound bound = new IndexBound(userTable, oldRow, new ConstantColumnSelector(true));
+        IndexBound bound = new IndexBound(userTable, oldRow, ConstantColumnSelector.ALL_ON);
         IndexKeyRange range = new IndexKeyRange(bound, true, bound, true);
 
         final PhysicalOperator scanOp;
@@ -133,24 +133,6 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
     public PersistitStore getPersistitStore() {
         return super.getDelegate();
     }
-
-    // private methods
-
-    private Schema schema(AkibanInformationSchema forAIS) {
-        synchronized (LOCK) {
-            if (lastKnownAIS != forAIS) {
-                schema = new Schema(forAIS);
-                lastKnownAIS = forAIS;
-            }
-            return schema;
-        }
-    }
-
-    // Object state
-
-    private final Object LOCK = new Object();
-    private AkibanInformationSchema lastKnownAIS;
-    private Schema schema;
 
     // inner classes
 

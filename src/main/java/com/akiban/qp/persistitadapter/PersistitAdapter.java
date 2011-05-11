@@ -23,7 +23,6 @@ import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.GroupCursor;
 import com.akiban.qp.physicaloperator.StoreAdapter;
 import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
-import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
@@ -173,10 +172,15 @@ public class PersistitAdapter extends StoreAdapter
 
     public PersistitAdapter(Schema schema, PersistitStore persistit, Session session)
     {
+        this(schema, persistit, session, null);
+    }
+
+    PersistitAdapter(Schema schema, PersistitStore persistit, Session session, PersistitFilterFactory.InternalHook hook)
+    {
         super(schema);
         this.persistit = persistit;
         this.session = session;
-        this.filterFactory = new PersistitFilterFactory(this);
+        this.filterFactory = new PersistitFilterFactory(this, hook);
     }
 
     // Object state

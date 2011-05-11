@@ -54,14 +54,14 @@ public class TestRow extends AbstractRow
     public TestRow(RowType rowType, Object[] fields)
     {
         this(rowType);
-        assert rowType.nFields() == fields.length;
+        assert rowType.nFields() == fields.length; // TODO use ArgumentValidation.isEQ ?
         System.arraycopy(fields, 0, this.fields, 0, fields.length);
     }
 
     public TestRow(RowType rowType, NewRow row)
     {
         this(rowType);
-        assert rowType.nFields() == row.getFields().size();
+        assert rowType.nFields() == row.getFields().size(); // TODO use ArgumentValidation.isEQ ?
         for (int i = 0; i < rowType.nFields(); i++) {
             fields[i] = row.get(i);
         }
