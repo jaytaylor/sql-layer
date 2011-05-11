@@ -116,13 +116,6 @@ public class RowDef implements TreeLink {
 
     private AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
 
-    /**
-     * A bandage. Marks whether or not the RowDef has been deleted (e.g. during
-     * a dropTable operation). Determines whether to save or remove the
-     * TableStatus.
-     */
-    private boolean isDeleted = false;
-
     public RowDef(Table table, final TableStatus tableStatus) {
         this.table = table;
         this.tableStatus = tableStatus;
@@ -545,10 +538,6 @@ public class RowDef implements TreeLink {
 
     public void setUserTableRowDefs(final RowDef[] userTableRowDefs) {
         this.userTableRowDefs = userTableRowDefs;
-    }
-
-    public void setDeleted(boolean deleted) {
-        isDeleted = deleted;
     }
 
     public boolean isAutoIncrement() {
