@@ -20,29 +20,25 @@ import static com.akiban.server.service.tree.TreeService.SCHEMA_TREE_NAME;
 import static com.akiban.server.service.tree.TreeService.STATUS_TREE_NAME;
 import static com.akiban.server.store.PersistitStore.MAX_TRANSACTION_RETRY_COUNT;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.akiban.ais.io.AISTarget;
+import com.akiban.ais.io.MessageSource;
 import com.akiban.ais.io.MessageTarget;
+import com.akiban.ais.io.Reader;
 import com.akiban.ais.io.TableSubsetWriter;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AISBuilder;
@@ -54,7 +50,6 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Type;
 import com.akiban.server.encoding.EncoderFactory;
-import org.omg.CORBA.DynAnyPackage.Invalid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,10 +73,8 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.service.tree.TreeVisitor;
-import com.akiban.util.MySqlStatementSplitter;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
@@ -110,8 +103,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private final static String AKIBAN_INFORMATION_SCHEMA = "akiban_information_schema";
 
     private final static boolean forceToDisk = true;
-
-    private static List<TableDefinition> aisSchema = readAisSchema();
 
     private AkibanInformationSchema ais;
 
@@ -644,33 +635,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return newAis;
     }
 
-    private synchronized AkibanInformationSchema constructAIS(
-            final Session session) throws Exception {
-        AkibanInformationSchema newAis;
-        final List<String> ddlList = new ArrayList<String>();
-        final Map<TableName, Integer> idMap = assembleSchema(session, ddlList, true,
-                                                             false, false);
-        final SchemaDef schemaDef = new SchemaDef();
-        for(String ddl : ddlList) {
-            schemaDef.parseCreateTable(ddl);
-        }
-        newAis = new SchemaDefToAis(schemaDef, true).getAis();
-        // Reassign the table ID values.
-        for (final Map.Entry<TableName, Integer> entry : idMap.entrySet()) {
-            Table table = newAis.getTable(entry.getKey());
-            table.setTableId(entry.getValue());
-        }
-        for (final Map.Entry<TableName, GroupTable> entry : newAis
-                .getGroupTables().entrySet()) {
-            final UserTable root = entry.getValue().getRoot();
-            final Integer rootId = idMap.get(root.getName());
-            assert rootId != null : "Group table with no root!";
-            entry.getValue().setTableId(
-                    TreeService.MAX_TABLES_PER_VOLUME - rootId);
-        }
-        return newAis;
-    }
-
     @Override
     public List<String> schemaStrings(Session session, boolean withGroupTables) throws Exception {
         final AkibanInformationSchema ais = getAis(session);
@@ -694,94 +658,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             firstPass = false;
         }
         return ddlList;
-    }
-
-    /**
-     * Assembles string forms of the Schema in a supplied StringBuilder. This
-     * method provides various forms of output for different purposes.
-     * 
-     * @param session
-     *            The Session to use
-     * @param ddlList
-     *            The List to which statemesn are written
-     * @param withAisTables
-     *            <code>true</code> if the akiban_information_schema tables
-     *            should be included
-     * @param withGroupTables
-     *            <code>true</code> if the generated group tables should be
-     *            included
-     * @param withCreateSchemaStatements
-     *            <code>true</code> if create schema statements should be
-     *            included.
-     * @throws Exception
-     */
-    private Map<TableName, Integer> assembleSchema(final Session session,
-            final List<String> ddlList, final boolean withAisTables,
-            final boolean withGroupTables,
-            final boolean withCreateSchemaStatements) throws Exception {
-
-        final TreeService treeService = serviceManager.getTreeService();
-        final Map<TableName, Integer> idMap = new HashMap<TableName, Integer>();
-        // append the AIS table definitions
-        if (withAisTables) {
-            if (withCreateSchemaStatements) {
-                ddlList.add(String.format(CREATE_SCHEMA_FORMATTER,
-                                          AKIBAN_INFORMATION_SCHEMA));
-            }
-            for (final TableDefinition td : aisSchema) {
-                ddlList.add(td.getDDL());
-                idMap.put(new TableName(td.getSchemaName(), td.getTableName()),
-                          td.getTableId());
-            }
-        }
-
-        // append the User Table definitions
-        treeService.visitStorage(session, new TreeVisitor() {
-
-            @Override
-            public void visit(Exchange ex) throws Exception {
-                ex.clear().append(BY_NAME).append(Key.BEFORE);
-                while (ex.next()) {
-                    final String schemaName = ex.getKey().indexTo(-1)
-                            .decodeString();
-                    ex.append(Key.BEFORE);
-                    final TreeLink link = treeService.treeLink(schemaName,
-                            SCHEMA_TREE_NAME);
-                    if (treeService.isContainer(ex, link)) {
-                        if (withCreateSchemaStatements) {
-                            ddlList.add(String.format(CREATE_SCHEMA_FORMATTER,
-                                                      schemaName));
-                        }
-                        while (ex.next()) {
-                            final String tableName = ex.getKey().indexTo(-1)
-                                    .decodeString();
-                            final TableDefinition td = getTableDefinition(
-                                    session, schemaName, tableName);
-                            ddlList.add(td.getDDL());
-                            int tableId = treeService.storeToAis(link,
-                                    td.getTableId());
-                            idMap.put(
-                                    new TableName(td.getSchemaName(), td
-                                            .getTableName()), tableId);
-                        }
-                    }
-                    ex.cut();
-                }
-            }
-        }, SCHEMA_TREE_NAME);
-
-        // append the Group table definitions
-        if (withGroupTables) {
-            final AkibanInformationSchema ais = getAis(session);
-            final List<String> statements = new DDLGenerator()
-                    .createAllGroupTables(ais);
-            for (final String statement : statements) {
-                if (!statement.contains(AKIBAN_INFORMATION_SCHEMA)) {
-                    ddlList.add(statement);
-                }
-            }
-        }
-        return idMap;
     }
 
     /**
@@ -823,28 +699,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
     }
 
-    private static List<TableDefinition> readAisSchema() {
-        List<TableDefinition> definitions = new ArrayList<TableDefinition>();
-        int tableId = AIS_BASE_TABLE_ID;
-        final BufferedReader reader = new BufferedReader(new InputStreamReader(
-                AkServer.class.getClassLoader().getResourceAsStream(
-                        AIS_DDL_NAME)));
-        final Pattern pattern = Pattern.compile("create table "
-                + AKIBAN_INFORMATION_SCHEMA + ".(\\w+).*");
-        for (String statement : (new MySqlStatementSplitter(reader))) {
-            Matcher matcher = pattern.matcher(statement);
-            if (!matcher.find()) {
-                throw new RuntimeException("couldn't match regex for: "
-                        + statement);
-            }
-            final String canonical = SchemaDef.canonicalStatement(statement);
-            TableDefinition def = new TableDefinition(tableId++,
-                    "akiban_information_schema", matcher.group(1), canonical);
-            definitions.add(def);
-        }
-        return Collections.unmodifiableList(definitions);
-    }
-
     @Override
     public SchemaManager cast() {
         return this;
@@ -882,19 +736,43 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     @Override
     public void afterStart() throws Exception {
-
-
         final TreeService treeService = serviceManager.getTreeService();
         final Session session = ServiceManagerImpl.newSession();
         final Transaction transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;
+        InputStream aisFileStream = null;
         try {
             for (;;) {
                 try {
                     transaction.begin();
-                    final AkibanInformationSchema ais = constructAIS(session);
+
+                    // Create AIS tables
+                    aisFileStream = AkServer.class.getClassLoader().getResourceAsStream(AIS_DDL_NAME);
+                    SchemaDef schemaDef = SchemaDef.parseSchemaFromStream(aisFileStream);
+                    final AkibanInformationSchema newAIS = new SchemaDefToAis(schemaDef, true).getAis();
+                    int curId = AIS_BASE_TABLE_ID;
+                    for(UserTable table : newAIS.getUserTables().values()) {
+                        table.setTableId(curId++);
+                    }
+
+                    // Load stored AIS data from each schema tree
+                    treeService.visitStorage(session, new TreeVisitor() {
+                        @Override
+                        public void visit(Exchange ex) throws Exception {
+                            ex.clear().append(BY_AIS);
+                            if(ex.isValueDefined()) {
+                                ex.fetch();
+
+                                byte[] serializedAIS = ex.getValue().getByteArray();
+                                ByteBuffer buffer = ByteBuffer.wrap(serializedAIS);
+                                AkibanInformationSchema tmpAis= new Reader(new MessageSource(buffer)).load();
+                                new Writer(new AISTarget(newAIS)).save(tmpAis);
+                            }
+                        }
+                    }, SCHEMA_TREE_NAME);
+
                     forceNewTimestamp();
-                    commitAIS(ais, updateTimestamp.get());
+                    commitAIS(newAIS, updateTimestamp.get());
                     transaction.commit();
                     break;
                 } catch (RollbackException e) {
@@ -902,6 +780,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                         throw new TransactionFailedException();
                     }
                 } finally {
+                    if(aisFileStream != null) {
+                        aisFileStream.close();
+                    }
                     transaction.end();
                 }
             }
