@@ -18,6 +18,8 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.util.RowDefNotFoundException;
 
 import java.util.List;
 
@@ -172,7 +174,11 @@ public abstract class UsablePhysicalOperator extends PhysicalOperator {
         // private methods
 
         private static RuntimeException launder(RuntimeException exception) {
-            return exception; // TODO need to filter stuff
+            if (exception.getClass().equals(RowDefNotFoundException.class)) {
+                RowDefNotFoundException casted = (RowDefNotFoundException) exception;
+                throw new NoSuchTableException(casted.getId(), casted);
+            }
+            return exception;
         }
     }
 }
