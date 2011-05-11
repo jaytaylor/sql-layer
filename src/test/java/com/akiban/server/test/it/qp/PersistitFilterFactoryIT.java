@@ -23,7 +23,6 @@ import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.NoLimit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
-import com.akiban.qp.physicaloperator.UsablePhysicalOperator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -80,7 +79,7 @@ public final class PersistitFilterFactoryIT extends ITBase {
                 NoLimit.instance(),
                 range
         );
-        Cursor groupCursor = UsablePhysicalOperator.wrappedCursor(
+        Cursor groupCursor = API.cursor(
                 groupScan,
                 new HookablePersistitAdapter(schema, persistitStore(), session(), hook)
         );

@@ -15,7 +15,7 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.physicaloperator.UsablePhysicalOperator;
+import com.akiban.qp.physicaloperator.API;
 import com.akiban.sql.StandardException;
 
 import com.akiban.ais.model.Column;
@@ -57,7 +57,7 @@ public class PostgresOperatorStatement extends PostgresStatement
     public int execute(PostgresMessenger messenger, Session session, int maxrows)
             throws IOException, StandardException {
         Bindings bindings = new ArrayBindings(0);
-        Cursor cursor = UsablePhysicalOperator.wrappedCursor(resultOperator, store);
+        Cursor cursor = API.cursor(resultOperator, store);
         int nrows = 0;
         try {
             cursor.open(bindings);
