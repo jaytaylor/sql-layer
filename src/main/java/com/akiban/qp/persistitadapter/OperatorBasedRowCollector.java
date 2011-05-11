@@ -53,6 +53,9 @@ public abstract class OperatorBasedRowCollector implements RowCollector
 
     @Override
     public void open() {
+        if (isOpen()) {
+            throw new IllegalStateException("cursor is already open");
+        }
         cursor = cursor(operator, adapter);
         cursor.open(UndefBindings.only());
         closed = !cursor.next();
