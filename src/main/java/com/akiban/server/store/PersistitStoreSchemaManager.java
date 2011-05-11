@@ -24,13 +24,16 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -97,7 +100,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private static final Logger LOG = LoggerFactory
             .getLogger(PersistitStoreSchemaManager.class.getName());
 
-    private final static String CREATE_SCHEMA_IF_NOT_EXISTS = "create schema if not exists ";
+    private final static String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
 
     private final static String AKIBAN_INFORMATION_SCHEMA = "akiban_information_schema";
 
@@ -492,10 +495,27 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     @Override
-    public List<String> schemaStrings(final Session session,
-                                final boolean withGroupTables) throws Exception {
+    public List<String> schemaStrings(Session session, boolean withGroupTables) throws Exception {
+        final AkibanInformationSchema ais = getAis(session);
+        final DDLGenerator generator = new DDLGenerator();
         final List<String> ddlList = new ArrayList<String>();
-        assembleSchema(session, ddlList, true, withGroupTables, true);
+        final Set<String> sawSchemas = new HashSet<String>();
+        Collection<? extends Table> tableCollection = ais.getUserTables().values();
+        boolean firstPass = true;
+        while(firstPass || tableCollection != null) {
+            for(Table table : tableCollection) {
+                final String schemaName = table.getName().getSchemaName();
+                if(!sawSchemas.contains(schemaName)) {
+                    final String createSchema = String.format(CREATE_SCHEMA_FORMATTER, schemaName);
+                    ddlList.add(createSchema);
+                    sawSchemas.add(schemaName);
+                }
+                final String ddl = generator.createTable(table);
+                ddlList.add(ddl);
+            }
+            tableCollection = (firstPass && withGroupTables) ? ais.getGroupTables().values() : null;
+            firstPass = false;
+        }
         return ddlList;
     }
 
@@ -528,8 +548,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         // append the AIS table definitions
         if (withAisTables) {
             if (withCreateSchemaStatements) {
-                ddlList.add(String.format("%s`%s`;",
-                                          CREATE_SCHEMA_IF_NOT_EXISTS,
+                ddlList.add(String.format(CREATE_SCHEMA_FORMATTER,
                                           AKIBAN_INFORMATION_SCHEMA));
             }
             for (final TableDefinition td : aisSchema) {
@@ -553,8 +572,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                             SCHEMA_TREE_NAME);
                     if (treeService.isContainer(ex, link)) {
                         if (withCreateSchemaStatements) {
-                            ddlList.add(String.format("%s`%s`;",
-                                                      CREATE_SCHEMA_IF_NOT_EXISTS,
+                            ddlList.add(String.format(CREATE_SCHEMA_FORMATTER,
                                                       schemaName));
                         }
                         while (ex.next()) {
