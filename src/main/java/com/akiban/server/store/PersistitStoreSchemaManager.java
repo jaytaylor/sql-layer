@@ -27,8 +27,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -36,12 +38,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.akiban.ais.io.AISTarget;
+import com.akiban.ais.io.TableSubsetWriter;
 import com.akiban.ais.io.Writer;
+import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Type;
 import com.akiban.server.encoding.EncoderFactory;
 import org.slf4j.Logger;
@@ -284,14 +289,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             transaction.begin();
             try {
                 deleteTableDefinitionList(session, tables);
-                final AkibanInformationSchema newAIS = constructAIS(session);
-                transaction.commit(new DefaultCommitListener() {
 
+                final AkibanInformationSchema newAIS = constructAIS(tables);
+
+                transaction.commit(new DefaultCommitListener() {
                     @Override
                     public void committed() {
                         commitAIS(newAIS, transaction.getCommitTimestamp());
                     }
-
                 }, forceToDisk);
                 break;
             } catch (RollbackException e) {
@@ -449,6 +454,47 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             assert root != null : "Group with no root table: ";
             groupTable.setTableId(TreeService.MAX_TABLES_PER_VOLUME - root.getTableId());
         }
+        return newAis;
+    }
+
+    private AkibanInformationSchema constructAIS(final List<TableName> withoutTables) throws Exception {
+        AkibanInformationSchema newAis = new AkibanInformationSchema();
+        new TableSubsetWriter(new AISTarget(newAis)) {
+            @Override
+            public boolean shouldSaveTable(Table table) {
+                return table.isUserTable() && !withoutTables.contains(table.getName());
+            }
+        }.save(ais);
+
+        // Rebuild all group tables
+        Queue<Join> tablesToAdd = new LinkedList<Join>();
+        AISBuilder builder = new AISBuilder(newAis);
+        for(UserTable table : newAis.getUserTables().values()) {
+            if(table.getParentJoin() == null) {
+                final Group group = table.getGroup();
+                assert group != null : table;
+                // recreate group table
+                String groupTableName = "_akiban_" + group.getName();
+                GroupTable groupTable = GroupTable.create(newAis, table.getName().getSchemaName(), groupTableName,
+                                                          TreeService.MAX_TABLES_PER_VOLUME - table.getTableId());
+                groupTable.setGroup(group);
+                builder.addTableToGroup(group.getName(), table.getName().getSchemaName(), table.getName().getTableName());
+                for(Join join : table.getCandidateChildJoins()) {
+                    tablesToAdd.add(join);
+                }
+            }
+            else {
+                table.setGroup(null);
+            }
+        }
+        while(!tablesToAdd.isEmpty()) {
+            Join j = tablesToAdd.poll();
+            builder.addJoinToGroup(j.getGroup().getName(), j.getName(), 0);
+            for (Join join : j.getChild().getCandidateChildJoins()) {
+                tablesToAdd.add(join);
+            }
+        }
+        builder.groupingIsComplete();
         return newAis;
     }
 

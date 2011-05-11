@@ -26,6 +26,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.TableName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -132,7 +133,9 @@ public class SchemaDefToAis {
                         AkibanInformationSchema ais = builder.akibanInformationSchema();
                         UserTable parent = ais.getUserTable(refDef.table.getSchema(), refDef.table.getName());
                         if (parent != null) {
-                            utDef.groupName = utDef.parentName = refDef.table;
+                            utDef.parentName = refDef.table;
+                            UserTable root = parent.getGroup().getGroupTable().getRoot();
+                            utDef.groupName = new CName(root.getName().getSchemaName(), root.getName().getTableName());
                         }
                     }
                     if (utDef.groupName != null) {
@@ -168,6 +171,10 @@ public class SchemaDefToAis {
                     groupPerTable.put(uTable, group);
                 }
             }
+        }
+
+        public void setIdForGroupName(CName groupName, int id) {
+            idPerGroup.put(groupName, id);
         }
 
         public int allocateId(CName uTableName) {
@@ -259,6 +266,18 @@ public class SchemaDefToAis {
         final AkibanInformationSchema ais = builder.akibanInformationSchema();
         builder.setTableIdOffset(computeTableIdOffset(ais));
         IdGenerator indexIdGenerator = new IdGenerator(schemaDef.getGroupMap());
+
+        // Index IDs must be unique in a given group. Find existing max index in each
+        // group so any newly generated ones don't overlap
+        for (GroupTable groupTable : ais.getGroupTables().values()) {
+            int maxId = 0;
+            for (Index index : groupTable.getIndexes()) {
+                maxId = Math.max(index.getIndexId(), maxId);
+            }
+            UserTable root = groupTable.getRoot();
+            indexIdGenerator.setIdForGroupName(new CName(root.getName().getSchemaName(), root.getName().getTableName()),
+                                               maxId);
+        }
 
         // loop through user tables and add to AIS
         for (UserTableDef utDef : schemaDef.getUserTableMap().values()) {
