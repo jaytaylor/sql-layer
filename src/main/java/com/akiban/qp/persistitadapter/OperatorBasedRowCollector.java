@@ -54,7 +54,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
 
     @Override
     public void open() {
-        cursor = operator.cursor(adapter);
+        cursor = UsablePhysicalOperator.wrappedCursor(operator, adapter);
         cursor.open(UndefBindings.only());
         closed = !cursor.next();
     }
