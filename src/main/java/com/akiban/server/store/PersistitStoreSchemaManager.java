@@ -167,7 +167,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
 
         validateTableDefinition(tableDef);
-        final AkibanInformationSchema newAIS = constructAIS(schemaDef);
+        final AkibanInformationSchema newAIS = addSchemaDefToAIS(schemaDef);
         final UserTable newTable = newAIS.getUserTable(schemaName, tableName);
         validateIndexSizes(newTable);
 
@@ -247,7 +247,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
 
         new AISBuilder(newAIS).generateGroupTableIndexes(newTable.getGroup());
-
         commitAISChange(session, newAIS, tableName.getSchemaName(), null);
     }
 
@@ -269,7 +268,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
         newTable.removeIndexes(indexesToDrop);
         new AISBuilder(newAIS).generateGroupTableIndexes(newTable.getGroup());
-
         commitAISChange(session, newAIS, tableName.getSchemaName(), null);
     }
 
@@ -290,8 +288,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      *             become invalid.
      */
     @Override
-    public void deleteTableDefinition(final Session session,
-            final String schemaName, final String tableName) throws Exception {
+    public void deleteTableDefinition(final Session session, final String schemaName,
+                                      final String tableName) throws Exception {
         if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
             return;
         }
@@ -321,7 +319,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             tables.add(table.getName());
         }
 
-        final AkibanInformationSchema newAIS = constructAIS(tables);
+        final AkibanInformationSchema newAIS = removeTablesFromAIS(tables);
 
         commitAISChange(session, newAIS,  schemaName, new AISChangeCallback() {
             @Override
@@ -412,27 +410,39 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return ais;
     }
 
-    private AkibanInformationSchema constructAIS(SchemaDef schemaDef) throws Exception {
+    /**
+     * Construct a new AIS instance containing a copy of the currently known
+     * data, see @{link #ais}, and the given schemaDef.
+     * @param schemaDef SchemaDef to combine.
+     * @return A completely new AIS
+     * @throws Exception For any error.
+     */
+    private AkibanInformationSchema addSchemaDefToAIS(SchemaDef schemaDef) throws Exception {
         AkibanInformationSchema newAis = new AkibanInformationSchema();
         new Writer(new AISTarget(newAis)).save(ais);
-
-        newAis = new SchemaDefToAis(schemaDef, newAis, true).getAis();
-
+        new SchemaDefToAis(schemaDef, newAis, true).getAis();
         // Old behavior, reassign group table IDs
         for(GroupTable groupTable: newAis.getGroupTables().values()) {
             final UserTable root = groupTable.getRoot();
-            assert root != null : "Group with no root table: ";
+            assert root != null : "Group with no root table: " + groupTable;
             groupTable.setTableId(TreeService.MAX_TABLES_PER_VOLUME - root.getTableId());
         }
         return newAis;
     }
 
-    private AkibanInformationSchema constructAIS(final List<TableName> withoutTables) throws Exception {
+    /**
+     * Construct a new AIS instance containg a copy of the currently known data, see @{link #ais},
+     * minus the given list of TableNames.
+     * @param tableNames List of tables to exclude from new AIS.
+     * @return A completely new AIS.
+     * @throws Exception For any error.
+     */
+    private AkibanInformationSchema removeTablesFromAIS(final List<TableName> tableNames) throws Exception {
         AkibanInformationSchema newAis = new AkibanInformationSchema();
         new TableSubsetWriter(new AISTarget(newAis)) {
             @Override
             public boolean shouldSaveTable(Table table) {
-                return table.isUserTable() && !withoutTables.contains(table.getName());
+                return table.isUserTable() && !tableNames.contains(table.getName());
             }
         }.save(ais);
 
