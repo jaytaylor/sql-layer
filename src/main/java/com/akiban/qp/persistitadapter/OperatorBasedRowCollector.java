@@ -53,7 +53,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
 
     @Override
     public void open() {
-        if (isOpen()) {
+        if (cursor != null) {
             throw new IllegalStateException("cursor is already open");
         }
         cursor = cursor(operator, adapter);
@@ -64,6 +64,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     @Override
     public boolean collectNextRow(ByteBuffer payload) throws Exception
     {
+        checkOpen();
         boolean wroteToPayload = false;
         if (!closed) {
             currentRow.set(cursor.currentRow());
@@ -90,6 +91,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     @Override
     public RowData collectNextRow() throws Exception
     {
+        checkOpen();
         RowData rowData = null;
         if (!closed) {
             currentRow.set(cursor.currentRow());
@@ -108,12 +110,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     }
 
     @Override
-    public boolean isOpen() {
-        return !closed;
-    }
-
-    @Override
-    public boolean hasMore() throws Exception
+    public boolean hasMore()
     {
         return !closed;
     }
@@ -121,9 +118,11 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     @Override
     public void close()
     {
+        checkOpen();
         if (!closed) {
             currentRow.set(null);
             cursor.close();
+            cursor = null;
             closed = true;
         }
     }
@@ -231,6 +230,12 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         this.schema = SchemaCache.globalSchema(store.getRowDefCache().ais());
         this.adapter = new PersistitAdapter(schema, store, session);
         this.rowCollectorId = idCounter.getAndIncrement();
+    }
+
+    private void checkOpen() {
+        if (!hasMore()) {
+            throw new IllegalStateException("RowCollector is not open");
+        }
     }
 
     private void createPlan(ScanLimit scanLimit, boolean singleRow, boolean descending, boolean deep)
