@@ -63,6 +63,11 @@ public final class BasicDMLFunctionsTest {
         }
 
         @Override
+        public void open() {
+            // nothing
+        }
+
+        @Override
         public boolean collectNextRow(ByteBuffer payload) {
             checkOpen();
             if (strings.isEmpty()) {

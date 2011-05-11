@@ -50,6 +50,12 @@ public abstract class OperatorBasedRowCollector implements RowCollector
 {
     // RowCollector interface
 
+
+    @Override
+    public void open() {
+        createPlan(openInfoStruct.scanLimit, openInfoStruct.singleRow, openInfoStruct.descending, openInfoStruct.deep);
+    }
+
     @Override
     public boolean collectNextRow(ByteBuffer payload) throws Exception
     {
@@ -180,6 +186,10 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             throw new IllegalArgumentException(String.format("start row def id: %s, end row def id: %s",
                                                              start.getRowDefId(), end.getRowDefId()));
         }
+        boolean singleRow = (scanFlags & SCAN_FLAGS_SINGLE_ROW) != 0;
+        boolean descending = (scanFlags & SCAN_FLAGS_DESCENDING) != 0;
+        boolean deep = (scanFlags & SCAN_FLAGS_DEEP) != 0;
+        OpenInfoStruct openInfo = new OpenInfoStruct(scanLimit, singleRow, descending, deep);
         OperatorBasedRowCollector rowCollector =
             rowDef.isUserTable()
             // HAPI query root table = predicate table
@@ -191,7 +201,8 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                                        start,
                                        startColumns,
                                        end,
-                                       endColumns)
+                                       endColumns,
+                                       openInfo)
             // HAPI query root table != predicate table
             : new TwoTableRowCollector(session,
                                        store,
@@ -202,19 +213,17 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                                        startColumns,
                                        end,
                                        endColumns,
-                                       columnBitMap);
-        boolean singleRow = (scanFlags & SCAN_FLAGS_SINGLE_ROW) != 0;
-        boolean descending = (scanFlags & SCAN_FLAGS_DESCENDING) != 0;
-        boolean deep = (scanFlags & SCAN_FLAGS_DEEP) != 0;
-        rowCollector.createPlan(scanLimit, singleRow, descending, deep);
+                                       columnBitMap,
+                                       openInfo);
         return rowCollector;
     }
     
-    protected OperatorBasedRowCollector(PersistitStore store, Session session)
+    protected OperatorBasedRowCollector(PersistitStore store, Session session, OpenInfoStruct openInfoStruct)
     {
         this.schema = SchemaCache.globalSchema(store.getRowDefCache().ais());
         this.adapter = new PersistitAdapter(schema, store, session);
         this.rowCollectorId = idCounter.getAndIncrement();
+        this.openInfoStruct = openInfoStruct;
     }
 
     private void createPlan(ScanLimit scanLimit, boolean singleRow, boolean descending, boolean deep)
@@ -327,6 +336,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
 
     // Object state
 
+    private final OpenInfoStruct openInfoStruct;
     private long rowCollectorId;
     protected final Schema schema;
     protected PersistitAdapter adapter;
@@ -343,4 +353,19 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     private boolean closed;
     private int rowCount = 0;
     private RowHolder<Row> currentRow = new RowHolder<Row>();
+
+    // inner class
+    static class OpenInfoStruct {
+        final ScanLimit scanLimit;
+        final boolean singleRow;
+        final boolean descending;
+        final boolean deep;
+
+        private OpenInfoStruct(ScanLimit scanLimit, boolean singleRow, boolean descending, boolean deep) {
+            this.scanLimit = scanLimit;
+            this.singleRow = singleRow;
+            this.descending = descending;
+            this.deep = deep;
+        }
+    }
 }

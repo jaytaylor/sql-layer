@@ -363,6 +363,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             try {
                 transaction.begin();
                 try {
+                    cursor.getRowCollector().open();
                     boolean ret = scanner.doScan(cursor, cursorId, output, scanHooks);
                     transaction.commit();
                     scanHooks.scanSomeFinishedWellHook();
