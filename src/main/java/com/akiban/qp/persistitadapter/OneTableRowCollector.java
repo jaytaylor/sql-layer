@@ -40,10 +40,9 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
                          RowData start,
                          ColumnSelector startColumns,
                          RowData end,
-                         ColumnSelector endColumns,
-                         OpenInfoStruct openInfoStruct)
+                         ColumnSelector endColumns)
     {
-        super(store, session, openInfoStruct);
+        super(store, session);
         // rootmostQueryTable
         queryRootTable = rowDef.userTable();
         queryRootType = schema.userTableRowType(queryRootTable);
