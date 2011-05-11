@@ -237,6 +237,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 ex.clear().append(BY_AIS);
                 ex.getValue().clear();
                 ex.getValue().putByteArray(byteBuffer.array(), byteBuffer.position(), byteBuffer.limit());
+                ex.store();
 
                 transaction.commit(new DefaultCommitListener() {
                     @Override
@@ -444,15 +445,31 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             tables.add(table.getName());
         }
 
-        final Transaction transaction = serviceManager.getTreeService()
-                .getTransaction(session);
+        Exchange ex = null;
+        final TreeService treeService = serviceManager.getTreeService();
+        final Transaction transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;
         for (;;) {
+            ex = treeService.getExchange(session, treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
             transaction.begin();
             try {
                 deleteTableDefinitionList(session, tables);
 
                 final AkibanInformationSchema newAIS = constructAIS(tables);
+
+                byteBuffer.clear();
+                new TableSubsetWriter(new MessageTarget(byteBuffer)) {
+                    @Override
+                    public boolean shouldSaveTable(Table table) {
+                        return table.getName().getSchemaName().equals(schemaName);
+                    }
+                }.save(newAIS);
+                byteBuffer.flip();
+
+                ex.clear().append(BY_AIS);
+                ex.getValue().clear();
+                ex.getValue().putByteArray(byteBuffer.array(), byteBuffer.position(), byteBuffer.limit());
+                ex.store();
 
                 transaction.commit(new DefaultCommitListener() {
                     @Override
@@ -467,6 +484,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 }
             } finally {
                 transaction.end();
+                treeService.releaseExchange(session, ex);
             }
         }
     }
