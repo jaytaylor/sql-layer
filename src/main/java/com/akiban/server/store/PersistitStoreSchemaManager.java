@@ -358,32 +358,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * @param tableName
      */
     @Override
-    public TableDefinition getTableDefinition(Session session,
-            String schemaName, String tableName) throws Exception {
-        if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
-            for (final TableDefinition td : aisSchema) {
-                if (td.getTableName().equals(tableName)) {
-                    return td;
-                }
-            }
+    public TableDefinition getTableDefinition(Session session, String schemaName, String tableName) throws Exception {
+        final Table table = getAis(session).getTable(new TableName(schemaName, tableName));
+        if(table == null) {
             return null;
         }
-        final TreeService treeService = serviceManager.getTreeService();
-        final Exchange ex = treeService.getExchange(session,
-                treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
-        try {
-            if (ex.clear().append(BY_NAME).append(schemaName).append(tableName)
-                    .append(Key.AFTER).previous()) {
-                final int tableId = ex.getKey().indexTo(-1).decodeInt();
-                return new TableDefinition(tableId, schemaName, tableName, ex
-                        .getValue().getString());
-            } else {
-                return null;
-            }
-
-        } finally {
-            treeService.releaseExchange(session, ex);
-        }
+        final String ddl = new DDLGenerator().createTable(table);
+        return new TableDefinition(table.getTableId(), schemaName, tableName, ddl);
     }
 
     /**
@@ -395,33 +376,18 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * @param schemaName
      */
     @Override
-    public SortedMap<String, TableDefinition> getTableDefinitions(
-            Session session, String schemaName) throws Exception {
+    public SortedMap<String, TableDefinition> getTableDefinitions(Session session, String schemaName) throws Exception {
         final SortedMap<String, TableDefinition> result = new TreeMap<String, TableDefinition>();
-        if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
-            for (final TableDefinition td : aisSchema) {
-                result.put(td.getTableName(), td);
+        final DDLGenerator gen = new DDLGenerator();
+        for(UserTable table : getAis(session).getUserTables().values()) {
+            final TableName name = table.getName();
+            if(name.getSchemaName().equals(schemaName)) {
+                final String ddl = gen.createTable(table);
+                final TableDefinition def = new TableDefinition(table.getTableId(), name, ddl);
+                result.put(name.getTableName(), def);
             }
-            return result;
         }
-        final TreeService treeService = serviceManager.getTreeService();
-        final Exchange ex = treeService.getExchange(session,
-                                                    treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
-        ex.clear().append(BY_NAME).append(schemaName).append(Key.BEFORE);
-        try {
-            while (ex.next()) {
-                final String tableName = ex.getKey().indexTo(-1).decodeString();
-                if (ex.append(Key.AFTER).previous()) {
-                    final int tableId = ex.getKey().indexTo(-1).decodeInt();
-                    final String ddl = ex.fetch().getValue().getString();
-                    result.put(tableName, new TableDefinition(tableId, schemaName, tableName, ddl));
-                }
-                ex.cut();
-            }
-            return result;
-        } finally {
-            treeService.releaseExchange(session, ex);
-        }
+        return result;
     }
 
     /**
