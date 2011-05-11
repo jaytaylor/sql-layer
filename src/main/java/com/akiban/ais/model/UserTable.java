@@ -332,7 +332,7 @@ public class UserTable extends Table
             // Start with the parent's hkey
             Join join = getParentJoin();
             HKey parentHKey = join.getParent().hKey();
-            // Start forming this table's full by including all of the parent hkey columns, but replacing
+            // Start forming this table's full hkey by including all of the parent hkey columns, but replacing
             // columns participating in the join (to this table) by columns from this table.
             for (HKeySegment parentHKeySegment : parentHKey.segments()) {
                 HKeySegment segment = hKey.addSegment(parentHKeySegment.table());
