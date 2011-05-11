@@ -35,6 +35,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.akiban.ais.io.AISTarget;
+import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
@@ -84,8 +86,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     final static int AIS_BASE_TABLE_ID = 1000000000;
     
     static final String AIS_DDL_NAME = "akiban_information_schema.ddl";
-
-    static final String BY_ID = "byId";
 
     static final String BY_NAME = "byName";
 
@@ -157,7 +157,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             final boolean useOldId) throws Exception {
         final TreeService treeService = serviceManager.getTreeService();
         String canonical = SchemaDef.canonicalStatement(statement);
-        SchemaDef.UserTableDef tableDef = parseTableStatement(defaultSchemaName, canonical);
+        SchemaDef schemaDef = parseTableStatement(defaultSchemaName, canonical);
+        SchemaDef.UserTableDef tableDef = schemaDef.getCurrentTable();
         if (tableDef.isLikeTableDef() == true) {
             final SchemaDef.CName srcName = tableDef.getLikeCName();
             assert srcName.getSchema() != null : canonical;
@@ -171,7 +172,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             assert dstName.getSchema() != null : canonical;
             DDLGenerator gen = new DDLGenerator(dstName.getSchema(), dstName.getName());
             canonical = gen.createTable(table);
-            tableDef = parseTableStatement(defaultSchemaName, canonical);
+            schemaDef = parseTableStatement(defaultSchemaName, canonical);
+            tableDef = schemaDef.getCurrentTable();
         }
         if (tableDef.getCName().getSchemaWasDerived()) {
             final String withoutCreate = canonical.substring(CREATE_TABLE.length());
@@ -199,37 +201,20 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
             transaction.begin();
             try {
-                final int tableId;
-                if(useOldId) {
-                    tableId = curTable.getTableId();
-                }
-                else {
-                    if (ex.clear().append(BY_ID).append(Key.AFTER).previous()) {
-                        tableId = ex.getKey().indexTo(1).decodeInt() + 1;
-                    } else {
-                        // First user table, start at 1 (0 special on adapter)
-                        tableId = 1;
-                    }
-                    ex.getValue().putNull();
-                    ex.clear().append(BY_ID).append(tableId).store();
-                }
-
-                ex.clear().append(BY_NAME).append(schemaName).append(tableName);
-                ex.append(tableId);
-                ex.getValue().put(canonical);
-                ex.store();
-
-                final AkibanInformationSchema newAIS = constructAIS(session);
+                final AkibanInformationSchema newAIS = constructAIS(schemaDef);
                 final UserTable newTable = newAIS.getUserTable(schemaName, tableName);
                 validateIndexSizes(newTable);
 
-                transaction.commit(new DefaultCommitListener() {
+                ex.clear().append(BY_NAME).append(schemaName).append(tableName);
+                ex.append(newTable.getTableId().intValue());
+                ex.getValue().put(canonical);
+                ex.store();
 
+                transaction.commit(new DefaultCommitListener() {
                     @Override
                     public void committed() {
                         commitAIS(newAIS, transaction.getCommitTimestamp());
                     }
-
                 }, forceToDisk);
                 
                 return new TableName(schemaName, tableName);
@@ -450,6 +435,21 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public AkibanInformationSchema getAis(final Session session) {
         return ais;
+    }
+
+    private AkibanInformationSchema constructAIS(SchemaDef schemaDef) throws Exception {
+        AkibanInformationSchema newAis = new AkibanInformationSchema();
+        new Writer(new AISTarget(newAis)).save(ais);
+
+        newAis = new SchemaDefToAis(schemaDef, newAis, true).getAis();
+
+        // Old behavior, reassign group table IDs
+        for(GroupTable groupTable: newAis.getGroupTables().values()) {
+            final UserTable root = groupTable.getRoot();
+            assert root != null : "Group with no root table: ";
+            groupTable.setTableId(TreeService.MAX_TABLES_PER_VOLUME - root.getTableId());
+        }
+        return newAis;
     }
 
     private synchronized AkibanInformationSchema constructAIS(
@@ -719,17 +719,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return rowDefCache;
     }
 
-    private SchemaDef.UserTableDef parseTableStatement(
-            final String defaultSchemaName, final String canonical)
-            throws InvalidOperationException {
+    private SchemaDef parseTableStatement(String defaultSchemaName, String ddl) throws InvalidOperationException {
         try {
             SchemaDef def = new SchemaDef();
             def.setMasterSchemaName(defaultSchemaName);
-            return def.parseCreateTable(canonical);
+            def.parseCreateTable(ddl);
+            return def;
         } catch (Exception e1) {
             throw new InvalidOperationException(ErrorCode.PARSE_EXCEPTION,
                     String.format("[%s] %s: %s", defaultSchemaName,
-                            e1.getMessage(), canonical), e1);
+                            e1.getMessage(), ddl), e1);
         }
     }
 
