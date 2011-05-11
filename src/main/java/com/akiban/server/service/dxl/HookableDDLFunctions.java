@@ -346,7 +346,8 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void dropIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop) throws InvalidOperationException {
+    public void dropIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
+            throws NoSuchTableException, IndexAlterException, GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.DROP_INDEXES);
@@ -354,7 +355,9 @@ public final class HookableDDLFunctions implements DDLFunctions {
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.DROP_INDEXES, t);
-            throwIfInstanceOf(t, InvalidOperationException.class);
+            throwIfInstanceOf(t, NoSuchTableException.class);
+            throwIfInstanceOf(t, IndexAlterException.class);
+            throwIfInstanceOf(t, GenericInvalidOperationException.class);
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.DROP_INDEXES, thrown);

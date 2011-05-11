@@ -359,7 +359,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void dropIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
-            throws InvalidOperationException
+            throws NoSuchTableException, IndexAlterException, GenericInvalidOperationException
     {
         logger.trace("dropping indexes {}", indexNamesToDrop);
         if(indexNamesToDrop.isEmpty() == true) {
@@ -368,45 +368,33 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         final Table table = getAIS(session).getTable(tableName);
         if (table == null) {
-            throw new IndexAlterException(ErrorCode.NO_SUCH_TABLE, "Unkown table");
+            throw new NoSuchTableException(tableName);
         }
-
-        ArrayList<Index> indexesToDrop = new ArrayList<Index>();
-
+        
         StringBuilder sb = new StringBuilder();
         sb.append("table=(");
         sb.append(tableName.getTableName());
         sb.append(") ");
 
-        // Confirm they exist
+        // Validate and build string for Store
         for(String indexName : indexNamesToDrop) {
             Index index = table.getIndex(indexName);
             if(index == null) {
-                throw new IndexAlterException(ErrorCode.NO_INDEX, "Unkown index: " + indexName);
+                throw new IndexAlterException(ErrorCode.NO_INDEX, "Unknown index: " + indexName);
             }
-            if(index.isPrimaryKey() == true) {
-                throw new IndexAlterException(ErrorCode.UNSUPPORTED_OPERATION,
-                        "Cannot drop primary key index");
+            if(index.isPrimaryKey()) {
+                throw new IndexAlterException(ErrorCode.UNSUPPORTED_OPERATION, "Cannot drop primary key index");
             }
-            indexesToDrop.add(index);
             sb.append("index=(");
             sb.append(indexName);
             sb.append(") ");
         }
-
-        // Remove from existing AIS to generate new DDL
-        table.removeIndexes(indexesToDrop);
+        
+        // Drop them from the Store before schema change while IndexDefs still exist
+        store().deleteIndexes(session, sb.toString());
         
         try {
-            // Generate new DDL statement from existing AIS/table
-            final DDLGenerator gen = new DDLGenerator();
-            final String newDDL = gen.createTable(table);
-
-            // Trigger drop of index trees while indexDef(s) still exist
-            store().deleteIndexes(session, sb.toString());
-            
-            // Store new DDL statement and recreate AIS
-            schemaManager().createTableDefinition(session, tableName.getSchemaName(), newDDL, true);
+            schemaManager().alterTableDropIndexes(session, tableName, indexNamesToDrop);
             checkCursorsForDDLModification(session, table);
         } catch(Exception e) {
             throw new GenericInvalidOperationException(e);

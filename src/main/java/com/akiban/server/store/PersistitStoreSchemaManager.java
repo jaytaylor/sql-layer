@@ -52,6 +52,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Type;
 import com.akiban.server.encoding.EncoderFactory;
+import org.omg.CORBA.DynAnyPackage.Invalid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -315,6 +316,53 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     }
                 }, forceToDisk);
                 
+                return;
+            } catch (RollbackException e) {
+                if(--retries < 0) {
+                    throw new TransactionFailedException();
+                }
+            } finally {
+                transaction.end();
+                treeService.releaseExchange(session, ex);
+            }
+        }
+    }
+
+    @Override
+    public void alterTableDropIndexes(Session session, TableName tableName, Collection<String> indexNames)
+            throws Exception {
+        if(indexNames.isEmpty()) {
+            return;
+        }
+
+        final AkibanInformationSchema newAIS = new AkibanInformationSchema();
+        new Writer(new AISTarget(newAIS)).save(ais);
+        final Table newTable = newAIS.getTable(tableName);
+        List<Index> indexesToDrop = new ArrayList<Index>();
+        for(String indexName : indexNames) {
+            final Index index = newTable.getIndex(indexName);
+            indexesToDrop.add(index);
+        }
+
+        newTable.removeIndexes(indexesToDrop);
+        new AISBuilder(newAIS).generateGroupTableIndexes(newTable.getGroup());
+
+        Exchange ex = null;
+        final TreeService treeService = serviceManager.getTreeService();
+        final Transaction transaction = treeService.getTransaction(session);
+        int retries = MAX_TRANSACTION_RETRY_COUNT;
+        for(;;) {
+            ex = treeService.getExchange(session,
+                                         treeService.treeLink(tableName.getSchemaName(), SCHEMA_TREE_NAME));
+            transaction.begin();
+            try {
+                transaction.commit(new DefaultCommitListener() {
+                    @Override
+                    public void committed() {
+                        commitAIS(newAIS, transaction.getCommitTimestamp());
+                    }
+                }, forceToDisk);
+
                 return;
             } catch (RollbackException e) {
                 if(--retries < 0) {

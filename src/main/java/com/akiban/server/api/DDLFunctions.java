@@ -222,11 +222,12 @@ public interface DDLFunctions {
 
     /**
      * Drop indexes on an existing table.
-     * 
      * @param tableName the table containing the indexes to drop
      * @param indexesToDrop list of indexes to drop
      * @throws InvalidOperationException
      */
     void dropIndexes(Session session, TableName tableName, Collection<String> indexesToDrop)
-            throws InvalidOperationException;
+            throws NoSuchTableException,
+            IndexAlterException,
+            GenericInvalidOperationException;
 }

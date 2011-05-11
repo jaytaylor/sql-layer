@@ -62,6 +62,7 @@ public interface SchemaManager {
             String statement, boolean useOldId) throws Exception;
 
     void alterTableAddIndexes(Session session, TableName tableName, Collection<Index> indexes) throws Exception;
+    void alterTableDropIndexes(Session session, TableName tableName, Collection<String> indexNames) throws Exception;
 
     /**
      * Delete all table definitions associated with the specified schema and
