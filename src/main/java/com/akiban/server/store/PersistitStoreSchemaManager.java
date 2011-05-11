@@ -22,6 +22,7 @@ import static com.akiban.server.store.PersistitStore.MAX_TRANSACTION_RETRY_COUNT
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,6 +42,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.akiban.ais.io.AISTarget;
+import com.akiban.ais.io.MessageTarget;
 import com.akiban.ais.io.TableSubsetWriter;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AISBuilder;
@@ -98,6 +100,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     static final String BY_NAME = "byName";
 
+    static final String BY_AIS = "byAIS";
+
     private static final Logger LOG = LoggerFactory
             .getLogger(PersistitStoreSchemaManager.class.getName());
 
@@ -116,6 +120,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private RowDefCache rowDefCache;
 
     private AtomicLong updateTimestamp = new AtomicLong();
+
+    private ByteBuffer byteBuffer = ByteBuffer.allocate(1<<20);
 
     /**
      * Maximum size that can can be stored in an index. See
@@ -218,6 +224,19 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 ex.append(newTable.getTableId().intValue());
                 ex.getValue().put(canonical);
                 ex.store();
+
+                byteBuffer.clear();
+                new TableSubsetWriter(new MessageTarget(byteBuffer)) {
+                    @Override
+                    public boolean shouldSaveTable(Table table) {
+                        return table.getName().getSchemaName().equals(schemaName);
+                    }
+                }.save(newAIS);
+                byteBuffer.flip();
+
+                ex.clear().append(BY_AIS);
+                ex.getValue().clear();
+                ex.getValue().putByteArray(byteBuffer.array(), byteBuffer.position(), byteBuffer.limit());
 
                 transaction.commit(new DefaultCommitListener() {
                     @Override
