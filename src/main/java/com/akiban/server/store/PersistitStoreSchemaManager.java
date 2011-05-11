@@ -237,6 +237,96 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
     }
 
+    @Override
+    public void alterTableAddIndexes(Session session, TableName tableName, Collection<Index> indexes) throws Exception {
+        if(indexes.isEmpty()) {
+            return;
+        }
+
+        final AkibanInformationSchema ais = getAis(session);
+        final Table existingTable = ais.getTable(tableName);
+        final Table firstIndexTable = indexes.iterator().next().getTable();
+
+        if(existingTable == null) {
+            throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE, "Unknown table: " + tableName);
+        }
+        if(!firstIndexTable.getTableId().equals(existingTable.getTableId())) {
+            throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE, "TableId mismatch");
+        }
+
+        // Input validation: same table, not a primary key, not a duplicate index name, and
+        // referenced columns are valid
+        for(Index idx : indexes) {
+            if(!idx.getTable().equals(firstIndexTable)) {
+                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
+                                                    "Cannot add indexes to multiple tables");
+            }
+            if(idx.isPrimaryKey()) {
+                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION, "Cannot add primary key");
+            }
+            final String indexName = idx.getIndexName().getName();
+            if(existingTable.getIndex(indexName) != null) {
+                throw new InvalidOperationException(ErrorCode.DUPLICATE_KEY, "Index already exists: " + indexName);
+            }
+            for(IndexColumn idxCol : idx.getColumns()) {
+                final Column refCol = idxCol.getColumn();
+                final Column tableCol = existingTable.getColumn(refCol.getPosition());
+                if (!refCol.getName().equals(tableCol.getName()) ||
+                    !refCol.getType().equals(tableCol.getType())) {
+                    throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
+                                                        "Index column does not match table column");
+                }
+            }
+        }
+
+        final AkibanInformationSchema newAIS = new AkibanInformationSchema();
+        new Writer(new AISTarget(newAIS)).save(ais);
+        final Table newTable = newAIS.getTable(tableName);
+
+        // All OK, add to current table
+        for(Index idx : indexes) {
+            Index newIndex = Index.create(newAIS, newTable, idx.getIndexName().getName(), -1,
+                                          idx.isUnique(), idx.getConstraint());
+
+            for(IndexColumn idxCol : idx.getColumns()) {
+                Column refCol = newTable.getColumn(idxCol.getColumn().getPosition());
+                IndexColumn indexCol = new IndexColumn(newIndex, refCol, idxCol.getPosition(),
+                                                       idxCol.isAscending(), idxCol.getIndexedLength());
+                newIndex.addColumn(indexCol);
+            }
+            newIndex.freezeColumns();
+        }
+
+        new AISBuilder(newAIS).generateGroupTableIndexes(newTable.getGroup());
+
+        Exchange ex = null;
+        final TreeService treeService = serviceManager.getTreeService();
+        final Transaction transaction = treeService.getTransaction(session);
+        int retries = MAX_TRANSACTION_RETRY_COUNT;
+        for(;;) {
+            ex = treeService.getExchange(session,
+                                         treeService.treeLink(tableName.getSchemaName(), SCHEMA_TREE_NAME));
+            transaction.begin();
+            try {
+                transaction.commit(new DefaultCommitListener() {
+                    @Override
+                    public void committed() {
+                        commitAIS(newAIS, transaction.getCommitTimestamp());
+                    }
+                }, forceToDisk);
+                
+                return;
+            } catch (RollbackException e) {
+                if(--retries < 0) {
+                    throw new TransactionFailedException();
+                }
+            } finally {
+                transaction.end();
+                treeService.releaseExchange(session, ex);
+            }
+        }
+    }
+
     /**
      * Delete all table definition versions for a table specified by schema name
      * and table name. This removes the entire history of the table, and is
@@ -705,6 +795,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     @Override
     public void afterStart() throws Exception {
+
+
         final TreeService treeService = serviceManager.getTreeService();
         final Session session = ServiceManagerImpl.newSession();
         final Transaction transaction = treeService.getTransaction(session);

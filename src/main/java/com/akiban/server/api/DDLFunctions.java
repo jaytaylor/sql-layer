@@ -42,6 +42,7 @@ import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedIndexSizeException;
+import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.service.session.Session;
 
 public interface DDLFunctions {
@@ -213,8 +214,11 @@ public interface DDLFunctions {
      * @param indexesToAdd a list of indexes to add to the existing AIS
      * @throws IndexAlterException, InvalidOperationException
      */
-    void createIndexes(Session session, Collection<Index> indexesToAdd) throws IndexAlterException,
-            InvalidOperationException;
+    void createIndexes(Session session, Collection<Index> indexesToAdd)
+            throws NoSuchTableException,
+            DuplicateKeyException,
+            IndexAlterException,
+            GenericInvalidOperationException;
 
     /**
      * Drop indexes on an existing table.

@@ -15,10 +15,12 @@
 
 package com.akiban.server.store;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.SortedMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.service.session.Session;
 
@@ -58,6 +60,8 @@ public interface SchemaManager {
      */
     TableName createTableDefinition(Session session, String schemaName,
             String statement, boolean useOldId) throws Exception;
+
+    void alterTableAddIndexes(Session session, TableName tableName, Collection<Index> indexes) throws Exception;
 
     /**
      * Delete all table definitions associated with the specified schema and

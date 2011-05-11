@@ -29,6 +29,7 @@ import com.akiban.server.api.ddl.DuplicateColumnNameException;
 import com.akiban.server.api.ddl.DuplicateTableNameException;
 import com.akiban.server.api.ddl.ForeignConstraintDDLException;
 import com.akiban.server.api.ddl.GroupWithProtectedTableException;
+import com.akiban.server.api.ddl.IndexAlterException;
 import com.akiban.server.api.ddl.JoinToMultipleParentsException;
 import com.akiban.server.api.ddl.JoinToUnknownTableException;
 import com.akiban.server.api.ddl.JoinToWrongColumnsException;
@@ -40,6 +41,7 @@ import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedIndexSizeException;
+import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.server.service.session.Session;
@@ -324,7 +326,8 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void createIndexes(final Session session, Collection<Index> indexesToAdd) throws InvalidOperationException {
+    public void createIndexes(final Session session, Collection<Index> indexesToAdd)
+            throws NoSuchTableException, DuplicateKeyException, IndexAlterException, GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.CREATE_INDEXES);
@@ -332,7 +335,10 @@ public final class HookableDDLFunctions implements DDLFunctions {
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.CREATE_INDEXES, t);
-            throwIfInstanceOf(t, InvalidOperationException.class);
+            throwIfInstanceOf(t, NoSuchTableException.class);
+            throwIfInstanceOf(t, DuplicateKeyException.class);
+            throwIfInstanceOf(t, IndexAlterException.class);
+            throwIfInstanceOf(t, GenericInvalidOperationException.class);
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.CREATE_INDEXES, thrown);

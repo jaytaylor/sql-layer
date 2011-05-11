@@ -307,101 +307,42 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void createIndexes(final Session session, Collection<Index> indexesToAdd)
-            throws InvalidOperationException
-    {
+            throws NoSuchTableException, DuplicateKeyException, IndexAlterException, GenericInvalidOperationException {
         logger.trace("creating indexes {}", indexesToAdd);
         if (indexesToAdd.isEmpty() == true) {
             return;
         }
-        
-        final Index firstIndex = indexesToAdd.iterator().next();
-        final AkibanInformationSchema ais = getAIS(session);
-        final UserTable table = ais.getUserTable(firstIndex.getTableName());
-        
-        if (table == null) {
-            throw new IndexAlterException(ErrorCode.NO_SUCH_TABLE, "Unkown table: "
-                    + firstIndex.getTableName());
-        }
 
-        // Require that IDs match for current and proposed (some other DDL may have happened)
-        if (table.getTableId().equals(firstIndex.getTable().getTableId()) == false) {
-            throw new IndexAlterException(ErrorCode.NO_SUCH_TABLE, "TableId mismatch");
+        final Table table = getTable(session, indexesToAdd.iterator().next().getTableName());
+        try {
+            schemaManager().alterTableAddIndexes(session, table.getName(), indexesToAdd);
+            checkCursorsForDDLModification(session, table);
+        }
+        catch(InvalidOperationException e) {
+            throw new IndexAlterException(e);
+        }
+        catch(Exception e) {
+            throw new GenericInvalidOperationException(e);
         }
         
-        // Save in case of error
-        final DDLGenerator gen = new DDLGenerator();
-        final String originalDDL = gen.createTable(table);
-
-        // Input validation: same table, not a primary key, not a duplicate index name, and 
-        // referenced columns are valid
-        for (Index idx : indexesToAdd) {
-            if (idx.getTable().equals(firstIndex.getTable()) == false) {
-                throw new IndexAlterException(ErrorCode.UNSUPPORTED_OPERATION,
-                        "Cannot add indexes to multiple tables");
-            }
-
-            if (idx.isPrimaryKey()) {
-                throw new IndexAlterException(ErrorCode.UNSUPPORTED_OPERATION,
-                        "Cannot add primary key");
-            }
-
-            final String indexName = idx.getIndexName().getName();
-            if (table.getIndex(indexName) != null) {
-                throw new IndexAlterException(ErrorCode.DUPLICATE_KEY,
-                        "Index name already exists: " + indexName);
-            }
-            
-            for (IndexColumn idxCol : idx.getColumns()) {
-                final Column refCol = idxCol.getColumn();
-                final Column tableCol = table.getColumn(refCol.getPosition());
-                if (refCol.getName().equals(tableCol.getName()) == false || 
-                    refCol.getType().equals(tableCol.getType()) == false) {
-                    throw new IndexAlterException(ErrorCode.UNSUPPORTED_OPERATION,
-                            "Index column does not match table column");
-                }
-            }
-        }
-         
+        // Build special string used/required by Store
         StringBuilder sb = new StringBuilder();
         sb.append("table=(");
         sb.append(table.getName().getTableName());
         sb.append(") ");
         
-        for (Index idx : indexesToAdd) {
-            // Add to current table/AIS so that the DDLGenerator call below will see it
-            Index newIndex = Index.create(ais, table, idx.getIndexName().getName(), -1,
-                    idx.isUnique(), idx.getConstraint());
-
-            for (IndexColumn idxCol : idx.getColumns()) {
-                Column refCol = table.getColumn(idxCol.getColumn().getPosition());
-                IndexColumn indexCol = new IndexColumn(newIndex, refCol, idxCol.getPosition(),
-                        idxCol.isAscending(), idxCol.getIndexedLength());
-                newIndex.addColumn(indexCol);
-            }
-            newIndex.freezeColumns();
-            
-            // Track new index names to build only new indexes
+        for(Index idx : indexesToAdd) {
             sb.append("index=(");
             sb.append(idx.getIndexName());
             sb.append(")");
         }
-
-        final String schemaName = table.getName().getSchemaName();
-
-        try {
-            // Generate new DDL statement from existing AIS/table
-            final String newDDL = gen.createTable(table);
-            schemaManager().createTableDefinition(session, schemaName, newDDL, true);
-            checkCursorsForDDLModification(session, table);
-        } catch (Exception e) {
-            throw new GenericInvalidOperationException(e);
-        }
-
-        final String indexString = sb.toString();
+        
         try {
             // Trigger build of new index trees
-            store().buildIndexes(session, indexString, false);
+            store().buildIndexes(session, sb.toString(), false);
         } catch(Exception e) {
+            // TODO: Rollback failure
+            /*
             try {
                 // Delete whatever was inserted, roll back table change
                 store().deleteIndexes(session, indexString);
@@ -409,6 +350,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             } catch(Exception e2) {
                 logger.error("Exception while rolling back failed createIndex : " + indexString, e2);
             }
+            */
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ioe, DuplicateKeyException.class);
             throw new GenericInvalidOperationException(ioe);

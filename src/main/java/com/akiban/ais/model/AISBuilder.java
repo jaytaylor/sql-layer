@@ -503,7 +503,7 @@ public class AISBuilder {
 
     }
 
-    private void generateGroupTableIndexes(Group group) {
+    public void generateGroupTableIndexes(Group group) {
         LOG.debug("generating group table indexes for group " + group);
 
         GroupTable groupTable = group.getGroupTable();

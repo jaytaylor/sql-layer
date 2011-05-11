@@ -29,6 +29,7 @@ import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.IndexAlterException;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -53,7 +54,7 @@ public final class CreateIndexesIT extends AlterTestBase {
         ddl().createIndexes(session(), indexes);
     }
     
-    @Test(expected=IndexAlterException.class) 
+    @Test(expected=NoSuchTableException.class)
     public void createIndexInvalidTable() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key");
         // Attempt to add index to unknown table
@@ -65,9 +66,9 @@ public final class CreateIndexesIT extends AlterTestBase {
     
     @Test(expected=IndexAlterException.class) 
     public void createIndexMultipleTables() throws InvalidOperationException {
-        AkibanInformationSchema ais = new AkibanInformationSchema();
-        UserTable.create(ais, "test", "t1", 1);
-        UserTable.create(ais, "test", "t2", 1);
+        createTable("test", "t1", "id int key");
+        createTable("test", "t2", "id int key");
+        AkibanInformationSchema ais = ddl().getAIS(session());
         // Attempt to add indexes to multiple tables
         addIndexToAIS(ais, "test", "t1", "index", null, false);
         addIndexToAIS(ais, "test", "t2", "index", null, false);
