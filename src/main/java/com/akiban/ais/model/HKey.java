@@ -21,7 +21,7 @@ import java.util.List;
 public class HKey
 {
     @Override
-    public String toString()
+    public synchronized String toString()
     {
         StringBuilder buffer = new StringBuilder();
         buffer.append("HKey(");
@@ -38,12 +38,12 @@ public class HKey
         return buffer.toString();
     }
 
-    public List<HKeySegment> segments()
+    public synchronized List<HKeySegment> segments()
     {
         return segments;
     }
 
-    public int nColumns()
+    public synchronized int nColumns()
     {
         int nColumns = 0;
         for (HKeySegment segment : segments) {
@@ -57,17 +57,17 @@ public class HKey
         this.table = table;
     }
 
-    public HKeySegment addSegment(UserTable table)
+    public synchronized HKeySegment addSegment(UserTable segmentTable)
     {
-        HKeySegment segment = new HKeySegment(this, table);
-        UserTable parent = table.getParentJoin() == null ? null : table.getParentJoin().getParent();
+        assert keyDepth == null : segmentTable; // Should only be computed after HKeySegments are completely formed.
         UserTable lastSegmentTable = segments.isEmpty() ? null : segments.get(segments.size() - 1).table();
-        assert parent == lastSegmentTable;
+        assert segmentTable.parentTable() == lastSegmentTable;
+        HKeySegment segment = new HKeySegment(this, segmentTable);
         segments.add(segment);
         return segment;
     }
 
-    public boolean containsColumn(Column column) {
+    public synchronized boolean containsColumn(Column column) {
         for(HKeySegment hkSeg : segments) {
             for(HKeyColumn hkCol : hkSeg.columns()) {
                 if(hkCol.column() == column) {
@@ -81,21 +81,28 @@ public class HKey
     public synchronized int[] keyDepth()
     {
         if (keyDepth == null) {
-            keyDepth = new int[segments.size() + 1];
-            int hKeySegments = segments.size();
-            for (int hKeySegment = 0; hKeySegment <= hKeySegments; hKeySegment++) {
-                this.keyDepth[hKeySegment] =
-                    hKeySegment == 0
-                    ? 0
-                    // + 1 to account for the ordinal
-                    : keyDepth[hKeySegment - 1] + 1 + segments.get(hKeySegment - 1).columns().size();
-            }
+            computeKeyDepth();
         }
         return keyDepth;
     }
 
     public HKey()
     {}
+
+    // For use by this class
+
+    private void computeKeyDepth()
+    {
+        keyDepth = new int[segments.size() + 1];
+        int hKeySegments = segments.size();
+        for (int hKeySegment = 0; hKeySegment <= hKeySegments; hKeySegment++) {
+            this.keyDepth[hKeySegment] =
+                hKeySegment == 0
+                ? 0
+                // + 1 to account for the ordinal
+                : keyDepth[hKeySegment - 1] + 1 + segments.get(hKeySegment - 1).columns().size();
+        }
+    }
 
     // State
 
