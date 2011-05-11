@@ -66,7 +66,7 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
     private SchemaManager schemaManager;
 
     private void createTableDef(String schema, String ddl) throws Exception {
-        schemaManager.createTableDefinition(session(), schema, ddl, false);
+        schemaManager.createTableDefinition(session(), schema, ddl);
     }
 
     private void deleteTableDef(String schema, String table) throws Exception {

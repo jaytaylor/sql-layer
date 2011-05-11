@@ -55,11 +55,9 @@ public interface SchemaManager {
      * @param session Session to operation under
      * @param schemaName Default schema name to use if statement does not contain one
      * @param statement A valid DDL statement (e.g. create table t(...))
-     * @param useOldId Whether or not to replace existing statement if it exists
      * @throws Exception
      */
-    TableName createTableDefinition(Session session, String schemaName,
-            String statement, boolean useOldId) throws Exception;
+    TableName createTableDefinition(Session session, String schemaName, String statement) throws Exception;
 
     void alterTableAddIndexes(Session session, TableName tableName, Collection<Index> indexes) throws Exception;
     void alterTableDropIndexes(Session session, TableName tableName, Collection<String> indexNames) throws Exception;

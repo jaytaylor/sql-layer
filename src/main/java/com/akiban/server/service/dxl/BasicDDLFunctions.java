@@ -85,7 +85,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     {
         logger.trace("creating table: ({}) {}", schema, ddlText);
         try {
-            TableName tableName = schemaManager().createTableDefinition(session, schema, ddlText, false);
+            TableName tableName = schemaManager().createTableDefinition(session, schema, ddlText);
             checkCursorsForDDLModification(session, getAIS(session).getTable(tableName));
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);

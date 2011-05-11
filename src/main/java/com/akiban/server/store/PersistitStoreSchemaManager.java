@@ -133,80 +133,44 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private interface AISChangeCallback {
         public void beforeCommit(Exchange schemaExchange, TreeService treeService) throws Exception;
     }
+
     
-    /**
-     * Create or update a table definition given a schema name, table name and a
-     * CREATE TABLE statement supplied by the client. The CREATE TABLE
-     * statement, if correctly formed, supplies the table name. It optionally
-     * specifies a schema name, and if so, that name overrides the supplied
-     * default schema name.
-     * 
-     * This method verifies the integrity of the supplied statement as follows:
-     * <ul>
-     * <li>it must be valid DDL syntax</li>
-     * <li>it does not have a schema name reserved by Akiban</li>
-     * <li>any references to other tables and columns must be valid</li>
-     * </ul>
-     * 
-     * @param session
-     * @param defaultSchemaName
-     *            default schema name (as supplied by a USE statement in the
-     *            client) to be used in case the statement does not explicitly
-     *            specify a schema name.
-     * @param statement
-     *            a CREATE TABLE statement
-     * @throws InvalidOperationException
-     *             if the statement does not match these criteria
-     * @throws PersistitException
-     *             if any of the underlying B-Tree operations caused an
-     *             exception
-     */
     @Override
-    public TableName createTableDefinition(final Session session,
-            final String defaultSchemaName, final String statement,
-            final boolean useOldId) throws Exception {
-        String canonical = SchemaDef.canonicalStatement(statement);
-        SchemaDef schemaDef = parseTableStatement(defaultSchemaName, canonical);
+    public TableName createTableDefinition(final Session session, final String defaultSchemaName,
+                                           final String originalDDL) throws Exception {
+        String ddlStatement = originalDDL;
+        SchemaDef schemaDef = parseTableStatement(defaultSchemaName, ddlStatement);
         SchemaDef.UserTableDef tableDef = schemaDef.getCurrentTable();
-        if (tableDef.isLikeTableDef() == true) {
+        if (tableDef.isLikeTableDef()) {
             final SchemaDef.CName srcName = tableDef.getLikeCName();
-            assert srcName.getSchema() != null : canonical;
-            final Table table = getAis(session).getTable(srcName.getSchema(), srcName.getName());
-            if (table == null) {
+            assert srcName.getSchema() != null : originalDDL;
+            final Table srcTable = getAis(session).getTable(srcName.getSchema(), srcName.getName());
+            if (srcTable == null) {
                 throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE,
                         String.format("Unknown source table [%s] %s",
                                 srcName.getSchema(), srcName.getName()));
             }
             final SchemaDef.CName dstName = tableDef.getCName();
-            assert dstName.getSchema() != null : canonical;
+            assert dstName.getSchema() != null : originalDDL;
             DDLGenerator gen = new DDLGenerator(dstName.getSchema(), dstName.getName());
-            canonical = gen.createTable(table);
-            schemaDef = parseTableStatement(defaultSchemaName, canonical);
+            ddlStatement = gen.createTable(srcTable);
+            schemaDef = parseTableStatement(defaultSchemaName, ddlStatement);
             tableDef = schemaDef.getCurrentTable();
         }
-        if (tableDef.getCName().getSchemaWasDerived()) {
-            final String withoutCreate = canonical.substring(CREATE_TABLE.length());
-            canonical = String.format("%s`%s`.%s", CREATE_TABLE, defaultSchemaName, withoutCreate);
-        }
+
         final String schemaName = tableDef.getCName().getSchema();
         final String tableName = tableDef.getCName().getName();
-        validateTableDefinition(tableDef);
-
         final Table curTable = getAis(session).getTable(schemaName, tableName);
-        if (useOldId && curTable == null) {
-            throw new IllegalArgumentException("useOldId=true and table does not exist");
-        }
-        if (!useOldId && curTable != null) {
+        if (curTable != null) {
             throw new InvalidOperationException(ErrorCode.DUPLICATE_TABLE,
-                    String.format("Table `%s`.`%s` already exists", schemaName,
-                            tableName));
+                    String.format("Table `%s`.`%s` already exists", schemaName, tableName));
         }
 
+        validateTableDefinition(tableDef);
         final AkibanInformationSchema newAIS = constructAIS(schemaDef);
         final UserTable newTable = newAIS.getUserTable(schemaName, tableName);
         validateIndexSizes(newTable);
 
-        final String originalDDL = canonical;
         commitAISChange(session, newAIS, schemaName, new AISChangeCallback() {
             @Override
             public void beforeCommit(Exchange schemaExchange, TreeService treeService) throws Exception {
