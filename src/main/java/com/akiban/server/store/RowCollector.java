@@ -51,6 +51,8 @@ public interface RowCollector {
 
     public boolean hasMore() throws Exception;
 
+    public boolean isOpen();
+
     public void open();
 
     public void close();

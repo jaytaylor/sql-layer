@@ -105,6 +105,11 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     }
 
     @Override
+    public boolean isOpen() {
+        return !closed;
+    }
+
+    @Override
     public boolean hasMore() throws Exception
     {
         return !closed;
@@ -347,7 +352,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     protected final Set<UserTable> requiredUserTables = new HashSet<UserTable>();
     protected IndexKeyRange indexKeyRange;
     private Cursor cursor;
-    private boolean closed;
+    private boolean closed = true;
     private int rowCount = 0;
     private RowHolder<Row> currentRow = new RowHolder<Row>();
 

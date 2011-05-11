@@ -89,6 +89,11 @@ public final class BasicDMLFunctionsTest {
         }
 
         @Override
+        public boolean isOpen() {
+            return open;
+        }
+
+        @Override
         public boolean hasMore() throws Exception {
             checkOpen();
             return ! strings.isEmpty();
