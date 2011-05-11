@@ -16,31 +16,30 @@
 package com.akiban.server.test.it.store;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.util.Command;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,10 +47,8 @@ import org.junit.Test;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.message.ErrorCode;
-import com.akiban.server.AkServer;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.service.config.Property;
-import com.akiban.util.MySqlStatementSplitter;
 
 public final class PersistitStoreSchemaManagerIT extends ITBase {
     private final static String SCHEMA = "my_schema";
@@ -78,6 +75,18 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
 
     private TableDefinition getTableDef(String schema, String table) throws Exception {
         return schemaManager.getTableDefinition(session(), schema, table);
+    }
+
+    private List<String> getSchemaStringsWithouAIS(boolean withGroupTables) throws Exception {
+        List<String> statements = schemaManager.schemaStrings(session(), withGroupTables);
+        Iterator<String> it = statements.iterator();
+        while(it.hasNext()) {
+            String ddl = it.next();
+            if(ddl.contains("akiban_information_schema")) {
+                it.remove();
+            }
+        }
+        return statements;
     }
     
     @Override
@@ -336,6 +345,43 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
         assertEquals("t3 id", 3, getUserTable(SCHEMA, T3_CHILD_T1_NAME).getTableId().intValue());
     }
 
+    @Test
+    public void schemaStringsSingleTable() throws Exception {
+        // Check 1) basic ordering 2) that the statements are 'canonicalized'
+        final String TABLE_DDL =  "create table bar(id int key)";
+        final String SCHEMA_DDL = "create schema if not exists `foo`;";
+        final String TABLE_CANONICAL = "create table `foo`.`bar`(`id` int, PRIMARY KEY(`id`)) engine=akibandb";
+        createTableDef("foo", TABLE_DDL);
+        final List<String> ddls = getSchemaStringsWithouAIS(false);
+        assertEquals("ddl count", 2, ddls.size()); // schema and table
+        assertTrue("create schema", ddls.get(0).startsWith("create schema"));
+        assertEquals("create schema is canonical", SCHEMA_DDL, ddls.get(0));
+        assertTrue("create table second", ddls.get(1).startsWith("create table"));
+        assertEquals("create table is canonical", TABLE_CANONICAL, ddls.get(1));
+    }
+
+    @Test
+    public void schemaStringsSingleGroup() throws Exception {
+        createTableDef(SCHEMA, T1_DDL);
+        createTableDef(SCHEMA, T3_CHILD_T1_DDL);
+        Map<String, List<String>> schemaAndTables = new HashMap<String, List<String>>();
+        schemaAndTables.put(SCHEMA, Arrays.asList(T1_NAME, T3_CHILD_T1_NAME));
+    }
+
+    @Test
+    public void schemaStringsMultipleSchemas() throws Exception {
+        final Map<String, List<String>> schemaAndTables = new HashMap<String, List<String>>();
+        schemaAndTables.put("s1", Arrays.asList("t1", "t2"));
+        schemaAndTables.put("s2", Arrays.asList("t3"));
+        schemaAndTables.put("s3", Arrays.asList("t4"));
+        for(Map.Entry<String, List<String>> entry : schemaAndTables.entrySet()) {
+            for(String table : entry.getValue()) {
+                createTableDef(entry.getKey(), "create table "+table+"(id int key)");
+            }
+        }
+        assertSchemaStrings(schemaAndTables);
+    }
+
     /**
      * Assert that the given tables in the given schema has the, and only the, given tables. Also
      * confirm each table exists in the AIS and has a definition.
@@ -361,5 +407,40 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
             actual.add(def.getTableName());
         }
         assertEquals("tables in: " + schema, expected, actual);
+    }
+
+    /**
+     * Check that the result of {@link SchemaManager#schemaStrings(Session, boolean)} is correct for
+     * the given tables. The only guarantees are that schemas are created with 'if not exists',
+     * a schema statement comes before any table in it, and a create table statement is fully qualified.
+     * @param schemaAndTables Map of schema names to table names that should exist
+     * @throws Exception For any internal error.
+     */
+    private void assertSchemaStrings(Map<String, List<String>> schemaAndTables) throws Exception {
+        final String CREATE_SCHEMA = "create schema if not exists `";
+        final String CREATE_TABLE = "create table `";
+        final List<String> ddls = getSchemaStringsWithouAIS(false);
+        final Set<String> sawSchemas = new HashSet<String>();
+        for(String statement : ddls) {
+            if(statement.startsWith(CREATE_SCHEMA)) {
+                final int offset = CREATE_SCHEMA.length();
+                final String schemaName = statement.substring(offset, offset + 2);
+                assertFalse("haven't seen schema "+schemaName,
+                            sawSchemas.contains(schemaName));
+                sawSchemas.add(schemaName);
+            }
+            else if(statement.startsWith(CREATE_TABLE)){
+                final int offset = CREATE_TABLE.length();
+                final String schemaName = statement.substring(offset, offset + 2);
+                assertTrue("schema "+schemaName+" has been seen",
+                           sawSchemas.contains(schemaName));
+                final String tableName = statement.substring(offset+5, offset+7);
+                assertTrue("table "+tableName+" is in schema "+tableName,
+                           schemaAndTables.get(schemaName).contains(tableName));
+            }
+            else {
+                Assert.fail("Unknown statement type: " + statement);
+            }
+        }
     }
 }
