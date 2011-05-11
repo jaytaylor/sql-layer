@@ -185,10 +185,9 @@ public final class DDLInvalidatesScansIT extends ITBase {
         final CursorId cursor;
         try {
             cursor = openFullScan(SCHEMA, CUSTOMERS, "name");
-            int nameIndex = indexId(SCHEMA, CUSTOMERS, "name");
+            indexId(SCHEMA, CUSTOMERS, "name");
             ddl().dropIndexes(session(), tableName(SCHEMA, CUSTOMERS), Collections.singleton("name"));
-            int positionIndex = indexId(SCHEMA, CUSTOMERS, "position");
-            assertEquals("position index", nameIndex, positionIndex);
+            indexId(SCHEMA, CUSTOMERS, "position");
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         }
