@@ -41,10 +41,9 @@ public class TwoTableRowCollector extends OperatorBasedRowCollector
                          ColumnSelector startColumns,
                          RowData end,
                          ColumnSelector endColumns,
-                         byte[] columnBitMap,
-                         OpenInfoStruct openInfoStruct)
+                         byte[] columnBitMap)
     {
-        super(store, session, openInfoStruct);
+        super(store, session);
         // Get group table and check that start/end refer to it
         GroupTable groupTable = rowDef.groupTable();
         assert start == null || start.getRowDefId() == groupTable.getTableId() : start;
