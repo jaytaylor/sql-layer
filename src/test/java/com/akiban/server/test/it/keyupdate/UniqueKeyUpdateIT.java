@@ -16,6 +16,7 @@
 package com.akiban.server.test.it.keyupdate;
 
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -49,7 +50,7 @@ public final class UniqueKeyUpdateIT extends ITBase {
         NewRow original = createNewRow(tableId, 12L, 22L);
         NewRow updated = createNewRow(tableId, 12L, 21L);
         try {
-            dml().updateRow(session(), original, updated, ALL_COLUMNS);
+            dml().updateRow(session(), original, updated, ConstantColumnSelector.ALL_ON);
             fail("expected DuplicateKeyException");
         } catch (DuplicateKeyException e) {
             // expected
@@ -90,7 +91,7 @@ public final class UniqueKeyUpdateIT extends ITBase {
         NewRow original = createNewRow(tableId, 12L);
         NewRow updated = createNewRow(tableId, 11L);
         try {
-            dml().updateRow(session(), original, updated, ALL_COLUMNS);
+            dml().updateRow(session(), original, updated, ConstantColumnSelector.ALL_ON);
             fail("expected DuplicateKeyException");
         } catch (DuplicateKeyException e) {
             // expected
@@ -197,7 +198,7 @@ public final class UniqueKeyUpdateIT extends ITBase {
                     session(),
                     createNewRow(tableId, 12L, 22L, 32L),
                     createNewRow(tableId, 12L, 21L, 32L),
-                    ALL_COLUMNS
+                    ConstantColumnSelector.ALL_ON
             );
             expectFullRows(
                     tableId,
@@ -217,7 +218,7 @@ public final class UniqueKeyUpdateIT extends ITBase {
                     session(),
                     createNewRow(tableId, 12L, 21L, 32L),
                     createNewRow(tableId, 12L, 21L, 33L),
-                    ALL_COLUMNS
+                    ConstantColumnSelector.ALL_ON
             );
             expectFullRows(
                     tableId,
@@ -240,7 +241,7 @@ public final class UniqueKeyUpdateIT extends ITBase {
                     session(),
                     createNewRow(tableId, 12L, 21L, 33L),
                     createNewRow(tableId, 12L, 21L, 31L),
-                    ALL_COLUMNS
+                    ConstantColumnSelector.ALL_ON
             );
             fail("expected DuplicateKeyException");
         } catch (DuplicateKeyException e) {
@@ -277,7 +278,7 @@ public final class UniqueKeyUpdateIT extends ITBase {
         }
         NewRow original = createNewRow(tableId, 12L, 22L);
         NewRow updated = createNewRow(tableId, 12L, null);
-        dml().updateRow(session(), original, updated, ALL_COLUMNS);
+        dml().updateRow(session(), original, updated, ConstantColumnSelector.ALL_ON);
 
         expectFullRows(
                 tableId,

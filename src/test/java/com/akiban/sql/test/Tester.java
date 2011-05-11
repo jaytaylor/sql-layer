@@ -23,8 +23,11 @@ import com.akiban.sql.optimizer.BindingNodeFactory;
 import com.akiban.sql.optimizer.BoundNodeToString;
 import com.akiban.sql.optimizer.Grouper;
 import com.akiban.sql.optimizer.SubqueryFlattener;
+import com.akiban.sql.optimizer.OperatorCompiler;
+import com.akiban.sql.optimizer.OperatorCompilerTest;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
+import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.ddl.SchemaDef;
@@ -41,7 +44,7 @@ public class Tester
         PRINT_TREE, PRINT_SQL, PRINT_BOUND_SQL,
         BIND, COMPUTE_TYPES,
         BOOLEAN_NORMALIZE, FLATTEN_SUBQUERIES,
-        GROUP, GROUP_REWRITE    
+        GROUP, GROUP_REWRITE, OPERATORS
     }
 
     List<Action> actions;
@@ -52,6 +55,7 @@ public class Tester
     BooleanNormalizer booleanNormalizer;
     SubqueryFlattener subqueryFlattener;
     Grouper grouper;
+    OperatorCompiler operatorCompiler;
 
     public Tester() {
         actions = new ArrayList<Action>();
@@ -112,6 +116,9 @@ public class Tester
                 grouper.group(stmt);
                 grouper.rewrite(stmt);
                 break;
+            case OPERATORS:
+                System.out.println(operatorCompiler.compile((CursorNode)stmt));
+                break;
             }
         }
     }
@@ -120,14 +127,33 @@ public class Tester
         SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
         SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
         AkibanInformationSchema ais = toAis.getAis();
-        binder = new AISBinder(ais, "user");
+        if (actions.indexOf(Action.BIND) >= 0)
+            binder = new AISBinder(ais, "user");
+        if (actions.indexOf(Action.OPERATORS) >= 0)
+            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, "user");
     }
 
     public void addView(String sql) throws Exception {
-        binder.addView(new ViewDefinition(sql, parser));
+        ViewDefinition view = new ViewDefinition(sql, parser);
+        if (binder != null)
+            binder.addView(view);
+        if (operatorCompiler != null)
+            operatorCompiler.addView(view);
     }
 
     public static void main(String[] args) throws Exception {
+        if (args.length == 0) {
+            System.out.println("Usage: Tester " +
+                               "[-clone] [-bind] [-types] [-boolean] [-flatten] [-group] [-group-rewrite] [-operators]" +
+                               "[-tree] [-print] [-print-bound]" +
+                               "[-schema ddl] [-view ddl]..." +
+                               "sql...");
+            System.out.println("Examples:");
+            System.out.println("-tree 'SELECT t1.x+2 FROM t1'");
+            System.out.println("-bind -print -tree -schema 'CREATE TABLE t1(x INT NOT NULL, y VARCHAR(7), z DECIMAL); CREATE table t2(w CHAR(1) NOT NULL);' -view 'CREATE VIEW v1(x,y) AS SELECT y,z FROM t1 WHERE y IS NOT NULL' \"SELECT x FROM v1 WHERE y > 'foo'\"");
+            System.out.println("-operators -schema 'CREATE TABLE parent(id INT, PRIMARY KEY(id), name VARCHAR(256) NOT NULL, UNIQUE(name), state CHAR(2)); CREATE TABLE child(id INT, PRIMARY KEY(id), pid INT, CONSTRAINT `__akiban_fk0` FOREIGN KEY akibanfk(pid) REFERENCES parent(id), name VARCHAR(256) NOT NULL);' \"SELECT parent.name,child.name FROM parent,child WHERE child.pid = parent.id AND parent.state = 'MA'\"");
+
+        }
         Tester tester = new Tester();
         tester.addAction(Action.ECHO);
         tester.addAction(Action.PARSE);
@@ -143,10 +169,10 @@ public class Tester
                     tester.addAction(Action.PRINT_BOUND_SQL);
                 else if ("-clone".equals(arg))
                     tester.addAction(Action.CLONE);
-                else if ("-bind".equals(arg)) {
-                    tester.setSchema(args[i++]);
+                else if ("-bind".equals(arg))
                     tester.addAction(Action.BIND);
-                }
+                else if ("-schema".equals(arg))
+                    tester.setSchema(args[i++]);
                 else if ("-view".equals(arg))
                     tester.addView(args[i++]);
                 else if ("-types".equals(arg))
@@ -159,6 +185,8 @@ public class Tester
                     tester.addAction(Action.GROUP);
                 else if ("-group-rewrite".equals(arg))
                     tester.addAction(Action.GROUP_REWRITE);
+                else if ("-operators".equals(arg))
+                    tester.addAction(Action.OPERATORS);
                 else
                     throw new Exception("Unknown switch: " + arg);
             }

@@ -20,6 +20,12 @@ import java.sql.*;
 public class SQLClient
 {
     public static void main(String[] args) throws Exception {
+        if (args.length < 5) {
+            System.out.println("Usage: SQLClient driver url user password sql params...");
+            String uname = System.getProperty("user.name", "user");
+            System.out.println("e.g. 'org.postgresql.Driver' 'jdbc:postgresql://localhost:15432/" + uname + "' '" + uname + "' '" + uname + "' 'SELECT * FROM customers'");
+            System.exit(1);
+        }
         Class.forName(args[0]);
         Connection conn = DriverManager.getConnection(args[1], args[2], args[3]);
         String sql = args[4];
