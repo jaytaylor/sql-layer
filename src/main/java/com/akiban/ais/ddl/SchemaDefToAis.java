@@ -83,6 +83,10 @@ public class SchemaDefToAis {
         return builder.akibanInformationSchema();
     }
 
+    private static CName toCName(TableName tableName) {
+        return new CName(tableName.getSchemaName(), tableName.getTableName());
+    }
+
     /**
      * Converted Akiban FKs into group relationships.
      */
@@ -95,7 +99,7 @@ public class SchemaDefToAis {
             if (table.getParentJoin() == null) {
                 final SortedSet<CName> members = new TreeSet<CName>();
                 final TableName parentName = table.getName();
-                groupMap.put(new CName(parentName.getSchemaName(), parentName.getTableName()), members);
+                groupMap.put(toCName(parentName), members);
             }
         }
         // Already existing in schemaDef
@@ -134,8 +138,7 @@ public class SchemaDefToAis {
                         UserTable parent = ais.getUserTable(refDef.table.getSchema(), refDef.table.getName());
                         if (parent != null) {
                             utDef.parentName = refDef.table;
-                            UserTable root = parent.getGroup().getGroupTable().getRoot();
-                            utDef.groupName = new CName(root.getName().getSchemaName(), root.getName().getTableName());
+                            utDef.groupName = toCName(parent.getGroup().getGroupTable().getRoot().getName());
                         }
                     }
                     if (utDef.groupName != null) {
@@ -275,8 +278,7 @@ public class SchemaDefToAis {
                 maxId = Math.max(index.getIndexId(), maxId);
             }
             UserTable root = groupTable.getRoot();
-            indexIdGenerator.setIdForGroupName(new CName(root.getName().getSchemaName(), root.getName().getTableName()),
-                                               maxId);
+            indexIdGenerator.setIdForGroupName(toCName(root.getName()), maxId);
         }
 
         // loop through user tables and add to AIS
