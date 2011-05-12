@@ -525,12 +525,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                         public void visit(Exchange ex) throws Exception {
                             ex.clear().append(BY_AIS);
                             if(ex.isValueDefined()) {
-                                ex.fetch();
-
-                                byte[] serializedAIS = ex.getValue().getByteArray();
-                                ByteBuffer buffer = ByteBuffer.wrap(serializedAIS);
-                                AkibanInformationSchema tmpAis= new Reader(new MessageSource(buffer)).load();
-                                new Writer(new AISTarget(newAIS)).save(tmpAis);
+                                byte[] storedAIS = ex.fetch().getValue().getByteArray();
+                                ByteBuffer buffer = ByteBuffer.wrap(storedAIS);
+                                new Reader(new MessageSource(buffer)).load(newAIS);
                             }
                         }
                     }, SCHEMA_TREE_NAME);
