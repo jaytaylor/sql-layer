@@ -105,11 +105,6 @@ class PersistitIndexCursor extends CursorStub
         }
     }
 
-    IndexRowType indexRowType()
-    {
-        return indexRowType;
-    }
-
     // For use by this class
 
     private RowHolder<PersistitIndexRow> unsharedRow() throws PersistitException

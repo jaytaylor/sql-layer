@@ -37,6 +37,16 @@ public class Ancestry
         return buffer.toString();
     }
 
+    public int commonSegments(Ancestry that)
+    {
+        int n = Math.min(this.typeIds.length, that.typeIds.length);
+        int s = 0;
+        while (s < n && this.typeIds[s] == that.typeIds[s]) {
+            s++;
+        }
+        return s;
+    }
+
     public static Ancestry of(UserTable table)
     {
         int[] typeIds = new int[table.getDepth() + 1];

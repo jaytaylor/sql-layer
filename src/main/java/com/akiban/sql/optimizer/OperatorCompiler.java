@@ -169,7 +169,10 @@ public abstract class OperatorCompiler
         else {
             IndexKeyRange indexKeyRange = getIndexKeyRange(index, indexConditions);
             PhysicalOperator indexOperator = indexScan_Default(index, false, indexKeyRange);
-            resultOperator = indexLookup_Default(indexOperator, groupTable);
+            UserTable indexTable = (UserTable) index.getTable();
+            UserTableRowType tableType = schema.userTableRowType(indexTable);
+            IndexRowType indexType = tableType.indexRowType(index);
+            resultOperator = lookup_Default(indexOperator, groupTable, indexType, tableType);
             // All selected rows above this need to be output by hkey left
             // segment random access.
             List<RowType> addAncestors = new ArrayList<RowType>();

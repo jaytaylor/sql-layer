@@ -37,7 +37,8 @@ import org.slf4j.LoggerFactory;
 /*
  * A PersistitGroupCursor can be used in three ways:
  * 1) Scan the entire group: This occurs when there is no binding before open().
- * 2) For a given hkey, find the row and its descendents: This occurs when rebind(HKey) is called.
+ * 2) For a given hkey, find the row and its descendents: This occurs when rebind(HKey, true) is called.
+ * 2) For a given hkey, find the row without its descendents: This occurs when rebind(HKey, false) is called.
  * 3) As an hkey-equivalent index: This occurs when IndexKeyRange is provided via constructor. The index restriction is
  *    on columns of the hkey. Find the qualifying rows and all descendents.
  */
@@ -48,11 +49,13 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
     // GroupCursor interface
 
     @Override
-    public void rebind(HKey hKey) {
+    public void rebind(HKey hKey, boolean deep)
+    {
         if (exchange != null) {
             throw new IllegalStateException("can't rebind while PersistitGroupCursor is open");
         }
         this.hKey = (PersistitHKey) hKey;
+        this.hKeyDeep = deep;
     }
 
 
@@ -66,7 +69,8 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
             exchange = adapter.takeExchange(groupTable).clear();
             groupScan =
                 hKeyRange == null && hKey == null ? new FullScan() :
-                hKeyRange == null ? new HKeyAndDescendentsScan(hKey) :
+                hKeyRange == null && hKeyDeep ? new HKeyAndDescendentsScan(hKey) :
+                hKeyRange == null && !hKeyDeep ? new HKeyWithoutDescendentsScan(hKey) :
                 hKeyRange.unbounded() ? new FullScan() : new HKeyRangeAndDescendentsScan(hKeyRange, bindings);
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
@@ -187,6 +191,7 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
     private Exchange exchange;
     private Key controllingHKey;
     private PersistitHKey hKey;
+    private boolean hKeyDeep;
     private final IndexKeyRange hKeyRange;
     private GroupScan groupScan;
 
@@ -245,10 +250,10 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
             }
         }
 
-        HKeyAndDescendentsScan(PersistitHKey singleHKeyRestriction) throws PersistitException
+        HKeyAndDescendentsScan(PersistitHKey hKey) throws PersistitException
         {
-            singleHKeyRestriction.copyTo(exchange.getKey());
-            singleHKeyRestriction.copyTo(controllingHKey);
+            hKey.copyTo(exchange.getKey());
+            hKey.copyTo(controllingHKey);
             if (reverse) {
                 firstDirection = Key.LTEQ;
                 subsequentDirection = Key.LT;
@@ -260,6 +265,30 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
 
         private final Key.Direction firstDirection;
         private final Key.Direction subsequentDirection;
+        private boolean first = true;
+    }
+
+    private class HKeyWithoutDescendentsScan implements GroupScan
+    {
+        @Override
+        public void advance() throws PersistitException, InvalidOperationException
+        {
+            if (first) {
+                exchange.fetch();
+                if (!exchange.getValue().isDefined()) {
+                    close();
+                }
+                first = false;
+            } else {
+                close();
+            }
+        }
+
+        HKeyWithoutDescendentsScan(PersistitHKey hKey) throws PersistitException
+        {
+            hKey.copyTo(exchange.getKey());
+        }
+
         private boolean first = true;
     }
 

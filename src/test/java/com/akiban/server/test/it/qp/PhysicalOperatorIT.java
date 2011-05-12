@@ -85,6 +85,7 @@ public class PhysicalOperatorIT extends ITBase
         itemRowType = schema.userTableRowType(userTable(item));
         customerNameIndexRowType = schema.indexRowType(index(customer, "name"));
         orderSalesmanIndexRowType = schema.indexRowType(index(order, "salesman"));
+        itemOidIndexRowType = schema.indexRowType(index(item, "oid"));
         coi = groupTable(customer);
         db = new NewRow[]{createNewRow(customer, 1L, "xyz"),
                           createNewRow(customer, 2L, "abc"),
@@ -145,21 +146,20 @@ public class PhysicalOperatorIT extends ITBase
         assertEquals("invocations of next()", db.length, nexts);
 
         Cursor executable = cursor(groupScan, adapter);
-        RowBase[] expected = new RowBase[]{
-                row(customerRowType, 1L, "XYZXYZ"),
-                row(orderRowType, 11L, 1L, "ori"),
-                row(itemRowType, 111L, 11L),
-                row(itemRowType, 112L, 11L),
-                row(orderRowType, 12L, 1L, "david"),
-                row(itemRowType, 121L, 12L),
-                row(itemRowType, 122L, 12L),
-                row(customerRowType, 2L, "ABCABC"),
-                row(orderRowType, 21L, 2L, "tom"),
-                row(itemRowType, 211L, 21L),
-                row(itemRowType, 212L, 21L),
-                row(orderRowType, 22L, 2L, "jack"),
-                row(itemRowType, 221L, 22L),
-                row(itemRowType, 222L, 22L)
+        RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "XYZXYZ"),
+                                           row(orderRowType, 11L, 1L, "ori"),
+                                           row(itemRowType, 111L, 11L),
+                                           row(itemRowType, 112L, 11L),
+                                           row(orderRowType, 12L, 1L, "david"),
+                                           row(itemRowType, 121L, 12L),
+                                           row(itemRowType, 122L, 12L),
+                                           row(customerRowType, 2L, "ABCABC"),
+                                           row(orderRowType, 21L, 2L, "tom"),
+                                           row(itemRowType, 211L, 21L),
+                                           row(itemRowType, 212L, 21L),
+                                           row(orderRowType, 22L, 2L, "jack"),
+                                           row(itemRowType, 221L, 22L),
+                                           row(itemRowType, 222L, 22L)
         };
         compareRows(expected, executable);
     }
@@ -170,19 +170,19 @@ public class PhysicalOperatorIT extends ITBase
         PhysicalOperator groupScan = groupScan_Default(coi);
         Cursor executable = cursor(groupScan, adapter);
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
-                                   row(orderRowType, 11L, 1L, "ori"),
-                                   row(itemRowType, 111L, 11L),
-                                   row(itemRowType, 112L, 11L),
-                                   row(orderRowType, 12L, 1L, "david"),
-                                   row(itemRowType, 121L, 12L),
-                                   row(itemRowType, 122L, 12L),
-                                   row(customerRowType, 2L, "abc"),
-                                   row(orderRowType, 21L, 2L, "tom"),
-                                   row(itemRowType, 211L, 21L),
-                                   row(itemRowType, 212L, 21L),
-                                   row(orderRowType, 22L, 2L, "jack"),
-                                   row(itemRowType, 221L, 22L),
-                                   row(itemRowType, 222L, 22L)
+                                           row(orderRowType, 11L, 1L, "ori"),
+                                           row(itemRowType, 111L, 11L),
+                                           row(itemRowType, 112L, 11L),
+                                           row(orderRowType, 12L, 1L, "david"),
+                                           row(itemRowType, 121L, 12L),
+                                           row(itemRowType, 122L, 12L),
+                                           row(customerRowType, 2L, "abc"),
+                                           row(orderRowType, 21L, 2L, "tom"),
+                                           row(itemRowType, 211L, 21L),
+                                           row(itemRowType, 212L, 21L),
+                                           row(orderRowType, 22L, 2L, "jack"),
+                                           row(itemRowType, 221L, 22L),
+                                           row(itemRowType, 222L, 22L)
         };
         compareRows(expected, executable);
     }
@@ -194,12 +194,12 @@ public class PhysicalOperatorIT extends ITBase
         Expression cidEq2 = compare(field(0), EQ, literal(2L));
         PhysicalOperator select = select_HKeyOrdered(groupScan, customerRowType, cidEq2);
         RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc"),
-                                   row(orderRowType, 21L, 2L, "tom"),
-                                   row(itemRowType, 211L, 21L),
-                                   row(itemRowType, 212L, 21L),
-                                   row(orderRowType, 22L, 2L, "jack"),
-                                   row(itemRowType, 221L, 22L),
-                                   row(itemRowType, 222L, 22L)};
+                                           row(orderRowType, 21L, 2L, "tom"),
+                                           row(itemRowType, 211L, 21L),
+                                           row(itemRowType, 212L, 21L),
+                                           row(orderRowType, 22L, 2L, "jack"),
+                                           row(itemRowType, 221L, 22L),
+                                           row(itemRowType, 222L, 22L)};
         compareRows(expected, cursor(select, adapter));
     }
 
@@ -210,17 +210,17 @@ public class PhysicalOperatorIT extends ITBase
         PhysicalOperator flatten = flatten_HKeyOrdered(groupScan, customerRowType, orderRowType);
         RowType flattenType = flatten.rowType();
         RowBase[] expected = new RowBase[]{row(flattenType, 1L, "xyz", 11L, 1L, "ori"),
-                                   row(itemRowType, 111L, 11L),
-                                   row(itemRowType, 112L, 11L),
-                                   row(flattenType, 1L, "xyz", 12L, 1L, "david"),
-                                   row(itemRowType, 121L, 12L),
-                                   row(itemRowType, 122L, 12L),
-                                   row(flattenType, 2L, "abc", 21L, 2L, "tom"),
-                                   row(itemRowType, 211L, 21L),
-                                   row(itemRowType, 212L, 21L),
-                                   row(flattenType, 2L, "abc", 22L, 2L, "jack"),
-                                   row(itemRowType, 221L, 22L),
-                                   row(itemRowType, 222L, 22L)};
+                                           row(itemRowType, 111L, 11L),
+                                           row(itemRowType, 112L, 11L),
+                                           row(flattenType, 1L, "xyz", 12L, 1L, "david"),
+                                           row(itemRowType, 121L, 12L),
+                                           row(itemRowType, 122L, 12L),
+                                           row(flattenType, 2L, "abc", 21L, 2L, "tom"),
+                                           row(itemRowType, 211L, 21L),
+                                           row(itemRowType, 212L, 21L),
+                                           row(flattenType, 2L, "abc", 22L, 2L, "jack"),
+                                           row(itemRowType, 221L, 22L),
+                                           row(itemRowType, 222L, 22L)};
         compareRows(expected, cursor(flatten, adapter));
     }
 
@@ -232,13 +232,13 @@ public class PhysicalOperatorIT extends ITBase
         PhysicalOperator flattenCOI = flatten_HKeyOrdered(flattenCO, flattenCO.rowType(), itemRowType);
         RowType flattenCOIType = flattenCOI.rowType();
         RowBase[] expected = new RowBase[]{row(flattenCOIType, 1L, "xyz", 11L, 1L, "ori", 111L, 11L),
-                                   row(flattenCOIType, 1L, "xyz", 11L, 1L, "ori", 112L, 11L),
-                                   row(flattenCOIType, 1L, "xyz", 12L, 1L, "david", 121L, 12L),
-                                   row(flattenCOIType, 1L, "xyz", 12L, 1L, "david", 122L, 12L),
-                                   row(flattenCOIType, 2L, "abc", 21L, 2L, "tom", 211L, 21L),
-                                   row(flattenCOIType, 2L, "abc", 21L, 2L, "tom", 212L, 21L),
-                                   row(flattenCOIType, 2L, "abc", 22L, 2L, "jack", 221L, 22L),
-                                   row(flattenCOIType, 2L, "abc", 22L, 2L, "jack", 222L, 22L)};
+                                           row(flattenCOIType, 1L, "xyz", 11L, 1L, "ori", 112L, 11L),
+                                           row(flattenCOIType, 1L, "xyz", 12L, 1L, "david", 121L, 12L),
+                                           row(flattenCOIType, 1L, "xyz", 12L, 1L, "david", 122L, 12L),
+                                           row(flattenCOIType, 2L, "abc", 21L, 2L, "tom", 211L, 21L),
+                                           row(flattenCOIType, 2L, "abc", 21L, 2L, "tom", 212L, 21L),
+                                           row(flattenCOIType, 2L, "abc", 22L, 2L, "jack", 221L, 22L),
+                                           row(flattenCOIType, 2L, "abc", 22L, 2L, "jack", 222L, 22L)};
         compareRows(expected, cursor(flattenCOI, adapter));
     }
 
@@ -270,82 +270,84 @@ public class PhysicalOperatorIT extends ITBase
     public void testIndexLookup()
     {
         PhysicalOperator indexScan = indexScan_Default(index(order, "salesman"));
-        PhysicalOperator indexLookup = indexLookup_Default(indexScan,
-                                                           coi);
+        PhysicalOperator lookup = lookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType);
         RowBase[] expected = new RowBase[]{row(orderRowType, 12L, 1L, "david"),
-                                   row(itemRowType, 121L, 12L),
-                                   row(itemRowType, 122L, 12L),
-                                   row(orderRowType, 22L, 2L, "jack"),
-                                   row(itemRowType, 221L, 22L),
-                                   row(itemRowType, 222L, 22L),
-                                   row(orderRowType, 11L, 1L, "ori"),
-                                   row(itemRowType, 111L, 11L),
-                                   row(itemRowType, 112L, 11L),
-                                   row(orderRowType, 21L, 2L, "tom"),
-                                   row(itemRowType, 211L, 21L),
-                                   row(itemRowType, 212L, 21L)};
-        compareRows(expected, cursor(indexLookup, adapter));
+                                           row(itemRowType, 121L, 12L),
+                                           row(itemRowType, 122L, 12L),
+                                           row(orderRowType, 22L, 2L, "jack"),
+                                           row(itemRowType, 221L, 22L),
+                                           row(itemRowType, 222L, 22L),
+                                           row(orderRowType, 11L, 1L, "ori"),
+                                           row(itemRowType, 111L, 11L),
+                                           row(itemRowType, 112L, 11L),
+                                           row(orderRowType, 21L, 2L, "tom"),
+                                           row(itemRowType, 211L, 21L),
+                                           row(itemRowType, 212L, 21L)};
+        compareRows(expected, cursor(lookup, adapter));
     }
 
     @Test
     public void testIndexLookupWithOneAncestor()
     {
         PhysicalOperator indexScan = indexScan_Default(index(order, "salesman"));
-        PhysicalOperator indexLookup = indexLookup_Default(indexScan, coi);
-        PhysicalOperator exhume = ancestorLookup_Default(indexLookup, coi, orderRowType, Arrays.asList(customerRowType));
+        PhysicalOperator lookup = lookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType);
+        PhysicalOperator ancestorLookup = ancestorLookup_Default(lookup,
+                                                                 coi,
+                                                                 orderRowType,
+                                                                 Arrays.asList(customerRowType));
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
-                                   row(orderRowType, 12L, 1L, "david"),
-                                   row(itemRowType, 121L, 12L),
-                                   row(itemRowType, 122L, 12L),
-                                   row(customerRowType, 2L, "abc"),
-                                   row(orderRowType, 22L, 2L, "jack"),
-                                   row(itemRowType, 221L, 22L),
-                                   row(itemRowType, 222L, 22L),
-                                   row(customerRowType, 1L, "xyz"),
-                                   row(orderRowType, 11L, 1L, "ori"),
-                                   row(itemRowType, 111L, 11L),
-                                   row(itemRowType, 112L, 11L),
-                                   row(customerRowType, 2L, "abc"),
-                                   row(orderRowType, 21L, 2L, "tom"),
-                                   row(itemRowType, 211L, 21L),
-                                   row(itemRowType, 212L, 21L)};
-        compareRows(expected, cursor(exhume, adapter));
+                                           row(orderRowType, 12L, 1L, "david"),
+                                           row(itemRowType, 121L, 12L),
+                                           row(itemRowType, 122L, 12L),
+                                           row(customerRowType, 2L, "abc"),
+                                           row(orderRowType, 22L, 2L, "jack"),
+                                           row(itemRowType, 221L, 22L),
+                                           row(itemRowType, 222L, 22L),
+                                           row(customerRowType, 1L, "xyz"),
+                                           row(orderRowType, 11L, 1L, "ori"),
+                                           row(itemRowType, 111L, 11L),
+                                           row(itemRowType, 112L, 11L),
+                                           row(customerRowType, 2L, "abc"),
+                                           row(orderRowType, 21L, 2L, "tom"),
+                                           row(itemRowType, 211L, 21L),
+                                           row(itemRowType, 212L, 21L)};
+        compareRows(expected, cursor(ancestorLookup, adapter));
     }
 
     @Test
     public void testIndexLookupWithTwoAncestors()
     {
         PhysicalOperator indexScan = indexScan_Default(index(item, "oid"));
-        PhysicalOperator indexLookup = indexLookup_Default(indexScan, coi);
-        PhysicalOperator exhume = ancestorLookup_Default(indexLookup,
-                                                         coi,
-                                                         itemRowType,
-                                                         Arrays.asList(customerRowType, orderRowType));
+        PhysicalOperator lookup = lookup_Default(indexScan, coi, itemOidIndexRowType, itemRowType);
+        PhysicalOperator ancestorLookup = ancestorLookup_Default(lookup,
+                                                                 coi,
+                                                                 itemRowType,
+                                                                 Arrays.asList(customerRowType, orderRowType));
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
-                                   row(orderRowType, 11L, 1L, "ori"),
-                                   row(itemRowType, 111L, 11L),
-                                   row(customerRowType, 1L, "xyz"),
-                                   row(orderRowType, 11L, 1L, "ori"),
-                                   row(itemRowType, 112L, 11L),
-                                   row(customerRowType, 1L, "xyz"),
-                                   row(orderRowType, 12L, 1L, "david"),
-                                   row(itemRowType, 121L, 12L),
-                                   row(customerRowType, 1L, "xyz"),
-                                   row(orderRowType, 12L, 1L, "david"),
-                                   row(itemRowType, 122L, 12L),
-                                   row(customerRowType, 2L, "abc"),
-                                   row(orderRowType, 21L, 2L, "tom"),
-                                   row(itemRowType, 211L, 21L),
-                                   row(customerRowType, 2L, "abc"),
-                                   row(orderRowType, 21L, 2L, "tom"),
-                                   row(itemRowType, 212L, 21L),
-                                   row(customerRowType, 2L, "abc"),
-                                   row(orderRowType, 22L, 2L, "jack"),
-                                   row(itemRowType, 221L, 22L),
-                                   row(customerRowType, 2L, "abc"),
-                                   row(orderRowType, 22L, 2L, "jack"),
-                                   row(itemRowType, 222L, 22L)};
-        compareRows(expected, cursor(exhume, adapter));
+                                           row(orderRowType, 11L, 1L, "ori"),
+                                           row(itemRowType, 111L, 11L),
+                                           row(customerRowType, 1L, "xyz"),
+                                           row(orderRowType, 11L, 1L, "ori"),
+                                           row(itemRowType, 112L, 11L),
+                                           row(customerRowType, 1L, "xyz"),
+                                           row(orderRowType, 12L, 1L, "david"),
+                                           row(itemRowType, 121L, 12L),
+                                           row(customerRowType, 1L, "xyz"),
+                                           row(orderRowType, 12L, 1L, "david"),
+                                           row(itemRowType, 122L, 12L),
+                                           row(customerRowType, 2L, "abc"),
+                                           row(orderRowType, 21L, 2L, "tom"),
+                                           row(itemRowType, 211L, 21L),
+                                           row(customerRowType, 2L, "abc"),
+                                           row(orderRowType, 21L, 2L, "tom"),
+                                           row(itemRowType, 212L, 21L),
+                                           row(customerRowType, 2L, "abc"),
+                                           row(orderRowType, 22L, 2L, "jack"),
+                                           row(itemRowType, 221L, 22L),
+                                           row(customerRowType, 2L, "abc"),
+                                           row(orderRowType, 22L, 2L, "jack"),
+                                           row(itemRowType, 222L, 22L)};
+        compareRows(expected, cursor(ancestorLookup, adapter));
     }
 
     @Test
@@ -369,12 +371,28 @@ public class PhysicalOperatorIT extends ITBase
         IndexBound tom = indexBound(userTable(order), row(order, 2, "tom"), columnSelector(idxOrderSalesman));
         IndexKeyRange matchTom = indexKeyRange(tom, true, tom, true);
         PhysicalOperator indexScan = indexScan_Default(idxOrderSalesman, false, matchTom);
-        PhysicalOperator indexLookup = indexLookup_Default(indexScan, coi);
+        PhysicalOperator lookup = lookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType);
         RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
-                                   row(itemRowType, 211L, 21L),
-                                   row(itemRowType, 212L, 21L)};
-        compareRows(expected, cursor(indexLookup, adapter));
+                                           row(itemRowType, 211L, 21L),
+                                           row(itemRowType, 212L, 21L)};
+        compareRows(expected, cursor(lookup, adapter));
 
+    }
+
+    @Test
+    public void testAncestorLookupAfterIndexScan()
+    {
+        // Find customers associated with salesman tom
+        Index idxOrderSalesman = index(order, "salesman");
+        IndexBound tom = indexBound(userTable(order), row(order, 2, "tom"), columnSelector(idxOrderSalesman));
+        IndexKeyRange matchTom = indexKeyRange(tom, true, tom, true);
+        PhysicalOperator indexScan = indexScan_Default(idxOrderSalesman, false, matchTom);
+        PhysicalOperator ancestorLookup = ancestorLookup_Default(indexScan,
+                                                                 coi,
+                                                                 orderSalesmanIndexRowType,
+                                                                 Arrays.asList(customerRowType));
+        RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc")};
+        compareRows(expected, cursor(ancestorLookup, adapter));
     }
 
 /*
@@ -540,6 +558,7 @@ public class PhysicalOperatorIT extends ITBase
     private RowType itemRowType;
     private IndexRowType customerNameIndexRowType;
     private IndexRowType orderSalesmanIndexRowType;
+    private IndexRowType itemOidIndexRowType;
     private GroupTable coi;
     private Schema schema;
     private NewRow[] db;

@@ -44,6 +44,11 @@ public class IndexRowType extends RowType
 
     // IndexRowType interface
 
+    public UserTableRowType tableType()
+    {
+        return tableType;
+    }
+
     public IndexKeyType keyType()
     {
         return keyType;
@@ -54,15 +59,17 @@ public class IndexRowType extends RowType
         return index;
     }
 
-    public IndexRowType(Schema schema, Index index)
+    public IndexRowType(Schema schema, UserTableRowType tableType, Index index)
     {
         super(schema, schema.nextTypeId(), null);
+        this.tableType = tableType;
         this.index = index;
         this.keyType = new IndexKeyType(schema, index);
     }
 
     // Object state
 
+    private final UserTableRowType tableType;
     private final Index index;
     private final IndexKeyType keyType;
 }

@@ -61,17 +61,25 @@ public class API
         return new GroupScan_Default(groupTable, reverse, limit, null);
     }
 
-    public static PhysicalOperator indexLookup_Default(PhysicalOperator inputOperator,
-                                                       GroupTable groupTable)
+    public static PhysicalOperator lookup_Default(PhysicalOperator inputOperator,
+                                                  GroupTable groupTable,
+                                                  RowType inputRowType,
+                                                  RowType outputRowType)
     {
-        return indexLookup_Default(inputOperator, groupTable, NO_LIMIT);
+        return lookup_Default(inputOperator, groupTable, inputRowType, outputRowType, NO_LIMIT);
     }
 
-    public static PhysicalOperator indexLookup_Default(PhysicalOperator inputOperator,
-                                                       GroupTable groupTable,
-                                                       Limit limit)
+    public static PhysicalOperator lookup_Default(PhysicalOperator inputOperator,
+                                                  GroupTable groupTable,
+                                                  RowType inputRowType,
+                                                  RowType outputRowType,
+                                                  Limit limit)
     {
-        return new IndexLookup_Default(inputOperator, groupTable, limit);
+        return new Lookup_Default(inputOperator,
+                                  groupTable,
+                                  inputRowType,
+                                  outputRowType,
+                                  limit);
     }
 
     public static PhysicalOperator ancestorLookup_Default(PhysicalOperator inputOperator,
@@ -80,6 +88,15 @@ public class API
                                                           List<RowType> ancestorTypes)
     {
         return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes);
+/*
+        assert ancestorTypes.size() == 1;
+        return new Lookup_Default(inputOperator,
+                                  groupTable,
+                                  rowType,
+                                  ancestorTypes.get(0),
+                                  false,
+                                  NO_LIMIT);
+*/
     }
 
     public static PhysicalOperator indexScan_Default(Index index)
