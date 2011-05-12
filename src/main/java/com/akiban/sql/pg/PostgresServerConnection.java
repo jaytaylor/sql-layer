@@ -26,6 +26,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
+import com.akiban.util.Tap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +43,9 @@ import java.util.*;
 public class PostgresServerConnection implements Runnable
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresServerConnection.class);
+
+    private final static Tap parserTap = Tap.add(new Tap.Count("sql: parse"));
+    private final static Tap optimizerTap = Tap.add(new Tap.Count("sql: optimize"));
 
     private PostgresServer server;
     private boolean running = false, ignoreUntilSync = false;
@@ -114,7 +118,9 @@ public class PostgresServerConnection implements Runnable
         }
     }
 
-    protected void topLevel() throws IOException {
+    protected enum ErrorMode { NONE, SIMPLE, EXTENDED };
+
+    protected void topLevel() throws IOException, StandardException {
         logger.info("Connect from {}" + socket.getRemoteSocketAddress());
         messenger.readMessage(false);
         processStartupMessage();
@@ -125,31 +131,37 @@ public class PostgresServerConnection implements Runnable
                     continue;
                 ignoreUntilSync = false;
             }
+            ErrorMode errorMode = ErrorMode.NONE;
             try {
                 switch (type) {
                 case -1:                                    // EOF
                     stop();
                     break;
+                case PostgresMessenger.SYNC_TYPE:
+                    readyForQuery();
+                    break;
                 case PostgresMessenger.PASSWORD_MESSAGE_TYPE:
                     processPasswordMessage();
                     break;
                 case PostgresMessenger.QUERY_TYPE:
+                    errorMode = ErrorMode.SIMPLE;
                     processQuery();
                     break;
                 case PostgresMessenger.PARSE_TYPE:
+                    errorMode = ErrorMode.EXTENDED;
                     processParse();
                     break;
                 case PostgresMessenger.BIND_TYPE:
+                    errorMode = ErrorMode.EXTENDED;
                     processBind();
                     break;
                 case PostgresMessenger.DESCRIBE_TYPE:
+                    errorMode = ErrorMode.EXTENDED;
                     processDescribe();
                     break;
                 case PostgresMessenger.EXECUTE_TYPE:
+                    errorMode = ErrorMode.EXTENDED;
                     processExecute();
-                    break;
-                case PostgresMessenger.SYNC_TYPE:
-                    processSync();
                     break;
                 case PostgresMessenger.CLOSE_TYPE:
                     processClose();
@@ -163,18 +175,30 @@ public class PostgresServerConnection implements Runnable
             }
             catch (StandardException ex) {
                 logger.warn("Error in query", ex);
-                messenger.beginMessage(PostgresMessenger.ERROR_RESPONSE_TYPE);
-                messenger.write('S');
-                messenger.writeString("ERROR");
-                // TODO: Could dummy up an SQLSTATE, etc.
-                messenger.write('M');
-                messenger.writeString(ex.getMessage());
-                messenger.write(0);
-                messenger.sendMessage(true);
-                ignoreUntilSync = true;
+                if (errorMode == ErrorMode.NONE) throw ex;
+                {
+                    messenger.beginMessage(PostgresMessenger.ERROR_RESPONSE_TYPE);
+                    messenger.write('S');
+                    messenger.writeString("ERROR");
+                    // TODO: Could dummy up an SQLSTATE, etc.
+                    messenger.write('M');
+                    messenger.writeString(ex.getMessage());
+                    messenger.write(0);
+                    messenger.sendMessage(true);
+                }
+                if (errorMode == ErrorMode.EXTENDED)
+                    ignoreUntilSync = true;
+                else
+                    readyForQuery();
             }
         }
         server.removeConnection(pid);
+    }
+
+    protected void readyForQuery() throws IOException {
+        messenger.beginMessage(PostgresMessenger.READY_FOR_QUERY_TYPE);
+        messenger.writeByte('I'); // Idle ('T' -> xact open; 'E' -> xact abort)
+        messenger.sendMessage(true);
     }
 
     protected void processStartupMessage() throws IOException {
@@ -266,11 +290,7 @@ public class PostgresServerConnection implements Runnable
             messenger.writeInt(secret);
             messenger.sendMessage();
         }
-        {
-            messenger.beginMessage(PostgresMessenger.READY_FOR_QUERY_TYPE);
-            messenger.writeByte('I'); // Idle ('T' -> xact open; 'E' -> xact abort)
-            messenger.sendMessage(true);
-        }
+        readyForQuery();
     }
 
     // ODBC driver sends this at the start; returning no rows is fine (and normal).
@@ -279,41 +299,70 @@ public class PostgresServerConnection implements Runnable
     protected void processQuery() throws IOException, StandardException {
         String sql = messenger.readString();
         logger.info("Query: {}", sql);
-        if (!sql.equals(ODBC_LO_TYPE_QUERY)) {
-            StatementNode stmt = parser.parseStatement(sql);
-            if (!(stmt instanceof CursorNode))
-                throw new StandardException("Not a SELECT");
-            PostgresStatement pstmt = compiler.compile((CursorNode)stmt, null);
-            pstmt.sendRowDescription(messenger);
-            int nrows = pstmt.execute(messenger, session, -1);
+        if (sql.equals(ODBC_LO_TYPE_QUERY)) {
+            messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+            messenger.writeString("SELECT");
+            messenger.sendMessage();
         }
-        messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
-        messenger.writeString("SELECT");
-        messenger.sendMessage();
-        messenger.beginMessage(PostgresMessenger.READY_FOR_QUERY_TYPE);
-        messenger.writeByte('I');
-        messenger.sendMessage(true);
+        else {
+            List<StatementNode> stmts;
+            try {
+                parserTap.in();
+                stmts = parser.parseStatements(sql);
+            }
+            finally {
+                parserTap.out();
+            }
+            for (StatementNode stmt : stmts) {
+                if (!(stmt instanceof CursorNode))
+                    throw new StandardException("Not a SELECT");
+                PostgresStatement pstmt;
+                try {
+                    optimizerTap.in();
+                    pstmt = compiler.compile((CursorNode)stmt, null);
+                }
+                finally {
+                    optimizerTap.out();
+                }
+                pstmt.sendRowDescription(messenger);
+                int nrows = pstmt.execute(messenger, session, -1);
+
+                messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+                messenger.writeString("SELECT");
+                messenger.sendMessage();
+            }
+        }
+        readyForQuery();
     }
 
     protected void processParse() throws IOException, StandardException {
         String stmtName = messenger.readString();
         String sql = messenger.readString();
-        // TODO: $n might be out of order.
-        sql = sql.replaceAll("\\$.", "?");
         short nparams = messenger.readShort();
         int[] paramTypes = new int[nparams];
         for (int i = 0; i < nparams; i++)
             paramTypes[i] = messenger.readInt();
         logger.info("Parse: {}", sql);
 
-        StatementNode stmt = parser.parseStatement(sql);
-        if (stmt instanceof CursorNode) {
-            PostgresStatement pstmt = compiler.compile((CursorNode)stmt, paramTypes);
-            preparedStatements.put(stmtName, pstmt);
+        StatementNode stmt;
+        try {
+            parserTap.in();
+            stmt = parser.parseStatement(sql);
         }
-        else
+        finally {
+            parserTap.out();
+        }
+        if (!(stmt instanceof CursorNode))
             throw new StandardException("Not a SELECT");
-
+        PostgresStatement pstmt;
+        try {
+            optimizerTap.in();
+            pstmt = compiler.compile((CursorNode)stmt, paramTypes);
+        }
+        finally {
+            optimizerTap.out();
+        }
+        preparedStatements.put(stmtName, pstmt);
         messenger.beginMessage(PostgresMessenger.PARSE_COMPLETE_TYPE);
         messenger.sendMessage();
     }
@@ -399,12 +448,6 @@ public class PostgresServerConnection implements Runnable
         messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
         messenger.writeString("SELECT");
         messenger.sendMessage();
-    }
-
-    protected void processSync() throws IOException {
-        messenger.beginMessage(PostgresMessenger.READY_FOR_QUERY_TYPE);
-        messenger.writeByte('I'); // Idle ('T' -> xact open; 'E' -> xact abort)
-        messenger.sendMessage(true);
     }
 
     protected void processClose() throws IOException {
