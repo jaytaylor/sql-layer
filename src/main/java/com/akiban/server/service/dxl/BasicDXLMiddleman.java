@@ -23,10 +23,10 @@ import com.akiban.server.service.session.Session;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public final class BasicDXLMiddleman {
-    private static final Session.MapKey<CursorId,ScanData> CURSORS_TO_SCANDATA = Session.MapKey.mapNamed("CURSORS_TO_SCANDATA");
-
     static final class ScanData {
         private final Cursor cursor;
         private final byte[] scanColumns;
@@ -62,18 +62,20 @@ public final class BasicDXLMiddleman {
     }
 
     static ScanData putScanData(Session session, CursorId cursorId, ScanData scanData) {
-        return session.put(CURSORS_TO_SCANDATA, cursorId, scanData);
+        return openScansMap.put(cursorId, scanData);
     }
 
     static ScanData getScanData(Session session, CursorId cursorId) {
-        return session.get(CURSORS_TO_SCANDATA, cursorId);
+        return openScansMap.get(cursorId);
     }
 
     static ScanData removeScanData(Session session, CursorId cursorId) {
-        return session.remove(CURSORS_TO_SCANDATA, cursorId);
+        return openScansMap.remove(cursorId);
     }
 
     static Map<CursorId,ScanData> getScanDataMap(Session session) {
-        return session.get(CURSORS_TO_SCANDATA);
+        return openScansMap;
     }
+
+    private static final ConcurrentMap<CursorId,ScanData> openScansMap = new ConcurrentHashMap<CursorId, ScanData>();
 }

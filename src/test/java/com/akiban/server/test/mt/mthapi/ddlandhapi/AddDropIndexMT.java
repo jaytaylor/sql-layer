@@ -26,6 +26,7 @@ import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.OldAISException;
+import com.akiban.server.api.dml.scan.TableDefinitionChangedException;
 import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.test.mt.mthapi.base.HapiMTBase;
 import com.akiban.server.test.mt.mthapi.base.HapiReadThread;
@@ -35,8 +36,6 @@ import com.akiban.server.test.mt.mthapi.base.sais.SaisBuilder;
 import com.akiban.server.test.mt.mthapi.base.sais.SaisTable;
 import com.akiban.server.service.session.Session;
 import com.akiban.util.ThreadlessRandom;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.Test;
 
 import java.util.Collection;
@@ -68,7 +67,10 @@ public final class AddDropIndexMT extends HapiMTBase {
             protected void validateErrorResponse(HapiGetRequest request, Throwable exception) throws UnexpectedException {
                 if (exception instanceof HapiRequestException) {
                     Throwable cause = exception.getCause();
-                    if (cause != null && cause.getClass().equals(OldAISException.class)) {
+                    if (cause != null && (
+                            cause.getClass().equals(OldAISException.class)
+                            || cause.getClass().equals(TableDefinitionChangedException.class))
+                    ) {
                         return; // expected
                     }
                 }

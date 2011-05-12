@@ -23,6 +23,7 @@ import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.OldAISException;
+import com.akiban.server.api.dml.scan.TableDefinitionChangedException;
 import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.test.mt.mthapi.base.HapiMTBase;
 import com.akiban.server.test.mt.mthapi.base.HapiRequestStruct;
@@ -102,7 +103,10 @@ public final class AddDropTableMT extends HapiMTBase {
         protected static boolean causeIsOldAIS(Throwable exception) {
             if (exception instanceof HapiRequestException) {
                 Throwable cause = exception.getCause();
-                if (cause != null && cause.getClass().equals(OldAISException.class)) {
+                if (cause != null && (
+                        cause.getClass().equals(OldAISException.class)
+                        || cause.getClass().equals(TableDefinitionChangedException.class))
+                ) {
                     return true; // expected
                 }
             }
