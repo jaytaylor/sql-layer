@@ -203,8 +203,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         final TableName tableName = new TableName(SCHEMA, TABLE);
         Index nameIndex = ddl().getUserTable(session(), tableName).getIndex("name");
         Index ageIndex = ddl().getUserTable(session(), tableName).getIndex("age");
-        assertTrue("age index's ID relative to name's", ageIndex.getIndexId() == nameIndex.getIndexId() + 1);
         final int nameIndexId = nameIndex.getIndexId();
+        assertTrue("age index's ID relative to name's", ageIndex.getIndexId() != nameIndexId);
 
         TimedCallable<List<NewRow>> scanCallable
                 = new DelayScanCallableBuilder(aisGeneration(), tableId, nameIndexId)
@@ -227,11 +227,6 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
         TimedResult<List<NewRow>> scanResult = scanFuture.get();
         TimedResult<Void> dropIndexResult = dropIndexFuture.get();
-
-        assertEquals("age's index ID",
-                nameIndexId,
-                ddl().getUserTable(session(), tableName).getIndex("age").getIndexId().intValue()
-        );
 
         new TimePointsComparison(scanResult, dropIndexResult).verify(
                 "SCAN: START",
