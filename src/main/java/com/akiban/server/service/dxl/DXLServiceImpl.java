@@ -108,5 +108,6 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     
     @Override
     public void crash() throws Exception {
+        BasicDXLMiddleman.destroy();
     }
 }
