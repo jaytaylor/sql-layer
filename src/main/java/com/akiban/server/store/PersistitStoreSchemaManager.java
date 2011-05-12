@@ -126,6 +126,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     static final int MAX_ORDINAL_STORAGE_SIZE = 5;
 
+    private static final String COMMIT_AIS_ERROR_MSG = "INTERNAL INCONSISTENCY, error while building RowDefCache";
+
     private interface AISChangeCallback {
         public void beforeCommit(Exchange schemaExchange, TreeService treeService) throws Exception;
     }
@@ -554,6 +556,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     private void commitAIS(final AkibanInformationSchema newAis, final long timestamp) {
+        // None of this code "can fail" because it is being ran inside of a Persistit commit. Fail LOUDLY.
         try {
             final RowDefCache rowDefCache = serviceManager.getStore().getRowDefCache();
             rowDefCache.clear();
@@ -564,8 +567,11 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             this.ais = newAis;
         }
         catch(RuntimeException e) {
-            // None of this code "can fail" because it is being ran inside of a Persistit commit. Fail LOUDLY.
-            LOG.error("INTERNAL INCONSISTENCY, exception while rebuilding RowDefCache", e);
+            LOG.error(COMMIT_AIS_ERROR_MSG, e);
+            throw e;
+        }
+        catch(Error e) {
+            LOG.error(COMMIT_AIS_ERROR_MSG, e);
             throw e;
         }
     }
