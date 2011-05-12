@@ -442,9 +442,11 @@ public class OperatorCompiler
             }
             BinaryOperatorNode binop = (BinaryOperatorNode)condition;
             if ((matchColumnReference(column, binop.getLeftOperand()) &&
-                 (binop.getRightOperand() instanceof ConstantNode)) ||
+                 ((binop.getRightOperand() instanceof ConstantNode) ||
+                  (binop.getRightOperand() instanceof ParameterNode))) ||
                 (matchColumnReference(column, binop.getRightOperand()) &&
-                 (binop.getLeftOperand() instanceof ConstantNode))) {
+                 ((binop.getLeftOperand() instanceof ConstantNode) ||
+                  (binop.getLeftOperand() instanceof ParameterNode)))) {
                 if (result == null)
                     result = new HashSet<BinaryOperatorNode>();
                 result.add(binop);

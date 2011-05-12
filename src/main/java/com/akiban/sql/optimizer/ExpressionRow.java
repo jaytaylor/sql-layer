@@ -51,4 +51,21 @@ public class ExpressionRow extends AbstractRow
         throw new UnsupportedOperationException();        
     }
 
+    /* Object */
+
+    @Override
+    public String toString() {
+        StringBuilder str = new StringBuilder();
+        str.append(getClass().getSimpleName());
+        str.append('[');
+        int nf = rowType().nFields();
+        for (int i = 0; i < nf; i++) {
+            if (i > 0) str.append(", ");
+            if (expressions[i] != null)
+                str.append(expressions[i]);
+        }
+        str.append(']');
+        return str.toString();
+    }
+
 }

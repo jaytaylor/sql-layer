@@ -24,6 +24,7 @@ import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.StoreAdapter;
+import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.service.session.Session;
@@ -37,8 +38,6 @@ import java.io.IOException;
  */
 public class PostgresOperatorStatement extends PostgresStatement
 {
-    private static final Bindings EMPTY_BINDINGS = new ArrayBindings(0);
-
     private StoreAdapter store;
     private PhysicalOperator resultOperator;
     private RowType resultRowType;
@@ -100,7 +99,7 @@ public class PostgresOperatorStatement extends PostgresStatement
     }
 
     protected Bindings getBindings() {
-        return EMPTY_BINDINGS;
+        return UndefBindings.only();
     }
 
     /** Only needed in the case where a statement has parameters or the client
