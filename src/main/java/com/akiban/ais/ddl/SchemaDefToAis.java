@@ -26,6 +26,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.TableName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,6 +84,10 @@ public class SchemaDefToAis {
         return builder.akibanInformationSchema();
     }
 
+    private static CName toCName(TableName tableName) {
+        return new CName(tableName.getSchemaName(), tableName.getTableName());
+    }
+
     /**
      * Converted Akiban FKs into group relationships.
      */
@@ -94,7 +100,7 @@ public class SchemaDefToAis {
             if (table.getParentJoin() == null) {
                 final SortedSet<CName> members = new TreeSet<CName>();
                 final TableName parentName = table.getName();
-                groupMap.put(new CName(parentName.getSchemaName(), parentName.getTableName()), members);
+                groupMap.put(toCName(parentName), members);
             }
         }
         // Already existing in schemaDef
@@ -132,7 +138,8 @@ public class SchemaDefToAis {
                         AkibanInformationSchema ais = builder.akibanInformationSchema();
                         UserTable parent = ais.getUserTable(refDef.table.getSchema(), refDef.table.getName());
                         if (parent != null) {
-                            utDef.groupName = utDef.parentName = refDef.table;
+                            utDef.parentName = refDef.table;
+                            utDef.groupName = toCName(parent.getGroup().getGroupTable().getRoot().getName());
                         }
                     }
                     if (utDef.groupName != null) {
@@ -168,6 +175,10 @@ public class SchemaDefToAis {
                     groupPerTable.put(uTable, group);
                 }
             }
+        }
+
+        public void setIdForGroupName(CName groupName, int id) {
+            idPerGroup.put(groupName, id);
         }
 
         public int allocateId(CName uTableName) {
@@ -259,6 +270,14 @@ public class SchemaDefToAis {
         final AkibanInformationSchema ais = builder.akibanInformationSchema();
         builder.setTableIdOffset(computeTableIdOffset(ais));
         IdGenerator indexIdGenerator = new IdGenerator(schemaDef.getGroupMap());
+
+        // Index IDs must be unique in a given group. For now, find max for all
+        // groups. Really only need to find max for any groups in the SchemaDef.
+        for(Group group : ais.getGroups().values()) {
+            final UserTable root = group.getGroupTable().getRoot();
+            final int maxId = findMaxIndexIDInGroup(ais, group);
+            indexIdGenerator.setIdForGroupName(toCName(root.getName()), maxId);
+        }
 
         // loop through user tables and add to AIS
         for (UserTableDef utDef : schemaDef.getUserTableMap().values()) {
@@ -423,5 +442,20 @@ public class SchemaDefToAis {
 
     private String groupTableName(final CName group) {
         return "_akiban_" + group.getName();
+    }
+
+    /**
+     * Find the maximum index ID from all of the user tables within the given group.
+     */
+    public static int findMaxIndexIDInGroup(AkibanInformationSchema ais, Group group) {
+        int maxId = Integer.MIN_VALUE;
+        for(UserTable table : ais.getUserTables().values()) {
+            if(table.getGroup().equals(group)) {
+                for(Index index : table.getIndexesIncludingInternal()) {
+                    maxId = Math.max(index.getIndexId(), maxId);
+                }
+            }
+        }
+        return maxId;
     }
 }

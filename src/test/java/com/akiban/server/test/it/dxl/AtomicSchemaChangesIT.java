@@ -212,8 +212,9 @@ public class AtomicSchemaChangesIT extends ITBase
 
     private static final int BUFFER_SIZE = 100000; // 100K
     private static final String PARENT_DDL =
-        "create table `s`.parent (pid int not null key,filler int);";
+        "create table `s`.`parent`(`pid` int NOT NULL, `filler` int, PRIMARY KEY(`pid`)) engine=akibandb";
     private static final String CHILD_DDL =
-        "create table `s`.child (cid int not null key,pid int,constraint __akiban_cp foreign key __akiban_cp(pid) references parent(pid));";
+        "create table `s`.`child`(`cid` int NOT NULL, `pid` int, PRIMARY KEY(`cid`), "+
+            "CONSTRAINT `__akiban_cp` FOREIGN KEY `__akiban_cp`(`pid`) REFERENCES `parent`(`pid`)) engine=akibandb";
     private ByteBuffer expectedAIS;
 }

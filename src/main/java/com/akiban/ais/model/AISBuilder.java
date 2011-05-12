@@ -503,7 +503,7 @@ public class AISBuilder {
 
     }
 
-    private void generateGroupTableIndexes(Group group) {
+    public void generateGroupTableIndexes(Group group) {
         LOG.debug("generating group table indexes for group " + group);
 
         GroupTable groupTable = group.getGroupTable();
@@ -586,7 +586,7 @@ public class AISBuilder {
         return ais;
     }
 
-    private void generateGroupTableColumns(Group group) {
+    public void generateGroupTableColumns(Group group) {
         LOG.debug("generating group table columns for group " + group);
         // Only generate columns if the group is connected, i.e., there is only
         // one root. Multiple roots means

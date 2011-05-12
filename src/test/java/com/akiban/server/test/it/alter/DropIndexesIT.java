@@ -22,6 +22,7 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.IndexAlterException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
@@ -44,7 +45,7 @@ public final class DropIndexesIT extends AlterTestBase {
         ddl().dropIndexes(session(), null, indexes);
     }
     
-    @Test(expected=IndexAlterException.class) 
+    @Test(expected=NoSuchTableException.class)
     public void dropIndexUnknownTable() throws InvalidOperationException {
         // Attempt to add index to unknown table
         ArrayList<String> indexes = new ArrayList<String>();
@@ -53,7 +54,7 @@ public final class DropIndexesIT extends AlterTestBase {
     }
     
     @Test(expected=IndexAlterException.class)
-    public void dropIndexUnkownIndex() throws InvalidOperationException {
+    public void dropIndexUnknownIndex() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key, name varchar(255)");
         // Attempt to drop unknown index
         ArrayList<String> indexes = new ArrayList<String>();

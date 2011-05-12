@@ -23,12 +23,15 @@ public class TableDefinition {
     private final String tableName;
     private final String ddl;
 
-    public TableDefinition(int tableId, String schemaName,
-            String tableName, String ddl) {
+    public TableDefinition(int tableId, String schemaName, String tableName, String ddl) {
         this.tableId = tableId;
         this.schemaName = schemaName;
         this.tableName = tableName;
         this.ddl = ddl;
+    }
+
+    public TableDefinition(int tableId, TableName name, String ddl) {
+        this(tableId, name.getSchemaName(), name.getTableName(), ddl);
     }
 
     public String getDDL() {
