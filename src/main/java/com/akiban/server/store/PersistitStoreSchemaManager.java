@@ -107,6 +107,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private AtomicLong updateTimestamp = new AtomicLong();
 
+    // 1<<20=1MB: Max currently supported, small enough to allocate up front
     private ByteBuffer byteBuffer = ByteBuffer.allocate(1<<20);
 
     /**
