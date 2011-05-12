@@ -321,6 +321,7 @@ public class OperatorCompiler
         return schema.userTableRowType(table);
     }
 
+    // TODO: Merge with getIndexComparand
     protected Expression getExpression(ValueNode operand, 
                                        Map<UserTable,Integer> fieldOffsets)
             throws StandardException {
@@ -338,7 +339,9 @@ public class OperatorCompiler
                 value = new Long(((Integer)value).intValue());
             return literal(value);
         }
-        // TODO: Parameters: Literals but with later substitution somehow.
+        else if (operand instanceof ParameterNode) {
+            return variable(((ParameterNode)operand).getParameterNumber());
+        }
         else
             throw new StandardException("Unsupported WHERE predicate on non-constant");
     }
@@ -461,7 +464,7 @@ public class OperatorCompiler
     
     // TODO: isConstant could be a method on Expression, including all
     // trees whose leaves are literals.
-    protected static Expression getComparand(ValueNode node, boolean[] isConstant) 
+    protected static Expression getIndexComparand(ValueNode node, boolean[] isConstant) 
             throws StandardException {
         if (node instanceof ConstantNode) {
             isConstant[0] = true;
@@ -498,10 +501,10 @@ public class OperatorCompiler
                 boolean reverse = false;
                 boolean[] isConstant = new boolean[1];
                 if (matchColumnReference(column, condition.getLeftOperand())) {
-                    expr = getComparand(condition.getRightOperand(), isConstant);
+                    expr = getIndexComparand(condition.getRightOperand(), isConstant);
                 }
                 else if (matchColumnReference(column, condition.getRightOperand())) {
-                    expr = getComparand(condition.getLeftOperand(), isConstant);
+                    expr = getIndexComparand(condition.getLeftOperand(), isConstant);
                     reverse = true;
                 }
                 if (expr == null)

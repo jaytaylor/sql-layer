@@ -160,21 +160,29 @@ public class PostgresServerIT extends ITBase
 
     @Parameters
     public static Collection<Object[]> queries() throws Exception {
-        return TestBase.sqlAndExpected(RESOURCE_DIR);
+        return TestBase.sqlAndExpectedAndParams(RESOURCE_DIR);
     }
 
     protected String caseName, sql, expected;
+    protected String[] params;
 
-    public PostgresServerIT(String caseName, String sql, String expected) {
+    public PostgresServerIT(String caseName, String sql, String expected, 
+                            String[] params) {
         this.caseName = caseName;
         this.sql = sql.trim();
         this.expected = expected;
+        this.params = params;
     }
 
     @Test
     public void testQuery() throws Exception {
         StringBuilder data = new StringBuilder();
         PreparedStatement stmt = connection.prepareStatement(sql);
+        if (params != null) {
+            for (int i = 0; i < params.length; i++) {
+                stmt.setString(i + 1, params[i]);
+            }
+        }
         ResultSet rs = stmt.executeQuery();
         ResultSetMetaData md = rs.getMetaData();
         for (int i = 1; i <= md.getColumnCount(); i++) {

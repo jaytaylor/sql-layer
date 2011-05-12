@@ -37,6 +37,8 @@ import java.io.IOException;
  */
 public class PostgresOperatorStatement extends PostgresStatement
 {
+    private static final Bindings EMPTY_BINDINGS = new ArrayBindings(0);
+
     private StoreAdapter store;
     private PhysicalOperator resultOperator;
     private RowType resultRowType;
@@ -56,7 +58,7 @@ public class PostgresOperatorStatement extends PostgresStatement
     
     public int execute(PostgresMessenger messenger, Session session, int maxrows)
             throws IOException, StandardException {
-        Bindings bindings = new ArrayBindings(0);
+        Bindings bindings = getBindings();
         Cursor cursor = API.cursor(resultOperator, store);
         int nrows = 0;
         try {
@@ -95,6 +97,67 @@ public class PostgresOperatorStatement extends PostgresStatement
             cursor.close();
         }
         return nrows;
+    }
+
+    protected Bindings getBindings() {
+        return EMPTY_BINDINGS;
+    }
+
+    /** Only needed in the case where a statement has parameters or the client
+     * specifies that some results should be in binary. */
+    static class BoundStatement extends PostgresOperatorStatement {
+        private Bindings bindings;
+        private boolean[] columnBinary; // Is this column binary format?
+        private boolean defaultColumnBinary;
+
+        public BoundStatement(StoreAdapter store,
+                              PhysicalOperator resultOperator,
+                              RowType resultRowType,
+                              List<Column> resultColumns,
+                              int[] resultColumnOffsets,
+                              Bindings bindings,
+                              boolean[] columnBinary, boolean defaultColumnBinary) {
+            super(store, 
+                  resultOperator, resultRowType, resultColumns, resultColumnOffsets);
+            this.bindings = bindings;
+            this.columnBinary = columnBinary;
+            this.defaultColumnBinary = defaultColumnBinary;
+        }
+
+        @Override
+        public Bindings getBindings() {
+            return bindings;
+        }
+
+        @Override
+        public boolean isColumnBinary(int i) {
+            if ((columnBinary != null) && (i < columnBinary.length))
+                return columnBinary[i];
+            else
+                return defaultColumnBinary;
+        }
+    }
+
+    /** Get a bound version of a predicate by applying given parameters
+     * and requested result formats. */
+    @Override
+    public PostgresStatement getBoundRequest(String[] parameters,
+                                             boolean[] columnBinary, 
+                                             boolean defaultColumnBinary) {
+        if ((parameters == null) && 
+            (columnBinary == null) && (defaultColumnBinary == false))
+            return this;        // Can be reused.
+
+        Bindings bindings = getBindings();
+        if (parameters != null) {
+            ArrayBindings ab = new ArrayBindings(parameters.length);
+            for (int i = 0; i < parameters.length; i++)
+                ab.set(i, parameters[i]);
+            bindings = ab;
+        }
+        return new BoundStatement(store, resultOperator, resultRowType, 
+                                  getColumns(), resultColumnOffsets,
+                                  bindings, columnBinary, defaultColumnBinary);
     }
 
 }
