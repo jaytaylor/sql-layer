@@ -124,7 +124,7 @@ public class PostgresMessenger implements DataInput, DataOutput
         int len = dataInput.readInt();
         len -= 4;
         if ((len < 0) || (len > 0x8000))
-            throw new IOException("Implausible message length received.");
+            throw new IOException(String.format("Implausible message length (%d) received.", len));
         byte[] msg = new byte[len];
         dataInput.readFully(msg, 0, len);
         messageInput = new DataInputStream(new ByteArrayInputStream(msg));
