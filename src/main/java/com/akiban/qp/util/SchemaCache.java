@@ -31,6 +31,7 @@ public final class SchemaCache {
     private Schema schema(AkibanInformationSchema ais) {
         synchronized(LOCK) {
             if (this.ais != ais) {
+                this.ais = ais;
                 this.schema = new Schema(ais);
             }
             return schema;
