@@ -36,6 +36,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
+import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
@@ -74,7 +76,7 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
     }
 
     private TableDefinition getTableDef(String schema, String table) throws Exception {
-        return schemaManager.getTableDefinition(session(), schema, table);
+        return schemaManager.getTableDefinition(session(), new TableName(schema, table));
     }
 
     private List<String> getSchemaStringsWithouAIS(boolean withGroupTables) throws Exception {
@@ -108,10 +110,9 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
         assertTablesInSchema(SCHEMA);
     }
 
-    @Test
+    @Test(expected=NoSuchTableException.class)
     public void getUnknownTableDefinition() throws Exception {
-        final TableDefinition def = getTableDef("fooschema", "bartable1");
-        assertNull("TableDefinition is null", def);
+        getTableDef("fooschema", "bartable1");
     }
 
     // Also tests createDef(), but assertTablesInSchema() uses getDef() so try and test first
@@ -396,7 +397,7 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
         for (String name : tableNames) {
             final Table table = ais.getTable(schema, name);
             assertNotNull(schema + "." + name + " in AIS", table);
-            final TableDefinition def = schemaManager.getTableDefinition(session, schema, name);
+            final TableDefinition def = schemaManager.getTableDefinition(session, table.getName());
             assertNotNull(schema + "." + name  + " has definition", def);
             expected.add(name);
         }

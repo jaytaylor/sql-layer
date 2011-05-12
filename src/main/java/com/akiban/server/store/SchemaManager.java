@@ -22,6 +22,7 @@ import java.util.SortedMap;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
+import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.service.session.Session;
 
 public interface SchemaManager {
@@ -74,14 +75,14 @@ public interface SchemaManager {
     void deleteTableDefinition(Session session, String schemaName, String tableName) throws Exception;
 
     /**
-     * Generate a 'create table' DDL statement, in canonical form, for the given table.
+     * Generate a TableDefinition, which includes a canonical 'create table' statement,
+     * schema name, table name, and table ID, for the given table.
      * @param session Session to operate under.
-     * @param schemaName Schema the table is in.
-     * @param tableName The name of the table.
-     * @return Filled in TableDefinition or null if the table does not exist
-     * @throws Exception For an internal error.
+     * @param tableName The name of the requested table.
+     * @return Filled in TableDefinition.
+     * @throws NoSuchTableException If the requested table does not exist.
      */
-    TableDefinition getTableDefinition(Session session, String schemaName, String tableName) throws Exception;
+    TableDefinition getTableDefinition(Session session, TableName tableName) throws NoSuchTableException;
 
     /**
      * Generate a 'create table' DDL statement for each table in the given schema.

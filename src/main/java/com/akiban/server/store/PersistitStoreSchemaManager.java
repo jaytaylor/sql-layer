@@ -46,6 +46,7 @@ import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Type;
+import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.encoding.EncoderFactory;
 import com.akiban.server.service.tree.TreeLink;
 import org.slf4j.Logger;
@@ -333,13 +334,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     @Override
-    public TableDefinition getTableDefinition(Session session, String schemaName, String tableName) throws Exception {
-        final Table table = getAis(session).getTable(new TableName(schemaName, tableName));
+    public TableDefinition getTableDefinition(Session session, TableName tableName) throws NoSuchTableException {
+        final Table table = getAis(session).getTable(tableName);
         if(table == null) {
-            return null;
+            throw new NoSuchTableException(tableName);
         }
         final String ddl = new DDLGenerator().createTable(table);
-        return new TableDefinition(table.getTableId(), schemaName, tableName, ddl);
+        return new TableDefinition(table.getTableId(), tableName, ddl);
     }
 
     @Override
