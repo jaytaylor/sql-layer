@@ -35,24 +35,30 @@ import com.akiban.server.api.dml.NoSuchColumnException;
 import com.akiban.server.api.dml.NoSuchIndexException;
 import com.akiban.server.api.dml.NoSuchRowException;
 import com.akiban.server.api.dml.UnsupportedModificationException;
+import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.CursorIsFinishedException;
 import com.akiban.server.api.dml.scan.CursorIsUnknownException;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.server.util.RowDefNotFoundException;
+
+import java.util.Map;
 
 abstract class ClientAPIBase {
 
     private final Store store;
     private final SchemaManager schemaManager;
     private final ServiceManager serviceManager;
+    private final BasicDXLMiddleman middleman;
 
-    ClientAPIBase() {
+    ClientAPIBase(BasicDXLMiddleman middleman) {
         serviceManager = ServiceManagerImpl.get();
         this.store = serviceManager.getStore();
         this.schemaManager = serviceManager.getSchemaManager();
+        this.middleman = middleman;
     }
 
     final public Store store() {
@@ -138,4 +144,26 @@ abstract class ClientAPIBase {
         return new GenericInvalidOperationException(e);
     }
 
+    BasicDXLMiddleman.ScanData putScanData(Session session, CursorId cursorId, BasicDXLMiddleman.ScanData scanData) {
+        return middleman.putScanData(session, cursorId, scanData);
+    }
+
+    BasicDXLMiddleman.ScanData getScanData(Session session, CursorId cursorId) {
+        return middleman.getScanData(session, cursorId);
+    }
+
+    BasicDXLMiddleman.ScanData removeScanData(Session session, CursorId cursorId) {
+        return middleman.removeScanData(session, cursorId);
+    }
+
+    Map<CursorId,BasicDXLMiddleman.ScanData> getScanDataMap() {
+        return middleman.getScanDataMap();
+    }
+    Map<CursorId,BasicDXLMiddleman.ScanData> getScanDataMap(Session session) {
+        return middleman.getScanDataMap(session);
+    }
+
+    BasicDXLMiddleman middleman() {
+        return middleman;
+    }
 }

@@ -52,8 +52,9 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     @Override
     public void start() throws Exception {
         List<DXLFunctionsHook> hooks = getHooks();
-        DDLFunctions localDdlFunctions = new HookableDDLFunctions(createDDLFunctions(), hooks);
-        DMLFunctions localDmlFunctions = new HookableDMLFunctions(createDMLFunctions(localDdlFunctions), hooks);
+        BasicDXLMiddleman middleman = BasicDXLMiddleman.create();
+        DDLFunctions localDdlFunctions = new HookableDDLFunctions(createDDLFunctions(middleman), hooks);
+        DMLFunctions localDmlFunctions = new HookableDMLFunctions(createDMLFunctions(middleman, localDdlFunctions), hooks);
         synchronized (MONITOR) {
             if (ddlFunctions != null) {
                 throw new ServiceStartupException("service already started");
@@ -63,12 +64,12 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
         }
     }
 
-    DMLFunctions createDMLFunctions(DDLFunctions newlyCreatedDDLF) {
-        return new BasicDMLFunctions(newlyCreatedDDLF);
+    DMLFunctions createDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions newlyCreatedDDLF) {
+        return new BasicDMLFunctions(middleman, newlyCreatedDDLF);
     }
 
-    DDLFunctions createDDLFunctions() {
-        return new BasicDDLFunctions();
+    DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
+        return new BasicDDLFunctions(middleman);
     }
 
     @Override
@@ -79,6 +80,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
             }
             ddlFunctions = null;
             dmlFunctions = null;
+            BasicDXLMiddleman.destroy();
         }
     }
 

@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class BasicDXLMiddleman {
     static final class ScanData {
@@ -61,21 +62,45 @@ public final class BasicDXLMiddleman {
         }
     }
 
-    static ScanData putScanData(Session session, CursorId cursorId, ScanData scanData) {
+    ScanData putScanData(Session session, CursorId cursorId, ScanData scanData) {
         return openScansMap.put(cursorId, scanData);
     }
 
-    static ScanData getScanData(Session session, CursorId cursorId) {
+    ScanData getScanData(Session session, CursorId cursorId) {
         return openScansMap.get(cursorId);
     }
 
-    static ScanData removeScanData(Session session, CursorId cursorId) {
+    ScanData removeScanData(Session session, CursorId cursorId) {
         return openScansMap.remove(cursorId);
     }
 
-    static Map<CursorId,ScanData> getScanDataMap(Session session) {
+    Map<CursorId,ScanData> getScanDataMap() {
+        return openScansMap;
+    }
+    Map<CursorId,ScanData> getScanDataMap(Session session) {
         return openScansMap;
     }
 
-    private static final ConcurrentMap<CursorId,ScanData> openScansMap = new ConcurrentHashMap<CursorId, ScanData>();
+    static BasicDXLMiddleman create() {
+        BasicDXLMiddleman instance = new BasicDXLMiddleman();
+        if (!lastInstance.compareAndSet(null, instance)) {
+            throw new RuntimeException("there is already a BasicDXLMiddleman instance");
+        }
+        return instance;
+    }
+
+    static void destroy() {
+        lastInstance.set(null);
+    }
+
+    static BasicDXLMiddleman last() {
+        return lastInstance.get();
+    }
+
+    private BasicDXLMiddleman() {
+    }
+
+    private final ConcurrentMap<CursorId,ScanData> openScansMap = new ConcurrentHashMap<CursorId, ScanData>();
+
+    private static final AtomicReference<BasicDXLMiddleman> lastInstance = new AtomicReference<BasicDXLMiddleman>();
 }

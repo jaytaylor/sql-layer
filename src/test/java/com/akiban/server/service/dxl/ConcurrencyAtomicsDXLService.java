@@ -70,13 +70,13 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
     }
 
     @Override
-    DMLFunctions createDMLFunctions(DDLFunctions newlyCreatedDDLF) {
-        return new ScanhooksDMLFunctions(newlyCreatedDDLF);
+    DMLFunctions createDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions newlyCreatedDDLF) {
+        return new ScanhooksDMLFunctions(middleman, newlyCreatedDDLF);
     }
 
     @Override
-    DDLFunctions createDDLFunctions() {
-        return new ConcurrencyAtomicsDDLFunctions();
+    DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
+        return new ConcurrencyAtomicsDDLFunctions(middleman);
     }
 
     public static ScanHooks installScanHook(Session session, ScanHooks hook) {
@@ -110,8 +110,8 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
     }
 
     public class ScanhooksDMLFunctions extends BasicDMLFunctions {
-        ScanhooksDMLFunctions(DDLFunctions ddlFunctions) {
-            super(ddlFunctions);
+        ScanhooksDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions ddlFunctions) {
+            super(middleman, ddlFunctions);
         }
 
         @Override
@@ -171,6 +171,10 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
             if (hook != null) {
                 hook.doAfter();
             }
+        }
+
+        private ConcurrencyAtomicsDDLFunctions(BasicDXLMiddleman middleman) {
+            super(middleman);
         }
     }
 }

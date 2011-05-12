@@ -66,7 +66,6 @@ import com.akiban.message.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.akiban.server.service.dxl.BasicDXLMiddleman.getScanDataMap;
 import static com.akiban.util.Exceptions.throwIfInstanceOf;
 
 class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
@@ -125,7 +124,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         try {
-            DMLFunctions dml = new BasicDMLFunctions(this);
+            DMLFunctions dml = new BasicDMLFunctions(middleman(), this);
             dml.truncateTable(session, table.getTableId());
             schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
             checkCursorsForDDLModification(session, table);
@@ -500,5 +499,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 cursor.setDDLModified();
             }
         }
+    }
+
+    BasicDDLFunctions(BasicDXLMiddleman middleman) {
+        super(middleman);
     }
 }

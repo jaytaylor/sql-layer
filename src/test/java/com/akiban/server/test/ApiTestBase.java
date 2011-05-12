@@ -39,6 +39,8 @@ import java.util.TreeSet;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.api.dml.scan.ScanFlag;
+import com.akiban.server.service.dxl.DXLTestHookRegistry;
+import com.akiban.server.service.dxl.DXLTestHooks;
 import com.akiban.util.Undef;
 import junit.framework.Assert;
 
@@ -197,10 +199,22 @@ public class ApiTestBase {
 
     @After
     public final void stopTestServices() throws Exception {
+        String openCursorsMessage = null;
+        DXLTestHooks dxlTestHooks = DXLTestHookRegistry.get();
+        // Check for any residual open cursors
+        if (dxlTestHooks.openCursorsExist()) {
+            String cursorsDescription = dxlTestHooks.describeOpenCursors();
+            dxlTestHooks.nukeOpenCursors();
+            openCursorsMessage = "open cursors remaining:" + cursorsDescription;
+        }
+
         session.close();
         sm.stopServices();
         sm = null;
         session = null;
+        if (openCursorsMessage != null) {
+            fail(openCursorsMessage);
+        }
     }
     
     public final void crashTestServices() throws Exception {
