@@ -84,7 +84,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
         Update_Default updateOp = new Update_Default(scanOp, updateLambda);
 
-        Cursor updateCursor = updateOp.cursor(adapter);
+        Cursor updateCursor = API.cursor(updateOp, adapter);
         Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
         try {
             transaction.begin();

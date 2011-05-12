@@ -129,4 +129,9 @@ public class API
         }
 
     };
+
+    public static Cursor cursor(PhysicalOperator root, StoreAdapter adapter) {
+        // if all they need is the wrapped cursor, create it directly
+        return new TopLevelWrappingCursor(root.cursor(adapter));
+    }
 }

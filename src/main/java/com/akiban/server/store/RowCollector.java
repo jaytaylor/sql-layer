@@ -49,7 +49,9 @@ public interface RowCollector {
 
     public RowData collectNextRow() throws Exception;
 
-    public boolean hasMore() throws Exception;
+    public boolean hasMore();
+
+    public void open();
 
     public void close();
     

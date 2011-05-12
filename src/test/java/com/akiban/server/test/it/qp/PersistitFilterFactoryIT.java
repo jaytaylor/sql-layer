@@ -79,7 +79,10 @@ public final class PersistitFilterFactoryIT extends ITBase {
                 NoLimit.instance(),
                 range
         );
-        Cursor groupCursor = groupScan.cursor(new HookablePersistitAdapter(schema, persistitStore(), session(), hook));
+        Cursor groupCursor = API.cursor(
+                groupScan,
+                new HookablePersistitAdapter(schema, persistitStore(), session(), hook)
+        );
         groupCursor.open(UndefBindings.only());
 
         List<KeyFilter> filters = hook.list();

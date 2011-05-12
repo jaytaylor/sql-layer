@@ -113,6 +113,7 @@ public abstract class AbstractScanBase extends ITSuiteBase {
         if (VERBOSE) {
             System.out.println("Test " + test);
         }
+        rc.open();
         while (rc.hasMore()) {
             final ByteBuffer payload = ByteBufferFactory.allocate(65536);
             while (rc.collectNextRow(payload))

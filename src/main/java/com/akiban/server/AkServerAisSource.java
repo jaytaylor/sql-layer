@@ -70,6 +70,7 @@ public class AkServerAisSource extends Source {
                 (byte) 0xFF, (byte) 0xFF }, null);
         final ByteBuffer buffer = ByteBuffer.allocate(65536);
         final RowData row = new RowData(buffer.array());
+        rowCollector.open();
         while (rowCollector.hasMore()) {
             buffer.clear();
             if (rowCollector.collectNextRow(buffer)) {

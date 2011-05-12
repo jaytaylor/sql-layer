@@ -50,6 +50,17 @@ public abstract class OperatorBasedRowCollector implements RowCollector
 {
     // RowCollector interface
 
+
+    @Override
+    public void open() {
+        if (cursor != null) {
+            throw new IllegalStateException("cursor is already open");
+        }
+        cursor = cursor(operator, adapter);
+        cursor.open(UndefBindings.only());
+        closed = !cursor.next();
+    }
+
     @Override
     public boolean collectNextRow(ByteBuffer payload) throws Exception
     {
@@ -97,7 +108,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     }
 
     @Override
-    public boolean hasMore() throws Exception
+    public boolean hasMore()
     {
         return !closed;
     }
@@ -108,6 +119,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (!closed) {
             currentRow.set(null);
             cursor.close();
+            cursor = null;
             closed = true;
         }
     }
@@ -247,9 +259,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             LOG.info("Execution plan:\n{}", rootOperator.describePlan());
         }
         // Executable stuff
-        cursor = rootOperator.cursor(adapter);
-        cursor.open(UndefBindings.only());
-        closed = !cursor.next();
+        this.operator = rootOperator;
     }
 
     private List<RowType> ancestorTypes()
@@ -339,10 +349,26 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     // If we're querying a user table, then requiredUserTables contains just queryRootTable
     // If we're querying a group table, it contains those user tables containing columns in the
     // columnBitMap.
+    private PhysicalOperator operator;
     protected final Set<UserTable> requiredUserTables = new HashSet<UserTable>();
     protected IndexKeyRange indexKeyRange;
     private Cursor cursor;
-    private boolean closed;
+    private boolean closed = true;
     private int rowCount = 0;
     private RowHolder<Row> currentRow = new RowHolder<Row>();
+
+//    // inner class
+//    static class OpenInfoStruct {
+//        final ScanLimit scanLimit;
+//        final boolean singleRow;
+//        final boolean descending;
+//        final boolean deep;
+//
+//        private OpenInfoStruct(ScanLimit scanLimit, boolean singleRow, boolean descending, boolean deep) {
+//            this.scanLimit = scanLimit;
+//            this.singleRow = singleRow;
+//            this.descending = descending;
+//            this.deep = deep;
+//        }
+//    }
 }

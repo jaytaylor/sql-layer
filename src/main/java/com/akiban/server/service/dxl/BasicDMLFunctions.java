@@ -363,6 +363,10 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             try {
                 transaction.begin();
                 try {
+                    if (!cursor.getRowCollector().hasMore()) { // this implies it's a freshly opened CursorId
+                        assert CursorState.FRESH.equals(cursor.getState()) : cursor.getState();
+                        cursor.getRowCollector().open();
+                    }
                     boolean ret = scanner.doScan(cursor, cursorId, output, scanHooks);
                     transaction.commit();
                     scanHooks.scanSomeFinishedWellHook();

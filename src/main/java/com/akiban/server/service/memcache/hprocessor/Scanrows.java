@@ -261,8 +261,12 @@ public class Scanrows implements HapiProcessor {
             while(rows == null) {
                 try {
                     rows = RowDataOutput.scanFull(session, knownAIS, dmlFunctions(), scanRequest);
+                    // TODO The following two exceptions shouldn't have to be caught! The knownAIS mechanism should
+                    // preclude them from happening!
+                } catch (NoSuchTableException e) {
+                    throw new HapiRequestException("table not found: " + request, e, UNSUPPORTED_REQUEST);
                 } catch (NoSuchIndexException e) {
-                    throw new HapiRequestException("no index found for query: " + request, UNSUPPORTED_REQUEST);
+                    throw new HapiRequestException("no index found for query: " + request, e, UNSUPPORTED_REQUEST);
                 }
             }
 
@@ -272,7 +276,6 @@ public class Scanrows implements HapiProcessor {
                              rows,
                              outputStream
             );
-
         } catch (InvalidOperationException e) {
             throw new HapiRequestException("unknown error", e); // TODO
         } catch (IOException e) {

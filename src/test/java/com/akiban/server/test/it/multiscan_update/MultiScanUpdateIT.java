@@ -56,6 +56,7 @@ public final class MultiScanUpdateIT extends ITBase {
     private final static String TABLE = "tbl";
     private final static int MAX_ID = 1000;
     private static final TableName TABLE_NAME = new TableName(SCHEMA, TABLE);
+    private static final int COL_WIDTH = 255; // must  be >= 11 for WhichIndex.updateInPlace
 
     @SuppressWarnings("unused") // accessed via WhichIndex.values
     private enum WhichIndex {
@@ -139,13 +140,13 @@ public final class MultiScanUpdateIT extends ITBase {
 
     private NewRow getRow(int i) {
         StringBuilder builder = new StringBuilder();
-        for (int c = 0; c < 255; ++c) {
+        for (int c = 0; c < COL_WIDTH; ++c) {
             builder.append( i % 9 );
         }
         String name = builder.toString();
         builder.setLength(0);
 
-        for (int c = 0; c < 255; ++c) {
+        for (int c = 0; c < COL_WIDTH; ++c) {
             builder.append((i % 9) + 1);
         }
         String nickname = builder.toString();
