@@ -15,7 +15,6 @@
 
 package com.akiban.server.store;
 
-import static com.akiban.ais.ddl.SchemaDef.CREATE_TABLE;
 import static com.akiban.server.service.tree.TreeService.SCHEMA_TREE_NAME;
 import static com.akiban.server.service.tree.TreeService.STATUS_TREE_NAME;
 import static com.akiban.server.store.PersistitStore.MAX_TRANSACTION_RETRY_COUNT;
@@ -35,6 +34,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.akiban.admin.Admin;
 import com.akiban.ais.io.AISTarget;
 import com.akiban.ais.io.MessageSource;
 import com.akiban.ais.io.MessageTarget;
@@ -81,7 +81,6 @@ import com.persistit.Key;
 import com.persistit.KeyFilter;
 import com.persistit.Transaction;
 import com.persistit.Transaction.DefaultCommitListener;
-import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 import com.persistit.exception.TransactionFailedException;
 
@@ -108,8 +107,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private AkibanInformationSchema ais;
 
     private ServiceManager serviceManager;
-
-    private RowDefCache rowDefCache;
 
     private AtomicLong updateTimestamp = new AtomicLong();
 
@@ -271,22 +268,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         commitAISChange(session, newAIS, tableName.getSchemaName(), null);
     }
 
-    /**
-     * Delete all table definition versions for a table specified by schema name
-     * and table name. This removes the entire history of the table, and is
-     * intended to implement part of the DROP TABLE operation (the other part is
-     * truncating the data).
-     * 
-     * For a GroupTable, it will also delete all tables participating in the
-     * group. A UserTable is required to have no referencing tables to succeed.
-     * 
-     * @param session
-     * @param schemaName
-     * @param tableName
-     * @throws InvalidOperationException
-     *             if removing this table would cause other table definitions to
-     *             become invalid.
-     */
     @Override
     public void deleteTableDefinition(final Session session, final String schemaName,
                                       final String tableName) throws Exception {
@@ -349,16 +330,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
         }
     }
-    
-    /**
-     * Get the most recent version of a table definition identified by schema
-     * and table names. If there is no such table this method returns
-     * <code>null</code>.
-     * 
-     * @param session
-     * @param schemaName
-     * @param tableName
-     */
+
     @Override
     public TableDefinition getTableDefinition(Session session, String schemaName, String tableName) throws Exception {
         final Table table = getAis(session).getTable(new TableName(schemaName, tableName));
@@ -369,14 +341,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return new TableDefinition(table.getTableId(), schemaName, tableName, ddl);
     }
 
-    /**
-     * Get a map sorted by table name of all table definitions having the
-     * specified schema name. The most recent definition for each name is
-     * returned.
-     * 
-     * @param session
-     * @param schemaName
-     */
     @Override
     public SortedMap<String, TableDefinition> getTableDefinitions(Session session, String schemaName) throws Exception {
         final SortedMap<String, TableDefinition> result = new TreeMap<String, TableDefinition>();
@@ -392,19 +356,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return result;
     }
 
-    /**
-     * Get the Akiban Information Schema created from the the current set of
-     * table definitions. This structure contains an internal representation of
-     * most recent version of each table defined in the schema database, plus a
-     * representation of the akiban_information_schema itself.
-     * 
-     * It would be more efficient to generate this value lazily, after multiple
-     * table definitions have been created. However, the validateTableDefinition
-     * method requires an up-to-date AIS, so for now we have to construct a new
-     * AIS after every schema change.
-     * 
-     * @param session
-     */
     @Override
     public AkibanInformationSchema getAis(final Session session) {
         return ais;
@@ -503,17 +454,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return ddlList;
     }
 
-    /**
-     * Timestamp at or after the last schema change. The timestamp is a
-     * universal, monotonically increasing counter maintained by Persistit.
-     * Usually the value returned by this method is the timestamp associated
-     * with the last schema change. However, when the Akiban Server starts up,
-     * the timestamp is a value guaranteed to be greater than that of any schema
-     * change. Clients can use the timestamp to determine whether locally cached
-     * schema information is stale.
-     * 
-     * @return timestamp at or after last update
-     */
     @Override
     public long getUpdateTimestamp() {
         return updateTimestamp.get();
@@ -525,12 +465,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return (int) ts ^ (int) (ts >>> 32);
     }
 
-    /**
-     * Updates the current timestamp to a new value greater than any previously
-     * returned value. This method can be used to force clients that rely on a
-     * timestamp value to determine staleness to refresh their cached schema
-     * data.
-     */
     @Override
     public synchronized void forceNewTimestamp() {
         final TreeService treeService = serviceManager.getTreeService();
@@ -560,7 +494,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public void stop() throws Exception {
         this.ais = null;
-        this.rowDefCache = null;
         this.serviceManager = null;
     }
 
@@ -634,22 +567,20 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
     }
 
-    private void commitAIS(final AkibanInformationSchema newAis,
-            final long timestamp) {
-        final RowDefCache rowDefCache = getRowDefCache();
-        rowDefCache.clear();
-        serviceManager.getTreeService().getTableStatusCache().detachAIS();
-        rowDefCache.setAIS(newAis);
-        rowDefCache.fixUpOrdinals();
-        updateTimestamp.set(timestamp);
-        this.ais = newAis;
-    }
-
-    private RowDefCache getRowDefCache() {
-        if (rowDefCache == null) {
-            rowDefCache = serviceManager.getStore().getRowDefCache();
+    private void commitAIS(final AkibanInformationSchema newAis, final long timestamp) {
+        try {
+            final RowDefCache rowDefCache = serviceManager.getStore().getRowDefCache();
+            rowDefCache.clear();
+            serviceManager.getTreeService().getTableStatusCache().detachAIS();
+            rowDefCache.setAIS(newAis);
+            rowDefCache.fixUpOrdinals();
+            updateTimestamp.set(timestamp);
+            this.ais = newAis;
         }
-        return rowDefCache;
+        catch(RuntimeException e) {
+            LOG.error("INTERNAL INCONSISTENCY, exception while rebuilding RowDefCache", e);
+            throw e;
+        }
     }
 
     private SchemaDef parseTableStatement(String defaultSchemaName, String ddl) throws InvalidOperationException {
@@ -871,7 +802,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     /**
      * Internal helper intended to be called to finalize any AIS change. This includes create, delete,
      * alter, etc. This currently updates the {@link TreeService#SCHEMA_TREE_NAME} for a given schema,
-     * rebuilds the {@link #rowDefCache}, and sets the {@link #ais} variable.
+     * rebuilds the {@link Store#getRowDefCache()}, and sets the {@link #ais} variable.
      * @param session Session to run under
      * @param newAIS The new AIS to store in the {@link #BY_AIS} key range <b>and</b> commit as {@link #ais}.
      * @param schemaName The schema the change affected
