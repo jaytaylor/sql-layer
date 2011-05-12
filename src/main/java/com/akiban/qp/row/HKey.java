@@ -20,4 +20,5 @@ public interface HKey
     boolean prefixOf(HKey hKey);
     int segments();
     void useSegments(int segments);
+    void copyTo(HKey target);
 }

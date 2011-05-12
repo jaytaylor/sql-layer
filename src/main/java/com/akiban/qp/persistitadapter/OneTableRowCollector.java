@@ -15,20 +15,14 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.rowtype.IndexKeyType;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
-
-import java.util.HashSet;
-import java.util.Set;
 
 public class OneTableRowCollector extends OperatorBasedRowCollector
 {

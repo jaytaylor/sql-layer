@@ -32,6 +32,9 @@ import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.physicaloperator.UpdateLambda;
 import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
@@ -48,7 +51,7 @@ import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Transaction;
 
-import static com.akiban.qp.physicaloperator.API.indexLookup_Default;
+import static com.akiban.qp.physicaloperator.API.lookup_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
 
 public final class OperatorStore extends DelegatingStore<PersistitStore> {
@@ -62,6 +65,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         PersistitStore persistitStore = getPersistitStore();
         AkibanInformationSchema ais = persistitStore.getRowDefCache().ais();
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), persistitStore, session);
+        Schema schema = adapter.schema();
 
         PersistitGroupRow oldRow = PersistitGroupRow.newPersistitGroupRow(adapter, oldRowData);
         RowDef rowDef = persistitStore.getRowDefCache().rowDef(oldRowData.getRowDefId());
@@ -78,8 +82,10 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         }
         else {
             Index index = userTable.getIndex("PRIMARY");
+            UserTableRowType tableType = schema.userTableRowType(userTable);
+            IndexRowType indexType = tableType.indexRowType(index);
             PhysicalOperator indexScan = indexScan_Default(index, false, range);
-            scanOp = indexLookup_Default(indexScan, groupTable);
+            scanOp = lookup_Default(indexScan, groupTable, indexType, tableType);
         }
 
         Update_Default updateOp = new Update_Default(scanOp, updateLambda);

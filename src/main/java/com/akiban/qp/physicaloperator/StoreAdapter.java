@@ -19,6 +19,7 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.HKey;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 
 public abstract class StoreAdapter
@@ -36,6 +37,8 @@ public abstract class StoreAdapter
     }
 
     public abstract Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange);
+
+    public abstract HKey newHKey(RowType rowType);
 
     public final Schema schema()
     {
