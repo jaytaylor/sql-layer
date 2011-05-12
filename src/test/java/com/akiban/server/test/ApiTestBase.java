@@ -203,9 +203,7 @@ public class ApiTestBase {
         DXLTestHooks dxlTestHooks = DXLTestHookRegistry.get();
         // Check for any residual open cursors
         if (dxlTestHooks.openCursorsExist()) {
-            String cursorsDescription = dxlTestHooks.describeOpenCursors();
-            dxlTestHooks.nukeOpenCursors();
-            openCursorsMessage = "open cursors remaining:" + cursorsDescription;
+            openCursorsMessage = "open cursors remaining:" + dxlTestHooks.describeOpenCursors();
         }
 
         session.close();

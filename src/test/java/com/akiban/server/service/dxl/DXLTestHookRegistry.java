@@ -32,11 +32,6 @@ public final class DXLTestHookRegistry {
             return middleman().getScanDataMap().toString();
         }
 
-        @Override
-        public void nukeOpenCursors() {
-            middleman().getScanDataMap().clear();
-        }
-
         private BasicDXLMiddleman middleman() {
             return BasicDXLMiddleman.last();
         }
