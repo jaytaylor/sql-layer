@@ -180,7 +180,11 @@ public class PostgresServerIT extends ITBase
         PreparedStatement stmt = connection.prepareStatement(sql);
         if (params != null) {
             for (int i = 0; i < params.length; i++) {
-                stmt.setString(i + 1, params[i]);
+                String param = params[i];
+                if (param.startsWith("#"))
+                    stmt.setLong(i + 1, Long.parseLong(param.substring(1)));
+                else
+                    stmt.setString(i + 1, param);
             }
         }
         ResultSet rs = stmt.executeQuery();
