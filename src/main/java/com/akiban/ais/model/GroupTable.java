@@ -103,7 +103,9 @@ public class GroupTable extends Table
     {
         for (Column groupColumn : getColumns()) {
             Column userColumn = groupColumn.getUserColumn();
-            userColumn.setGroupColumn(null);
+            if(userColumn != null) {
+                userColumn.setGroupColumn(null);
+            }
         }
         super.dropColumns();
     }

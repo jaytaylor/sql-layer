@@ -20,21 +20,19 @@ import static com.akiban.server.service.tree.TreeService.STATUS_TREE_NAME;
 import static com.akiban.server.store.PersistitStore.MAX_TRANSACTION_RETRY_COUNT;
 
 import java.io.InputStream;
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.akiban.admin.Admin;
 import com.akiban.ais.io.AISTarget;
 import com.akiban.ais.io.MessageSource;
 import com.akiban.ais.io.MessageTarget;
@@ -47,7 +45,6 @@ import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Type;
 import com.akiban.server.encoding.EncoderFactory;
 import com.akiban.server.service.tree.TreeLink;
@@ -281,7 +278,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
 
         final List<TableName> tables = new ArrayList<TableName>();
-
         if (table.isGroupTable() == true) {
             final Group group = table.getGroup();
             tables.add(group.getGroupTable().getName());
@@ -296,6 +292,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 throw new InvalidOperationException(
                         ErrorCode.UNSUPPORTED_MODIFICATION, table.getName()
                                 + " has referencing tables");
+            }
+            if (userTable.getParentJoin() == null) {
+                // Last table in group, also delete group table
+                tables.add(userTable.getGroup().getGroupTable().getName());
             }
             tables.add(table.getName());
         }
@@ -393,39 +393,25 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         new TableSubsetWriter(new AISTarget(newAis)) {
             @Override
             public boolean shouldSaveTable(Table table) {
-                return table.isUserTable() && !tableNames.contains(table.getName());
+                return !tableNames.contains(table.getName());
             }
         }.save(ais);
 
-        // Rebuild all group tables
-        Queue<Join> tablesToAdd = new LinkedList<Join>();
+        // Fix up group table columns and indexes for modified groups
         AISBuilder builder = new AISBuilder(newAis);
-        for(UserTable table : newAis.getUserTables().values()) {
-            if(table.getParentJoin() == null) {
-                final Group group = table.getGroup();
-                assert group != null : table;
-                // recreate group table
-                String groupTableName = "_akiban_" + group.getName();
-                GroupTable groupTable = GroupTable.create(newAis, table.getName().getSchemaName(), groupTableName,
-                                                          TreeService.MAX_TABLES_PER_VOLUME - table.getTableId());
-                groupTable.setGroup(group);
-                builder.addTableToGroup(group.getName(), table.getName().getSchemaName(), table.getName().getTableName());
-                for(Join join : table.getCandidateChildJoins()) {
-                    tablesToAdd.add(join);
+        Set<String> handledGroups = new HashSet<String>();
+        for(TableName tn : tableNames) {
+            final UserTable userTable = ais.getUserTable(tn);
+            if(userTable != null) {
+                final String groupName = userTable.getGroup().getName();
+                final Group group = newAis.getGroup(groupName);
+                if(group != null && !handledGroups.contains(groupName)) {
+                    builder.generateGroupTableColumns(group);
+                    builder.generateGroupTableIndexes(group);
+                    handledGroups.add(groupName);
                 }
             }
-            else {
-                table.setGroup(null);
-            }
         }
-        while(!tablesToAdd.isEmpty()) {
-            Join j = tablesToAdd.poll();
-            builder.addJoinToGroup(j.getGroup().getName(), j.getName(), 0);
-            for (Join join : j.getChild().getCandidateChildJoins()) {
-                tablesToAdd.add(join);
-            }
-        }
-        builder.groupingIsComplete();
         return newAis;
     }
 
@@ -503,12 +489,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     /**
-     * Create an AIS during the startup process so that the AIS tables are
-     * populated and a visible. This can't be done until both this Service and
-     * the PersistitStore service are fully initialized and registered, so it is
-     * done as an "afterStart" step. It is done within the scope of a
-     * transaction so that the TableStatus ordinal fields can be updated
-     * transactionally in {@link RowDefCache#fixUpOrdinals()}.
+     * Load the AIS tables from file and then load the serialized AIS from each
+     * {@link TreeService#SCHEMA_TREE_NAME} in each volume. This must be done
+     * in afterStart because it requires other services, TreeService and Store
+     * specifically, to be up and functional
      */
     @Override
     public void afterStart() throws Exception {
@@ -578,6 +562,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             this.ais = newAis;
         }
         catch(RuntimeException e) {
+            // None of this code "can fail" because it is being ran inside of a Persistit commit. Fail LOUDLY.
             LOG.error("INTERNAL INCONSISTENCY, exception while rebuilding RowDefCache", e);
             throw e;
         }
@@ -807,18 +792,24 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * @param newAIS The new AIS to store in the {@link #BY_AIS} key range <b>and</b> commit as {@link #ais}.
      * @param schemaName The schema the change affected
      * @param callback If non-null, beforeCommit while be called before transaction.commit().
-     * @throws Exception
+     * @throws Exception for any error.
      */
     private void commitAISChange(final Session session, final AkibanInformationSchema newAIS, final String schemaName,
                                  AISChangeCallback callback) throws Exception {
-        byteBuffer.clear();
-        new TableSubsetWriter(new MessageTarget(byteBuffer)) {
-            @Override
-            public boolean shouldSaveTable(Table table) {
-                return table.getName().getSchemaName().equals(schemaName);
-            }
-        }.save(newAIS);
-        byteBuffer.flip();
+        try {
+            byteBuffer.clear();
+            new TableSubsetWriter(new MessageTarget(byteBuffer)) {
+                @Override
+                public boolean shouldSaveTable(Table table) {
+                    return table.getName().getSchemaName().equals(schemaName);
+                }
+            }.save(newAIS);
+            byteBuffer.flip();
+        }
+        catch(BufferOverflowException e) {
+            throw new InvalidOperationException(ErrorCode.INTERNAL_ERROR,
+                                                "Modification not possible, serialized AIS is too large", e);
+        }
 
         final TreeService treeService = serviceManager.getTreeService();
         final Transaction transaction = treeService.getTransaction(session);
