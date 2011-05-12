@@ -69,6 +69,14 @@ class PersistitHKey implements HKey
         }
     }
 
+    @Override
+    public void copyTo(HKey target)
+    {
+        assert target instanceof PersistitHKey;
+        PersistitHKey that = (PersistitHKey) target;
+        that.copyFrom(hKey);
+    }
+
     // PersistitHKey interface
 
     public void copyFrom(Key source)

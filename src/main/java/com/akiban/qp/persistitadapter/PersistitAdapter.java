@@ -25,7 +25,9 @@ import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
@@ -39,11 +41,7 @@ import com.persistit.Key;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PersistitAdapter extends StoreAdapter
@@ -74,7 +72,15 @@ public class PersistitAdapter extends StoreAdapter
         return cursor;
     }
 
-    public void setTransactional(boolean transactional) {
+    @Override
+    public HKey newHKey(RowType rowType)
+    {
+        assert rowType instanceof UserTableRowType : rowType;
+        return new PersistitHKey(this, ((UserTableRowType) rowType).userTable().hKey());
+    }
+
+    public void setTransactional(boolean transactional)
+    {
         this.transactional.set(transactional);
     }
 

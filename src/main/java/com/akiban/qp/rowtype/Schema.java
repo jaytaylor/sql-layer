@@ -31,7 +31,6 @@ public class Schema
     {
         this.ais = ais;
         this.typeIdCounter = -1;
-        // User tables: use ordinal as typeId
         for (UserTable userTable : ais.getUserTables().values()) {
             UserTableRowType userTableRowType = new UserTableRowType(this, userTable);
             rowTypes.put(userTable.getTableId(), userTableRowType);
@@ -39,7 +38,7 @@ public class Schema
             // Indexes
             this.typeIdCounter++;
             for (Index index : userTable.getIndexesIncludingInternal()) {
-                IndexRowType indexRowType = new IndexRowType(this, index);
+                IndexRowType indexRowType = new IndexRowType(this, userTableRowType, index);
                 userTableRowType.addIndexRowType(indexRowType);
                 rowTypes.put(indexRowType.typeId(), indexRowType);
             }
@@ -71,17 +70,6 @@ public class Schema
     public int maxTypeId()
     {
         return rowTypes.size() - 1;
-    }
-
-    public Set<RowType> userTableRowTypes()
-    {
-        Set<RowType> userTableRowTypes = new HashSet<RowType>();
-        for (RowType rowType : rowTypes.values()) {
-            if (rowType instanceof UserTableRowType) {
-                userTableRowTypes.add(rowType);
-            }
-        }
-        return userTableRowTypes;
     }
 
     // For use by this package

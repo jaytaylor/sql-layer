@@ -20,12 +20,15 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import static java.lang.Math.max;
@@ -72,15 +75,27 @@ class AncestorLookup_Default extends PhysicalOperator
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
         this.rowType = rowType;
+        // Handling of a group row is complete once it's been emitted (which happens later).
+        // An index row is handled as soon as it's read because it will not be emitted.
+        this.emitInputRow = !(rowType instanceof IndexRowType);
+        // Sort ancestor types by depth
         this.ancestorTypes = ancestorTypes;
-        int maxTypeId = -1;
-        for (RowType missingType : ancestorTypes) {
-            maxTypeId = max(maxTypeId, missingType.typeId());
-        }
-        this.ancestorTypeDepth = new int[maxTypeId + 1];
-        for (RowType missingType : ancestorTypes) {
-            UserTable userTable = ((UserTableRowType) missingType).userTable();
-            this.ancestorTypeDepth[missingType.typeId()] = userTable.getDepth() + 1;
+        Collections.sort(this.ancestorTypes,
+                         new Comparator<RowType>()
+                         {
+                             @Override
+                             public int compare(RowType x, RowType y)
+                             {
+                                 UserTable xTable = ((UserTableRowType) x).userTable();
+                                 UserTable yTable = ((UserTableRowType) y).userTable();
+                                 return xTable.getDepth() - yTable.getDepth();
+                             }
+                         });
+        this.ancestorTypeDepth = new int[ancestorTypes.size()];
+        int a = 0;
+        for (RowType ancestorType : this.ancestorTypes) {
+            UserTable userTable = ((UserTableRowType) ancestorType).userTable();
+            this.ancestorTypeDepth[a++] = userTable.getDepth() + 1;
         }
     }
 
@@ -95,6 +110,7 @@ class AncestorLookup_Default extends PhysicalOperator
     private final RowType rowType;
     private final List<RowType> ancestorTypes;
     private final int[] ancestorTypeDepth;
+    private final boolean emitInputRow;
 
     // Inner classes
 
@@ -106,12 +122,13 @@ class AncestorLookup_Default extends PhysicalOperator
         public void open()
         {
             input.open();
+            advance();
         }
 
         @Override
         public boolean next()
         {
-            if (pending.isEmpty()) {
+            while (pending.isEmpty() && inputRow.isNotNull()) {
                 advance();
             }
             Row row = pending.take();
@@ -140,7 +157,12 @@ class AncestorLookup_Default extends PhysicalOperator
                 if (currentRow.rowType() == rowType) {
                     findAncestors(currentRow);
                 }
-                pending.add(currentRow);
+                if (emitInputRow) {
+                    pending.add(currentRow);
+                }
+                inputRow.set(currentRow);
+            } else {
+                inputRow.set(null);
             }
         }
 
@@ -149,14 +171,12 @@ class AncestorLookup_Default extends PhysicalOperator
             assert pending.isEmpty();
             HKey hKey = row.hKey();
             int nSegments = hKey.segments();
-            for (int i = 1; i < ancestorTypeDepth.length; i++) {
-                if (ancestorTypeDepth[i] > 0) {
-                    int depth = ancestorTypeDepth[i];
-                    hKey.useSegments(depth);
-                    readAncestorRow(hKey);
-                    if (ancestorRow.isNotNull()) {
-                        pending.add(ancestorRow.get());
-                    }
+            for (int i = 0; i < ancestorTypeDepth.length; i++) {
+                int depth = ancestorTypeDepth[i];
+                hKey.useSegments(depth);
+                readAncestorRow(hKey);
+                if (ancestorRow.isNotNull()) {
+                    pending.add(ancestorRow.get());
                 }
             }
             // Restore the hkey to its original state
@@ -178,13 +198,15 @@ class AncestorLookup_Default extends PhysicalOperator
         private void readAncestorRow(HKey hKey)
         {
             try {
-                ancestorCursor.rebind(hKey);
+                ancestorCursor.rebind(hKey, false);
                 ancestorCursor.open();
                 if (ancestorCursor.next()) {
                     Row retrievedRow = ancestorCursor.currentRow();
                     // Retrieved row might not actually what we were looking for -- not all ancestors are present,
                     // (there are orphan rows).
                     ancestorRow.set(hKey.equals(retrievedRow.hKey()) ? retrievedRow : null);
+                } else {
+                    ancestorRow.set(null);
                 }
             } finally {
                 ancestorCursor.close();
@@ -194,6 +216,7 @@ class AncestorLookup_Default extends PhysicalOperator
         // Object state
 
         private final Cursor input;
+        private final RowHolder<Row> inputRow = new RowHolder<Row>();
         private final GroupCursor ancestorCursor;
         private final RowHolder<Row> ancestorRow = new RowHolder<Row>();
         private final PendingRows pending;

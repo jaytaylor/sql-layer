@@ -18,5 +18,5 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.qp.row.HKey;
 
 public interface GroupCursor extends Cursor {
-    void rebind(HKey hKey);
+    void rebind(HKey hKey, boolean deep);
 }

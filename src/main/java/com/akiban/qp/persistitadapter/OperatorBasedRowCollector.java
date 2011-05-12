@@ -226,11 +226,19 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         GroupTable groupTable = queryRootTable.getGroup().getGroupTable();
         PhysicalOperator rootOperator;
         if (useIndex) {
-            PhysicalOperator indexScan =
-                indexScan_Default(predicateIndex, descending, ConstantValueBindable.of(indexKeyRange));
-            rootOperator = indexLookup_Default(indexScan, groupTable, limit);
+            PhysicalOperator indexScan = indexScan_Default(predicateIndex,
+                                                           descending,
+                                                           ConstantValueBindable.of(indexKeyRange));
+            rootOperator = lookup_Default(indexScan,
+                                          groupTable,
+                                          predicateType.indexRowType(predicateIndex),
+                                          predicateType,
+                                          limit);
         } else {
-            rootOperator = groupScan_Default(groupTable, descending, limit, ConstantValueBindable.of(indexKeyRange));
+            rootOperator = groupScan_Default(groupTable,
+                                             descending,
+                                             limit,
+                                             ConstantValueBindable.of(indexKeyRange));
         }
         // Fill in ancestors above predicate
         if (queryRootType != predicateType) {
