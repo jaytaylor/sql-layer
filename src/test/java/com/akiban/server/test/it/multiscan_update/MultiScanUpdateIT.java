@@ -212,6 +212,8 @@ public class MultiScanUpdateIT extends ITBase {
         } catch (ConcurrentScanAndUpdateRuntimeException e) {
             assertEquals("calls to scanSome", 2, scanIterator.getScanSomeCalls());
             throw e.cause;
+        } finally {
+            scanIterator.close();
         }
     }
 
@@ -311,6 +313,10 @@ public class MultiScanUpdateIT extends ITBase {
 
         private int getScanSomeCalls() {
             return scanSomeCalls;
+        }
+
+        public void close() {
+            dml().closeCursor(session(), cursorId);
         }
     }
 }

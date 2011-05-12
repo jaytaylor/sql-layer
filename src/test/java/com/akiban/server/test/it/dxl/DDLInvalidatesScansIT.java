@@ -65,6 +65,7 @@ public final class DDLInvalidatesScansIT extends ITBase {
 
         ListRowOutput output = new ListRowOutput();
         dml().scanSome(session(), cursor, output);
+        dml().closeCursor(session(), cursor);
         assertEquals("rows scanned", expectedCustomers(), output.getRows());
     }
 
@@ -80,6 +81,7 @@ public final class DDLInvalidatesScansIT extends ITBase {
 
         ListRowOutput output = new ListRowOutput();
         dml().scanSome(session(), cursor, output);
+        dml().closeCursor(session(), cursor);
         assertEquals("rows scanned", expectedCustomers(), output.getRows());
     }
 
@@ -95,6 +97,7 @@ public final class DDLInvalidatesScansIT extends ITBase {
 
         ListRowOutput output = new ListRowOutput();
         dml().scanSome(session(), cursor, output);
+        dml().closeCursor(session(), cursor);
         assertEquals("rows scanned", expectedCustomers(), output.getRows());
     }
 
@@ -225,8 +228,12 @@ public final class DDLInvalidatesScansIT extends ITBase {
 
     private void scanExpectingException(CursorId cursorId) throws InvalidOperationException {
         ListRowOutput output = new ListRowOutput();
-        dml().scanSome(session(), cursorId, output);
-        fail("Expected exception, but scanned: " + output.getRows().toString());
+        try {
+            dml().scanSome(session(), cursorId, output);
+            fail("Expected exception, but scanned: " + output.getRows().toString());
+        } finally {
+            dml().closeCursor(session(), cursorId);
+        }
     }
 
     private Index createIndex() throws InvalidOperationException {
