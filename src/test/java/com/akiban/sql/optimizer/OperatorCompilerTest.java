@@ -83,12 +83,6 @@ public class OperatorCompilerTest extends TestBase
                                      String defaultSchemaName) {
             super(parser, ais, defaultSchemaName);
         }
-
-        @Override
-        protected Row getIndexRow(Index index, Object[] keys) {
-            IndexRowType rowType = schema.indexRowType(index);
-            return new TestRow(rowType, keys);
-        }
     }
 
     @Parameters
