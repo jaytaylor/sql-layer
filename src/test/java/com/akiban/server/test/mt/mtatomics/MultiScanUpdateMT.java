@@ -13,16 +13,22 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.test.it;
+package com.akiban.server.test.mt.mtatomics;
 
-import com.akiban.server.test.ApiTestBase;
+import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.Parameterization;
+import com.akiban.server.test.it.multiscan_update.MultiScanUpdateIT;
 
-public abstract class ITBase extends ApiTestBase {
-    public ITBase() {
-        super("IT");
+import java.util.List;
+
+public final class MultiScanUpdateMT extends MultiScanUpdateIT {
+    public MultiScanUpdateMT(TestMode testMode, WhichIndex scanIndex, WhichIndex updateColumn) {
+        super(testMode, scanIndex, updateColumn);
     }
 
-    protected ITBase(String suffix) {
-        super(suffix);
+
+    @NamedParameterizedRunner.TestParameters
+    public static List<Parameterization> params() {
+        return params(TestMode.MT);
     }
 }

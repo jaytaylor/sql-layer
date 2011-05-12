@@ -50,7 +50,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(NamedParameterizedRunner.class)
-public final class MultiScanUpdateIT extends ITBase {
+public class MultiScanUpdateIT extends ITBase {
 
     private final static String SCHEMA = "sch";
     private final static String TABLE = "tbl";
@@ -59,7 +59,7 @@ public final class MultiScanUpdateIT extends ITBase {
     private static final int COL_WIDTH = 255; // must  be >= 11 for WhichIndex.updateInPlace
 
     @SuppressWarnings("unused") // accessed via WhichIndex.values
-    private enum WhichIndex {
+    protected enum WhichIndex {
         PK {
             @Override
             public void updateInPlace(NewRow row) {
@@ -98,14 +98,24 @@ public final class MultiScanUpdateIT extends ITBase {
         abstract void updateInPlace(NewRow row);
     }
 
+    protected enum TestMode {
+        IT,
+        MT
+    }
+
     @NamedParameterizedRunner.TestParameters
     public static List<Parameterization> params() {
+        return params(TestMode.IT);
+    }
+
+    protected static List<Parameterization> params(TestMode testMode) {
         ParameterizationBuilder builder = new ParameterizationBuilder();
 
         for (WhichIndex scanIndex : Arrays.asList(WhichIndex.PK, WhichIndex.NAME)) {
             for (WhichIndex updateIndex : WhichIndex.values()) {
                 builder.add(
                         String.format("scan %s update %s", scanIndex, updateIndex),
+                        testMode,
                         scanIndex,
                         updateIndex);
             }
@@ -118,7 +128,8 @@ public final class MultiScanUpdateIT extends ITBase {
     private final WhichIndex updateColumn;
     private int tableId;
 
-    public MultiScanUpdateIT(WhichIndex scanIndex, WhichIndex updateColumn) {
+    public MultiScanUpdateIT(TestMode testMode, WhichIndex scanIndex, WhichIndex updateColumn) {
+        super(testMode.name());
         this.scanIndex = scanIndex;
         this.updateColumn = updateColumn;
     }
@@ -196,12 +207,16 @@ public final class MultiScanUpdateIT extends ITBase {
                 assertTrue("saw updated row: " + oldRow, get(oldRow, 0, Long.class) <= MAX_ID);
                 NewRow newRow = new NiceRow(oldRow);
                 updateColumn.updateInPlace(newRow);
-                dml().updateRow(session(), oldRow, newRow, ConstantColumnSelector.ALL_ON);
+                doUpdate(oldRow, newRow);
             }
         } catch (ConcurrentScanAndUpdateRuntimeException e) {
             assertEquals("calls to scanSome", 2, scanIterator.getScanSomeCalls());
             throw e.cause;
         }
+    }
+
+    protected void doUpdate(NewRow oldRow, NewRow newRow) {
+        dml().updateRow(session(), oldRow, newRow, ConstantColumnSelector.ALL_ON);
     }
 
     private static class ConcurrentScanAndUpdateRuntimeException extends RuntimeException {
