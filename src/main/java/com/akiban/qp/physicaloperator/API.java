@@ -20,6 +20,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 
@@ -85,14 +86,14 @@ public class API
         return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes);
     }
 
-    public static PhysicalOperator indexScan_Default(Index index)
+    public static PhysicalOperator indexScan_Default(IndexRowType indexType)
     {
-        return indexScan_Default(index, false, null);
+        return indexScan_Default(indexType, false, null);
     }
 
-    public static PhysicalOperator indexScan_Default(Index index, boolean reverse, IndexKeyRange indexKeyRange)
+    public static PhysicalOperator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
     {
-        return new IndexScan_Default(index, reverse, indexKeyRange);
+        return new IndexScan_Default(indexType, reverse, indexKeyRange);
     }
 
     public static PhysicalOperator select_HKeyOrdered(PhysicalOperator inputOperator,

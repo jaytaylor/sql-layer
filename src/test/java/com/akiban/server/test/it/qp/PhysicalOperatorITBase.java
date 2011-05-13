@@ -71,10 +71,11 @@ public class PhysicalOperatorITBase extends ITBase
         customerRowType = schema.userTableRowType(userTable(customer));
         orderRowType = schema.userTableRowType(userTable(order));
         itemRowType = schema.userTableRowType(userTable(item));
-        customerNameIndexRowType = schema.indexRowType(index(customer, "name"));
-        orderSalesmanIndexRowType = schema.indexRowType(index(order, "salesman"));
-        itemOidIndexRowType = schema.indexRowType(index(item, "oid"));
-        customerCidIndexRowType = schema.indexRowType(index(customer, "cid"));
+        customerNameIndexRowType = indexType(customer, "name");
+        orderSalesmanIndexRowType = indexType(order, "salesman");
+        itemOidIndexRowType = indexType(item, "oid");
+        itemIidIndexRowType = indexType(item, "iid");
+        customerCidIndexRowType = indexType(customer, "cid");
         coi = groupTable(customer);
         db = new NewRow[]{createNewRow(customer, 1L, "xyz"),
                           createNewRow(customer, 2L, "abc"),
@@ -119,7 +120,7 @@ public class PhysicalOperatorITBase extends ITBase
         return userTableRowDef.userTable();
     }
 
-    protected Index index(int userTableId, String... searchIndexColumnNamesArray)
+    protected IndexRowType indexType(int userTableId, String... searchIndexColumnNamesArray)
     {
         UserTable userTable = userTable(userTableId);
         for (Index index : userTable.getIndexesIncludingInternal()) {
@@ -129,7 +130,7 @@ public class PhysicalOperatorITBase extends ITBase
             }
             List<String> searchIndexColumnNames = Arrays.asList(searchIndexColumnNamesArray);
             if (searchIndexColumnNames.equals(indexColumnNames)) {
-                return index;
+                return schema.userTableRowType(userTable(userTableId)).indexRowType(index);
             }
         }
         return null;
@@ -182,7 +183,6 @@ public class PhysicalOperatorITBase extends ITBase
             cursor.open(bindings);
             while (cursor.next()) {
                 RowBase actualRow = cursor.currentRow();
-/*
                 int count = actualRows.size();
                 assertTrue(count < expected.length);
                 if(!equal(expected[count], actualRow)) {
@@ -190,7 +190,6 @@ public class PhysicalOperatorITBase extends ITBase
                     String actualString = actualRow == null ? "null" : actualRow.toString();
                     assertEquals(expectedString, actualString);
                 }
-*/
                 actualRows.add(actualRow);
             }
         } finally {
@@ -242,6 +241,7 @@ public class PhysicalOperatorITBase extends ITBase
     protected IndexRowType customerNameIndexRowType;
     protected IndexRowType orderSalesmanIndexRowType;
     protected IndexRowType itemOidIndexRowType;
+    protected IndexRowType itemIidIndexRowType;
     protected GroupTable coi;
     protected Schema schema;
     protected NewRow[] db;

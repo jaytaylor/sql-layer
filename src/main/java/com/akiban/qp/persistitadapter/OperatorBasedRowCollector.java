@@ -238,7 +238,9 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         GroupTable groupTable = queryRootTable.getGroup().getGroupTable();
         PhysicalOperator rootOperator;
         if (useIndex) {
-            PhysicalOperator indexScan = indexScan_Default(predicateIndex, descending, indexKeyRange);
+            PhysicalOperator indexScan = indexScan_Default(predicateType.indexRowType(predicateIndex),
+                                                           descending,
+                                                           indexKeyRange);
             rootOperator = lookup_Default(indexScan,
                                           groupTable,
                                           predicateType.indexRowType(predicateIndex),

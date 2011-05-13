@@ -19,35 +19,19 @@ import com.akiban.ais.model.*;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.persistitadapter.OperatorStore;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.physicaloperator.UpdateLambda;
 import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowDef;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.Store;
-import com.akiban.server.test.it.ITBase;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import static com.akiban.qp.expression.API.*;
 import static com.akiban.qp.physicaloperator.API.*;
@@ -195,7 +179,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     public void testIndexScan1()
     {
         System.out.println("customer hkeys, by customer.name");
-        PhysicalOperator indexScan = indexScan_Default(index(customer, "name"));
+        PhysicalOperator indexScan = indexScan_Default(indexType(customer, "name"));
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
         String[] expected = new String[]{"{1,(long)2}",
                                          "{1,(long)1}"};
@@ -206,7 +190,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     public void testIndexScan2()
     {
         System.out.println("order hkeys, by order.salesman");
-        PhysicalOperator indexScan = indexScan_Default(index(order, "salesman"));
+        PhysicalOperator indexScan = indexScan_Default(indexType(order, "salesman"));
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
         String[] expected = new String[]{"{1,(long)1,2,(long)12}",
                                          "{1,(long)2,2,(long)22}",
@@ -218,7 +202,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     @Test
     public void testIndexLookup()
     {
-        PhysicalOperator indexScan = indexScan_Default(index(order, "salesman"));
+        PhysicalOperator indexScan = indexScan_Default(indexType(order, "salesman"));
         PhysicalOperator lookup = lookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType);
         RowBase[] expected = new RowBase[]{row(orderRowType, 12L, 1L, "david"),
                                            row(itemRowType, 121L, 12L),
@@ -238,7 +222,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     @Test
     public void testIndexLookupWithOneAncestor()
     {
-        PhysicalOperator indexScan = indexScan_Default(index(order, "salesman"));
+        PhysicalOperator indexScan = indexScan_Default(indexType(order, "salesman"));
         PhysicalOperator lookup = lookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType);
         PhysicalOperator ancestorLookup = ancestorLookup_Default(lookup,
                                                                  coi,
@@ -266,7 +250,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     @Test
     public void testIndexLookupWithTwoAncestors()
     {
-        PhysicalOperator indexScan = indexScan_Default(index(item, "oid"));
+        PhysicalOperator indexScan = indexScan_Default(indexType(item, "oid"));
         PhysicalOperator lookup = lookup_Default(indexScan, coi, itemOidIndexRowType, itemRowType);
         PhysicalOperator ancestorLookup = ancestorLookup_Default(lookup,
                                                                  coi,
@@ -302,11 +286,11 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     @Test
     public void testRestrictedIndexScan()
     {
-        Index idxOrderSalesman = index(order, "salesman");
+        Index idxOrderSalesman = orderSalesmanIndexRowType.index();
         IndexBound lo = indexBound(userTable(order), row(order, 2, "jack"), columnSelector(idxOrderSalesman));
         IndexBound hi = indexBound(userTable(order), row(order, 2, "tom"), columnSelector(idxOrderSalesman));
         IndexKeyRange range = indexKeyRange(lo, true, hi, false);
-        PhysicalOperator indexScan = indexScan_Default(idxOrderSalesman, false, range);
+        PhysicalOperator indexScan = indexScan_Default(orderSalesmanIndexRowType, false, range);
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
         String[] expected = new String[]{"{1,(long)2,2,(long)22}",
                                          "{1,(long)1,2,(long)11}"};
@@ -316,10 +300,10 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     @Test
     public void testRestrictedIndexLookup()
     {
-        Index idxOrderSalesman = index(order, "salesman");
+        Index idxOrderSalesman = orderSalesmanIndexRowType.index();
         IndexBound tom = indexBound(userTable(order), row(order, 2, "tom"), columnSelector(idxOrderSalesman));
         IndexKeyRange matchTom = indexKeyRange(tom, true, tom, true);
-        PhysicalOperator indexScan = indexScan_Default(idxOrderSalesman, false, matchTom);
+        PhysicalOperator indexScan = indexScan_Default(orderSalesmanIndexRowType, false, matchTom);
         PhysicalOperator lookup = lookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType);
         RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
                                            row(itemRowType, 211L, 21L),
@@ -332,10 +316,10 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     public void testAncestorLookupAfterIndexScan()
     {
         // Find customers associated with salesman tom
-        Index idxOrderSalesman = index(order, "salesman");
+        Index idxOrderSalesman = orderSalesmanIndexRowType.index();
         IndexBound tom = indexBound(userTable(order), row(order, 2, "tom"), columnSelector(idxOrderSalesman));
         IndexKeyRange matchTom = indexKeyRange(tom, true, tom, true);
-        PhysicalOperator indexScan = indexScan_Default(idxOrderSalesman, false, matchTom);
+        PhysicalOperator indexScan = indexScan_Default(orderSalesmanIndexRowType, false, matchTom);
         PhysicalOperator ancestorLookup = ancestorLookup_Default(indexScan,
                                                                  coi,
                                                                  orderSalesmanIndexRowType,

@@ -84,7 +84,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
             Index index = userTable.getIndex("PRIMARY");
             UserTableRowType tableType = schema.userTableRowType(userTable);
             IndexRowType indexType = tableType.indexRowType(index);
-            PhysicalOperator indexScan = indexScan_Default(index, false, range);
+            PhysicalOperator indexScan = indexScan_Default(indexType, false, range);
             scanOp = lookup_Default(indexScan, groupTable, indexType, tableType);
         }
 
