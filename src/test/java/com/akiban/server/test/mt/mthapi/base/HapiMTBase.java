@@ -189,6 +189,7 @@ public class HapiMTBase extends MTBase {
 
             Map<EqualishExceptionWrapper,Integer> errorsMap
                     = feedReadThreads(readThreads, executor, errors, writeThreadAlive);
+            LOG.debug("test finishing at time {}", System.currentTimeMillis());
 
             writeThreadCallable.stopOngoingWrites();
             writeThreadFuture.get(5, TimeUnit.SECONDS);
@@ -252,6 +253,24 @@ public class HapiMTBase extends MTBase {
                 throw new RuntimeException(e);
             }
         }
+        final int remainingThreads = submitFutures.size();
+        // Gobble up any remaining read threads
+        int loopsRequired = 0;
+        while(!submitFutures.isEmpty()) {
+            ++loopsRequired;
+            ReadThreadProcessor processor = new ReadThreadProcessor(submitFutures, errors);
+            Future<Void> processingFuture = processingService.submit(processor);
+            processor.stopProcessing();
+            if (submitFutures.isEmpty()) {
+                submitFutures.offer(new DummyFuture());
+            }
+            try {
+                processingFuture.get();
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        LOG.debug("required {} loop(s) to flush {} remaining thread(s)", loopsRequired, remainingThreads);
 
         return errors;
     }

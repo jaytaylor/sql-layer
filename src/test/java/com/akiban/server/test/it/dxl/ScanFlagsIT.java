@@ -151,6 +151,7 @@ public class ScanFlagsIT extends ITBase
         CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
         boolean more = dml().scanSome(session(), cursorId, output);
         assertTrue(!more);
+        dml().closeCursor(session(), cursorId);
         return output.getRows();
     }
 

@@ -13,16 +13,9 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.test.it;
+package com.akiban.server.service.dxl;
 
-import com.akiban.server.test.ApiTestBase;
-
-public abstract class ITBase extends ApiTestBase {
-    public ITBase() {
-        super("IT");
-    }
-
-    protected ITBase(String suffix) {
-        super(suffix);
-    }
+public interface DXLTestHooks {
+    public boolean openCursorsExist();
+    public String describeOpenCursors();
 }

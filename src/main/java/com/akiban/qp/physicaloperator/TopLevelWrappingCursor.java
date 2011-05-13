@@ -102,10 +102,6 @@ class TopLevelWrappingCursor extends ChainedCursor {
     // private methods
 
     private static RuntimeException launder(RuntimeException exception) {
-        if (exception.getClass().equals(RowDefNotFoundException.class)) {
-            RowDefNotFoundException casted = (RowDefNotFoundException) exception;
-            throw new NoSuchTableException(casted.getId(), casted);
-        }
         return exception;
     }
 }

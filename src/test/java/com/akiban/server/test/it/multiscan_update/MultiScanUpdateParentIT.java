@@ -87,6 +87,8 @@ public final class MultiScanUpdateParentIT extends ITBase {
         } catch (ConcurrentScanAndUpdateException e) {
             assertEquals("rows scanned", 0, output.getRows().size());
             throw e;
+        } finally {
+            dml().closeCursor(session(),  cursorId);
         }
     }
 
@@ -110,6 +112,8 @@ public final class MultiScanUpdateParentIT extends ITBase {
         } catch (ConcurrentScanAndUpdateException e) {
             assertEquals("rows scanned", 0, output.getRows().size());
             throw e;
+        } finally {
+            dml().closeCursor(session(),  cursorId);
         }
     }
 }

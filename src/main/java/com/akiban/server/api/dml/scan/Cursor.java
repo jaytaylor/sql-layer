@@ -23,11 +23,13 @@ public final class Cursor {
     private final RowCollector rowCollector;
     private final ScanLimit limit;
     private final ScanRequest scanRequest;
+    private final long createdTimestamp;
 
     public Cursor(RowCollector rowCollector, ScanLimit limit, ScanRequest scanRequest) {
         this.rowCollector = rowCollector;
         this.limit = limit;
         this.scanRequest = scanRequest;
+        this.createdTimestamp = System.currentTimeMillis();
     }
 
     public RowCollector getRowCollector() {
@@ -75,5 +77,10 @@ public final class Cursor {
 
     public boolean isClosed() {
         return ! state.isOpenState();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Cursor(created=%d, state=%s, request=%s)", createdTimestamp, state, scanRequest);
     }
 }
