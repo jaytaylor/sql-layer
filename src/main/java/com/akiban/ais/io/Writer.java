@@ -17,6 +17,7 @@ package com.akiban.ais.io;
 
 import java.util.Collection;
 
+import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
@@ -37,8 +38,8 @@ public class Writer
         this.target = target;
     }
 
-    protected int getVersion(AkibanInformationSchema ais) throws Exception {
-        return ais.getModelVersion();
+    protected int getVersion() throws Exception {
+        return MetaModel.only().getModelVersion();
     }
 
     protected Collection<Type> getTypes(AkibanInformationSchema ais) throws Exception {
@@ -160,7 +161,7 @@ public class Writer
     }
 
     public final void save(AkibanInformationSchema ais) throws Exception {
-        final int version = getVersion(ais);
+        final int version = getVersion();
         final Collection<Type> types = getTypes(ais);
         final Collection<Group> groups = getGroups(ais);
         final Collection<GroupTable> groupTables = getGroupTables(ais);

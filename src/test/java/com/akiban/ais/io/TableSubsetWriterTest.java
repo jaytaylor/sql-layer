@@ -96,7 +96,6 @@ public class TableSubsetWriterTest {
             }
         }.save(srcAIS);
 
-        assertEquals("version equals", srcAIS.getModelVersion(), dstAIS.getModelVersion());
         assertEquals("type count", srcAIS.getTypes().size(), dstAIS.getTypes().size());
     }
 
