@@ -18,4 +18,9 @@ public class MetaModelVersionMismatchException extends MetaModelException {
     public MetaModelVersionMismatchException (final String message) {
         super (message);
     }
+
+    public MetaModelVersionMismatchException (final int expectedVersion, final int actualVersion) {
+        super (String.format("Model version mismatch, expected version %d vs actual version %d",
+                             expectedVersion, actualVersion));
+    }
 }
