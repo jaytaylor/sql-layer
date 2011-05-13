@@ -22,6 +22,7 @@ import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.GenericInvalidOperationException;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.ForeignConstraintDDLException;
+import com.akiban.server.api.ddl.IndexAlterException;
 import com.akiban.server.api.ddl.ProtectedTableDDLException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.api.dml.scan.BufferFullException;
@@ -70,13 +71,13 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
     }
 
     @Override
-    DMLFunctions createDMLFunctions(DDLFunctions newlyCreatedDDLF) {
-        return new ScanhooksDMLFunctions(newlyCreatedDDLF);
+    DMLFunctions createDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions newlyCreatedDDLF) {
+        return new ScanhooksDMLFunctions(middleman, newlyCreatedDDLF);
     }
 
     @Override
-    DDLFunctions createDDLFunctions() {
-        return new ConcurrencyAtomicsDDLFunctions();
+    DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
+        return new ConcurrencyAtomicsDDLFunctions(middleman);
     }
 
     public static ScanHooks installScanHook(Session session, ScanHooks hook) {
@@ -110,8 +111,8 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
     }
 
     public class ScanhooksDMLFunctions extends BasicDMLFunctions {
-        ScanhooksDMLFunctions(DDLFunctions ddlFunctions) {
-            super(ddlFunctions);
+        ScanhooksDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions ddlFunctions) {
+            super(middleman, ddlFunctions);
         }
 
         @Override
@@ -150,7 +151,8 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
     private static class ConcurrencyAtomicsDDLFunctions extends BasicDDLFunctions {
         @Override
-        public void dropIndexes(Session session, TableName tableName, Collection<String> indexNamesToDrop) throws InvalidOperationException {
+        public void dropIndexes(Session session, TableName tableName, Collection<String> indexNamesToDrop)
+                throws NoSuchTableException, IndexAlterException, GenericInvalidOperationException {
             BeforeAndAfter hook = session.remove(DELAY_ON_DROP_INDEX);
             if (hook != null) {
                 hook.doBefore();
@@ -171,6 +173,10 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
             if (hook != null) {
                 hook.doAfter();
             }
+        }
+
+        private ConcurrencyAtomicsDDLFunctions(BasicDXLMiddleman middleman) {
+            super(middleman);
         }
     }
 }

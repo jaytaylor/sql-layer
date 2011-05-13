@@ -66,7 +66,6 @@ import com.akiban.message.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.akiban.server.service.dxl.BasicDXLMiddleman.getScanDataMap;
 import static com.akiban.util.Exceptions.throwIfInstanceOf;
 
 class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
@@ -85,7 +84,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     {
         logger.trace("creating table: ({}) {}", schema, ddlText);
         try {
-            TableName tableName = schemaManager().createTableDefinition(session, schema, ddlText, false);
+            TableName tableName = schemaManager().createTableDefinition(session, schema, ddlText);
             checkCursorsForDDLModification(session, getAIS(session).getTable(tableName));
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
@@ -125,7 +124,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         try {
-            DMLFunctions dml = new BasicDMLFunctions(this);
+            DMLFunctions dml = new BasicDMLFunctions(middleman(), this);
             dml.truncateTable(session, table.getTableId());
             schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
             checkCursorsForDDLModification(session, table);
@@ -307,105 +306,47 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void createIndexes(final Session session, Collection<Index> indexesToAdd)
-            throws InvalidOperationException
-    {
+            throws NoSuchTableException, DuplicateKeyException, IndexAlterException, GenericInvalidOperationException {
         logger.trace("creating indexes {}", indexesToAdd);
         if (indexesToAdd.isEmpty() == true) {
             return;
         }
-        
-        final Index firstIndex = indexesToAdd.iterator().next();
-        final AkibanInformationSchema ais = getAIS(session);
-        final UserTable table = ais.getUserTable(firstIndex.getTableName());
-        
-        if (table == null) {
-            throw new IndexAlterException(ErrorCode.NO_SUCH_TABLE, "Unkown table: "
-                    + firstIndex.getTableName());
-        }
 
-        // Require that IDs match for current and proposed (some other DDL may have happened)
-        if (table.getTableId().equals(firstIndex.getTable().getTableId()) == false) {
-            throw new IndexAlterException(ErrorCode.NO_SUCH_TABLE, "TableId mismatch");
+        final Table table = getTable(session, indexesToAdd.iterator().next().getTableName());
+        try {
+            schemaManager().alterTableAddIndexes(session, table.getName(), indexesToAdd);
+            checkCursorsForDDLModification(session, table);
+        }
+        catch(InvalidOperationException e) {
+            throw new IndexAlterException(e);
+        }
+        catch(Exception e) {
+            throw new GenericInvalidOperationException(e);
         }
         
-        // Save in case of error
-        final DDLGenerator gen = new DDLGenerator();
-        final String originalDDL = gen.createTable(table);
-
-        // Input validation: same table, not a primary key, not a duplicate index name, and 
-        // referenced columns are valid
-        for (Index idx : indexesToAdd) {
-            if (idx.getTable().equals(firstIndex.getTable()) == false) {
-                throw new IndexAlterException(ErrorCode.UNSUPPORTED_OPERATION,
-                        "Cannot add indexes to multiple tables");
-            }
-
-            if (idx.isPrimaryKey()) {
-                throw new IndexAlterException(ErrorCode.UNSUPPORTED_OPERATION,
-                        "Cannot add primary key");
-            }
-
-            final String indexName = idx.getIndexName().getName();
-            if (table.getIndex(indexName) != null) {
-                throw new IndexAlterException(ErrorCode.DUPLICATE_KEY,
-                        "Index name already exists: " + indexName);
-            }
-            
-            for (IndexColumn idxCol : idx.getColumns()) {
-                final Column refCol = idxCol.getColumn();
-                final Column tableCol = table.getColumn(refCol.getPosition());
-                if (refCol.getName().equals(tableCol.getName()) == false || 
-                    refCol.getType().equals(tableCol.getType()) == false) {
-                    throw new IndexAlterException(ErrorCode.UNSUPPORTED_OPERATION,
-                            "Index column does not match table column");
-                }
-            }
-        }
-         
+        // Build special string used/required by Store
         StringBuilder sb = new StringBuilder();
         sb.append("table=(");
         sb.append(table.getName().getTableName());
         sb.append(") ");
         
-        for (Index idx : indexesToAdd) {
-            // Add to current table/AIS so that the DDLGenerator call below will see it
-            Index newIndex = Index.create(ais, table, idx.getIndexName().getName(), -1,
-                    idx.isUnique(), idx.getConstraint());
-
-            for (IndexColumn idxCol : idx.getColumns()) {
-                Column refCol = table.getColumn(idxCol.getColumn().getPosition());
-                IndexColumn indexCol = new IndexColumn(newIndex, refCol, idxCol.getPosition(),
-                        idxCol.isAscending(), idxCol.getIndexedLength());
-                newIndex.addColumn(indexCol);
-            }
-            newIndex.freezeColumns();
-            
-            // Track new index names to build only new indexes
+        for(Index idx : indexesToAdd) {
             sb.append("index=(");
-            sb.append(idx.getIndexName());
+            sb.append(idx.getIndexName().getName());
             sb.append(")");
-        }
-
-        final String schemaName = table.getName().getSchemaName();
-
-        try {
-            // Generate new DDL statement from existing AIS/table
-            final String newDDL = gen.createTable(table);
-            schemaManager().createTableDefinition(session, schemaName, newDDL, true);
-            checkCursorsForDDLModification(session, table);
-        } catch (Exception e) {
-            throw new GenericInvalidOperationException(e);
         }
 
         final String indexString = sb.toString();
         try {
-            // Trigger build of new index trees
             store().buildIndexes(session, indexString, false);
         } catch(Exception e) {
+            // Try and roll back
+            List<String> indexNames = new ArrayList<String>(indexesToAdd.size());
+            for(Index idx : indexesToAdd) {
+                indexNames.add(idx.getIndexName().getName());
+            }
             try {
-                // Delete whatever was inserted, roll back table change
-                store().deleteIndexes(session, indexString);
-                schemaManager().createTableDefinition(session, schemaName, originalDDL, true);
+                dropIndexes(session, table.getName(), indexNames);
             } catch(Exception e2) {
                 logger.error("Exception while rolling back failed createIndex : " + indexString, e2);
             }
@@ -417,7 +358,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void dropIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
-            throws InvalidOperationException
+            throws NoSuchTableException, IndexAlterException, GenericInvalidOperationException
     {
         logger.trace("dropping indexes {}", indexNamesToDrop);
         if(indexNamesToDrop.isEmpty() == true) {
@@ -426,45 +367,33 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         final Table table = getAIS(session).getTable(tableName);
         if (table == null) {
-            throw new IndexAlterException(ErrorCode.NO_SUCH_TABLE, "Unkown table");
+            throw new NoSuchTableException(tableName);
         }
-
-        ArrayList<Index> indexesToDrop = new ArrayList<Index>();
-
+        
         StringBuilder sb = new StringBuilder();
         sb.append("table=(");
         sb.append(tableName.getTableName());
         sb.append(") ");
 
-        // Confirm they exist
+        // Validate and build string for Store
         for(String indexName : indexNamesToDrop) {
             Index index = table.getIndex(indexName);
             if(index == null) {
-                throw new IndexAlterException(ErrorCode.NO_INDEX, "Unkown index: " + indexName);
+                throw new IndexAlterException(ErrorCode.NO_INDEX, "Unknown index: " + indexName);
             }
-            if(index.isPrimaryKey() == true) {
-                throw new IndexAlterException(ErrorCode.UNSUPPORTED_OPERATION,
-                        "Cannot drop primary key index");
+            if(index.isPrimaryKey()) {
+                throw new IndexAlterException(ErrorCode.UNSUPPORTED_OPERATION, "Cannot drop primary key index");
             }
-            indexesToDrop.add(index);
             sb.append("index=(");
             sb.append(indexName);
             sb.append(") ");
         }
-
-        // Remove from existing AIS to generate new DDL
-        table.removeIndexes(indexesToDrop);
+        
+        // Drop them from the Store before schema change while IndexDefs still exist
+        store().deleteIndexes(session, sb.toString());
         
         try {
-            // Generate new DDL statement from existing AIS/table
-            final DDLGenerator gen = new DDLGenerator();
-            final String newDDL = gen.createTable(table);
-
-            // Trigger drop of index trees while indexDef(s) still exist
-            store().deleteIndexes(session, sb.toString());
-            
-            // Store new DDL statement and recreate AIS
-            schemaManager().createTableDefinition(session, tableName.getSchemaName(), newDDL, true);
+            schemaManager().alterTableDropIndexes(session, tableName, indexNamesToDrop);
             checkCursorsForDDLModification(session, table);
         } catch(Exception e) {
             throw new GenericInvalidOperationException(e);
@@ -500,5 +429,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 cursor.setDDLModified();
             }
         }
+    }
+
+    BasicDDLFunctions(BasicDXLMiddleman middleman) {
+        super(middleman);
     }
 }

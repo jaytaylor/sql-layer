@@ -13,16 +13,29 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.test.it;
+package com.akiban.server.service.dxl;
 
-import com.akiban.server.test.ApiTestBase;
+public final class DXLTestHookRegistry {
 
-public abstract class ITBase extends ApiTestBase {
-    public ITBase() {
-        super("IT");
+    public static DXLTestHooks get() {
+        return INSTANCE;
     }
 
-    protected ITBase(String suffix) {
-        super(suffix);
+    private static class SingleMiddlemanHooks implements DXLTestHooks {
+        @Override
+        public boolean openCursorsExist() {
+            return ! middleman().getScanDataMap().isEmpty();
+        }
+
+        @Override
+        public String describeOpenCursors() {
+            return middleman().getScanDataMap().toString();
+        }
+
+        private BasicDXLMiddleman middleman() {
+            return BasicDXLMiddleman.last();
+        }
     }
+
+    private static final SingleMiddlemanHooks INSTANCE = new SingleMiddlemanHooks();
 }

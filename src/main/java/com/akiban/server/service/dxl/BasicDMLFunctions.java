@@ -83,10 +83,6 @@ import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.akiban.server.service.dxl.BasicDXLMiddleman.getScanData;
-import static com.akiban.server.service.dxl.BasicDXLMiddleman.getScanDataMap;
-import static com.akiban.server.service.dxl.BasicDXLMiddleman.putScanData;
-import static com.akiban.server.service.dxl.BasicDXLMiddleman.removeScanData;
 import static com.akiban.util.Exceptions.throwIfInstanceOf;
 
 class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
@@ -102,7 +98,8 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     private static Tap SCAN_RETRY_COUNT_TAP = Tap.add(new Tap.Count("BasicDMLFunctions: scan retries"));
     private static Tap SCAN_RETRY_ABANDON_TAP = Tap.add(new Tap.Count("BasicDMLFunctions: scan abandons"));
 
-    BasicDMLFunctions(DDLFunctions ddlFunctions) {
+    BasicDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions ddlFunctions) {
+        super(middleman);
         this.ddlFunctions = ddlFunctions;
         this.scanner = new Scanner();
     }

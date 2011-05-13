@@ -98,6 +98,6 @@ public final class SpuriousDuplicateKeyIT extends ITBase {
             missing.removeAll(actualGTableIds);
             fail(String.format("missing %s: %s doesn't contain all of %s", missing, actualGTableIds, actualUTableIds));
         }
-        assertEquals("uTable index count", expectedGIndexes, actualGTableIds.size());
+        assertEquals("gTable index count", expectedGIndexes, actualGTableIds.size());
     }
 }
