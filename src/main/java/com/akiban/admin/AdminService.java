@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.Map;
 
 import com.akiban.admin.state.AkServerState;
-import com.akiban.network.AkibanNetworkHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.mortbay.jetty.Server;
@@ -29,13 +28,6 @@ import com.akiban.admin.action.StartChunkservers;
 import com.akiban.admin.action.StopChunkservers;
 import com.akiban.admin.config.AkServerNetworkConfig;
 import com.akiban.admin.config.ClusterConfig;
-import com.akiban.admin.message.AdminIntroductionRequest;
-import com.akiban.admin.message.AdminIntroductionResponse;
-import com.akiban.message.AkibanConnection;
-import com.akiban.message.MessageRegistry;
-import com.akiban.message.NettyAkibanConnectionImpl;
-import com.akiban.network.CommEventNotifier;
-import com.akiban.network.NetworkHandlerFactory;
 
 public class AdminService
 {
@@ -51,7 +43,6 @@ public class AdminService
 
     private void run() throws Exception
     {
-        initializeNetwork();
         ensureRequiredKeysExist();
         watchClusterConfig();
         contactMySQLHead();
@@ -63,18 +54,6 @@ public class AdminService
         StartChunkservers.only().shutdown();
         StopChunkservers.only().shutdown();
         ClearConfig.only().shutdown();
-    }
-
-    private void initializeNetwork()
-    {
-        logger.info("initializing network");
-        MessageRegistry.initialize();
-        MessageRegistry.only().registerModule("com.akiban.admin.message");
-        // MessageRegistry.only().registerModule("com.akiban.ais.message");
-        MessageRegistry.only().registerModule("com.akiban.message");
-        NetworkHandlerFactory.initializeNetwork(LOCALHOST,
-                                                Integer.toString(DEFAULT_ADMIN_SERVICE_PORT),
-                                                new ChannelNotifier());
     }
 
     private void ensureRequiredKeysExist() throws Admin.StaleUpdateException
@@ -134,6 +113,10 @@ public class AdminService
 
     private void sayHelloToMySQL() throws Exception
     {
+        throw new UnsupportedOperationException();
+
+        /* If this used again, rewrite in terms of AkibanConnectionImpl
+
         ClusterConfig cluster = Admin.only().clusterConfig();
         Address mysql = cluster.mysql();
         if (mysql != null) { // mysql not known until cluster config has actually been loaded
@@ -150,6 +133,8 @@ public class AdminService
                 mysqlConnection.close();
             }
         } // else: mysql not known before initial config has been loaded. Caller will try again.
+
+        */
     }
 
     private void handleClusterConfigUpdate()
@@ -199,19 +184,4 @@ public class AdminService
 
     private Admin admin;
     private Server server;
-
-    public class ChannelNotifier implements CommEventNotifier
-    {
-        @Override
-        public void onConnect(AkibanNetworkHandler handler)
-        {
-            logger.error("AdminService.ChannelNotifier.onConnect shouldn't be called.");
-        }
-
-        @Override
-        public void onDisconnect(AkibanNetworkHandler handler)
-        {
-            logger.error("AdminService.ChannelNotifier.onDisconnect shouldn't be called.");
-        }
-    }
 }
