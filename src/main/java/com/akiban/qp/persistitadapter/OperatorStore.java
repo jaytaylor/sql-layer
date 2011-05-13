@@ -172,9 +172,14 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 //                }
 //            }
 //            return overlay;
+            // null selector means all rows, so we can skip the merging and just return the new row data
+            if (columnSelector == null) {
+                return PersistitGroupRow.newPersistitGroupRow(adapter, newRowData);
+            }
+            // Note: some encodings are untested except as necessary for mtr
             NewRow newRow = new NiceRow(rowDef.getRowDefId());
             for (int i=0; i < original.rowType().nFields(); ++i) {
-                if (columnSelector == null || columnSelector.includesColumn(i)) {
+                if (columnSelector.includesColumn(i)) {
                     newRow.put(i, newRowData.toObject(rowDef, i));
                 }
                 else {
