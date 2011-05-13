@@ -78,7 +78,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
         final PhysicalOperator scanOp;
         if (rowDef.getPKIndexDef() != null && rowDef.getPKIndexDef().isHKeyEquivalent()) {
-            scanOp = API.groupScan_Default(groupTable, false, NoLimit.instance(), range);
+            scanOp = API.groupScan_Default(groupTable, NoLimit.instance(), range);
         }
         else {
             Index index = userTable.getIndex("PRIMARY");

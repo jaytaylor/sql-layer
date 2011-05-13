@@ -297,8 +297,7 @@ public class Scanrows implements HapiProcessor {
         // Row limit
         ScanLimit countLimit = null;
         if (request.getLimit() >= 0) {
-            countLimit = new PredicateLimit(ais.getTable(request.getUsingTable()).getTableId(),
-                                            request.getLimit());
+            countLimit = new PredicateLimit(ais.getTable(request.getUsingTable()).getTableId(), request.getLimit());
         }
         limit =
             messageSizeLimit == null && countLimit == null ? ScanLimit.NONE :

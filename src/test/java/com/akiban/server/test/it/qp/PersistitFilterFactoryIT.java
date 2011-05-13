@@ -75,7 +75,6 @@ public final class PersistitFilterFactoryIT extends ITBase {
 
         PhysicalOperator groupScan = API.groupScan_Default(
                 getUserTable(iTable).getGroup().getGroupTable(),
-                false,
                 NoLimit.instance(),
                 range
         );

@@ -245,7 +245,8 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                                           predicateType,
                                           limit);
         } else {
-            rootOperator = groupScan_Default(groupTable, descending, limit, indexKeyRange);
+            assert !descending;
+            rootOperator = groupScan_Default(groupTable, limit, indexKeyRange);
         }
         // Fill in ancestors above predicate
         if (queryRootType != predicateType) {
