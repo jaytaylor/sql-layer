@@ -189,6 +189,7 @@ public class HapiMTBase extends MTBase {
 
             Map<EqualishExceptionWrapper,Integer> errorsMap
                     = feedReadThreads(readThreads, executor, errors, writeThreadAlive);
+            LOG.debug("test finishing at time {}", System.currentTimeMillis());
 
             writeThreadCallable.stopOngoingWrites();
             writeThreadFuture.get(5, TimeUnit.SECONDS);
