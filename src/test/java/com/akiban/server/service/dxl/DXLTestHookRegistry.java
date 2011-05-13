@@ -33,7 +33,11 @@ public final class DXLTestHookRegistry {
         }
 
         private BasicDXLMiddleman middleman() {
-            return BasicDXLMiddleman.last();
+            BasicDXLMiddleman middleman = BasicDXLMiddleman.last();
+            if (middleman == null) {
+                throw new RuntimeException("no active middleman; DXLService probably wasn't started correctly");
+            }
+            return middleman;
         }
     }
 
