@@ -18,19 +18,23 @@ package com.akiban.sql.pg;
 import com.akiban.sql.StandardException;
 
 import com.akiban.sql.optimizer.OperatorCompiler;
+import com.akiban.sql.optimizer.ExpressionRow;
 
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.CursorNode;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.UserTable;
+
+import com.akiban.qp.expression.Expression;
 
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 
 import com.akiban.qp.row.Row;
-import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.qp.rowtype.RowType;
 
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.session.Session;
@@ -79,12 +83,17 @@ public class PostgresOperatorCompiler extends OperatorCompiler
                                              result.getResultColumnOffsets());
     }
 
-    protected Row getIndexRow(Index index, Object[] keys) {
-        NiceRow niceRow = new NiceRow(index.getTable().getTableId());
+    // The current implementation of index cursors expects that the
+    // key bounds' rows are in the shape of the indexed table, not the
+    // index itself.
+    protected Row getIndexExpressionRow(Index index, Expression[] keys) {
+        UserTable userTable = (UserTable)index.getTable();
+        RowType rowType = schema.userTableRowType(userTable);
+        Expression[] userKeys = new Expression[rowType.nFields()];
         for (int i = 0; i < keys.length; i++) {
-            niceRow.put(index.getColumns().get(i).getColumn().getPosition(), keys[i]);
+            userKeys[index.getColumns().get(i).getColumn().getPosition()] = keys[i];
         }
-        return PersistitGroupRow.newPersistitGroupRow(adapter, niceRow.toRowData());
+        return new ExpressionRow(rowType, userKeys);
     }
 
 }
