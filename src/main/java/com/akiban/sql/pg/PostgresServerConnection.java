@@ -65,7 +65,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     private AkibanInformationSchema ais;
     private String defaultSchemaName;
     private SQLParser parser;
-    private PostgresStatementGenerator[] generators;
+    private PostgresStatementParser[] unparsedGenerators;
+    private PostgresStatementGenerator[] parsedGenerators;
     private Thread thread;
 
     public PostgresServerConnection(PostgresServer server, Socket socket, 
@@ -450,16 +451,27 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
         // TODO: Any way / need to ask AIS if schema exists?
 
-        generators = new PostgresStatementGenerator[] {
+        unparsedGenerators = new PostgresStatementParser[] {
+        };
+        parsedGenerators = new PostgresStatementGenerator[] {
             (hapi) ? new PostgresHapiCompiler(this) : new PostgresOperatorCompiler(this)
         };
+    }
+
+    protected void sessionChanged() {
+        for (PostgresStatementParser parser : unparsedGenerators) {
+            parser.sessionChanged(this);
+        }
+        for (PostgresStatementGenerator generator : parsedGenerators) {
+            generator.sessionChanged(this);
+        }
     }
 
     protected PostgresStatement generateStatement(StatementNode stmt, int[] paramTypes)
             throws StandardException {
         try {
             optimizerTap.in();
-            for (PostgresStatementGenerator generator : generators) {
+            for (PostgresStatementGenerator generator : parsedGenerators) {
                 PostgresStatement pstmt = generator.generate(this, stmt, paramTypes);
                 if (pstmt != null) return pstmt;
             }
@@ -510,9 +522,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     @Override
     public void setAttribute(String key, Object attr) {
         attributes.put(key, attr);
-        for (PostgresStatementGenerator generator : generators) {
-            generator.sessionChanged(this);
-        }
+        sessionChanged();
     }
 
     @Override
@@ -533,9 +543,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     @Override
     public void setDefaultSchemaName(String defaultSchemaName) {
         this.defaultSchemaName = defaultSchemaName;
-        for (PostgresStatementGenerator generator : generators) {
-            generator.sessionChanged(this);
-        }
+        sessionChanged();
     }
 
     @Override

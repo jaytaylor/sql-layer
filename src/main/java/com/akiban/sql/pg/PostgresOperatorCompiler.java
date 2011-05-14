@@ -67,6 +67,14 @@ public class PostgresOperatorCompiler extends OperatorCompiler
     }
 
     @Override
+    public PostgresStatement parse(PostgresServerSession server,
+                                   String sql, int[] paramTypes) 
+            throws StandardException {
+        // This very inefficient reparsing by every generator is actually avoided.
+        return generate(server, server.getParser().parseStatement(sql), paramTypes);
+    }
+
+    @Override
     public void sessionChanged(PostgresServerSession server) {
         binder.setDefaultSchemaName(server.getDefaultSchemaName());
     }
