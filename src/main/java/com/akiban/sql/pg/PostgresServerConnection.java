@@ -288,18 +288,22 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         readyForQuery();
     }
 
-    // ODBC driver sends this at the start; returning no rows is fine (and normal).
-    public static final String ODBC_LO_TYPE_QUERY = "select oid, typbasetype from pg_type where typname = 'lo'";
-
     protected void processQuery() throws IOException, StandardException {
         String sql = messenger.readString();
         logger.info("Query: {}", sql);
-        if (sql.equals(ODBC_LO_TYPE_QUERY)) {
-            messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
-            messenger.writeString("SELECT");
-            messenger.sendMessage();
+        PostgresStatement pstmt = null;
+        for (PostgresStatementParser parser : unparsedGenerators) {
+            // Try special recognition first; only allowed to turn into one statement.
+            pstmt = parser.parse(this, sql, null);
+            if (pstmt != null)
+                break;
+        }
+        if (pstmt != null) {
+            pstmt.sendDescription(this, false);
+            pstmt.execute(this, -1);
         }
         else {
+            // Parse as a _list_ of statements and process each in turn.
             List<StatementNode> stmts;
             try {
                 parserTap.in();
@@ -309,8 +313,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 parserTap.out();
             }
             for (StatementNode stmt : stmts) {
-                PostgresStatement pstmt = generateStatement(stmt, null);
-                pstmt.sendDescription(this);
+                pstmt = generateStatement(stmt, null);
+                pstmt.sendDescription(this, false);
                 pstmt.execute(this, -1);
             }
         }
@@ -403,7 +407,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         default:
             throw new IOException("Unknown describe source: " + (char)source);
         }
-        pstmt.sendDescription(this);
+        pstmt.sendDescription(this, true);
     }
 
     protected void processExecute() throws IOException, StandardException {
