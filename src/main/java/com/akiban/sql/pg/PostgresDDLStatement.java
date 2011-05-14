@@ -15,10 +15,15 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.aisddl.*;
+
+import com.akiban.sql.parser.CreateTableNode;
 import com.akiban.sql.parser.DDLStatementNode;
 import com.akiban.sql.parser.NodeTypes;
 
 import com.akiban.sql.StandardException;
+
+import com.akiban.ais.model.AkibanInformationSchema;
 
 import java.io.IOException;
 
@@ -53,18 +58,23 @@ public class PostgresDDLStatement implements PostgresStatement
 
     public void execute(PostgresServerSession server, int maxrows)
             throws IOException, StandardException {
+        AkibanInformationSchema ais = server.getAIS();
+        String schema = server.getDefaultSchemaName();
+
         switch (ddl.getNodeType()) {
+        case NodeTypes.CREATE_TABLE_NODE:
+            TableDDL.createTable(ais, schema, (CreateTableNode)ddl);
+            break;
         default:
             throw new StandardException(ddl.statementToString() + " not supported yet");
         }
-        /*
+
         {        
             PostgresMessenger messenger = server.getMessenger();
             messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
             messenger.writeString(ddl.statementToString());
             messenger.sendMessage();
         }
-        */
     }
 
 }
