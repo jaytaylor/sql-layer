@@ -51,7 +51,7 @@ import java.util.*;
  * Compile SQL SELECT statements into operator trees if possible.
  */
 public class PostgresOperatorCompiler extends OperatorCompiler
-                                      implements PostgresStatementCompiler
+                                      implements PostgresStatementGenerator
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorCompiler.class);
 
@@ -71,10 +71,10 @@ public class PostgresOperatorCompiler extends OperatorCompiler
     }
 
     @Override
-    public PostgresStatement compile(StatementNode stmt, int[] paramTypes)
+    public PostgresStatement generate(StatementNode stmt, int[] paramTypes)
             throws StandardException {
         if (!(stmt instanceof CursorNode))
-            throw new StandardException("Not a SELECT");
+            return null;
         CursorNode cursor = (CursorNode)stmt;
         Result result = compile(cursor);
 

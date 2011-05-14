@@ -20,11 +20,11 @@ import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.views.ViewDefinition;
 
-public interface PostgresStatementCompiler
+/** Turn an SQL statement into something executable. */
+public interface PostgresStatementGenerator
 {
-  public void addView(ViewDefinition view) throws StandardException;
-
-  public PostgresStatement compile(StatementNode stmt, int[] paramTypes) 
+  /** Return executable form of the given statement or
+   * <code>null</code> if this generator cannot handle it. */
+  public PostgresStatement generate(StatementNode stmt, int[] paramTypes) 
       throws StandardException;
-
 }

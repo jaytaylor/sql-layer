@@ -57,10 +57,4 @@ public interface PostgresServerSession
     /** Return server's AIS. */
     AkibanInformationSchema getAIS();
     
-    /** Return a parser for SQL. */
-    SQLParser getParser();
-
-    /** Return a compiler for ordinary DML statements. */
-    PostgresStatementCompiler getCompiler();
-    
 }

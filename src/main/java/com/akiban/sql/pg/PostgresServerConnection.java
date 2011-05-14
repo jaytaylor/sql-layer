@@ -64,7 +64,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     private ServiceManager serviceManager;
     private AkibanInformationSchema ais;
     private SQLParser parser;
-    private PostgresStatementCompiler compiler;
+    private PostgresStatementGenerator[] generators;
     private Thread thread;
 
     public PostgresServerConnection(PostgresServer server, Socket socket, 
@@ -215,6 +215,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             this.version = version;
             logger.debug("Version {}.{}", (version >> 16), (version & 0xFFFF));
         }
+
         properties = new Properties();
         while (true) {
             String param = messenger.readString();
@@ -230,17 +231,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             else
                 messenger.setEncoding(enc);
         }
-        
-        String schema = properties.getProperty("database");
-        session = ServiceManagerImpl.newSession();
-        serviceManager = ServiceManagerImpl.get();
-        ais = serviceManager.getDXL().ddlFunctions().getAIS(session);
-        parser = new SQLParser();
-        if (false)
-            compiler = new PostgresHapiCompiler(parser, ais, schema);
-        else
-            compiler = new PostgresOperatorCompiler(parser, ais, schema,
-                                                    session, serviceManager);
+
+        makeGenerators();
 
         {
             messenger.beginMessage(PostgresMessenger.AUTHENTICATION_TYPE);
@@ -315,14 +307,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 parserTap.out();
             }
             for (StatementNode stmt : stmts) {
-                PostgresStatement pstmt;
-                try {
-                    optimizerTap.in();
-                    pstmt = compiler.compile(stmt, null);
-                }
-                finally {
-                    optimizerTap.out();
-                }
+                PostgresStatement pstmt = generateStatement(stmt, null);
                 pstmt.sendDescription(this);
                 pstmt.execute(this, -1);
             }
@@ -347,14 +332,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         finally {
             parserTap.out();
         }
-        PostgresStatement pstmt;
-        try {
-            optimizerTap.in();
-            pstmt = compiler.compile(stmt, paramTypes);
-        }
-        finally {
-            optimizerTap.out();
-        }
+        PostgresStatement pstmt = generateStatement(stmt, paramTypes);
         preparedStatements.put(stmtName, pstmt);
         messenger.beginMessage(PostgresMessenger.PARSE_COMPLETE_TYPE);
         messenger.sendMessage();
@@ -455,6 +433,42 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         stop();
     }
 
+    protected void makeGenerators() {
+        session = ServiceManagerImpl.newSession();
+        serviceManager = ServiceManagerImpl.get();
+        ais = serviceManager.getDXL().ddlFunctions().getAIS(session);
+
+        parser = new SQLParser();
+
+        String schema = getProperty("database");
+        boolean hapi = false;
+        if (schema.startsWith("hapi/")) {
+            schema = schema.substring(5);
+            hapi = true;
+        }
+        generators = new PostgresStatementGenerator[] {
+            (hapi) ? 
+            new PostgresHapiCompiler(parser, ais, schema) : 
+            new PostgresOperatorCompiler(parser, ais, schema,
+                                         session, serviceManager)
+        };
+    }
+
+    protected PostgresStatement generateStatement(StatementNode stmt, int[] paramTypes)
+            throws StandardException {
+        try {
+            optimizerTap.in();
+            for (PostgresStatementGenerator generator : generators) {
+                PostgresStatement pstmt = generator.generate(stmt, paramTypes);
+                if (pstmt != null) return pstmt;
+            }
+        }
+        finally {
+            optimizerTap.out();
+        }
+        throw new StandardException("Unsupported SQL statement");
+    }
+
     /* PostgresServerSession */
 
     @Override
@@ -505,16 +519,6 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     @Override
     public AkibanInformationSchema getAIS() {
         return ais;
-    }
-    
-    @Override
-    public SQLParser getParser() {
-        return parser;
-    }
-
-    @Override
-    public PostgresStatementCompiler getCompiler() {
-        return compiler;
     }
 
 }

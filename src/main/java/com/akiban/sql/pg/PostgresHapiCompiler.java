@@ -47,7 +47,7 @@ import java.util.*;
  * <li>No FOR UPDATE.</li>
  * </ul>
  */
-public class PostgresHapiCompiler implements PostgresStatementCompiler
+public class PostgresHapiCompiler implements PostgresStatementGenerator
 {
     private SQLParserContext parserContext;
     private NodeFactory nodeFactory;
@@ -74,10 +74,10 @@ public class PostgresHapiCompiler implements PostgresStatementCompiler
     }
 
     @Override
-    public PostgresStatement compile(StatementNode stmt, int[] paramTypes)
+    public PostgresStatement generate(StatementNode stmt, int[] paramTypes)
             throws StandardException {
         if (!(stmt instanceof CursorNode))
-            throw new StandardException("Not a SELECT");
+            return null;
         CursorNode cursor = (CursorNode)stmt;
 
         // Get into bound & grouped form.
