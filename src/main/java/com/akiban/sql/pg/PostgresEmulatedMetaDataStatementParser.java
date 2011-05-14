@@ -21,6 +21,9 @@ import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.sql.StandardException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.regex.Pattern;
 
 /** Handle known system table queries from tools directly.  At some
@@ -30,6 +33,8 @@ import java.util.regex.Pattern;
  */
 public class PostgresEmulatedMetaDataStatementParser implements PostgresStatementParser
 {
+    private static final Logger logger = LoggerFactory.getLogger(PostgresEmulatedMetaDataStatementParser.class);
+
     /** Quickly determine whether a given query <em>might</em> be a
      * Postgres system table. */
     public static final String POSSIBLE_PG_QUERY = "FROM\\s+PG_";
@@ -46,11 +51,9 @@ public class PostgresEmulatedMetaDataStatementParser implements PostgresStatemen
         throws StandardException {
         if (!possiblePattern.matcher(sql).find())
             return null;
-        // *** Only needed for debugging.
-        if (sql.endsWith(";"))
-            sql = sql.substring(0, sql.length()-1);
         for (Query query : Query.values()) {
             if (sql.equals(query.getSQL())) {
+                logger.debug("Emulated: {}", query);
                 return new PostgresEmulatedMetaDataStatement(query);
             }
         }

@@ -57,10 +57,39 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return this;
     }
 
+    static final PostgresType OID_PG_TYPE = 
+        new PostgresType(PostgresType.OID_TYPE_OID, (short)4, -1);
+
     @Override
     public void sendDescription(PostgresServerSession server, boolean always) 
             throws IOException, StandardException {
-        // TODO: Need to make up columns.
+        int ncols;
+        String[] names;
+        PostgresType[] types;
+        switch (query) {
+        case ODBC_LO_TYPE_QUERY:
+            ncols = 2;
+            names = new String[] { "oid", "typbasetype" };
+            types = new PostgresType[] { OID_PG_TYPE, OID_PG_TYPE };
+            break;
+        default:
+            return;
+        }
+
+        PostgresMessenger messenger = server.getMessenger();
+        messenger.beginMessage(PostgresMessenger.ROW_DESCRIPTION_TYPE);
+        messenger.writeShort(ncols);
+        for (int i = 0; i < ncols; i++) {
+            PostgresType type = types[i];
+            messenger.writeString(names[i]); // attname
+            messenger.writeInt(0);    // attrelid
+            messenger.writeShort(0);  // attnum
+            messenger.writeInt(type.getOid()); // atttypid
+            messenger.writeShort(type.getLength()); // attlen
+            messenger.writeInt(type.getModifier()); // atttypmod
+            messenger.writeShort(0);
+        }
+        messenger.sendMessage();
     }
 
     @Override
