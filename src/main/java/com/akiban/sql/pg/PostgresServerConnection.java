@@ -449,7 +449,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         defaultSchemaName = getProperty("database");
         // Temporary until completely removed.
         boolean hapi = false;
-        if (defaultSchemaName.startsWith("hapi/")) {
+        if (defaultSchemaName.startsWith("hapi.")) {
             defaultSchemaName = defaultSchemaName.substring(5);
             hapi = true;
         }
