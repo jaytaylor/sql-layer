@@ -15,7 +15,7 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.parser.CursorNode;
+import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.views.ViewDefinition;
@@ -24,7 +24,7 @@ public interface PostgresStatementCompiler
 {
   public void addView(ViewDefinition view) throws StandardException;
 
-  public PostgresStatement compile(CursorNode cursor, int[] paramTypes) 
+  public PostgresStatement compile(StatementNode stmt, int[] paramTypes) 
       throws StandardException;
 
 }

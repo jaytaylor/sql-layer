@@ -74,8 +74,12 @@ public class PostgresHapiCompiler implements PostgresStatementCompiler
     }
 
     @Override
-    public PostgresStatement compile(CursorNode cursor, int[] paramTypes)
+    public PostgresStatement compile(StatementNode stmt, int[] paramTypes)
             throws StandardException {
+        if (!(stmt instanceof CursorNode))
+            throw new StandardException("Not a SELECT");
+        CursorNode cursor = (CursorNode)stmt;
+
         // Get into bound & grouped form.
         binder.bind(cursor);
         cursor = (CursorNode)booleanNormalizer.normalize(cursor);

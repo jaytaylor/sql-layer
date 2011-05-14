@@ -144,8 +144,10 @@ public class PostgresHapiRequest extends PostgresStatement implements HapiGetReq
     }
 
     @Override
-    public int execute(PostgresMessenger messenger, Session session, int maxrows) 
+    public void execute(PostgresServerSession server, int maxrows) 
             throws IOException, StandardException {
+        PostgresMessenger messenger = server.getMessenger();
+        Session session = server.getSession();
         PostgresHapiOutputter outputter = new PostgresHapiOutputter(messenger, session,
                                                                     this, maxrows);
         // null as OutputStream, since we use the higher level messenger.
@@ -155,7 +157,10 @@ public class PostgresHapiRequest extends PostgresStatement implements HapiGetReq
         catch (HapiRequestException ex) {
             throw new StandardException(ex);
         }
-        return outputter.getNRows();
+        int nrows = outputter.getNRows();
+        messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+        messenger.writeString("SELECT " + nrows);
+        messenger.sendMessage();
     }
 
 }

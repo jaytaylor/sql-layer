@@ -29,10 +29,14 @@ import java.io.IOException;
  */
 public abstract class PostgresStatement
 {
-  private List<Column> columns; // Any from shallowestTable through deepestTable.
+  private List<Column> columns;
   private List<PostgresType> types;
 
-  public PostgresStatement(List<Column> columns) {
+  protected PostgresStatement() {
+    this.columns = null;
+  }
+
+  protected PostgresStatement(List<Column> columns) {
     this.columns = columns;
   }
 
@@ -46,6 +50,7 @@ public abstract class PostgresStatement
 
   public List<PostgresType> getTypes() throws StandardException {
     if (types == null) {
+      if (columns == null) return null;
       types = new ArrayList<PostgresType>(columns.size());
       for (Column column : columns) {
         types.add(PostgresType.fromAIS(column));
@@ -54,23 +59,29 @@ public abstract class PostgresStatement
     return types;
   }
 
-  public void sendRowDescription(PostgresMessenger messenger) 
+  public void sendDescription(PostgresServerSession server) 
       throws IOException, StandardException {
-    messenger.beginMessage(PostgresMessenger.ROW_DESCRIPTION_TYPE);
+    PostgresMessenger messenger = server.getMessenger();
     List<Column> columns = getColumns();
-    List<PostgresType> types = getTypes();
-    int ncols = columns.size();
-    messenger.writeShort(ncols);
-    for (int i = 0; i < ncols; i++) {
-      Column col = columns.get(i);
-      PostgresType type = types.get(i);
-      messenger.writeString(col.getName()); // attname
-      messenger.writeInt(0);    // attrelid
-      messenger.writeShort(0);  // attnum
-      messenger.writeInt(type.getOid()); // atttypid
-      messenger.writeShort(type.getLength()); // attlen
-      messenger.writeInt(type.getModifier()); // atttypmod
-      messenger.writeShort(isColumnBinary(i) ? 1 : 0);
+    if (columns == null) {
+      messenger.beginMessage(PostgresMessenger.NO_DATA_TYPE);
+    }
+    else {
+      messenger.beginMessage(PostgresMessenger.ROW_DESCRIPTION_TYPE);
+      List<PostgresType> types = getTypes();
+      int ncols = columns.size();
+      messenger.writeShort(ncols);
+      for (int i = 0; i < ncols; i++) {
+        Column col = columns.get(i);
+        PostgresType type = types.get(i);
+        messenger.writeString(col.getName()); // attname
+        messenger.writeInt(0);    // attrelid
+        messenger.writeShort(0);  // attnum
+        messenger.writeInt(type.getOid()); // atttypid
+        messenger.writeShort(type.getLength()); // attlen
+        messenger.writeInt(type.getModifier()); // atttypmod
+        messenger.writeShort(isColumnBinary(i) ? 1 : 0);
+      }
     }
     messenger.sendMessage();
   }
@@ -81,7 +92,7 @@ public abstract class PostgresStatement
     return this;
   }
 
-  public abstract int execute(PostgresMessenger messenger, Session session, int maxrows)
+  public abstract void execute(PostgresServerSession server, int maxrows)
       throws IOException, StandardException;
 
 }

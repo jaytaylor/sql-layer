@@ -22,6 +22,7 @@ import com.akiban.sql.optimizer.ExpressionRow;
 
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.CursorNode;
+import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
@@ -70,8 +71,11 @@ public class PostgresOperatorCompiler extends OperatorCompiler
     }
 
     @Override
-    public PostgresStatement compile(CursorNode cursor, int[] paramTypes)
+    public PostgresStatement compile(StatementNode stmt, int[] paramTypes)
             throws StandardException {
+        if (!(stmt instanceof CursorNode))
+            throw new StandardException("Not a SELECT");
+        CursorNode cursor = (CursorNode)stmt;
         Result result = compile(cursor);
 
         logger.debug("Operator:\n{}", result);

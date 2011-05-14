@@ -40,7 +40,7 @@ import java.util.*;
  * Runs in its own thread; has its own AkServer Session.
  *
  */
-public class PostgresServerConnection implements Runnable
+public class PostgresServerConnection implements PostgresServerSession, Runnable
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresServerConnection.class);
 
@@ -54,6 +54,7 @@ public class PostgresServerConnection implements Runnable
     private int pid, secret;
     private int version;
     private Properties properties;
+    private Map<String,Object> attributes = new HashMap<String,Object>();
     private Map<String,PostgresStatement> preparedStatements =
         new HashMap<String,PostgresStatement>();
     private Map<String,PostgresStatement> boundPortals =
@@ -314,22 +315,16 @@ public class PostgresServerConnection implements Runnable
                 parserTap.out();
             }
             for (StatementNode stmt : stmts) {
-                if (!(stmt instanceof CursorNode))
-                    throw new StandardException("Not a SELECT");
                 PostgresStatement pstmt;
                 try {
                     optimizerTap.in();
-                    pstmt = compiler.compile((CursorNode)stmt, null);
+                    pstmt = compiler.compile(stmt, null);
                 }
                 finally {
                     optimizerTap.out();
                 }
-                pstmt.sendRowDescription(messenger);
-                int nrows = pstmt.execute(messenger, session, -1);
-
-                messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
-                messenger.writeString("SELECT");
-                messenger.sendMessage();
+                pstmt.sendDescription(this);
+                pstmt.execute(this, -1);
             }
         }
         readyForQuery();
@@ -352,12 +347,10 @@ public class PostgresServerConnection implements Runnable
         finally {
             parserTap.out();
         }
-        if (!(stmt instanceof CursorNode))
-            throw new StandardException("Not a SELECT");
         PostgresStatement pstmt;
         try {
             optimizerTap.in();
-            pstmt = compiler.compile((CursorNode)stmt, paramTypes);
+            pstmt = compiler.compile(stmt, paramTypes);
         }
         finally {
             optimizerTap.out();
@@ -430,24 +423,14 @@ public class PostgresServerConnection implements Runnable
         default:
             throw new IOException("Unknown describe source: " + (char)source);
         }
-        if (false) {
-            // This would be for a query not returning data.
-            messenger.beginMessage(PostgresMessenger.NO_DATA_TYPE);
-            messenger.sendMessage();
-        }
-        else {
-            pstmt.sendRowDescription(messenger);
-        }
+        pstmt.sendDescription(this);
     }
 
     protected void processExecute() throws IOException, StandardException {
         String portalName = messenger.readString();
         int maxrows = messenger.readInt();
         PostgresStatement pstmt = boundPortals.get(portalName);
-        int nrows = pstmt.execute(messenger, session, maxrows);
-        messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
-        messenger.writeString("SELECT");
-        messenger.sendMessage();
+        pstmt.execute(this, maxrows);
     }
 
     protected void processClose() throws IOException {
@@ -470,6 +453,68 @@ public class PostgresServerConnection implements Runnable
     
     protected void processTerminate() throws IOException {
         stop();
+    }
+
+    /* PostgresServerSession */
+
+    @Override
+    public PostgresMessenger getMessenger() {
+        return messenger;
+    }
+
+    @Override
+    public int getVersion() {
+        return version;
+    }
+
+    @Override
+    public Properties getProperties() {
+        return properties;
+    }
+
+    @Override
+    public String getProperty(String key) {
+        return properties.getProperty(key);
+    }
+
+    @Override
+    public String getProperty(String key, String defval) {
+        return properties.getProperty(key, defval);
+    }
+
+    @Override
+    public Map<String,Object> getAttributes() {
+        return attributes;
+    }
+
+    @Override
+    public Object getAttribute(String key) {
+        return attributes.get(key);
+    }
+
+    @Override
+    public void setAttribute(String key, Object attr) {
+        attributes.put(key, attr);
+    }
+
+    @Override
+    public Session getSession() {
+        return session;
+    }
+
+    @Override
+    public AkibanInformationSchema getAIS() {
+        return ais;
+    }
+    
+    @Override
+    public SQLParser getParser() {
+        return parser;
+    }
+
+    @Override
+    public PostgresStatementCompiler getCompiler() {
+        return compiler;
     }
 
 }

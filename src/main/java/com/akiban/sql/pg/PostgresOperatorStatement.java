@@ -55,8 +55,9 @@ public class PostgresOperatorStatement extends PostgresStatement
         this.resultColumnOffsets = resultColumnOffsets;
     }
     
-    public int execute(PostgresMessenger messenger, Session session, int maxrows)
-            throws IOException, StandardException {
+    public void execute(PostgresServerSession server, int maxrows)
+        throws IOException, StandardException {
+        PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
         Cursor cursor = API.cursor(resultOperator, store);
         int nrows = 0;
@@ -95,7 +96,11 @@ public class PostgresOperatorStatement extends PostgresStatement
         finally {
             cursor.close();
         }
-        return nrows;
+        {        
+          messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+          messenger.writeString("SELECT " + nrows);
+          messenger.sendMessage();
+        }
     }
 
     protected Bindings getBindings() {
