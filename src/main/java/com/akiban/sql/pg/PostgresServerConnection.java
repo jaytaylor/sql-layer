@@ -453,12 +453,14 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             defaultSchemaName = defaultSchemaName.substring(5);
             hapi = true;
         }
-        // TODO: Any way / need to ask AIS if schema exists?
+        // TODO: Any way / need to ask AIS if schema exists and report error?
 
         unparsedGenerators = new PostgresStatementParser[] {
             new PostgresEmulatedMetaDataStatementParser(this)
         };
         parsedGenerators = new PostgresStatementGenerator[] {
+            new PostgresSessionStatementGenerator(this),
+            new PostgresDDLStatementGenerator(this),
             (hapi) ? new PostgresHapiCompiler(this) : new PostgresOperatorCompiler(this)
         };
     }

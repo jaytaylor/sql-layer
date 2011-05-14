@@ -97,9 +97,9 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             cursor.close();
         }
         {        
-          messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
-          messenger.writeString("SELECT " + nrows);
-          messenger.sendMessage();
+            messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+            messenger.writeString("SELECT " + nrows);
+            messenger.sendMessage();
         }
     }
 

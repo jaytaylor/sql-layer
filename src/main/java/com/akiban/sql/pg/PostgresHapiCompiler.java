@@ -47,7 +47,7 @@ import java.util.*;
  * <li>No FOR UPDATE.</li>
  * </ul>
  */
-public class PostgresHapiCompiler implements PostgresStatementGenerator
+public class PostgresHapiCompiler extends PostgresBaseStatementGenerator
 {
     private SQLParserContext parserContext;
     private NodeFactory nodeFactory;
@@ -67,18 +67,6 @@ public class PostgresHapiCompiler implements PostgresStatementGenerator
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
         grouper = new Grouper(parser);
-    }
-
-    public void addView(ViewDefinition view) throws StandardException {
-        binder.addView(view);
-    }
-
-    @Override
-    public PostgresStatement parse(PostgresServerSession server,
-                                   String sql, int[] paramTypes) 
-            throws StandardException {
-        // This very inefficient reparsing by every generator is actually avoided.
-        return generate(server, server.getParser().parseStatement(sql), paramTypes);
     }
 
     @Override
@@ -237,6 +225,10 @@ public class PostgresHapiCompiler implements PostgresStatementGenerator
 
         return new PostgresHapiRequest(shallowestTable, queryTable, deepestTable,
                                        predicates, columns);
+    }
+
+    public void addView(ViewDefinition view) throws StandardException {
+        binder.addView(view);
     }
 
     /** Is t1 an ancestor of t2? */

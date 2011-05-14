@@ -24,6 +24,8 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.parser.StatementNode;
 
+import com.akiban.sql.views.ViewDefinition;
+
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
@@ -95,6 +97,11 @@ public class PostgresOperatorCompiler extends OperatorCompiler
                                              result.getResultRowType(),
                                              result.getResultColumns(),
                                              result.getResultColumnOffsets());
+    }
+
+    // TODO: Not used. View definitions need to live someplace persistent.
+    public void addView(ViewDefinition view) throws StandardException {
+        binder.addView(view);
     }
 
     // The current implementation of index cursors expects that the

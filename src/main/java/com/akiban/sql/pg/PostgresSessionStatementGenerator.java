@@ -19,14 +19,20 @@ import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.sql.StandardException;
 
-/** Turn an SQL statement into something executable. */
-public interface PostgresStatementGenerator extends PostgresStatementParser
+/** SQL statements that affect session / environment state. */
+public class PostgresSessionStatementGenerator extends PostgresBaseStatementGenerator
 {
+    public PostgresSessionStatementGenerator(PostgresServerSession server) {
+    }
 
-    /** Return executable form of the given parsed statement or
-     * <code>null</code> if this generator cannot handle it. */
+    @Override
     public PostgresStatement generate(PostgresServerSession server,
                                       StatementNode stmt, int[] paramTypes) 
-            throws StandardException;
+            throws StandardException {
+        switch (stmt.getNodeType()) {
+        default:
+            return null;
+        }
+    }
 
 }

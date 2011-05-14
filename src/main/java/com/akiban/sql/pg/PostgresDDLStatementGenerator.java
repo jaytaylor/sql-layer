@@ -15,18 +15,24 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.parser.DDLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.sql.StandardException;
 
-/** Turn an SQL statement into something executable. */
-public interface PostgresStatementGenerator extends PostgresStatementParser
+/** DDL statements executed against AIS. */
+public class PostgresDDLStatementGenerator extends PostgresBaseStatementGenerator
 {
+    public PostgresDDLStatementGenerator(PostgresServerSession server) {
+    }
 
-    /** Return executable form of the given parsed statement or
-     * <code>null</code> if this generator cannot handle it. */
+    @Override
     public PostgresStatement generate(PostgresServerSession server,
                                       StatementNode stmt, int[] paramTypes) 
-            throws StandardException;
+            throws StandardException {
+        if (!(stmt instanceof DDLStatementNode))
+            return null;
+        return new PostgresDDLStatement((DDLStatementNode)stmt);
+    }
 
 }
