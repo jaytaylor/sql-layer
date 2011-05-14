@@ -57,11 +57,11 @@ public class PostgresHapiCompiler implements PostgresStatementGenerator
     private SubqueryFlattener subqueryFlattener;
     private Grouper grouper;
 
-    public PostgresHapiCompiler(SQLParser parser, 
-                                AkibanInformationSchema ais, String defaultSchemaName) {
+    public PostgresHapiCompiler(PostgresServerSession server) {
+        SQLParser parser = server.getParser();
         parserContext = parser;
         nodeFactory = parserContext.getNodeFactory();
-        binder = new AISBinder(ais, defaultSchemaName);
+        binder = new AISBinder(server.getAIS(), server.getDefaultSchemaName());
         parser.setNodeFactory(new BindingNodeFactory(nodeFactory));
         typeComputer = new AISTypeComputer();
         booleanNormalizer = new BooleanNormalizer(parser);
@@ -74,7 +74,13 @@ public class PostgresHapiCompiler implements PostgresStatementGenerator
     }
 
     @Override
-    public PostgresStatement generate(StatementNode stmt, int[] paramTypes)
+    public void sessionChanged(PostgresServerSession server) {
+        binder.setDefaultSchemaName(server.getDefaultSchemaName());
+    }
+
+    @Override
+    public PostgresStatement generate(PostgresServerSession session,
+                                      StatementNode stmt, int[] paramTypes)
             throws StandardException {
         if (!(stmt instanceof CursorNode))
             return null;

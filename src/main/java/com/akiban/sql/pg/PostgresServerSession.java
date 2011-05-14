@@ -17,8 +17,9 @@ package com.akiban.sql.pg;
 
 import com.akiban.sql.parser.SQLParser;
 
-import com.akiban.server.service.session.Session;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.server.service.ServiceManager;
+import com.akiban.server.service.session.Session;
 
 import java.util.Properties;
 import java.util.Map;
@@ -28,33 +29,45 @@ import java.util.Map;
 public interface PostgresServerSession
 {
     /** Return the messenger used to communicate with client. */
-    PostgresMessenger getMessenger();
+    public PostgresMessenger getMessenger();
 
     /** Return the protocol version in use. */
-    int getVersion();
+    public int getVersion();
 
     /** Return properties specified by the client. */
-    Properties getProperties();
+    public Properties getProperties();
 
     /** Get a client property. */
-    String getProperty(String key);
+    public String getProperty(String key);
 
     /** Get a client property. */
-    String getProperty(String key, String defval);
+    public String getProperty(String key, String defval);
 
     /** Get session attributes used to store state between statements. */
-    Map<String,Object> getAttributes();
+    public Map<String,Object> getAttributes();
 
     /** Get a session attribute. */
-    Object getAttribute(String key);
+    public Object getAttribute(String key);
 
     /** Set a session attribute. */
-    void setAttribute(String key, Object attr);
+    public void setAttribute(String key, Object attr);
+
+    /** Return Akiban Server manager. */
+    public ServiceManager getServiceManager();
 
     /** Return Akiban Server session. */
-    Session getSession();
+    public Session getSession();
+
+    /** Return the default schema for SQL objects. */
+    public String getDefaultSchemaName();
+
+    /** Set the default schema for SQL objects. */
+    public void setDefaultSchemaName(String defaultSchemaName);
 
     /** Return server's AIS. */
-    AkibanInformationSchema getAIS();
+    public AkibanInformationSchema getAIS();
     
+    /** Return a parser for SQL statements. */
+    public SQLParser getParser();
+
 }

@@ -25,6 +25,10 @@ public interface PostgresStatementGenerator
 {
   /** Return executable form of the given statement or
    * <code>null</code> if this generator cannot handle it. */
-  public PostgresStatement generate(StatementNode stmt, int[] paramTypes) 
+  public PostgresStatement generate(PostgresServerSession server,
+                                    StatementNode stmt, int[] paramTypes) 
       throws StandardException;
+
+  /** Notification that an attribute or schema has changed. */
+  public void sessionChanged(PostgresServerSession server);
 }

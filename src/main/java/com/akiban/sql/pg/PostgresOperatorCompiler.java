@@ -37,8 +37,6 @@ import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 
@@ -57,21 +55,25 @@ public class PostgresOperatorCompiler extends OperatorCompiler
 
     private PersistitAdapter adapter;
 
-    public PostgresOperatorCompiler(SQLParser parser, 
-                                    AkibanInformationSchema ais, String defaultSchemaName,
-                                    Session session, ServiceManager serviceManager) {
-        super(parser, ais, defaultSchemaName);
-        Store store = serviceManager.getStore();
+    public PostgresOperatorCompiler(PostgresServerSession server) {
+        super(server.getParser(), server.getAIS(), server.getDefaultSchemaName());
+        Store store = server.getServiceManager().getStore();
         PersistitStore persistitStore;
         if (store instanceof OperatorStore)
             persistitStore = ((OperatorStore)store).getPersistitStore();
         else
             persistitStore = (PersistitStore)store;
-        adapter = new PersistitAdapter(schema, persistitStore, session);
+        adapter = new PersistitAdapter(schema, persistitStore, server.getSession());
     }
 
     @Override
-    public PostgresStatement generate(StatementNode stmt, int[] paramTypes)
+    public void sessionChanged(PostgresServerSession server) {
+        binder.setDefaultSchemaName(server.getDefaultSchemaName());
+    }
+
+    @Override
+    public PostgresStatement generate(PostgresServerSession session,
+                                      StatementNode stmt, int[] paramTypes)
             throws StandardException {
         if (!(stmt instanceof CursorNode))
             return null;

@@ -63,6 +63,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     private Session session;
     private ServiceManager serviceManager;
     private AkibanInformationSchema ais;
+    private String defaultSchemaName;
     private SQLParser parser;
     private PostgresStatementGenerator[] generators;
     private Thread thread;
@@ -440,17 +441,17 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
         parser = new SQLParser();
 
-        String schema = getProperty("database");
+        defaultSchemaName = getProperty("database");
+        // Temporary until completely removed.
         boolean hapi = false;
-        if (schema.startsWith("hapi/")) {
-            schema = schema.substring(5);
+        if (defaultSchemaName.startsWith("hapi/")) {
+            defaultSchemaName = defaultSchemaName.substring(5);
             hapi = true;
         }
+        // TODO: Any way / need to ask AIS if schema exists?
+
         generators = new PostgresStatementGenerator[] {
-            (hapi) ? 
-            new PostgresHapiCompiler(parser, ais, schema) : 
-            new PostgresOperatorCompiler(parser, ais, schema,
-                                         session, serviceManager)
+            (hapi) ? new PostgresHapiCompiler(this) : new PostgresOperatorCompiler(this)
         };
     }
 
@@ -459,7 +460,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         try {
             optimizerTap.in();
             for (PostgresStatementGenerator generator : generators) {
-                PostgresStatement pstmt = generator.generate(stmt, paramTypes);
+                PostgresStatement pstmt = generator.generate(this, stmt, paramTypes);
                 if (pstmt != null) return pstmt;
             }
         }
@@ -509,6 +510,14 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     @Override
     public void setAttribute(String key, Object attr) {
         attributes.put(key, attr);
+        for (PostgresStatementGenerator generator : generators) {
+            generator.sessionChanged(this);
+        }
+    }
+
+    @Override
+    public ServiceManager getServiceManager() {
+        return serviceManager;
     }
 
     @Override
@@ -517,8 +526,26 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     @Override
+    public String getDefaultSchemaName() {
+        return defaultSchemaName;
+    }
+
+    @Override
+    public void setDefaultSchemaName(String defaultSchemaName) {
+        this.defaultSchemaName = defaultSchemaName;
+        for (PostgresStatementGenerator generator : generators) {
+            generator.sessionChanged(this);
+        }
+    }
+
+    @Override
     public AkibanInformationSchema getAIS() {
         return ais;
+    }
+
+    @Override
+    public SQLParser getParser() {
+        return parser;
     }
 
 }
