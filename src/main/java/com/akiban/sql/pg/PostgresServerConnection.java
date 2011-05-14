@@ -344,7 +344,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         messenger.sendMessage();
     }
 
-    protected void processBind() throws IOException {
+    protected void processBind() throws IOException, StandardException {
         String portalName = messenger.readString();
         String stmtName = messenger.readString();
         String[] params = null;
@@ -387,8 +387,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
         PostgresStatement pstmt = preparedStatements.get(stmtName);
         boundPortals.put(portalName, 
-                         pstmt.getBoundRequest(params, 
-                                               resultsBinary, defaultResultsBinary));
+                         pstmt.getBoundStatement(params, 
+                                                 resultsBinary, defaultResultsBinary));
         messenger.beginMessage(PostgresMessenger.BIND_COMPLETE_TYPE);
         messenger.sendMessage();
     }
@@ -456,6 +456,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         // TODO: Any way / need to ask AIS if schema exists?
 
         unparsedGenerators = new PostgresStatementParser[] {
+            new PostgresEmulatedMetaDataStatementParser(this)
         };
         parsedGenerators = new PostgresStatementGenerator[] {
             (hapi) ? new PostgresHapiCompiler(this) : new PostgresOperatorCompiler(this)

@@ -44,8 +44,11 @@ public class PostgresEmulatedMetaDataStatementParser implements PostgresStatemen
     public PostgresStatement parse(PostgresServerSession server,
                                    String sql, int[] paramTypes) 
         throws StandardException {
-        if (!possiblePattern.matcher(sql).matches())
+        if (!possiblePattern.matcher(sql).find())
             return null;
+        // *** Only needed for debugging.
+        if (sql.endsWith(";"))
+            sql = sql.substring(0, sql.length()-1);
         for (Query query : Query.values()) {
             if (sql.equals(query.getSQL())) {
                 return new PostgresEmulatedMetaDataStatement(query);

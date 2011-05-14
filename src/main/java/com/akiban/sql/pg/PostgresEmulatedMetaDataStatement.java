@@ -23,7 +23,7 @@ import java.io.IOException;
  * Canned handling for fixed SQL text that comes from tools that
  * believe they are talking to a real Postgres database.
  */
-public class PostgresEmulatedMetaDataStatement extends PostgresStatement
+public class PostgresEmulatedMetaDataStatement implements PostgresStatement
 {
     enum Query {
         // ODBC driver sends this at the start; returning no rows is fine (and normal).
@@ -47,6 +47,23 @@ public class PostgresEmulatedMetaDataStatement extends PostgresStatement
         this.query = query;
     }
 
+    @Override
+    public PostgresStatement getBoundStatement(String[] parameters,
+                                               boolean[] columnBinary, 
+                                               boolean defaultColumnBinary) 
+            throws StandardException {
+        if (parameters != null)
+            throw new StandardException("Parameters not supported.");
+        return this;
+    }
+
+    @Override
+    public void sendDescription(PostgresServerSession server, boolean always) 
+            throws IOException, StandardException {
+        // TODO: Need to make up columns.
+    }
+
+    @Override
     public void execute(PostgresServerSession server, int maxrows)
         throws IOException, StandardException {
         PostgresMessenger messenger = server.getMessenger();

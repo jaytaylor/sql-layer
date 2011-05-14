@@ -33,7 +33,7 @@ import java.io.IOException;
  * An SQL SELECT transformed into a Hapi request.
  * @see PostgresHapiCompiler
  */
-public class PostgresHapiRequest extends PostgresStatement implements HapiGetRequest
+public class PostgresHapiRequest extends PostgresBaseStatement implements HapiGetRequest
 {
     private UserTable shallowestTable, queryTable, deepestTable;
     private List<HapiPredicate> predicates; // All on queryTable.
@@ -118,9 +118,9 @@ public class PostgresHapiRequest extends PostgresStatement implements HapiGetReq
     /** Get a bound version of a predicate by applying given parameters
      * and requested result formats. */
     @Override
-    public PostgresStatement getBoundRequest(String[] parameters,
-                                             boolean[] columnBinary, 
-                                             boolean defaultColumnBinary) {
+    public PostgresStatement getBoundStatement(String[] parameters,
+                                               boolean[] columnBinary, 
+                                               boolean defaultColumnBinary) {
         if ((parameters == null) && 
             (columnBinary == null) && (defaultColumnBinary == false))
             return this;        // Can be reused.

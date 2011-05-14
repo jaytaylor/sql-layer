@@ -36,7 +36,7 @@ import java.io.IOException;
  * An SQL SELECT transformed into an operator tree
  * @see PostgresOperatorCompiler
  */
-public class PostgresOperatorStatement extends PostgresStatement
+public class PostgresOperatorStatement extends PostgresBaseStatement
 {
     private StoreAdapter store;
     private PhysicalOperator resultOperator;
@@ -145,9 +145,9 @@ public class PostgresOperatorStatement extends PostgresStatement
     /** Get a bound version of a predicate by applying given parameters
      * and requested result formats. */
     @Override
-    public PostgresStatement getBoundRequest(String[] parameters,
-                                             boolean[] columnBinary, 
-                                             boolean defaultColumnBinary) {
+    public PostgresStatement getBoundStatement(String[] parameters,
+                                               boolean[] columnBinary, 
+                                               boolean defaultColumnBinary) {
         if ((parameters == null) && 
             (columnBinary == null) && (defaultColumnBinary == false))
             return this;        // Can be reused.
