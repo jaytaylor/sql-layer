@@ -15,16 +15,24 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.parser.CursorNode;
+import com.akiban.sql.parser.DDLStatementNode;
+import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.sql.StandardException;
-import com.akiban.sql.views.ViewDefinition;
 
-public interface PostgresStatementCompiler
+/** DDL statements executed against AIS. */
+public class PostgresDDLStatementGenerator extends PostgresBaseStatementGenerator
 {
-  public void addView(ViewDefinition view) throws StandardException;
+    public PostgresDDLStatementGenerator(PostgresServerSession server) {
+    }
 
-  public PostgresStatement compile(CursorNode cursor, int[] paramTypes) 
-      throws StandardException;
+    @Override
+    public PostgresStatement generate(PostgresServerSession server,
+                                      StatementNode stmt, int[] paramTypes) 
+            throws StandardException {
+        if (!(stmt instanceof DDLStatementNode))
+            return null;
+        return new PostgresDDLStatement((DDLStatementNode)stmt);
+    }
 
 }

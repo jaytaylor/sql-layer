@@ -22,6 +22,9 @@ import com.akiban.sql.optimizer.ExpressionRow;
 
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.CursorNode;
+import com.akiban.sql.parser.StatementNode;
+
+import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
@@ -36,8 +39,6 @@ import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 
@@ -50,28 +51,43 @@ import java.util.*;
  * Compile SQL SELECT statements into operator trees if possible.
  */
 public class PostgresOperatorCompiler extends OperatorCompiler
-                                      implements PostgresStatementCompiler
+                                      implements PostgresStatementGenerator
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorCompiler.class);
 
     private PersistitAdapter adapter;
 
-    public PostgresOperatorCompiler(SQLParser parser, 
-                                    AkibanInformationSchema ais, String defaultSchemaName,
-                                    Session session, ServiceManager serviceManager) {
-        super(parser, ais, defaultSchemaName);
-        Store store = serviceManager.getStore();
+    public PostgresOperatorCompiler(PostgresServerSession server) {
+        super(server.getParser(), server.getAIS(), server.getDefaultSchemaName());
+        Store store = server.getServiceManager().getStore();
         PersistitStore persistitStore;
         if (store instanceof OperatorStore)
             persistitStore = ((OperatorStore)store).getPersistitStore();
         else
             persistitStore = (PersistitStore)store;
-        adapter = new PersistitAdapter(schema, persistitStore, session);
+        adapter = new PersistitAdapter(schema, persistitStore, server.getSession());
     }
 
     @Override
-    public PostgresStatement compile(CursorNode cursor, int[] paramTypes)
+    public PostgresStatement parse(PostgresServerSession server,
+                                   String sql, int[] paramTypes) 
             throws StandardException {
+        // This very inefficient reparsing by every generator is actually avoided.
+        return generate(server, server.getParser().parseStatement(sql), paramTypes);
+    }
+
+    @Override
+    public void sessionChanged(PostgresServerSession server) {
+        binder.setDefaultSchemaName(server.getDefaultSchemaName());
+    }
+
+    @Override
+    public PostgresStatement generate(PostgresServerSession session,
+                                      StatementNode stmt, int[] paramTypes)
+            throws StandardException {
+        if (!(stmt instanceof CursorNode))
+            return null;
+        CursorNode cursor = (CursorNode)stmt;
         Result result = compile(cursor);
 
         logger.debug("Operator:\n{}", result);
@@ -81,6 +97,11 @@ public class PostgresOperatorCompiler extends OperatorCompiler
                                              result.getResultRowType(),
                                              result.getResultColumns(),
                                              result.getResultColumnOffsets());
+    }
+
+    // TODO: Not used. View definitions need to live someplace persistent.
+    public void addView(ViewDefinition view) throws StandardException {
+        binder.addView(view);
     }
 
     // The current implementation of index cursors expects that the

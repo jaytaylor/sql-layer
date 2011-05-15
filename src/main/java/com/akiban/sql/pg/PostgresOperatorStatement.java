@@ -36,7 +36,7 @@ import java.io.IOException;
  * An SQL SELECT transformed into an operator tree
  * @see PostgresOperatorCompiler
  */
-public class PostgresOperatorStatement extends PostgresStatement
+public class PostgresOperatorStatement extends PostgresBaseStatement
 {
     private StoreAdapter store;
     private PhysicalOperator resultOperator;
@@ -55,8 +55,9 @@ public class PostgresOperatorStatement extends PostgresStatement
         this.resultColumnOffsets = resultColumnOffsets;
     }
     
-    public int execute(PostgresMessenger messenger, Session session, int maxrows)
-            throws IOException, StandardException {
+    public void execute(PostgresServerSession server, int maxrows)
+        throws IOException, StandardException {
+        PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
         Cursor cursor = API.cursor(resultOperator, store);
         int nrows = 0;
@@ -95,7 +96,11 @@ public class PostgresOperatorStatement extends PostgresStatement
         finally {
             cursor.close();
         }
-        return nrows;
+        {        
+            messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+            messenger.writeString("SELECT " + nrows);
+            messenger.sendMessage();
+        }
     }
 
     protected Bindings getBindings() {
@@ -140,9 +145,9 @@ public class PostgresOperatorStatement extends PostgresStatement
     /** Get a bound version of a predicate by applying given parameters
      * and requested result formats. */
     @Override
-    public PostgresStatement getBoundRequest(String[] parameters,
-                                             boolean[] columnBinary, 
-                                             boolean defaultColumnBinary) {
+    public PostgresStatement getBoundStatement(String[] parameters,
+                                               boolean[] columnBinary, 
+                                               boolean defaultColumnBinary) {
         if ((parameters == null) && 
             (columnBinary == null) && (defaultColumnBinary == false))
             return this;        // Can be reused.
