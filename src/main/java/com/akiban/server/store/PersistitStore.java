@@ -1482,9 +1482,11 @@ public class PersistitStore implements Store {
             IndexRecordVisitor visitor) throws PersistitException,
             InvalidOperationException
     {
+/*
         if (indexDef.isHKeyEquivalent()) {
             throw new IllegalArgumentException("HKeyEquivalent not allowed: " + indexDef);
         }
+*/
         Exchange exchange = getExchange(session, null, indexDef).append(Key.BEFORE);
 
         try {

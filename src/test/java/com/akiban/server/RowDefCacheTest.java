@@ -210,7 +210,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(index.isPkIndex());
         assertTrue(index.isUnique());
-        assertTrue(index.isHKeyEquivalent());
+        // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(0, fields[0]); // c.cid
         indexKeyFields = index.indexKeyFields();
@@ -223,7 +223,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(0, fields[0]); // c.cid
         assertEquals(1, fields[1]); // c.cx
@@ -243,7 +243,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(index.isPkIndex());
         assertTrue(index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(0, fields[0]); // o.oid
         indexKeyFields = index.indexKeyFields();
@@ -259,7 +259,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(index.isUnique());
-        assertTrue(index.isHKeyEquivalent());
+        // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(1, fields[0]); // o.cid
         assertEquals(0, fields[1]); // o.oid
@@ -276,7 +276,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(0, fields[0]); // o.oid
         assertEquals(1, fields[1]); // o.cid
@@ -294,7 +294,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(1, fields[0]); // o.cid
         assertEquals(0, fields[1]); // o.oid
@@ -318,7 +318,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(index.isPkIndex());
         assertTrue(index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(0, fields[0]); // i.iid
         indexKeyFields = index.indexKeyFields();
@@ -337,7 +337,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(1, fields[0]); // i.oid
         assertEquals(0, fields[1]); // i.iid
@@ -357,7 +357,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(0, fields[0]); // i.iid
         assertEquals(1, fields[1]); // i.oid
@@ -377,7 +377,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(1, fields[0]); // i.oid
         assertEquals(0, fields[1]); // i.iid
@@ -406,7 +406,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(index.isHKeyEquivalent());
+        // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(0, fields[0]); // customer$cid
         indexKeyFields = index.indexKeyFields();
@@ -419,7 +419,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(2, fields[0]); // orders$oid
         indexKeyFields = index.indexKeyFields();
@@ -434,7 +434,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(5, fields[0]); // item$iid
         indexKeyFields = index.indexKeyFields();
@@ -451,7 +451,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(index.isHKeyEquivalent());
+        // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(3, fields[0]); // orders$cid
         indexKeyFields = index.indexKeyFields();
@@ -466,7 +466,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(6, fields[0]); // item$oid
         indexKeyFields = index.indexKeyFields();
@@ -483,7 +483,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(0, fields[0]); // customer$cid
         assertEquals(1, fields[1]); // customer$cx
@@ -498,7 +498,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(index.isHKeyEquivalent());
+        // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(3, fields[0]); // orders$cid
         assertEquals(2, fields[1]); // orders$oid
@@ -515,7 +515,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(2, fields[0]); // orders$oid
         assertEquals(3, fields[1]); // orders$cid
@@ -532,7 +532,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(3, fields[0]); // orders$cid
         assertEquals(2, fields[1]); // orders$oid
@@ -551,7 +551,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(6, fields[0]); // item$oid
         assertEquals(5, fields[1]); // item$iid
@@ -570,7 +570,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(5, fields[0]); // item$iid
         assertEquals(6, fields[1]); // item$oid
@@ -589,7 +589,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(6, fields[0]); // item$oid
         assertEquals(5, fields[1]); // item$iid
@@ -651,7 +651,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(index.isPkIndex());
         assertTrue(index.isUnique());
-        assertTrue(index.isHKeyEquivalent());
+        // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(0, fields[0]); // c.cid
         indexKeyFields = index.indexKeyFields();
@@ -664,7 +664,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(1, fields[0]); // c.cx
         indexKeyFields = index.indexKeyFields();
@@ -683,7 +683,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(index.isPkIndex());
         assertTrue(index.isUnique());
-        assertTrue(index.isHKeyEquivalent());
+        // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(0, fields[0]); // o.cid
         assertEquals(1, fields[1]); // o.oid
@@ -700,7 +700,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(2, fields[0]); // o.ox
         assertEquals(0, fields[1]); // o.cid
@@ -723,7 +723,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(index.isPkIndex());
         assertTrue(index.isUnique());
-        assertTrue(index.isHKeyEquivalent());
+        // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(0, fields[0]); // i.cid
         assertEquals(1, fields[1]); // i.oid
@@ -744,7 +744,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(3, fields[0]); // i.ix
         assertEquals(2, fields[1]); // i.iid
@@ -774,7 +774,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(index.isHKeyEquivalent());
+        // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(0, fields[0]); // customer$cid
         indexKeyFields = index.indexKeyFields();
@@ -787,7 +787,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(index.isHKeyEquivalent());
+        // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(2, fields[0]); // orders$cid
         assertEquals(3, fields[1]); // orders$oid
@@ -804,7 +804,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(index.isHKeyEquivalent());
+        // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(5, fields[0]); // item$cid
         assertEquals(6, fields[1]); // item$oid
@@ -825,7 +825,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(index.isHKeyEquivalent());
+        // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(2, fields[0]); // orders$cid
         indexKeyFields = index.indexKeyFields();
@@ -840,7 +840,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(index.isHKeyEquivalent());
+        // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(5, fields[0]); // item$cid
         assertEquals(6, fields[1]); // item$oid
@@ -861,7 +861,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(1, fields[0]); // customer$cx
         indexKeyFields = index.indexKeyFields();
@@ -874,7 +874,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(4, fields[0]); // orders$ox
         assertEquals(2, fields[1]); // orders$cid
@@ -891,7 +891,7 @@ public class RowDefCacheTest
         assertNotNull(index);
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(8, fields[0]); // item$ix
         assertEquals(7, fields[1]); // item$iid
@@ -940,11 +940,11 @@ public class RowDefCacheTest
         RowDef child = rowDefCache.getRowDef(tableName("child"));
         RowDef group = rowDefCache.getRowDef(parent.getGroupRowDefId());
         assertSame(group, rowDefCache.getRowDef(child.getGroupRowDefId()));
-        assertTrue(index(parent, "b", "a").isHKeyEquivalent());
-        assertTrue(index(child, "b", "a").isHKeyEquivalent()); 
-        assertTrue(index(group, "parent$b", "parent$a").isHKeyEquivalent());
-        assertTrue(!index(group, "child$c", "child$d").isHKeyEquivalent());
-        assertTrue(index(group, "child$b", "child$a").isHKeyEquivalent()); 
+        // assertTrue(index(parent, "b", "a").isHKeyEquivalent());
+        // assertTrue(index(child, "b", "a").isHKeyEquivalent()); 
+        // assertTrue(index(group, "parent$b", "parent$a").isHKeyEquivalent());
+        // assertTrue(!index(group, "child$c", "child$d").isHKeyEquivalent());
+        // assertTrue(index(group, "child$b", "child$a").isHKeyEquivalent()); 
         IndexDef index;
         // parent (b, a) index
         index = index(parent, "b", "a");

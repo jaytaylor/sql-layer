@@ -317,6 +317,8 @@ public class IndexDef implements TreeLink {
 
     private void computeHKeyEquivalence(List<RowDef> path)
     {
+        hkeyEquivalent = false;
+/*
         hkeyEquivalent = true;
         // Collect the HKeyColumns of the index's hkey
         List<HKeyColumn> hKeyColumns = new ArrayList<HKeyColumn>();
@@ -334,6 +336,7 @@ public class IndexDef implements TreeLink {
         if (hkeyEquivalent && !hKeyColumnScan.hasNext() && indexColumnScan.hasNext()) {
             hkeyEquivalent = false;
         }
+*/
     }
 
     @Override

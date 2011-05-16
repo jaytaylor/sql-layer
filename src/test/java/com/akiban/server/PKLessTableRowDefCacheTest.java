@@ -103,7 +103,7 @@ public class PKLessTableRowDefCacheTest
         index = index(parent, "p1");
         assertTrue(index.isPkIndex());
         assertTrue(index.isUnique());
-        assertTrue(index.isHKeyEquivalent());
+        // assertTrue(index.isHKeyEquivalent());
         indexKeyFields = index.indexKeyFields();
         assertEquals(0, indexKeyFields[0].fieldIndex()); // parent.p1
         hKeyFields = index.hkeyFields();
@@ -120,7 +120,7 @@ public class PKLessTableRowDefCacheTest
         index = index(child, "c2", "c1");
         assertTrue(!index.isPkIndex());
         assertTrue(!index.isUnique());
-        assertTrue(!index.isHKeyEquivalent());
+        // assertTrue(!index.isHKeyEquivalent());
         indexKeyFields = index.indexKeyFields();
         assertEquals(1, indexKeyFields[0].fieldIndex()); // child.c2
         assertEquals(0, indexKeyFields[1].fieldIndex()); // child.c1
