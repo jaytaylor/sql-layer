@@ -70,7 +70,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
         PhysicalOperator updateOperator = new Update_Default(groupScan, updateLambda);
         Cursor updateCursor = cursor(updateOperator, adapter);
         int nexts = 0;
-        updateCursor.open(UNDEF_BINDINGS);
+        updateCursor.open(NO_BINDINGS);
         while (updateCursor.next()) {
             ++nexts;
         }

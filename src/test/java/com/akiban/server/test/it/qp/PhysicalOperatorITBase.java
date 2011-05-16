@@ -173,7 +173,7 @@ public class PhysicalOperatorITBase extends ITBase
 
     protected void compareRows(RowBase[] expected, Cursor cursor)
     {
-        compareRows(expected, cursor, UNDEF_BINDINGS);
+        compareRows(expected, cursor, NO_BINDINGS);
     }
 
     protected void compareRows(RowBase[] expected, Cursor cursor, Bindings bindings)
@@ -202,7 +202,7 @@ public class PhysicalOperatorITBase extends ITBase
     {
         int count;
         try {
-            cursor.open(UNDEF_BINDINGS);
+            cursor.open(NO_BINDINGS);
             count = 0;
             List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
             while (cursor.next()) {
@@ -221,14 +221,14 @@ public class PhysicalOperatorITBase extends ITBase
     {
         boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
         for (int i = 0; equal && i < actual.rowType().nFields(); i++) {
-            Object expectedField = expected.field(i, UNDEF_BINDINGS);
-            Object actualField = actual.field(i, UNDEF_BINDINGS);
+            Object expectedField = expected.field(i, NO_BINDINGS);
+            Object actualField = actual.field(i, NO_BINDINGS);
             equal = expectedField.equals(actualField);
         }
         return equal;
     }
 
-    protected static final Bindings UNDEF_BINDINGS = UndefBindings.only();
+    protected static final Bindings NO_BINDINGS = UndefBindings.only();
     protected static final Limit NO_LIMIT = new PersistitRowLimit(ScanLimit.NONE);
 
     protected int customer;
