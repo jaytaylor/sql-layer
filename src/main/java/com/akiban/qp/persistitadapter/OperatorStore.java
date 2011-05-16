@@ -77,16 +77,12 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         IndexKeyRange range = new IndexKeyRange(bound, true, bound, true);
 
         final PhysicalOperator scanOp;
-        if (rowDef.getPKIndexDef() != null && rowDef.getPKIndexDef().isHKeyEquivalent()) {
-            scanOp = API.groupScan_Default(groupTable, NoLimit.instance(), range);
-        }
-        else {
-            Index index = userTable.getIndex("PRIMARY");
-            UserTableRowType tableType = schema.userTableRowType(userTable);
-            IndexRowType indexType = tableType.indexRowType(index);
-            PhysicalOperator indexScan = indexScan_Default(indexType, false, range);
-            scanOp = lookup_Default(indexScan, groupTable, indexType, tableType);
-        }
+        Index index = userTable.getPrimaryKeyIncludingInternal().getIndex();
+        assert index != null : userTable;
+        UserTableRowType tableType = schema.userTableRowType(userTable);
+        IndexRowType indexType = tableType.indexRowType(index);
+        PhysicalOperator indexScan = indexScan_Default(indexType, false, range);
+        scanOp = lookup_Default(indexScan, groupTable, indexType, tableType);
 
         Update_Default updateOp = new Update_Default(scanOp, updateLambda);
 
