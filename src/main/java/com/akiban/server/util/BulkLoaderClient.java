@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.akiban.network.AkibanNetworkHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,11 +30,8 @@ import com.akiban.server.message.BulkLoadStatusRequest;
 import com.akiban.message.AkibanConnection;
 import com.akiban.message.AkibanConnectionImpl;
 import com.akiban.message.ErrorResponse;
-import com.akiban.message.MessageRegistry;
 import com.akiban.message.Request;
 import com.akiban.message.Response;
-import com.akiban.network.CommEventNotifier;
-import com.akiban.network.NetworkHandlerFactory;
 
 public class BulkLoaderClient
 {
@@ -54,7 +50,6 @@ public class BulkLoaderClient
 
     private void run() throws Exception
     {
-        startNetwork();
         connection = new AkibanConnectionImpl(akserverHost, akserverPort);
         logger.info(String.format("Got connection: %s", connection));
         int exitCode = 0;
@@ -226,32 +221,6 @@ public class BulkLoaderClient
         }
     }
 
-    private ChannelNotifier startNetwork() throws Exception
-    {
-        MessageRegistry.reset();
-        MessageRegistry.initialize();
-        MessageRegistry.only().registerModule("com.akiban.server.message");
-        MessageRegistry.only().registerModule("com.akiban.message");
-        ChannelNotifier notifier = new ChannelNotifier();
-        // Why oh why does every user of initializeNetwork have to listen? This program doesn't have to listen.
-        // Try a few ports before giving up. This allows for monitoring of a bulk load by some other instance
-        // of BulkLoaderClient that's already using BULK_LOADER_CLIENT_LISTENER_PORT.
-        int dummyListenerPort = BULK_LOADER_CLIENT_LISTENER_PORT;
-        boolean ok = false;
-        do {
-            try {
-                NetworkHandlerFactory.initializeNetwork(LOCALHOST, Integer.toString(dummyListenerPort), notifier);
-                ok = true;
-            } catch (Exception e) {
-                if (++dummyListenerPort == BULK_LOADER_CLIENT_LISTENER_PORT + 20) {
-                    throw e;
-                }
-            }
-        } while(!ok);
-        logger.info("Network started");
-        return notifier;
-    }
-
     private static void usage(Exception e) throws Exception
     {
         for (String line : USAGE) {
@@ -296,7 +265,6 @@ public class BulkLoaderClient
     private static final String LOCALHOST = "localhost";
     private static final int DEFAULT_MYSQL_PORT = 3306;
     // Networking layer requires a listening port
-    private static final int BULK_LOADER_CLIENT_LISTENER_PORT = 9999;
     private static final int TIME_BETWEEN_REQUESTS_MSEC = 10 * 1000; // 10 sec
 
     private AkibanConnection connection;
@@ -313,20 +281,4 @@ public class BulkLoaderClient
     private final Map<String, String> sourceSchemas = new HashMap<String, String>();
     private final List<String> groups = new ArrayList<String>();
     private int lastEventId = -1;
-
-    // Inner classes
-
-    public class ChannelNotifier implements CommEventNotifier
-    {
-        @Override
-        public void onConnect(AkibanNetworkHandler handler)
-        {
-        }
-
-        @Override
-        public void onDisconnect(AkibanNetworkHandler handler)
-        {
-            handler.disconnectWorker();
-        }
-    }
 }

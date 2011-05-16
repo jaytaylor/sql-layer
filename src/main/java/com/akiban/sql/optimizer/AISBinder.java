@@ -46,6 +46,14 @@ public class AISBinder implements Visitor
         this.bindingContexts = new Stack<BindingContext>();
     }
 
+    public String getDefaultSchemaName() {
+        return defaultSchemaName;
+    }
+
+    public void setDefaultSchemaName(String defaultSchemaName) {
+        this.defaultSchemaName = defaultSchemaName;
+    }
+
     public void addView(ViewDefinition view) throws StandardException {
         TableName name = view.getName();
         /**

@@ -40,7 +40,7 @@ import java.util.*;
  * Runs in its own thread; has its own AkServer Session.
  *
  */
-public class PostgresServerConnection implements Runnable
+public class PostgresServerConnection implements PostgresServerSession, Runnable
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresServerConnection.class);
 
@@ -54,6 +54,7 @@ public class PostgresServerConnection implements Runnable
     private int pid, secret;
     private int version;
     private Properties properties;
+    private Map<String,Object> attributes = new HashMap<String,Object>();
     private Map<String,PostgresStatement> preparedStatements =
         new HashMap<String,PostgresStatement>();
     private Map<String,PostgresStatement> boundPortals =
@@ -62,8 +63,10 @@ public class PostgresServerConnection implements Runnable
     private Session session;
     private ServiceManager serviceManager;
     private AkibanInformationSchema ais;
+    private String defaultSchemaName;
     private SQLParser parser;
-    private PostgresStatementCompiler compiler;
+    private PostgresStatementParser[] unparsedGenerators;
+    private PostgresStatementGenerator[] parsedGenerators;
     private Thread thread;
 
     public PostgresServerConnection(PostgresServer server, Socket socket, 
@@ -214,6 +217,7 @@ public class PostgresServerConnection implements Runnable
             this.version = version;
             logger.debug("Version {}.{}", (version >> 16), (version & 0xFFFF));
         }
+
         properties = new Properties();
         while (true) {
             String param = messenger.readString();
@@ -229,17 +233,8 @@ public class PostgresServerConnection implements Runnable
             else
                 messenger.setEncoding(enc);
         }
-        
-        String schema = properties.getProperty("database");
-        session = ServiceManagerImpl.newSession();
-        serviceManager = ServiceManagerImpl.get();
-        ais = serviceManager.getDXL().ddlFunctions().getAIS(session);
-        parser = new SQLParser();
-        if (false)
-            compiler = new PostgresHapiCompiler(parser, ais, schema);
-        else
-            compiler = new PostgresOperatorCompiler(parser, ais, schema,
-                                                    session, serviceManager);
+
+        makeGenerators();
 
         {
             messenger.beginMessage(PostgresMessenger.AUTHENTICATION_TYPE);
@@ -293,18 +288,22 @@ public class PostgresServerConnection implements Runnable
         readyForQuery();
     }
 
-    // ODBC driver sends this at the start; returning no rows is fine (and normal).
-    public static final String ODBC_LO_TYPE_QUERY = "select oid, typbasetype from pg_type where typname = 'lo'";
-
     protected void processQuery() throws IOException, StandardException {
         String sql = messenger.readString();
         logger.info("Query: {}", sql);
-        if (sql.equals(ODBC_LO_TYPE_QUERY)) {
-            messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
-            messenger.writeString("SELECT");
-            messenger.sendMessage();
+        PostgresStatement pstmt = null;
+        for (PostgresStatementParser parser : unparsedGenerators) {
+            // Try special recognition first; only allowed to turn into one statement.
+            pstmt = parser.parse(this, sql, null);
+            if (pstmt != null)
+                break;
+        }
+        if (pstmt != null) {
+            pstmt.sendDescription(this, false);
+            pstmt.execute(this, -1);
         }
         else {
+            // Parse as a _list_ of statements and process each in turn.
             List<StatementNode> stmts;
             try {
                 parserTap.in();
@@ -314,22 +313,9 @@ public class PostgresServerConnection implements Runnable
                 parserTap.out();
             }
             for (StatementNode stmt : stmts) {
-                if (!(stmt instanceof CursorNode))
-                    throw new StandardException("Not a SELECT");
-                PostgresStatement pstmt;
-                try {
-                    optimizerTap.in();
-                    pstmt = compiler.compile((CursorNode)stmt, null);
-                }
-                finally {
-                    optimizerTap.out();
-                }
-                pstmt.sendRowDescription(messenger);
-                int nrows = pstmt.execute(messenger, session, -1);
-
-                messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
-                messenger.writeString("SELECT");
-                messenger.sendMessage();
+                pstmt = generateStatement(stmt, null);
+                pstmt.sendDescription(this, false);
+                pstmt.execute(this, -1);
             }
         }
         readyForQuery();
@@ -352,22 +338,13 @@ public class PostgresServerConnection implements Runnable
         finally {
             parserTap.out();
         }
-        if (!(stmt instanceof CursorNode))
-            throw new StandardException("Not a SELECT");
-        PostgresStatement pstmt;
-        try {
-            optimizerTap.in();
-            pstmt = compiler.compile((CursorNode)stmt, paramTypes);
-        }
-        finally {
-            optimizerTap.out();
-        }
+        PostgresStatement pstmt = generateStatement(stmt, paramTypes);
         preparedStatements.put(stmtName, pstmt);
         messenger.beginMessage(PostgresMessenger.PARSE_COMPLETE_TYPE);
         messenger.sendMessage();
     }
 
-    protected void processBind() throws IOException {
+    protected void processBind() throws IOException, StandardException {
         String portalName = messenger.readString();
         String stmtName = messenger.readString();
         String[] params = null;
@@ -410,8 +387,8 @@ public class PostgresServerConnection implements Runnable
         }
         PostgresStatement pstmt = preparedStatements.get(stmtName);
         boundPortals.put(portalName, 
-                         pstmt.getBoundRequest(params, 
-                                               resultsBinary, defaultResultsBinary));
+                         pstmt.getBoundStatement(params, 
+                                                 resultsBinary, defaultResultsBinary));
         messenger.beginMessage(PostgresMessenger.BIND_COMPLETE_TYPE);
         messenger.sendMessage();
     }
@@ -430,24 +407,14 @@ public class PostgresServerConnection implements Runnable
         default:
             throw new IOException("Unknown describe source: " + (char)source);
         }
-        if (false) {
-            // This would be for a query not returning data.
-            messenger.beginMessage(PostgresMessenger.NO_DATA_TYPE);
-            messenger.sendMessage();
-        }
-        else {
-            pstmt.sendRowDescription(messenger);
-        }
+        pstmt.sendDescription(this, true);
     }
 
     protected void processExecute() throws IOException, StandardException {
         String portalName = messenger.readString();
         int maxrows = messenger.readInt();
         PostgresStatement pstmt = boundPortals.get(portalName);
-        int nrows = pstmt.execute(messenger, session, maxrows);
-        messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
-        messenger.writeString("SELECT");
-        messenger.sendMessage();
+        pstmt.execute(this, maxrows);
     }
 
     protected void processClose() throws IOException {
@@ -470,6 +437,130 @@ public class PostgresServerConnection implements Runnable
     
     protected void processTerminate() throws IOException {
         stop();
+    }
+
+    protected void makeGenerators() {
+        session = ServiceManagerImpl.newSession();
+        serviceManager = ServiceManagerImpl.get();
+        ais = serviceManager.getDXL().ddlFunctions().getAIS(session);
+
+        parser = new SQLParser();
+
+        defaultSchemaName = getProperty("database");
+        // Temporary until completely removed.
+        boolean hapi = false;
+        if (defaultSchemaName.startsWith("hapi.")) {
+            defaultSchemaName = defaultSchemaName.substring(5);
+            hapi = true;
+        }
+        // TODO: Any way / need to ask AIS if schema exists and report error?
+
+        unparsedGenerators = new PostgresStatementParser[] {
+            new PostgresEmulatedMetaDataStatementParser(this)
+        };
+        parsedGenerators = new PostgresStatementGenerator[] {
+            new PostgresSessionStatementGenerator(this),
+            new PostgresDDLStatementGenerator(this),
+            (hapi) ? new PostgresHapiCompiler(this) : new PostgresOperatorCompiler(this)
+        };
+    }
+
+    protected void sessionChanged() {
+        for (PostgresStatementParser parser : unparsedGenerators) {
+            parser.sessionChanged(this);
+        }
+        for (PostgresStatementGenerator generator : parsedGenerators) {
+            generator.sessionChanged(this);
+        }
+    }
+
+    protected PostgresStatement generateStatement(StatementNode stmt, int[] paramTypes)
+            throws StandardException {
+        try {
+            optimizerTap.in();
+            for (PostgresStatementGenerator generator : parsedGenerators) {
+                PostgresStatement pstmt = generator.generate(this, stmt, paramTypes);
+                if (pstmt != null) return pstmt;
+            }
+        }
+        finally {
+            optimizerTap.out();
+        }
+        throw new StandardException("Unsupported SQL statement");
+    }
+
+    /* PostgresServerSession */
+
+    @Override
+    public PostgresMessenger getMessenger() {
+        return messenger;
+    }
+
+    @Override
+    public int getVersion() {
+        return version;
+    }
+
+    @Override
+    public Properties getProperties() {
+        return properties;
+    }
+
+    @Override
+    public String getProperty(String key) {
+        return properties.getProperty(key);
+    }
+
+    @Override
+    public String getProperty(String key, String defval) {
+        return properties.getProperty(key, defval);
+    }
+
+    @Override
+    public Map<String,Object> getAttributes() {
+        return attributes;
+    }
+
+    @Override
+    public Object getAttribute(String key) {
+        return attributes.get(key);
+    }
+
+    @Override
+    public void setAttribute(String key, Object attr) {
+        attributes.put(key, attr);
+        sessionChanged();
+    }
+
+    @Override
+    public ServiceManager getServiceManager() {
+        return serviceManager;
+    }
+
+    @Override
+    public Session getSession() {
+        return session;
+    }
+
+    @Override
+    public String getDefaultSchemaName() {
+        return defaultSchemaName;
+    }
+
+    @Override
+    public void setDefaultSchemaName(String defaultSchemaName) {
+        this.defaultSchemaName = defaultSchemaName;
+        sessionChanged();
+    }
+
+    @Override
+    public AkibanInformationSchema getAIS() {
+        return ais;
+    }
+
+    @Override
+    public SQLParser getParser() {
+        return parser;
     }
 
 }

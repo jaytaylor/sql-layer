@@ -51,7 +51,7 @@ import java.util.*;
 /**
  * Compile SQL statements into operator trees.
  */
-public abstract class OperatorCompiler
+public class OperatorCompiler
 {
     protected SQLParserContext parserContext;
     protected NodeFactory nodeFactory;
@@ -324,6 +324,7 @@ public abstract class OperatorCompiler
         return schema.userTableRowType(table);
     }
 
+    // TODO: Merge with getIndexComparand
     protected Expression getExpression(ValueNode operand, 
                                        Map<UserTable,Integer> fieldOffsets)
             throws StandardException {
@@ -341,7 +342,9 @@ public abstract class OperatorCompiler
                 value = new Long(((Integer)value).intValue());
             return literal(value);
         }
-        // TODO: Parameters: Literals but with later substitution somehow.
+        else if (operand instanceof ParameterNode) {
+            return variable(((ParameterNode)operand).getParameterNumber());
+        }
         else
             throw new StandardException("Unsupported WHERE predicate on non-constant");
     }
@@ -442,9 +445,11 @@ public abstract class OperatorCompiler
             }
             BinaryOperatorNode binop = (BinaryOperatorNode)condition;
             if ((matchColumnReference(column, binop.getLeftOperand()) &&
-                 (binop.getRightOperand() instanceof ConstantNode)) ||
+                 ((binop.getRightOperand() instanceof ConstantNode) ||
+                  (binop.getRightOperand() instanceof ParameterNode))) ||
                 (matchColumnReference(column, binop.getRightOperand()) &&
-                 (binop.getLeftOperand() instanceof ConstantNode))) {
+                 ((binop.getLeftOperand() instanceof ConstantNode) ||
+                  (binop.getLeftOperand() instanceof ParameterNode)))) {
                 if (result == null)
                     result = new HashSet<BinaryOperatorNode>();
                 result.add(binop);
@@ -462,35 +467,52 @@ public abstract class OperatorCompiler
         return (column == cb.getColumn());
     }
     
+    // TODO: isConstant could be a method on Expression, including all
+    // trees whose leaves are literals.
+    protected static Expression getIndexComparand(ValueNode node, boolean[] isConstant) 
+            throws StandardException {
+        if (node instanceof ConstantNode) {
+            isConstant[0] = true;
+            return literal(((ConstantNode)node).getValue());
+        }
+        else if (node instanceof ParameterNode)
+            return variable(((ParameterNode)node).getParameterNumber());
+        else
+            // TODO: Lots more possibilities here as expressions become more complete.
+            // Will probably deserve its own class then.
+            return null;
+    }
+
     // TODO: Too much work here dealing with multiple conditions that
     // could have been reconciled earlier as part of normalization.
+    // Not general enough to handle expressions that actually compute, rather
+    // than fetching a field, constant or parameter.
     protected IndexKeyRange getIndexKeyRange(Index index, 
                                              Set<BinaryOperatorNode> indexConditions) 
             throws StandardException {
         List<IndexColumn> indexColumns = index.getColumns();
         int nkeys = indexColumns.size();
-        Object[] keys = new Object[nkeys];
-        Object[] lb = null, ub = null;
+        Expression[] keys = new Expression[nkeys];
+        Expression[] lb = null, ub = null;
         boolean lbinc = false, ubinc = false;
         for (int i = 0; i < nkeys; i++) {
             IndexColumn indexColumn = indexColumns.get(i);
             Column column = indexColumn.getColumn();
-            Object eqValue = null, ltValue = null, gtValue = null;
+            Expression eqExpr = null, ltExpr = null, gtExpr = null;
             Comparison ltOp = null, gtOp = null;
+            boolean ltConstant = false, gtConstant = false;
             for (BinaryOperatorNode condition : indexConditions) {
-                boolean reverse;
-                Object value;
-                if (matchColumnReference(column, condition.getLeftOperand()) &&
-                    (condition.getRightOperand() instanceof ConstantNode)) {
-                    value = ((ConstantNode)condition.getRightOperand()).getValue();
-                    reverse = false;
+                Expression expr = null;
+                boolean reverse = false;
+                boolean[] isConstant = new boolean[1];
+                if (matchColumnReference(column, condition.getLeftOperand())) {
+                    expr = getIndexComparand(condition.getRightOperand(), isConstant);
                 }
-                else if (matchColumnReference(column, condition.getRightOperand()) &&
-                         (condition.getLeftOperand() instanceof ConstantNode)) {
-                    value = ((ConstantNode)condition.getLeftOperand()).getValue();
+                else if (matchColumnReference(column, condition.getRightOperand())) {
+                    expr = getIndexComparand(condition.getLeftOperand(), isConstant);
                     reverse = true;
                 }
-                else
+                if (expr == null)
                     continue;
                 Comparison op;
                 switch (condition.getNodeType()) {
@@ -514,54 +536,80 @@ public abstract class OperatorCompiler
                 }
                 switch (op) {
                 case EQ:
-                    if (eqValue == null)
-                        eqValue = value;
-                    else if (!eqValue.equals(value))
+                    if (eqExpr == null)
+                        eqExpr = expr;
+                    else if (!eqExpr.equals(expr))
                         throw new StandardException("Conflicting equality conditions.");
                     break;
                 case LT:
                 case LE:
                     {
-                        int comp = (ltValue == null) ? +1 : ((Comparable)ltValue).compareTo(value);
-                        if ((comp > 0) ||
-                            ((comp == 0) && (op == Comparison.LT) && (ltOp == Comparison.LE))) {
-                            ltValue = value;
+                        boolean narrower;
+                        if (ltExpr == null)
+                            narrower = true;
+                        else {
+                            if (!(isConstant[0] && ltConstant))
+                                throw new StandardException("Conflicting inequality conditions.");
+                            int comp = ((Comparable)ltExpr.evaluate(null, null))
+                                .compareTo(expr.evaluate(null, null));
+                            narrower = ((comp > 0) ||
+                                        // < with same comparand is narrower than <=.
+                                        ((comp == 0) && 
+                                         (op == Comparison.LT) && 
+                                         (ltOp == Comparison.LE)));
+                        }
+                        if (narrower) {
+                            ltExpr = expr;
                             ltOp = op;
+                            ltConstant = isConstant[0];
                         }
                     }
                     break;
                 case GT:
                 case GE:
                     {
-                        int comp = (gtValue == null) ? -1 : ((Comparable)gtValue).compareTo(value);
-                        if ((comp < 0) ||
-                            ((comp == 0) && (op == Comparison.GT) && (gtOp == Comparison.GE))) {
-                            gtValue = value;
+                        boolean narrower;
+                        if (gtExpr == null)
+                            narrower = true;
+                        else {
+                            if (!(isConstant[0] && gtConstant))
+                                throw new StandardException("Conflicting inequality conditions.");
+                            int comp = ((Comparable)gtExpr.evaluate(null, null))
+                                .compareTo(expr.evaluate(null, null));
+                            narrower = ((comp > 0) ||
+                                        // > with same comparand is narrower than >=.
+                                        ((comp == 0) && 
+                                         (op == Comparison.GT) && 
+                                         (ltOp == Comparison.GE)));
+                        }
+                        if (narrower) {
+                            gtExpr = expr;
                             gtOp = op;
+                            gtConstant = isConstant[0];
                         }
                     }
                     break;
                 }
             }
-            if (eqValue != null) {
-                keys[i] = eqValue;
+            if (eqExpr != null) {
+                keys[i] = eqExpr;
             }
             else {
-                if (gtValue != null) {
+                if (gtExpr != null) {
                     if (lb == null) {
-                        lb = new Object[nkeys];
+                        lb = new Expression[nkeys];
                         System.arraycopy(keys, 0, lb, 0, nkeys);
                     }
-                    lb[i] = gtValue;
+                    lb[i] = gtExpr;
                     if (gtOp == Comparison.GE) 
                         lbinc = true;
                 }
-                if (ltValue != null) {
+                if (ltExpr != null) {
                     if (ub == null) {
-                        ub = new Object[nkeys];
+                        ub = new Expression[nkeys];
                         System.arraycopy(keys, 0, ub, 0, nkeys);
                     }
-                    ub[i] = ltValue;
+                    ub[i] = ltExpr;
                     if (ltOp == Comparison.LE) 
                         ubinc = true;
                 }
@@ -578,11 +626,11 @@ public abstract class OperatorCompiler
         }
     }
 
-    protected IndexBound getIndexBound(Index index, Object[] keys) {
+    protected IndexBound getIndexBound(Index index, Expression[] keys) {
         if (keys == null) 
             return null;
         return new IndexBound((UserTable)index.getTable(), 
-                              getIndexRow(index, keys),
+                              getIndexExpressionRow(index, keys),
                               getIndexColumnSelector(index));
     }
 
@@ -600,6 +648,8 @@ public abstract class OperatorCompiler
             };
     }
 
-    protected abstract Row getIndexRow(Index index, Object[] keys);
+    protected Row getIndexExpressionRow(Index index, Expression[] keys) {
+        return new ExpressionRow(schema.indexRowType(index), keys);
+    }
 
 }

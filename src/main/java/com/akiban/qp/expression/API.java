@@ -45,6 +45,11 @@ public class API
     {
         return new Literal(value);
     }
+
+    public static Expression variable(int position)
+    {
+        return new Variable(position);
+    }
     
     public static Comparison EQ = Comparison.EQ;
     public static Comparison NE = Comparison.NE;

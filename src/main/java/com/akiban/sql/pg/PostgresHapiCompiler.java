@@ -47,7 +47,7 @@ import java.util.*;
  * <li>No FOR UPDATE.</li>
  * </ul>
  */
-public class PostgresHapiCompiler implements PostgresStatementCompiler
+public class PostgresHapiCompiler extends PostgresBaseStatementGenerator
 {
     private SQLParserContext parserContext;
     private NodeFactory nodeFactory;
@@ -57,11 +57,11 @@ public class PostgresHapiCompiler implements PostgresStatementCompiler
     private SubqueryFlattener subqueryFlattener;
     private Grouper grouper;
 
-    public PostgresHapiCompiler(SQLParser parser, 
-                                AkibanInformationSchema ais, String defaultSchemaName) {
+    public PostgresHapiCompiler(PostgresServerSession server) {
+        SQLParser parser = server.getParser();
         parserContext = parser;
         nodeFactory = parserContext.getNodeFactory();
-        binder = new AISBinder(ais, defaultSchemaName);
+        binder = new AISBinder(server.getAIS(), server.getDefaultSchemaName());
         parser.setNodeFactory(new BindingNodeFactory(nodeFactory));
         typeComputer = new AISTypeComputer();
         booleanNormalizer = new BooleanNormalizer(parser);
@@ -69,13 +69,19 @@ public class PostgresHapiCompiler implements PostgresStatementCompiler
         grouper = new Grouper(parser);
     }
 
-    public void addView(ViewDefinition view) throws StandardException {
-        binder.addView(view);
+    @Override
+    public void sessionChanged(PostgresServerSession server) {
+        binder.setDefaultSchemaName(server.getDefaultSchemaName());
     }
 
     @Override
-    public PostgresStatement compile(CursorNode cursor, int[] paramTypes)
+    public PostgresStatement generate(PostgresServerSession session,
+                                      StatementNode stmt, int[] paramTypes)
             throws StandardException {
+        if (!(stmt instanceof CursorNode))
+            return null;
+        CursorNode cursor = (CursorNode)stmt;
+
         // Get into bound & grouped form.
         binder.bind(cursor);
         cursor = (CursorNode)booleanNormalizer.normalize(cursor);
@@ -219,6 +225,10 @@ public class PostgresHapiCompiler implements PostgresStatementCompiler
 
         return new PostgresHapiRequest(shallowestTable, queryTable, deepestTable,
                                        predicates, columns);
+    }
+
+    public void addView(ViewDefinition view) throws StandardException {
+        binder.addView(view);
     }
 
     /** Is t1 an ancestor of t2? */

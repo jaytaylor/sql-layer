@@ -33,7 +33,7 @@ import java.io.IOException;
  * An SQL SELECT transformed into a Hapi request.
  * @see PostgresHapiCompiler
  */
-public class PostgresHapiRequest extends PostgresStatement implements HapiGetRequest
+public class PostgresHapiRequest extends PostgresBaseStatement implements HapiGetRequest
 {
     private UserTable shallowestTable, queryTable, deepestTable;
     private List<HapiPredicate> predicates; // All on queryTable.
@@ -118,9 +118,9 @@ public class PostgresHapiRequest extends PostgresStatement implements HapiGetReq
     /** Get a bound version of a predicate by applying given parameters
      * and requested result formats. */
     @Override
-    public PostgresStatement getBoundRequest(String[] parameters,
-                                             boolean[] columnBinary, 
-                                             boolean defaultColumnBinary) {
+    public PostgresStatement getBoundStatement(String[] parameters,
+                                               boolean[] columnBinary, 
+                                               boolean defaultColumnBinary) {
         if ((parameters == null) && 
             (columnBinary == null) && (defaultColumnBinary == false))
             return this;        // Can be reused.
@@ -144,8 +144,10 @@ public class PostgresHapiRequest extends PostgresStatement implements HapiGetReq
     }
 
     @Override
-    public int execute(PostgresMessenger messenger, Session session, int maxrows) 
+    public void execute(PostgresServerSession server, int maxrows) 
             throws IOException, StandardException {
+        PostgresMessenger messenger = server.getMessenger();
+        Session session = server.getSession();
         PostgresHapiOutputter outputter = new PostgresHapiOutputter(messenger, session,
                                                                     this, maxrows);
         // null as OutputStream, since we use the higher level messenger.
@@ -155,7 +157,10 @@ public class PostgresHapiRequest extends PostgresStatement implements HapiGetReq
         catch (HapiRequestException ex) {
             throw new StandardException(ex);
         }
-        return outputter.getNRows();
+        int nrows = outputter.getNRows();
+        messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+        messenger.writeString("SELECT " + nrows);
+        messenger.sendMessage();
     }
 
 }
