@@ -24,40 +24,24 @@
         </repository>
     </distributionManagement>
     <repositories>
-        <repository>
-            <id>JBOSS</id>
-            <name>JBoss Repository</name>
-            <url>http://repository.jboss.org/maven2/</url>
-        </repository>
-        <repository>
-            <id>Artifact-Repository</id>
-            <name>Artifact-Repository</name>
-            <url>http://www.artifact-repository.org/maven2/</url>
-        </repository>
-        <repository>
-            <id>central</id>
-            <name>Maven Repository Switchboard</name>
-            <layout>default</layout>
-            <url>http://repo1.maven.org/maven2</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
+        <!-- jmemcached-core -->
         <repository>
             <id>thimbleware.repo</id>
             <url>http://thimbleware.com/maven</url>
         </repository>
+        <!-- maven-license-plugin -->
         <repository>
-        <id>mc-release</id>
-        <name>Local Maven repository of releases</name>
-        <url>http://mc-repo.googlecode.com/svn/maven2/releases</url>
-        <snapshots>
-            <enabled>false</enabled>
-        </snapshots>
-        <releases>
-            <enabled>true</enabled>
-        </releases>
+            <id>mc-release</id>
+            <name>Local Maven repository of releases</name>
+            <url>http://mc-repo.googlecode.com/svn/maven2/releases</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
         </repository>
+        <!-- sql-parser -->
         <repository>
             <id>akiban-releases</id>
             <name>akiban-releases</name>
@@ -69,6 +53,7 @@
                 <enabled>true</enabled>
             </releases>
         </repository>
+        <!-- sql-parser -->
         <repository>
             <id>akiban-snapshots</id>
             <name>akiban-snapshots</name>
@@ -114,11 +99,11 @@
             <groupId>velocity</groupId>
             <artifactId>velocity-dep</artifactId>
             <version>1.4</version>
-        </dependency>                                                                                                  
-        <dependency>                                                                                                   
-            <groupId>mysql</groupId>                                                                                   
-            <artifactId>mysql-connector-java</artifactId>                                                              
-            <version>5.1.10</version>                                                                                  
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>5.1.10</version>
         </dependency>
         <dependency>
             <groupId>com.akiban</groupId>
