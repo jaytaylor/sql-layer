@@ -25,6 +25,7 @@ import com.akiban.sql.optimizer.Grouper;
 import com.akiban.sql.optimizer.SubqueryFlattener;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.OperatorCompilerTest;
+import com.akiban.sql.optimizer.SimplifiedSelectQuery;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.CursorNode;
@@ -44,7 +45,8 @@ public class Tester
         PRINT_TREE, PRINT_SQL, PRINT_BOUND_SQL,
         BIND, COMPUTE_TYPES,
         BOOLEAN_NORMALIZE, FLATTEN_SUBQUERIES,
-        GROUP, GROUP_REWRITE, OPERATORS
+        GROUP, GROUP_REWRITE, 
+        SIMPLIFY, OPERATORS
     }
 
     List<Action> actions;
@@ -116,6 +118,10 @@ public class Tester
                 grouper.group(stmt);
                 grouper.rewrite(stmt);
                 break;
+            case SIMPLIFY:
+                System.out.println(new SimplifiedSelectQuery((CursorNode)stmt, 
+                                                             grouper.getJoinConditions()));
+                break;
             case OPERATORS:
                 System.out.println(operatorCompiler.compile((CursorNode)stmt));
                 break;
@@ -144,7 +150,7 @@ public class Tester
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             System.out.println("Usage: Tester " +
-                               "[-clone] [-bind] [-types] [-boolean] [-flatten] [-group] [-group-rewrite] [-operators]" +
+                               "[-clone] [-bind] [-types] [-boolean] [-flatten] [-group] [-group-rewrite] [-simplify] [-operators]" +
                                "[-tree] [-print] [-print-bound]" +
                                "[-schema ddl] [-view ddl]..." +
                                "sql...");
@@ -185,6 +191,8 @@ public class Tester
                     tester.addAction(Action.GROUP);
                 else if ("-group-rewrite".equals(arg))
                     tester.addAction(Action.GROUP_REWRITE);
+                else if ("-simplify".equals(arg))
+                    tester.addAction(Action.SIMPLIFY);
                 else if ("-operators".equals(arg))
                     tester.addAction(Action.OPERATORS);
                 else
