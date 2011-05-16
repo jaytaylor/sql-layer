@@ -466,6 +466,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     protected void sessionChanged() {
+        if (parsedGenerators == null) return; // setAttribute() from generator's ctor.
         for (PostgresStatementParser parser : unparsedGenerators) {
             parser.sessionChanged(this);
         }

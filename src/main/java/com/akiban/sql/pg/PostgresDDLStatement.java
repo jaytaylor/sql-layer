@@ -17,11 +17,16 @@ package com.akiban.sql.pg;
 
 import com.akiban.sql.aisddl.*;
 
+import com.akiban.sql.StandardException;
+
 import com.akiban.sql.parser.CreateTableNode;
+import com.akiban.sql.parser.CreateViewNode;
+import com.akiban.sql.parser.DropViewNode;
 import com.akiban.sql.parser.DDLStatementNode;
 import com.akiban.sql.parser.NodeTypes;
 
-import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.AISBinder;
+import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 
@@ -64,6 +69,13 @@ public class PostgresDDLStatement implements PostgresStatement
         switch (ddl.getNodeType()) {
         case NodeTypes.CREATE_TABLE_NODE:
             TableDDL.createTable(ais, schema, (CreateTableNode)ddl);
+            break;
+        case NodeTypes.CREATE_VIEW_NODE:
+            // TODO: Need to store persistently in AIS (or its extension).
+            ((AISBinder)server.getAttribute("aisBinder")).addView(new ViewDefinition(ddl, server.getParser()));
+            break;
+        case NodeTypes.DROP_VIEW_NODE:
+            ((AISBinder)server.getAttribute("aisBinder")).removeView(((DropViewNode)ddl).getObjectName());
             break;
         default:
             throw new StandardException(ddl.statementToString() + " not supported yet");
