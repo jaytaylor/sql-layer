@@ -17,10 +17,15 @@ package com.akiban.server.test.daily.slap;
 
 import static org.junit.Assert.assertTrue;
 
+import com.akiban.server.service.config.Property;
+import com.akiban.server.store.PersistitStoreSchemaManager;
 import org.junit.Test;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.server.test.daily.DailyBase;
+
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * This test simply creates and then drops 2000 tables. Prior to the
@@ -31,7 +36,13 @@ import com.akiban.server.test.daily.DailyBase;
  */
 public class LotsOfTablesDT extends DailyBase {
     private final static int TABLE_COUNT = 2000;
-    
+
+    @Override
+    protected Collection<Property> startupConfigProperties() {
+        // Set no limit on maximum serialized AIS size
+        return Collections.singleton(new Property(PersistitStoreSchemaManager.MAX_AIS_SIZE_PROPERTY, "0"));
+    }
+
     @Test
     public void createLotsOfTablesTest() throws Exception {
         int was = -1;
