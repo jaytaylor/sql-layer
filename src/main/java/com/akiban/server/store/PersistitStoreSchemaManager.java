@@ -40,6 +40,7 @@ import com.akiban.ais.io.Reader;
 import com.akiban.ais.io.TableSubsetWriter;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
@@ -250,6 +251,48 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     @Override
+    public void alterGroupAddIndex(Session session, String groupName, GroupIndex index) throws Exception {
+        final AkibanInformationSchema ais = getAis(session);
+        final Group curGroup = ais.getGroup(groupName);
+
+        if(curGroup == null) {
+            throw new InvalidOperationException(ErrorCode.NO_SUCH_GROUP, "Unknown group: " + groupName);
+        }
+
+        for(IndexColumn col : index.getColumns()) {
+            final TableName tableName = col.getColumn().getTable().getName();
+            final Table curTable = ais.getTable(tableName);
+            if(curTable == null) {
+                throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE, "Unknown table: " + tableName);
+            }
+            if(!curTable.getGroup().getName().equals(groupName)) {
+                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION, "Table not in group: " + curTable);
+            }
+        }
+
+        final AkibanInformationSchema newAIS = new AkibanInformationSchema();
+        new Writer(new AISTarget(newAIS)).save(ais);
+        final Group newGroup = newAIS.getGroup(groupName);
+        final GroupIndex newIndex = GroupIndex.create(newAIS,  newGroup, index.getIndexName().getName(),
+                                                      SchemaDefToAis.findMaxIndexIDInGroup(newAIS, newGroup) + 1,
+                                                      index.isUnique(), index.getConstraint());
+
+        for(IndexColumn idxCol : index.getColumns()) {
+            final Table refTable = newAIS.getTable(idxCol.getColumn().getTable().getName());
+            final Column refCol = refTable.getColumn(idxCol.getColumn().getName());
+            IndexColumn indexCol = new IndexColumn(newIndex, refCol, idxCol.getPosition(),
+                                                   idxCol.isAscending(), idxCol.getIndexedLength());
+            newIndex.addColumn(indexCol);
+        }
+        newIndex.freezeColumns();
+
+        new AISBuilder(newAIS).generateGroupTableIndexes(newGroup);
+        // Until a) groups have trees b) groups are in a schema
+        final String schema = newGroup.getGroupTable().getName().getSchemaName();
+        commitAISChange(session, newAIS, schema, null);
+    }
+
+    @Override
     public void alterTableDropIndexes(Session session, TableName tableName, Collection<String> indexNames)
             throws Exception {
         if(indexNames.isEmpty()) {
@@ -268,6 +311,21 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         newTable.removeIndexes(indexesToDrop);
         new AISBuilder(newAIS).generateGroupTableIndexes(newTable.getGroup());
         commitAISChange(session, newAIS, tableName.getSchemaName(), null);
+    }
+
+    @Override
+    public void alterGroupDropIndex(Session session, String groupName, String indexName) throws Exception {
+        final AkibanInformationSchema newAIS = new AkibanInformationSchema();
+        new Writer(new AISTarget(newAIS)).save(ais);
+
+        final Group newGroup = newAIS.getGroup(groupName);
+        List<GroupIndex> indexesToDrop = new ArrayList<GroupIndex>();
+        indexesToDrop.add(newGroup.getIndex(indexName));
+        newGroup.removeIndexes(indexesToDrop);
+
+        // Until a) groups have trees b) groups are in a schema
+        final String schema = newGroup.getGroupTable().getName().getSchemaName();
+        commitAISChange(session, newAIS, schema, null);
     }
 
     @Override
