@@ -60,7 +60,14 @@ public class AISBinder implements Visitor
            if (name.getSchemaName() == null)
            name.setSchemaName(defaultSchemaName);
         **/
+        if (views.get(name) != null)
+            throw new StandardException("View already defined: " + name);
         views.put(name, view);
+    }
+
+    public void removeView(TableName name) throws StandardException {
+        if (views.remove(name) == null)
+            throw new StandardException("View not defined: " + name);
     }
 
     public void bind(StatementNode stmt) throws StandardException {

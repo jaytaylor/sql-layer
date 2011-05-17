@@ -67,6 +67,8 @@ public class PostgresHapiCompiler extends PostgresBaseStatementGenerator
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
         grouper = new Grouper(parser);
+
+        server.setAttribute("aisBinder", binder);
     }
 
     @Override
@@ -225,10 +227,6 @@ public class PostgresHapiCompiler extends PostgresBaseStatementGenerator
 
         return new PostgresHapiRequest(shallowestTable, queryTable, deepestTable,
                                        predicates, columns);
-    }
-
-    public void addView(ViewDefinition view) throws StandardException {
-        binder.addView(view);
     }
 
     /** Is t1 an ancestor of t2? */
