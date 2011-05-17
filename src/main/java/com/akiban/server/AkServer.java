@@ -41,12 +41,6 @@ public class AkServer implements Service<AkServer>, JmxManageable {
 
     private static final Logger LOG = LoggerFactory.getLogger(AkServer.class.getName());
     private static final ShutdownMXBeanImpl shutdownBean = new ShutdownMXBeanImpl();
-
-    
-    /**
-     * Name of this akserver. Must match one of the entries in
-     * /config/cluster.properties (managed by Admin).
-     */
     private static final String AKSERVER_NAME = System.getProperty("akserver.name");
 
     private final JmxObjectInfo jmxObjectInfo;
