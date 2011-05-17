@@ -87,7 +87,7 @@ public class Index implements Serializable, ModelNames, Traversable
         // GWT
     }
 
-    public Index(Table table,
+    protected Index(Table table,
                  String indexName,
                  Integer indexId,
                  Boolean isUnique,

@@ -128,11 +128,11 @@ public final class AddDropIndexMT extends HapiMTBase {
 
                 UserTable parentTable = ddl.getUserTable(session, tableName);
 
-                Index stringIndex = new Index(parentTable, indexName, 2, false, "KEY");
+                Index stringIndex = Index.create(null, parentTable, indexName, 2, false, "KEY");
                 stringIndex.addColumn(
                         new IndexColumn(stringIndex, parentTable.getColumn("aString"), 0, true, null)
                 );
-                Index numIndex = new Index(parentTable, indexName, 2, false, "KEY");
+                Index numIndex = Index.create(null, parentTable, indexName, 2, false, "KEY");
                 numIndex.addColumn(
                         new IndexColumn(numIndex, parentTable.getColumn("anInt"), 0, true, null)
                 );

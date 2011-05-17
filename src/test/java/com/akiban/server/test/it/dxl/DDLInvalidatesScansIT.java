@@ -237,7 +237,7 @@ public final class DDLInvalidatesScansIT extends ITBase {
 
     private Index createIndex() throws InvalidOperationException {
         UserTable customers = getUserTable(SCHEMA, CUSTOMERS);
-        Index addIndex = new Index(
+        Index addIndex = Index.create(null,
                 customers,
                 "played_for_Bs",
                 2,
