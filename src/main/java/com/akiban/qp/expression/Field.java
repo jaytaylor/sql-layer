@@ -16,15 +16,14 @@
 package com.akiban.qp.expression;
 
 import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.UndefBindings;
-import com.akiban.qp.row.RowBase;
+import com.akiban.qp.row.Row;
 
 class Field implements Expression
 {
     // Expression interface
 
     @Override
-    public Object evaluate(RowBase row, Bindings bindings)
+    public Object evaluate(Row row, Bindings bindings)
     {
         return row.field(position, bindings);
     }
