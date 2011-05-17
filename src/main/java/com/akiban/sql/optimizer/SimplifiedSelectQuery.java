@@ -29,11 +29,7 @@ import static com.akiban.qp.expression.API.*;
 import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * An SQL SELECT statement turned into a simpler form for the interim
@@ -45,9 +41,10 @@ import java.util.Set;
 public class SimplifiedSelectQuery
 {
     public static abstract class BaseJoinNode {
-        public abstract int getMinOrdinal();
-        public abstract int getMaxOrdinal();
+        public abstract Integer getMinOrdinal();
+        public abstract Integer getMaxOrdinal();
 
+        public abstract boolean isInnerJoin();
         public abstract boolean promoteOuterJoins(Set<UserTable> conditionTables);
     }
 
@@ -63,11 +60,15 @@ public class SimplifiedSelectQuery
             return table;
         }
 
-        public int getMinOrdinal() {
+        public Integer getMinOrdinal() {
             return table.getTableId();
         }
-        public int getMaxOrdinal() {
+        public Integer getMaxOrdinal() {
             return table.getTableId();
+        }
+
+        public boolean isInnerJoin() {
+            return false;
         }
 
         public boolean promoteOuterJoins(Set<UserTable> conditionTables) {
@@ -88,6 +89,7 @@ public class SimplifiedSelectQuery
     public static class JoinJoinNode extends BaseJoinNode {
         private BaseJoinNode left, right;
         private JoinType joinType;
+        private Integer minOrdinal, maxOrdinal;
 
         public JoinJoinNode(BaseJoinNode left, BaseJoinNode right, 
                             JoinType joinType) {
@@ -96,11 +98,38 @@ public class SimplifiedSelectQuery
             this.joinType = joinType;
         }
 
-        public int getMinOrdinal() {
-            return Math.min(left.getMinOrdinal(), right.getMinOrdinal());
+        public BaseJoinNode getLeft() {
+            return left;
         }
-        public int getMaxOrdinal() {
-            return Math.max(left.getMaxOrdinal(), right.getMaxOrdinal());
+        public void setLeft(BaseJoinNode left) {
+            this.left = left;
+        }
+        public BaseJoinNode getRight() {
+            return right;
+        }
+        public void setRight(BaseJoinNode right) {
+            this.right = right;
+        }
+
+        public Integer getMinOrdinal() {
+            if (minOrdinal == null) {
+                minOrdinal = left.getMinOrdinal();
+                if (minOrdinal > right.getMinOrdinal())
+                    minOrdinal = right.getMinOrdinal();
+            }
+            return minOrdinal;
+        }
+        public Integer getMaxOrdinal() {
+            if (maxOrdinal == null) {
+                maxOrdinal = left.getMaxOrdinal();
+                if (maxOrdinal < right.getMaxOrdinal())
+                    maxOrdinal = right.getMaxOrdinal();
+            }
+            return maxOrdinal;
+        }
+
+        public boolean isInnerJoin() {
+            return (joinType == JoinType.INNER);
         }
 
         public boolean promoteOuterJoins(Set<UserTable> conditionTables) {
@@ -115,6 +144,20 @@ public class SimplifiedSelectQuery
                 break;
             }
             return lp || rp;
+        }
+
+        public void reverse() {
+            BaseJoinNode temp = left;
+            left = right;
+            right = temp;
+            switch (joinType) {
+            case LEFT:
+                joinType = JoinType.RIGHT;
+                break;
+            case RIGHT:
+                joinType = JoinType.LEFT;
+                break;
+            }
         }
 
         public String toString() {
@@ -535,6 +578,7 @@ public class SimplifiedSelectQuery
     // much as possible given that half outer joins are not associative.
     public void reorderJoins() throws StandardException {
         promoteImpossibleOuterJoins();
+        joins = reorderJoinNode(joins);
     }
 
     // If a join is specified as outer, but there is a boolean
@@ -544,7 +588,7 @@ public class SimplifiedSelectQuery
     // allows more reordering.
     // Such outer joins usually arise from programmatically generated
     // queries, such as views.
-    public void promoteImpossibleOuterJoins() throws StandardException {
+    protected void promoteImpossibleOuterJoins() throws StandardException {
         Set<UserTable> conditionTables = new HashSet<UserTable>();
         for (ColumnCondition condition : conditions) {
             conditionTables.add(condition.getLeft().getColumn().getUserTable());
@@ -553,6 +597,60 @@ public class SimplifiedSelectQuery
                                      condition.getRight()).getColumn().getUserTable());
         }
         joins.promoteOuterJoins(conditionTables);
+    }
+
+    // Return size of directly-reachable subtree of all inner joins.
+    protected int countInnerJoins(BaseJoinNode join) {
+        if (!join.isInnerJoin())
+            return 0;
+        return 1 + 
+            countInnerJoins(((JoinJoinNode)join).getLeft()) +
+            countInnerJoins(((JoinJoinNode)join).getRight());
+    }
+
+    // Accumulate operands of directly-reachable subtree of inner joins.
+    protected void getInnerJoins(BaseJoinNode join, Collection<BaseJoinNode> into) {
+        if (!join.isInnerJoin())
+            into.add(join);
+        else {
+            getInnerJoins(((JoinJoinNode)join).getLeft(), into);
+            getInnerJoins(((JoinJoinNode)join).getRight(), into);
+        }
+    }
+
+    // Reorder this join node.
+    // A subtree of inner nodes can be completely reordered.
+    // An outer join (or a lone inner join) can still commute (changing chirality).
+    protected BaseJoinNode reorderJoinNode(BaseJoinNode join) {
+        if (countInnerJoins(join) > 1) {
+            List<BaseJoinNode> joins = new ArrayList<BaseJoinNode>();
+            getInnerJoins(join, joins);
+            for (int i = 0; i < joins.size(); i++) {
+                joins.set(i, reorderJoinNode(joins.get(i)));
+            }
+            Collections.sort(joins, new Comparator<BaseJoinNode>() {
+                                 public int compare(BaseJoinNode j1, BaseJoinNode j2) {
+                                     return j1.getMaxOrdinal().compareTo(j2.getMaxOrdinal());
+                                 }
+                             });
+            BaseJoinNode result = joins.get(0);
+            for (int i = 1; i < joins.size(); i++) {
+                result = new JoinJoinNode(result, joins.get(i), JoinType.INNER);
+            }
+            return result;
+        }
+        if (join instanceof JoinJoinNode) {
+            JoinJoinNode jjoin = (JoinJoinNode)join;
+            BaseJoinNode left = jjoin.getLeft();
+            left = reorderJoinNode(left);
+            jjoin.setLeft(left);
+            BaseJoinNode right = jjoin.getRight();
+            right = reorderJoinNode(right);
+            jjoin.setRight(right);
+            if (left.getMaxOrdinal().compareTo(right.getMaxOrdinal()) > 0)
+                jjoin.reverse();
+        }
+        return join;
     }
 
     public String toString() {
