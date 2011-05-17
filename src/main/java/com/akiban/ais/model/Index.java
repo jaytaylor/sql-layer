@@ -94,7 +94,7 @@ public class Index implements Serializable, ModelNames, Traversable
                  String constraint)
     {
         this.table = table;
-        this.indexName = new IndexName(table, indexName);
+        this.indexName = new IndexName(table.getName(), indexName);
         this.indexId = indexId;
         this.isUnique = isUnique;
         this.constraint = constraint;
