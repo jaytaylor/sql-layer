@@ -20,7 +20,7 @@ import java.io.Serializable;
 /**
  * Serializable object for use as a monitor in a synchronized block.
  */
-public final class SerializableMonitor implements Serializable {
+final class SerializableMonitor implements Serializable {
     @Override
     public String toString() {
         return "LOCK";
