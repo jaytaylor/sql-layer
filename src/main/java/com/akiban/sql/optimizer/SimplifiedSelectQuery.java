@@ -30,6 +30,7 @@ import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +45,10 @@ import java.util.Set;
 public class SimplifiedSelectQuery
 {
     public static abstract class BaseJoinNode {
+        public abstract int getMinOrdinal();
+        public abstract int getMaxOrdinal();
+
+        public abstract boolean promoteOuterJoins(Set<UserTable> conditionTables);
     }
 
     // A join to an actual table.
@@ -56,6 +61,17 @@ public class SimplifiedSelectQuery
 
         public UserTable getTable() {
             return table;
+        }
+
+        public int getMinOrdinal() {
+            return table.getTableId();
+        }
+        public int getMaxOrdinal() {
+            return table.getTableId();
+        }
+
+        public boolean promoteOuterJoins(Set<UserTable> conditionTables) {
+            return conditionTables.contains(table);
         }
 
         public String toString() {
@@ -78,6 +94,27 @@ public class SimplifiedSelectQuery
             this.left = left;
             this.right = right;
             this.joinType = joinType;
+        }
+
+        public int getMinOrdinal() {
+            return Math.min(left.getMinOrdinal(), right.getMinOrdinal());
+        }
+        public int getMaxOrdinal() {
+            return Math.max(left.getMaxOrdinal(), right.getMaxOrdinal());
+        }
+
+        public boolean promoteOuterJoins(Set<UserTable> conditionTables) {
+            boolean lp = left.promoteOuterJoins(conditionTables);
+            boolean rp = right.promoteOuterJoins(conditionTables);
+            switch (joinType) {
+            case LEFT:
+                if (rp) joinType = JoinType.INNER;
+                break;
+            case RIGHT:
+                if (lp) joinType = JoinType.INNER;
+                break;
+            }
+            return lp || rp;
         }
 
         public String toString() {
@@ -278,7 +315,7 @@ public class SimplifiedSelectQuery
     }
     
     private GroupBinding group = null;
-    private BaseJoinNode tables = null;
+    private BaseJoinNode joins = null;
     private List<SelectColumn> selectColumns = new ArrayList<SelectColumn>();
     private List<ColumnCondition> conditions = new ArrayList<ColumnCondition>();
     private List<SortColumn> sortColumns = null;
@@ -297,10 +334,10 @@ public class SimplifiedSelectQuery
             throw new UnsupportedSQLException("Unsupported WINDOW");
 
         for (FromTable fromTable : select.getFromList()) {
-            if (tables == null)
-                tables = getJoinNode(fromTable);
+            if (joins == null)
+                joins = getJoinNode(fromTable);
             else
-                tables = joinNodes(tables, getJoinNode(fromTable), JoinType.INNER);
+                joins = joinNodes(joins, getJoinNode(fromTable), JoinType.INNER);
         }
 
         ValueNode whereClause = select.getWhereClause();
@@ -474,8 +511,8 @@ public class SimplifiedSelectQuery
     public GroupBinding getGroup() {
         return group;
     }
-    public BaseJoinNode getTables() {
-        return tables;
+    public BaseJoinNode getJoins() {
+        return joins;
     }
     public List<SelectColumn> getSelectColumns() {
         return selectColumns;
@@ -493,12 +530,37 @@ public class SimplifiedSelectQuery
         return limit;
     }
 
+    // The initial join tree is in syntax order. 
+    // Convert it to the preferred AIS order: ancestors on the left as
+    // much as possible given that half outer joins are not associative.
+    public void reorderJoins() throws StandardException {
+        promoteImpossibleOuterJoins();
+    }
+
+    // If a join is specified as outer, but there is a boolean
+    // condition on an attribute of the nullable table, then its
+    // operand won't actually be null in any matching row and the join
+    // is equivalent to the corresponding inner join. Converting it
+    // allows more reordering.
+    // Such outer joins usually arise from programmatically generated
+    // queries, such as views.
+    public void promoteImpossibleOuterJoins() throws StandardException {
+        Set<UserTable> conditionTables = new HashSet<UserTable>();
+        for (ColumnCondition condition : conditions) {
+            conditionTables.add(condition.getLeft().getColumn().getUserTable());
+            if (condition.getRight() instanceof ColumnConditionOperand)
+                conditionTables.add(((ColumnConditionOperand)
+                                     condition.getRight()).getColumn().getUserTable());
+        }
+        joins.promoteOuterJoins(conditionTables);
+    }
+
     public String toString() {
         StringBuilder str = new StringBuilder(super.toString());
         str.append("\ngroup = ");
         str.append(group);
-        str.append("\ntables = ");
-        str.append(tables);
+        str.append("\njoins = ");
+        str.append(joins);
         str.append("\nselect = [");
         for (int i = 0; i < selectColumns.size(); i++) {
             if (i > 0) str.append(", ");

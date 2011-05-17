@@ -46,7 +46,7 @@ public class Tester
         BIND, COMPUTE_TYPES,
         BOOLEAN_NORMALIZE, FLATTEN_SUBQUERIES,
         GROUP, GROUP_REWRITE, 
-        SIMPLIFY, OPERATORS
+        SIMPLIFY, SIMPLIFY_REORDER, OPERATORS
     }
 
     List<Action> actions;
@@ -119,8 +119,15 @@ public class Tester
                 grouper.rewrite(stmt);
                 break;
             case SIMPLIFY:
-                System.out.println(new SimplifiedSelectQuery((CursorNode)stmt, 
-                                                             grouper.getJoinConditions()));
+            case SIMPLIFY_REORDER:
+                {
+                    SimplifiedSelectQuery query = 
+                        new SimplifiedSelectQuery((CursorNode)stmt, 
+                                                  grouper.getJoinConditions());
+                    if (action == Action.SIMPLIFY_REORDER)
+                        query.reorderJoins();
+                    System.out.println(query);
+                }
                 break;
             case OPERATORS:
                 System.out.println(operatorCompiler.compile((CursorNode)stmt));
@@ -150,7 +157,7 @@ public class Tester
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             System.out.println("Usage: Tester " +
-                               "[-clone] [-bind] [-types] [-boolean] [-flatten] [-group] [-group-rewrite] [-simplify] [-operators]" +
+                               "[-clone] [-bind] [-types] [-boolean] [-flatten] [-group] [-group-rewrite] [-simplify] [-simplify-reorder] [-operators]" +
                                "[-tree] [-print] [-print-bound]" +
                                "[-schema ddl] [-view ddl]..." +
                                "sql...");
@@ -193,6 +200,8 @@ public class Tester
                     tester.addAction(Action.GROUP_REWRITE);
                 else if ("-simplify".equals(arg))
                     tester.addAction(Action.SIMPLIFY);
+                else if ("-simplify-reorder".equals(arg))
+                    tester.addAction(Action.SIMPLIFY_REORDER);
                 else if ("-operators".equals(arg))
                     tester.addAction(Action.OPERATORS);
                 else
