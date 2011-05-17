@@ -33,5 +33,5 @@ public interface UpdateFunction {
      * @throws IllegalArgumentException if the row could not be updated
      * (ie, if {@linkplain #rowIsApplicable(Row)} returned {@code false})
      */
-    Row applyUpdate(Row original, Bindings bindings);
+    Row evaluate(Row original, Bindings bindings);
 }

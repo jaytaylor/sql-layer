@@ -95,7 +95,7 @@ public final class Update_Default extends PhysicalOperator {
                 if (!updateFunction.rowIsApplicable(row)) {
                     return true;
                 }
-                Row currentRow = updateFunction.applyUpdate(row, bindings);
+                Row currentRow = updateFunction.evaluate(row, bindings);
                 input.updateCurrentRow(currentRow);
                 return true;
             }

@@ -161,7 +161,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         }
 
         @Override
-        public Row applyUpdate(Row original, Bindings bindings) {
+        public Row evaluate(Row original, Bindings bindings) {
             // TODO
             // ideally we'd like to use an OverlayingRow, but ModifiablePersistitGroupCursor requires
             // a PersistitGroupRow if an hkey changes

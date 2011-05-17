@@ -125,7 +125,7 @@ public class PhysicalOperatorIT extends ITBase
             }
 
             @Override
-            public Row applyUpdate(Row original, Bindings bindings) {
+            public Row evaluate(Row original, Bindings bindings) {
                 String name = (String) original.field(1, bindings); // TODO eventually use Expression for this
                 name = name.toUpperCase();
                 name = name + name;
