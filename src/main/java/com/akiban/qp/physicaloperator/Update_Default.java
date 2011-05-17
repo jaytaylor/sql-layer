@@ -92,7 +92,7 @@ public final class Update_Default extends PhysicalOperator {
         public boolean next() {
             if (input.next()) {
                 Row row = this.input.currentRow();
-                if (!updateFunction.rowIsApplicable(row)) {
+                if (!updateFunction.rowIsSelected(row)) {
                     return true;
                 }
                 Row currentRow = updateFunction.evaluate(row, bindings);

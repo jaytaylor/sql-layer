@@ -156,7 +156,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         }
 
         @Override
-        public boolean rowIsApplicable(Row row) {
+        public boolean rowIsSelected(Row row) {
             return row.rowType().typeId() == rowDef.getRowDefId();
         }
 

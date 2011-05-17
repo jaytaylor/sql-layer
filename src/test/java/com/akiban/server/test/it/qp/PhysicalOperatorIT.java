@@ -120,7 +120,7 @@ public class PhysicalOperatorIT extends ITBase
 
         UpdateFunction updateFunction = new UpdateFunction() {
             @Override
-            public boolean rowIsApplicable(Row row) {
+            public boolean rowIsSelected(Row row) {
                 return row.rowType().equals(customerRowType);
             }
 

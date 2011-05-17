@@ -15,15 +15,17 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.qp.expression.Expression;
 import com.akiban.qp.row.Row;
 
-public interface UpdateFunction {
+public interface UpdateFunction extends Expression, SelectionFunction {
     /**
      * Determines whether this update lambda should work on the given row
      * @param row the row which may possibly be updated
      * @return whether the row can be updated by this lambda
      */
-    boolean rowIsApplicable(Row row);
+    @Override
+    boolean rowIsSelected(Row row);
 
     /**
      * Updates the given row by returning another row with the required modifications.
@@ -31,7 +33,8 @@ public interface UpdateFunction {
      * @param bindings the bindings for this row
      * @return a row of the same type as the original, but different fields
      * @throws IllegalArgumentException if the row could not be updated
-     * (ie, if {@linkplain #rowIsApplicable(Row)} returned {@code false})
+     * (ie, if {@linkplain #rowIsSelected(Row)} returned {@code false})
      */
+    @Override
     Row evaluate(Row original, Bindings bindings);
 }
