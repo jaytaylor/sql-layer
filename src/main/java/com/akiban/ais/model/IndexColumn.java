@@ -74,14 +74,24 @@ public class IndexColumn implements Serializable, ModelNames
         IndexColumn indexColumn = null;
         String schemaName = (String) map.get(indexColumn_schemaName);
         String tableName = (String) map.get(indexColumn_tableName);
+        String indexType = (String) map.get(indexColumn_indexType);
         String indexName = (String) map.get(indexColumn_indexName);
         String columnName = (String) map.get(indexColumn_columnName);
         Integer position = (Integer) map.get(indexColumn_position);
         Boolean ascending = (Boolean) map.get(indexColumn_ascending);
         Integer indexedLength = (Integer) map.get(indexColumn_indexedLength);
         Table table = ais.getTable(schemaName, tableName);
-        if (table != null) {
-            Index index = table.getIndex(indexName);
+        Index index = null;
+        if(table != null) {
+            if(indexType.equals(Index.TYPE_GROUP_TAG)) {
+                Group group = table.getGroup();
+                if (group != null) {
+                    index = group.getIndex(indexName);
+                }
+            }
+            else {
+                index = table.getIndex(indexName);
+            }
             if (index != null) {
                 Column column = table.getColumnMap().get(columnName.toLowerCase());
                 if (column != null) {
@@ -96,8 +106,9 @@ public class IndexColumn implements Serializable, ModelNames
     public Map<String, Object> map()
     {
         Map<String, Object> map = new HashMap<String, Object>();
-        map.put(indexColumn_schemaName, index.getIndexName().getSchemaName());
-        map.put(indexColumn_tableName, index.getIndexName().getTableName());
+        map.put(indexColumn_schemaName, column.getTable().getName().getSchemaName());
+        map.put(indexColumn_tableName, column.getTable().getName().getTableName());
+        map.put(indexColumn_indexType, index.getTypeTag());
         map.put(indexColumn_indexName, index.getIndexName().getName());
         map.put(indexColumn_columnName, column.getName());
         map.put(indexColumn_position, position);

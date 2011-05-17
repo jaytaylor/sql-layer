@@ -87,6 +87,7 @@ public interface ModelNames
     String indexColumn = "indexColumn";
     String indexColumn_schemaName = "schemaName";
     String indexColumn_tableName = "tableName";
+    String indexColumn_indexType = "indexType";
     String indexColumn_indexName = "indexName";
     String indexColumn_columnName = "columnName";
     String indexColumn_position = "position";

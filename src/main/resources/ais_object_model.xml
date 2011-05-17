@@ -238,6 +238,7 @@
 	<object name="indexColumn" tableName="akiban_information_schema.index_columns">
 		<attr name="schemaName" type="String" />
 		<attr name="tableName" type="String" />
+        <attr name="indexType" type="String" />
 		<attr name="indexName" type="String" />
 		<attr name="columnName" type="String" />
 		<attr name="position" type="Integer" />

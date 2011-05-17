@@ -85,7 +85,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         Map<String, Object> map = new HashMap<String, Object>();
         map.put(index_schemaName, indexName.getSchemaName());
         map.put(index_tableName, indexName.getTableName());
-        map.put(index_indexType, isTableIndex() ? TYPE_TABLE_TAG : TYPE_GROUP_TAG);
+        map.put(index_indexType, getTypeTag());
         map.put(index_indexName, indexName.getName());
         map.put(index_indexId, indexId);
         map.put(index_unique, isUnique);
@@ -188,9 +188,14 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         this.indexDef = indexDef;
     }
 
+    String getTypeTag()
+    {
+        return isTableIndex() ? TYPE_TABLE_TAG : TYPE_GROUP_TAG;
+    }
+
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
-    private static String TYPE_GROUP_TAG = "GROUP";
-    private static String TYPE_TABLE_TAG = "TABLE";
+    static String TYPE_GROUP_TAG = "GROUP";
+    static String TYPE_TABLE_TAG = "TABLE";
     
     private IndexName indexName;
     private Integer indexId;
