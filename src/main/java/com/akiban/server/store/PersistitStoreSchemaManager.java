@@ -481,6 +481,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         updateTimestamp = new AtomicLong();
         ConfigurationService config = serviceManager.getConfigurationService();
         maxAISBufferSize = Integer.parseInt(config.getProperty(MAX_AIS_SIZE_PROPERTY));
+        if(maxAISBufferSize < 0) {
+            LOG.warn("Clamping property "+MAX_AIS_SIZE_PROPERTY+" to 0");
+            maxAISBufferSize = 0;
+        }
         // 0 = unlimited, start off at 1MB in this case.
         aisByteBuffer = ByteBuffer.allocate(maxAISBufferSize != 0 ? maxAISBufferSize : 1<<20);
     }
