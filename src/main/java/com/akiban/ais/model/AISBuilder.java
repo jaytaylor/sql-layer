@@ -794,7 +794,7 @@ public class AISBuilder {
 
         @Override
         public String generateGroupIndexName(Index userTableIndex) {
-            return userTableIndex.getTableName().getTableName() + "$"
+            return userTableIndex.getTable().getName().getTableName() + "$"
                     + userTableIndex.getIndexName();
         }
 

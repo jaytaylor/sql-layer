@@ -155,11 +155,6 @@ public class Index implements Serializable, ModelNames, Traversable
         return constraint;
     }
 
-    public TableName getTableName()
-    {
-        return table.getName();
-    }
-
     public IndexName getIndexName()
     {
         return indexName;

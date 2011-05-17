@@ -312,7 +312,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
-        final Table table = getTable(session, indexesToAdd.iterator().next().getTableName());
+        final Table table = getTable(session, indexesToAdd.iterator().next().getTable().getName());
         try {
             schemaManager().alterTableAddIndexes(session, table.getName(), indexesToAdd);
             checkCursorsForDDLModification(session, table);

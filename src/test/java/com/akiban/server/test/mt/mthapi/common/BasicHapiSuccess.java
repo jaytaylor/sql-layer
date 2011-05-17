@@ -60,7 +60,7 @@ public class BasicHapiSuccess extends HapiSuccess {
     protected void validateIndex(HapiRequestStruct requestStruct, Index index) {
         HapiGetRequest request = requestStruct.getRequest();
         if (request.getUsingTable().equals(request.getSchema(), request.getTable())) {
-            assertTrue("index table: " + index, index.getTableName().equals(request.getUsingTable()));
+            assertTrue("index table: " + index, index.getTable().getName().equals(request.getUsingTable()));
         }
         else {
             assertTrue("index should have been on group table", index.getTable().isGroupTable());
