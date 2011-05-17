@@ -15,18 +15,8 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.row.Row;
 
-public interface UpdateFunction extends Expression, SelectionFunction {
-    /**
-     * Updates the given row by returning another row with the required modifications.
-     * @param original the original row, which will remain untouched
-     * @param bindings the bindings for this row
-     * @return a row of the same type as the original, but different fields
-     * @throws IllegalArgumentException if the row could not be updated
-     * (ie, if {@linkplain #rowIsSelected(Row)} returned {@code false})
-     */
-    @Override
-    Row evaluate(Row original, Bindings bindings);
+public interface SelectionFunction {
+    boolean rowIsSelected(Row row);
 }
