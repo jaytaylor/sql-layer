@@ -113,7 +113,7 @@ public class AISBuilder {
         Table table = ais.getTable(schemaName, tableName);
         checkFound(table, "creating index", "table",
                 concat(schemaName, tableName));
-        Index.create(ais, table, indexName, indexIdGenerator++, unique,
+        TableIndex.create(ais, table, indexName, indexIdGenerator++, unique,
                 constraint);
     }
 
@@ -520,8 +520,8 @@ public class AISBuilder {
             UserTable userTable) {
         LOG.debug("generating group table indexes for group table "
                 + groupTable + " and user table " + userTable);
-        for (Index userIndex : userTable.getIndexes()) {
-            Index groupIndex = Index.create(ais, groupTable,
+        for (TableIndex userIndex : userTable.getIndexes()) {
+            TableIndex groupIndex = TableIndex.create(ais, groupTable,
                     nameGenerator.generateGroupIndexName(userIndex),
                     userIndex.getIndexId(), false, "key");
             int position = 0;
@@ -546,8 +546,8 @@ public class AISBuilder {
             Group group = userTable.getGroup();
             if (group != null) {
                 GroupTable groupTable = group.getGroupTable();
-                for (Index userIndex : userTable.getIndexesIncludingInternal()) {
-                    Index groupIndex = Index.create(ais, groupTable,
+                for (TableIndex userIndex : userTable.getIndexesIncludingInternal()) {
+                    TableIndex groupIndex = TableIndex.create(ais, groupTable,
                             nameGenerator.generateGroupIndexName(userIndex),
                             userIndex.getIndexId(), false, "key");
                     int position = 0;
@@ -793,7 +793,7 @@ public class AISBuilder {
         }
 
         @Override
-        public String generateGroupIndexName(Index userTableIndex) {
+        public String generateGroupIndexName(TableIndex userTableIndex) {
             return userTableIndex.getTable().getName().getTableName() + "$"
                     + userTableIndex.getIndexName();
         }

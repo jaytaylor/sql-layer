@@ -28,6 +28,7 @@ import java.util.TreeSet;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -315,7 +316,7 @@ public class SchemaDefToAis {
                 final int id = indexIdGenerator.allocateId(utDef.name);
 
                 assert name.equals(Index.PRIMARY_KEY_CONSTRAINT) : utDef.primaryKey;
-                final Index pkIndex = Index.create(ais, ut, name, id, true, name);
+                final Index pkIndex = TableIndex.create(ais, ut, name, id, true, name);
 
                 int columnIndex = 0;
                 for (SchemaDef.IndexColumnDef indexColDef : utDef.primaryKey.columns) {
@@ -370,7 +371,7 @@ public class SchemaDefToAis {
                 }
 
                 // indexes
-                Index fkIndex = Index.create(ais, ut, indexDef.name,
+                Index fkIndex = TableIndex.create(ais, ut, indexDef.name,
                         indexIdGenerator.allocateId(utDef.name), unique, indexType);
 
                 int columnIndex = 0;
