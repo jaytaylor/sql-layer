@@ -107,6 +107,9 @@ public class AISBuilder {
         column.setCollation(collation);
     }
 
+    /**
+     * Create a new TableIndex
+     */
     public void index(String schemaName, String tableName, String indexName,
             Boolean unique, String constraint) {
         LOG.info("index: " + schemaName + "." + tableName + "." + indexName);
@@ -115,6 +118,14 @@ public class AISBuilder {
                 concat(schemaName, tableName));
         TableIndex.create(ais, table, indexName, indexIdGenerator++, unique,
                 constraint);
+    }
+
+    public void groupIndex(String groupName, String indexName, Boolean unique, String constraint)
+    {
+        LOG.info("groupIndex: " + groupName + "." + indexName);
+        Group group = ais.getGroup(groupName);
+        checkFound(group, "creating group index", "group", groupName);
+        GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint);
     }
 
     public void indexColumn(String schemaName, String tableName,
@@ -133,6 +144,21 @@ public class AISBuilder {
                 concat(schemaName, tableName, indexName));
         index.addColumn(new IndexColumn(index, column, position, ascending,
                 indexedLength));
+    }
+
+    public void groupIndexColumn(String groupName, String indexName, String schemaName, String tableName,
+                                 String columnName, Integer position, Boolean ascending, Integer indexedLength)
+    {
+        LOG.info("groupIndexColumn: " + groupName + "." + indexName + ":" + columnName);
+        Group group = ais.getGroup(groupName);
+        checkFound(group, "creating group index column", "group", groupName);
+        Index index = group.getIndex(indexName);
+        checkFound(index, "creating group index column", "index", concat(groupName, indexName));
+        Table table = ais.getTable(schemaName, tableName);
+        checkFound(table, "creating group index column", "table", concat(schemaName, tableName));
+        Column column = table.getColumn(columnName);
+        checkFound(column, "creating group index column", "column", concat(schemaName, tableName, columnName));
+        index.addColumn(new IndexColumn(index, column, position, ascending, indexedLength));
     }
 
     public void joinTables(String joinName, String parentSchemaName,

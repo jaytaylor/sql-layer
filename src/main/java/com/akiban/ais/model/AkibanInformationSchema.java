@@ -312,6 +312,9 @@ public class AkibanInformationSchema implements Serializable, Traversable
             else if (!groupTables.containsKey(groupTable.getName())) {
                 out.add("group tables didn't contain group's getGroupTable(): " + groupTable.getName());
             }
+            else {
+                group.checkIntegrity(out);
+            }
         }
     }
 

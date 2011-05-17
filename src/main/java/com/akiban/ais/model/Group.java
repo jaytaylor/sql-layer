@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -88,6 +89,38 @@ public class Group implements Serializable, ModelNames
     public GroupIndex getIndex(String indexName)
     {
         return internalGetIndexMap().get(indexName.toLowerCase());
+    }
+
+    public void checkIntegrity(List<String> out)
+    {
+        for (Map.Entry<String, GroupIndex> entry : internalGetIndexMap().entrySet()) {
+            String name = entry.getKey();
+            GroupIndex index = entry.getValue();
+            if (name == null) {
+                out.add("null name for index: " + index);
+            } else if (index == null) {
+                out.add("null index for name: " + name);
+            } else if (index.getGroup() != this) {
+                out.add("group's index.getGroup() wasn't the group" + index + " <--> " + this);
+            }
+            if (index != null) {
+                for (IndexColumn indexColumn : index.getColumns()) {
+                    if (!index.equals(indexColumn.getIndex())) {
+                        out.add("index's indexColumn.getIndex() wasn't index: " + indexColumn);
+                    }
+                    Column column = indexColumn.getColumn();
+                    if (column == null) {
+                        out.add("column was null in index column: " + indexColumn);
+                    }
+                    else if(column.getTable() == null) {
+                        out.add("column's table was null: " + column);
+                    }
+                    else if(column.getTable().getGroup() != this) {
+                        out.add("column table's group was wrong " + column.getTable().getGroup() + "<-->" + this);
+                    }
+                }
+            }
+        }
     }
 
     public void addIndex(GroupIndex index)
