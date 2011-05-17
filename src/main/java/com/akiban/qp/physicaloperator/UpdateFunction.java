@@ -17,7 +17,7 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.row.Row;
 
-public interface UpdateLambda {
+public interface UpdateFunction {
     /**
      * Determines whether this update lambda should work on the given row
      * @param row the row which may possibly be updated

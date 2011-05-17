@@ -26,7 +26,7 @@ import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
-import com.akiban.qp.physicaloperator.UpdateLambda;
+import com.akiban.qp.physicaloperator.UpdateFunction;
 import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
@@ -118,7 +118,7 @@ public class PhysicalOperatorIT extends ITBase
     public void basicUpdate() throws Exception {
         adapter.setTransactional(false);
 
-        UpdateLambda updateLambda = new UpdateLambda() {
+        UpdateFunction updateFunction = new UpdateFunction() {
             @Override
             public boolean rowIsApplicable(Row row) {
                 return row.rowType().equals(customerRowType);
@@ -134,7 +134,7 @@ public class PhysicalOperatorIT extends ITBase
         };
 
         PhysicalOperator groupScan = groupScan_Default(coi);
-        PhysicalOperator updateOperator = new Update_Default(groupScan, updateLambda);
+        PhysicalOperator updateOperator = new Update_Default(groupScan, updateFunction);
         Cursor updateCursor = cursor(updateOperator, adapter);
         int nexts = 0;
         updateCursor.open(UNDEF_BINDINGS);
