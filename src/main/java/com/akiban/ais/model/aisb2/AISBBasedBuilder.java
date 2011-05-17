@@ -70,7 +70,6 @@ public class AISBBasedBuilder
             aisb.userTable(schema, table);
             aisb.createGroup(groupName, schema, "_akiban_"+schema+'_'+table);
             aisb.addTableToGroup(groupName, schema, table);
-            tablesPerGroup.put(groupName, 1);
             tablesToGroups.put(TableName.create(schema, table), groupName);
             uTableColumnPos = 0;
             return this;
@@ -197,7 +196,6 @@ public class AISBBasedBuilder
             aisb = new AISBuilder();
             usable = true;
             groupNames = new HashSet<String>();
-            tablesPerGroup = new HashMap<String, Integer>();
             tablesToGroups = new HashMap<TableName, String>();
         }
 
@@ -226,7 +224,6 @@ public class AISBBasedBuilder
         private boolean usable;
 
         private final Set<String> groupNames;
-        private final Map<String,Integer> tablesPerGroup;
         private final Map<TableName,String> tablesToGroups;
 
         // constants
