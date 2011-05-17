@@ -30,13 +30,22 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         Index index = null;
         String schemaName = (String) map.get(index_schemaName);
         String tableName = (String) map.get(index_tableName);
+        String indexType = (String) map.get(index_indexType);
         String indexName = (String) map.get(index_indexName);
         Integer indexId = (Integer) map.get(index_indexId);
         Boolean unique = (Boolean) map.get(index_unique);
         String constraint = (String) map.get(index_constraint);
-        Table table = ais.getTable(schemaName, tableName);
-        if (table != null) {
-            index = TableIndex.create(ais, table, indexName, indexId, unique, constraint);
+        if(indexType.equals(TYPE_TABLE_TAG)) {
+            Table table = ais.getTable(schemaName, tableName);
+            if (table != null) {
+                index = TableIndex.create(ais, table, indexName, indexId, unique, constraint);
+            }
+        }
+        else if(indexType.equals(TYPE_GROUP_TAG)) {
+            Group group = ais.getGroup(tableName);
+            if (group != null) {
+                index = GroupIndex.create(ais, group, indexName, indexId, unique, constraint);
+            }
         }
         return index;
     }
@@ -76,6 +85,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         Map<String, Object> map = new HashMap<String, Object>();
         map.put(index_schemaName, indexName.getSchemaName());
         map.put(index_tableName, indexName.getTableName());
+        map.put(index_indexType, isTableIndex() ? TYPE_TABLE_TAG : TYPE_GROUP_TAG);
         map.put(index_indexName, indexName.getName());
         map.put(index_indexId, indexId);
         map.put(index_unique, isUnique);
@@ -179,7 +189,9 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     }
 
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
-
+    private static String TYPE_GROUP_TAG = "GROUP";
+    private static String TYPE_TABLE_TAG = "TABLE";
+    
     private IndexName indexName;
     private Integer indexId;
     private Boolean isUnique;

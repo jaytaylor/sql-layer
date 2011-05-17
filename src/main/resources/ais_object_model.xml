@@ -16,7 +16,7 @@
 
 -->
 
-<model version="1">
+<model version="2">
 	<object name="type" tableName="akiban_information_schema.types">
 		<attr name="name" type="String" />
 		<attr name="parameters" type="Integer" />
@@ -209,6 +209,7 @@
 	<object name="index" tableName="akiban_information_schema.indexes">
 		<attr name="schemaName" type="String" />
 		<attr name="tableName" type="String" />
+        <attr name="indexType" type="String" />
 		<attr name="indexName" type="String" />
 		<attr name="indexId" type="Integer" />
 		<attr name="constraint" type="String" />

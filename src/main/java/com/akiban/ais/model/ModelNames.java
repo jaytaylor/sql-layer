@@ -78,6 +78,7 @@ public interface ModelNames
     String index = "index";
     String index_schemaName = "schemaName";
     String index_tableName = "tableName";
+    String index_indexType = "indexType";
     String index_indexName = "indexName";
     String index_indexId = "indexId";
     String index_constraint = "constraint";
