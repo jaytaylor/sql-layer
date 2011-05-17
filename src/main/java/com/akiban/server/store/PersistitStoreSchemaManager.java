@@ -45,6 +45,7 @@ import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.Type;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.encoding.EncoderFactory;
@@ -183,7 +184,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     @Override
-    public void alterTableAddIndexes(Session session, TableName tableName, Collection<Index> indexes) throws Exception {
+    public void alterTableAddIndexes(Session session, TableName tableName, Collection<TableIndex> indexes) throws Exception {
         if(indexes.isEmpty()) {
             return;
         }
@@ -201,7 +202,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
         // Input validation: same table, not a primary key, not a duplicate index name, and
         // referenced columns are valid
-        for(Index idx : indexes) {
+        for(TableIndex idx : indexes) {
             if(!idx.getTable().equals(firstIndexTable)) {
                 throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
                                                     "Cannot add indexes to multiple tables");
@@ -231,8 +232,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         // All OK, add to current table
         Integer curId = SchemaDefToAis.findMaxIndexIDInGroup(newAIS, newTable.getGroup());
         assert curId != null : newTable;
-        for(Index idx : indexes) {
-            Index newIndex = Index.create(newAIS, newTable, idx.getIndexName().getName(), ++curId,
+        for(TableIndex idx : indexes) {
+            TableIndex newIndex = TableIndex.create(newAIS, newTable, idx.getIndexName().getName(), ++curId,
                                           idx.isUnique(), idx.getConstraint());
 
             for(IndexColumn idxCol : idx.getColumns()) {
@@ -258,9 +259,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         final AkibanInformationSchema newAIS = new AkibanInformationSchema();
         new Writer(new AISTarget(newAIS)).save(ais);
         final Table newTable = newAIS.getTable(tableName);
-        List<Index> indexesToDrop = new ArrayList<Index>();
+        List<TableIndex> indexesToDrop = new ArrayList<TableIndex>();
         for(String indexName : indexNames) {
-            final Index index = newTable.getIndex(indexName);
+            final TableIndex index = newTable.getIndex(indexName);
             indexesToDrop.add(index);
         }
 

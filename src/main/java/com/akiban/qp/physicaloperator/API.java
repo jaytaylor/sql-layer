@@ -17,6 +17,7 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.RowBase;
@@ -99,12 +100,12 @@ public class API
 */
     }
 
-    public static PhysicalOperator indexScan_Default(Index index)
+    public static PhysicalOperator indexScan_Default(TableIndex index)
     {
         return indexScan_Default(index, false, null);
     }
 
-    public static PhysicalOperator indexScan_Default(Index index, boolean reverse, IndexKeyRange indexKeyRange)
+    public static PhysicalOperator indexScan_Default(TableIndex index, boolean reverse, IndexKeyRange indexKeyRange)
     {
         return new IndexScan_Default(index, reverse, indexKeyRange);
     }

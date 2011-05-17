@@ -37,7 +37,7 @@ public class IndexName implements Serializable
     @Override
     public String toString()
     {
-        return indexName;
+        return tableName.toString() + "." + indexName;
     }
 
     public String getSchemaName()

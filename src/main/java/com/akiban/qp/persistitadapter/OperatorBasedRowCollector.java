@@ -347,7 +347,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     protected PersistitAdapter adapter;
     protected UserTable queryRootTable;
     protected UserTableRowType queryRootType;
-    protected Index predicateIndex;
+    protected TableIndex predicateIndex;
     protected UserTableRowType predicateType;
     // If we're querying a user table, then requiredUserTables contains just queryRootTable
     // If we're querying a group table, it contains those user tables containing columns in the

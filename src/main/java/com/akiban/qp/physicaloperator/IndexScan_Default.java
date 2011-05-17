@@ -16,6 +16,7 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexKeyRange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,7 @@ class IndexScan_Default extends PhysicalOperator
 
     // IndexScan_Default interface
 
-    public IndexScan_Default(Index index, boolean reverse, IndexKeyRange indexKeyRange)
+    public IndexScan_Default(TableIndex index, boolean reverse, IndexKeyRange indexKeyRange)
     {
         this.index = index;
         this.reverse = reverse;
@@ -53,7 +54,7 @@ class IndexScan_Default extends PhysicalOperator
 
     // Object state
 
-    private final Index index;
+    private final TableIndex index;
     private final boolean reverse;
     private final IndexKeyRange indexKeyRange;
 

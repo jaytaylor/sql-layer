@@ -353,7 +353,7 @@ public class PhysicalOperatorIT extends ITBase
     @Test
     public void testRestrictedIndexScan()
     {
-        Index idxOrderSalesman = index(order, "salesman");
+        TableIndex idxOrderSalesman = index(order, "salesman");
         IndexBound lo = indexBound(userTable(order), row(order, 2, "jack"), columnSelector(idxOrderSalesman));
         IndexBound hi = indexBound(userTable(order), row(order, 2, "tom"), columnSelector(idxOrderSalesman));
         IndexKeyRange range = indexKeyRange(lo, true, hi, false);
@@ -367,7 +367,7 @@ public class PhysicalOperatorIT extends ITBase
     @Test
     public void testRestrictedIndexLookup()
     {
-        Index idxOrderSalesman = index(order, "salesman");
+        TableIndex idxOrderSalesman = index(order, "salesman");
         IndexBound tom = indexBound(userTable(order), row(order, 2, "tom"), columnSelector(idxOrderSalesman));
         IndexKeyRange matchTom = indexKeyRange(tom, true, tom, true);
         PhysicalOperator indexScan = indexScan_Default(idxOrderSalesman, false, matchTom);
@@ -383,7 +383,7 @@ public class PhysicalOperatorIT extends ITBase
     public void testAncestorLookupAfterIndexScan()
     {
         // Find customers associated with salesman tom
-        Index idxOrderSalesman = index(order, "salesman");
+        TableIndex idxOrderSalesman = index(order, "salesman");
         IndexBound tom = indexBound(userTable(order), row(order, 2, "tom"), columnSelector(idxOrderSalesman));
         IndexKeyRange matchTom = indexKeyRange(tom, true, tom, true);
         PhysicalOperator indexScan = indexScan_Default(idxOrderSalesman, false, matchTom);
@@ -444,10 +444,10 @@ public class PhysicalOperatorIT extends ITBase
         return userTableRowDef.userTable();
     }
 
-    private Index index(int userTableId, String... searchIndexColumnNamesArray)
+    private TableIndex index(int userTableId, String... searchIndexColumnNamesArray)
     {
         UserTable userTable = userTable(userTableId);
-        for (Index index : userTable.getIndexesIncludingInternal()) {
+        for (TableIndex index : userTable.getIndexesIncludingInternal()) {
             List<String> indexColumnNames = new ArrayList<String>();
             for (IndexColumn indexColumn : index.getColumns()) {
                 indexColumnNames.add(indexColumn.getColumn().getName());

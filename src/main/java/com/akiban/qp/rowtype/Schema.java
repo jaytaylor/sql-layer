@@ -17,6 +17,7 @@ package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 
 import java.util.*;
@@ -37,7 +38,7 @@ public class Schema
             this.typeIdCounter = max(this.typeIdCounter, userTable.getTableId());
             // Indexes
             this.typeIdCounter++;
-            for (Index index : userTable.getIndexesIncludingInternal()) {
+            for (TableIndex index : userTable.getIndexesIncludingInternal()) {
                 IndexRowType indexRowType = new IndexRowType(this, userTableRowType, index);
                 userTableRowType.addIndexRowType(indexRowType);
                 rowTypes.put(indexRowType.typeId(), indexRowType);
@@ -56,7 +57,7 @@ public class Schema
         return (UserTableRowType) rowTypes.get(table.getTableId());
     }
 
-    public synchronized IndexRowType indexRowType(Index index)
+    public synchronized IndexRowType indexRowType(TableIndex index)
     {
         assert index.getTable().isUserTable() : index;
         return userTableRowType((UserTable) index.getTable()).indexRowType(index);

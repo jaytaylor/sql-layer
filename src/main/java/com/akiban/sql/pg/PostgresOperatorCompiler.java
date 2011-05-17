@@ -15,6 +15,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.ais.model.TableIndex;
 import com.akiban.sql.StandardException;
 
 import com.akiban.sql.optimizer.OperatorCompiler;
@@ -107,7 +108,7 @@ public class PostgresOperatorCompiler extends OperatorCompiler
     // The current implementation of index cursors expects that the
     // key bounds' rows are in the shape of the indexed table, not the
     // index itself.
-    protected Row getIndexExpressionRow(Index index, Expression[] keys) {
+    protected Row getIndexExpressionRow(TableIndex index, Expression[] keys) {
         UserTable userTable = (UserTable)index.getTable();
         RowType rowType = schema.userTableRowType(userTable);
         Expression[] userKeys = new Expression[rowType.nFields()];

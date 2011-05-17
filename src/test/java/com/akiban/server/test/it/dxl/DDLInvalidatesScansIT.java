@@ -19,6 +19,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.CursorId;
@@ -237,7 +238,7 @@ public final class DDLInvalidatesScansIT extends ITBase {
 
     private Index createIndex() throws InvalidOperationException {
         UserTable customers = getUserTable(SCHEMA, CUSTOMERS);
-        Index addIndex = Index.create(null,
+        Index addIndex = new TableIndex(
                 customers,
                 "played_for_Bs",
                 2,

@@ -138,7 +138,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         return Collections.unmodifiableCollection(internalGetIndexMap().values());
     }
 
-    public Index getIndex(String indexName)
+    public TableIndex getIndex(String indexName)
     {
         return internalGetIndexMap().get(indexName.toLowerCase());
     }

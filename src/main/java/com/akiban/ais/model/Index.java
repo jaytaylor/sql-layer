@@ -68,7 +68,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     @Override
     public String toString()
     {
-        return "Index(" + table + "." + indexName + columns + ")";
+        return "Index(" + indexName + columns + ")";
     }
 
     public Map<String, Object> map()
@@ -117,6 +117,11 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     public IndexName getIndexName()
     {
         return indexName;
+    }
+
+    public void setIndexName(IndexName name)
+    {
+        indexName = name;
     }
 
     public List<IndexColumn> getColumns()

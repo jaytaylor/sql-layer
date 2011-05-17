@@ -16,6 +16,7 @@
 package com.akiban.server.test.mt.mthapi.common;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.test.mt.mthapi.base.HapiRequestStruct;
@@ -59,11 +60,13 @@ public class BasicHapiSuccess extends HapiSuccess {
     @Override
     protected void validateIndex(HapiRequestStruct requestStruct, Index index) {
         HapiGetRequest request = requestStruct.getRequest();
+        assertTrue("index is TableIndex: " + index, index.isTableIndex());
+        TableIndex tableIndex = (TableIndex)index;
         if (request.getUsingTable().equals(request.getSchema(), request.getTable())) {
-            assertTrue("index table: " + index, index.getTable().getName().equals(request.getUsingTable()));
+            assertTrue("index table: " + index, tableIndex.getTable().getName().equals(request.getUsingTable()));
         }
         else {
-            assertTrue("index should have been on group table", index.getTable().isGroupTable());
+            assertTrue("index should have been on group table", tableIndex.getTable().isGroupTable());
         }
         if (requestStruct.expectedIndexKnown()) {
             assertEquals("index name", requestStruct.getExpectedIndex(), index.getIndexName().getName());

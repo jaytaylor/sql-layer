@@ -31,6 +31,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
@@ -312,9 +313,17 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
-        final Table table = getTable(session, indexesToAdd.iterator().next().getTable().getName());
+        Collection<TableIndex> tableIndexesToAdd = new ArrayList<TableIndex>();
+        for(Index index : indexesToAdd) {
+            if(!index.isTableIndex()) {
+                throw new IllegalArgumentException("Only TableIndexes can be added");
+            }
+            tableIndexesToAdd.add((TableIndex)index);
+        }
+
+        final Table table = getTable(session, tableIndexesToAdd.iterator().next().getTable().getName());
         try {
-            schemaManager().alterTableAddIndexes(session, table.getName(), indexesToAdd);
+            schemaManager().alterTableAddIndexes(session, table.getName(), tableIndexesToAdd);
             checkCursorsForDDLModification(session, table);
         }
         catch(InvalidOperationException e) {

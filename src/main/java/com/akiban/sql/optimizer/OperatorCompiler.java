@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.ais.model.TableIndex;
 import com.akiban.sql.parser.*;
 import com.akiban.sql.compiler.*;
 
@@ -156,7 +157,7 @@ public class OperatorCompiler
         GroupBinding group = addTables(select.getFromList(), tables);
         GroupTable groupTable = group.getGroup().getGroupTable();
         Set<BinaryOperatorNode> indexConditions = new HashSet<BinaryOperatorNode>();
-        Index index = null;
+        TableIndex index = null;
         if (select.getWhereClause() != null) {
             // TODO: Put ColumnReferences on the left of any condition with constant in WHERE,
             // changing operand as necessary.
@@ -364,16 +365,16 @@ public class OperatorCompiler
         }
     }
 
-    protected Index pickBestIndex(List<UserTable> tables, 
-                                  ValueNode whereClause,
-                                  Set<BinaryOperatorNode> indexConditions) {
+    protected TableIndex pickBestIndex(List<UserTable> tables,
+                                       ValueNode whereClause,
+                                       Set<BinaryOperatorNode> indexConditions) {
         if (whereClause == null) 
             return null;
         
-        Index bestIndex = null;
+        TableIndex bestIndex = null;
         Set<BinaryOperatorNode> bestIndexConditions = null;
         for (UserTable table : tables) {
-            for (Index index : table.getIndexes()) { // TODO: getIndexesIncludingInternal()
+            for (TableIndex index : table.getIndexes()) { // TODO: getIndexesIncludingInternal()
                 Set<BinaryOperatorNode> matchingConditions = matchIndexConditions(index, 
                                                                                   whereClause);
                 if (matchingConditions.size() > ((bestIndex == null) ? 0 : 
@@ -487,7 +488,7 @@ public class OperatorCompiler
     // could have been reconciled earlier as part of normalization.
     // Not general enough to handle expressions that actually compute, rather
     // than fetching a field, constant or parameter.
-    protected IndexKeyRange getIndexKeyRange(Index index, 
+    protected IndexKeyRange getIndexKeyRange(TableIndex index,
                                              Set<BinaryOperatorNode> indexConditions) 
             throws StandardException {
         List<IndexColumn> indexColumns = index.getColumns();
@@ -626,7 +627,7 @@ public class OperatorCompiler
         }
     }
 
-    protected IndexBound getIndexBound(Index index, Expression[] keys) {
+    protected IndexBound getIndexBound(TableIndex index, Expression[] keys) {
         if (keys == null) 
             return null;
         return new IndexBound((UserTable)index.getTable(), 
@@ -648,7 +649,7 @@ public class OperatorCompiler
             };
     }
 
-    protected Row getIndexExpressionRow(Index index, Expression[] keys) {
+    protected Row getIndexExpressionRow(TableIndex index, Expression[] keys) {
         return new ExpressionRow(schema.indexRowType(index), keys);
     }
 

@@ -133,9 +133,9 @@ public class UserTable extends Table
     }
 
     @Override
-    public Index getIndex(String indexName)
+    public TableIndex getIndex(String indexName)
     {
-        Index index = null;
+        TableIndex index = null;
         if (indexName.equals(Index.PRIMARY_KEY_CONSTRAINT)) {
             // getPrimaryKey has logic for handling Akiban PK
             PrimaryKey primaryKey = getPrimaryKey();
@@ -206,8 +206,8 @@ public class UserTable extends Table
         // Creates a PK for a pk-less table.
         if (primaryKey == null) {
             // Find primary key index
-            Index primaryKeyIndex = null;
-            for (Index index : getIndexesIncludingInternal()) {
+            TableIndex primaryKeyIndex = null;
+            for (TableIndex index : getIndexesIncludingInternal()) {
                 if (index.isPrimaryKey()) {
                     primaryKeyIndex = index;
                 }
@@ -353,7 +353,7 @@ public class UserTable extends Table
         }
     }
 
-    private Index createAkibanPrimaryKeyIndex()
+    private TableIndex createAkibanPrimaryKeyIndex()
     {
         // Create a column for a PK
         Column pkColumn = Column.create(this,

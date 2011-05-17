@@ -27,6 +27,7 @@ import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
 
@@ -39,7 +40,7 @@ import com.akiban.server.service.tree.TreeLink;
  */
 public class IndexDef implements TreeLink {
 
-    private final Index index;
+    private final TableIndex index;
 
     private final String treeName;
 
@@ -162,7 +163,7 @@ public class IndexDef implements TreeLink {
         private final int indexKeyLoc;
     }
 
-    public IndexDef(String treeName, RowDef rowDef, Index index)
+    public IndexDef(String treeName, RowDef rowDef, TableIndex index)
     {
         this.index = index;
         index.indexDef(this);

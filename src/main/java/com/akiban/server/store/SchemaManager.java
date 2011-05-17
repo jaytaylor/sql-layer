@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.SortedMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.service.session.Session;
@@ -51,7 +51,7 @@ public interface SchemaManager {
      * @throws Exception If the request is invalid (e.g. duplicate index name, malformed Index) or there
      * was an internal error.
      */
-    void alterTableAddIndexes(Session session, TableName tableName, Collection<Index> indexes) throws Exception;
+    void alterTableAddIndexes(Session session, TableName tableName, Collection<TableIndex> indexes) throws Exception;
 
     /**
      * Alter an existing table by removing index(es) from it.
