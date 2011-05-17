@@ -364,6 +364,8 @@ public class SimplifiedSelectQuery
     private List<SortColumn> sortColumns = null;
     private int offset = 0;
     private int limit = -1;
+    private List<Set<Column>> columnEquivalences = new ArrayList<Set<Column>>();
+    private Map<Column,Set<Column>> columnEquivalencesByColumn = new HashMap<Column,Set<Column>>();
 
     // Turn the given SELECT statement into its simplified form.
     public SimplifiedSelectQuery(CursorNode cursor, Set<ValueNode> joinConditions) 
@@ -456,6 +458,22 @@ public class SimplifiedSelectQuery
                                        "Unsupported LIMIT");
         if (cursor.getUpdateMode() == CursorNode.UpdateMode.UPDATE)
             throw new UnsupportedSQLException("Unsupported FOR UPDATE");
+
+        for (ValueNode joinCondition : joinConditions) {
+            BinaryRelationalOperatorNode binop = (BinaryRelationalOperatorNode)
+                joinCondition;
+            Column left = getColumnReferenceColumn(binop.getLeftOperand(), null);
+            Column right = getColumnReferenceColumn(binop.getRightOperand(), null);
+            if ((left != null) && (right != null))
+                addColumnEquivalence(left, right);
+        }
+        for (ColumnCondition whereCondition : conditions) {
+            if ((whereCondition.getOperation() == Comparison.EQ) &&
+                (whereCondition.getRight() instanceof ColumnConditionOperand))
+                addColumnEquivalence(whereCondition.getLeft().getColumn(),
+                                     ((ColumnConditionOperand)
+                                      whereCondition.getRight()).getColumn());
+        }
     }
 
     protected BaseJoinNode getJoinNode(FromTable fromTable) throws StandardException {
@@ -572,6 +590,43 @@ public class SimplifiedSelectQuery
     public int getLimit() {
         return limit;
     }
+    
+    public Set<Column> getColumnEquivalences(Column column) {
+        return columnEquivalencesByColumn.get(column);
+    }
+
+    // Add an equivalence between two columns.
+    // With these, a table can be left out entirely if all its
+    // selected / tested columns are equated with ones that come from
+    // one that's needed anyway, like from the index.
+    protected void addColumnEquivalence(Column c1, Column c2) {
+        Set<Column> e1 = columnEquivalencesByColumn.get(c1);
+        Set<Column> e2 = columnEquivalencesByColumn.get(c2);
+        if (e1 == null) {
+            if (e2 == null) {
+                // Brand new.
+                Set<Column> n = new HashSet<Column>(2);
+                n.add(c1);
+                n.add(c2);
+                columnEquivalences.add(n);
+                columnEquivalencesByColumn.put(c1, n);
+                columnEquivalencesByColumn.put(c2, n);
+            }
+            else {
+                columnEquivalencesByColumn.put(c1, e2);
+            }
+        }
+        else if (e2 == null) {
+            columnEquivalencesByColumn.put(c2, e1);
+        }
+        else {
+            // Have two that need to be merged.
+            columnEquivalences.remove(e2);
+            for (Column o2 : e2) {
+                columnEquivalencesByColumn.put(o2, e1);
+            }
+        }
+    }
 
     // The initial join tree is in syntax order. 
     // Convert it to the preferred AIS order: ancestors on the left as
@@ -655,35 +710,44 @@ public class SimplifiedSelectQuery
 
     public String toString() {
         StringBuilder str = new StringBuilder(super.toString());
-        str.append("\ngroup = ");
+        str.append("\ngroup: ");
         str.append(group);
-        str.append("\njoins = ");
+        str.append("\njoins: ");
         str.append(joins);
-        str.append("\nselect = [");
+        str.append("\nselect: [");
         for (int i = 0; i < selectColumns.size(); i++) {
             if (i > 0) str.append(", ");
             str.append(selectColumns.get(i));
         }
         str.append("]");
-        str.append("\nconditions = ");
+        str.append("\nconditions: ");
         for (int i = 0; i < conditions.size(); i++) {
             if (i > 0) str.append(",\n  ");
             str.append(conditions.get(i));
         }
         if (sortColumns != null) {
-            str.append("\nsort = ");
+            str.append("\nsort: ");
             for (int i = 0; i < sortColumns.size(); i++) {
                 if (i > 0) str.append(", ");
                 str.append(sortColumns.get(i));
             }
         }
         if (offset > 0) {
-            str.append("\noffset = ");
+            str.append("\noffset: ");
             str.append(offset);
         }
         if (limit >= 0) {
-            str.append("\nlimit = ");
+            str.append("\nlimit: ");
             str.append(limit);
+        }
+        str.append("\nequivalences: ");
+        for (int i = 0; i < columnEquivalences.size(); i++) {
+            if (i > 0) str.append(",\n  ");
+            int j = 0;
+            for (Column column : columnEquivalences.get(i)) {
+                if (j++ > 0) str.append(" = ");
+                str.append(column);
+            }
         }
         return str.toString();
     }
