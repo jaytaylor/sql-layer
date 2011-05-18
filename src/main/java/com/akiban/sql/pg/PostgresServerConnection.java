@@ -44,8 +44,9 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresServerConnection.class);
 
-    private final static Tap parserTap = Tap.add(new Tap.Count("sql: parse"));
-    private final static Tap optimizerTap = Tap.add(new Tap.Count("sql: optimize"));
+    private final static Tap parserTap = Tap.add(new Tap.PerThread("sql: parse", Tap.TimeAndCount.class));
+    private final static Tap optimizerTap = Tap.add(new Tap.PerThread("sql: optimize", Tap.TimeAndCount.class));
+    private final static Tap executorTap = Tap.add(new Tap.PerThread("sql: execute", Tap.TimeAndCount.class));
 
     private PostgresServer server;
     private boolean running = false, ignoreUntilSync = false;
@@ -68,6 +69,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     private PostgresStatementParser[] unparsedGenerators;
     private PostgresStatementGenerator[] parsedGenerators;
     private Thread thread;
+    
+    private boolean instrumentationEnabled = false;
 
     public PostgresServerConnection(PostgresServer server, Socket socket, 
                                     int pid, int secret) {
@@ -300,7 +303,13 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
         if (pstmt != null) {
             pstmt.sendDescription(this, false);
-            pstmt.execute(this, -1);
+            try {
+                executorTap.in();
+                pstmt.execute(this, -1);
+            }
+            finally {
+                executorTap.out();
+            }
         }
         else {
             // Parse as a _list_ of statements and process each in turn.
@@ -315,7 +324,13 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             for (StatementNode stmt : stmts) {
                 pstmt = generateStatement(stmt, null);
                 pstmt.sendDescription(this, false);
-                pstmt.execute(this, -1);
+                try {
+                    executorTap.in();
+                    pstmt.execute(this, -1);
+                }
+                finally {
+                    executorTap.out();
+                }
             }
         }
         readyForQuery();
@@ -567,6 +582,23 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     @Override
     public SQLParser getParser() {
         return parser;
+    }
+    
+    public boolean isInstrumentationEnabled() {
+        return instrumentationEnabled;
+    }
+    
+    public void enableInstrumentation() {
+        parserTap.reset();
+        optimizerTap.reset();
+        executorTap.reset();
+        Tap.setEnabled("sql.*", true); /* is this enabling it globally? */
+        instrumentationEnabled = true;
+    }
+    
+    public void disableInstrumentation() {
+        Tap.setEnabled("sql.*", false);
+        instrumentationEnabled = false;
     }
 
 }

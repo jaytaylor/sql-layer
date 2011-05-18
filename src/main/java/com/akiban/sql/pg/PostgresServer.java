@@ -16,6 +16,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.service.Service;
+import com.akiban.server.service.memcache.MemcacheMXBean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +30,7 @@ import java.util.*;
  * to process requests.
  * Also keeps global state for shutdown and inter-connection communication like cancel.
 */
-public class PostgresServer implements Runnable {
+public class PostgresServer implements Runnable, PostgresMXBean {
     private int port;
     private ServerSocket socket = null;
     private boolean running = false;
@@ -126,8 +127,34 @@ public class PostgresServer implements Runnable {
     public synchronized PostgresServerConnection getConnection(int pid) {
         return connections.get(pid);
     }
+   
     public synchronized void removeConnection(int pid) {
         connections.remove(pid);
+    }
+
+    @Override
+    public String getCurrentConnections() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("Current Connection ID's");
+        for (Integer entry : connections.keySet()) {
+            sb.append(entry);
+        }
+        return sb.toString();
+    }
+
+    @Override
+    public boolean isInstrumentationEnabled(int pid) {
+        return getConnection(pid).isInstrumentationEnabled();
+    }
+
+    @Override
+    public void enableInstrumentation(int pid) {
+        getConnection(pid).enableInstrumentation();
+    }
+    
+    @Override
+    public void disableInstrumentation(int pid) {
+        getConnection(pid).disableInstrumentation();
     }
 
 }

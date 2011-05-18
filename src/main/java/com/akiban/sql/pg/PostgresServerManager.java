@@ -18,6 +18,7 @@ package com.akiban.sql.pg;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.jmx.JmxManageable;
 
 import java.net.*;
 import java.io.*;
@@ -26,7 +27,8 @@ import java.util.*;
 /** The PostgreSQL server service.
  * @see PostgresServer
 */
-public class PostgresServerManager implements PostgresService, Service<PostgresService> {
+public class PostgresServerManager implements PostgresService, 
+    Service<PostgresService>, JmxManageable {
     private ServiceManager serviceManager;
     private int port = -1;
     private PostgresServer server = null;
@@ -72,6 +74,13 @@ public class PostgresServerManager implements PostgresService, Service<PostgresS
 
     public int getPort() {
         return port;
+    }
+    
+    /*** JmxManageable ***/
+    
+    @Override
+    public JmxObjectInfo getJmxObjectInfo() {
+        return new JmxObjectInfo("PostgresServer", server, PostgresMXBean.class);
     }
 
 }
