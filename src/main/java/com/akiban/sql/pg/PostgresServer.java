@@ -15,9 +15,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.service.Service;
-import com.akiban.server.service.memcache.MemcacheMXBean;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
