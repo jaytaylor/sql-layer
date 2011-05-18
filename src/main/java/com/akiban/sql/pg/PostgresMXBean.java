@@ -24,5 +24,17 @@ public interface PostgresMXBean {
     boolean isInstrumentationEnabled(int pid);
     void enableInstrumentation(int pid);
     void disableInstrumentation(int pid);
+    
+    /**
+     * @param pid connection ID
+     * @return text of current/last query this connection executed
+     */
+    String getSqlString(int pid);
+    
+    /**
+     * @param pid connection ID
+     * @return client's IP address
+     */
+    String getRemoteAddress(int pid);
 
 }

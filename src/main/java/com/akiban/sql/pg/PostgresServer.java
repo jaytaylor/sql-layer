@@ -148,5 +148,15 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     public void disableInstrumentation(int pid) {
         getConnection(pid).disableInstrumentation();
     }
+    
+    @Override
+    public String getSqlString(int pid) {
+        return getConnection(pid).getSqlString();
+    }
+    
+    @Override
+    public String getRemoteAddress(int pid) {
+        return getConnection(pid).getRemoteAddress();
+    }
 
 }

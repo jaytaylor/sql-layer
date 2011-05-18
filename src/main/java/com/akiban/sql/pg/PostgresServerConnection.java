@@ -71,6 +71,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     private Thread thread;
     
     private boolean instrumentationEnabled = false;
+    private String sql;
 
     public PostgresServerConnection(PostgresServer server, Socket socket, 
                                     int pid, int secret) {
@@ -292,7 +293,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     protected void processQuery() throws IOException, StandardException {
-        String sql = messenger.readString();
+        sql = messenger.readString();
         logger.info("Query: {}", sql);
         PostgresStatement pstmt = null;
         for (PostgresStatementParser parser : unparsedGenerators) {
@@ -338,7 +339,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     protected void processParse() throws IOException, StandardException {
         String stmtName = messenger.readString();
-        String sql = messenger.readString();
+        sql = messenger.readString();
         short nparams = messenger.readShort();
         int[] paramTypes = new int[nparams];
         for (int i = 0; i < nparams; i++)
@@ -605,6 +606,14 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     public void disableInstrumentation() {
         Tap.setEnabled("sql.*", false);
         instrumentationEnabled = false;
+    }
+    
+    public String getSqlString() {
+        return sql;
+    }
+    
+    public String getRemoteAddress() {
+        return socket.getInetAddress().getHostAddress();
     }
 
 }
