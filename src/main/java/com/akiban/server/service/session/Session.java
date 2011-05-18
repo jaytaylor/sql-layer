@@ -22,7 +22,6 @@ import java.util.Map;
 
 public final class Session
 {
-    private static final Object NULL_OBJ = new Object();
     private final Map<Key<?>,Object> map = new HashMap<Key<?>, Object>();
     private final SessionEventListener listener;
 
@@ -35,7 +34,7 @@ public final class Session
     }
 
     public <T> T put(Session.Key<T> key, T item) {
-        return launder(key, map.put(key, item == null ? NULL_OBJ : item));
+        return launder(key, map.put(key, item));
     }
 
     public <T> T remove(Key<T> key) {
@@ -84,13 +83,11 @@ public final class Session
         return deque.pollLast();
     }
 
-    @SuppressWarnings("unused") // "key" is used only for generic type inference
+    // "unused" suppression: Key<T> is only used for type inference
+    // "unchecked" suppression: we know from the put methods that Object will be of type T
+    @SuppressWarnings({"unused", "unchecked"})
     private static <T> T launder(Key<T> key, Object o) {
-        @SuppressWarnings("unchecked") T t = (T) o;
-        if (t == null) {
-            return null;
-        }
-        return t == NULL_OBJ ? null : t;
+        return (T) o;
     }
 
     public void close()
