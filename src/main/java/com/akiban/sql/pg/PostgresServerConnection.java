@@ -595,7 +595,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         /* 
          * TODO: change this so its only enabled for this thread by TAP
          * Right now, TAP will enable all dispatches that match the given
-         * regular expression will be all connections to the postgres
+         * regular expression which will be all connections to the postgres
          * server. 
          */
         Tap.setEnabled("sql.*", true);
