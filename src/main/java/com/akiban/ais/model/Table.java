@@ -405,7 +405,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
     protected String engine;
 
-    private final Object LOCK = new Object();
+    private final Object LOCK = new SerializableMonitor();
     // It really is a RowDef, but declaring it that way creates trouble for AIS. We don't want to pull in
     // all the RowDef stuff and have it visible to GWT.
     private transient /*RowDef*/ Object rowDef;

@@ -50,6 +50,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.Type;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.encoding.EncoderFactory;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.tree.TreeLink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,15 +105,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private final static boolean forceToDisk = true;
 
-    private AkibanInformationSchema ais;
-
-    private ServiceManager serviceManager;
-
-    private AtomicLong updateTimestamp = new AtomicLong();
-
-    // 1<<20=1MB: Max currently supported, small enough to allocate up front
-    private ByteBuffer byteBuffer = ByteBuffer.allocate(1<<20);
-
     /**
      * Maximum size that can can be stored in an index. See
      * {@link Transaction#prepareTxnExchange(com.persistit.Tree, com.persistit.Key, char)}
@@ -130,10 +122,17 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private static final String COMMIT_AIS_ERROR_MSG = "INTERNAL INCONSISTENCY, error while building RowDefCache";
 
+    public static final String MAX_AIS_SIZE_PROPERTY = "akserver.max_ais_size_bytes";
+
     private interface AISChangeCallback {
         public void beforeCommit(Exchange schemaExchange, TreeService treeService) throws Exception;
     }
 
+    private AkibanInformationSchema ais;
+    private ServiceManager serviceManager;
+    private AtomicLong updateTimestamp;
+    private int maxAISBufferSize;
+    private ByteBuffer aisByteBuffer;
     
     @Override
     public TableName createTableDefinition(final Session session, final String defaultSchemaName,
@@ -538,12 +537,24 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public void start() throws Exception {
         serviceManager = ServiceManagerImpl.get();
+        updateTimestamp = new AtomicLong();
+        ConfigurationService config = serviceManager.getConfigurationService();
+        maxAISBufferSize = Integer.parseInt(config.getProperty(MAX_AIS_SIZE_PROPERTY));
+        if(maxAISBufferSize < 0) {
+            LOG.warn("Clamping property "+MAX_AIS_SIZE_PROPERTY+" to 0");
+            maxAISBufferSize = 0;
+        }
+        // 0 = unlimited, start off at 1MB in this case.
+        aisByteBuffer = ByteBuffer.allocate(maxAISBufferSize != 0 ? maxAISBufferSize : 1<<20);
     }
 
     @Override
     public void stop() throws Exception {
         this.ais = null;
         this.serviceManager = null;
+        this.updateTimestamp = null;
+        this.maxAISBufferSize = 0;
+        this.aisByteBuffer = null;
     }
 
     @Override
@@ -848,6 +859,36 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
     }
 
+    private ByteBuffer trySerializeAIS(final AkibanInformationSchema newAIS, final String schemaName) throws Exception {
+        boolean finishedSerializing = false;
+        while(!finishedSerializing) {
+            try {
+                aisByteBuffer.clear();
+                new TableSubsetWriter(new MessageTarget(aisByteBuffer)) {
+                    @Override
+                    public boolean shouldSaveTable(Table table) {
+                        return table.getName().getSchemaName().equals(schemaName);
+                    }
+                }.save(newAIS);
+                aisByteBuffer.flip();
+                finishedSerializing = true;
+            }
+            catch(BufferOverflowException e) {
+                if(aisByteBuffer.capacity() == maxAISBufferSize) {
+                    throw new InvalidOperationException(ErrorCode.INTERNAL_ERROR,
+                                                        "Serialized AIS exceeds max size ("+ maxAISBufferSize +")", e);
+                }
+                
+                int newCapacity = aisByteBuffer.capacity() * 2;
+                if(maxAISBufferSize != 0 && newCapacity > maxAISBufferSize) {
+                    newCapacity = maxAISBufferSize;
+                }
+                aisByteBuffer = ByteBuffer.allocate(newCapacity);
+            }
+        }
+        return aisByteBuffer;
+    }
+
     /**
      * Internal helper intended to be called to finalize any AIS change. This includes create, delete,
      * alter, etc. This currently updates the {@link TreeService#SCHEMA_TREE_NAME} for a given schema,
@@ -860,21 +901,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     private void commitAISChange(final Session session, final AkibanInformationSchema newAIS, final String schemaName,
                                  AISChangeCallback callback) throws Exception {
-        try {
-            byteBuffer.clear();
-            new TableSubsetWriter(new MessageTarget(byteBuffer)) {
-                @Override
-                public boolean shouldSaveTable(Table table) {
-                    return table.getName().getSchemaName().equals(schemaName);
-                }
-            }.save(newAIS);
-            byteBuffer.flip();
-        }
-        catch(BufferOverflowException e) {
-            throw new InvalidOperationException(ErrorCode.INTERNAL_ERROR,
-                                                "Modification not possible, serialized AIS is too large", e);
-        }
-
+        ByteBuffer buffer = trySerializeAIS(newAIS, schemaName);
         final TreeService treeService = serviceManager.getTreeService();
         final Transaction transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;
@@ -889,7 +916,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
                 schemaEx.clear().append(BY_AIS);
                 schemaEx.getValue().clear();
-                schemaEx.getValue().putByteArray(byteBuffer.array(), byteBuffer.position(), byteBuffer.limit());
+                schemaEx.getValue().putByteArray(buffer.array(), buffer.position(), buffer.limit());
                 schemaEx.store();
 
                 transaction.commit(new DefaultCommitListener() {

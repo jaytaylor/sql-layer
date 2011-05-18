@@ -67,6 +67,8 @@ public class PostgresOperatorCompiler extends OperatorCompiler
         else
             persistitStore = (PersistitStore)store;
         adapter = new PersistitAdapter(schema, persistitStore, server.getSession());
+
+        server.setAttribute("aisBinder", binder);
     }
 
     @Override
@@ -98,11 +100,6 @@ public class PostgresOperatorCompiler extends OperatorCompiler
                                              result.getResultRowType(),
                                              result.getResultColumns(),
                                              result.getResultColumnOffsets());
-    }
-
-    // TODO: Not used. View definitions need to live someplace persistent.
-    public void addView(ViewDefinition view) throws StandardException {
-        binder.addView(view);
     }
 
     // The current implementation of index cursors expects that the

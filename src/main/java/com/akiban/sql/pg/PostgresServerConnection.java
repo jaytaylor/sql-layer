@@ -349,25 +349,30 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         String stmtName = messenger.readString();
         String[] params = null;
         {
+            boolean[] paramsBinary = null;
             short nformats = messenger.readShort();
-            boolean[] paramsBinary = new boolean[nformats];
-            for (int i = 0; i < nformats; i++)
-                paramsBinary[i] = (messenger.readShort() == 1);
+            if (nformats > 0) {
+                paramsBinary = new boolean[nformats];
+                for (int i = 0; i < nformats; i++)
+                    paramsBinary[i] = (messenger.readShort() == 1);
+            }
             short nparams = messenger.readShort();
-            params = new String[nparams];
-            boolean binary = false;
-            for (int i = 0; i < nparams; i++) {
-                if (i < nformats)
-                    binary = paramsBinary[i];
-                int len = messenger.readInt();
-                if (len < 0) continue;      // Null
-                byte[] param = new byte[len];
-                messenger.readFully(param, 0, len);
-                if (binary) {
-                    throw new IOException("Don't know how to parse binary format.");
-                }
-                else {
-                    params[i] = new String(param, messenger.getEncoding());
+            if (nparams > 0) {
+                params = new String[nparams];
+                boolean binary = false;
+                for (int i = 0; i < nparams; i++) {
+                    if (i < nformats)
+                        binary = paramsBinary[i];
+                    int len = messenger.readInt();
+                    if (len < 0) continue;      // Null
+                    byte[] param = new byte[len];
+                    messenger.readFully(param, 0, len);
+                    if (binary) {
+                        throw new IOException("Don't know how to parse binary format.");
+                    }
+                    else {
+                        params[i] = new String(param, messenger.getEncoding());
+                    }
                 }
             }
         }
@@ -466,6 +471,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     protected void sessionChanged() {
+        if (parsedGenerators == null) return; // setAttribute() from generator's ctor.
         for (PostgresStatementParser parser : unparsedGenerators) {
             parser.sessionChanged(this);
         }

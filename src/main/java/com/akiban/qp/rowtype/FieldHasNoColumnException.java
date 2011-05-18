@@ -13,35 +13,10 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.expression;
+package com.akiban.qp.rowtype;
 
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.row.Row;
-
-class Field implements Expression
-{
-    // Expression interface
-
-    @Override
-    public Object evaluate(Row row, Bindings bindings)
-    {
-        return row.field(position, bindings);
+public final class FieldHasNoColumnException extends RuntimeException {
+    public FieldHasNoColumnException(int i) {
+        super("at index " + i);
     }
-
-    @Override
-    public String toString()
-    {
-        return getClass().getSimpleName() + "(" + position + ")";
-    }
-
-    // Field interface
-
-    Field(int position)
-    {
-        this.position = position;
-    }
-
-    // Object state
-
-    private final int position;
 }
