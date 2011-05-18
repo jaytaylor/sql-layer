@@ -46,7 +46,7 @@ public class AlterTestBase extends ITBase {
             String[] refColumns, boolean isUnique) {
         Table table = ais.getTable(sname, tname);
         Table curTable = ddl().getAIS(session()).getTable(sname, tname);
-        Index index = new TableIndex(table, iname, -1, isUnique, isUnique ? "UNIQUE" : "KEY");
+        Index index = TableIndex.create(ais, table, iname, -1, isUnique, isUnique ? "UNIQUE" : "KEY");
 
         if(refColumns != null) {
             int pos = 0;
