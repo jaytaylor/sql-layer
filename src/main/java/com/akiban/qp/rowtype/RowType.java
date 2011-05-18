@@ -36,7 +36,7 @@ public abstract class RowType
     @Override
     public boolean equals(Object o)
     {
-        return o != null && o instanceof RowType && this.typeId == ((RowType)o).typeId;
+        return o == this || o != null && o instanceof RowType && this.typeId == ((RowType)o).typeId;
     }
 
     // RowType interface
