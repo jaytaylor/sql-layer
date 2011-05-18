@@ -592,7 +592,13 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         parserTap.reset();
         optimizerTap.reset();
         executorTap.reset();
-        Tap.setEnabled("sql.*", true); /* is this enabling it globally? */
+        /* 
+         * TODO: change this so its only enabled for this thread by TAP
+         * Right now, TAP will enable all dispatches that match the given
+         * regular expression will be all connections to the postgres
+         * server. 
+         */
+        Tap.setEnabled("sql.*", true);
         instrumentationEnabled = true;
     }
     
