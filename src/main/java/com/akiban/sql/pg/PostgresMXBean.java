@@ -15,9 +15,11 @@
 
 package com.akiban.sql.pg;
 
+import java.util.Set;
+
 public interface PostgresMXBean {
     
-    String getCurrentConnections();
+    Set<Integer> getCurrentConnections();
     
     boolean isInstrumentationEnabled(int pid);
     void enableInstrumentation(int pid);

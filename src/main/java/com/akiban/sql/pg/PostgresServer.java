@@ -130,13 +130,8 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     }
 
     @Override
-    public String getCurrentConnections() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("Current Connection ID's");
-        for (Integer entry : connections.keySet()) {
-            sb.append(entry);
-        }
-        return sb.toString();
+    public synchronized Set<Integer> getCurrentConnections() {
+        return new HashSet<Integer>(connections.keySet());
     }
 
     @Override
