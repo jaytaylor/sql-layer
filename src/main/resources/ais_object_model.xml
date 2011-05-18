@@ -225,8 +225,9 @@
             from akiban_information_schema.indexes
         ]]></sql>
 		<sql action="write"><![CDATA[insert into akiban_information_schema.indexes(
-                schema_name, 
-                table_name, 
+                schema_name,
+                table_name,
+                index_type,
                 index_name, 
                 index_id, 
                 table_constraint, 
@@ -247,7 +248,8 @@
 		<sql action="read"><![CDATA[
             select 
                 schema_name, 
-                table_name, 
+                table_name,
+                index_type,
                 index_name, 
                 column_name, 
                 ordinal_position, 

@@ -60,6 +60,7 @@ create table akiban_information_schema.join_columns (
 create table akiban_information_schema.indexes (
     schema_name      varchar(64),
     table_name       varchar(64),
+    index_type       varchar(64),
     index_name       varchar(64),
     index_id         int,
     table_constraint varchar(64),
@@ -70,6 +71,7 @@ create table akiban_information_schema.indexes (
 create table akiban_information_schema.index_columns (
     schema_name       varchar(64),
     table_name        varchar(64),
+    index_type        varchar(64),
     index_name        varchar(64),
     column_name       varchar(64),
     ordinal_position  int,
