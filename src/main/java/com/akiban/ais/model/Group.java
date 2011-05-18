@@ -165,6 +165,6 @@ public class Group implements Serializable, ModelNames
 
     private String name;
     private GroupTable groupTable;
-    private final Object LOCK = new Object();
+    private final Object LOCK = new SerializableMonitor();
     private volatile Map<String, GroupIndex> indexMap = Collections.emptyMap();
 }
