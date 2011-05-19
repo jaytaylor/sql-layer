@@ -111,16 +111,27 @@ public class OperatorCompiler
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            explainPlan(resultOperator, sb, 0);
+            for (String operator : explainPlan()) {
+                if (sb.length() > 0) sb.append("\n");
+                sb.append(operator);
+            }
             return sb.toString();
         }
 
+        public List<String> explainPlan() {
+            List<String> result = new ArrayList<String>();
+            explainPlan(resultOperator, result, 0);
+            return result;
+        }
+
         protected static void explainPlan(PhysicalOperator operator, 
-                                          StringBuilder into, int depth) {
+                                          List<String> into, int depth) {
+            
+            StringBuilder sb = new StringBuilder();
             for (int i = 0; i < depth; i++)
-                into.append("  ");
-            into.append(operator);
-            into.append("\n");
+                sb.append("  ");
+            sb.append(operator);
+            into.add(sb.toString());
             for (PhysicalOperator inputOperator : operator.getInputOperators()) {
                 explainPlan(inputOperator, into, depth+1);
             }
