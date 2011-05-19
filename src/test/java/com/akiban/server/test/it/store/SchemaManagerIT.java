@@ -18,7 +18,6 @@ package com.akiban.server.test.it.store;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -42,6 +41,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
 import com.akiban.server.test.it.ITBase;
+import com.persistit.Persistit;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,7 +52,7 @@ import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.service.config.Property;
 
-public final class PersistitStoreSchemaManagerIT extends ITBase {
+public final class SchemaManagerIT extends ITBase {
     private final static String SCHEMA = "my_schema";
     private final static String VOL2_PREFIX = "foo_schema";
     private final static String VOL3_PREFIX = "bar_schema";
@@ -381,6 +381,33 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
             }
         }
         assertSchemaStrings(schemaAndTables);
+    }
+
+    @Test
+    public void manyTablesAndRestart() throws Exception {
+        final int TABLE_COUNT = 25;
+        final int UT_COUNT = schemaManager.getAis(session()).getUserTables().size();
+        final int GT_COUNT = schemaManager.getAis(session()).getGroupTables().size();
+
+        String tableNames[] = new String[TABLE_COUNT];
+        for(int i = 0; i < TABLE_COUNT; ++i) {
+            tableNames[i] = "t" + i;
+            createTable(SCHEMA, tableNames[i], "id int key");
+        }
+
+        AkibanInformationSchema ais = schemaManager.getAis(session());
+        assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
+        assertEquals("group tables count", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
+        assertTablesInSchema(SCHEMA, tableNames);
+
+        safeRestartTestServices();
+
+        schemaManager = serviceManager().getSchemaManager();
+        ais = schemaManager.getAis(session());
+        assertNotNull(ais);
+        assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
+        assertEquals("group tables count", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
+        assertTablesInSchema(SCHEMA, tableNames);
     }
 
     /**

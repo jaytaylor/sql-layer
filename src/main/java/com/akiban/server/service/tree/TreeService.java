@@ -77,4 +77,5 @@ public interface TreeService extends Service<TreeService> {
 
     TreeLink treeLink(final String schemaName, final String treeName);
     
+    String getDataPath();
 }
