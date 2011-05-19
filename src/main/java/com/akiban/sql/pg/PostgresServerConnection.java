@@ -464,9 +464,11 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             new PostgresEmulatedMetaDataStatementParser(this)
         };
         parsedGenerators = new PostgresStatementGenerator[] {
-            new PostgresSessionStatementGenerator(this),
+            // Can be ordered by frequency so long as there is no overlap.
+            (hapi) ? new PostgresHapiCompiler(this) : new PostgresOperatorCompiler(this),
             new PostgresDDLStatementGenerator(this),
-            (hapi) ? new PostgresHapiCompiler(this) : new PostgresOperatorCompiler(this)
+            new PostgresSessionStatementGenerator(this),
+            new PostgresExplainStatementGenerator(this)
         };
     }
 

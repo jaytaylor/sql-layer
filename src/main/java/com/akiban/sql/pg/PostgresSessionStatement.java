@@ -56,6 +56,7 @@ public class PostgresSessionStatement implements PostgresStatement
         }
     }
 
+    @Override
     public void execute(PostgresServerSession server, int maxrows)
             throws IOException, StandardException {
         switch (operation) {
