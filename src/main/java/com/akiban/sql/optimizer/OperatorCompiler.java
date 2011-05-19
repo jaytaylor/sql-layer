@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.sql.optimizer.SimplifiedSelectQuery.*;
+
 import com.akiban.sql.parser.*;
 import com.akiban.sql.compiler.*;
 
@@ -135,6 +137,139 @@ public class OperatorCompiler
             for (PhysicalOperator inputOperator : operator.getInputOperators()) {
                 explainPlan(inputOperator, into, depth+1);
             }
+        }
+    }
+
+    public Result new_compile(CursorNode cursor) throws StandardException {
+        // Get into standard form.
+        binder.bind(cursor);
+        cursor = (CursorNode)booleanNormalizer.normalize(cursor);
+        typeComputer.compute(cursor);
+        cursor = (CursorNode)subqueryFlattener.flatten(cursor);
+        grouper.group(cursor);
+
+        SimplifiedSelectQuery squery = 
+            new SimplifiedSelectQuery(cursor, grouper.getJoinConditions());
+        GroupBinding group = squery.getGroup();
+        GroupTable groupTable = group.getGroup().getGroupTable();
+        
+        PhysicalOperator resultOperator;
+        if (true) {
+            resultOperator = groupScan_Default(groupTable);
+        }
+        
+        // TODO: Can apply most Select conditions before flattening.
+        // In addition to conditions between fields of different
+        // tables, a left join should not be satisfied if the right
+        // table has a failing condition, since the WHERE is on the
+        // whole (as opposed to the outer join with a subquery
+        // containing the condition).
+
+        FlattenState fl = flatten(resultOperator, squery.getJoins());
+        resultOperator = fl.getResultOperator();
+        RowType resultRowType = fl.getResultRowType();
+        Map<UserTable,Integer> fieldOffsets = fl.getFieldOffsets();
+        
+        for (ColumnCondition condition : squery.getConditions()) {
+            Expression predicate = condition.generateExpression(fieldOffsets);
+            resultOperator = select_HKeyOrdered(resultOperator,
+                                                resultRowType,
+                                                predicate);
+        }
+
+        int ncols = squery.getSelectColumns().size();
+        List<Column> resultColumns = new ArrayList<Column>(ncols);
+        for (SelectColumn selectColumn : squery.getSelectColumns()) {
+            resultColumns.add(selectColumn.getColumn());
+        }
+        int[] resultColumnOffsets = new int[ncols];
+        for (int i = 0; i < ncols; i++) {
+            Column column = resultColumns.get(i);
+            UserTable table = column.getUserTable();
+            resultColumnOffsets[i] = fieldOffsets.get(table) + column.getPosition();
+        }
+
+        return new Result(resultOperator, resultRowType, 
+                          resultColumns, resultColumnOffsets);
+    }
+
+    // Need to return several values from flatten operation.
+    static class FlattenState {
+        private PhysicalOperator resultOperator;
+        private RowType resultRowType;
+        private Map<UserTable,Integer> fieldOffsets = new HashMap<UserTable,Integer>();
+        int nfields = 0;
+
+        public FlattenState(PhysicalOperator resultOperator,
+                            RowType resultRowType,
+                            Map<UserTable,Integer> fieldOffsets,
+                            int nfields) {
+            this.resultOperator = resultOperator;
+            this.resultRowType = resultRowType;
+            this.fieldOffsets = fieldOffsets;
+            this.nfields = nfields;
+        }
+        
+        public PhysicalOperator getResultOperator() {
+            return resultOperator;
+        }
+        public RowType getResultRowType() {
+            return resultRowType;
+        }
+        public Map<UserTable,Integer> getFieldOffsets() {
+            return fieldOffsets;
+        }
+        public int getNfields() {
+            return nfields;
+        }
+
+        public void setResultOperator(PhysicalOperator resultOperator) {
+            this.resultOperator = resultOperator;
+            this.resultRowType = resultOperator.rowType();
+        }
+        
+        public void mergeFields(FlattenState other) {
+            for (UserTable table : other.fieldOffsets.keySet()) {
+                fieldOffsets.put(table, other.fieldOffsets.get(table) + nfields);
+            }
+            nfields += other.nfields;
+        }
+    }
+
+    protected FlattenState flatten(PhysicalOperator resultOperator, BaseJoinNode join) {
+        if (join instanceof TableJoinNode) {
+            UserTable table = ((TableJoinNode)join).getTable();
+            Map<UserTable,Integer> fieldOffsets = new HashMap<UserTable,Integer>();
+            fieldOffsets.put(table, 0);
+            return new FlattenState(resultOperator,
+                                    schema.userTableRowType(table),
+                                    fieldOffsets,
+                                    table.getColumns().size());
+        }
+        else {
+            JoinJoinNode jjoin = (JoinJoinNode)join;
+            BaseJoinNode left = jjoin.getLeft();
+            BaseJoinNode right = jjoin.getRight();
+            FlattenState fleft = flatten(resultOperator, left);
+            FlattenState fright = flatten(fleft.getResultOperator(), right);
+            int flags = 0x00;
+            switch (jjoin.getJoinType()) {
+            case LEFT:
+                flags = 0x08;
+                break;
+            case RIGHT:
+                flags = 0x10;
+                break;
+            }
+            // There is one current resultOperator, which gets added
+            // to as operators are generated. It's the right because
+            // that was done second.
+            fleft.setResultOperator(flatten_HKeyOrdered(fright.getResultOperator(),
+                                                        fleft.getResultRowType(),
+                                                        fright.getResultRowType(),
+                                                        flags));
+            fleft.mergeFields(fright);
+            return fleft;
         }
     }
 

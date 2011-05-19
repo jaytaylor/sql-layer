@@ -128,6 +128,10 @@ public class SimplifiedSelectQuery
             return maxOrdinal;
         }
 
+        public JoinType getJoinType() {
+            return joinType;
+        }
+
         public boolean isInnerJoin() {
             return (joinType == JoinType.INNER);
         }
@@ -215,6 +219,8 @@ public class SimplifiedSelectQuery
         private Object value;
         
         public LiteralConditionOperand(Object value) {
+            if (value instanceof Integer)
+                value = new Long(((Integer)value).intValue());
             this.value = value;
         }
 
