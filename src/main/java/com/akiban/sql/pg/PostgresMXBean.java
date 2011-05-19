@@ -13,35 +13,28 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.expression;
+package com.akiban.sql.pg;
 
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.row.Row;
+import java.util.Set;
 
-class Field implements Expression
-{
-    // Expression interface
+public interface PostgresMXBean {
+    
+    Set<Integer> getCurrentConnections();
+    
+    boolean isInstrumentationEnabled(int pid);
+    void enableInstrumentation(int pid);
+    void disableInstrumentation(int pid);
+    
+    /**
+     * @param pid connection ID
+     * @return text of current/last query this connection executed
+     */
+    String getSqlString(int pid);
+    
+    /**
+     * @param pid connection ID
+     * @return client's IP address
+     */
+    String getRemoteAddress(int pid);
 
-    @Override
-    public Object evaluate(Row row, Bindings bindings)
-    {
-        return row.field(position, bindings);
-    }
-
-    @Override
-    public String toString()
-    {
-        return getClass().getSimpleName() + "(" + position + ")";
-    }
-
-    // Field interface
-
-    Field(int position)
-    {
-        this.position = position;
-    }
-
-    // Object state
-
-    private final int position;
 }

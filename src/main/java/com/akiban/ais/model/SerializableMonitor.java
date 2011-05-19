@@ -13,35 +13,16 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.expression;
+package com.akiban.ais.model;
 
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.row.Row;
+import java.io.Serializable;
 
-class Field implements Expression
-{
-    // Expression interface
-
+/**
+ * Serializable object for use as a monitor in a synchronized block.
+ */
+final class SerializableMonitor implements Serializable {
     @Override
-    public Object evaluate(Row row, Bindings bindings)
-    {
-        return row.field(position, bindings);
+    public String toString() {
+        return "LOCK";
     }
-
-    @Override
-    public String toString()
-    {
-        return getClass().getSimpleName() + "(" + position + ")";
-    }
-
-    // Field interface
-
-    Field(int position)
-    {
-        this.position = position;
-    }
-
-    // Object state
-
-    private final int position;
 }

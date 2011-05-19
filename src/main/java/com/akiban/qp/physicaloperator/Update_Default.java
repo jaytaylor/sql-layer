@@ -27,19 +27,19 @@ public final class Update_Default extends PhysicalOperator {
 
     @Override
     public String toString() {
-        return String.format("%s(%s -> %s)", getClass().getSimpleName(), inputOperator, updateLambda);
+        return String.format("%s(%s -> %s)", getClass().getSimpleName(), inputOperator, updateFunction);
     }
 
     // constructor
 
-    public Update_Default(PhysicalOperator inputOperator, UpdateLambda updateLambda) {
-        ArgumentValidation.notNull("update lambda", updateLambda);
+    public Update_Default(PhysicalOperator inputOperator, UpdateFunction updateFunction) {
+        ArgumentValidation.notNull("update lambda", updateFunction);
         if (!inputOperator.cursorAbilitiesInclude(CursorAbility.MODIFY)) {
             throw new IllegalArgumentException("input operator must be modifiable: " + inputOperator.getClass());
         }
         
         this.inputOperator = inputOperator;
-        this.updateLambda = updateLambda;
+        this.updateFunction = updateFunction;
     }
 
     // PhysicalOperator interface
@@ -47,7 +47,7 @@ public final class Update_Default extends PhysicalOperator {
     @Override
     protected Cursor cursor(StoreAdapter adapter) {
         Cursor inputCursor = inputOperator.cursor(adapter);
-        return new Execution(inputCursor, updateLambda);
+        return new Execution(inputCursor, updateFunction);
     }
 
     @Override
@@ -64,18 +64,18 @@ public final class Update_Default extends PhysicalOperator {
     // Object state
 
     private final PhysicalOperator inputOperator;
-    private final UpdateLambda updateLambda;
+    private final UpdateFunction updateFunction;
 
     // Inner classes
 
     private class Execution extends ChainedCursor {
 
-        private final UpdateLambda updateLambda;
+        private final UpdateFunction updateFunction;
         private Bindings bindings;
 
-        public Execution(Cursor input, UpdateLambda updateLambda) {
+        public Execution(Cursor input, UpdateFunction updateFunction) {
             super(input);
-            this.updateLambda = updateLambda;
+            this.updateFunction = updateFunction;
             this.bindings = UndefBindings.only();
         }
 
@@ -92,10 +92,10 @@ public final class Update_Default extends PhysicalOperator {
         public boolean next() {
             if (input.next()) {
                 Row row = this.input.currentRow();
-                if (!updateLambda.rowIsApplicable(row)) {
+                if (!updateFunction.rowIsSelected(row)) {
                     return true;
                 }
-                Row currentRow = updateLambda.applyUpdate(row, bindings);
+                Row currentRow = updateFunction.evaluate(row, bindings);
                 input.updateCurrentRow(currentRow);
                 return true;
             }

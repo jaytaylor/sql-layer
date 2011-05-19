@@ -16,14 +16,14 @@
 package com.akiban.qp.expression;
 
 import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.row.RowBase;
+import com.akiban.qp.row.Row;
 
 class Literal implements Expression
 {
     // Expression interface
 
     @Override
-    public Object evaluate(RowBase row, Bindings ignored)
+    public Object evaluate(Row row, Bindings ignored)
     {
         return value;
     }
