@@ -63,6 +63,7 @@ case "$1" in
             log_failure_msg "Starting Akiban"
         fi
         # we give server 60 seconds to start all services
+        echo -n "Starting Akiban "
         attempts=1
         while [ ! -f $pid_file ]
         do
@@ -74,9 +75,9 @@ case "$1" in
             sleep 1
         done
         if [ -f $pid_file ]; then
-            log_success_msg "Starting Akiban"
+            log_success_msg
         else
-            log_failure_msg "Starting Akiban" 
+            log_failure_msg
         fi
         ;;
     stop)
