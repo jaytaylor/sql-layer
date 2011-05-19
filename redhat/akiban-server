@@ -15,6 +15,7 @@ export AKIBAN_OWNR="akiban"
 NAME="akiban"
 log_file=/var/log/akiban/server_stdout.log
 pid_file=/var/run/akiban/server.pid
+timeout=60
 AKIBAN_PROG=/usr/sbin/akserver
 
 # Use LSB init script functions for printing messages, if possible
@@ -61,7 +62,22 @@ case "$1" in
         if [ $? -ne 0 ]; then
             log_failure_msg "Starting Akiban"
         fi
-        log_success_msg "Starting Akiban"
+        # we give server 60 seconds to start all services
+        attempts=1
+        while [ ! -f $pid_file ]
+        do
+            attempts=$(($attempts+1))
+            echo -n "."
+            if [ $attempts = $timeout ]; then
+                break
+            fi
+            sleep 1
+        done
+        if [ -f $pid_file ]; then
+            log_success_msg "Starting Akiban"
+        else
+            log_failure_msg "Starting Akiban" 
+        fi
         ;;
     stop)
         status -p $pid_file akiban > /dev/null 2>&1

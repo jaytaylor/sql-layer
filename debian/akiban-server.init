@@ -19,6 +19,7 @@ NAME="akiban"
 DESC="Akiban"
 log_file=/var/log/akiban/server_stdout.log
 pidfile=/var/run/akiban/server.pid
+timeout=60
 AKIBAN_PROG=/usr/sbin/akserver
 DAEMON=/usr/sbin/akserver
 
@@ -87,8 +88,23 @@ case "$1" in
         fi
         log_daemon_msg "Starting $DESC"
         start_daemon "$DAEMON --chuid $AKIBAN_OWNR" "-p $pidfile" "-j $JAR_FILE" "-c $AKIBAN_CONF" > $log_file 2>&1 &
-        log_progress_msg "$DESC"
-        log_end_msg 0
+        # we give server 60 seconds to start all services
+        attempts=1
+        while [ ! -f $pidfile ]
+        do
+            attempts=$(($attempts+1))
+            echo -n "."
+            if [ $attempts = $timeout ]; then
+                break
+            fi
+            sleep 1
+        done
+        if [ -f $pidfile ]; then
+            log_progress_msg "$DESC"
+            log_end_msg 0
+        else
+            log_failure_msg "$DESC failed to start correctly"
+        fi
         ;;
     stop)
         is_running

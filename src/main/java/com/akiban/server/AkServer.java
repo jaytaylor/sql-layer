@@ -16,6 +16,7 @@
 package com.akiban.server;
 
 import com.akiban.util.Strings;
+import com.akiban.util.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +30,9 @@ import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.util.Tap;
 
 import javax.management.ObjectName;
+
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 
@@ -42,6 +46,7 @@ public class AkServer implements Service<AkServer>, JmxManageable {
     private static final Logger LOG = LoggerFactory.getLogger(AkServer.class.getName());
     private static final ShutdownMXBeanImpl shutdownBean = new ShutdownMXBeanImpl();
     private static final String AKSERVER_NAME = System.getProperty("akserver.name");
+    private static final String pidFileName = System.getProperty("akserver.pidfile");
 
     private final JmxObjectInfo jmxObjectInfo;
 
@@ -138,13 +143,23 @@ public class AkServer implements Service<AkServer>, JmxManageable {
         // Bring system up
         final ServiceManager serviceManager = new ServiceManagerImpl(new DefaultServiceFactory());
         serviceManager.startServices();
-
+        
         // JMX shutdown method
         try {
             ObjectName name = new ObjectName(ShutdownMXBeanImpl.BEAN_NAME);
             ManagementFactory.getPlatformMBeanServer().registerMBean(shutdownBean, name);
         } catch(Exception e) {
             LOG.error("Exception registering shutdown bean", e);
+        }
+        
+        // services started successfully, now create pidfile and write pid to it
+        if (pidFileName != null) {
+            File pidFile = new File(pidFileName);
+            pidFile.deleteOnExit();
+            FileWriter out = new FileWriter(pidFile);
+            System.out.println("process ID is: " + OsUtils.getProcessID());
+            out.write(OsUtils.getProcessID());
+            out.flush();
         }
     }
 }
