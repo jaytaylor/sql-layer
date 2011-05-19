@@ -41,7 +41,6 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
 import com.akiban.server.test.it.ITBase;
-import com.persistit.Persistit;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
