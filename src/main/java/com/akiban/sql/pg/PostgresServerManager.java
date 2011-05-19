@@ -18,6 +18,7 @@ package com.akiban.sql.pg;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.jmx.JmxManageable;
 
 import java.net.*;
@@ -30,7 +31,7 @@ import java.util.*;
 public class PostgresServerManager implements PostgresService, 
     Service<PostgresService>, JmxManageable {
     private ServiceManager serviceManager;
-    private int port = -1;
+    private int port;
     private PostgresServer server = null;
 
     public PostgresServerManager() {
@@ -52,10 +53,12 @@ public class PostgresServerManager implements PostgresService,
         return PostgresService.class;
     }
 
-    public void start() throws Exception {
+    public void start() throws ServiceStartupException {
         if (port > 0) {
             server = new PostgresServer(port);
             server.start();
+        } else {
+            throw new ServiceStartupException("Invalid port specified for Postgres Server");
         }
     }
 
