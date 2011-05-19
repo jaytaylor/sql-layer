@@ -15,25 +15,37 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.optimizer.OperatorCompiler;
+
+import com.akiban.sql.parser.CursorNode;
+import com.akiban.sql.parser.ExplainStatementNode;
 import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.sql.StandardException;
 
-/** SQL statements that affect session / environment state. */
-public class PostgresSessionStatementGenerator extends PostgresBaseStatementGenerator
+/** SQL statement to explain another one. */
+public class PostgresExplainStatementGenerator extends PostgresBaseStatementGenerator
 {
-    public PostgresSessionStatementGenerator(PostgresServerSession server) {
+    private OperatorCompiler compiler;
+
+    public PostgresExplainStatementGenerator(PostgresServerSession server) {
+        compiler = (OperatorCompiler)server.getAttribute("compiler");
     }
 
     @Override
     public PostgresStatement generate(PostgresServerSession server,
                                       StatementNode stmt, int[] paramTypes) 
             throws StandardException {
-        switch (stmt.getNodeType()) {
-        default:
+        if (stmt.getNodeType() != NodeTypes.EXPLAIN_STATEMENT_NODE)
             return null;
-        }
+        StatementNode innerStmt = ((ExplainStatementNode)stmt).getStatement();
+        if (compiler == null)
+            throw new StandardException("Optimizer does not support EXPLAIN");
+        if (!(innerStmt instanceof CursorNode))
+            throw new StandardException("Cannot EXPLAIN this statement");
+        OperatorCompiler.Result result = compiler.compile((CursorNode)innerStmt);
+        return new PostgresExplainStatement(result.explainPlan());
     }
 
 }

@@ -13,16 +13,28 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.ais.model;
+package com.akiban.sql.pg;
 
-import java.io.Serializable;
+import java.util.Set;
 
-/**
- * Serializable object for use as a monitor in a synchronized block.
- */
-final class SerializableMonitor implements Serializable {
-    @Override
-    public String toString() {
-        return "LOCK";
-    }
+public interface PostgresMXBean {
+    
+    Set<Integer> getCurrentConnections();
+    
+    boolean isInstrumentationEnabled(int pid);
+    void enableInstrumentation(int pid);
+    void disableInstrumentation(int pid);
+    
+    /**
+     * @param pid connection ID
+     * @return text of current/last query this connection executed
+     */
+    String getSqlString(int pid);
+    
+    /**
+     * @param pid connection ID
+     * @return client's IP address
+     */
+    String getRemoteAddress(int pid);
+
 }

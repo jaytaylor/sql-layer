@@ -44,8 +44,9 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresServerConnection.class);
 
-    private final static Tap parserTap = Tap.add(new Tap.Count("sql: parse"));
-    private final static Tap optimizerTap = Tap.add(new Tap.Count("sql: optimize"));
+    private final static Tap parserTap = Tap.add(new Tap.PerThread("sql: parse", Tap.TimeAndCount.class));
+    private final static Tap optimizerTap = Tap.add(new Tap.PerThread("sql: optimize", Tap.TimeAndCount.class));
+    private final static Tap executorTap = Tap.add(new Tap.PerThread("sql: execute", Tap.TimeAndCount.class));
 
     private PostgresServer server;
     private boolean running = false, ignoreUntilSync = false;
@@ -68,6 +69,9 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     private PostgresStatementParser[] unparsedGenerators;
     private PostgresStatementGenerator[] parsedGenerators;
     private Thread thread;
+    
+    private boolean instrumentationEnabled = false;
+    private String sql;
 
     public PostgresServerConnection(PostgresServer server, Socket socket, 
                                     int pid, int secret) {
@@ -289,7 +293,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     protected void processQuery() throws IOException, StandardException {
-        String sql = messenger.readString();
+        sql = messenger.readString();
         logger.info("Query: {}", sql);
         PostgresStatement pstmt = null;
         for (PostgresStatementParser parser : unparsedGenerators) {
@@ -300,7 +304,13 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
         if (pstmt != null) {
             pstmt.sendDescription(this, false);
-            pstmt.execute(this, -1);
+            try {
+                executorTap.in();
+                pstmt.execute(this, -1);
+            }
+            finally {
+                executorTap.out();
+            }
         }
         else {
             // Parse as a _list_ of statements and process each in turn.
@@ -315,7 +325,13 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             for (StatementNode stmt : stmts) {
                 pstmt = generateStatement(stmt, null);
                 pstmt.sendDescription(this, false);
-                pstmt.execute(this, -1);
+                try {
+                    executorTap.in();
+                    pstmt.execute(this, -1);
+                }
+                finally {
+                    executorTap.out();
+                }
             }
         }
         readyForQuery();
@@ -323,7 +339,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     protected void processParse() throws IOException, StandardException {
         String stmtName = messenger.readString();
-        String sql = messenger.readString();
+        sql = messenger.readString();
         short nparams = messenger.readShort();
         int[] paramTypes = new int[nparams];
         for (int i = 0; i < nparams; i++)
@@ -464,9 +480,11 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             new PostgresEmulatedMetaDataStatementParser(this)
         };
         parsedGenerators = new PostgresStatementGenerator[] {
-            new PostgresSessionStatementGenerator(this),
+            // Can be ordered by frequency so long as there is no overlap.
+            (hapi) ? new PostgresHapiCompiler(this) : new PostgresOperatorCompiler(this),
             new PostgresDDLStatementGenerator(this),
-            (hapi) ? new PostgresHapiCompiler(this) : new PostgresOperatorCompiler(this)
+            new PostgresSessionStatementGenerator(this),
+            new PostgresExplainStatementGenerator(this)
         };
     }
 
@@ -567,6 +585,37 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     @Override
     public SQLParser getParser() {
         return parser;
+    }
+    
+    public boolean isInstrumentationEnabled() {
+        return instrumentationEnabled;
+    }
+    
+    public void enableInstrumentation() {
+        parserTap.reset();
+        optimizerTap.reset();
+        executorTap.reset();
+        /* 
+         * TODO: change this so its only enabled for this thread by TAP
+         * Right now, TAP will enable all dispatches that match the given
+         * regular expression which will be all connections to the postgres
+         * server. 
+         */
+        Tap.setEnabled("sql.*", true);
+        instrumentationEnabled = true;
+    }
+    
+    public void disableInstrumentation() {
+        Tap.setEnabled("sql.*", false);
+        instrumentationEnabled = false;
+    }
+    
+    public String getSqlString() {
+        return sql;
+    }
+    
+    public String getRemoteAddress() {
+        return socket.getInetAddress().getHostAddress();
     }
 
 }
