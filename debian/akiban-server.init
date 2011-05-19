@@ -93,14 +93,12 @@ case "$1" in
         while [ ! -f $pidfile ]
         do
             attempts=$(($attempts+1))
-            echo -n "."
             if [ $attempts = $timeout ]; then
                 break
             fi
             sleep 1
         done
         if [ -f $pidfile ]; then
-            log_progress_msg "$DESC"
             log_end_msg 0
         else
             log_failure_msg "$DESC failed to start correctly"
