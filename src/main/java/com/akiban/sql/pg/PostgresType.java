@@ -166,10 +166,18 @@ public class PostgresType
 
         if ("varchar".equals(name))
             oid = VARCHAR_TYPE_OID;
+        else if ("char".equals(name))
+            oid = CHAR_TYPE_OID;
         else if ("int".equals(name))
             oid = INT4_TYPE_OID;
         else if ("date".equals(name))
             oid = DATE_TYPE_OID;
+        else if ("datetime".equals(name))
+            // TODO: May need this for timestamp as well, which
+            // Postgres doesn't distinguish. In which case some
+            // additional instance fields may be needed to remember
+            // the original.
+            oid = TIMESTAMP_TYPE_OID;
         else
             throw new StandardException("Don't know type for " + name);
 
@@ -186,6 +194,7 @@ public class PostgresType
     }
 
     public static final DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
+    public static final DateFormat datetimeFormatter = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 
     public byte[] encodeValue(Object value, Column aisColumn, 
                               String encoding, boolean binary) 
@@ -203,6 +212,13 @@ public class PostgresType
                         value = dateFormatter.format((Date)value);
                     else
                         value = EncoderFactory.DATE.decodeToString((Long)value);
+                    break;
+                case TIMESTAMP_TYPE_OID:
+                    if (value instanceof Date)
+                        value = datetimeFormatter.format((Date)value);
+                    else
+                        // TODO: See above: maybe TIMESTAMP sometimes.
+                        value = EncoderFactory.DATETIME.decodeToString((Long)value);
                     break;
                 }
             }

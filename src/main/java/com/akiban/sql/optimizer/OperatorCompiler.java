@@ -473,7 +473,10 @@ public class OperatorCompiler
             throws StandardException {
         if (node instanceof ConstantNode) {
             isConstant[0] = true;
-            return literal(((ConstantNode)node).getValue());
+            Object value = ((ConstantNode)node).getValue();
+            if (value instanceof Integer)
+                value = new Long(((Integer)value).intValue());
+            return literal(value);
         }
         else if (node instanceof ParameterNode)
             return variable(((ParameterNode)node).getParameterNumber());
