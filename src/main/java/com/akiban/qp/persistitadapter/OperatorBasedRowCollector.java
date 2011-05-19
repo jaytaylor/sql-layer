@@ -36,6 +36,7 @@ import com.akiban.server.service.memcache.hprocessor.PredicateLimit;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.RowCollector;
+import com.akiban.util.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +50,6 @@ import static com.akiban.qp.physicaloperator.API.*;
 public abstract class OperatorBasedRowCollector implements RowCollector
 {
     // RowCollector interface
-
 
     @Override
     public void open() {
@@ -252,7 +252,10 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         }
         // Fill in ancestors above predicate
         if (queryRootType != predicateType) {
-            rootOperator = ancestorLookup_Default(rootOperator, groupTable, predicateType, ancestorTypes());
+            List<RowType> ancestorTypes = ancestorTypes();
+            if (!ancestorTypes.isEmpty()) {
+                rootOperator = ancestorLookup_Default(rootOperator, groupTable, predicateType, ancestorTypes);
+            }
         }
         // Get rid of everything above query root table.
         rootOperator = extract_Default(schema, rootOperator, Arrays.<RowType>asList(queryRootType));
@@ -264,7 +267,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (LOG.isInfoEnabled()) {
             LOG.info("Execution plan:\n{}", rootOperator.describePlan());
         }
-        // Executable stuff
         this.operator = rootOperator;
     }
 
