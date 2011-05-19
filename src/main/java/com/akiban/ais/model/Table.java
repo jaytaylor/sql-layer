@@ -64,6 +64,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 
     protected Table(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
+        this.LOCK = new Object();
         this.ais = ais;
         this.tableName = new TableName(schemaName, tableName);
         this.tableId = tableId;
@@ -202,6 +203,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     protected Table()
     {
         // XXX: GWT requires empty constructor
+        this.LOCK = new Object();
     }
 
     // For use by this package
@@ -405,7 +407,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
     protected String engine;
 
-    private final Object LOCK = new SerializableMonitor();
+    private transient final Object LOCK;
     // It really is a RowDef, but declaring it that way creates trouble for AIS. We don't want to pull in
     // all the RowDef stuff and have it visible to GWT.
     private transient /*RowDef*/ Object rowDef;
