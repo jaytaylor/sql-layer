@@ -17,10 +17,13 @@ package com.akiban.server.service.memcache.outputter.jsonoutputter;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.HKey;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowData;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 public class AncestorDiscoveryIterator implements Iterator<RowData>
 {
@@ -47,6 +50,9 @@ public class AncestorDiscoveryIterator implements Iterator<RowData>
                     divergencePosition = 0;
                 } else {
                     UserTable table = ais.getUserTable(current.getRowDefId());
+                    assert table != null
+                            : "null table " + current.getRowDefId() + " from previous " + previous.getRowDefId()
+                            + ". tables map: " + describeTablesMap(ais);
                     if (table.getDepth() < predicateTableDepth) {
                         if (table.isRoot()) {
                             divergencePosition = 0;
@@ -73,6 +79,15 @@ public class AncestorDiscoveryIterator implements Iterator<RowData>
         }
 */
         return previous;
+    }
+
+    private static String describeTablesMap(AkibanInformationSchema ais) {
+        // please please, Java, can't we have list comprehension and lambdas? :-(
+        Map<Integer,TableName> map = new HashMap<Integer, TableName>();
+        for (Map.Entry<TableName,UserTable> entry : ais.getUserTables().entrySet()) {
+            map.put(entry.getValue().getTableId(), entry.getKey());
+        }
+        return map.toString();
     }
 
     @Override
