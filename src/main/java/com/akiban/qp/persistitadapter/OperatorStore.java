@@ -29,7 +29,7 @@ import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.NoLimit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
-import com.akiban.qp.physicaloperator.UpdateLambda;
+import com.akiban.qp.physicaloperator.UpdateFunction;
 import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -69,7 +69,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
         PersistitGroupRow oldRow = PersistitGroupRow.newPersistitGroupRow(adapter, oldRowData);
         RowDef rowDef = persistitStore.getRowDefCache().rowDef(oldRowData.getRowDefId());
-        UpdateLambda updateLambda = new InternalUpdateLambda(adapter, rowDef, newRowData, columnSelector);
+        UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);
 
         UserTable userTable = ais.getUserTable(oldRowData.getRowDefId());
         GroupTable groupTable = userTable.getGroup().getGroupTable();
@@ -88,7 +88,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
             scanOp = lookup_Default(indexScan, groupTable, indexType, tableType);
         }
 
-        Update_Default updateOp = new Update_Default(scanOp, updateLambda);
+        Update_Default updateOp = new Update_Default(scanOp, updateFunction);
 
         Cursor updateCursor = API.cursor(updateOp, adapter);
         Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
@@ -142,13 +142,13 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // inner classes
 
-    private static class InternalUpdateLambda implements UpdateLambda {
+    private static class InternalUpdateFunction implements UpdateFunction {
         private final PersistitAdapter adapter;
         private final RowData newRowData;
         private final ColumnSelector columnSelector;
         private final RowDef rowDef;
 
-        private InternalUpdateLambda(PersistitAdapter adapter, RowDef rowDef, RowData newRowData, ColumnSelector columnSelector) {
+        private InternalUpdateFunction(PersistitAdapter adapter, RowDef rowDef, RowData newRowData, ColumnSelector columnSelector) {
             this.newRowData = newRowData;
             this.columnSelector = columnSelector;
             this.rowDef = rowDef;
@@ -156,12 +156,12 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         }
 
         @Override
-        public boolean rowIsApplicable(Row row) {
+        public boolean rowIsSelected(Row row) {
             return row.rowType().typeId() == rowDef.getRowDefId();
         }
 
         @Override
-        public Row applyUpdate(Row original, Bindings bindings) {
+        public Row evaluate(Row original, Bindings bindings) {
             // TODO
             // ideally we'd like to use an OverlayingRow, but ModifiablePersistitGroupCursor requires
             // a PersistitGroupRow if an hkey changes

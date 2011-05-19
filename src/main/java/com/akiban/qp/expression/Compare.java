@@ -16,14 +16,14 @@
 package com.akiban.qp.expression;
 
 import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.row.RowBase;
+import com.akiban.qp.row.Row;
 
 class Compare implements Expression
 {
     // Predicate interface
 
     @Override
-    public Object evaluate(RowBase row, Bindings bindings)
+    public Object evaluate(Row row, Bindings bindings)
     {
         int c = ((Comparable) left.evaluate(row, bindings)).compareTo(right.evaluate(row, bindings));
         switch (comparison) {
