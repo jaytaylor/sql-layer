@@ -16,7 +16,6 @@
 package com.akiban.server;
 
 import com.akiban.util.Strings;
-import com.akiban.util.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -157,8 +156,8 @@ public class AkServer implements Service<AkServer>, JmxManageable {
             File pidFile = new File(pidFileName);
             pidFile.deleteOnExit();
             FileWriter out = new FileWriter(pidFile);
-            System.out.println("process ID is: " + OsUtils.getProcessID());
-            out.write(OsUtils.getProcessID());
+            int pid = Integer.parseInt(System.getProperty("akserver.pid"));
+            out.write(pid);
             out.flush();
         }
     }

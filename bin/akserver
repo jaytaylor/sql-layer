@@ -87,6 +87,8 @@ launch_service()
         akiban_parms="$akiban_parms -Dcom.persistit.showgui=true"
     fi
 
+    akiban_parms="$akiban_parms -Dakserver.pid=$$"
+
     if [ "x$foreground" != "x" ]; then
         echo $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props
         exec $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props
