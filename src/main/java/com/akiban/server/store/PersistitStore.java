@@ -881,7 +881,7 @@ public class PersistitStore implements Store {
             groupRowDef = rowDefCache.getRowDef(groupRowDef.getGroupRowDefId());
         }
 
-        final Transaction transaction = treeService.getTransaction(session);
+        Transaction transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;
         for (;;) {
 
@@ -891,18 +891,13 @@ public class PersistitStore implements Store {
                 //
                 // Remove the index trees
                 //
-                for (final IndexDef indexDef : groupRowDef.getIndexDefs()) {
-                    if (!indexDef.isHKeyEquivalent()) {
-                        final Exchange iEx = getExchange(session, groupRowDef,
-                                indexDef);
-                        iEx.removeAll();
-                        releaseExchange(session, iEx);
-                    }
-                    indexManager.deleteIndexAnalysis(session, indexDef);
-                }
-                for (final RowDef userRowDef : groupRowDef
-                        .getUserTableRowDefs()) {
-                    for (final IndexDef indexDef : userRowDef.getIndexDefs()) {
+                for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
+                    for (IndexDef indexDef : userRowDef.getIndexDefs()) {
+                        if (!indexDef.isHKeyEquivalent()) {
+                            Exchange iEx = getExchange(session, userRowDef, indexDef);
+                            iEx.removeAll();
+                            releaseExchange(session, iEx);
+                        }
                         indexManager.deleteIndexAnalysis(session, indexDef);
                     }
                 }
