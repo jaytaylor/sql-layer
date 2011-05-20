@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.sql.optimizer.SimplifiedSelectQuery.*;
+
 import com.akiban.sql.parser.*;
 import com.akiban.sql.compiler.*;
 
@@ -139,144 +141,78 @@ public class OperatorCompiler
     }
 
     public Result compile(CursorNode cursor) throws StandardException {
-        // Get into bound & grouped form.
+        // Get into standard form.
         binder.bind(cursor);
         cursor = (CursorNode)booleanNormalizer.normalize(cursor);
         typeComputer.compute(cursor);
         cursor = (CursorNode)subqueryFlattener.flatten(cursor);
         grouper.group(cursor);
 
-        if (cursor.getOrderByList() != null)
-            throw new StandardException("Unsupported ORDER BY");
-        if (cursor.getOffsetClause() != null)
-            throw new StandardException("Unsupported OFFSET");
-        if (cursor.getFetchFirstClause() != null)
-            throw new StandardException("Unsupported FETCH");
-        if (cursor.getUpdateMode() == CursorNode.UpdateMode.UPDATE)
-            throw new StandardException("Unsupported FOR UPDATE");
-
-        SelectNode select = (SelectNode)cursor.getResultSetNode();
-        if (select.getGroupByList() != null)
-            throw new StandardException("Unsupported GROUP BY");
-        if (select.isDistinct())
-            throw new StandardException("Unsupported DISTINCT");
-        if (select.hasWindows())
-            throw new StandardException("Unsupported WINDOW");
-
-        List<UserTable> tables = new ArrayList<UserTable>();
-        GroupBinding group = addTables(select.getFromList(), tables);
+        SimplifiedSelectQuery squery = 
+            new SimplifiedSelectQuery(cursor, grouper.getJoinConditions());
+        GroupBinding group = squery.getGroup();
         GroupTable groupTable = group.getGroup().getGroupTable();
-        Set<BinaryOperatorNode> indexConditions = new HashSet<BinaryOperatorNode>();
-        Index index = null;
-        if (select.getWhereClause() != null) {
-            // TODO: Put ColumnReferences on the left of any condition with constant in WHERE,
-            // changing operand as necessary.
-            index = pickBestIndex(tables, select.getWhereClause(), indexConditions);
-        }
+        
+        // Try to use an index.
+        IndexUsage index = pickBestIndex(squery);
+        if (squery.getSortColumns() != null)
+            throw new UnsupportedSQLException("Unsupported ORDER BY");
+        
+        Set<ColumnCondition> indexConditions = null;
         PhysicalOperator resultOperator;
-        if (index == null) {
-            resultOperator = groupScan_Default(groupTable);
-        }
-        else {
-            IndexKeyRange indexKeyRange = getIndexKeyRange(index, indexConditions);
-            PhysicalOperator indexOperator = indexScan_Default(index, false, indexKeyRange);
-            UserTable indexTable = (UserTable) index.getTable();
-            UserTableRowType tableType = schema.userTableRowType(indexTable);
-            IndexRowType indexType = tableType.indexRowType(index);
-            resultOperator = lookup_Default(indexOperator, groupTable, indexType, tableType);
+        if (index != null) {
+            indexConditions = index.getIndexConditions();
+            Index iindex = index.getIndex();
+            PhysicalOperator indexOperator = indexScan_Default(iindex, 
+                                                               index.isReverse(),
+                                                               index.getIndexKeyRange());
+            UserTable indexTable = (UserTable)iindex.getTable();
+            UserTableRowType tableType = userTableRowType(indexTable);
+            IndexRowType indexType = tableType.indexRowType(iindex);
+            resultOperator = lookup_Default(indexOperator, groupTable,
+                                            indexType, tableType);
             // All selected rows above this need to be output by hkey left
             // segment random access.
             List<RowType> addAncestors = new ArrayList<RowType>();
-            for (UserTable table : tables) {
-                if (table == index.getTable())
-                    break;
-                addAncestors.add(userTableRowType(table));
+            for (UserTable table : squery.getTables()) {
+                if ((table != indexTable) && isAncestorTable(table, indexTable))
+                    addAncestors.add(userTableRowType(table));
             }
             if (!addAncestors.isEmpty())
-                resultOperator = ancestorLookup_Default(resultOperator, groupTable, 
-                                                        userTableRowType((UserTable)index.getTable()),
-                                                        addAncestors);
+                resultOperator = ancestorLookup_Default(resultOperator, groupTable,
+                                                        tableType, addAncestors);
         }
-        RowType resultRowType = null;
-        Map<UserTable,Integer> fieldOffsets = new HashMap<UserTable,Integer>();
-        UserTable prev = null;
-        int nfields = 0;
-        // TODO: Tables that are only used for join conditions (no
-        // predicates or result columns) can be skipped in flatten (and in
-        // index ancestors above).
-        for (UserTable table : tables) {
-            if (prev != null) {
-                if (!isAncestorTable(prev, table))
-                    throw new StandardException("Unsupported branching group");
-                // Join result so far to new child.
-                resultOperator = flatten_HKeyOrdered(resultOperator,
-                                                     resultRowType,
-                                                     userTableRowType(table));
-                resultRowType = resultOperator.rowType();
-            }
-            else {
-                resultRowType = userTableRowType(table);
-            }
-            prev = table;
-            fieldOffsets.put(table, nfields);
-            nfields += table.getColumns().size();
+        else {
+            resultOperator = groupScan_Default(groupTable);
         }
+        
+        // TODO: Can apply most Select conditions before flattening.
+        // In addition to conditions between fields of different
+        // tables, a left join should not be satisfied if the right
+        // table has a failing condition, since the WHERE is on the
+        // whole (as opposed to the outer join with a subquery
+        // containing the condition).
 
-        ValueNode whereClause = select.getWhereClause();
-        while (whereClause != null) {
-            if (whereClause.isBooleanTrue()) break;
-            if (!(whereClause instanceof AndNode))
-                throw new StandardException("Unsupported complex WHERE");
-            AndNode andNode = (AndNode)whereClause;
-            whereClause = andNode.getRightOperand();
-            ValueNode condition = andNode.getLeftOperand();
-            if (grouper.getJoinConditions().contains(condition))
+        Flattener fl = new Flattener(resultOperator);
+        FlattenState fls = fl.flatten(squery.getJoins());
+        resultOperator = fl.getResultOperator();
+        RowType resultRowType = fls.getResultRowType();
+        Map<UserTable,Integer> fieldOffsets = fls.getFieldOffsets();
+        
+        for (ColumnCondition condition : squery.getConditions()) {
+            if ((indexConditions != null) && indexConditions.contains(condition))
                 continue;
-            Comparison op;
-            switch (condition.getNodeType()) {
-            case NodeTypes.BINARY_EQUALS_OPERATOR_NODE:
-                op = Comparison.EQ;
-                break;
-            case NodeTypes.BINARY_GREATER_THAN_OPERATOR_NODE:
-                op = Comparison.GT;
-                break;
-            case NodeTypes.BINARY_GREATER_EQUALS_OPERATOR_NODE:
-                op = Comparison.GE;
-                break;
-            case NodeTypes.BINARY_LESS_THAN_OPERATOR_NODE:
-                op = Comparison.LT;
-                break;
-            case NodeTypes.BINARY_LESS_EQUALS_OPERATOR_NODE:
-                op = Comparison.LE;
-                break;
-            default:
-                throw new StandardException("Unsupported WHERE predicate");
-            }
-            BinaryOperatorNode binop = (BinaryOperatorNode)condition;
-            if (indexConditions.contains(binop))
-                continue;
-            Expression leftExpr = getExpression(binop.getLeftOperand(), fieldOffsets);
-            Expression rightExpr = getExpression(binop.getRightOperand(), fieldOffsets);
-            Expression predicate = compare(leftExpr, op, rightExpr);
+            Expression predicate = condition.generateExpression(fieldOffsets);
             resultOperator = select_HKeyOrdered(resultOperator,
                                                 resultRowType,
                                                 predicate);
         }
 
-        List<Column> resultColumns = new ArrayList<Column>();
-        for (ResultColumn result : select.getResultColumns()) {
-            if (!(result.getExpression() instanceof ColumnReference))
-                throw new StandardException("Unsupported result column: " + result);
-            ColumnReference cref = (ColumnReference)result.getExpression();
-            ColumnBinding cb = (ColumnBinding)cref.getUserData();
-            if (cb == null)
-                throw new StandardException("Unsupported result column: " + result);
-            Column column = cb.getColumn();
-            if (column == null)
-                throw new StandardException("Unsupported result column: " + result);
-            resultColumns.add(column);
+        int ncols = squery.getSelectColumns().size();
+        List<Column> resultColumns = new ArrayList<Column>(ncols);
+        for (SelectColumn selectColumn : squery.getSelectColumns()) {
+            resultColumns.add(selectColumn.getColumn());
         }
-        int ncols = resultColumns.size();
         int[] resultColumnOffsets = new int[ncols];
         for (int i = 0; i < ncols; i++) {
             Column column = resultColumns.get(i);
@@ -288,76 +224,238 @@ public class OperatorCompiler
                           resultColumns, resultColumnOffsets);
     }
 
-    protected GroupBinding addTables(FromList fromTables, List<UserTable> tables) 
-            throws StandardException {
-        GroupBinding group = null;
-        for (FromTable fromTable : fromTables) {
-            group = addTable(fromTable, tables, group);
+    // A possible index.
+    class IndexUsage implements Comparable<IndexUsage> {
+        private Index index;
+        private List<ColumnCondition> equalityConditions;
+        ColumnCondition lowCondition, highCondition;
+        
+        public IndexUsage(Index index) {
+            this.index = index;
         }
-        Collections.sort(tables, new Comparator<UserTable>() {
-                             public int compare(UserTable t1, UserTable t2) {
-                                 return t1.getDepth().compareTo(t2.getDepth());
-                             }
-                         });
-        return group;
+
+        public Index getIndex() {
+            return index;
+        }
+
+        // The conditions that this index usage subsumes.
+        public Set<ColumnCondition> getIndexConditions() {
+            Set<ColumnCondition> result = new HashSet<ColumnCondition>();
+            if (equalityConditions != null)
+                result.addAll(equalityConditions);
+            if (lowCondition != null)
+                result.add(lowCondition);
+            if (highCondition != null)
+                result.add(highCondition);
+            return result;
+        }
+
+        public boolean isReverse() {
+            return false;
+        }
+
+        // Is this a better index?
+        // TODO: Best we can do without any idea of selectivity.
+        public int compareTo(IndexUsage other) {
+            if (equalityConditions != null) {
+                if (other.equalityConditions == null)
+                    return +1;
+                else if (equalityConditions.size() != other.equalityConditions.size())
+                    return (equalityConditions.size() > other.equalityConditions.size()) 
+                        ? +1 : -1;
+            }
+            int n = 0, on = 0;
+            if (lowCondition != null)
+                n++;
+            if (highCondition != null)
+                n++;
+            if (other.lowCondition != null)
+                on++;
+            if (other.highCondition != null)
+                on++;
+            if (n != on) 
+                return (n > on) ? +1 : -1;
+            return index.getTable().getTableId().compareTo(other.index.getTable().getTableId());
+        }
+
+        // Can this index be used for part of the given query?
+        public boolean usable(SimplifiedSelectQuery squery) {
+            List<IndexColumn> indexColumns = index.getColumns();
+            int ncols = indexColumns.size();
+            int nequals = 0;
+            while (nequals < ncols) {
+                IndexColumn indexColumn = indexColumns.get(nequals);
+                Column column = indexColumn.getColumn();
+                ColumnCondition equalityCondition = 
+                    squery.findColumnConstantCondition(column, Comparison.EQ);
+                if (equalityCondition == null)
+                    break;
+                if (nequals == 0)
+                    equalityConditions = new ArrayList<ColumnCondition>(1);
+                equalityConditions.add(equalityCondition);
+                nequals++;
+            }
+            if (nequals < ncols) {
+                IndexColumn indexColumn = indexColumns.get(nequals);
+                Column column = indexColumn.getColumn();
+                lowCondition = squery.findColumnConstantCondition(column, Comparison.GT);
+                highCondition = squery.findColumnConstantCondition(column, Comparison.LT);
+            }
+            return ((equalityConditions != null) ||
+                    (lowCondition != null) ||
+                    (highCondition != null));
+        }
+
+        // Generate key range bounds.
+        public IndexKeyRange getIndexKeyRange() {
+            List<IndexColumn> indexColumns = index.getColumns();
+            int nkeys = indexColumns.size();
+            Expression[] keys = new Expression[nkeys];
+
+            int kidx = 0;
+            if (equalityConditions != null) {
+                for (ColumnCondition cond : equalityConditions) {
+                    keys[kidx++] = cond.getRight().generateExpression(null);
+                }
+            }
+
+            if ((lowCondition == null) && (highCondition == null)) {
+                IndexBound eq = getIndexBound(index, keys);
+                return new IndexKeyRange(eq, true, eq, true);
+            }
+            else {
+                Expression[] lowKeys = null, highKeys = null;
+                boolean lowInc = false, highInc = false;
+                if (lowCondition != null) {
+                    lowKeys = keys;
+                    if (highCondition != null) {
+                        highKeys = new Expression[nkeys];
+                        System.arraycopy(keys, 0, highKeys, 0, kidx);
+                    }
+                }
+                else if (highCondition != null) {
+                    highKeys = keys;
+                }
+                if (lowCondition != null) {
+                    lowKeys[kidx] = lowCondition.getRight().generateExpression(null);
+                    lowInc = (lowCondition.getOperation() == Comparison.GE);
+                }
+                if (highCondition != null) {
+                    highKeys[kidx] = highCondition.getRight().generateExpression(null);
+                    highInc = (highCondition.getOperation() == Comparison.LE);
+                }
+                IndexBound lo = getIndexBound(index, lowKeys);
+                IndexBound hi = getIndexBound(index, highKeys);
+                return new IndexKeyRange(lo, lowInc, hi, highInc);
+            }
+        }
     }
 
-    protected GroupBinding addTable(FromTable fromTable, 
-                                    List<UserTable> tables, GroupBinding group)
-            throws StandardException {
-        if (fromTable instanceof FromBaseTable) {
-            TableBinding tb = (TableBinding)fromTable.getUserData();
-            if (tb == null) 
-                throw new StandardException("Unsupported FROM table: " + fromTable);
-            GroupBinding gb = tb.getGroupBinding();
-            if (gb == null)
-                throw new StandardException("Unsupported FROM non-group: " + fromTable);
-            if (group == null)
-                group = gb;
-            else if (group != gb)
-                throw new StandardException("Unsupported multiple groups");
-            UserTable table = (UserTable)tb.getTable();
-            tables.add(table);
+    // Pick an index to use.
+    protected IndexUsage pickBestIndex(SimplifiedSelectQuery squery) {
+        if (squery.getConditions().isEmpty())
+            return null;
+
+        IndexUsage bestIndex = null;
+        for (UserTable table : squery.getTables()) {
+            for (Index index : table.getIndexes()) { // TODO: getIndexesIncludingInternal()
+                IndexUsage candidate = new IndexUsage(index);
+                if (candidate.usable(squery)) {
+                    if ((bestIndex == null) ||
+                        (candidate.compareTo(bestIndex) > 0))
+                        bestIndex = candidate;
+                }
+            }
         }
-        else if (fromTable instanceof JoinNode) {
-            if (fromTable instanceof HalfOuterJoinNode)
-                throw new StandardException("Unsupported OUTER JOIN: " + fromTable);
-            JoinNode joinNode = (JoinNode)fromTable;
-            group = addTable((FromTable)joinNode.getLeftResultSet(), tables, group);
-            group = addTable((FromTable)joinNode.getRightResultSet(), tables, group);
+        return bestIndex;
+    }
+
+    static class FlattenState {
+        private RowType resultRowType;
+        private Map<UserTable,Integer> fieldOffsets;
+        int nfields;
+
+        public FlattenState(RowType resultRowType,
+                            Map<UserTable,Integer> fieldOffsets,
+                            int nfields) {
+            this.resultRowType = resultRowType;
+            this.fieldOffsets = fieldOffsets;
+            this.nfields = nfields;
         }
-        else
-            throw new StandardException("Unsupported FROM non-table: " + fromTable);
-        return group;
+        
+        public RowType getResultRowType() {
+            return resultRowType;
+        }
+        public void setResultRowType(RowType resultRowType) {
+            this.resultRowType = resultRowType;
+        }
+
+        public Map<UserTable,Integer> getFieldOffsets() {
+            return fieldOffsets;
+        }
+        public int getNfields() {
+            return nfields;
+        }
+
+        
+        public void mergeFields(FlattenState other) {
+            for (UserTable table : other.fieldOffsets.keySet()) {
+                fieldOffsets.put(table, other.fieldOffsets.get(table) + nfields);
+            }
+            nfields += other.nfields;
+        }
+    }
+
+    // Holds a partial operator tree while flattening, since need the
+    // single return value for above per-branch result.
+    class Flattener {
+        private PhysicalOperator resultOperator;
+
+        public Flattener(PhysicalOperator resultOperator) {
+            this.resultOperator = resultOperator;
+        }
+        
+        public PhysicalOperator getResultOperator() {
+            return resultOperator;
+        }
+
+        public FlattenState flatten(BaseJoinNode join) {
+            if (join.isTable()) {
+                UserTable table = ((TableJoinNode)join).getTable();
+                Map<UserTable,Integer> fieldOffsets = new HashMap<UserTable,Integer>();
+                fieldOffsets.put(table, 0);
+                return new FlattenState(userTableRowType(table),
+                                        fieldOffsets,
+                                        table.getColumns().size());
+            }
+            else {
+                JoinJoinNode jjoin = (JoinJoinNode)join;
+                BaseJoinNode left = jjoin.getLeft();
+                BaseJoinNode right = jjoin.getRight();
+                FlattenState fleft = flatten(left);
+                FlattenState fright = flatten(right);
+                int flags = 0x00;
+                switch (jjoin.getJoinType()) {
+                case LEFT:
+                    flags = 0x08;
+                    break;
+                case RIGHT:
+                    flags = 0x10;
+                    break;
+                }
+                resultOperator = flatten_HKeyOrdered(resultOperator,
+                                                     fleft.getResultRowType(),
+                                                     fright.getResultRowType(),
+                                                     flags);
+                fleft.setResultRowType(resultOperator.rowType());
+                fleft.mergeFields(fright);
+                return fleft;
+            }
+        }
     }
 
     protected UserTableRowType userTableRowType(UserTable table) {
         return schema.userTableRowType(table);
-    }
-
-    // TODO: Merge with getIndexComparand
-    protected Expression getExpression(ValueNode operand, 
-                                       Map<UserTable,Integer> fieldOffsets)
-            throws StandardException {
-        if ((operand instanceof ColumnReference) &&
-            (operand.getUserData() != null)) {
-            Column column = ((ColumnBinding)operand.getUserData()).getColumn();
-            if (column == null)
-                throw new StandardException("Unsupported WHERE predicate on non-column");
-            UserTable table = column.getUserTable();
-            return field(fieldOffsets.get(table) + column.getPosition());
-        }
-        else if (operand instanceof ConstantNode) {
-            Object value = ((ConstantNode)operand).getValue();
-            if (value instanceof Integer)
-                value = new Long(((Integer)value).intValue());
-            return literal(value);
-        }
-        else if (operand instanceof ParameterNode) {
-            return variable(((ParameterNode)operand).getParameterNumber());
-        }
-        else
-            throw new StandardException("Unsupported WHERE predicate on non-constant");
     }
 
     /** Is t1 an ancestor of t2? */
@@ -372,268 +470,6 @@ public class OperatorCompiler
             if (parent == t1)
                 return true;
             t2 = parent;
-        }
-    }
-
-    protected Index pickBestIndex(List<UserTable> tables, 
-                                  ValueNode whereClause,
-                                  Set<BinaryOperatorNode> indexConditions) {
-        if (whereClause == null) 
-            return null;
-        
-        Index bestIndex = null;
-        Set<BinaryOperatorNode> bestIndexConditions = null;
-        for (UserTable table : tables) {
-            for (Index index : table.getIndexes()) { // TODO: getIndexesIncludingInternal()
-                Set<BinaryOperatorNode> matchingConditions = matchIndexConditions(index, 
-                                                                                  whereClause);
-                if (matchingConditions.size() > ((bestIndex == null) ? 0 : 
-                                                 bestIndexConditions.size())) {
-                    bestIndex = index;
-                    bestIndexConditions = matchingConditions;
-                }
-            }
-        }
-        if (bestIndex != null)
-            indexConditions.addAll(bestIndexConditions);
-        return bestIndex;
-    }
-
-    // Return where conditions matching a left subset of index columns of given index.
-    protected Set<BinaryOperatorNode> matchIndexConditions(Index index,
-                                                           ValueNode whereClause) {
-        Set<BinaryOperatorNode> result = null;
-        boolean alleq = true;
-        for (IndexColumn indexColumn : index.getColumns()) {
-            Column column = indexColumn.getColumn();
-            Set<BinaryOperatorNode> match = matchColumnConditions(column, whereClause);
-            if (match == null)
-                break;
-            else if (result == null)
-                result = match;
-            else
-                result.addAll(match);
-            if (alleq) {
-                for (ValueNode condition : match) {
-                    switch (condition.getNodeType()) {
-                    case NodeTypes.BINARY_EQUALS_OPERATOR_NODE:
-                        break;
-                    default:
-                        alleq = false;
-                        break;
-                    }
-                    if (!alleq) break;
-                }
-            }
-            if (!alleq) break;
-        }
-        if (result == null)
-            result = Collections.emptySet();
-        return result;
-    }
-
-    // Return where conditions matching given column in supported comparison.
-    protected Set<BinaryOperatorNode> matchColumnConditions(Column column,
-                                                            ValueNode whereClause) {
-        Set<BinaryOperatorNode> result = null;
-        while (whereClause != null) {
-            if (whereClause.isBooleanTrue()) break;
-            if (!(whereClause instanceof AndNode)) break;
-            AndNode andNode = (AndNode)whereClause;
-            whereClause = andNode.getRightOperand();
-            ValueNode condition = andNode.getLeftOperand();
-            if (grouper.getJoinConditions().contains(condition))
-                continue;
-            switch (condition.getNodeType()) {
-            case NodeTypes.BINARY_EQUALS_OPERATOR_NODE:
-            case NodeTypes.BINARY_GREATER_THAN_OPERATOR_NODE:
-            case NodeTypes.BINARY_GREATER_EQUALS_OPERATOR_NODE:
-            case NodeTypes.BINARY_LESS_THAN_OPERATOR_NODE:
-            case NodeTypes.BINARY_LESS_EQUALS_OPERATOR_NODE:
-                break;
-            default:
-                continue;
-            }
-            BinaryOperatorNode binop = (BinaryOperatorNode)condition;
-            if ((matchColumnReference(column, binop.getLeftOperand()) &&
-                 ((binop.getRightOperand() instanceof ConstantNode) ||
-                  (binop.getRightOperand() instanceof ParameterNode))) ||
-                (matchColumnReference(column, binop.getRightOperand()) &&
-                 ((binop.getLeftOperand() instanceof ConstantNode) ||
-                  (binop.getLeftOperand() instanceof ParameterNode)))) {
-                if (result == null)
-                    result = new HashSet<BinaryOperatorNode>();
-                result.add(binop);
-            }
-        }
-        return result;
-    }
-
-    protected static boolean matchColumnReference(Column column, ValueNode operand) {
-        if (!(operand instanceof ColumnReference))
-            return false;
-        ColumnBinding cb = (ColumnBinding)operand.getUserData();
-        if (cb == null)
-            return false;
-        return (column == cb.getColumn());
-    }
-    
-    // TODO: isConstant could be a method on Expression, including all
-    // trees whose leaves are literals.
-    protected static Expression getIndexComparand(ValueNode node, boolean[] isConstant) 
-            throws StandardException {
-        if (node instanceof ConstantNode) {
-            isConstant[0] = true;
-            return literal(((ConstantNode)node).getValue());
-        }
-        else if (node instanceof ParameterNode)
-            return variable(((ParameterNode)node).getParameterNumber());
-        else
-            // TODO: Lots more possibilities here as expressions become more complete.
-            // Will probably deserve its own class then.
-            return null;
-    }
-
-    // TODO: Too much work here dealing with multiple conditions that
-    // could have been reconciled earlier as part of normalization.
-    // Not general enough to handle expressions that actually compute, rather
-    // than fetching a field, constant or parameter.
-    protected IndexKeyRange getIndexKeyRange(Index index, 
-                                             Set<BinaryOperatorNode> indexConditions) 
-            throws StandardException {
-        List<IndexColumn> indexColumns = index.getColumns();
-        int nkeys = indexColumns.size();
-        Expression[] keys = new Expression[nkeys];
-        Expression[] lb = null, ub = null;
-        boolean lbinc = false, ubinc = false;
-        for (int i = 0; i < nkeys; i++) {
-            IndexColumn indexColumn = indexColumns.get(i);
-            Column column = indexColumn.getColumn();
-            Expression eqExpr = null, ltExpr = null, gtExpr = null;
-            Comparison ltOp = null, gtOp = null;
-            boolean ltConstant = false, gtConstant = false;
-            for (BinaryOperatorNode condition : indexConditions) {
-                Expression expr = null;
-                boolean reverse = false;
-                boolean[] isConstant = new boolean[1];
-                if (matchColumnReference(column, condition.getLeftOperand())) {
-                    expr = getIndexComparand(condition.getRightOperand(), isConstant);
-                }
-                else if (matchColumnReference(column, condition.getRightOperand())) {
-                    expr = getIndexComparand(condition.getLeftOperand(), isConstant);
-                    reverse = true;
-                }
-                if (expr == null)
-                    continue;
-                Comparison op;
-                switch (condition.getNodeType()) {
-                case NodeTypes.BINARY_EQUALS_OPERATOR_NODE:
-                    op = Comparison.EQ;
-                    break;
-                case NodeTypes.BINARY_GREATER_THAN_OPERATOR_NODE:
-                    op = (reverse) ? Comparison.LT : Comparison.GT;
-                    break;
-                case NodeTypes.BINARY_GREATER_EQUALS_OPERATOR_NODE:
-                    op = (reverse) ? Comparison.LE : Comparison.GE;
-                    break;
-                case NodeTypes.BINARY_LESS_THAN_OPERATOR_NODE:
-                    op = (reverse) ? Comparison.GT : Comparison.LT;
-                    break;
-                case NodeTypes.BINARY_LESS_EQUALS_OPERATOR_NODE:
-                    op = (reverse) ? Comparison.GE : Comparison.LE;
-                    break;
-                default:
-                    continue;
-                }
-                switch (op) {
-                case EQ:
-                    if (eqExpr == null)
-                        eqExpr = expr;
-                    else if (!eqExpr.equals(expr))
-                        throw new StandardException("Conflicting equality conditions.");
-                    break;
-                case LT:
-                case LE:
-                    {
-                        boolean narrower;
-                        if (ltExpr == null)
-                            narrower = true;
-                        else {
-                            if (!(isConstant[0] && ltConstant))
-                                throw new StandardException("Conflicting inequality conditions.");
-                            int comp = ((Comparable)ltExpr.evaluate(null, null))
-                                .compareTo(expr.evaluate(null, null));
-                            narrower = ((comp > 0) ||
-                                        // < with same comparand is narrower than <=.
-                                        ((comp == 0) && 
-                                         (op == Comparison.LT) && 
-                                         (ltOp == Comparison.LE)));
-                        }
-                        if (narrower) {
-                            ltExpr = expr;
-                            ltOp = op;
-                            ltConstant = isConstant[0];
-                        }
-                    }
-                    break;
-                case GT:
-                case GE:
-                    {
-                        boolean narrower;
-                        if (gtExpr == null)
-                            narrower = true;
-                        else {
-                            if (!(isConstant[0] && gtConstant))
-                                throw new StandardException("Conflicting inequality conditions.");
-                            int comp = ((Comparable)gtExpr.evaluate(null, null))
-                                .compareTo(expr.evaluate(null, null));
-                            narrower = ((comp > 0) ||
-                                        // > with same comparand is narrower than >=.
-                                        ((comp == 0) && 
-                                         (op == Comparison.GT) && 
-                                         (ltOp == Comparison.GE)));
-                        }
-                        if (narrower) {
-                            gtExpr = expr;
-                            gtOp = op;
-                            gtConstant = isConstant[0];
-                        }
-                    }
-                    break;
-                }
-            }
-            if (eqExpr != null) {
-                keys[i] = eqExpr;
-            }
-            else {
-                if (gtExpr != null) {
-                    if (lb == null) {
-                        lb = new Expression[nkeys];
-                        System.arraycopy(keys, 0, lb, 0, nkeys);
-                    }
-                    lb[i] = gtExpr;
-                    if (gtOp == Comparison.GE) 
-                        lbinc = true;
-                }
-                if (ltExpr != null) {
-                    if (ub == null) {
-                        ub = new Expression[nkeys];
-                        System.arraycopy(keys, 0, ub, 0, nkeys);
-                    }
-                    ub[i] = ltExpr;
-                    if (ltOp == Comparison.LE) 
-                        ubinc = true;
-                }
-            }
-        }
-        if ((lb == null) && (ub == null)) {
-            IndexBound eq = getIndexBound(index, keys);
-            return new IndexKeyRange(eq, true, eq, true);
-        }
-        else {
-            IndexBound lo = getIndexBound(index, lb);
-            IndexBound hi = getIndexBound(index, ub);
-            return new IndexKeyRange(lo, lbinc, hi, ubinc);
         }
     }
 
