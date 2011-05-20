@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -506,4 +507,22 @@ public class SchemaDefToAisTest {
         assertNotNull("foo.two exists", ais.getUserTable("foo", "two"));
     }
 
+    @Test
+    public void tableIDsAreDepthFirst() throws Exception {
+        // Multiple in group at once
+        final String ddl1 = "create table t.c(id int key) engine=akibandb;"+
+                            "create table t.o(id int key, cid int, constraint __akiban foreign key(cid) references c(id)) engine=akibandb;"+
+                            "create table t.i(id int key, oid int, constraint __akiban foreign key(oid) references o(id)) engine=akibandb;";
+        final AkibanInformationSchema ais = buildAISfromString(ddl1);
+        assertEquals("table count", 3, ais.getUserTables().size());
+        assertEquals("group count", 1, ais.getGroups().size());
+        assertTrue("cid < oid", ais.getUserTable("t", "c").getTableId() < ais.getUserTable("t", "o").getTableId());
+        assertTrue("oid < iid", ais.getUserTable("t", "o").getTableId() < ais.getUserTable("t", "i").getTableId());
+        // Incremental
+        final String ddl2 = "create table t.x(id int key, iid int, constraint __akiban foreign key(iid) references i(id)) engine=akibandb;";
+        new SchemaDefToAis(SchemaDef.parseSchema(ddl2), ais, true);
+        assertEquals("table count", 4, ais.getUserTables().size());
+        assertEquals("group count", 1, ais.getGroups().size());
+        assertTrue("iid < xid", ais.getUserTable("t", "i").getTableId() < ais.getUserTable("t", "x").getTableId());
+    }
 }

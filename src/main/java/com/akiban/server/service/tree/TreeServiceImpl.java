@@ -529,6 +529,11 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         return link;
     }
 
+    @Override
+    public String getDataPath() {
+        return getDb().getProperty("datapath");
+    }
+
     void buildSchemaMap() {
         final Properties properties = configService.getModuleConfiguration(
                 "akserver").getProperties();

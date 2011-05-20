@@ -364,6 +364,15 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return ais;
     }
 
+    private void setGroupTableIds(AkibanInformationSchema newAIS) {
+       // Old behavior, reassign group table IDs
+        for(GroupTable groupTable: newAIS.getGroupTables().values()) {
+            final UserTable root = groupTable.getRoot();
+            assert root != null : "Group with no root table: " + groupTable;
+            groupTable.setTableId(TreeService.MAX_TABLES_PER_VOLUME - root.getTableId());
+        }
+    }
+
     /**
      * Construct a new AIS instance containing a copy of the currently known
      * data, see @{link #ais}, and the given schemaDef.
@@ -375,12 +384,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         AkibanInformationSchema newAis = new AkibanInformationSchema();
         new Writer(new AISTarget(newAis)).save(ais);
         new SchemaDefToAis(schemaDef, newAis, true).getAis();
-        // Old behavior, reassign group table IDs
-        for(GroupTable groupTable: newAis.getGroupTables().values()) {
-            final UserTable root = groupTable.getRoot();
-            assert root != null : "Group with no root table: " + groupTable;
-            groupTable.setTableId(TreeService.MAX_TABLES_PER_VOLUME - root.getTableId());
-        }
+        setGroupTableIds(newAis);
         return newAis;
     }
 
@@ -529,6 +533,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     for(UserTable table : newAIS.getUserTables().values()) {
                         table.setTableId(curId++);
                     }
+                    setGroupTableIds(newAIS);
 
                     // Load stored AIS data from each schema tree
                     treeService.visitStorage(session, new TreeVisitor() {
@@ -544,9 +549,11 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     }, SCHEMA_TREE_NAME);
 
                     forceNewTimestamp();
-                    commitAIS(newAIS, updateTimestamp.get());
+                    onTransactionCommit(newAIS, updateTimestamp.get());
                     transaction.commit();
-                    break;
+
+                    break; // Success
+
                 } catch (RollbackException e) {
                     if (--retries < 0) {
                         throw new TransactionFailedException();
@@ -563,7 +570,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
     }
 
-    private void commitAIS(final AkibanInformationSchema newAis, final long timestamp) {
+    private void onTransactionCommit(final AkibanInformationSchema newAis, final long timestamp) {
         // None of this code "can fail" because it is being ran inside of a Persistit commit. Fail LOUDLY.
         try {
             final RowDefCache rowDefCache = serviceManager.getStore().getRowDefCache();
@@ -863,7 +870,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 transaction.commit(new DefaultCommitListener() {
                     @Override
                     public void committed() {
-                        commitAIS(newAIS, transaction.getCommitTimestamp());
+                        onTransactionCommit(newAIS, transaction.getCommitTimestamp());
                     }
                 }, forceToDisk);
 

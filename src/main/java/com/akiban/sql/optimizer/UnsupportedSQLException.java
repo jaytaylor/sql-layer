@@ -13,16 +13,30 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.ais.model;
+package com.akiban.sql.optimizer;
 
-import java.io.Serializable;
+import com.akiban.sql.StandardException;
 
-/**
- * Serializable object for use as a monitor in a synchronized block.
- */
-final class SerializableMonitor implements Serializable {
-    @Override
-    public String toString() {
-        return "LOCK";
+import com.akiban.sql.parser.QueryTreeNode;
+
+import com.akiban.sql.unparser.NodeToString;
+
+public class UnsupportedSQLException extends StandardException
+{
+    public UnsupportedSQLException(String msg) {
+        super(msg);
+    }
+
+    public UnsupportedSQLException(String msg, QueryTreeNode sql) {
+        super(msg + ": " + formatSQL(sql));
+    }
+
+    protected static String formatSQL(QueryTreeNode sql) {
+        try {
+            return new NodeToString().toString(sql);
+        }
+        catch (StandardException ex) {
+            return sql.toString();
+        }
     }
 }

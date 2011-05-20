@@ -25,6 +25,7 @@ import com.akiban.sql.optimizer.Grouper;
 import com.akiban.sql.optimizer.SubqueryFlattener;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.OperatorCompilerTest;
+import com.akiban.sql.optimizer.SimplifiedSelectQuery;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.CursorNode;
@@ -44,7 +45,8 @@ public class Tester
         PRINT_TREE, PRINT_SQL, PRINT_BOUND_SQL,
         BIND, COMPUTE_TYPES,
         BOOLEAN_NORMALIZE, FLATTEN_SUBQUERIES,
-        GROUP, GROUP_REWRITE, OPERATORS
+        GROUP, GROUP_REWRITE, 
+        SIMPLIFY, SIMPLIFY_REORDER, OPERATORS
     }
 
     List<Action> actions;
@@ -56,6 +58,7 @@ public class Tester
     SubqueryFlattener subqueryFlattener;
     Grouper grouper;
     OperatorCompiler operatorCompiler;
+    int repeat;
 
     public Tester() {
         actions = new ArrayList<Action>();
@@ -72,13 +75,34 @@ public class Tester
         actions.add(action);
     }
 
+    public int getRepeat() {
+        return repeat;
+    }
+    public void setRepeat(int repeat) {
+        this.repeat = repeat;
+    }
+
     public void process(String sql) throws Exception {
+        process(sql, false);
+        if (repeat > 0) {
+            long start = System.currentTimeMillis();
+            for (int i = 0; i < repeat; i++) {
+                process(sql, true);
+            }
+            long end =  System.currentTimeMillis();
+            System.out.println((end - start) + " ms.");
+        }
+    }
+
+    public void process(String sql, boolean silent) throws Exception {
         StatementNode stmt = null;
         for (Action action : actions) {
             switch (action) {
             case ECHO:
-                System.out.println("=====");
-                System.out.println(sql);
+                if (!silent) {
+                    System.out.println("=====");
+                    System.out.println(sql);
+                }
                 break;
             case PARSE:
                 stmt = parser.parseStatement(sql);
@@ -90,12 +114,13 @@ public class Tester
                 stmt.treePrint();
                 break;
             case PRINT_SQL:
-                unparser.setUseBindings(false);
-                System.out.println(unparser.toString(stmt));
-                break;
             case PRINT_BOUND_SQL:
-                unparser.setUseBindings(true);
-                System.out.println(unparser.toString(stmt));
+                {
+                    unparser.setUseBindings(action == Action.PRINT_BOUND_SQL);
+                    String usql = unparser.toString(stmt);
+                    if (!silent)
+                        System.out.println(usql);
+                }
                 break;
             case BIND:
                 binder.bind(stmt);
@@ -116,8 +141,24 @@ public class Tester
                 grouper.group(stmt);
                 grouper.rewrite(stmt);
                 break;
+            case SIMPLIFY:
+            case SIMPLIFY_REORDER:
+                {
+                    SimplifiedSelectQuery query = 
+                        new SimplifiedSelectQuery((CursorNode)stmt, 
+                                                  grouper.getJoinConditions());
+                    if (action == Action.SIMPLIFY_REORDER)
+                        query.reorderJoins();
+                    if (!silent)
+                        System.out.println(query);
+                }
+                break;
             case OPERATORS:
-                System.out.println(operatorCompiler.compile((CursorNode)stmt));
+                {
+                    Object compiled = operatorCompiler.compile((CursorNode)stmt);
+                    if (!silent)
+                        System.out.println(compiled);
+                }
                 break;
             }
         }
@@ -144,7 +185,7 @@ public class Tester
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             System.out.println("Usage: Tester " +
-                               "[-clone] [-bind] [-types] [-boolean] [-flatten] [-group] [-group-rewrite] [-operators]" +
+                               "[-clone] [-bind] [-types] [-boolean] [-flatten] [-group] [-group-rewrite] [-simplify] [-simplify-reorder] [-operators]" +
                                "[-tree] [-print] [-print-bound]" +
                                "[-schema ddl] [-view ddl]..." +
                                "sql...");
@@ -185,8 +226,14 @@ public class Tester
                     tester.addAction(Action.GROUP);
                 else if ("-group-rewrite".equals(arg))
                     tester.addAction(Action.GROUP_REWRITE);
+                else if ("-simplify".equals(arg))
+                    tester.addAction(Action.SIMPLIFY);
+                else if ("-simplify-reorder".equals(arg))
+                    tester.addAction(Action.SIMPLIFY_REORDER);
                 else if ("-operators".equals(arg))
                     tester.addAction(Action.OPERATORS);
+                else if ("-repeat".equals(arg))
+                    tester.setRepeat(Integer.parseInt(args[i++]));
                 else
                     throw new Exception("Unknown switch: " + arg);
             }

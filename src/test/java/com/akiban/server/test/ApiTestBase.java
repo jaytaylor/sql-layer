@@ -227,6 +227,13 @@ public class ApiTestBase {
         session = ServiceManagerImpl.newSession();
     }
 
+    public final void safeRestartTestServices() throws Exception {
+        final String datapath = serviceManager().getTreeService().getDataPath();
+        Thread.sleep(1000);  // Let journal flush
+        crashTestServices(); // TODO: WHY doesn't this work with stop?
+        restartTestServices(Collections.singleton(new Property("akserver.datapath", datapath)));
+    }
+
     protected final HapiProcessor hapi(HapiProcessorFactory whichHapi) {
         memcache().setHapiProcessor(whichHapi);
         return hapi();

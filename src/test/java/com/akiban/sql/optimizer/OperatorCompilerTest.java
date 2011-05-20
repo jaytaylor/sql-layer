@@ -40,6 +40,8 @@ import com.akiban.server.test.it.qp.TestRow;
 import org.junit.Before;
 
 import java.io.File;
+import java.io.FileFilter;
+import java.util.ArrayList;
 import java.util.Collection;
 
 @RunWith(Parameterized.class)
@@ -48,13 +50,14 @@ public class OperatorCompilerTest extends TestBase
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "operator");
     
+    protected File schemaFile;
     protected SQLParser parser;
     protected OperatorCompiler compiler;
 
     @Before
     public void makeCompiler() throws Exception {
         parser = new SQLParser();
-        AkibanInformationSchema ais = loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
+        AkibanInformationSchema ais = loadSchema(schemaFile);
         compiler = TestOperatorCompiler.create(parser, ais, "user");
     }
 
@@ -87,11 +90,30 @@ public class OperatorCompilerTest extends TestBase
 
     @Parameters
     public static Collection<Object[]> statements() throws Exception {
-        return sqlAndExpected(RESOURCE_DIR);
+        Collection<Object[]> result = new ArrayList<Object[]>();
+        for (File subdir : RESOURCE_DIR.listFiles(new FileFilter() {
+                public boolean accept(File file) {
+                    return file.isDirectory();
+                }
+            })) {
+            File schemaFile = new File(subdir, "schema.ddl");
+            if (schemaFile.exists()) {
+                for (Object[] args : sqlAndExpected(subdir)) {
+                    Object[] nargs = new Object[args.length+1];
+                    nargs[0] = subdir.getName() + "/" + args[0];
+                    nargs[1] = schemaFile;
+                    System.arraycopy(args, 1, nargs, 2, args.length-1);
+                    result.add(nargs);
+                }
+            }
+        }
+        return result;
     }
 
-    public OperatorCompilerTest(String caseName, String sql, String expected) {
+    public OperatorCompilerTest(String caseName, File schemaFile, 
+                                String sql, String expected) {
         super(caseName, sql, expected);
+        this.schemaFile = schemaFile;
     }
 
     @Test

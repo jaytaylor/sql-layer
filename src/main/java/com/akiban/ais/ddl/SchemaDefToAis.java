@@ -22,6 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -263,6 +264,26 @@ public class SchemaDefToAis {
         return tableList;
     }
 
+    /**
+     * Ensure any newly generated IDs are low to high according depth first order.
+     * @param depthFirstTableList Table names in the order their IDs should be.
+     */
+    private void reassignTableIDsDepthFirst(List<CName> depthFirstTableList)
+    {
+        SortedSet<Integer> newIDs = new TreeSet<Integer>();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
+        for(CName tableName : depthFirstTableList) {
+            UserTable table = ais.getUserTable(tableName.getSchema(), tableName.getName());
+            boolean wasNew = newIDs.add(table.getTableId());
+            assert wasNew : table.getTableId();
+        }
+        Iterator<Integer> idIt = newIDs.iterator();
+        for(CName tableName : depthFirstTableList) {
+            UserTable table = ais.getUserTable(tableName.getSchema(), tableName.getName());
+            table.setTableId(idIt.next());
+        }
+    }
+
     private void buildAISFromBuilder(final boolean akibandbOnly) throws Exception {
         removeNonAkibanForeignKeys();
         addImpliedGroups();
@@ -394,6 +415,8 @@ public class SchemaDefToAis {
         for (CName group : schemaDef.getGroupMap().keySet()) {
             String groupName = null;
             List<CName> tablesInGroup = depthFirstSortedUserTables(group);
+            reassignTableIDsDepthFirst(tablesInGroup);
+
             for (CName table : tablesInGroup) {
                 UserTableDef tableDef = schemaDef.getUserTableMap().get(table);
                 List<ReferenceDef> joinDefs = tableDef.getAkibanJoinRefs();
