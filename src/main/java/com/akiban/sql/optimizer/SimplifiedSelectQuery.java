@@ -365,6 +365,7 @@ public class SimplifiedSelectQuery
     
     private GroupBinding group = null;
     private BaseJoinNode joins = null;
+    private Set<UserTable> tables = new HashSet<UserTable>();
     private List<SelectColumn> selectColumns = new ArrayList<SelectColumn>();
     private List<ColumnCondition> conditions = new ArrayList<ColumnCondition>();
     private List<SortColumn> sortColumns = null;
@@ -497,6 +498,8 @@ public class SimplifiedSelectQuery
             else if (group != gb)
                 throw new UnsupportedSQLException("Unsupported multiple groups");
             UserTable table = (UserTable)tb.getTable();
+            if (!tables.add(table))
+                throw new UnsupportedSQLException("Unsupported self join");
             return new TableJoinNode(table);
         }
         else if (fromTable instanceof JoinNode) {
@@ -580,6 +583,9 @@ public class SimplifiedSelectQuery
     }
     public BaseJoinNode getJoins() {
         return joins;
+    }
+    public Set<UserTable> getTables() {
+        return tables;
     }
     public List<SelectColumn> getSelectColumns() {
         return selectColumns;
@@ -712,6 +718,10 @@ public class SimplifiedSelectQuery
                 jjoin.reverse();
         }
         return join;
+    }
+
+    public ColumnCondition findConstantCondition(Column column, Comparison comparison) {
+        return null;
     }
 
     public String toString() {

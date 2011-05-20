@@ -153,8 +153,35 @@ public class OperatorCompiler
         GroupBinding group = squery.getGroup();
         GroupTable groupTable = group.getGroup().getGroupTable();
         
+        IndexUsage index = pickBestIndex(squery);
+        if (squery.getSortColumns() != null)
+            throw new UnsupportedSQLException("Unsupported ORDER BY");
+        
+        Set<ColumnCondition> indexConditions = null;
         PhysicalOperator resultOperator;
-        if (true) {
+        if (index != null) {
+            indexConditions = index.getIndexConditions();
+            Index iindex = index.getIndex();
+            PhysicalOperator indexOperator = indexScan_Default(iindex, 
+                                                               index.isReverse(),
+                                                               index.getIndexKeyRange());
+            UserTable indexTable = (UserTable)iindex.getTable();
+            UserTableRowType tableType = userTableRowType(indexTable);
+            IndexRowType indexType = tableType.indexRowType(iindex);
+            resultOperator = lookup_Default(indexOperator, groupTable,
+                                            indexType, tableType);
+            // All selected rows above this need to be output by hkey left
+            // segment random access.
+            List<RowType> addAncestors = new ArrayList<RowType>();
+            for (UserTable table : squery.getTables()) {
+                if ((table != indexTable) && isAncestorTable(table, indexTable))
+                    addAncestors.add(userTableRowType(table));
+            }
+            if (!addAncestors.isEmpty())
+                resultOperator = ancestorLookup_Default(resultOperator, groupTable,
+                                                        tableType, addAncestors);
+        }
+        else {
             resultOperator = groupScan_Default(groupTable);
         }
         
@@ -191,6 +218,106 @@ public class OperatorCompiler
 
         return new Result(resultOperator, resultRowType, 
                           resultColumns, resultColumnOffsets);
+    }
+
+    static class IndexUsage implements Comparable<IndexUsage> {
+        private Index index;
+        private List<ColumnCondition> equalityConditions;
+        ColumnCondition lowCondition, highCondition;
+        
+        public IndexUsage(Index index) {
+            this.index = index;
+        }
+
+        public Index getIndex() {
+            return index;
+        }
+
+        public Set<ColumnCondition> getIndexConditions() {
+            Set<ColumnCondition> result = new HashSet<ColumnCondition>();
+            if (equalityConditions != null)
+                result.addAll(equalityConditions);
+            if (lowCondition != null)
+                result.add(lowCondition);
+            if (highCondition != null)
+                result.add(highCondition);
+            return result;
+        }
+
+        public boolean isReverse() {
+            return false;
+        }
+
+        public int compareTo(IndexUsage other) {
+            if (equalityConditions != null) {
+                if (other.equalityConditions == null)
+                    return +1;
+                else if (equalityConditions.size() != other.equalityConditions.size())
+                    return (equalityConditions.size() > other.equalityConditions.size()) 
+                        ? +1 : -1;
+            }
+            int n = 0, on = 0;
+            if (lowCondition != null)
+                n++;
+            if (highCondition != null)
+                n++;
+            if (other.lowCondition != null)
+                on++;
+            if (other.highCondition != null)
+                on++;
+            if (n != on) 
+                return (n > on) ? +1 : -1;
+            return index.getTable().getTableId().compareTo(other.index.getTable().getTableId());
+        }
+
+        public boolean usable(SimplifiedSelectQuery squery) {
+            List<IndexColumn> indexColumns = index.getColumns();
+            int ncols = indexColumns.size();
+            int nequals = 0;
+            while (nequals < ncols) {
+                IndexColumn indexColumn = indexColumns.get(nequals);
+                Column column = indexColumn.getColumn();
+                ColumnCondition equalityCondition = 
+                    squery.findConstantCondition(column, Comparison.EQ);
+                if (equalityCondition == null)
+                    break;
+                if (nequals == 0)
+                    equalityConditions = new ArrayList<ColumnCondition>(1);
+                equalityConditions.add(equalityCondition);
+                nequals++;
+            }
+            if (nequals < ncols) {
+                IndexColumn indexColumn = indexColumns.get(nequals);
+                Column column = indexColumn.getColumn();
+                lowCondition = squery.findConstantCondition(column, Comparison.LT);
+                highCondition = squery.findConstantCondition(column, Comparison.GT);
+            }
+            return ((equalityConditions != null) ||
+                    (lowCondition != null) ||
+                    (highCondition != null));
+        }
+
+        public IndexKeyRange getIndexKeyRange() {
+            return null;
+        }
+    }
+
+    protected IndexUsage pickBestIndex(SimplifiedSelectQuery squery) {
+        if (squery.getConditions().isEmpty())
+            return null;
+
+        IndexUsage bestIndex = null;
+        for (UserTable table : squery.getTables()) {
+            for (Index index : table.getIndexes()) { // TODO: getIndexesIncludingInternal()
+                IndexUsage candidate = new IndexUsage(index);
+                if (candidate.usable(squery)) {
+                    if ((bestIndex == null) ||
+                        (candidate.compareTo(bestIndex) > 0))
+                        bestIndex = candidate;
+                }
+            }
+        }
+        return bestIndex;
     }
 
     // Need to return several values from flatten operation.
@@ -242,7 +369,7 @@ public class OperatorCompiler
             Map<UserTable,Integer> fieldOffsets = new HashMap<UserTable,Integer>();
             fieldOffsets.put(table, 0);
             return new FlattenState(resultOperator,
-                                    schema.userTableRowType(table),
+                                    userTableRowType(table),
                                     fieldOffsets,
                                     table.getColumns().size());
         }
