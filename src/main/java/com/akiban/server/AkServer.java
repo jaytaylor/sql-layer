@@ -156,7 +156,7 @@ public class AkServer implements Service<AkServer>, JmxManageable {
             File pidFile = new File(pidFileName);
             pidFile.deleteOnExit();
             FileWriter out = new FileWriter(pidFile);
-            out.write(System.getProperty("akserver.pid"));
+            out.write(String.valueOf(System.getProperty("akserver.pid")));
             out.flush();
         }
     }
