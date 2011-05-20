@@ -84,12 +84,26 @@ case "$1" in
         status -p $pid_file akiban > /dev/null 2>&1
         if [ $? -ne 0 ]; then
             log_failure_msg "Shutdown Akiban"
-            rm -f $pid_file
             exit 1
         fi
+        echo -n "Shutdown Akiban "
         su $AKIBAN_OWNR -c "kill `cat $pid_file`"
-        rm -f $pid_file
-        log_success_msg "Shutdown Akiban"
+        # we give server 60 seconds to shut down
+        attempts=1
+        while [ -f $pid_file ]
+        do
+            attempts=$(($attempts+1))
+            echo -n "."
+            if [ $attempts = $timeout ]; then
+                break
+            fi
+            sleep 1
+        done
+        if [ -f $pid_file ]; then
+            log_failure_msg
+        else
+            log_success_msg
+        fi
         ;;
     reload|restart)
         $0 stop

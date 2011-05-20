@@ -120,10 +120,23 @@ case "$1" in
         log_daemon_msg "Stopping $DESC"
         if [ -f "$pidfile" ]; then
             killproc -p "$pidfile" "$DAEMON"
-            rm -f "$pidfile"
             log_progress_msg "$DESC"
         fi
-        log_end_msg 0
+        # we give server 60 seconds to shut down
+        attempts=1
+        while [ -f $pidfile ]
+        do
+            attempts=$(($attempts+1))
+            if [ $attempts = $timeout ]; then
+                break
+            fi
+            sleep 1
+        done
+        if [ -f $pidfile ]; then
+            log_failure_msg "$DESC failed to shutdown cleanly"
+        else
+            log_end_msg 0
+        fi
         ;;
     force-reload|restart)
         set +e; $SELF stop; set -e
