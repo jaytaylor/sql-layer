@@ -151,4 +151,13 @@ public class API
         // if all they need is the wrapped cursor, create it directly
         return new TopLevelWrappingCursor(root.cursor(adapter));
     }
+
+    // For all flags
+    public static final int DEFAULT = 0x00;
+    // Flattening flags
+    public static final int KEEP_PARENT = Flatten_HKeyOrdered.KEEP_PARENT;
+    public static final int KEEP_CHILD = Flatten_HKeyOrdered.KEEP_CHILD;
+    public static final int INNER_JOIN = Flatten_HKeyOrdered.INNER_JOIN;
+    public static final int LEFT_JOIN = Flatten_HKeyOrdered.LEFT_JOIN;
+    public static final int RIGHT_JOIN = Flatten_HKeyOrdered.RIGHT_JOIN;
 }
