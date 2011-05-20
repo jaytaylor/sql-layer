@@ -140,7 +140,7 @@ public class OperatorCompiler
         }
     }
 
-    public Result new_compile(CursorNode cursor) throws StandardException {
+    public Result compile(CursorNode cursor) throws StandardException {
         // Get into standard form.
         binder.bind(cursor);
         cursor = (CursorNode)booleanNormalizer.normalize(cursor);
@@ -153,6 +153,7 @@ public class OperatorCompiler
         GroupBinding group = squery.getGroup();
         GroupTable groupTable = group.getGroup().getGroupTable();
         
+        // Try to use an index.
         IndexUsage index = pickBestIndex(squery);
         if (squery.getSortColumns() != null)
             throw new UnsupportedSQLException("Unsupported ORDER BY");
@@ -192,12 +193,15 @@ public class OperatorCompiler
         // whole (as opposed to the outer join with a subquery
         // containing the condition).
 
-        FlattenState fl = flatten(resultOperator, squery.getJoins());
+        Flattener fl = new Flattener(resultOperator);
+        FlattenState fls = fl.flatten(squery.getJoins());
         resultOperator = fl.getResultOperator();
-        RowType resultRowType = fl.getResultRowType();
-        Map<UserTable,Integer> fieldOffsets = fl.getFieldOffsets();
+        RowType resultRowType = fls.getResultRowType();
+        Map<UserTable,Integer> fieldOffsets = fls.getFieldOffsets();
         
         for (ColumnCondition condition : squery.getConditions()) {
+            if ((indexConditions != null) && indexConditions.contains(condition))
+                continue;
             Expression predicate = condition.generateExpression(fieldOffsets);
             resultOperator = select_HKeyOrdered(resultOperator,
                                                 resultRowType,
@@ -220,7 +224,8 @@ public class OperatorCompiler
                           resultColumns, resultColumnOffsets);
     }
 
-    static class IndexUsage implements Comparable<IndexUsage> {
+    // A possible index.
+    class IndexUsage implements Comparable<IndexUsage> {
         private Index index;
         private List<ColumnCondition> equalityConditions;
         ColumnCondition lowCondition, highCondition;
@@ -233,6 +238,7 @@ public class OperatorCompiler
             return index;
         }
 
+        // The conditions that this index usage subsumes.
         public Set<ColumnCondition> getIndexConditions() {
             Set<ColumnCondition> result = new HashSet<ColumnCondition>();
             if (equalityConditions != null)
@@ -248,6 +254,8 @@ public class OperatorCompiler
             return false;
         }
 
+        // Is this a better index?
+        // TODO: Best we can do without any idea of selectivity.
         public int compareTo(IndexUsage other) {
             if (equalityConditions != null) {
                 if (other.equalityConditions == null)
@@ -270,6 +278,7 @@ public class OperatorCompiler
             return index.getTable().getTableId().compareTo(other.index.getTable().getTableId());
         }
 
+        // Can this index be used for part of the given query?
         public boolean usable(SimplifiedSelectQuery squery) {
             List<IndexColumn> indexColumns = index.getColumns();
             int ncols = indexColumns.size();
@@ -278,7 +287,7 @@ public class OperatorCompiler
                 IndexColumn indexColumn = indexColumns.get(nequals);
                 Column column = indexColumn.getColumn();
                 ColumnCondition equalityCondition = 
-                    squery.findConstantCondition(column, Comparison.EQ);
+                    squery.findColumnConstantCondition(column, Comparison.EQ);
                 if (equalityCondition == null)
                     break;
                 if (nequals == 0)
@@ -289,19 +298,60 @@ public class OperatorCompiler
             if (nequals < ncols) {
                 IndexColumn indexColumn = indexColumns.get(nequals);
                 Column column = indexColumn.getColumn();
-                lowCondition = squery.findConstantCondition(column, Comparison.LT);
-                highCondition = squery.findConstantCondition(column, Comparison.GT);
+                lowCondition = squery.findColumnConstantCondition(column, Comparison.GT);
+                highCondition = squery.findColumnConstantCondition(column, Comparison.LT);
             }
             return ((equalityConditions != null) ||
                     (lowCondition != null) ||
                     (highCondition != null));
         }
 
+        // Generate key range bounds.
         public IndexKeyRange getIndexKeyRange() {
-            return null;
+            List<IndexColumn> indexColumns = index.getColumns();
+            int nkeys = indexColumns.size();
+            Expression[] keys = new Expression[nkeys];
+
+            int kidx = 0;
+            if (equalityConditions != null) {
+                for (ColumnCondition cond : equalityConditions) {
+                    keys[kidx++] = cond.getRight().generateExpression(null);
+                }
+            }
+
+            if ((lowCondition == null) && (highCondition == null)) {
+                IndexBound eq = getIndexBound(index, keys);
+                return new IndexKeyRange(eq, true, eq, true);
+            }
+            else {
+                Expression[] lowKeys = null, highKeys = null;
+                boolean lowInc = false, highInc = false;
+                if (lowCondition != null) {
+                    lowKeys = keys;
+                    if (highCondition != null) {
+                        highKeys = new Expression[nkeys];
+                        System.arraycopy(keys, 0, highKeys, 0, kidx);
+                    }
+                }
+                else if (highCondition != null) {
+                    highKeys = keys;
+                }
+                if (lowCondition != null) {
+                    lowKeys[kidx] = lowCondition.getRight().generateExpression(null);
+                    lowInc = (lowCondition.getOperation() == Comparison.GE);
+                }
+                if (highCondition != null) {
+                    highKeys[kidx] = highCondition.getRight().generateExpression(null);
+                    highInc = (highCondition.getOperation() == Comparison.LE);
+                }
+                IndexBound lo = getIndexBound(index, lowKeys);
+                IndexBound hi = getIndexBound(index, highKeys);
+                return new IndexKeyRange(lo, lowInc, hi, highInc);
+            }
         }
     }
 
+    // Pick an index to use.
     protected IndexUsage pickBestIndex(SimplifiedSelectQuery squery) {
         if (squery.getConditions().isEmpty())
             return null;
@@ -320,29 +370,26 @@ public class OperatorCompiler
         return bestIndex;
     }
 
-    // Need to return several values from flatten operation.
     static class FlattenState {
-        private PhysicalOperator resultOperator;
         private RowType resultRowType;
-        private Map<UserTable,Integer> fieldOffsets = new HashMap<UserTable,Integer>();
-        int nfields = 0;
+        private Map<UserTable,Integer> fieldOffsets;
+        int nfields;
 
-        public FlattenState(PhysicalOperator resultOperator,
-                            RowType resultRowType,
+        public FlattenState(RowType resultRowType,
                             Map<UserTable,Integer> fieldOffsets,
                             int nfields) {
-            this.resultOperator = resultOperator;
             this.resultRowType = resultRowType;
             this.fieldOffsets = fieldOffsets;
             this.nfields = nfields;
         }
         
-        public PhysicalOperator getResultOperator() {
-            return resultOperator;
-        }
         public RowType getResultRowType() {
             return resultRowType;
         }
+        public void setResultRowType(RowType resultRowType) {
+            this.resultRowType = resultRowType;
+        }
+
         public Map<UserTable,Integer> getFieldOffsets() {
             return fieldOffsets;
         }
@@ -350,10 +397,6 @@ public class OperatorCompiler
             return nfields;
         }
 
-        public void setResultOperator(PhysicalOperator resultOperator) {
-            this.resultOperator = resultOperator;
-            this.resultRowType = resultOperator.rowType();
-        }
         
         public void mergeFields(FlattenState other) {
             for (UserTable table : other.fieldOffsets.keySet()) {
@@ -363,44 +406,55 @@ public class OperatorCompiler
         }
     }
 
-    protected FlattenState flatten(PhysicalOperator resultOperator, BaseJoinNode join) {
-        if (join instanceof TableJoinNode) {
-            UserTable table = ((TableJoinNode)join).getTable();
-            Map<UserTable,Integer> fieldOffsets = new HashMap<UserTable,Integer>();
-            fieldOffsets.put(table, 0);
-            return new FlattenState(resultOperator,
-                                    userTableRowType(table),
-                                    fieldOffsets,
-                                    table.getColumns().size());
+    // Holds a partial operator tree while flattening, since need the
+    // single return value for per-branch result.
+    class Flattener {
+        private PhysicalOperator resultOperator;
+
+        public Flattener(PhysicalOperator resultOperator) {
+            this.resultOperator = resultOperator;
         }
-        else {
-            JoinJoinNode jjoin = (JoinJoinNode)join;
-            BaseJoinNode left = jjoin.getLeft();
-            BaseJoinNode right = jjoin.getRight();
-            FlattenState fleft = flatten(resultOperator, left);
-            FlattenState fright = flatten(fleft.getResultOperator(), right);
-            int flags = 0x00;
-            switch (jjoin.getJoinType()) {
-            case LEFT:
-                flags = 0x08;
-                break;
-            case RIGHT:
-                flags = 0x10;
-                break;
+        
+        public PhysicalOperator getResultOperator() {
+            return resultOperator;
+        }
+
+        public FlattenState flatten(BaseJoinNode join) {
+            if (join.isTable()) {
+                UserTable table = ((TableJoinNode)join).getTable();
+                Map<UserTable,Integer> fieldOffsets = new HashMap<UserTable,Integer>();
+                fieldOffsets.put(table, 0);
+                return new FlattenState(userTableRowType(table),
+                                        fieldOffsets,
+                                        table.getColumns().size());
             }
-            // There is one current resultOperator, which gets added
-            // to as operators are generated. It's the right because
-            // that was done second.
-            fleft.setResultOperator(flatten_HKeyOrdered(fright.getResultOperator(),
-                                                        fleft.getResultRowType(),
-                                                        fright.getResultRowType(),
-                                                        flags));
-            fleft.mergeFields(fright);
-            return fleft;
+            else {
+                JoinJoinNode jjoin = (JoinJoinNode)join;
+                BaseJoinNode left = jjoin.getLeft();
+                BaseJoinNode right = jjoin.getRight();
+                FlattenState fleft = flatten(left);
+                FlattenState fright = flatten(right);
+                int flags = 0x00;
+                switch (jjoin.getJoinType()) {
+                case LEFT:
+                    flags = 0x08;
+                    break;
+                case RIGHT:
+                    flags = 0x10;
+                    break;
+                }
+                resultOperator = flatten_HKeyOrdered(resultOperator,
+                                                     fleft.getResultRowType(),
+                                                     fright.getResultRowType(),
+                                                     flags);
+                fleft.setResultRowType(resultOperator.rowType());
+                fleft.mergeFields(fright);
+                return fleft;
+            }
         }
     }
 
-    public Result compile(CursorNode cursor) throws StandardException {
+    public Result old_compile(CursorNode cursor) throws StandardException {
         // Get into bound & grouped form.
         binder.bind(cursor);
         cursor = (CursorNode)booleanNormalizer.normalize(cursor);

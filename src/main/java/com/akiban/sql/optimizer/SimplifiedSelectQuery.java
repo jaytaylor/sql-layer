@@ -41,10 +41,16 @@ import java.util.*;
 public class SimplifiedSelectQuery
 {
     public static abstract class BaseJoinNode {
+        // For now, order by tableId, i.e. creation time.
         public abstract Integer getMinOrdinal();
         public abstract Integer getMaxOrdinal();
 
-        public abstract boolean isInnerJoin();
+        public boolean isTable() {
+            return false;
+        }
+        public boolean isInnerJoin() {
+            return false;
+        }
         public abstract boolean promoteOuterJoins(Set<UserTable> conditionTables);
     }
 
@@ -67,8 +73,8 @@ public class SimplifiedSelectQuery
             return table.getTableId();
         }
 
-        public boolean isInnerJoin() {
-            return false;
+        public boolean isTable() {
+            return true;
         }
 
         public boolean promoteOuterJoins(Set<UserTable> conditionTables) {
@@ -136,6 +142,8 @@ public class SimplifiedSelectQuery
             return (joinType == JoinType.INNER);
         }
 
+        // If the optional side of an outer join cannot be null, turn it into inner.
+        // Return whether neither side can be null, i.e. the join cannot be.
         public boolean promoteOuterJoins(Set<UserTable> conditionTables) {
             boolean lp = left.promoteOuterJoins(conditionTables);
             boolean rp = right.promoteOuterJoins(conditionTables);
@@ -147,9 +155,10 @@ public class SimplifiedSelectQuery
                 if (lp) joinType = JoinType.INNER;
                 break;
             }
-            return lp || rp;
+            return lp && rp;
         }
 
+        // Reverse operands and outer join direction if necessary.
         public void reverse() {
             BaseJoinNode temp = left;
             left = right;
@@ -189,6 +198,9 @@ public class SimplifiedSelectQuery
     // One of the operands to a boolean equality / inequality
     // condition, the only kind currently supported.
     public static abstract class ConditionOperand {
+        public boolean isColumn() {
+            return false;
+        }
         public abstract Expression generateExpression(Map<UserTable,Integer> fieldOffsets);
     }
 
@@ -208,13 +220,17 @@ public class SimplifiedSelectQuery
             return column.toString();
         }
 
+        public boolean isColumn() {
+            return true;
+        }
+
         public Expression generateExpression(Map<UserTable,Integer> fieldOffsets) {
             UserTable table = column.getUserTable();
             return field(fieldOffsets.get(table) + column.getPosition());
         }
     }
     
-    // An operand with a constant literval value.
+    // An operand with a constant literal value.
     public static class LiteralConditionOperand extends ConditionOperand {
         private Object value;
         
@@ -284,7 +300,7 @@ public class SimplifiedSelectQuery
         }
 
         public boolean isConstant() {
-            return !(right instanceof ColumnConditionOperand);
+            return !right.isColumn();
         }
 
         // Does this condition match the given column?
@@ -292,10 +308,28 @@ public class SimplifiedSelectQuery
         public ColumnCondition matches(Column column) {
             if (column == left.getColumn())
                 return this;
-            if ((right instanceof ColumnConditionOperand) &&
+            if (right.isColumn() &&
                 (column == ((ColumnConditionOperand)right).getColumn()))
                 return getMirror();
             return null;
+        }
+
+        // Is this a condition between the given column and a constant
+        // of the given comparison type?
+        public boolean isColumnConstantCondition(Column column, 
+                                                 Comparison comparison) {
+            if ((column != left.getColumn()) || !isConstant())
+                return false;
+            switch (comparison) {
+            case EQ:
+                return (operation == Comparison.EQ);
+            case LT:
+                return ((operation == Comparison.LT) || (operation == Comparison.LE));
+            case GT:
+                return ((operation == Comparison.GT) || (operation == Comparison.GE));
+            default:
+                return false;
+            }
         }
 
         public static Comparison reverseComparison(Comparison operation) {
@@ -476,7 +510,7 @@ public class SimplifiedSelectQuery
         }
         for (ColumnCondition whereCondition : conditions) {
             if ((whereCondition.getOperation() == Comparison.EQ) &&
-                (whereCondition.getRight() instanceof ColumnConditionOperand))
+                whereCondition.getRight().isColumn())
                 addColumnEquivalence(whereCondition.getLeft().getColumn(),
                                      ((ColumnConditionOperand)
                                       whereCondition.getRight()).getColumn());
@@ -552,6 +586,7 @@ public class SimplifiedSelectQuery
                                               operand);
     }
 
+    // Get the column that this node references or else return null or throw given error.
     protected Column getColumnReferenceColumn(ValueNode value, String errmsg)
             throws StandardException {
         if (value instanceof ColumnReference) {
@@ -568,6 +603,7 @@ public class SimplifiedSelectQuery
         throw new UnsupportedSQLException(errmsg, value);
     }
     
+    // Get the constant integer value that this node represents or else throw error.
     protected int getIntegerConstant(ValueNode value, String errmsg) 
             throws StandardException {
         if (value instanceof NumericConstantNode) {
@@ -659,7 +695,7 @@ public class SimplifiedSelectQuery
         Set<UserTable> conditionTables = new HashSet<UserTable>();
         for (ColumnCondition condition : conditions) {
             conditionTables.add(condition.getLeft().getColumn().getUserTable());
-            if (condition.getRight() instanceof ColumnConditionOperand)
+            if (condition.getRight().isColumn())
                 conditionTables.add(((ColumnConditionOperand)
                                      condition.getRight()).getColumn().getUserTable());
         }
@@ -706,7 +742,7 @@ public class SimplifiedSelectQuery
             }
             return result;
         }
-        if (join instanceof JoinJoinNode) {
+        if (!join.isTable()) {
             JoinJoinNode jjoin = (JoinJoinNode)join;
             BaseJoinNode left = jjoin.getLeft();
             left = reorderJoinNode(left);
@@ -720,7 +756,14 @@ public class SimplifiedSelectQuery
         return join;
     }
 
-    public ColumnCondition findConstantCondition(Column column, Comparison comparison) {
+    // Find a boolean condition of the given [in]equality type between
+    // the given column and a constant.
+    public ColumnCondition findColumnConstantCondition(Column column, 
+                                                       Comparison comparison) {
+        for (ColumnCondition columnCondition : conditions) {
+            if (columnCondition.isColumnConstantCondition(column, comparison))
+                return columnCondition;
+        }
         return null;
     }
 
