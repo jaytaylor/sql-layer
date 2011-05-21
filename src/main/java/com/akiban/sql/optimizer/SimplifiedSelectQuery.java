@@ -51,6 +51,9 @@ public class SimplifiedSelectQuery
         public boolean isInnerJoin() {
             return false;
         }
+
+        // Return true if conditions mean this node cannot be left
+        // out, after adjusting for such inputs.
         public abstract boolean promoteOuterJoins(Set<UserTable> conditionTables);
     }
 
@@ -143,7 +146,7 @@ public class SimplifiedSelectQuery
         }
 
         // If the optional side of an outer join cannot be null, turn it into inner.
-        // Return whether neither side can be null, i.e. the join cannot be.
+        // If either side of a join has a condition, then the join result does.
         public boolean promoteOuterJoins(Set<UserTable> conditionTables) {
             boolean lp = left.promoteOuterJoins(conditionTables);
             boolean rp = right.promoteOuterJoins(conditionTables);
@@ -155,7 +158,7 @@ public class SimplifiedSelectQuery
                 if (lp) joinType = JoinType.INNER;
                 break;
             }
-            return lp && rp;
+            return lp || rp;
         }
 
         // Reverse operands and outer join direction if necessary.
