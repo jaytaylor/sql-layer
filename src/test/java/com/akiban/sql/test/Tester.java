@@ -26,6 +26,7 @@ import com.akiban.sql.optimizer.SubqueryFlattener;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.OperatorCompilerTest;
 import com.akiban.sql.optimizer.SimplifiedSelectQuery;
+import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.CursorNode;
@@ -132,7 +133,7 @@ public class Tester
                 stmt = booleanNormalizer.normalize(stmt);
                 break;
             case FLATTEN_SUBQUERIES:
-                stmt = subqueryFlattener.flatten(stmt);
+                stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
                 break;
             case GROUP:
                 grouper.group(stmt);
