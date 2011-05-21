@@ -200,7 +200,7 @@ public class SimplifiedSelectQuery
 
     // One of the operands to a boolean equality / inequality
     // condition, the only kind currently supported.
-    public static abstract class ConditionOperand {
+    public static abstract class SimpleExpression {
         public boolean isColumn() {
             return false;
         }
@@ -208,10 +208,10 @@ public class SimplifiedSelectQuery
     }
 
     // An operand from a table column.
-    public static class ColumnConditionOperand extends ConditionOperand {
+    public static class ColumnExpression extends SimpleExpression {
         private Column column;
         
-        public ColumnConditionOperand(Column column) {
+        public ColumnExpression(Column column) {
             this.column = column;
         }
 
@@ -234,10 +234,10 @@ public class SimplifiedSelectQuery
     }
     
     // An operand with a constant literal value.
-    public static class LiteralConditionOperand extends ConditionOperand {
+    public static class LiteralExpression extends SimpleExpression {
         private Object value;
         
-        public LiteralConditionOperand(Object value) {
+        public LiteralExpression(Object value) {
             if (value instanceof Integer)
                 value = new Long(((Integer)value).intValue());
             this.value = value;
@@ -257,10 +257,10 @@ public class SimplifiedSelectQuery
     }
 
     // An operand with a parameter value.
-    public static class VariableConditionOperand extends ConditionOperand {
+    public static class ParameterExpression extends SimpleExpression {
         private int position;
         
-        public VariableConditionOperand(int position) {
+        public ParameterExpression(int position) {
             this.position = position;
         }
 
@@ -280,22 +280,22 @@ public class SimplifiedSelectQuery
     // A boolean condition between a column and something else that
     // can be turned into an expression.
     public static class ColumnCondition {
-        private ColumnConditionOperand left;
-        private ConditionOperand right;
+        private ColumnExpression left;
+        private SimpleExpression right;
         private Comparison operation;
         private ColumnCondition mirror;
 
-        public ColumnCondition(ColumnConditionOperand left, ConditionOperand right,
+        public ColumnCondition(ColumnExpression left, SimpleExpression right,
                                Comparison operation) {
             this.left = left;
             this.right = right;
             this.operation = operation;
         }
 
-        public ColumnConditionOperand getLeft() {
+        public ColumnExpression getLeft() {
             return left;
         }
-        public ConditionOperand getRight() {
+        public SimpleExpression getRight() {
             return right;
         }
         public Comparison getOperation() {
@@ -312,7 +312,7 @@ public class SimplifiedSelectQuery
             if (column == left.getColumn())
                 return this;
             if (right.isColumn() &&
-                (column == ((ColumnConditionOperand)right).getColumn()))
+                (column == ((ColumnExpression)right).getColumn()))
                 return getMirror();
             return null;
         }
@@ -358,7 +358,7 @@ public class SimplifiedSelectQuery
         // other column is on the left.
         protected ColumnCondition getMirror() {
             if (mirror == null)
-                mirror = new ColumnCondition((ColumnConditionOperand)right,
+                mirror = new ColumnCondition((ColumnExpression)right,
                                              left, reverseComparison(operation));
             return mirror;
         }
@@ -462,18 +462,18 @@ public class SimplifiedSelectQuery
                                                   condition);
             }
             BinaryOperatorNode binop = (BinaryOperatorNode)condition;
-            ColumnConditionOperand left;
-            ConditionOperand right;
-            left = getColumnConditionOperand(binop.getLeftOperand());
+            ColumnExpression left;
+            SimpleExpression right;
+            left = getColumnExpression(binop.getLeftOperand());
             if (left != null) {
-                right = getConditionOperand(binop.getRightOperand());
+                right = getSimpleExpression(binop.getRightOperand());
             }
             else {
-                left = getColumnConditionOperand(binop.getRightOperand());
+                left = getColumnExpression(binop.getRightOperand());
                 if (left == null)
                     throw new UnsupportedSQLException("Unsupported WHERE operands", 
                                                       condition);
-                right = getConditionOperand(binop.getLeftOperand());
+                right = getSimpleExpression(binop.getLeftOperand());
                 op = ColumnCondition.reverseComparison(op);
             }
             conditions.add(new ColumnCondition(left, right, op));
@@ -519,7 +519,7 @@ public class SimplifiedSelectQuery
             if ((whereCondition.getOperation() == Comparison.EQ) &&
                 whereCondition.getRight().isColumn())
                 addColumnEquivalence(whereCondition.getLeft().getColumn(),
-                                     ((ColumnConditionOperand)
+                                     ((ColumnExpression)
                                       whereCondition.getRight()).getColumn());
         }
     }
@@ -572,22 +572,22 @@ public class SimplifiedSelectQuery
         return new JoinJoinNode(left, right, joinType);
     }
 
-    protected ColumnConditionOperand getColumnConditionOperand(ValueNode operand)
+    protected ColumnExpression getColumnExpression(ValueNode operand)
             throws StandardException {
         Column column = getColumnReferenceColumn(operand, null);
         if (column == null) return null;
-        return new ColumnConditionOperand(column);
+        return new ColumnExpression(column);
     }
 
-    protected ConditionOperand getConditionOperand(ValueNode operand) 
+    protected SimpleExpression getSimpleExpression(ValueNode operand) 
             throws StandardException {
         if (operand instanceof ColumnReference)
-            return new ColumnConditionOperand(getColumnReferenceColumn(operand, 
+            return new ColumnExpression(getColumnReferenceColumn(operand, 
                                                                        "Unsupported WHERE operand"));
         else if (operand instanceof ConstantNode)
-            return new LiteralConditionOperand(((ConstantNode)operand).getValue());
+            return new LiteralExpression(((ConstantNode)operand).getValue());
         else if (operand instanceof ParameterNode)
-            return new VariableConditionOperand(((ParameterNode)operand).getParameterNumber());
+            return new ParameterExpression(((ParameterNode)operand).getParameterNumber());
         else
             throw new UnsupportedSQLException("Unsupported WHERE operand",
                                               operand);
@@ -703,7 +703,7 @@ public class SimplifiedSelectQuery
         for (ColumnCondition condition : conditions) {
             conditionTables.add(condition.getLeft().getColumn().getUserTable());
             if (condition.getRight().isColumn())
-                conditionTables.add(((ColumnConditionOperand)
+                conditionTables.add(((ColumnExpression)
                                      condition.getRight()).getColumn().getUserTable());
         }
         joins.promoteOuterJoins(conditionTables);
