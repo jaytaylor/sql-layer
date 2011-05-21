@@ -155,7 +155,8 @@ public class OperatorCompiler
         
         // Try to use an index.
         IndexUsage index = pickBestIndex(squery);
-        if (squery.getSortColumns() != null)
+        if ((squery.getSortColumns() != null) &&
+            !((index != null) && index.isSorting()))
             throw new UnsupportedSQLException("Unsupported ORDER BY");
         
         Set<ColumnCondition> indexConditions = null;
@@ -228,7 +229,8 @@ public class OperatorCompiler
     class IndexUsage implements Comparable<IndexUsage> {
         private Index index;
         private List<ColumnCondition> equalityConditions;
-        ColumnCondition lowCondition, highCondition;
+        private ColumnCondition lowCondition, highCondition;
+        private boolean sorting, reverse;
         
         public IndexUsage(Index index) {
             this.index = index;
@@ -250,13 +252,25 @@ public class OperatorCompiler
             return result;
         }
 
+        // Does this index accomplish the query's sorting?
+        public boolean isSorting() {
+            return sorting;
+        }
+
+        // Should the index iteration be in reverse?
         public boolean isReverse() {
-            return false;
+            return reverse;
         }
 
         // Is this a better index?
         // TODO: Best we can do without any idea of selectivity.
         public int compareTo(IndexUsage other) {
+            if (sorting) {
+                if (!other.sorting)
+                    return +1;
+            }
+            else if (other.sorting)
+                return -1;
             if (equalityConditions != null) {
                 if (other.equalityConditions == null)
                     return +1;
@@ -264,6 +278,8 @@ public class OperatorCompiler
                     return (equalityConditions.size() > other.equalityConditions.size()) 
                         ? +1 : -1;
             }
+            else if (other.equalityConditions != null)
+                return -1;
             int n = 0, on = 0;
             if (lowCondition != null)
                 n++;
@@ -301,13 +317,44 @@ public class OperatorCompiler
                 lowCondition = squery.findColumnConstantCondition(column, Comparison.GT);
                 highCondition = squery.findColumnConstantCondition(column, Comparison.LT);
             }
+            if (squery.getSortColumns() != null) {
+                // Sort columns corresponding to equality constraints
+                // were removed already as pointless. So the remaining
+                // ones just need to be a subset of the remaining
+                // index columns.
+                int nsort = squery.getSortColumns().size();
+                if (nsort <= (ncols - nequals)) {
+                    found: {
+                        for (int i = 0; i < nsort; i++) {
+                            SortColumn sort = squery.getSortColumns().get(i);
+                            IndexColumn index = indexColumns.get(nequals + i);
+                            if (sort.getColumn() != index.getColumn())
+                                break found;
+                            // Iterate in reverse if index goes wrong way.
+                            boolean dirMismatch = (sort.isAscending() != 
+                                                   index.isAscending().booleanValue());
+                            if (i == 0)
+                                reverse = dirMismatch;
+                            else if (reverse != dirMismatch)
+                                break found;
+                        }
+                        // This index will accomplish required sorting.
+                        sorting = true;
+                    }
+                }
+            }
             return ((equalityConditions != null) ||
                     (lowCondition != null) ||
-                    (highCondition != null));
+                    (highCondition != null) ||
+                    sorting);
         }
 
         // Generate key range bounds.
         public IndexKeyRange getIndexKeyRange() {
+            if ((equalityConditions == null) &&
+                (lowCondition == null) && (highCondition == null))
+                return new IndexKeyRange(null, false, null, false);
+
             List<IndexColumn> indexColumns = index.getColumns();
             int nkeys = indexColumns.size();
             Expression[] keys = new Expression[nkeys];
@@ -353,7 +400,8 @@ public class OperatorCompiler
 
     // Pick an index to use.
     protected IndexUsage pickBestIndex(SimplifiedSelectQuery squery) {
-        if (squery.getConditions().isEmpty())
+        if (squery.getConditions().isEmpty() && 
+            (squery.getSortColumns() == null))
             return null;
 
         IndexUsage bestIndex = null;

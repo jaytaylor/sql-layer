@@ -492,7 +492,7 @@ public class SimplifiedSelectQuery
                                                          "Unsupported ORDER BY column");
                 // If column has a constant value, there is no need to sort on it.
                 if (!isColumnConstant(column))
-                    sortColumns.add(new SortColumn(column, orderByColumn.isAscending()));
+                    sc.add(new SortColumn(column, orderByColumn.isAscending()));
             }
             if (!sc.isEmpty())
                 sortColumns = sc;
