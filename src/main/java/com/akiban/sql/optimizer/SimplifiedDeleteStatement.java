@@ -22,24 +22,15 @@ import com.akiban.sql.StandardException;
 import java.util.*;
 
 /**
- * An SQL SELECT statement turned into a simpler form for the interim
+ * An SQL DELETE statement turned into a simpler form for the interim
  * heuristic optimizer.
  */
-public class SimplifiedSelectQuery extends SimplifiedQuery
+public class SimplifiedDeleteStatement extends SimplifiedTableStatement
 {
-    // Turn the given SELECT statement into its simplified form.
-    public SimplifiedSelectQuery(CursorNode cursor, Set<ValueNode> joinConditions)
-            throws StandardException {
-        super(cursor, joinConditions);
 
-        if (cursor.getOrderByList() != null)
-            fillFromOrderBy(cursor.getOrderByList());
-        if (cursor.getOffsetClause() != null)
-            fillOffset(cursor.getOffsetClause());
-        if (cursor.getFetchFirstClause() != null)
-            fillLimit(cursor.getFetchFirstClause());
-        if (cursor.getUpdateMode() == CursorNode.UpdateMode.UPDATE)
-            throw new UnsupportedSQLException("Unsupported FOR UPDATE");
+    public SimplifiedDeleteStatement(DeleteNode delete, Set<ValueNode> joinConditions)
+            throws StandardException {
+        super(delete, joinConditions);
     }
 
 }

@@ -19,27 +19,35 @@ import com.akiban.sql.parser.*;
 
 import com.akiban.sql.StandardException;
 
+import com.akiban.ais.model.UserTable;
+
 import java.util.*;
 
 /**
- * An SQL SELECT statement turned into a simpler form for the interim
- * heuristic optimizer.
+ * An SQL table modifying statement turned into a simpler form for the
+ * interim heuristic optimizer.
  */
-public class SimplifiedSelectQuery extends SimplifiedQuery
+public class SimplifiedTableStatement extends SimplifiedQuery
 {
-    // Turn the given SELECT statement into its simplified form.
-    public SimplifiedSelectQuery(CursorNode cursor, Set<ValueNode> joinConditions)
-            throws StandardException {
-        super(cursor, joinConditions);
+    private UserTable targetTable;
 
-        if (cursor.getOrderByList() != null)
-            fillFromOrderBy(cursor.getOrderByList());
-        if (cursor.getOffsetClause() != null)
-            fillOffset(cursor.getOffsetClause());
-        if (cursor.getFetchFirstClause() != null)
-            fillLimit(cursor.getFetchFirstClause());
-        if (cursor.getUpdateMode() == CursorNode.UpdateMode.UPDATE)
-            throw new UnsupportedSQLException("Unsupported FOR UPDATE");
+    public SimplifiedTableStatement(DMLModStatementNode statement, 
+                                    Set<ValueNode> joinConditions)
+            throws StandardException {
+        super(statement, joinConditions);
+
+        targetTable = (UserTable)statement.getTargetTableName().getUserData();
+        if (targetTable == null)
+            throw new StandardException("Table not bound properly.");
+    }
+
+    public UserTable getTargetTable() {
+        return targetTable;
+    }
+
+    public String toString() {
+        return super.toString() + 
+            "\ntable = " + targetTable;
     }
 
 }

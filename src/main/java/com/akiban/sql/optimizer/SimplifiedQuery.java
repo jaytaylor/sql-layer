@@ -32,7 +32,7 @@ import com.akiban.qp.expression.Expression;
 import java.util.*;
 
 /**
- * An SQL SELECT statement turned into a simpler form for the interim
+ * An SQL DML statement turned into a simpler form for the interim
  * heuristic optimizer.
  * 
  * Takes care of representing what we can optimize today and rejecting
@@ -404,7 +404,7 @@ public class SimplifiedQuery
     private BaseJoinNode joins = null;
     private List<List<SimpleExpression>> values = null;
     private Set<UserTable> tables = new HashSet<UserTable>();
-    private List<SelectColumn> selectColumns = new ArrayList<SelectColumn>();
+    private List<SelectColumn> selectColumns = null;
     private List<ColumnCondition> conditions = new ArrayList<ColumnCondition>();
     private List<SortColumn> sortColumns = null;
     private int offset = 0;
@@ -508,6 +508,7 @@ public class SimplifiedQuery
             conditions.add(new ColumnCondition(left, right, op));
         }
         
+        selectColumns = new ArrayList<SelectColumn>(select.getResultColumns().size());
         for (ResultColumn result : select.getResultColumns()) {
             Column column = getColumnReferenceColumn(result.getExpression(),
                                                      "Unsupported result column");
@@ -611,7 +612,7 @@ public class SimplifiedQuery
             throws StandardException {
         if (operand instanceof ColumnReference)
             return new ColumnExpression(getColumnReferenceColumn(operand, 
-                                                                       "Unsupported WHERE operand"));
+                                                                 "Unsupported WHERE operand"));
         else if (operand instanceof ConstantNode)
             return new LiteralExpression(((ConstantNode)operand).getValue());
         else if (operand instanceof ParameterNode)
