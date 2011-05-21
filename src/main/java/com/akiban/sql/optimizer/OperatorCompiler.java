@@ -152,14 +152,29 @@ public class OperatorCompiler
         }
     }
 
-    public Result compile(CursorNode cursor) throws StandardException {
-        // Get into standard form.
-        binder.bind(cursor);
-        cursor = (CursorNode)booleanNormalizer.normalize(cursor);
-        typeComputer.compute(cursor);
-        cursor = (CursorNode)subqueryFlattener.flatten(cursor);
-        grouper.group(cursor);
+    public Result compile(DMLStatementNode stmt) throws StandardException {
+        switch (stmt.getNodeType()) {
+        case NodeTypes.CURSOR_NODE:
+            return compileSelect((CursorNode)stmt);
+        default:
+            throw new UnsupportedSQLException("Unsupported statement type: " + 
+                                              stmt.statementToString());
+        }
+    }
 
+    protected DMLStatementNode bindAndGroup(DMLStatementNode stmt) 
+            throws StandardException {
+        binder.bind(stmt);
+        stmt = (DMLStatementNode)booleanNormalizer.normalize(stmt);
+        typeComputer.compute(stmt);
+        stmt = subqueryFlattener.flatten(stmt);
+        grouper.group(stmt);
+        return stmt;
+    }
+
+    public Result compileSelect(CursorNode cursor) throws StandardException {
+        // Get into standard form.
+        cursor = (CursorNode)bindAndGroup(cursor);
         SimplifiedSelectQuery squery = 
             new SimplifiedSelectQuery(cursor, grouper.getJoinConditions());
         GroupBinding group = squery.getGroup();
@@ -311,7 +326,7 @@ public class OperatorCompiler
         }
 
         // Can this index be used for part of the given query?
-        public boolean usable(SimplifiedSelectQuery squery) {
+        public boolean usable(SimplifiedQuery squery) {
             List<IndexColumn> indexColumns = index.getColumns();
             int ncols = indexColumns.size();
             int nequals = 0;
@@ -415,7 +430,7 @@ public class OperatorCompiler
     }
 
     // Pick an index to use.
-    protected IndexUsage pickBestIndex(SimplifiedSelectQuery squery) {
+    protected IndexUsage pickBestIndex(SimplifiedQuery squery) {
         if (squery.getConditions().isEmpty() && 
             (squery.getSortColumns() == null))
             return null;
