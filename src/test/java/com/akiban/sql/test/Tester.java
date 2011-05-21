@@ -17,19 +17,29 @@ package com.akiban.sql.test;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.compiler.BooleanNormalizer;
-import com.akiban.sql.optimizer.AISTypeComputer;
 import com.akiban.sql.optimizer.AISBinder;
+import com.akiban.sql.optimizer.AISTypeComputer;
 import com.akiban.sql.optimizer.BindingNodeFactory;
 import com.akiban.sql.optimizer.BoundNodeToString;
 import com.akiban.sql.optimizer.Grouper;
-import com.akiban.sql.optimizer.SubqueryFlattener;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.OperatorCompilerTest;
+import com.akiban.sql.optimizer.SimplifiedDeleteStatement;
+import com.akiban.sql.optimizer.SimplifiedInsertStatement;
+import com.akiban.sql.optimizer.SimplifiedQuery;
 import com.akiban.sql.optimizer.SimplifiedSelectQuery;
+import com.akiban.sql.optimizer.SimplifiedUpdateStatement;
+import com.akiban.sql.optimizer.SubqueryFlattener;
+import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.parser.DMLStatementNode;
+import com.akiban.sql.parser.DMLStatementNode;
+import com.akiban.sql.parser.DeleteNode;
+import com.akiban.sql.parser.InsertNode;
+import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.parser.CursorNode;
+import com.akiban.sql.parser.UpdateNode;
+import com.akiban.sql.parser.ValueNode;
 import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.ddl.SchemaDef;
@@ -145,9 +155,8 @@ public class Tester
             case SIMPLIFY:
             case SIMPLIFY_REORDER:
                 {
-                    SimplifiedSelectQuery query = 
-                        new SimplifiedSelectQuery((CursorNode)stmt, 
-                                                  grouper.getJoinConditions());
+                    SimplifiedQuery query = simplify((DMLStatementNode)stmt,
+                                                     grouper.getJoinConditions());
                     if (action == Action.SIMPLIFY_REORDER)
                         query.reorderJoins();
                     if (!silent)
@@ -162,6 +171,24 @@ public class Tester
                 }
                 break;
             }
+        }
+    }
+
+    private static SimplifiedQuery simplify(DMLStatementNode stmt,
+                                            Set<ValueNode> joinConditions) 
+            throws Exception {
+        switch (stmt.getNodeType()) {
+        case NodeTypes.CURSOR_NODE:
+            return new SimplifiedSelectQuery((CursorNode)stmt, joinConditions);
+        case NodeTypes.DELETE_NODE:
+            return new SimplifiedDeleteStatement((DeleteNode)stmt, joinConditions);
+        case NodeTypes.UPDATE_NODE:
+            return new SimplifiedUpdateStatement((UpdateNode)stmt, joinConditions);
+        case NodeTypes.INSERT_NODE:
+            return new SimplifiedInsertStatement((InsertNode)stmt, joinConditions);
+        default:
+            throw new StandardException("Unsupported statement type: " +
+                                        stmt.statementToString());
         }
     }
 

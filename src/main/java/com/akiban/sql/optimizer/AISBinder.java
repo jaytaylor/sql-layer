@@ -99,6 +99,9 @@ public class AISBinder implements Visitor
         case NodeTypes.CURSOR_NODE:
         case NodeTypes.FROM_SUBQUERY:
         case NodeTypes.SUBQUERY_NODE:
+        case NodeTypes.DELETE_NODE:
+        case NodeTypes.INSERT_NODE:
+        case NodeTypes.UPDATE_NODE:
             pushBindingContext();
         }
 
@@ -110,6 +113,9 @@ public class AISBinder implements Visitor
         case NodeTypes.CURSOR_NODE:
         case NodeTypes.FROM_SUBQUERY:
         case NodeTypes.SUBQUERY_NODE:
+        case NodeTypes.DELETE_NODE:
+        case NodeTypes.INSERT_NODE:
+        case NodeTypes.UPDATE_NODE:
             popBindingContext();
             break;
         }
@@ -539,6 +545,8 @@ public class AISBinder implements Visitor
      */
     public void expandAllsAndNameColumns(ResultColumnList rcl, FromList fromList) 
             throws StandardException {
+        if (rcl == null) return;
+
         boolean expanded = false;
         ResultColumnList allExpansion;
         TableName fullTableName;

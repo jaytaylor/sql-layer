@@ -238,8 +238,11 @@ public class OperatorCompiler
 
         int ncols = squery.getSelectColumns().size();
         List<Column> resultColumns = new ArrayList<Column>(ncols);
-        for (SelectColumn selectColumn : squery.getSelectColumns()) {
-            resultColumns.add(selectColumn.getColumn());
+        for (SimpleExpression selectColumn : squery.getSelectColumns()) {
+            if (!selectColumn.isColumn())
+                throw new UnsupportedSQLException("Unsupported result column: " + 
+                                                  selectColumn);
+            resultColumns.add(((ColumnExpression)selectColumn).getColumn());
         }
         int[] resultColumnOffsets = new int[ncols];
         for (int i = 0; i < ncols; i++) {

@@ -181,23 +181,6 @@ public class SimplifiedQuery
         }
     }
 
-    // A result column (necessarily from an actual table column).
-    public static class SelectColumn {
-        private Column column;
-
-        public SelectColumn(Column column) {
-            this.column = column;
-        }
-
-        public Column getColumn() {
-            return column;
-        }
-
-        public String toString() {
-            return column.toString();
-        }
-    }
-
     // One of the operands to a boolean equality / inequality
     // condition, the only kind currently supported.
     public static abstract class SimpleExpression {
@@ -404,7 +387,7 @@ public class SimplifiedQuery
     private BaseJoinNode joins = null;
     private List<List<SimpleExpression>> values = null;
     private Set<UserTable> tables = new HashSet<UserTable>();
-    private List<SelectColumn> selectColumns = null;
+    private List<SimpleExpression> selectColumns = null;
     private List<ColumnCondition> conditions = new ArrayList<ColumnCondition>();
     private List<SortColumn> sortColumns = null;
     private int offset = 0;
@@ -508,11 +491,13 @@ public class SimplifiedQuery
             conditions.add(new ColumnCondition(left, right, op));
         }
         
-        selectColumns = new ArrayList<SelectColumn>(select.getResultColumns().size());
-        for (ResultColumn result : select.getResultColumns()) {
-            Column column = getColumnReferenceColumn(result.getExpression(),
-                                                     "Unsupported result column");
-            selectColumns.add(new SelectColumn(column));
+        ResultColumnList rcl = select.getResultColumns();
+        if (rcl != null) {
+            selectColumns = new ArrayList<SimpleExpression>(rcl.size());
+            for (ResultColumn result : select.getResultColumns()) {
+                SimpleExpression column = getSimpleExpression(result.getExpression());
+                selectColumns.add(column);
+            }
         }
 
         for (ValueNode joinCondition : joinConditions) {
@@ -662,7 +647,7 @@ public class SimplifiedQuery
     public Set<UserTable> getTables() {
         return tables;
     }
-    public List<SelectColumn> getSelectColumns() {
+    public List<SimpleExpression> getSelectColumns() {
         return selectColumns;
     }
     public List<ColumnCondition> getConditions() {
@@ -823,16 +808,20 @@ public class SimplifiedQuery
             str.append("\nvalues: ");
             str.append(values);
         }
-        str.append("\nselect: [");
-        for (int i = 0; i < selectColumns.size(); i++) {
-            if (i > 0) str.append(", ");
-            str.append(selectColumns.get(i));
+        if (selectColumns != null) {
+            str.append("\nselect: [");
+            for (int i = 0; i < selectColumns.size(); i++) {
+                if (i > 0) str.append(", ");
+                str.append(selectColumns.get(i));
+            }
+            str.append("]");
         }
-        str.append("]");
-        str.append("\nconditions: ");
-        for (int i = 0; i < conditions.size(); i++) {
-            if (i > 0) str.append(",\n  ");
-            str.append(conditions.get(i));
+        if (!conditions.isEmpty()) {
+            str.append("\nconditions: ");
+            for (int i = 0; i < conditions.size(); i++) {
+                if (i > 0) str.append(",\n  ");
+                str.append(conditions.get(i));
+            }
         }
         if (sortColumns != null) {
             str.append("\nsort: ");
