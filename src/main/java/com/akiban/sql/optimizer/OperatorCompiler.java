@@ -86,15 +86,21 @@ public class OperatorCompiler
         private RowType resultRowType;
         private List<Column> resultColumns;
         private int[] resultColumnOffsets;
+        private int offset = 0;
+        private int limit = -1;
 
         public Result(PhysicalOperator resultOperator,
                       RowType resultRowType,
                       List<Column> resultColumns,
-                      int[] resultColumnOffsets) {
+                      int[] resultColumnOffsets,
+                      int offset,
+                      int limit) {
             this.resultOperator = resultOperator;
             this.resultRowType = resultRowType;
             this.resultColumns = resultColumns;
             this.resultColumnOffsets = resultColumnOffsets;
+            this.offset = offset;
+            this.limit = limit;
         }
 
         public PhysicalOperator getResultOperator() {
@@ -108,6 +114,12 @@ public class OperatorCompiler
         }
         public int[] getResultColumnOffsets() {
             return resultColumnOffsets;
+        }
+        public int getOffset() {
+            return offset;
+        }
+        public int getLimit() {
+            return limit;
         }
 
         @Override
@@ -221,8 +233,12 @@ public class OperatorCompiler
             resultColumnOffsets[i] = fieldOffsets.get(table) + column.getPosition();
         }
 
+        int offset = squery.getOffset();
+        int limit = squery.getLimit();
+
         return new Result(resultOperator, resultRowType, 
-                          resultColumns, resultColumnOffsets);
+                          resultColumns, resultColumnOffsets,
+                          offset, limit);
     }
 
     // A possible index.

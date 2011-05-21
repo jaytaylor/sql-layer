@@ -42,17 +42,23 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     private PhysicalOperator resultOperator;
     private RowType resultRowType;
     private int[] resultColumnOffsets;
-
+    private int offset = 0;
+    private int limit = -1;
+        
     public PostgresOperatorStatement(StoreAdapter store,
                                      PhysicalOperator resultOperator,
                                      RowType resultRowType,
                                      List<Column> resultColumns,
-                                     int[] resultColumnOffsets) {
+                                     int[] resultColumnOffsets,
+                                     int offset,
+                                     int limit) {
         super(resultColumns);
         this.store = store;
         this.resultOperator = resultOperator;
         this.resultRowType = resultRowType;
         this.resultColumnOffsets = resultColumnOffsets;
+        this.offset = offset;
+        this.limit = limit;
     }
     
     public void execute(PostgresServerSession server, int maxrows)
@@ -60,6 +66,11 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
         Cursor cursor = API.cursor(resultOperator, store);
+        int nskip = offset;
+        if (limit > 0) {
+            if ((maxrows == 0) || (maxrows > limit))
+                maxrows = limit;
+        }
         int nrows = 0;
         try {
             cursor.open(bindings);
@@ -69,6 +80,10 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             while (cursor.next()) {
                 Row row = cursor.currentRow();
                 if (row.rowType() == resultRowType) {
+                    if (nskip > 0) {
+                        nskip--;
+                        continue;
+                    }
                     messenger.beginMessage(PostgresMessenger.DATA_ROW_TYPE);
                     messenger.writeShort(ncols);
                     for (int i = 0; i < ncols; i++) {
@@ -119,10 +134,12 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                               RowType resultRowType,
                               List<Column> resultColumns,
                               int[] resultColumnOffsets,
+                              int offset, int limit,
                               Bindings bindings,
                               boolean[] columnBinary, boolean defaultColumnBinary) {
             super(store, 
-                  resultOperator, resultRowType, resultColumns, resultColumnOffsets);
+                  resultOperator, resultRowType, resultColumns, resultColumnOffsets,
+                  offset, limit);
             this.bindings = bindings;
             this.columnBinary = columnBinary;
             this.defaultColumnBinary = defaultColumnBinary;
@@ -161,7 +178,8 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         }
         return new BoundStatement(store, resultOperator, resultRowType, 
                                   getColumns(), resultColumnOffsets,
-                                  bindings, columnBinary, defaultColumnBinary);
+                                  offset, limit, bindings, 
+                                  columnBinary, defaultColumnBinary);
     }
 
 }

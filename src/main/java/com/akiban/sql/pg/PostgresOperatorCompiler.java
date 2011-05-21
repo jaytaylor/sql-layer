@@ -99,7 +99,9 @@ public class PostgresOperatorCompiler extends OperatorCompiler
                                              result.getResultOperator(),
                                              result.getResultRowType(),
                                              result.getResultColumns(),
-                                             result.getResultColumnOffsets());
+                                             result.getResultColumnOffsets(),
+                                             result.getOffset(),
+                                             result.getLimit());
     }
 
     // The current implementation of index cursors expects that the
