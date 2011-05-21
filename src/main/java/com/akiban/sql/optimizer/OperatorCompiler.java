@@ -15,7 +15,7 @@
 
 package com.akiban.sql.optimizer;
 
-import com.akiban.sql.optimizer.SimplifiedSelectQuery.*;
+import com.akiban.sql.optimizer.SimplifiedQuery.*;
 
 import com.akiban.sql.parser.*;
 import com.akiban.sql.compiler.*;
