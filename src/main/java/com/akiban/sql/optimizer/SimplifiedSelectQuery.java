@@ -402,6 +402,7 @@ public class SimplifiedSelectQuery
     
     private GroupBinding group = null;
     private BaseJoinNode joins = null;
+    private List<List<SimpleExpression>> values = null;
     private Set<UserTable> tables = new HashSet<UserTable>();
     private List<SelectColumn> selectColumns = new ArrayList<SelectColumn>();
     private List<ColumnCondition> conditions = new ArrayList<ColumnCondition>();
@@ -414,7 +415,47 @@ public class SimplifiedSelectQuery
     // Turn the given SELECT statement into its simplified form.
     public SimplifiedSelectQuery(CursorNode cursor, Set<ValueNode> joinConditions) 
             throws StandardException {
-        SelectNode select = (SelectNode)cursor.getResultSetNode();
+        fillFromResultSet(cursor.getResultSetNode(), joinConditions);
+
+        if (cursor.getOrderByList() != null)
+            fillFromOrderBy(cursor.getOrderByList());
+        if (cursor.getOffsetClause() != null)
+            offset = getIntegerConstant(cursor.getOffsetClause(),
+                                        "Unsupported OFFSET");
+        if (cursor.getFetchFirstClause() != null)
+            limit = getIntegerConstant(cursor.getFetchFirstClause(),
+                                       "Unsupported LIMIT");
+        if (cursor.getUpdateMode() == CursorNode.UpdateMode.UPDATE)
+            throw new UnsupportedSQLException("Unsupported FOR UPDATE");
+    }
+
+    protected void fillFromResultSet(ResultSetNode resultSet,
+                                     Set<ValueNode> joinConditions) 
+            throws StandardException {
+        if (resultSet instanceof SelectNode) {
+            fillFromSelect((SelectNode)resultSet, joinConditions);
+            return;
+        }
+
+        values = new ArrayList<List<SimpleExpression>>();
+        fillFromValues(resultSet);
+    }
+
+    protected void fillFromValues(ResultSetNode resultSet)
+            throws StandardException {
+        if (resultSet instanceof RowResultSetNode) {
+        }
+        else if (resultSet instanceof UnionNode) {
+            UnionNode valuesList = (UnionNode)resultSet;
+            fillFromValues(valuesList.getLeftResultSet());
+            fillFromValues(valuesList.getRightResultSet());
+        }
+        else
+            throw new UnsupportedSQLException("Unsupported result set", resultSet);
+    }
+
+    protected void fillFromSelect(SelectNode select, Set<ValueNode> joinConditions) 
+            throws StandardException {
         if (select.getGroupByList() != null)
             throw new UnsupportedSQLException("Unsupported GROUP BY");
         if (select.isDistinct())
@@ -484,28 +525,6 @@ public class SimplifiedSelectQuery
                                                      "Unsupported result column");
             selectColumns.add(new SelectColumn(column));
         }
-        
-        if (cursor.getOrderByList() != null) {
-            List<SortColumn> sc = new ArrayList<SortColumn>();
-            for (OrderByColumn orderByColumn : cursor.getOrderByList()) {
-                Column column = getColumnReferenceColumn(orderByColumn.getExpression(), 
-                                                         "Unsupported ORDER BY column");
-                // If column has a constant value, there is no need to sort on it.
-                if (!isColumnConstant(column))
-                    sc.add(new SortColumn(column, orderByColumn.isAscending()));
-            }
-            if (!sc.isEmpty())
-                sortColumns = sc;
-        }
-
-        if (cursor.getOffsetClause() != null)
-            offset = getIntegerConstant(cursor.getOffsetClause(),
-                                        "Unsupported OFFSET");
-        if (cursor.getFetchFirstClause() != null)
-            limit = getIntegerConstant(cursor.getFetchFirstClause(),
-                                       "Unsupported LIMIT");
-        if (cursor.getUpdateMode() == CursorNode.UpdateMode.UPDATE)
-            throw new UnsupportedSQLException("Unsupported FOR UPDATE");
 
         for (ValueNode joinCondition : joinConditions) {
             BinaryRelationalOperatorNode binop = (BinaryRelationalOperatorNode)
@@ -522,6 +541,19 @@ public class SimplifiedSelectQuery
                                      ((ColumnExpression)
                                       whereCondition.getRight()).getColumn());
         }
+    }
+
+    protected void fillFromOrderBy(OrderByList orderByList) throws StandardException {
+        List<SortColumn> sc = new ArrayList<SortColumn>();
+        for (OrderByColumn orderByColumn : orderByList) {
+            Column column = getColumnReferenceColumn(orderByColumn.getExpression(), 
+                                                     "Unsupported ORDER BY column");
+            // If column has a constant value, there is no need to sort on it.
+            if (!isColumnConstant(column))
+                sc.add(new SortColumn(column, orderByColumn.isAscending()));
+        }
+        if (!sc.isEmpty())
+            sortColumns = sc;
     }
 
     protected BaseJoinNode getJoinNode(FromTable fromTable) throws StandardException {
@@ -626,6 +658,9 @@ public class SimplifiedSelectQuery
     }
     public BaseJoinNode getJoins() {
         return joins;
+    }
+    public List<List<SimpleExpression>> getValues() {
+        return values;
     }
     public Set<UserTable> getTables() {
         return tables;
