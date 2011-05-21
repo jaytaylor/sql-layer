@@ -486,12 +486,16 @@ public class SimplifiedSelectQuery
         }
         
         if (cursor.getOrderByList() != null) {
-            sortColumns = new ArrayList<SortColumn>();
+            List<SortColumn> sc = new ArrayList<SortColumn>();
             for (OrderByColumn orderByColumn : cursor.getOrderByList()) {
                 Column column = getColumnReferenceColumn(orderByColumn.getExpression(), 
                                                          "Unsupported ORDER BY column");
-                sortColumns.add(new SortColumn(column, orderByColumn.isAscending()));
+                // If column has a constant value, there is no need to sort on it.
+                if (!isColumnConstant(column))
+                    sortColumns.add(new SortColumn(column, orderByColumn.isAscending()));
             }
+            if (!sc.isEmpty())
+                sortColumns = sc;
         }
 
         if (cursor.getOffsetClause() != null)
@@ -768,6 +772,11 @@ public class SimplifiedSelectQuery
                 return columnCondition;
         }
         return null;
+    }
+
+    // Is this column constant due to equality constraint?
+    public boolean isColumnConstant(Column column) {
+        return (findColumnConstantCondition(column, Comparison.EQ) != null);
     }
 
     public String toString() {
