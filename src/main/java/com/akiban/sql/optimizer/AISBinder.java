@@ -92,6 +92,11 @@ public class AISBinder implements Visitor
             case NodeTypes.COLUMN_REFERENCE:
                 columnReference((ColumnReference)node);
                 break;
+            case NodeTypes.INSERT_NODE:
+            case NodeTypes.UPDATE_NODE:
+            case NodeTypes.DELETE_NODE:
+                dmlModStatementNode((DMLModStatementNode)node);
+                break;
             }
         }
 
@@ -683,6 +688,31 @@ public class AISBinder implements Visitor
             valueNode.setUserData(new ColumnBinding(fromTable, column));
         }
         return rcList;
+    }
+
+    protected void dmlModStatementNode(DMLModStatementNode node)
+            throws StandardException {
+        TableName tableName = node.getTargetTableName();
+        Table table = lookupTableName(tableName);
+        tableName.setUserData(table);
+        
+        ResultColumnList targetColumns = null;
+        if (node instanceof InsertNode)
+            targetColumns = ((InsertNode)node).getTargetColumnList();
+        else
+            targetColumns = node.getResultSetNode().getResultColumns();
+        if (targetColumns != null) {
+            for (ResultColumn targetColumn : targetColumns) {
+                ColumnReference columnReference = targetColumn.getReference();
+                String columnName = columnReference.getColumnName();
+                Column column = table.getColumn(columnName);
+                if (column == null)
+                    throw new StandardException("Target column " + columnName + 
+                                                " not found");
+                ColumnBinding columnBinding = new ColumnBinding(null, column);
+                columnReference.setUserData(columnBinding);
+            }
+        }
     }
 
     protected static class BindingContext {
