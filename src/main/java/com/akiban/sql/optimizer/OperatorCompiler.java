@@ -102,6 +102,11 @@ public class OperatorCompiler
             this.offset = offset;
             this.limit = limit;
         }
+        public Result(PhysicalOperator resultOperator,
+                      RowType resultRowType) {
+            this.resultOperator = resultOperator;
+            this.resultRowType = resultRowType;
+        }
 
         public PhysicalOperator getResultOperator() {
             return resultOperator;
@@ -267,10 +272,58 @@ public class OperatorCompiler
 
     public Result compileUpdate(UpdateNode update) throws StandardException {
         update = (UpdateNode)bindAndGroup(update);
-        SimplifiedUpdateStatement sstmt = 
+        SimplifiedUpdateStatement supdate = 
             new SimplifiedUpdateStatement(update, grouper.getJoinConditions());
 
-        throw new UnsupportedSQLException("No Update operators yet");
+        UserTable targetTable = supdate.getTargetTable();
+        GroupTable groupTable = targetTable.getGroup().getGroupTable();
+        UserTableRowType targetRowType = userTableRowType(targetTable);
+        
+        // TODO: If we flattened subqueries (e.g., IN or EXISTS) into
+        // the main result set, then the index and conditions might be
+        // on joined tables, which might need to be looked up and / or
+        // flattened in before non-index conditions.
+
+        IndexUsage index = pickBestIndex(supdate);
+        Set<ColumnCondition> indexConditions = null;
+        PhysicalOperator resultOperator;
+        if (index != null) {
+            indexConditions = index.getIndexConditions();
+            Index iindex = index.getIndex();
+            assert (targetTable == iindex.getTable());
+            PhysicalOperator indexOperator = indexScan_Default(iindex, 
+                                                               index.isReverse(),
+                                                               index.getIndexKeyRange());
+            IndexRowType indexType = targetRowType.indexRowType(iindex);
+            resultOperator = lookup_Default(indexOperator, groupTable,
+                                            indexType, targetRowType);
+        }
+        else {
+            resultOperator = groupScan_Default(groupTable);
+        }
+        
+        Map<UserTable,Integer> fieldOffsets = new HashMap<UserTable,Integer>(1);
+        fieldOffsets.put(targetTable, 0);
+        for (ColumnCondition condition : supdate.getConditions()) {
+            if ((indexConditions != null) && indexConditions.contains(condition))
+                continue;
+            Expression predicate = condition.generateExpression(fieldOffsets);
+            resultOperator = select_HKeyOrdered(resultOperator,
+                                                targetRowType,
+                                                predicate);
+        }
+        
+        Expression[] updates = new Expression[targetRowType.nFields()];
+        for (SimplifiedUpdateStatement.UpdateColumn updateColumn : 
+                 supdate.getUpdateColumns()) {
+            updates[updateColumn.getColumn().getPosition()] =
+                updateColumn.getValue().generateExpression(fieldOffsets);
+        }
+        ExpressionRow updateRow = new ExpressionRow(targetRowType, updates);
+
+        resultOperator = new com.akiban.qp.physicaloperator.Update_Default(resultOperator,
+                                            new ExpressionRowUpdateFunction(updateRow));
+        return new Result(resultOperator, targetRowType);
     }
 
     public Result compileInsert(InsertNode insert) throws StandardException {
