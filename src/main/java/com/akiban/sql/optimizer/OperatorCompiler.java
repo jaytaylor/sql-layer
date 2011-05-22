@@ -603,13 +603,13 @@ public class OperatorCompiler
                 BaseJoinNode right = jjoin.getRight();
                 FlattenState fleft = flatten(left);
                 FlattenState fright = flatten(right);
-                int flags = 0x00;
+                int flags = DEFAULT;
                 switch (jjoin.getJoinType()) {
                 case LEFT:
-                    flags = 0x08;
+                    flags = LEFT_JOIN;
                     break;
                 case RIGHT:
-                    flags = 0x10;
+                    flags = RIGHT_JOIN;
                     break;
                 }
                 resultOperator = flatten_HKeyOrdered(resultOperator,
