@@ -75,4 +75,27 @@ public class SimplifiedUpdateStatement extends SimplifiedTableStatement
         }
     }
     
+    public String toString() {
+        StringBuilder str = new StringBuilder(super.toString());
+        str.append("\ntarget: ");
+        str.append(getTargetTable());
+        str.append("\nupdate: [");
+        for (int i = 0; i < getUpdateColumns().size(); i++) {
+            if (i > 0) str.append(", ");
+            UpdateColumn updateColumn = getUpdateColumns().get(i);
+            str.append(updateColumn.getColumn());
+            str.append(" = ");
+            str.append(updateColumn.getValue());
+        }
+        str.append("]");
+        if (!getConditions().isEmpty()) {
+            str.append("\nconditions: ");
+            for (int i = 0; i < getConditions().size(); i++) {
+                if (i > 0) str.append(",\n  ");
+                str.append(getConditions().get(i));
+            }
+        }
+        return str.toString();
+    }
+
 }

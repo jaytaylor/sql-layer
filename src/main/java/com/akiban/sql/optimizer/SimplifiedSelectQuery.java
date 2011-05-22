@@ -17,6 +17,8 @@ package com.akiban.sql.optimizer;
 
 import com.akiban.sql.parser.*;
 
+import com.akiban.ais.model.Column;
+
 import com.akiban.sql.StandardException;
 
 import java.util.*;
@@ -40,6 +42,60 @@ public class SimplifiedSelectQuery extends SimplifiedQuery
             fillLimit(cursor.getFetchFirstClause());
         if (cursor.getUpdateMode() == CursorNode.UpdateMode.UPDATE)
             throw new UnsupportedSQLException("Unsupported FOR UPDATE");
+    }
+
+    public String toString() {
+        StringBuilder str = new StringBuilder(super.toString());
+        str.append("\ngroup: ");
+        str.append(getGroup());
+        if (getJoins() != null) {
+            str.append("\njoins: ");
+            str.append(getJoins());
+        }
+        else if (getValues() != null) {
+            str.append("\nvalues: ");
+            str.append(getValues());
+        }
+        if (getSelectColumns() != null) {
+            str.append("\nselect: [");
+            for (int i = 0; i < getSelectColumns().size(); i++) {
+                if (i > 0) str.append(", ");
+                str.append(getSelectColumns().get(i));
+            }
+            str.append("]");
+        }
+        if (!getConditions().isEmpty()) {
+            str.append("\nconditions: ");
+            for (int i = 0; i < getConditions().size(); i++) {
+                if (i > 0) str.append(",\n  ");
+                str.append(getConditions().get(i));
+            }
+        }
+        if (getSortColumns() != null) {
+            str.append("\nsort: ");
+            for (int i = 0; i < getSortColumns().size(); i++) {
+                if (i > 0) str.append(", ");
+                str.append(getSortColumns().get(i));
+            }
+        }
+        if (getOffset() > 0) {
+            str.append("\noffset: ");
+            str.append(getOffset());
+        }
+        if (getLimit() >= 0) {
+            str.append("\nlimit: ");
+            str.append(getLimit());
+        }
+        str.append("\nequivalences: ");
+        for (int i = 0; i < getColumnEquivalences().size(); i++) {
+            if (i > 0) str.append(",\n  ");
+            int j = 0;
+            for (Column column : getColumnEquivalences().get(i)) {
+                if (j++ > 0) str.append(" = ");
+                str.append(column);
+            }
+        }
+        return str.toString();
     }
 
 }

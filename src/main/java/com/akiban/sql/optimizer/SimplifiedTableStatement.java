@@ -45,9 +45,4 @@ public class SimplifiedTableStatement extends SimplifiedQuery
         return targetTable;
     }
 
-    public String toString() {
-        return super.toString() + 
-            "\ntable = " + targetTable;
-    }
-
 }

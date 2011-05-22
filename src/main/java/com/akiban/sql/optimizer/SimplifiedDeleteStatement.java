@@ -33,4 +33,18 @@ public class SimplifiedDeleteStatement extends SimplifiedTableStatement
         super(delete, joinConditions);
     }
 
+    public String toString() {
+        StringBuilder str = new StringBuilder(super.toString());
+        str.append("\ntarget: ");
+        str.append(getTargetTable());
+        if (!getConditions().isEmpty()) {
+            str.append("\nconditions: ");
+            for (int i = 0; i < getConditions().size(); i++) {
+                if (i > 0) str.append(",\n  ");
+                str.append(getConditions().get(i));
+            }
+        }
+        return str.toString();
+    }
+
 }

@@ -35,7 +35,19 @@ public class SimplifiedInsertStatement extends SimplifiedTableStatement
             throws StandardException {
         super(insert, joinConditions);
 
-        fillTargetColumns(insert.getTargetColumnList());
+        if (insert.getTargetColumnList() != null)
+            fillTargetColumns(insert.getTargetColumnList());
+        else {
+            // No explicit column list: use DDL order.
+            int ncols = insert.getResultSetNode().getResultColumns().size();
+            List<Column> aisColumns = getTargetTable().getColumns();
+            if (ncols > aisColumns.size())
+                ncols = aisColumns.size();
+            targetColumns = new ArrayList<Column>(ncols);
+            for (int i = 0; i < ncols; i++) {
+                targetColumns.add(aisColumns.get(i));
+            }
+        }
     }
 
     public List<Column> getTargetColumns() {
@@ -44,17 +56,74 @@ public class SimplifiedInsertStatement extends SimplifiedTableStatement
 
     protected void fillTargetColumns(ResultColumnList rcl) 
             throws StandardException {
-        targetColumns = new ArrayList<Column>(targetColumns.size());
+        targetColumns = new ArrayList<Column>(rcl.size());
         for (ResultColumn resultColumn : rcl) {
-            Column column = getColumnReferenceColumn(resultColumn.getExpression(),
+            Column column = getColumnReferenceColumn(resultColumn.getReference(),
                                                      "Unsupported target column");
             targetColumns.add(column);
         }
     }
 
     public String toString() {
-        return super.toString() + 
-            "\ncolumns = " + targetColumns;
+        StringBuilder str = new StringBuilder(super.toString());
+        str.append("\ntarget: ");
+        str.append(getTargetTable());
+        str.append("\ncolumns: [");
+        for (int i = 0; i < getTargetColumns().size(); i++) {
+            if (i > 0) str.append(", ");
+            str.append(getTargetColumns().get(i));
+        }
+        str.append("]");
+        str.append("\ngroup: ");
+        str.append(getGroup());
+        if (getJoins() != null) {
+            str.append("\njoins: ");
+            str.append(getJoins());
+        }
+        else if (getValues() != null) {
+            str.append("\nvalues: ");
+            str.append(getValues());
+        }
+        if (getSelectColumns() != null) {
+            str.append("\nselect: [");
+            for (int i = 0; i < getSelectColumns().size(); i++) {
+                if (i > 0) str.append(", ");
+                str.append(getSelectColumns().get(i));
+            }
+            str.append("]");
+        }
+        if (!getConditions().isEmpty()) {
+            str.append("\nconditions: ");
+            for (int i = 0; i < getConditions().size(); i++) {
+                if (i > 0) str.append(",\n  ");
+                str.append(getConditions().get(i));
+            }
+        }
+        if (getSortColumns() != null) {
+            str.append("\nsort: ");
+            for (int i = 0; i < getSortColumns().size(); i++) {
+                if (i > 0) str.append(", ");
+                str.append(getSortColumns().get(i));
+            }
+        }
+        if (getOffset() > 0) {
+            str.append("\noffset: ");
+            str.append(getOffset());
+        }
+        if (getLimit() >= 0) {
+            str.append("\nlimit: ");
+            str.append(getLimit());
+        }
+        str.append("\nequivalences: ");
+        for (int i = 0; i < getColumnEquivalences().size(); i++) {
+            if (i > 0) str.append(",\n  ");
+            int j = 0;
+            for (Column column : getColumnEquivalences().get(i)) {
+                if (j++ > 0) str.append(" = ");
+                str.append(column);
+            }
+        }
+        return str.toString();
     }
 
 }

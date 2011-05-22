@@ -415,6 +415,12 @@ public class SimplifiedQuery
     protected void fillFromValues(ResultSetNode resultSet)
             throws StandardException {
         if (resultSet instanceof RowResultSetNode) {
+            ResultColumnList resultColumns = resultSet.getResultColumns();
+            List<SimpleExpression> row = new ArrayList<SimpleExpression>(resultColumns.size());
+            for (ResultColumn resultColumn : resultColumns) {
+                row.add(getSimpleExpression(resultColumn.getExpression()));
+            }
+            values.add(row);
         }
         else if (resultSet instanceof UnionNode) {
             UnionNode valuesList = (UnionNode)resultSet;
@@ -663,6 +669,10 @@ public class SimplifiedQuery
         return limit;
     }
     
+    public List<Set<Column>> getColumnEquivalences() {
+        return columnEquivalences;
+    }
+
     public Set<Column> getColumnEquivalences(Column column) {
         return columnEquivalencesByColumn.get(column);
     }
@@ -796,57 +806,4 @@ public class SimplifiedQuery
         return (findColumnConstantCondition(column, Comparison.EQ) != null);
     }
 
-    public String toString() {
-        StringBuilder str = new StringBuilder(super.toString());
-        str.append("\ngroup: ");
-        str.append(group);
-        if (joins != null) {
-            str.append("\njoins: ");
-            str.append(joins);
-        }
-        else if (values != null) {
-            str.append("\nvalues: ");
-            str.append(values);
-        }
-        if (selectColumns != null) {
-            str.append("\nselect: [");
-            for (int i = 0; i < selectColumns.size(); i++) {
-                if (i > 0) str.append(", ");
-                str.append(selectColumns.get(i));
-            }
-            str.append("]");
-        }
-        if (!conditions.isEmpty()) {
-            str.append("\nconditions: ");
-            for (int i = 0; i < conditions.size(); i++) {
-                if (i > 0) str.append(",\n  ");
-                str.append(conditions.get(i));
-            }
-        }
-        if (sortColumns != null) {
-            str.append("\nsort: ");
-            for (int i = 0; i < sortColumns.size(); i++) {
-                if (i > 0) str.append(", ");
-                str.append(sortColumns.get(i));
-            }
-        }
-        if (offset > 0) {
-            str.append("\noffset: ");
-            str.append(offset);
-        }
-        if (limit >= 0) {
-            str.append("\nlimit: ");
-            str.append(limit);
-        }
-        str.append("\nequivalences: ");
-        for (int i = 0; i < columnEquivalences.size(); i++) {
-            if (i > 0) str.append(",\n  ");
-            int j = 0;
-            for (Column column : columnEquivalences.get(i)) {
-                if (j++ > 0) str.append(" = ");
-                str.append(column);
-            }
-        }
-        return str.toString();
-    }
 }
