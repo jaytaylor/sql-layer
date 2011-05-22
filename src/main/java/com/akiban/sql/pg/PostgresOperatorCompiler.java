@@ -95,13 +95,18 @@ public class PostgresOperatorCompiler extends OperatorCompiler
 
         logger.debug("Operator:\n{}", result);
 
-        return new PostgresOperatorStatement(adapter, 
-                                             result.getResultOperator(),
-                                             result.getResultRowType(),
-                                             result.getResultColumns(),
-                                             result.getResultColumnOffsets(),
-                                             result.getOffset(),
-                                             result.getLimit());
+        if (result.isModify())
+            return new PostgresModifyOperatorStatement(stmt.statementToString(),
+                                                       adapter,
+                                                       result.getResultOperator());
+        else
+            return new PostgresOperatorStatement(adapter, 
+                                                 result.getResultOperator(),
+                                                 result.getResultRowType(),
+                                                 result.getResultColumns(),
+                                                 result.getResultColumnOffsets(),
+                                                 result.getOffset(),
+                                                 result.getLimit());
     }
 
     // The current implementation of index cursors expects that the

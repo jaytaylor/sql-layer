@@ -15,10 +15,10 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.physicaloperator.API;
 import com.akiban.sql.StandardException;
 
 import com.akiban.ais.model.Column;
+import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.ArrayBindings;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;

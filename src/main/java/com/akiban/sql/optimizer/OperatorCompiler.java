@@ -127,6 +127,10 @@ public class OperatorCompiler
             return limit;
         }
 
+        public boolean isModify() {
+            return (resultColumns == null);
+        }
+
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
