@@ -156,6 +156,12 @@ public class OperatorCompiler
         switch (stmt.getNodeType()) {
         case NodeTypes.CURSOR_NODE:
             return compileSelect((CursorNode)stmt);
+        case NodeTypes.UPDATE_NODE:
+            return compileUpdate((UpdateNode)stmt);
+        case NodeTypes.INSERT_NODE:
+            return compileInsert((InsertNode)stmt);
+        case NodeTypes.DELETE_NODE:
+            return compileDelete((DeleteNode)stmt);
         default:
             throw new UnsupportedSQLException("Unsupported statement type: " + 
                                               stmt.statementToString());
@@ -257,6 +263,30 @@ public class OperatorCompiler
         return new Result(resultOperator, resultRowType, 
                           resultColumns, resultColumnOffsets,
                           offset, limit);
+    }
+
+    public Result compileUpdate(UpdateNode update) throws StandardException {
+        update = (UpdateNode)bindAndGroup(update);
+        SimplifiedUpdateStatement sstmt = 
+            new SimplifiedUpdateStatement(update, grouper.getJoinConditions());
+
+        throw new UnsupportedSQLException("No Update operators yet");
+    }
+
+    public Result compileInsert(InsertNode insert) throws StandardException {
+        insert = (InsertNode)bindAndGroup(insert);
+        SimplifiedInsertStatement sstmt = 
+            new SimplifiedInsertStatement(insert, grouper.getJoinConditions());
+
+        throw new UnsupportedSQLException("No Insert operators yet");
+    }
+
+    public Result compileDelete(DeleteNode delete) throws StandardException {
+        delete = (DeleteNode)bindAndGroup(delete);
+        SimplifiedDeleteStatement sstmt = 
+            new SimplifiedDeleteStatement(delete, grouper.getJoinConditions());
+
+        throw new UnsupportedSQLException("No Delete operators yet");
     }
 
     // A possible index.

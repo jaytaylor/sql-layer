@@ -165,7 +165,7 @@ public class Tester
                 break;
             case OPERATORS:
                 {
-                    Object compiled = operatorCompiler.compile((CursorNode)stmt);
+                    Object compiled = operatorCompiler.compile((DMLStatementNode)stmt);
                     if (!silent)
                         System.out.println(compiled);
                 }
