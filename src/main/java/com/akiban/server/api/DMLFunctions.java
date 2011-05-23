@@ -179,7 +179,7 @@ public interface DMLFunctions {
      * @throws ConcurrentScanAndUpdateException if an update has happened since opening the scan and this call
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    boolean scanSome(Session session, CursorId cursorId, RowOutput output)
+    void scanSome(Session session, CursorId cursorId, RowOutput output)
             throws  CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException,

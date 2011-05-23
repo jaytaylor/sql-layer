@@ -132,7 +132,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
         }
 
         @Override
-        public boolean scanSome(Session session, CursorId cursorId, RowOutput output)
+        public void scanSome(Session session, CursorId cursorId, RowOutput output)
                 throws CursorIsFinishedException,
                 CursorIsUnknownException,
                 RowOutputException,
@@ -145,7 +145,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
             if (hooks == null) {
                 hooks = BasicDMLFunctions.DEFAULT_SCAN_HOOK;
             }
-            return super.scanSome(session, cursorId, output, hooks);
+            super.scanSome(session, cursorId, output, hooks);
         }
     }
 

@@ -53,8 +53,7 @@ public final class CBasicIT extends ITBase {
         assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session()));
         assertEquals("state", CursorState.FRESH, dml().getCursorState(session(), cursorId));
 
-        boolean hasMore = dml().scanSome(session(), cursorId, output);
-        assertFalse("more rows expected to be false", hasMore);
+        dml().scanSome(session(), cursorId, output);
         assertEquals("state", CursorState.FINISHED, dml().getCursorState(session(), cursorId));
 
         assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session()));
@@ -84,8 +83,7 @@ public final class CBasicIT extends ITBase {
         assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session()));
         assertEquals("state", CursorState.FRESH, dml().getCursorState(session(), cursorId));
 
-        boolean hasMore = dml().scanSome(session(), cursorId, output);
-        assertFalse("more rows found", hasMore);
+        dml().scanSome(session(), cursorId, output);
         assertEquals("state", CursorState.FINISHED, dml().getCursorState(session(), cursorId));
 
         assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session()));
@@ -279,8 +277,7 @@ public final class CBasicIT extends ITBase {
         assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session()));
         assertEquals("state", CursorState.FRESH, dml().getCursorState(session(), cursorId));
 
-        boolean hasMore = dml().scanSome(session(), cursorId, output);
-        assertFalse("no more rows expected", hasMore);
+        dml().scanSome(session(), cursorId, output);
         assertEquals("state", CursorState.FINISHED, dml().getCursorState(session(), cursorId));
 
         CursorIsFinishedException caught = null;
