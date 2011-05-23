@@ -38,8 +38,8 @@ import org.slf4j.LoggerFactory;
  * A PersistitGroupCursor can be used in three ways:
  * 1) Scan the entire group: This occurs when there is no binding before open().
  * 2) For a given hkey, find the row and its descendents: This occurs when rebind(HKey, true) is called.
- * 2) For a given hkey, find the row without its descendents: This occurs when rebind(HKey, false) is called.
- * 3) As an hkey-equivalent index: This occurs when IndexKeyRange is provided via constructor. The index restriction is
+ * 3) For a given hkey, find the row without its descendents: This occurs when rebind(HKey, false) is called.
+ * 4) As an hkey-equivalent index: This occurs when IndexKeyRange is provided via constructor. The index restriction is
  *    on columns of the hkey. Find the qualifying rows and all descendents.
  */
 
@@ -124,13 +124,12 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
 
     // For use by this package
 
-    PersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable, boolean reverse, IndexKeyRange indexKeyRange)
+    PersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable, IndexKeyRange indexKeyRange)
         throws PersistitException
     {
         this.hKeyRange = indexKeyRange;
         this.adapter = adapter;
         this.groupTable = groupTable;
-        this.reverse = reverse;
         this.row = new RowHolder<PersistitGroupRow>(adapter.newGroupRow());
         this.controllingHKey = new Key(adapter.persistit.getDb());
     }
@@ -156,11 +155,12 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
      * 1) Scan entire group: Initialize exchange to Key.BEFORE and keep going forward, doing a deep traversal,
      *    until there are no more rows.
      *
-     * 2) Scan one hkey and descendents: The binding is stored in singleHKeyRestriction until the scan begins.
-     *    Then, the key is copied to the exchange, to begin the scan, and to controllingHKey to determine
-     *    when the scan should end.
+     * 2) Scan one hkey and descendents: The key is copied to the exchange, to begin the scan, and to controllingHKey
+     *    to determine when the scan should end.
      *
-     * 3) Index range scan: The binding is stored in hKeyRange until the scan begins. The exchange is used with
+     * 3) Scan one hkey without descendents: The key is copied to the exchange.
+     *
+     * 4) Index range scan: The binding is stored in hKeyRange until the scan begins. The exchange is used with
      *    hKeyRangeFilter to implement the range restriction, alternating with deep traversal. For each
      *    record that hKeyRangeFilter, the current hKey is copied to conrollingHKey, and this is used to
      *    identify descendents, as in (2).
@@ -186,7 +186,6 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
 
     private final PersistitAdapter adapter;
     private final GroupTable groupTable;
-    private final boolean reverse;
     private final RowHolder<PersistitGroupRow> row;
     private Exchange exchange;
     private Key controllingHKey;
@@ -220,13 +219,8 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
 
         public FullScan() throws PersistitException
         {
-            if (reverse) {
-                exchange.getKey().append(Key.AFTER);
-                direction = Key.LT;
-            } else {
-                exchange.getKey().append(Key.BEFORE);
-                direction = Key.GT;
-            }
+            exchange.getKey().append(Key.BEFORE);
+            direction = Key.GT;
         }
 
         private final Key.Direction direction;
@@ -238,12 +232,12 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
         public void advance() throws PersistitException, InvalidOperationException
         {
             if (first) {
-                if (!exchange.traverse(firstDirection, true)) {
+                if (!exchange.traverse(Key.GTEQ, true)) {
                     close();
                 }
                 first = false;
             } else {
-                if (!exchange.traverse(subsequentDirection, true) ||
+                if (!exchange.traverse(Key.GT, true) ||
                     exchange.getKey().firstUniqueByteIndex(controllingHKey) < controllingHKey.getEncodedSize()) {
                     close();
                 }
@@ -254,17 +248,8 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
         {
             hKey.copyTo(exchange.getKey());
             hKey.copyTo(controllingHKey);
-            if (reverse) {
-                firstDirection = Key.LTEQ;
-                subsequentDirection = Key.LT;
-            } else {
-                firstDirection = Key.GTEQ;
-                subsequentDirection = Key.GT;
-            }
         }
 
-        private final Key.Direction firstDirection;
-        private final Key.Direction subsequentDirection;
         private boolean first = true;
     }
 
@@ -298,14 +283,14 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
         public void advance() throws PersistitException, InvalidOperationException
         {
             if (first) {
-                if (!exchange.traverse(firstDirection, hKeyRangeFilter, VALUE_BYTES)) {
+                if (!exchange.traverse(Key.GTEQ, hKeyRangeFilter, VALUE_BYTES)) {
                     close();
                 } else {
                     exchange.getKey().copyTo(controllingHKey);
                 }
                 first = false;
             } else {
-                if (!exchange.traverse(subsequentDirection, true)) {
+                if (!exchange.traverse(Key.GT, true)) {
                     close();
                 } else {
                     if (exchange.getKey().firstUniqueByteIndex(controllingHKey) < controllingHKey.getEncodedSize()) {
@@ -315,7 +300,7 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
                             exchange.getKey().copyTo(controllingHKey);
                         } else {
                             // Not selected. Could be that we need to skip over some orphans.
-                            if (!exchange.traverse(subsequentDirection, hKeyRangeFilter, VALUE_BYTES)) {
+                            if (!exchange.traverse(Key.GT, hKeyRangeFilter, VALUE_BYTES)) {
                                 close();
                             } else {
                                 exchange.getKey().copyTo(controllingHKey);
@@ -331,18 +316,9 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
             UserTable table = (hKeyRange.lo() == null ? hKeyRange.hi() : hKeyRange.lo()).table();
             RowDef rowDef = (RowDef) table.rowDef();
             hKeyRangeFilter = adapter.filterFactory.computeHKeyFilter(exchange.getKey(), rowDef, hKeyRange, bindings);
-            if (reverse) {
-                firstDirection = Key.LTEQ;
-                subsequentDirection = Key.LT;
-            } else {
-                firstDirection = Key.GTEQ;
-                subsequentDirection = Key.GT;
-            }
         }
 
         private final KeyFilter hKeyRangeFilter;
-        private final Key.Direction firstDirection;
-        private final Key.Direction subsequentDirection;
         private boolean first = true;
     }
 }

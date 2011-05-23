@@ -19,6 +19,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.util.RowDefNotFoundException;
+import com.akiban.util.Tap;
 
 class TopLevelWrappingCursor extends ChainedCursor {
 
@@ -27,7 +28,10 @@ class TopLevelWrappingCursor extends ChainedCursor {
     @Override
     public void open(Bindings bindings) {
         try {
+            CURSOR_SETUP_TAP.in();
             super.open(bindings);
+            CURSOR_SETUP_TAP.out();
+            CURSOR_SCAN_TAP.in();
         } catch (RuntimeException e) {
             throw launder(e);
         }
@@ -46,6 +50,7 @@ class TopLevelWrappingCursor extends ChainedCursor {
     public void close() {
         try {
             super.close();
+            CURSOR_SCAN_TAP.out();
         } catch (RuntimeException e) {
             throw launder(e);
         }
@@ -104,4 +109,10 @@ class TopLevelWrappingCursor extends ChainedCursor {
     private static RuntimeException launder(RuntimeException exception) {
         return exception;
     }
+
+    // Class state
+
+    private static final Tap CURSOR_SETUP_TAP = Tap.add(new Tap.PerThread("cursor setup"));
+    private static final Tap CURSOR_SCAN_TAP = Tap.add(new Tap.PerThread("cursor scan"));
+
 }

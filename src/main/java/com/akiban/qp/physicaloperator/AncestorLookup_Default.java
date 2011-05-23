@@ -72,6 +72,23 @@ class AncestorLookup_Default extends PhysicalOperator
                                   RowType rowType,
                                   List<RowType> ancestorTypes)
     {
+        // Check arguments
+        if (ancestorTypes.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+        RowType tableRowType =
+            rowType instanceof IndexRowType
+            ? ((IndexRowType)rowType).tableType()
+            : rowType;
+        for (RowType ancestorType : ancestorTypes) {
+            if (ancestorType == tableRowType) {
+                throw new IllegalArgumentException(ancestorType.toString());
+            }
+            if (!ancestorType.ancestorOf(tableRowType)) {
+                throw new IllegalArgumentException(ancestorType.toString());
+            }
+        }
+        // Arguments are OK
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
         this.rowType = rowType;
