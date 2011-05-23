@@ -194,6 +194,8 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     }
 
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
+    public static final String UNIQUE_KEY_CONSTRAINT = "UNIQUE";
+    public static final String KEY_CONSTRAINT = "KEY";
 
     public static enum IndexType {
         TABLE("TABLE"),

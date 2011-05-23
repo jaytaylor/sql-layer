@@ -30,7 +30,8 @@ import com.akiban.ais.model.Join.SourceType;
 // of a dump. The user need not search the AIS and hold on to AIS objects (UserTable, Column, etc.). Instead,
 // only names from the dump need be supplied. 
 
-public class AISBuilder {
+public class
+        AISBuilder {
     GwtLogger LOG = GwtLogging.getLogger(AISBuilder.class);
 
     // API for creating capturing basic schema information
@@ -120,11 +121,12 @@ public class AISBuilder {
                 constraint);
     }
 
-    public void groupIndex(String groupName, String indexName, Boolean unique, String constraint)
+    public void groupIndex(String groupName, String indexName, Boolean unique)
     {
         LOG.info("groupIndex: " + groupName + "." + indexName);
         Group group = ais.getGroup(groupName);
         checkFound(group, "creating group index", "group", groupName);
+        String constraint = unique ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT;
         GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint);
     }
 
@@ -147,7 +149,7 @@ public class AISBuilder {
     }
 
     public void groupIndexColumn(String groupName, String indexName, String schemaName, String tableName,
-                                 String columnName, Integer position, Boolean ascending, Integer indexedLength)
+                                 String columnName, Integer position)
     {
         LOG.info("groupIndexColumn: " + groupName + "." + indexName + ":" + columnName);
         Group group = ais.getGroup(groupName);
@@ -158,7 +160,7 @@ public class AISBuilder {
         checkFound(table, "creating group index column", "table", concat(schemaName, tableName));
         Column column = table.getColumn(columnName);
         checkFound(column, "creating group index column", "column", concat(schemaName, tableName, columnName));
-        index.addColumn(new IndexColumn(index, column, position, ascending, indexedLength));
+        index.addColumn(new IndexColumn(index, column, position, true, null));
     }
 
     public void joinTables(String joinName, String parentSchemaName,

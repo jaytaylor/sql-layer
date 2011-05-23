@@ -1006,9 +1006,9 @@ public class AISBuilderTest
         builder.basicSchemaIsComplete();
         builder.createGroup("coi", "test", "_akiban_c");
         builder.addJoinToGroup("coi", "c/id/o/cid", 0);
-        builder.groupIndex("coi", "name_date", false, "KEY");
-        builder.groupIndexColumn("coi", "name_date", "test", "c",  "name", 0, true, null);
-        builder.groupIndexColumn("coi", "name_date", "test", "o",  "date", 1, true, null);
+        builder.groupIndex("coi", "name_date", false);
+        builder.groupIndexColumn("coi", "name_date", "test", "c",  "name", 0);
+        builder.groupIndexColumn("coi", "name_date", "test", "o",  "date", 1);
         builder.groupingIsComplete();
 
         final AkibanInformationSchema ais = builder.akibanInformationSchema();
