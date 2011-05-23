@@ -108,6 +108,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     public void run() {
         try {
+            socket.setTcpNoDelay(true); // We flush() when we mean it.
             messenger = new PostgresMessenger(socket.getInputStream(),
                                               socket.getOutputStream());
             topLevel();
@@ -435,7 +436,13 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         String portalName = messenger.readString();
         int maxrows = messenger.readInt();
         PostgresStatement pstmt = boundPortals.get(portalName);
-        pstmt.execute(this, maxrows);
+        try {
+            executorTap.in();
+            pstmt.execute(this, maxrows);
+        }
+        finally {
+            executorTap.out();
+        }
     }
 
     protected void processClose() throws IOException {
