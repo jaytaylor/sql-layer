@@ -29,7 +29,7 @@ public interface CudResult {
      * rows in {@code my_table}.</p>
      * @return the number of rows touched by the query, including for read-only scanning
      */
-    long rowsTouched();
+    int rowsTouched();
 
     /**
      * <p>The number of rows that were modified or deleted by this query.</p>
@@ -39,5 +39,5 @@ public interface CudResult {
      * be updated).</p>
      * @return the number of rows touched by the query, including for read-only scanning
      */
-    long rowsModified();
+    int rowsModified();
 }

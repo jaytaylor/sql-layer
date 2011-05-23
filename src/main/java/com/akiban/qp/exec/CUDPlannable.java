@@ -16,7 +16,8 @@
 package com.akiban.qp.exec;
 
 import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.physicaloperator.StoreAdapter;
 
-public interface CUDPlannable {
-    CudResult run(Bindings bindings);
+public interface CUDPlannable extends Plannable {
+    CudResult run(Bindings bindings, StoreAdapter adapter);
 }

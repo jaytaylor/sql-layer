@@ -15,13 +15,16 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.qp.exec.CUDPlannable;
+import com.akiban.qp.exec.CudResult;
 import com.akiban.qp.row.Row;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.Strings;
 
 import java.util.Collections;
 import java.util.List;
 
-public final class Update_Default extends PhysicalOperator {
+public final class Update_Default implements CUDPlannable {
 
     // Object interface
 
@@ -42,13 +45,27 @@ public final class Update_Default extends PhysicalOperator {
         this.updateFunction = updateFunction;
     }
 
-    // PhysicalOperator interface
+    // CudResult interface
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter) {
+    public CudResult run(Bindings bindings, StoreAdapter adapter) {
+        int touched = 0;
+        long start = System.currentTimeMillis();
         Cursor inputCursor = inputOperator.cursor(adapter);
-        return new Execution(inputCursor, updateFunction);
+        Cursor execution =  new Execution(inputCursor, updateFunction);
+        execution.open(bindings);
+        try {
+            while (execution.next()) {
+                ++touched;
+            }
+        } finally {
+            execution.close();
+        }
+        long end = System.currentTimeMillis();
+        return new StandardCudResult(end - start, touched, touched);
     }
+
+    // Plannable interface
 
     @Override
     public List<PhysicalOperator> getInputOperators() {
@@ -59,6 +76,11 @@ public final class Update_Default extends PhysicalOperator {
     public String describePlan()
     {
         return describePlan(inputOperator);
+    }
+
+    @Override
+    public String describePlan(PhysicalOperator inputOperator) {
+        return inputOperator + Strings.nl() + this;
     }
 
     // Object state
