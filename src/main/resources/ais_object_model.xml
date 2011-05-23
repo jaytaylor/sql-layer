@@ -209,8 +209,8 @@
 	<object name="index" tableName="akiban_information_schema.indexes">
 		<attr name="schemaName" type="String" />
 		<attr name="tableName" type="String" />
-        <attr name="indexType" type="String" />
 		<attr name="indexName" type="String" />
+		<attr name="indexType" type="String" />
 		<attr name="indexId" type="Integer" />
 		<attr name="constraint" type="String" />
 		<attr name="unique" type="Boolean" />
@@ -218,7 +218,8 @@
             select 
                 schema_name, 
                 table_name, 
-                index_name, 
+                index_name,
+                index_type,
                 index_id, 
                 table_constraint, 
                 is_unique 
@@ -227,20 +228,20 @@
 		<sql action="write"><![CDATA[insert into akiban_information_schema.indexes(
                 schema_name,
                 table_name,
+                index_name,
                 index_type,
-                index_name, 
                 index_id, 
                 table_constraint, 
                 is_unique 
-            ) values (?, ?, ?, ?, ?, ?)]]></sql>
+            ) values (?, ?, ?, ?, ?, ?, ?)]]></sql>
 		<sql action="cleanup"><![CDATA[delete from akiban_information_schema.indexes]]></sql>
 	</object>
 
 	<object name="indexColumn" tableName="akiban_information_schema.index_columns">
 		<attr name="schemaName" type="String" />
 		<attr name="tableName" type="String" />
-        <attr name="indexType" type="String" />
 		<attr name="indexName" type="String" />
+		<attr name="indexType" type="String" />
 		<attr name="columnName" type="String" />
 		<attr name="position" type="Integer" />
 		<attr name="ascending" type="Boolean" />
@@ -249,8 +250,8 @@
             select 
                 schema_name, 
                 table_name,
+                index_name,
                 index_type,
-                index_name, 
                 column_name, 
                 ordinal_position, 
                 is_ascending,
@@ -260,12 +261,13 @@
 		<sql action="write"><![CDATA[insert into akiban_information_schema.index_columns(
                 schema_name, 
                 table_name, 
-                index_name, 
+                index_name,
+                index_type,
                 column_name, 
                 ordinal_position, 
                 is_ascending,
                 indexed_length
-            ) values (?, ?, ?, ?, ?, ?, ?)]]></sql>
+            ) values (?, ?, ?, ?, ?, ?, ?, ?)]]></sql>
 		<sql action="cleanup"><![CDATA[delete from akiban_information_schema.index_columns]]></sql>
 	</object>
 
