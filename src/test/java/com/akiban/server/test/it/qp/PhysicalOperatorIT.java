@@ -16,6 +16,8 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.*;
+import com.akiban.qp.exec.CudPlannable;
+import com.akiban.qp.exec.CudResult;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -68,16 +70,10 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
         };
 
         PhysicalOperator groupScan = groupScan_Default(coi);
-        PhysicalOperator updateOperator = new Update_Default(groupScan, updateFunction);
-        Cursor updateCursor = cursor(updateOperator, adapter);
-        int nexts = 0;
-        updateCursor.open(NO_BINDINGS);
-        while (updateCursor.next()) {
-            ++nexts;
-        }
-        updateCursor.close();
-        adapter.commitAllTransactions();
-        assertEquals("invocations of next()", db.length, nexts);
+        CudPlannable updateOperator = new Update_Default(groupScan, updateFunction);
+        CudResult result = updateOperator.run(NO_BINDINGS, adapter);
+        assertEquals("rows modified", db.length, result.rowsModified());
+        assertEquals("rows touched", db.length, result.rowsTouched());
 
         Cursor executable = cursor(groupScan, adapter);
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "XYZXYZ"),
