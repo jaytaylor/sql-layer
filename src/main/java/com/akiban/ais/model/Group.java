@@ -48,11 +48,13 @@ public class Group implements Serializable, ModelNames
     private Group()
     {
         // GWT requires empty constructor
+        this.LOCK = new Object();
     }
 
     public Group(final String name)
     {
         this.name = name;
+        this.LOCK = new Object();
     }
 
     @Override
@@ -165,6 +167,6 @@ public class Group implements Serializable, ModelNames
 
     private String name;
     private GroupTable groupTable;
-    private final Object LOCK = new SerializableMonitor();
+    private transient final Object LOCK;
     private volatile Map<String, GroupIndex> indexMap = Collections.emptyMap();
 }
