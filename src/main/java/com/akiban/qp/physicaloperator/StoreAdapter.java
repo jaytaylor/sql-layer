@@ -26,10 +26,10 @@ public abstract class StoreAdapter
 {
     public final GroupCursor newGroupCursor(GroupTable groupTable)
     {
-        return newGroupCursor(groupTable, false, null);
+        return newGroupCursor(groupTable, null);
     }
 
-    public abstract GroupCursor newGroupCursor(GroupTable groupTable, boolean reverse, IndexKeyRange indexKeyRange);
+    public abstract GroupCursor newGroupCursor(GroupTable groupTable, IndexKeyRange indexKeyRange);
 
     public final Cursor newIndexCursor(Index index)
     {

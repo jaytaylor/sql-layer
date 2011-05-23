@@ -163,12 +163,12 @@ public class OperatorCompiler
         if (index != null) {
             indexConditions = index.getIndexConditions();
             Index iindex = index.getIndex();
-            PhysicalOperator indexOperator = indexScan_Default(iindex, 
-                                                               index.isReverse(),
-                                                               index.getIndexKeyRange());
             UserTable indexTable = (UserTable)iindex.getTable();
             UserTableRowType tableType = userTableRowType(indexTable);
             IndexRowType indexType = tableType.indexRowType(iindex);
+            PhysicalOperator indexOperator = indexScan_Default(indexType,
+                                                               index.isReverse(),
+                                                               index.getIndexKeyRange());
             resultOperator = lookup_Default(indexOperator, groupTable,
                                             indexType, tableType);
             // All selected rows above this need to be output by hkey left

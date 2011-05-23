@@ -30,14 +30,27 @@ public final class VarBinaryEncoder extends EncodingBase<ByteBuffer>{
     VarBinaryEncoder() {
     }
 
-    @Override
-    public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
-                          int offset) {
-        if (!(value instanceof byte[])) {
-            throw new IllegalArgumentException(value
-                    + " must be a byte array");
+    private static ByteBuffer toByteBuffer(Object value) {
+        final ByteBuffer buffer;
+        if(value == null) {
+            buffer = ByteBuffer.wrap(new byte[0]);
         }
-        return EncodingUtils.putByteArray((byte[]) value, dest, offset, fieldDef);
+        else if(value instanceof byte[]) {
+            buffer = ByteBuffer.wrap((byte[])value);
+        }
+        else if(value instanceof ByteBuffer) {
+            buffer = (ByteBuffer)value;
+        }
+        else {
+            throw new IllegalArgumentException("Requires byte[] or ByteBuffer");
+        }
+        return buffer;
+    }
+
+    @Override
+    public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
+        final ByteBuffer bb = toByteBuffer(value);
+        return EncodingUtils.putByteArray(bb.array(), bb.position(), bb.remaining(), dest, offset, fieldDef);
     }
 
     @Override
@@ -47,7 +60,12 @@ public final class VarBinaryEncoder extends EncodingBase<ByteBuffer>{
 
     @Override
     public void toKey(FieldDef fieldDef, Object value, Key key) {
-        key.append(value);
+        if(value == null) {
+            key.append(null);
+        } else {
+            ByteBuffer bb = toByteBuffer(value);
+            key.appendByteArray(bb.array(), bb.position(), bb.remaining());
+        }
     }
 
     @Override
@@ -60,22 +78,25 @@ public final class VarBinaryEncoder extends EncodingBase<ByteBuffer>{
         final long location = getCheckedOffsetAndWidth(fieldDef, rowData);
         int offset = (int) location + fieldDef.getPrefixSize();
         int size = (int) (location >>> 32) - fieldDef.getPrefixSize();
-
         return ByteBuffer.wrap(rowData.getBytes(), offset, size);
     }
 
     @Override
-    public void toString(FieldDef fieldDef, RowData rowData,
-                         AkibanAppender sb, final Quote quote) {
-        final ByteBuffer myBuffer = toObject(fieldDef, rowData);
-        sb.append("0x");
-        AkServerUtil.hex(sb, myBuffer.array(), 0, myBuffer.limit());
+    public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, final Quote quote) {
+        if(rowData.isNull(fieldDef.getFieldIndex())) {
+            sb.append("null");
+        } else {
+            final ByteBuffer bb = toObject(fieldDef, rowData);
+            sb.append("0x");
+            AkServerUtil.hex(sb, bb.array(), bb.position(), bb.remaining());
+        }
     }
 
     @Override
     public int widthFromObject(final FieldDef fieldDef, final Object value) {
-        int prefixWidth = fieldDef.getPrefixSize();
-        return ((byte[]) value).length + prefixWidth;
+        final int prefixSize = fieldDef.getPrefixSize();
+        final ByteBuffer bb = toByteBuffer(value);
+        return bb.remaining() + prefixSize;
     }
 
     @Override
@@ -83,5 +104,4 @@ public final class VarBinaryEncoder extends EncodingBase<ByteBuffer>{
         long w = type.maxSizeBytes();
         return !type.fixedSize() && w < 65536;
     }
-
 }

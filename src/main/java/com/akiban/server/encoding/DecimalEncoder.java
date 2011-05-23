@@ -164,12 +164,17 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
             ++fromOff;
 
         int signSize = mask == 0 ? 0 : 1;
-        int intCnt = from.indexOf('.') - signSize;
-        int fracCnt = from.length() - intCnt - 1 - signSize;
+        int periodIndex = from.indexOf('.');
+        final int intCnt;
+        final int fracCnt;
 
-        if (intCnt == -1) {
-            intCnt = from.length();
+        if (periodIndex == -1) {
+            intCnt = from.length() - signSize;
             fracCnt = 0;
+        }
+        else {
+            intCnt = periodIndex - signSize;
+            fracCnt = from.length() - intCnt - 1 - signSize;
         }
 
         final int intFull = intCnt / DECIMAL_DIGIT_PER;

@@ -255,7 +255,7 @@ public class IndexDef implements TreeLink {
     // TODO: 2) This won't work from group table indexes whose columns span multiple user tables.
     void computeFieldAssociations(RowDefCache rowDefCache, List<RowDef> path)
     {
-        computeHKeyEquivalence(path);
+        computeHKeyEquivalence();
         // indexKeyFields is a list of H2I objects which map row and hkey fields to the fields of an index.
         // The leading index fields are exactly the fields identified by IndexDef.fields, i.e., the declared
         // index columns. The remaining index fields are whatever fields are necessary to ensure that the
@@ -315,8 +315,10 @@ public class IndexDef implements TreeLink {
         hKeyFields = i2hList.toArray(new I2H[i2hList.size()]);
     }
 
-    private void computeHKeyEquivalence(List<RowDef> path)
+    private void computeHKeyEquivalence()
     {
+        hkeyEquivalent = false;
+/*
         hkeyEquivalent = true;
         // Collect the HKeyColumns of the index's hkey
         List<HKeyColumn> hKeyColumns = new ArrayList<HKeyColumn>();
@@ -334,6 +336,7 @@ public class IndexDef implements TreeLink {
         if (hkeyEquivalent && !hKeyColumnScan.hasNext() && indexColumnScan.hasNext()) {
             hkeyEquivalent = false;
         }
+*/
     }
 
     @Override

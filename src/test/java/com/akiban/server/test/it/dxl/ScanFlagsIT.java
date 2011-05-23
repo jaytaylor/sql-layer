@@ -15,6 +15,8 @@
 
 package com.akiban.server.test.it.dxl;
 
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
@@ -30,6 +32,7 @@ import java.util.List;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.assertNotNull;
 
 public class ScanFlagsIT extends ITBase
 {
@@ -127,6 +130,14 @@ public class ScanFlagsIT extends ITBase
     @Test
     public void testLEAsc() throws InvalidOperationException
     {
+        List<NewRow> actual = query(DEFAULT, null, 2,
+                                    0, 1, 2, 3, 4);
+        checkOutput(actual, 0, 1, 2);
+    }
+
+    @Test
+    public void testLEDesc() throws InvalidOperationException
+    {
         List<NewRow> actual = query(DESCENDING, null, 2,
                                     0, 1, 2, 3, 4);
         checkOutput(actual, 2, 1, 0);
@@ -134,9 +145,17 @@ public class ScanFlagsIT extends ITBase
 
     private List<NewRow> query(int flags, Integer start, Integer end, int ... values) throws InvalidOperationException
     {
-        rowDefId = createTable("schema", "t", "id int key");
+        rowDefId = createTable("schema", "t", "id int key, idcopy int, key(idcopy)");
+        UserTable table = super.getUserTable(rowDefId);
+        Index idCopyIndex = null;
+        for (Index index : table.getIndexes()) {
+            if (!index.isPrimaryKey()) {
+                idCopyIndex = index;
+            }
+        }
+        assertNotNull(idCopyIndex);
         for (int x : values) {
-            dml().writeRow(session(), createNewRow(rowDefId, x));
+            dml().writeRow(session(), createNewRow(rowDefId, x, x));
         }
         LegacyScanRequest request = new LegacyScanRequest(rowDefId,
                                                           bound(start),
@@ -144,7 +163,7 @@ public class ScanFlagsIT extends ITBase
                                                           bound(end),
                                                           null,
                                                           new byte[]{1},
-                                                          0, // index id, 0 = table scan
+                                                          idCopyIndex.getIndexId(),
                                                           flags,  // scan flags
                                                           ScanLimit.NONE);
         ListRowOutput output = new ListRowOutput();
@@ -169,7 +188,7 @@ public class ScanFlagsIT extends ITBase
         if (x != null) {
             rowData = new RowData(new byte[100]);
             RowDef rowDef = rowDefCache().rowDef(rowDefId);
-            rowData.createRow(rowDef, new Object[]{x});
+            rowData.createRow(rowDef, new Object[]{null, x});
         }
         return rowData;
     }

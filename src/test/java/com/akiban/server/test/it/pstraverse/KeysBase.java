@@ -77,7 +77,7 @@ public abstract class KeysBase extends ITBase {
         return items;
     }
 
-    @Test(expected=IllegalArgumentException.class) @SuppressWarnings("unused") // junit will invoke
+    @Test // (expected=IllegalArgumentException.class) @SuppressWarnings("unused") // junit will invoke
     public void traverseCustomersPK() throws Exception {
         traversePK(
                 customers(),
@@ -104,7 +104,7 @@ public abstract class KeysBase extends ITBase {
         );
     }
 
-    private void traversePK(int rowDefId, List<? super Long>... expectedIndexes) throws Exception {
+    protected void traversePK(int rowDefId, List<? super Long>... expectedIndexes) throws Exception {
         IndexDef pkIndexDef = rowDefCache().rowDef(rowDefId).getPKIndexDef();
 
         RecordCollectingIndexRecordVisistor visitor = new RecordCollectingIndexRecordVisistor();
