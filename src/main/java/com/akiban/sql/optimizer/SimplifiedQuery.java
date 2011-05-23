@@ -458,43 +458,7 @@ public class SimplifiedQuery
             ValueNode condition = andNode.getLeftOperand();
             if (joinConditions.contains(condition))
                 continue;
-            Comparison op;
-            switch (condition.getNodeType()) {
-            case NodeTypes.BINARY_EQUALS_OPERATOR_NODE:
-                op = Comparison.EQ;
-                break;
-            case NodeTypes.BINARY_GREATER_THAN_OPERATOR_NODE:
-                op = Comparison.GT;
-                break;
-            case NodeTypes.BINARY_GREATER_EQUALS_OPERATOR_NODE:
-                op = Comparison.GE;
-                break;
-            case NodeTypes.BINARY_LESS_THAN_OPERATOR_NODE:
-                op = Comparison.LT;
-                break;
-            case NodeTypes.BINARY_LESS_EQUALS_OPERATOR_NODE:
-                op = Comparison.LE;
-                break;
-            default:
-                throw new UnsupportedSQLException("Unsupported WHERE predicate", 
-                                                  condition);
-            }
-            BinaryOperatorNode binop = (BinaryOperatorNode)condition;
-            ColumnExpression left;
-            SimpleExpression right;
-            left = getColumnExpression(binop.getLeftOperand());
-            if (left != null) {
-                right = getSimpleExpression(binop.getRightOperand());
-            }
-            else {
-                left = getColumnExpression(binop.getRightOperand());
-                if (left == null)
-                    throw new UnsupportedSQLException("Unsupported WHERE operands", 
-                                                      condition);
-                right = getSimpleExpression(binop.getLeftOperand());
-                op = ColumnCondition.reverseComparison(op);
-            }
-            conditions.add(new ColumnCondition(left, right, op));
+            addCondition(condition);
         }
         
         ResultColumnList rcl = select.getResultColumns();
@@ -521,6 +485,47 @@ public class SimplifiedQuery
                                      ((ColumnExpression)
                                       whereCondition.getRight()).getColumn());
         }
+    }
+
+    protected void addCondition(ValueNode condition) throws StandardException {
+        switch (condition.getNodeType()) {
+        case NodeTypes.BINARY_EQUALS_OPERATOR_NODE:
+            addBinaryCondition((BinaryOperatorNode)condition, Comparison.EQ);
+            break;
+        case NodeTypes.BINARY_GREATER_THAN_OPERATOR_NODE:
+            addBinaryCondition((BinaryOperatorNode)condition, Comparison.GT);
+            break;
+        case NodeTypes.BINARY_GREATER_EQUALS_OPERATOR_NODE:
+            addBinaryCondition((BinaryOperatorNode)condition, Comparison.GE);
+            break;
+        case NodeTypes.BINARY_LESS_THAN_OPERATOR_NODE:
+            addBinaryCondition((BinaryOperatorNode)condition, Comparison.LT);
+            break;
+        case NodeTypes.BINARY_LESS_EQUALS_OPERATOR_NODE:
+            addBinaryCondition((BinaryOperatorNode)condition, Comparison.LE);
+            break;
+        default:
+            throw new UnsupportedSQLException("Unsupported WHERE predicate", 
+                                              condition);
+        }
+    }
+
+    protected void addBinaryCondition(BinaryOperatorNode binop, Comparison op)
+            throws StandardException {
+        ColumnExpression left;
+        SimpleExpression right;
+        left = getColumnExpression(binop.getLeftOperand());
+        if (left != null) {
+            right = getSimpleExpression(binop.getRightOperand());
+        }
+        else {
+            left = getColumnExpression(binop.getRightOperand());
+            if (left == null)
+                throw new UnsupportedSQLException("Unsupported WHERE operands", binop);
+            right = getSimpleExpression(binop.getLeftOperand());
+            op = ColumnCondition.reverseComparison(op);
+        }
+        conditions.add(new ColumnCondition(left, right, op));
     }
 
     protected void fillFromOrderBy(OrderByList orderByList) throws StandardException {
