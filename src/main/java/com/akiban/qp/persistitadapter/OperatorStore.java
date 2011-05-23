@@ -20,13 +20,12 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.message.ErrorCode;
+import com.akiban.qp.exec.CudPlannable;
+import com.akiban.qp.exec.CudResult;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.CursorUpdateException;
-import com.akiban.qp.physicaloperator.NoLimit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.physicaloperator.UpdateFunction;
@@ -86,44 +85,53 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
         Update_Default updateOp = new Update_Default(scanOp, updateFunction);
 
-        Cursor updateCursor = API.cursor(updateOp, adapter);
         Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
         try {
             transaction.begin();
-            runCursor(oldRowData, rowDef, updateCursor);
+            runCursor(oldRowData, rowDef, updateOp, adapter);
             transaction.commit();
         } finally {
             transaction.end();
         }
     }
 
-    private static void runCursor(RowData oldRowData, RowDef rowDef, Cursor updateCursor)
+    private static void runCursor(RowData oldRowData, RowDef rowDef, CudPlannable plannable, PersistitAdapter adapter)
             throws DuplicateKeyException, NoSuchRowException
     {
-        updateCursor.open(UndefBindings.only());
+        final CudResult result;
         try {
-            try {
-                if (!updateCursor.next()) {
-                    String rowDescription;
-                    try {
-                        rowDescription = oldRowData.toString(rowDef);
-                    } catch (Exception e) {
-                        rowDescription = "error in generating RowData.toString";
-                    }
-                    throw new NoSuchRowException(rowDescription);
-                }
-            } catch (CursorUpdateException e) {
-                Throwable cause = e.getCause();
-                if ( (cause instanceof InvalidOperationException)
-                        && ErrorCode.DUPLICATE_KEY.equals(((InvalidOperationException) cause).getCode()))
-                {
-                    throw new DuplicateKeyException((InvalidOperationException)cause);
-                }
-                throw e;
+            result = plannable.run(UndefBindings.only(), adapter);
+        } catch (CursorUpdateException e) {
+            Throwable cause = e.getCause();
+            if ( (cause instanceof InvalidOperationException)
+                    && ErrorCode.DUPLICATE_KEY.equals(((InvalidOperationException) cause).getCode()))
+            {
+                throw new DuplicateKeyException((InvalidOperationException)cause);
             }
-        } finally {
-            updateCursor.close();
+            throw e;
         }
+
+        if (result.rowsModified() == 0 || result.rowsTouched() == 0) {
+            throw new NoSuchRowException(describeRow(oldRowData, rowDef));
+        }
+        else if(result.rowsModified() != 1 || result.rowsTouched() != 1) {
+            throw new RuntimeException(String.format(
+                    "%s: %d touched, %d modified",
+                    describeRow(oldRowData, rowDef),
+                    result.rowsTouched(),
+                    result.rowsModified()
+            ));
+        }
+    }
+
+    private static String describeRow(RowData oldRowData, RowDef rowDef) {
+        String rowDescription;
+        try {
+            rowDescription = oldRowData.toString(rowDef);
+        } catch (Exception e) {
+            rowDescription = "error in generating RowData.toString";
+        }
+        return rowDescription;
     }
 
     // OperatorStore interface
