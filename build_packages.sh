@@ -22,6 +22,7 @@ fi
 
 platform=$1
 bzr_revno=`bzr revno`
+cp packages-common/* ${platform}
 
 if [ ${platform} == "debian" ]; then
     mvn -Dmaven.test.skip=true clean install -DBZR_REVISION=${bzr_revno}
