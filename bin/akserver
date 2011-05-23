@@ -75,6 +75,10 @@ launch_service()
     fi
     akiban_parms="-Dakiban.admin=$AKIBAN_CONF"
 
+    if [ "x$pidpath" != "x" ]; then
+        akiban_parms="$akiban_parms -Dakserver.pidfile=$pidpath"
+    fi
+
     if [ -f "$AKIBAN_CONF/config/jvm.options" ]; then
         . "$AKIBAN_CONF/config/jvm.options"
     fi
@@ -91,7 +95,6 @@ launch_service()
         # use log4j to log output
         akiban_parms="$akiban_parms -Dlog4j.configuration=file:$AKIBAN_CONF/config/log4j.properties"
         exec $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props <&- &
-        [ ! -z $pidpath ] && printf "%d" $! > $pidpath
     fi
 
     return $?

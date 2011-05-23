@@ -69,6 +69,7 @@ public class PostgresOperatorCompiler extends OperatorCompiler
         adapter = new PersistitAdapter(schema, persistitStore, server.getSession());
 
         server.setAttribute("aisBinder", binder);
+        server.setAttribute("compiler", this);
     }
 
     @Override

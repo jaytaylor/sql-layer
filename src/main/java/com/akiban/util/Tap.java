@@ -353,6 +353,11 @@ public abstract class Tap {
      * Mark the end of a section of code to be timed
      */
     public abstract void out();
+    
+    /**
+     * @return duration of time spent in section of code to be timed
+     */
+    public abstract long getDuration();
 
     /**
      * Reset any accumulated statistics to zero.
@@ -408,6 +413,10 @@ public abstract class Tap {
         public void out() {
             currentTap.out();
         }
+        
+        public long getDuration() {
+            return currentTap.getDuration();
+        }
 
         public void reset() {
             currentTap.reset();
@@ -447,6 +456,10 @@ public abstract class Tap {
 
         public void out() {
             // do nothing
+        }
+        
+        public long getDuration() {
+            return 0;
         }
 
         public void reset() {
@@ -488,6 +501,10 @@ public abstract class Tap {
         public void out() {
             outCount++;
         }
+        
+        public long getDuration() {
+            return 0;
+        }
 
         public void reset() {
             inCount = 0;
@@ -525,6 +542,7 @@ public abstract class Tap {
         long inNanos = Long.MIN_VALUE;
         long startNanos = System.nanoTime();
         long endNanos = System.nanoTime();
+        long lastDuration = Long.MIN_VALUE;
 
         public void in() {
             inCount++;
@@ -535,10 +553,15 @@ public abstract class Tap {
             if (inNanos != Long.MIN_VALUE) {
                 long now = System.nanoTime();
                 endNanos = now;
-                cumulativeNanos += now - inNanos;
+                lastDuration = now - inNanos;
+                cumulativeNanos += lastDuration;
                 outCount++;
                 inNanos = Long.MIN_VALUE;
             }
+        }
+        
+        public long getDuration() {
+            return lastDuration;
         }
 
         public void reset() {
@@ -601,6 +624,7 @@ public abstract class Tap {
         long inCount = 0;
         long outCount = 0;
         long inNanos = Long.MIN_VALUE;
+        long lastDuration = Long.MIN_VALUE;
 
         long[] log = new long[0];
 
@@ -617,7 +641,8 @@ public abstract class Tap {
             if (inNanos != Long.MIN_VALUE) {
                 long now = System.nanoTime();
                 endNanos = now;
-                cumulativeNanos += now - inNanos;
+                lastDuration = now - inNanos;
+                cumulativeNanos += lastDuration;
                 if (outCount * 2 < MAX_LOG_SIZE) {
                     if (outCount * 2 >= log.length) {
                         try {
@@ -637,6 +662,10 @@ public abstract class Tap {
                 outCount++;
                 inNanos = Long.MIN_VALUE;
             }
+        }
+        
+        public long getDuration() {
+            return lastDuration;
         }
 
         public void reset() {
@@ -843,6 +872,12 @@ public abstract class Tap {
         public void out() {
             final Tap tap = getTap();
             tap.out();
+        }
+        
+        @Override
+        public long getDuration() {
+            final Tap tap = getTap();
+            return tap.getDuration();
         }
 
         @Override

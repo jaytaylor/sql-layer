@@ -13,27 +13,30 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.pg;
-
-import com.akiban.sql.parser.NodeTypes;
-import com.akiban.sql.parser.StatementNode;
+package com.akiban.sql.optimizer;
 
 import com.akiban.sql.StandardException;
 
-/** SQL statements that affect session / environment state. */
-public class PostgresSessionStatementGenerator extends PostgresBaseStatementGenerator
+import com.akiban.sql.parser.QueryTreeNode;
+
+import com.akiban.sql.unparser.NodeToString;
+
+public class UnsupportedSQLException extends StandardException
 {
-    public PostgresSessionStatementGenerator(PostgresServerSession server) {
+    public UnsupportedSQLException(String msg) {
+        super(msg);
     }
 
-    @Override
-    public PostgresStatement generate(PostgresServerSession server,
-                                      StatementNode stmt, int[] paramTypes) 
-            throws StandardException {
-        switch (stmt.getNodeType()) {
-        default:
-            return null;
+    public UnsupportedSQLException(String msg, QueryTreeNode sql) {
+        super(msg + ": " + formatSQL(sql));
+    }
+
+    protected static String formatSQL(QueryTreeNode sql) {
+        try {
+            return new NodeToString().toString(sql);
+        }
+        catch (StandardException ex) {
+            return sql.toString();
         }
     }
-
 }
