@@ -72,14 +72,6 @@ public class DelegatingStore<S extends Store> implements Store {
         return delegate.getIndexManager();
     }
 
-    public void setVerbose(final boolean verbose) {
-        delegate.setVerbose(verbose);
-    }
-
-    public boolean isVerbose() {
-        return delegate.isVerbose();
-    }
-
     public void writeRow(final Session session, final RowData rowData) throws Exception {
         delegate.writeRow(session, rowData);
     }

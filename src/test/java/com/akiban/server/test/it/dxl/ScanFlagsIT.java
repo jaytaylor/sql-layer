@@ -168,8 +168,7 @@ public class ScanFlagsIT extends ITBase
                                                           ScanLimit.NONE);
         ListRowOutput output = new ListRowOutput();
         CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
-        boolean more = dml().scanSome(session(), cursorId, output);
-        assertTrue(!more);
+        dml().scanSome(session(), cursorId, output);
         dml().closeCursor(session(), cursorId);
         return output.getRows();
     }
