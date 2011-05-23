@@ -56,7 +56,7 @@ public abstract class PhysicalOperator implements Plannable
     {
         StringBuilder buffer = new StringBuilder();
         buffer.append(inputOperator.describePlan());
-        buffer.append('\n'); // the newline separator isn't necessarily \u000a, but that's okay
+        buffer.append('\n');
         buffer.append(toString());
         return buffer.toString();
     }
