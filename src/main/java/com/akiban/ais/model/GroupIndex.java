@@ -45,8 +45,7 @@ public class GroupIndex extends Index
     @Override
     public HKey hKey()
     {
-        // TODO: Implement or refactor
-        return null;
+        throw new UnsupportedOperationException("Define hkey() on GroupIndex");
     }
 
     private Group group;
