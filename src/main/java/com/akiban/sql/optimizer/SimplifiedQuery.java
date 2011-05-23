@@ -504,6 +504,12 @@ public class SimplifiedQuery
         case NodeTypes.BINARY_LESS_EQUALS_OPERATOR_NODE:
             addBinaryCondition((BinaryOperatorNode)condition, Comparison.LE);
             break;
+        case NodeTypes.BETWEEN_OPERATOR_NODE:
+            addBetweenCondition((BetweenOperatorNode)condition);
+            break;
+        case NodeTypes.IN_LIST_OPERATOR_NODE:
+            addInCondition((InListOperatorNode)condition);
+            break;
         default:
             throw new UnsupportedSQLException("Unsupported WHERE predicate", 
                                               condition);
@@ -526,6 +532,32 @@ public class SimplifiedQuery
             op = ColumnCondition.reverseComparison(op);
         }
         conditions.add(new ColumnCondition(left, right, op));
+    }
+
+    protected void addBetweenCondition(BetweenOperatorNode between)
+            throws StandardException {
+        ColumnExpression left = getColumnExpression(between.getLeftOperand());
+        if (left == null)
+            throw new UnsupportedSQLException("Unsupported BETWEEN operand", 
+                                              between.getLeftOperand());
+        ValueNodeList rightOperandList = between.getRightOperandList();
+        SimpleExpression right1 = getSimpleExpression(rightOperandList.get(0));
+        SimpleExpression right2 = getSimpleExpression(rightOperandList.get(1));
+        conditions.add(new ColumnCondition(left, right1, Comparison.GE));
+        conditions.add(new ColumnCondition(left, right2, Comparison.LE));
+    }
+
+    protected void addInCondition(InListOperatorNode in)
+            throws StandardException {
+        ColumnExpression left = getColumnExpression(in.getLeftOperand());
+        if (left == null)
+            throw new UnsupportedSQLException("Unsupported IN operand", 
+                                              in.getLeftOperand());
+        ValueNodeList rightOperandList = in.getRightOperandList();
+        if (rightOperandList.size() != 1)
+            throw new UnsupportedSQLException("Unsupported IN predicate", in);
+        SimpleExpression right1 = getSimpleExpression(rightOperandList.get(0));
+        conditions.add(new ColumnCondition(left, right1, Comparison.EQ));
     }
 
     protected void fillFromOrderBy(OrderByList orderByList) throws StandardException {
