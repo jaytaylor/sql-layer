@@ -107,8 +107,6 @@ public class PersistitStore implements Store {
 
     private final static String COLLECTORS_SESSION_KEY = "collectors";
 
-    private boolean verbose = false;
-
     private boolean deferIndexes = false;
 
     RowDefCache rowDefCache;
@@ -466,16 +464,6 @@ public class PersistitStore implements Store {
 
     public IndexManager getIndexManager() {
         return errorIfNull("index manager", indexManager);
-    }
-
-    @Override
-    public void setVerbose(final boolean verbose) {
-        this.verbose = verbose;
-    }
-
-    @Override
-    public boolean isVerbose() {
-        return verbose;
     }
 
     /**
