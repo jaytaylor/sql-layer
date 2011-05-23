@@ -33,6 +33,7 @@ public abstract class PhysicalOperator implements Plannable
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public List<PhysicalOperator> getInputOperators()
     {
         return Collections.emptyList();
@@ -44,16 +45,18 @@ public abstract class PhysicalOperator implements Plannable
         return false;
     }
 
+    @Override
     public String describePlan()
     {
         return toString();
     }
 
+    @Override
     public final String describePlan(PhysicalOperator inputOperator)
     {
         StringBuilder buffer = new StringBuilder();
         buffer.append(inputOperator.describePlan());
-        buffer.append('\n');
+        buffer.append('\n'); // the newline separator isn't necessarily \u000a, but that's okay
         buffer.append(toString());
         return buffer.toString();
     }
