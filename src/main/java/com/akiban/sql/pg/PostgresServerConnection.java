@@ -108,9 +108,12 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     public void run() {
         try {
-            socket.setTcpNoDelay(true); // We flush() when we mean it.
+            // We flush() when we mean it. 
+            // So, turn off kernel delay, but wrap a buffer so every
+            // message isn't its own packet.
+            socket.setTcpNoDelay(true);
             messenger = new PostgresMessenger(socket.getInputStream(),
-                                              socket.getOutputStream());
+                                              new BufferedOutputStream(socket.getOutputStream()));
             topLevel();
         }
         catch (Exception ex) {
