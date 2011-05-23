@@ -142,11 +142,11 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public boolean scanSome(Session session, CursorId cursorId, RowOutput output) throws CursorIsFinishedException, CursorIsUnknownException, RowOutputException, NoSuchTableException, ConcurrentScanAndUpdateException, TableDefinitionChangedException, GenericInvalidOperationException {
+    public void scanSome(Session session, CursorId cursorId, RowOutput output) throws CursorIsFinishedException, CursorIsUnknownException, RowOutputException, NoSuchTableException, ConcurrentScanAndUpdateException, TableDefinitionChangedException, GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.SCAN_SOME);
-            return delegate.scanSome(session, cursorId, output);
+            delegate.scanSome(session, cursorId, output);
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.SCAN_SOME, t);
