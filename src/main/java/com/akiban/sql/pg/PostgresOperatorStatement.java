@@ -68,7 +68,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         Cursor cursor = API.cursor(resultOperator, store);
         int nskip = offset;
         if (limit > 0) {
-            if ((maxrows == 0) || (maxrows > limit))
+            if ((maxrows <= 0) || (maxrows > limit))
                 maxrows = limit;
         }
         int nrows = 0;
