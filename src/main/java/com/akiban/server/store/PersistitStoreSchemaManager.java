@@ -46,6 +46,7 @@ import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.Type;
 import com.akiban.server.api.common.NoSuchTableException;
@@ -249,6 +250,31 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         commitAISChange(session, newAIS, tableName.getSchemaName(), null);
     }
 
+    private boolean inSameBranch(UserTable t1, UserTable t2) {
+        if(t1 == t2) {
+            return true;
+        }
+        // search for t2 in t1->root
+        Join join = t1.getParentJoin();
+        while(join != null) {
+            final UserTable parent = join.getParent();
+            if(parent == t2) {
+                return true;
+            }
+            join = parent.getParentJoin();
+        }
+        // search fo t1 in t2->root
+        join = t2.getParentJoin();
+        while(join != null) {
+            final UserTable parent = join.getParent();
+            if(parent == t1) {
+                return true;
+            }
+            join = parent.getParentJoin();
+        }
+        return false;
+    }
+
     @Override
     public void alterGroupAddIndex(Session session, String groupName, GroupIndex index) throws Exception {
         final AkibanInformationSchema ais = getAis(session);
@@ -258,15 +284,21 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             throw new InvalidOperationException(ErrorCode.NO_SUCH_GROUP, "Unknown group: " + groupName);
         }
 
+        UserTable lastTable = null;
         for(IndexColumn col : index.getColumns()) {
             final TableName tableName = col.getColumn().getTable().getName();
-            final Table curTable = ais.getTable(tableName);
+            final UserTable curTable = ais.getUserTable(tableName);
             if(curTable == null) {
-                throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE, "Unknown table: " + tableName);
+                throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE, "Unknown user table: " + tableName);
             }
             if(!curTable.getGroup().getName().equals(groupName)) {
                 throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION, "Table not in group: " + curTable);
             }
+            if(lastTable != null && !inSameBranch(lastTable, curTable)) {
+                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
+                                                    "Branching group index: " + lastTable + "," + curTable);
+            }
+            lastTable = curTable;
         }
 
         final AkibanInformationSchema newAIS = new AkibanInformationSchema();
@@ -596,16 +628,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
                     // Load stored AIS data from each schema tree
                     treeService.visitStorage(session, new TreeVisitor() {
-                        @Override
-                        public void visit(Exchange ex) throws Exception {
-                            ex.clear().append(BY_AIS);
-                            if(ex.isValueDefined()) {
-                                byte[] storedAIS = ex.fetch().getValue().getByteArray();
-                                ByteBuffer buffer = ByteBuffer.wrap(storedAIS);
-                                new Reader(new MessageSource(buffer)).load(newAIS);
-                            }
-                        }
-                    }, SCHEMA_TREE_NAME);
+                                                 @Override
+                                                 public void visit(Exchange ex) throws Exception {
+                                                     ex.clear().append(BY_AIS);
+                                                     if(ex.isValueDefined()) {
+                                                         byte[] storedAIS = ex.fetch().getValue().getByteArray();
+                                                         ByteBuffer buffer = ByteBuffer.wrap(storedAIS);
+                                                         new Reader(new MessageSource(buffer)).load(newAIS);
+                                                     }
+                                                 }
+                                             }, SCHEMA_TREE_NAME);
 
                     forceNewTimestamp();
                     onTransactionCommit(newAIS, updateTimestamp.get());

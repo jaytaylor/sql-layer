@@ -63,4 +63,12 @@ public class GroupIndexIT extends ITBase {
         final String groupName = getUserTable("test","c").getGroup().getName();
         createGroupIndex(groupName, "name_d", "c.name, foo.d");
     }
+
+    @Test(expected=InvalidOperationException.class)
+    public void branchingNotAllowed() throws InvalidOperationException {
+        createTables();
+        createTable("test", "a", "id int key, cid int, addr int, constraint __akiban foreign key(cid) references c(id)");
+        final String groupName = getUserTable("test","c").getGroup().getName();
+        createGroupIndex(groupName, "name_addr_date", "c.name, a.addr, o.odate");
+    }
 }
