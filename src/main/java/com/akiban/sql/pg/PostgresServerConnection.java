@@ -43,11 +43,11 @@ import java.util.*;
 public class PostgresServerConnection implements PostgresServerSession, Runnable
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresServerConnection.class);
-
-    private final static Tap parserTap = Tap.add(new Tap.PerThread("sql: parse", Tap.TimeAndCount.class));
-    private final static Tap optimizerTap = Tap.add(new Tap.PerThread("sql: optimize", Tap.TimeAndCount.class));
-    private final static Tap executorTap = Tap.add(new Tap.PerThread("sql: execute", Tap.TimeAndCount.class));
-
+    
+    private final Tap parserTap;
+    private final Tap optimizerTap;
+    private final Tap executorTap;
+    
     private PostgresServer server;
     private boolean running = false, ignoreUntilSync = false;
     private Socket socket;
@@ -79,6 +79,9 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         this.socket = socket;
         this.pid = pid;
         this.secret = secret;
+        this.parserTap = Tap.add(new Tap.PerThread("sql: parse: " + pid, Tap.TimeAndCount.class));
+        this.optimizerTap = Tap.add(new Tap.PerThread("sql: optimize: " + pid, Tap.TimeAndCount.class));
+        this.executorTap = Tap.add(new Tap.PerThread("sql: execute: " + pid, Tap.TimeAndCount.class));
     }
 
     public void start() {
@@ -595,18 +598,16 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         parserTap.reset();
         optimizerTap.reset();
         executorTap.reset();
-        /* 
-         * TODO: change this so its only enabled for this thread by TAP
-         * Right now, TAP will enable all dispatches that match the given
-         * regular expression which will be all connections to the postgres
-         * server. 
-         */
-        Tap.setEnabled("sql.*", true);
+        Tap.setEnabled("sql: parse: " + pid, true);
+        Tap.setEnabled("sql: optimize: " + pid, true);
+        Tap.setEnabled("sql: execute: " + pid, true);
         instrumentationEnabled = true;
     }
     
     public void disableInstrumentation() {
-        Tap.setEnabled("sql.*", false);
+        Tap.setEnabled("sql: parse: " + pid, true);
+        Tap.setEnabled("sql: optimize: " + pid, true);
+        Tap.setEnabled("sql: execute: " + pid, true);
         instrumentationEnabled = false;
     }
     
