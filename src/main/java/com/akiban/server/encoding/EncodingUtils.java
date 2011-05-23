@@ -113,7 +113,8 @@ abstract class EncodingUtils {
     static int objectToString(final Object obj, final byte[] bytes, final int offset,
                        final FieldDef fieldDef) {
         final String s = obj == null ? "" : obj.toString();
-        return putByteArray(stringBytes(s), bytes, offset, fieldDef);
+        final byte b[] = stringBytes(s);
+        return putByteArray(b, 0, b.length, bytes, offset, fieldDef);
     }
 
     static int objectToDouble(final byte[] bytes, final int offset, final Object obj, final boolean unsigned) {
@@ -157,31 +158,29 @@ abstract class EncodingUtils {
         return sdf;
     }
 
-    static int putByteArray(final byte[] b, final byte[] bytes, final int offset,
-                     final FieldDef fieldDef) {
+    static int putByteArray(final byte[] src, final int srcOffset, final int srcLength,
+                            final byte[] dst, final int dstOffset, final FieldDef fieldDef) {
         int prefixSize = fieldDef.getPrefixSize();
-        final int size = b.length;
         switch (prefixSize) {
             case 0:
                 break;
             case 1:
-                AkServerUtil.putByte(bytes, offset, size);
+                AkServerUtil.putByte(dst, dstOffset, srcLength);
                 break;
             case 2:
-                AkServerUtil.putChar(bytes, offset, size);
+                AkServerUtil.putChar(dst, dstOffset, srcLength);
                 break;
             case 3:
-                AkServerUtil.putMediumInt(bytes, offset, size);
+                AkServerUtil.putMediumInt(dst, dstOffset, srcLength);
                 break;
             case 4:
-                AkServerUtil.putInt(bytes, offset, size);
+                AkServerUtil.putInt(dst, dstOffset, srcLength);
                 break;
             default:
                 throw new Error("Missing case");
         }
-        System.arraycopy(b, 0, bytes, offset + prefixSize, size);
-
-        return prefixSize + size;
+        System.arraycopy(src, srcOffset, dst, dstOffset + prefixSize, srcLength);
+        return prefixSize + srcLength;
 
     }
 
