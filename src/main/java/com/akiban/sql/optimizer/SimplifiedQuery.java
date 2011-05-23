@@ -645,6 +645,11 @@ public class SimplifiedQuery
             return new LiteralExpression(((ConstantNode)operand).getValue());
         else if (operand instanceof ParameterNode)
             return new ParameterExpression(((ParameterNode)operand).getParameterNumber());
+        else if (operand instanceof CastNode)
+            // TODO: This is passing the burden of proper conversion
+            // onto the Expression / IndexKey. It might be better to
+            // attempt to do some here.
+            return getSimpleExpression(((CastNode)operand).getCastOperand());
         else
             throw new UnsupportedSQLException("Unsupported WHERE operand",
                                               operand);
