@@ -83,7 +83,7 @@ public class IndexColumn implements Serializable, ModelNames
         Table table = ais.getTable(schemaName, tableName);
         Index index = null;
         if(table != null) {
-            if(indexType.equals(Index.TYPE_GROUP_TAG)) {
+            if(Index.IndexType.GROUP.toString().endsWith(indexType)) {
                 Group group = table.getGroup();
                 if (group != null) {
                     index = group.getIndex(indexName);
@@ -108,7 +108,7 @@ public class IndexColumn implements Serializable, ModelNames
         Map<String, Object> map = new HashMap<String, Object>();
         map.put(indexColumn_schemaName, column.getTable().getName().getSchemaName());
         map.put(indexColumn_tableName, column.getTable().getName().getTableName());
-        map.put(indexColumn_indexType, index.getTypeTag());
+        map.put(indexColumn_indexType, index.getIndexType().toString());
         map.put(indexColumn_indexName, index.getIndexName().getName());
         map.put(indexColumn_columnName, column.getName());
         map.put(indexColumn_position, position);
