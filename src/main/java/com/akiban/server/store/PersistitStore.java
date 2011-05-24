@@ -107,8 +107,6 @@ public class PersistitStore implements Store {
 
     private final static String COLLECTORS_SESSION_KEY = "collectors";
 
-    private boolean verbose = false;
-
     private boolean deferIndexes = false;
 
     RowDefCache rowDefCache;
@@ -466,16 +464,6 @@ public class PersistitStore implements Store {
 
     public IndexManager getIndexManager() {
         return errorIfNull("index manager", indexManager);
-    }
-
-    @Override
-    public void setVerbose(final boolean verbose) {
-        this.verbose = verbose;
-    }
-
-    @Override
-    public boolean isVerbose() {
-        return verbose;
     }
 
     /**
@@ -881,7 +869,7 @@ public class PersistitStore implements Store {
             groupRowDef = rowDefCache.getRowDef(groupRowDef.getGroupRowDefId());
         }
 
-        final Transaction transaction = treeService.getTransaction(session);
+        Transaction transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;
         for (;;) {
 
@@ -891,18 +879,13 @@ public class PersistitStore implements Store {
                 //
                 // Remove the index trees
                 //
-                for (final IndexDef indexDef : groupRowDef.getIndexDefs()) {
-                    if (!indexDef.isHKeyEquivalent()) {
-                        final Exchange iEx = getExchange(session, groupRowDef,
-                                indexDef);
-                        iEx.removeAll();
-                        releaseExchange(session, iEx);
-                    }
-                    indexManager.deleteIndexAnalysis(session, indexDef);
-                }
-                for (final RowDef userRowDef : groupRowDef
-                        .getUserTableRowDefs()) {
-                    for (final IndexDef indexDef : userRowDef.getIndexDefs()) {
+                for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
+                    for (IndexDef indexDef : userRowDef.getIndexDefs()) {
+                        if (!indexDef.isHKeyEquivalent()) {
+                            Exchange iEx = getExchange(session, userRowDef, indexDef);
+                            iEx.removeAll();
+                            releaseExchange(session, iEx);
+                        }
                         indexManager.deleteIndexAnalysis(session, indexDef);
                     }
                 }

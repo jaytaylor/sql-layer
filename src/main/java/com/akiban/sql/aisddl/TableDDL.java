@@ -27,7 +27,6 @@ import com.akiban.sql.types.TypeId.FormatIds;
 
 import com.akiban.sql.StandardException;
 
-import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
@@ -46,7 +45,6 @@ public class TableDDL
         if (createTable.getQueryExpression() != null)
             throw new StandardException("Cannot CREATE TABLE from SELECT yet.");
 
-        AISBuilder ab = new AISBuilder(ais);
         TableName tableName = createTable.getObjectName();
         String schemaName = tableName.getSchemaName();
         if (schemaName == null)
@@ -87,6 +85,8 @@ public class TableDDL
                 ConstraintDefinitionNode cdn = (ConstraintDefinitionNode)tableElement;
             }
         }
+
+        
     }
 
 }

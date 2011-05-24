@@ -74,13 +74,22 @@ public class Lookup_Default extends PhysicalOperator
                           RowType outputRowType,
                           Limit limit)
     {
+        if (inputRowType == null) {
+            throw new IllegalArgumentException();
+        }
+        if (outputRowType == null) {
+            throw new IllegalArgumentException();
+        }
         UserTableRowType inputTableType;
         if (inputRowType instanceof UserTableRowType) {
+            if (outputRowType == inputRowType) {
+                throw new IllegalArgumentException();
+            }
+            if (outputRowType.ancestorOf(inputRowType)) {
+                throw new IllegalArgumentException("Use AncestorLookup instead");
+            }
             inputTableType = (UserTableRowType) inputRowType;
             this.emitInputRow = true;
-            assert inputRowType != outputRowType;
-            assert !outputRowType.ancestorOf(inputTableType)
-                : String.format("For lookup of ancestor, use AncestorLookup_Default");
         } else {
             inputTableType = ((IndexRowType) inputRowType).tableType();
             this.emitInputRow = false;

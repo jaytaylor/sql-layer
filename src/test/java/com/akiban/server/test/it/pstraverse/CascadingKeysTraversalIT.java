@@ -17,6 +17,8 @@ package com.akiban.server.test.it.pstraverse;
 
 import org.junit.Test;
 
+import java.util.Arrays;
+
 public final class CascadingKeysTraversalIT extends KeysBase {
     @Override
     protected String ordersPK() {
@@ -29,14 +31,23 @@ public final class CascadingKeysTraversalIT extends KeysBase {
     }
 
     @Override
-    @Test(expected=IllegalArgumentException.class)
+    @Test @SuppressWarnings("unused") // junit will invoke
     public void traverseOrdersPK() throws Exception {
-        super.traverseOrdersPK();
+        traversePK(
+                orders(),
+                Arrays.asList(71L, 81L),
+                Arrays.asList(72L, 82L)
+        );
     }
 
     @Override
-    @Test(expected=IllegalArgumentException.class)
+    @Test @SuppressWarnings("unused") // junit will invoke
     public void traverseItemsPK() throws Exception {
-        super.traverseItemsPK();
+        traversePK(
+                items(),
+                Arrays.asList(71L, 81L, 91L),
+                Arrays.asList(71L, 81L, 92L),
+                Arrays.asList(72L, 82L, 93L)
+        );
     }
 }

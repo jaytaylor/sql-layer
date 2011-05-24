@@ -36,6 +36,7 @@ import com.akiban.server.service.memcache.hprocessor.PredicateLimit;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.RowCollector;
+import com.akiban.util.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +50,6 @@ import static com.akiban.qp.physicaloperator.API.*;
 public abstract class OperatorBasedRowCollector implements RowCollector
 {
     // RowCollector interface
-
 
     @Override
     public void open() {
@@ -238,18 +238,24 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         GroupTable groupTable = queryRootTable.getGroup().getGroupTable();
         PhysicalOperator rootOperator;
         if (useIndex) {
-            PhysicalOperator indexScan = indexScan_Default(predicateIndex, descending, indexKeyRange);
+            PhysicalOperator indexScan = indexScan_Default(predicateType.indexRowType(predicateIndex),
+                                                           descending,
+                                                           indexKeyRange);
             rootOperator = lookup_Default(indexScan,
                                           groupTable,
                                           predicateType.indexRowType(predicateIndex),
                                           predicateType,
                                           limit);
         } else {
-            rootOperator = groupScan_Default(groupTable, descending, limit, indexKeyRange);
+            // assert !descending;
+            rootOperator = groupScan_Default(groupTable, limit, indexKeyRange);
         }
         // Fill in ancestors above predicate
         if (queryRootType != predicateType) {
-            rootOperator = ancestorLookup_Default(rootOperator, groupTable, predicateType, ancestorTypes());
+            List<RowType> ancestorTypes = ancestorTypes();
+            if (!ancestorTypes.isEmpty()) {
+                rootOperator = ancestorLookup_Default(rootOperator, groupTable, predicateType, ancestorTypes);
+            }
         }
         // Get rid of everything above query root table.
         rootOperator = extract_Default(schema, rootOperator, Arrays.<RowType>asList(queryRootType));
@@ -261,7 +267,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (LOG.isInfoEnabled()) {
             LOG.info("Execution plan:\n{}", rootOperator.describePlan());
         }
-        // Executable stuff
         this.operator = rootOperator;
     }
 

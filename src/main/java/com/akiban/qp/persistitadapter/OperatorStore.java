@@ -18,7 +18,6 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.message.ErrorCode;
 import com.akiban.qp.expression.IndexBound;
@@ -78,16 +77,12 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         IndexKeyRange range = new IndexKeyRange(bound, true, bound, true);
 
         final PhysicalOperator scanOp;
-        if (rowDef.getPKIndexDef() != null && rowDef.getPKIndexDef().isHKeyEquivalent()) {
-            scanOp = API.groupScan_Default(groupTable, false, NoLimit.instance(), range);
-        }
-        else {
-            TableIndex index = userTable.getIndex("PRIMARY");
-            UserTableRowType tableType = schema.userTableRowType(userTable);
-            IndexRowType indexType = tableType.indexRowType(index);
-            PhysicalOperator indexScan = indexScan_Default(index, false, range);
-            scanOp = lookup_Default(indexScan, groupTable, indexType, tableType);
-        }
+        Index index = userTable.getPrimaryKeyIncludingInternal().getIndex();
+        assert index != null : userTable;
+        UserTableRowType tableType = schema.userTableRowType(userTable);
+        IndexRowType indexType = tableType.indexRowType(index);
+        PhysicalOperator indexScan = indexScan_Default(indexType, false, range);
+        scanOp = lookup_Default(indexScan, groupTable, indexType, tableType);
 
         Update_Default updateOp = new Update_Default(scanOp, updateFunction);
 

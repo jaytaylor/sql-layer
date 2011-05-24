@@ -1,0 +1,3 @@
+Update_Default(Lookup_Default(_akiban_customers Index(user.customers.name[IndexColumn(name)]) -> user.customers limit NO LIMIT) -> ExpressionRowUpdateFunction(ExpressionRow[, Literal(Smyth)]))
+  Lookup_Default(_akiban_customers Index(user.customers.name[IndexColumn(name)]) -> user.customers limit NO LIMIT)
+    IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>=user.customers=ExpressionRow[Literal(Smith)],<=user.customers=ExpressionRow[Literal(Smith)]))

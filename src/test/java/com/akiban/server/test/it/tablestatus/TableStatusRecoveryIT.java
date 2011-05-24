@@ -58,7 +58,8 @@ public class TableStatusRecoveryIT extends ITBase {
     public void pkLessInsertRowCountTest() throws Exception {
         int tableId = createTable("test", "A", "I INT, V VARCHAR(255)");
         for (int i = 0; i < 10000; i++) {
-            writeRows(createNewRow(tableId, i, "This is record # " + 1));
+            // -1: Dummy value for akiban-supplied PK
+            writeRows(createNewRow(tableId, i, "This is record # " + 1, -1));
         }
         final TableStatistics ts1 = store().getTableStatistics(session(), tableId);
         assertEquals(10000, ts1.getRowCount());
@@ -70,7 +71,8 @@ public class TableStatusRecoveryIT extends ITBase {
         db.checkpoint();
 
         for (int i = 10000; i < 20000; i++) {
-            writeRows(createNewRow(tableId, i, "This is record # " + 1));
+            // -1: Dummy value for akiban-supplied PK
+            writeRows(createNewRow(tableId, i, "This is record # " + 1, -1));
         }
         
         final TableStatistics ts2 = store().getTableStatistics(session(), tableId);
