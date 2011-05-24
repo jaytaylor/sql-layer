@@ -67,15 +67,24 @@ public class PhysicalOperatorITBase extends ITBase
             "iid int not null key",
             "oid int",
             "constraint __akiban_io foreign key __akiban_io(oid) references order(oid)");
+        address = createTable(
+            "schema", "address",
+            "aid int not null key",
+            "cid int",
+            "address varchar(100)",
+            "constraint __akiban_ac foreign key __akiban_ac(cid) references customer(cid)",
+            "index(address)");
         schema = new Schema(rowDefCache().ais());
         customerRowType = schema.userTableRowType(userTable(customer));
         orderRowType = schema.userTableRowType(userTable(order));
         itemRowType = schema.userTableRowType(userTable(item));
+        addressRowType = schema.userTableRowType(userTable(address));
         customerNameIndexRowType = indexType(customer, "name");
         orderSalesmanIndexRowType = indexType(order, "salesman");
         itemOidIndexRowType = indexType(item, "oid");
         itemIidIndexRowType = indexType(item, "iid");
         customerCidIndexRowType = indexType(customer, "cid");
+        addressAddressIndexRowType = indexType(address, "address");
         coi = groupTable(customer);
         db = new NewRow[]{createNewRow(customer, 1L, "xyz"),
                           createNewRow(customer, 2L, "abc"),
@@ -234,14 +243,17 @@ public class PhysicalOperatorITBase extends ITBase
     protected int customer;
     protected int order;
     protected int item;
+    protected int address;
     protected RowType customerRowType;
     protected RowType orderRowType;
     protected RowType itemRowType;
+    protected RowType addressRowType;
     protected IndexRowType customerCidIndexRowType;
     protected IndexRowType customerNameIndexRowType;
     protected IndexRowType orderSalesmanIndexRowType;
     protected IndexRowType itemOidIndexRowType;
     protected IndexRowType itemIidIndexRowType;
+    protected IndexRowType addressAddressIndexRowType;
     protected GroupTable coi;
     protected Schema schema;
     protected NewRow[] db;

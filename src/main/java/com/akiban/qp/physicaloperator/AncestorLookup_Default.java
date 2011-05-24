@@ -219,7 +219,7 @@ class AncestorLookup_Default extends PhysicalOperator
                 ancestorCursor.open(UndefBindings.only());
                 if (ancestorCursor.next()) {
                     Row retrievedRow = ancestorCursor.currentRow();
-                    // Retrieved row might not actually what we were looking for -- not all ancestors are present,
+                    // Retrieved row might not actually be what we were looking for -- not all ancestors are present,
                     // (there are orphan rows).
                     ancestorRow.set(hKey.equals(retrievedRow.hKey()) ? retrievedRow : null);
                 } else {
