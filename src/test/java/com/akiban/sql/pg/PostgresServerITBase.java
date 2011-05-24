@@ -16,8 +16,14 @@
 package com.akiban.sql.pg;
 import com.akiban.sql.RegexFilenameFilter;
 
+import com.akiban.server.RowDef;
+import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.api.dml.scan.RowOutput;
+import com.akiban.server.api.dml.scan.RowOutputException;
+import com.akiban.server.api.dml.scan.ScanAllRequest;
+import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.test.it.ITBase;
 
 import org.junit.After;
@@ -34,6 +40,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 @Ignore
@@ -56,6 +63,8 @@ public class PostgresServerITBase extends ITBase
         }
     }
 
+    protected int rootTableId;
+
     protected void loadSchemaFile(File file) throws Exception {
         Reader rdr = null;
         try {
@@ -63,6 +72,7 @@ public class PostgresServerITBase extends ITBase
             BufferedReader brdr = new BufferedReader(rdr);
             String tableName = null;
             List<String> tableDefinition = new ArrayList<String>();
+            boolean first = true;
             while (true) {
                 String line = brdr.readLine();
                 if (line == null) break;
@@ -71,9 +81,14 @@ public class PostgresServerITBase extends ITBase
                     tableName = line.substring(13);
                 else if (line.startsWith("("))
                     tableDefinition.clear();
-                else if (line.startsWith(")"))
-                    createTable(SCHEMA_NAME, tableName, 
-                                tableDefinition.toArray(new String[tableDefinition.size()]));
+                else if (line.startsWith(")")) {
+                    int id = createTable(SCHEMA_NAME, tableName, 
+                                         tableDefinition.toArray(new String[tableDefinition.size()]));
+                    if (first) {
+                        rootTableId = id;
+                        first = false;
+                    }
+                }
                 else {
                     if (line.endsWith(","))
                         line = line.substring(0, line.length() - 1);
@@ -118,6 +133,33 @@ public class PostgresServerITBase extends ITBase
                 }
             }
         }
+    }
+
+    protected String dumpData() throws Exception {
+        final StringBuilder str = new StringBuilder();
+        CursorId cursorId = dml()
+            .openCursor(session(), aisGeneration(), 
+                        new ScanAllRequest(rootTableId, null, 0,
+                                           EnumSet.of(ScanFlag.DEEP)));
+        dml().scanSome(session(), cursorId,
+                       new RowOutput() {
+                           public void output(NewRow row) throws RowOutputException {
+                               RowDef rowDef = row.getRowDef();
+                               str.append(rowDef.table().getName().getTableName());
+                               for (int i = 0; i < rowDef.getFieldCount(); i++) {
+                                   str.append(",");
+                                   str.append(row.get(i));
+                               }
+                               str.append("\n");
+                           }
+
+                           public void mark() {
+                           }
+                           public void rewind() {
+                           }
+                       });
+        dml().closeCursor(session(), cursorId);
+        return str.toString();
     }
 
     protected void beforeOpenConnection() throws Exception {
