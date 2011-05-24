@@ -15,45 +15,33 @@
 
 package com.akiban.sql.pg;
 import com.akiban.sql.RegexFilenameFilter;
-import com.akiban.sql.TestBase;
 
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.server.service.ServiceManagerImpl;
-import com.akiban.server.service.config.Property;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
-import static junit.framework.Assert.*;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
-import org.junit.runner.RunWith;
+import org.junit.Ignore;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
-@RunWith(Parameterized.class)
-public class PostgresServerIT extends ITBase
+@Ignore
+public class PostgresServerITBase extends ITBase
 {
     public static final File RESOURCE_DIR = 
         new File("src/test/resources/"
-                 + PostgresServerIT.class.getPackage().getName().replace('.', '/'));
+                 + PostgresServerITBase.class.getPackage().getName().replace('.', '/'));
 
     public static final String SCHEMA_NAME = "user";
     public static final String DRIVER_NAME = "org.postgresql.Driver";
@@ -61,10 +49,9 @@ public class PostgresServerIT extends ITBase
     public static final String USER_NAME = "user";
     public static final String USER_PASSWORD = "user";
 
-    @Before
-    public void loadDatabase() throws Exception {
-        loadSchemaFile(new File(RESOURCE_DIR, "schema.ddl"));
-        for (File data : RESOURCE_DIR.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
+    public void loadDatabase(File dir) throws Exception {
+        loadSchemaFile(new File(dir, "schema.ddl"));
+        for (File data : dir.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
             loadDataFile(data);
         }
     }
@@ -133,10 +120,15 @@ public class PostgresServerIT extends ITBase
         }
     }
 
+    protected void beforeOpenConnection() throws Exception {
+    }
+
     protected Connection connection;
 
     @Before
     public void openConnection() throws Exception {
+        beforeOpenConnection();
+
         int port = serviceManager().getPostgresService().getPort();
         if (port < 0) {
             throw new Exception("akserver.postgres.port is not set.");
@@ -158,50 +150,15 @@ public class PostgresServerIT extends ITBase
         }
     }
 
-    @Parameters
-    public static Collection<Object[]> queries() throws Exception {
-        return TestBase.sqlAndExpectedAndParams(RESOURCE_DIR);
-    }
-
     protected String caseName, sql, expected;
     protected String[] params;
 
-    public PostgresServerIT(String caseName, String sql, String expected, 
-                            String[] params) {
+    public PostgresServerITBase(String caseName, String sql, String expected, 
+                                String[] params) {
         this.caseName = caseName;
         this.sql = sql.trim();
         this.expected = expected;
         this.params = params;
     }
 
-    @Test
-    public void testQuery() throws Exception {
-        StringBuilder data = new StringBuilder();
-        PreparedStatement stmt = connection.prepareStatement(sql);
-        if (params != null) {
-            for (int i = 0; i < params.length; i++) {
-                String param = params[i];
-                if (param.startsWith("#"))
-                    stmt.setLong(i + 1, Long.parseLong(param.substring(1)));
-                else
-                    stmt.setString(i + 1, param);
-            }
-        }
-        ResultSet rs = stmt.executeQuery();
-        ResultSetMetaData md = rs.getMetaData();
-        for (int i = 1; i <= md.getColumnCount(); i++) {
-            if (i > 1) data.append('\t');
-            data.append(md.getColumnName(i));
-        }
-        data.append('\n');
-        while (rs.next()) {
-            for (int i = 1; i <= md.getColumnCount(); i++) {
-                if (i > 1) data.append('\t');
-                data.append(rs.getString(i));
-            }
-            data.append('\n');
-        }
-        stmt.close();
-        assertEquals("Difference in " + caseName, expected, data.toString());
-    }
 }
