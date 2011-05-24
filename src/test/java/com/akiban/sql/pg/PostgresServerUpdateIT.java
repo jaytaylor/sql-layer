@@ -36,8 +36,8 @@ public class PostgresServerUpdateIT extends PostgresServerITBase
     public static final File RESOURCE_DIR = 
         new File(PostgresServerITBase.RESOURCE_DIR, "update");
 
-    @Override
-    protected void beforeOpenConnection() throws Exception {
+    @Before
+    public void loadDatabase() throws Exception {
         loadDatabase(RESOURCE_DIR);
     }
 

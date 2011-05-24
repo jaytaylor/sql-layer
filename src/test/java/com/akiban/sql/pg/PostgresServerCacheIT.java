@@ -15,6 +15,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.service.config.Property;
 import com.akiban.server.api.dml.scan.NewRow;
 
 import org.junit.Before;
@@ -30,12 +31,19 @@ import java.sql.SQLException;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Collections;
 
 public class PostgresServerCacheIT extends PostgresServerITBase
 {
     public static final String QUERY = "SELECT id FROM t1 WHERE id = %d";
     public static final int NROWS = 100;
     public static final int CAPACITY = 10;
+
+    @Override
+    protected Collection<Property> startupConfigProperties() {
+        return Collections.singleton(new Property(Property.parseKey("akserver.postgres.statementCacheSize"),
+                                                  Integer.toString(CAPACITY)));
+    }
 
     @Override
     protected void beforeOpenConnection() throws Exception {

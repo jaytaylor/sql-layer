@@ -166,6 +166,14 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         return statementCache;
     }
 
+    /** This is the version for use by connections. */
+    // TODO: This could create a new one if we didn't want to share them.
+    public PostgresStatementCache getStatementCache(int generation) {
+        if (statementCache != null)
+            statementCache.checkGeneration(generation);
+        return statementCache;
+    }
+
     @Override
     public int getStatementCacheHits() {
         if (statementCache == null)

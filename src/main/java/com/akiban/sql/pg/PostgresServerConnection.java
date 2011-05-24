@@ -22,6 +22,7 @@ import com.akiban.sql.parser.StatementNode;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
@@ -62,6 +63,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     private Session session;
     private ServiceManager serviceManager;
+    private int aisGeneration = -1;
     private AkibanInformationSchema ais;
     private String defaultSchemaName;
     private SQLParser parser;
@@ -212,7 +214,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         messenger.sendMessage(true);
     }
 
-    protected void processStartupMessage() throws IOException {
+    protected void processStartupMessage() throws IOException, StandardException {
         int version = messenger.readInt();
         switch (version) {
         case PostgresMessenger.VERSION_CANCEL:
@@ -242,7 +244,10 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 messenger.setEncoding(enc);
         }
 
-        makeGenerators();
+        // Get initial version of AIS.
+        session = ServiceManagerImpl.newSession();
+        serviceManager = ServiceManagerImpl.get();
+        updateAIS();
 
         {
             messenger.beginMessage(PostgresMessenger.AUTHENTICATION_TYPE);
@@ -299,6 +304,9 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     protected void processQuery() throws IOException, StandardException {
         sql = messenger.readString();
         logger.info("Query: {}", sql);
+
+        updateAIS();
+
         PostgresStatement pstmt = null;
         if (statementCache != null)
             pstmt = statementCache.get(sql);
@@ -356,6 +364,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         for (int i = 0; i < nparams; i++)
             paramTypes[i] = messenger.readInt();
         logger.info("Parse: {}", sql);
+
+        updateAIS();
 
         PostgresStatement pstmt = null;
         if (statementCache != null)
@@ -484,10 +494,24 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         stop();
     }
 
-    protected void makeGenerators() {
-        session = ServiceManagerImpl.newSession();
-        serviceManager = ServiceManagerImpl.get();
-        ais = serviceManager.getDXL().ddlFunctions().getAIS(session);
+    // When the AIS changes, throw everything away, since it might
+    // point to obsolete objects.
+    protected void updateAIS() throws StandardException {
+        DDLFunctions ddl = serviceManager.getDXL().ddlFunctions();
+        boolean changed = false;
+        // TODO: This could be simpler if the AIS object itself also
+        // knew its generation.
+        while (true) {
+            int currentGeneration = ddl.getGeneration();
+            if (aisGeneration != currentGeneration) {
+                aisGeneration = currentGeneration;
+                ais = ddl.getAIS(session);
+                changed = true;
+            }
+            else
+                break;
+        }
+        if (!changed) return;
 
         parser = new SQLParser();
 
@@ -500,7 +524,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
-        statementCache = server.getStatementCache();
+        statementCache = server.getStatementCache(aisGeneration);
         unparsedGenerators = new PostgresStatementParser[] {
             new PostgresEmulatedMetaDataStatementParser(this)
         };

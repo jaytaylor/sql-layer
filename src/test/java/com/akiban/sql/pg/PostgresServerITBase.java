@@ -180,14 +180,10 @@ public class PostgresServerITBase extends ITBase
         }
     }
 
-    protected void beforeOpenConnection() throws Exception {
-    }
-
     protected Connection connection;
 
     @Before
     public void openTheConnection() throws Exception {
-        beforeOpenConnection();
         connection = openConnection();
     }
 

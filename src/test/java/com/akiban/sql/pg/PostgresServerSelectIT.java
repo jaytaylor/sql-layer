@@ -38,10 +38,10 @@ public class PostgresServerSelectIT extends PostgresServerITBase
     public static final File RESOURCE_DIR = 
         new File(PostgresServerITBase.RESOURCE_DIR, "select");
 
-    // This cannot be a @Before because that'll run after super's
-    // openConnection(), which will then have a stale AIS.
-    @Override
-    protected void beforeOpenConnection() throws Exception {
+    @Before
+    // Note that this runs _after_ super's openTheConnection(), which
+    // means that there is always an AIS generation flush.
+    public void loadDatabase() throws Exception {
         loadDatabase(RESOURCE_DIR);
     }
 
