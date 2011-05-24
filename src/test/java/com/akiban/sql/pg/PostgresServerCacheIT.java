@@ -41,7 +41,7 @@ public class PostgresServerCacheIT extends PostgresServerITBase
 
     @Override
     protected Collection<Property> startupConfigProperties() {
-        return Collections.singleton(new Property(Property.parseKey("akserver.postgres.statementCacheSize"),
+        return Collections.singleton(new Property(Property.parseKey("akserver.postgres.statementCacheCapacity"),
                                                   Integer.toString(CAPACITY)));
     }
 

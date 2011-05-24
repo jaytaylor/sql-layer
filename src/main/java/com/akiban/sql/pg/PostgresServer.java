@@ -38,10 +38,10 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
-    public PostgresServer(int port, int statementCacheSize) {
+    public PostgresServer(int port, int statementCacheCapacity) {
         this.port = port;
-        if (statementCacheSize > 0)
-            statementCache = new PostgresStatementCache(statementCacheSize);
+        if (statementCacheCapacity > 0)
+            statementCache = new PostgresStatementCache(statementCacheCapacity);
     }
 
     /** Called from the (AkServer's) main thread to start a server
@@ -172,6 +172,25 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         if (statementCache != null)
             statementCache.checkGeneration(generation);
         return statementCache;
+    }
+
+    @Override
+    public int getStatementCacheCapacity() {
+        if (statementCache == null)
+            return 0;
+        else
+            return statementCache.getCapacity();
+    }
+
+    @Override
+    public void setStatementCacheCapacity(int capacity) {
+        if (capacity <= 0) {
+            statementCache = null;
+        }
+        else if (statementCache == null)
+            statementCache = new PostgresStatementCache(capacity);
+        else
+            statementCache.setCapacity(capacity);
     }
 
     @Override
