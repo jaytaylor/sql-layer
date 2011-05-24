@@ -27,7 +27,7 @@ import java.util.Map;
  */
 public class PostgresStatementCache
 {
-    private Map<String,PostgresStatement> cache;
+    private Cache cache;
     private int hits, misses;
 
     static class Cache extends LinkedHashMap<String,PostgresStatement> {
@@ -37,14 +37,32 @@ public class PostgresStatementCache
             super(capacity, 0.75f, true);
             this.capacity = capacity;
         }
+        
+        public int getCapacity() {
+            return capacity;
+        }
 
-        protected boolean removeEldestEntry(Map.Entry eldest) {  
+        public void setCapacity(int capacity) {
+            this.capacity = capacity;
+        }
+
+        @Override
+        protected boolean removeEldestEntry(Map.Entry eldest) {
             return (size() > capacity); 
         }  
     }
 
     public PostgresStatementCache(int size) {
         cache = new Cache(size);
+    }
+
+    public int getCapacity() {
+        return cache.getCapacity();
+    }
+
+    public synchronized void setCapacity(int capacity) {
+        cache.setCapacity(capacity);
+        cache.clear();
     }
 
     public synchronized PostgresStatement get(String sql) {
@@ -67,6 +85,10 @@ public class PostgresStatementCache
     }
     public synchronized int getMisses() {
         return misses;
+    }
+
+    public synchronized void invalidate() {
+        cache.clear();
     }
 
     public synchronized void reset() {
