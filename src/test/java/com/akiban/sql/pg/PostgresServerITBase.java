@@ -162,32 +162,39 @@ public class PostgresServerITBase extends ITBase
         return str.toString();
     }
 
-    protected void beforeOpenConnection() throws Exception {
-    }
-
-    protected Connection connection;
-
-    @Before
-    public void openConnection() throws Exception {
-        beforeOpenConnection();
-
+    protected Connection openConnection() throws Exception {
         int port = serviceManager().getPostgresService().getPort();
         if (port < 0) {
             throw new Exception("akserver.postgres.port is not set.");
         }
         String url = String.format(CONNECTION_URL, port);
         Class.forName(DRIVER_NAME);
-        connection = DriverManager.getConnection(url, USER_NAME, USER_PASSWORD);
+        return DriverManager.getConnection(url, USER_NAME, USER_PASSWORD);
+    }
+
+    protected void closeConnection(Connection Connection) {
+        try {
+            connection.close();
+        }
+        catch (SQLException ex) {
+        }
+    }
+
+    protected void beforeOpenConnection() throws Exception {
+    }
+
+    protected Connection connection;
+
+    @Before
+    public void openTheConnection() throws Exception {
+        beforeOpenConnection();
+        connection = openConnection();
     }
 
     @After
-    public void closeConnection() {
+    public void closeTheConnection() {
         if (connection != null) {
-            try {
-                connection.close();
-            }
-            catch (SQLException ex) {
-            }
+            closeConnection(connection);
             connection = null;
         }
     }
