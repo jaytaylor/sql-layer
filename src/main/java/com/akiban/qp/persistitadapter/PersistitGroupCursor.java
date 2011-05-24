@@ -138,7 +138,7 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
 
     private RowHolder<PersistitGroupRow> unsharedRow()
     {
-        if (row.get().isShared()) {
+        if (row.isNull() || row.get().isShared()) {
             row.set(adapter.newGroupRow());
         }
         return row;

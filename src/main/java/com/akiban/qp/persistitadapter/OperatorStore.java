@@ -114,14 +114,15 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         if (result.rowsModified() == 0 || result.rowsTouched() == 0) {
             throw new NoSuchRowException(describeRow(oldRowData, rowDef));
         }
-        else if(result.rowsModified() != 1 || result.rowsTouched() != 1) {
-            throw new RuntimeException(String.format(
-                    "%s: %d touched, %d modified",
-                    describeRow(oldRowData, rowDef),
-                    result.rowsTouched(),
-                    result.rowsModified()
-            ));
-        }
+        // TODO not yet implemented
+//        else if(result.rowsModified() != 1 || result.rowsTouched() != 1) {
+//            throw new RuntimeException(String.format(
+//                    "%s: %d touched, %d modified",
+//                    describeRow(oldRowData, rowDef),
+//                    result.rowsTouched(),
+//                    result.rowsModified()
+//            ));
+//        }
     }
 
     private static String describeRow(RowData oldRowData, RowDef rowDef) {

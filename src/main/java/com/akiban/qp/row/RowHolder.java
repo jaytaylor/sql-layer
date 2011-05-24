@@ -22,7 +22,7 @@ public class RowHolder<MR extends Row>
     @Override
     public String toString()
     {
-        return row.toString();
+        return String.valueOf(row);
     }
 
     // RowHolder interface
