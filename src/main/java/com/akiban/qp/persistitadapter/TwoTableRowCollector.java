@@ -18,6 +18,7 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -93,7 +94,7 @@ public class TwoTableRowCollector extends OperatorBasedRowCollector
         if (predicateTable != null) {
             // predicateIndex and predicateType
             predicateIndex = null;
-            for (Index userTableIndex : predicateTable.getIndexesIncludingInternal()) {
+            for (TableIndex userTableIndex : predicateTable.getIndexesIncludingInternal()) {
                 if (userTableIndex.getIndexId() == indexId) {
                     predicateIndex = userTableIndex;
                 }

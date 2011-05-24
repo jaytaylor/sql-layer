@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.ais.model.TableIndex;
 import com.akiban.sql.optimizer.SimplifiedQuery.*;
 
 import com.akiban.sql.parser.*;
@@ -52,7 +53,7 @@ import java.util.*;
 
 /**
  * Compile SQL statements into operator trees.
- */
+ */ 
 public class OperatorCompiler
 {
     protected SQLParserContext parserContext;
@@ -205,7 +206,7 @@ public class OperatorCompiler
         PhysicalOperator resultOperator;
         if (index != null) {
             indexConditions = index.getIndexConditions();
-            Index iindex = index.getIndex();
+            TableIndex iindex = index.getIndex();
             UserTable indexTable = (UserTable)iindex.getTable();
             UserTableRowType tableType = userTableRowType(indexTable);
             IndexRowType indexType = tableType.indexRowType(iindex);
@@ -293,7 +294,7 @@ public class OperatorCompiler
         PhysicalOperator resultOperator;
         if (index != null) {
             indexConditions = index.getIndexConditions();
-            Index iindex = index.getIndex();
+            TableIndex iindex = index.getIndex();
             assert (targetTable == iindex.getTable());
             IndexRowType indexType = targetRowType.indexRowType(iindex);
             PhysicalOperator indexOperator = indexScan_Default(indexType, 
@@ -348,16 +349,16 @@ public class OperatorCompiler
 
     // A possible index.
     class IndexUsage implements Comparable<IndexUsage> {
-        private Index index;
+        private TableIndex index;
         private List<ColumnCondition> equalityConditions;
         private ColumnCondition lowCondition, highCondition;
         private boolean sorting, reverse;
         
-        public IndexUsage(Index index) {
+        public IndexUsage(TableIndex index) {
             this.index = index;
         }
 
-        public Index getIndex() {
+        public TableIndex getIndex() {
             return index;
         }
 
@@ -527,7 +528,7 @@ public class OperatorCompiler
 
         IndexUsage bestIndex = null;
         for (UserTable table : squery.getTables()) {
-            for (Index index : table.getIndexes()) { // TODO: getIndexesIncludingInternal()
+            for (TableIndex index : table.getIndexes()) { // TODO: getIndexesIncludingInternal()
                 IndexUsage candidate = new IndexUsage(index);
                 if (candidate.usable(squery)) {
                     if ((bestIndex == null) ||
@@ -642,7 +643,7 @@ public class OperatorCompiler
         }
     }
 
-    protected IndexBound getIndexBound(Index index, Expression[] keys) {
+    protected IndexBound getIndexBound(TableIndex index, Expression[] keys) {
         if (keys == null) 
             return null;
         return new IndexBound((UserTable)index.getTable(), 
@@ -664,7 +665,7 @@ public class OperatorCompiler
             };
     }
 
-    protected Row getIndexExpressionRow(Index index, Expression[] keys) {
+    protected Row getIndexExpressionRow(TableIndex index, Expression[] keys) {
         return new ExpressionRow(schema.indexRowType(index), keys);
     }
 

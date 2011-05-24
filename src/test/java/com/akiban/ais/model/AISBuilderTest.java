@@ -989,4 +989,38 @@ public class AISBuilderTest
 
         builder.akibanInformationSchema().checkIntegrity();
     }
+
+    @Test
+    public void testTwoTableGroupWithGroupIndex()
+    {
+        final AISBuilder builder = new AISBuilder();
+        builder.userTable("test", "c");
+        builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
+        builder.userTable("test", "o");
+        builder.column("test", "o", "oid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "o", "cid", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "o", "date", 2, "int", 0L, 0L, false, false, null, null);
+        builder.joinTables("c/id/o/cid", "test", "c", "test", "o");
+        builder.joinColumns("c/id/o/cid", "test", "c", "id", "test", "o", "cid");
+        builder.basicSchemaIsComplete();
+        builder.createGroup("coi", "test", "_akiban_c");
+        builder.addJoinToGroup("coi", "c/id/o/cid", 0);
+        builder.groupIndex("coi", "name_date", false);
+        builder.groupIndexColumn("coi", "name_date", "test", "c",  "name", 0);
+        builder.groupIndexColumn("coi", "name_date", "test", "o",  "date", 1);
+        builder.groupingIsComplete();
+
+        final AkibanInformationSchema ais = builder.akibanInformationSchema();
+        ais.checkIntegrity();
+        Assert.assertEquals(2, ais.getUserTables().size());
+        Assert.assertEquals(1, ais.getGroupTables().size());
+        Assert.assertEquals(1, ais.getGroups().size());
+
+        final Group group = ais.getGroup("coi");
+        Assert.assertEquals(1, group.getIndexes().size());
+        final Index index = group.getIndex("name_date");
+        Assert.assertNotNull(index);
+        Assert.assertEquals(2, index.getColumns().size());
+    }
 }

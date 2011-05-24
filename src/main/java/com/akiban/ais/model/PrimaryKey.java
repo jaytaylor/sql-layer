@@ -32,7 +32,7 @@ public class PrimaryKey implements Serializable
         return columns;
     }
 
-    public Index getIndex()
+    public TableIndex getIndex()
     {
         return index;
     }
@@ -42,11 +42,11 @@ public class PrimaryKey implements Serializable
         // GWT: needs default constructor
     }
 
-    public PrimaryKey(Index index)
+    public PrimaryKey(TableIndex index)
     {
         this.index = index;
     }
 
-    private Index index;
+    private TableIndex index;
     private List<Column> columns;
 }

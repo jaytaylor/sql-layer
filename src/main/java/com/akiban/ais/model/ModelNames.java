@@ -78,6 +78,7 @@ public interface ModelNames
     String index = "index";
     String index_schemaName = "schemaName";
     String index_tableName = "tableName";
+    String index_indexType = "indexType";
     String index_indexName = "indexName";
     String index_indexId = "indexId";
     String index_constraint = "constraint";
@@ -86,6 +87,7 @@ public interface ModelNames
     String indexColumn = "indexColumn";
     String indexColumn_schemaName = "schemaName";
     String indexColumn_tableName = "tableName";
+    String indexColumn_indexType = "indexType";
     String indexColumn_indexName = "indexName";
     String indexColumn_columnName = "columnName";
     String indexColumn_position = "position";

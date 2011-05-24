@@ -28,6 +28,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
@@ -57,7 +58,7 @@ public final class CreateIndexesIT extends AlterTestBase {
         ArrayList<Index> indexes = new ArrayList<Index>();
         ddl().createIndexes(session(), indexes);
     }
-    
+
     @Test(expected=NoSuchTableException.class)
     public void createIndexInvalidTable() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key");
@@ -95,7 +96,7 @@ public final class CreateIndexesIT extends AlterTestBase {
         // Attempt to a primary key
         AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "atable");
-        Index.create(ais, table, "PRIMARY", 1, false, "PRIMARY");
+        TableIndex.create(ais, table, "PRIMARY", 1, false, "PRIMARY");
         ddl().createIndexes(session(), getAllIndexes(ais));
     }
     
@@ -115,7 +116,7 @@ public final class CreateIndexesIT extends AlterTestBase {
         AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "t");
         Table curTable = ddl().getAIS(session()).getTable("test", "t");
-        Index index = Index.create(ais, table, "id", -1, false, "KEY");
+        Index index = TableIndex.create(ais, table, "id", -1, false, "KEY");
         Column refCol = Column.create(table, "foo", 0, Types.INT);
         index.addColumn(new IndexColumn(index, refCol, 0, true, 0));
         ddl().createIndexes(session(), getAllIndexes(ais));
@@ -128,7 +129,7 @@ public final class CreateIndexesIT extends AlterTestBase {
         AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "t");
         Table curTable = ddl().getAIS(session()).getTable("test", "t");
-        Index index = Index.create(ais, table, "id", -1, false, "KEY");
+        Index index = TableIndex.create(ais, table, "id", -1, false, "KEY");
         Column refCol = Column.create(table, "id", 0, Types.BLOB);
         index.addColumn(new IndexColumn(index, refCol, 0, true, 0));
         ddl().createIndexes(session(), getAllIndexes(ais));

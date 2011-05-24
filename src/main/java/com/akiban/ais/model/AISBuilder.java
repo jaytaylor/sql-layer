@@ -30,7 +30,8 @@ import com.akiban.ais.model.Join.SourceType;
 // of a dump. The user need not search the AIS and hold on to AIS objects (UserTable, Column, etc.). Instead,
 // only names from the dump need be supplied. 
 
-public class AISBuilder {
+public class
+        AISBuilder {
     GwtLogger LOG = GwtLogging.getLogger(AISBuilder.class);
 
     // API for creating capturing basic schema information
@@ -107,14 +108,26 @@ public class AISBuilder {
         column.setCollation(collation);
     }
 
+    /**
+     * Create a new TableIndex
+     */
     public void index(String schemaName, String tableName, String indexName,
             Boolean unique, String constraint) {
         LOG.info("index: " + schemaName + "." + tableName + "." + indexName);
         Table table = ais.getTable(schemaName, tableName);
         checkFound(table, "creating index", "table",
                 concat(schemaName, tableName));
-        Index.create(ais, table, indexName, indexIdGenerator++, unique,
+        TableIndex.create(ais, table, indexName, indexIdGenerator++, unique,
                 constraint);
+    }
+
+    public void groupIndex(String groupName, String indexName, Boolean unique)
+    {
+        LOG.info("groupIndex: " + groupName + "." + indexName);
+        Group group = ais.getGroup(groupName);
+        checkFound(group, "creating group index", "group", groupName);
+        String constraint = unique ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT;
+        GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint);
     }
 
     public void indexColumn(String schemaName, String tableName,
@@ -133,6 +146,21 @@ public class AISBuilder {
                 concat(schemaName, tableName, indexName));
         index.addColumn(new IndexColumn(index, column, position, ascending,
                 indexedLength));
+    }
+
+    public void groupIndexColumn(String groupName, String indexName, String schemaName, String tableName,
+                                 String columnName, Integer position)
+    {
+        LOG.info("groupIndexColumn: " + groupName + "." + indexName + ":" + columnName);
+        Group group = ais.getGroup(groupName);
+        checkFound(group, "creating group index column", "group", groupName);
+        Index index = group.getIndex(indexName);
+        checkFound(index, "creating group index column", "index", concat(groupName, indexName));
+        Table table = ais.getTable(schemaName, tableName);
+        checkFound(table, "creating group index column", "table", concat(schemaName, tableName));
+        Column column = table.getColumn(columnName);
+        checkFound(column, "creating group index column", "column", concat(schemaName, tableName, columnName));
+        index.addColumn(new IndexColumn(index, column, position, true, null));
     }
 
     public void joinTables(String joinName, String parentSchemaName,
@@ -520,8 +548,8 @@ public class AISBuilder {
             UserTable userTable) {
         LOG.debug("generating group table indexes for group table "
                 + groupTable + " and user table " + userTable);
-        for (Index userIndex : userTable.getIndexes()) {
-            Index groupIndex = Index.create(ais, groupTable,
+        for (TableIndex userIndex : userTable.getIndexes()) {
+            TableIndex groupIndex = TableIndex.create(ais, groupTable,
                     nameGenerator.generateGroupIndexName(userIndex),
                     userIndex.getIndexId(), false, "key");
             int position = 0;
@@ -546,8 +574,8 @@ public class AISBuilder {
             Group group = userTable.getGroup();
             if (group != null) {
                 GroupTable groupTable = group.getGroupTable();
-                for (Index userIndex : userTable.getIndexesIncludingInternal()) {
-                    Index groupIndex = Index.create(ais, groupTable,
+                for (TableIndex userIndex : userTable.getIndexesIncludingInternal()) {
+                    TableIndex groupIndex = TableIndex.create(ais, groupTable,
                             nameGenerator.generateGroupIndexName(userIndex),
                             userIndex.getIndexId(), false, "key");
                     int position = 0;
@@ -793,9 +821,9 @@ public class AISBuilder {
         }
 
         @Override
-        public String generateGroupIndexName(Index userTableIndex) {
-            return userTableIndex.getTableName().getTableName() + "$"
-                    + userTableIndex.getIndexName();
+        public String generateGroupIndexName(TableIndex userTableIndex) {
+            return userTableIndex.getTable().getName().getTableName() + "$"
+                    + userTableIndex.getIndexName().getName();
         }
 
     }

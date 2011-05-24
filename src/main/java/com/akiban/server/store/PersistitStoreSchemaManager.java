@@ -40,11 +40,14 @@ import com.akiban.ais.io.Reader;
 import com.akiban.ais.io.TableSubsetWriter;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.Type;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.encoding.EncoderFactory;
@@ -182,7 +185,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     @Override
-    public void alterTableAddIndexes(Session session, TableName tableName, Collection<Index> indexes) throws Exception {
+    public void alterTableAddIndexes(Session session, TableName tableName, Collection<TableIndex> indexes) throws Exception {
         if(indexes.isEmpty()) {
             return;
         }
@@ -200,7 +203,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
         // Input validation: same table, not a primary key, not a duplicate index name, and
         // referenced columns are valid
-        for(Index idx : indexes) {
+        for(TableIndex idx : indexes) {
             if(!idx.getTable().equals(firstIndexTable)) {
                 throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
                                                     "Cannot add indexes to multiple tables");
@@ -230,8 +233,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         // All OK, add to current table
         Integer curId = SchemaDefToAis.findMaxIndexIDInGroup(newAIS, newTable.getGroup());
         assert curId != null : newTable;
-        for(Index idx : indexes) {
-            Index newIndex = Index.create(newAIS, newTable, idx.getIndexName().getName(), ++curId,
+        for(TableIndex idx : indexes) {
+            TableIndex newIndex = TableIndex.create(newAIS, newTable, idx.getIndexName().getName(), ++curId,
                                           idx.isUnique(), idx.getConstraint());
 
             for(IndexColumn idxCol : idx.getColumns()) {
@@ -247,6 +250,79 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         commitAISChange(session, newAIS, tableName.getSchemaName(), null);
     }
 
+    private boolean inSameBranch(UserTable t1, UserTable t2) {
+        if(t1 == t2) {
+            return true;
+        }
+        // search for t2 in t1->root
+        Join join = t1.getParentJoin();
+        while(join != null) {
+            final UserTable parent = join.getParent();
+            if(parent == t2) {
+                return true;
+            }
+            join = parent.getParentJoin();
+        }
+        // search fo t1 in t2->root
+        join = t2.getParentJoin();
+        while(join != null) {
+            final UserTable parent = join.getParent();
+            if(parent == t1) {
+                return true;
+            }
+            join = parent.getParentJoin();
+        }
+        return false;
+    }
+
+    @Override
+    public void alterGroupAddIndex(Session session, String groupName, GroupIndex index) throws Exception {
+        final AkibanInformationSchema ais = getAis(session);
+        final Group curGroup = ais.getGroup(groupName);
+
+        if(curGroup == null) {
+            throw new InvalidOperationException(ErrorCode.NO_SUCH_GROUP, "Unknown group: " + groupName);
+        }
+
+        UserTable lastTable = null;
+        for(IndexColumn col : index.getColumns()) {
+            final TableName tableName = col.getColumn().getTable().getName();
+            final UserTable curTable = ais.getUserTable(tableName);
+            if(curTable == null) {
+                throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE, "Unknown user table: " + tableName);
+            }
+            if(!curTable.getGroup().getName().equals(groupName)) {
+                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION, "Table not in group: " + curTable);
+            }
+            if(lastTable != null && !inSameBranch(lastTable, curTable)) {
+                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
+                                                    "Branching group index: " + lastTable + "," + curTable);
+            }
+            lastTable = curTable;
+        }
+
+        final AkibanInformationSchema newAIS = new AkibanInformationSchema();
+        new Writer(new AISTarget(newAIS)).save(ais);
+        final Group newGroup = newAIS.getGroup(groupName);
+        final GroupIndex newIndex = GroupIndex.create(newAIS,  newGroup, index.getIndexName().getName(),
+                                                      SchemaDefToAis.findMaxIndexIDInGroup(newAIS, newGroup) + 1,
+                                                      index.isUnique(), index.getConstraint());
+
+        for(IndexColumn idxCol : index.getColumns()) {
+            final Table refTable = newAIS.getTable(idxCol.getColumn().getTable().getName());
+            final Column refCol = refTable.getColumn(idxCol.getColumn().getName());
+            IndexColumn indexCol = new IndexColumn(newIndex, refCol, idxCol.getPosition(),
+                                                   idxCol.isAscending(), idxCol.getIndexedLength());
+            newIndex.addColumn(indexCol);
+        }
+        newIndex.freezeColumns();
+
+        new AISBuilder(newAIS).generateGroupTableIndexes(newGroup);
+        // Until a) groups have trees b) groups are in a schema
+        final String schema = newGroup.getGroupTable().getName().getSchemaName();
+        commitAISChange(session, newAIS, schema, null);
+    }
+
     @Override
     public void alterTableDropIndexes(Session session, TableName tableName, Collection<String> indexNames)
             throws Exception {
@@ -257,15 +333,30 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         final AkibanInformationSchema newAIS = new AkibanInformationSchema();
         new Writer(new AISTarget(newAIS)).save(ais);
         final Table newTable = newAIS.getTable(tableName);
-        List<Index> indexesToDrop = new ArrayList<Index>();
+        List<TableIndex> indexesToDrop = new ArrayList<TableIndex>();
         for(String indexName : indexNames) {
-            final Index index = newTable.getIndex(indexName);
+            final TableIndex index = newTable.getIndex(indexName);
             indexesToDrop.add(index);
         }
 
         newTable.removeIndexes(indexesToDrop);
         new AISBuilder(newAIS).generateGroupTableIndexes(newTable.getGroup());
         commitAISChange(session, newAIS, tableName.getSchemaName(), null);
+    }
+
+    @Override
+    public void alterGroupDropIndex(Session session, String groupName, String indexName) throws Exception {
+        final AkibanInformationSchema newAIS = new AkibanInformationSchema();
+        new Writer(new AISTarget(newAIS)).save(ais);
+
+        final Group newGroup = newAIS.getGroup(groupName);
+        List<GroupIndex> indexesToDrop = new ArrayList<GroupIndex>();
+        indexesToDrop.add(newGroup.getIndex(indexName));
+        newGroup.removeIndexes(indexesToDrop);
+
+        // Until a) groups have trees b) groups are in a schema
+        final String schema = newGroup.getGroupTable().getName().getSchemaName();
+        commitAISChange(session, newAIS, schema, null);
     }
 
     @Override
@@ -537,16 +628,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
                     // Load stored AIS data from each schema tree
                     treeService.visitStorage(session, new TreeVisitor() {
-                        @Override
-                        public void visit(Exchange ex) throws Exception {
-                            ex.clear().append(BY_AIS);
-                            if(ex.isValueDefined()) {
-                                byte[] storedAIS = ex.fetch().getValue().getByteArray();
-                                ByteBuffer buffer = ByteBuffer.wrap(storedAIS);
-                                new Reader(new MessageSource(buffer)).load(newAIS);
-                            }
-                        }
-                    }, SCHEMA_TREE_NAME);
+                                                 @Override
+                                                 public void visit(Exchange ex) throws Exception {
+                                                     ex.clear().append(BY_AIS);
+                                                     if(ex.isValueDefined()) {
+                                                         byte[] storedAIS = ex.fetch().getValue().getByteArray();
+                                                         ByteBuffer buffer = ByteBuffer.wrap(storedAIS);
+                                                         new Reader(new MessageSource(buffer)).load(newAIS);
+                                                     }
+                                                 }
+                                             }, SCHEMA_TREE_NAME);
 
                     forceNewTimestamp();
                     onTransactionCommit(newAIS, updateTimestamp.get());

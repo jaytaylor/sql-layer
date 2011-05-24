@@ -16,6 +16,7 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.server.RowData;
@@ -43,7 +44,7 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
         requiredUserTables.add(queryRootTable);
         // predicateIndex and predicateType
         predicateIndex = null;
-        for (Index userTableIndex : queryRootTable.getIndexesIncludingInternal()) {
+        for (TableIndex userTableIndex : queryRootTable.getIndexesIncludingInternal()) {
             if (userTableIndex.getIndexId() == indexId) {
                 predicateIndex = userTableIndex;
             }

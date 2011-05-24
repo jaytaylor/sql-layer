@@ -13,10 +13,18 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.ais.model;
+package com.akiban.server.api.common;
 
-public interface NameGenerator
-{
-    String generateColumnName(Column column);
-    String generateGroupIndexName(TableIndex userTableIndex);
+import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.dml.DMLException;
+import com.akiban.message.ErrorCode;
+
+public final class NoSuchGroupException extends DMLException {
+    public NoSuchGroupException(InvalidOperationException e) {
+        super(e);
+    }
+
+    public NoSuchGroupException(String groupName) {
+        super(ErrorCode.NO_SUCH_GROUP, "No group with name %s", groupName);
+    }
 }

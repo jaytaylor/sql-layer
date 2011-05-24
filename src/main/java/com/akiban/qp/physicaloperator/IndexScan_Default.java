@@ -15,7 +15,7 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.rowtype.IndexRowType;
 import org.slf4j.Logger;
@@ -54,7 +54,7 @@ class IndexScan_Default extends PhysicalOperator
 
     // Object state
 
-    private final Index index;
+    private final TableIndex index;
     private final boolean reverse;
     private final IndexKeyRange indexKeyRange;
 

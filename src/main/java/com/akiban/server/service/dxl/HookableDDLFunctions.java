@@ -16,6 +16,7 @@
 package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -346,12 +347,51 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
+    public void createGroupIndex(Session session, String groupName, GroupIndex indexToAdd)
+            throws IndexAlterException, GenericInvalidOperationException {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.CREATE_INDEXES);
+            delegate.createGroupIndex(session, groupName, indexToAdd);
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.CREATE_INDEXES, t);
+            throwIfInstanceOf(t, NoSuchTableException.class);
+            throwIfInstanceOf(t, DuplicateKeyException.class);
+            throwIfInstanceOf(t, IndexAlterException.class);
+            throwIfInstanceOf(t, GenericInvalidOperationException.class);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.CREATE_INDEXES, thrown);
+        }
+    }
+
+    @Override
     public void dropIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
             throws NoSuchTableException, IndexAlterException, GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.DROP_INDEXES);
             delegate.dropIndexes(session, tableName, indexNamesToDrop);
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.DROP_INDEXES, t);
+            throwIfInstanceOf(t, NoSuchTableException.class);
+            throwIfInstanceOf(t, IndexAlterException.class);
+            throwIfInstanceOf(t, GenericInvalidOperationException.class);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.DROP_INDEXES, thrown);
+        }
+    }
+
+    @Override
+    public void dropGroupIndex(Session session, String groupName, String indexToDrop)
+            throws IndexAlterException, GenericInvalidOperationException {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.DROP_INDEXES);
+            delegate.dropGroupIndex(session, groupName, indexToDrop);
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.DROP_INDEXES, t);

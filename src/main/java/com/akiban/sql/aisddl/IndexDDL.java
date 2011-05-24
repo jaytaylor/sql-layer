@@ -15,6 +15,7 @@
 
 package com.akiban.sql.aisddl;
 
+import com.akiban.ais.model.TableIndex;
 import com.akiban.sql.parser.CreateIndexNode;
 import com.akiban.sql.parser.TableName;
 
@@ -46,7 +47,7 @@ public class IndexDDL
         if (table == null)
             throw new StandardException("Table not found: " + tableName);
         // TODO: What about indexName schemaName?
-        Index index = new Index(table, 
+        Index index = new TableIndex(table,
                                 // TODO: Any case issues?
                                 indexName.getTableName(),
                                 -1, 

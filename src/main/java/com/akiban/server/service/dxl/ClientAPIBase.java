@@ -17,6 +17,7 @@ package com.akiban.server.service.dxl;
 
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.GenericInvalidOperationException;
+import com.akiban.server.api.common.NoSuchGroupException;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.DuplicateTableNameException;
 import com.akiban.server.api.ddl.JoinToMultipleParentsException;
@@ -128,6 +129,8 @@ abstract class ClientAPIBase {
                     return new ForeignKeyConstraintDMLException(ioe);
                 case NO_SUCH_ROW:
                     return new NoSuchRowException(ioe);
+                case NO_SUCH_GROUP:
+                    return new NoSuchGroupException(ioe);
                 case CURSOR_IS_FINISHED:
                     return new CursorIsFinishedException(ioe);
                 case CURSOR_IS_UNKNOWN:

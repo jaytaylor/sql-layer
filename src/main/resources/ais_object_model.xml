@@ -16,7 +16,7 @@
 
 -->
 
-<model version="1">
+<model version="2">
 	<object name="type" tableName="akiban_information_schema.types">
 		<attr name="name" type="String" />
 		<attr name="parameters" type="Integer" />
@@ -210,6 +210,7 @@
 		<attr name="schemaName" type="String" />
 		<attr name="tableName" type="String" />
 		<attr name="indexName" type="String" />
+		<attr name="indexType" type="String" />
 		<attr name="indexId" type="Integer" />
 		<attr name="constraint" type="String" />
 		<attr name="unique" type="Boolean" />
@@ -217,20 +218,22 @@
             select 
                 schema_name, 
                 table_name, 
-                index_name, 
+                index_name,
+                index_type,
                 index_id, 
                 table_constraint, 
                 is_unique 
             from akiban_information_schema.indexes
         ]]></sql>
 		<sql action="write"><![CDATA[insert into akiban_information_schema.indexes(
-                schema_name, 
-                table_name, 
-                index_name, 
+                schema_name,
+                table_name,
+                index_name,
+                index_type,
                 index_id, 
                 table_constraint, 
                 is_unique 
-            ) values (?, ?, ?, ?, ?, ?)]]></sql>
+            ) values (?, ?, ?, ?, ?, ?, ?)]]></sql>
 		<sql action="cleanup"><![CDATA[delete from akiban_information_schema.indexes]]></sql>
 	</object>
 
@@ -238,6 +241,7 @@
 		<attr name="schemaName" type="String" />
 		<attr name="tableName" type="String" />
 		<attr name="indexName" type="String" />
+		<attr name="indexType" type="String" />
 		<attr name="columnName" type="String" />
 		<attr name="position" type="Integer" />
 		<attr name="ascending" type="Boolean" />
@@ -245,8 +249,9 @@
 		<sql action="read"><![CDATA[
             select 
                 schema_name, 
-                table_name, 
-                index_name, 
+                table_name,
+                index_name,
+                index_type,
                 column_name, 
                 ordinal_position, 
                 is_ascending,
@@ -256,12 +261,13 @@
 		<sql action="write"><![CDATA[insert into akiban_information_schema.index_columns(
                 schema_name, 
                 table_name, 
-                index_name, 
+                index_name,
+                index_type,
                 column_name, 
                 ordinal_position, 
                 is_ascending,
                 indexed_length
-            ) values (?, ?, ?, ?, ?, ?, ?)]]></sql>
+            ) values (?, ?, ?, ?, ?, ?, ?, ?)]]></sql>
 		<sql action="cleanup"><![CDATA[delete from akiban_information_schema.index_columns]]></sql>
 	</object>
 

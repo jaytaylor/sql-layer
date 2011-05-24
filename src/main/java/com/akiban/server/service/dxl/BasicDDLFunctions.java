@@ -27,10 +27,12 @@ import java.util.Set;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
@@ -312,9 +314,17 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
-        final Table table = getTable(session, indexesToAdd.iterator().next().getTableName());
+        Collection<TableIndex> tableIndexesToAdd = new ArrayList<TableIndex>();
+        for(Index index : indexesToAdd) {
+            if(!index.isTableIndex()) {
+                throw new IllegalArgumentException("Only TableIndexes can be added");
+            }
+            tableIndexesToAdd.add((TableIndex)index);
+        }
+
+        final Table table = getTable(session, tableIndexesToAdd.iterator().next().getTable().getName());
         try {
-            schemaManager().alterTableAddIndexes(session, table.getName(), indexesToAdd);
+            schemaManager().alterTableAddIndexes(session, table.getName(), tableIndexesToAdd);
             checkCursorsForDDLModification(session, table);
         }
         catch(InvalidOperationException e) {
@@ -357,6 +367,25 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
+    public void createGroupIndex(Session session, String groupName, GroupIndex indexToAdd)
+            throws IndexAlterException, GenericInvalidOperationException {
+        logger.trace("creating indexes {}", indexToAdd);
+
+        try {
+            schemaManager().alterGroupAddIndex(session, groupName, indexToAdd);
+            // TODO: checkCursorsForDDLModification ?
+        }
+        catch(InvalidOperationException e) {
+            throw new IndexAlterException(e);
+        }
+        catch(Exception e) {
+            throw new GenericInvalidOperationException(e);
+        }
+
+        // TODO: Refactor Store interface to allow building group indexes
+    }
+
+    @Override
     public void dropIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
             throws NoSuchTableException, IndexAlterException, GenericInvalidOperationException
     {
@@ -395,6 +424,29 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         try {
             schemaManager().alterTableDropIndexes(session, tableName, indexNamesToDrop);
             checkCursorsForDDLModification(session, table);
+        } catch(Exception e) {
+            throw new GenericInvalidOperationException(e);
+        }
+    }
+
+    @Override
+    public void dropGroupIndex(Session session, String groupName, String indexToDrop)
+            throws IndexAlterException, GenericInvalidOperationException {
+                logger.trace("dropping index {}", indexToDrop);
+        final Group group = getAIS(session).getGroup(groupName);
+        if (group == null) {
+            throw new IndexAlterException(ErrorCode.NO_SUCH_GROUP, "Unknown group: " + groupName);
+        }
+        final Index index = group.getIndex(indexToDrop);
+        if(index == null) {
+            throw new IndexAlterException(ErrorCode.NO_INDEX, "Unknown index: " + indexToDrop);
+        }
+
+        // TODO: Drop group indexes through store interface
+
+        try {
+            schemaManager().alterGroupDropIndex(session, groupName, indexToDrop);
+            // TODO: checkCursorsForDDLModification ?
         } catch(Exception e) {
             throw new GenericInvalidOperationException(e);
         }
