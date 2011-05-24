@@ -31,7 +31,7 @@ elif [ ${platform} == "redhat" ]; then
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
     tar_file=${PWD}/redhat/rpmbuild/SOURCES/akserver.tar
     bzr export --format=tar $tar_file
-    cp packages-common/* ${PWD}/redhat/akserver
+    cp packages-common/* ${PWD}/redhat/akserver/redhat
     pushd redhat
     for to_add in $(bzr st -S . | sed 's/\?\s\+ redhat\///'); do
         tar --append -f $tar_file $to_add
