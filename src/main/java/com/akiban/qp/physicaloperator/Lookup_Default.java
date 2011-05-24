@@ -80,19 +80,20 @@ public class Lookup_Default extends PhysicalOperator
         if (outputRowType == null) {
             throw new IllegalArgumentException();
         }
+        // TODO: Is emitInputRow = true ever useful? Definitely not if input is an index row. What about
+        // TODO: a group row? Makes sense for AncestorLookup. Not so sure about Lookup. If emitInputRow
+        // TODO: is always false, then implementation of Execution.next() can be simplified.
+        this.emitInputRow = false;
         UserTableRowType inputTableType;
         if (inputRowType instanceof UserTableRowType) {
             if (outputRowType == inputRowType) {
                 throw new IllegalArgumentException();
             }
-            if (outputRowType.ancestorOf(inputRowType)) {
-                throw new IllegalArgumentException("Use AncestorLookup instead");
-            }
             inputTableType = (UserTableRowType) inputRowType;
-            this.emitInputRow = true;
+            // this.emitInputRow = true;
         } else {
             inputTableType = ((IndexRowType) inputRowType).tableType();
-            this.emitInputRow = false;
+            // this.emitInputRow = false;
         }
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
@@ -175,24 +176,28 @@ public class Lookup_Default extends PhysicalOperator
         }
 
         @Override
-        public boolean cursorAbilitiesInclude(CursorAbility ability) {
+        public boolean cursorAbilitiesInclude(CursorAbility ability)
+        {
             return lookupCursor.cursorAbilitiesInclude(ability);
         }
 
         @Override
-        public void removeCurrentRow() {
+        public void removeCurrentRow()
+        {
             checkModifiableState();
             lookupCursor.removeCurrentRow();
         }
 
         @Override
-        public void updateCurrentRow(Row newRow) {
+        public void updateCurrentRow(Row newRow)
+        {
             checkModifiableState();
             lookupCursor.updateCurrentRow(newRow);
         }
 
         @Override
-        public ModifiableCursorBackingStore backingStore() {
+        public ModifiableCursorBackingStore backingStore()
+        {
             return lookupCursor.backingStore();
         }
 
