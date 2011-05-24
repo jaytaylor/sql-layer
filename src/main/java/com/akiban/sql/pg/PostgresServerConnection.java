@@ -65,6 +65,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     private AkibanInformationSchema ais;
     private String defaultSchemaName;
     private SQLParser parser;
+    private PostgresStatementCache statementCache;
     private PostgresStatementParser[] unparsedGenerators;
     private PostgresStatementGenerator[] parsedGenerators;
     private Thread thread;
@@ -299,11 +300,16 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         sql = messenger.readString();
         logger.info("Query: {}", sql);
         PostgresStatement pstmt = null;
-        for (PostgresStatementParser parser : unparsedGenerators) {
-            // Try special recognition first; only allowed to turn into one statement.
-            pstmt = parser.parse(this, sql, null);
-            if (pstmt != null)
-                break;
+        if (statementCache != null)
+            pstmt = statementCache.get(sql);
+        if (pstmt == null) {
+            for (PostgresStatementParser parser : unparsedGenerators) {
+                // Try special recognition first; only allowed to turn
+                // into one statement.
+                pstmt = parser.parse(this, sql, null);
+                if (pstmt != null)
+                    break;
+            }
         }
         if (pstmt != null) {
             pstmt.sendDescription(this, false);
@@ -327,6 +333,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             }
             for (StatementNode stmt : stmts) {
                 pstmt = generateStatement(stmt, null);
+                if ((statementCache != null) && (stmts.size() == 1))
+                    statementCache.put(sql, pstmt);
                 pstmt.sendDescription(this, false);
                 try {
                     executorTap.in();
@@ -349,15 +357,22 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             paramTypes[i] = messenger.readInt();
         logger.info("Parse: {}", sql);
 
-        StatementNode stmt;
-        try {
-            parserTap.in();
-            stmt = parser.parseStatement(sql);
+        PostgresStatement pstmt = null;
+        if (statementCache != null)
+            pstmt = statementCache.get(sql);
+        if (pstmt == null) {
+            StatementNode stmt;
+            try {
+                parserTap.in();
+                stmt = parser.parseStatement(sql);
+            }
+            finally {
+                parserTap.out();
+            }
+            pstmt = generateStatement(stmt, paramTypes);
+            if (statementCache != null)
+                statementCache.put(sql, pstmt);
         }
-        finally {
-            parserTap.out();
-        }
-        PostgresStatement pstmt = generateStatement(stmt, paramTypes);
         preparedStatements.put(stmtName, pstmt);
         messenger.beginMessage(PostgresMessenger.PARSE_COMPLETE_TYPE);
         messenger.sendMessage();
@@ -485,6 +500,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
+        statementCache = server.getStatementCache();
         unparsedGenerators = new PostgresStatementParser[] {
             new PostgresEmulatedMetaDataStatementParser(this)
         };

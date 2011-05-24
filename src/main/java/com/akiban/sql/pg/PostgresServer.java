@@ -29,6 +29,7 @@ import java.util.*;
 */
 public class PostgresServer implements Runnable, PostgresMXBean {
     private int port;
+    private PostgresStatementCache statementCache;
     private ServerSocket socket = null;
     private boolean running = false;
     private Map<Integer,PostgresServerConnection> connections =
@@ -37,8 +38,10 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
-    public PostgresServer(int port) {
+    public PostgresServer(int port, int statementCacheSize) {
         this.port = port;
+        if (statementCacheSize > 0)
+            statementCache = new PostgresStatementCache(statementCacheSize);
     }
 
     /** Called from the (AkServer's) main thread to start a server
@@ -159,4 +162,24 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         return getConnection(pid).getRemoteAddress();
     }
 
+    public PostgresStatementCache getStatementCache() {
+        return statementCache;
+    }
+
+    @Override
+    public int getStatementCacheHits() {
+        if (statementCache == null)
+            return 0;
+        else
+            return statementCache.getHits();
+    }
+
+    @Override
+    public int getStatementCacheMisses() {
+        if (statementCache == null)
+            return 0;
+        else
+            return statementCache.getMisses();
+    }
+    
 }

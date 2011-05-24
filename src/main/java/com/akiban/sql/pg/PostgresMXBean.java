@@ -37,4 +37,7 @@ public interface PostgresMXBean {
      */
     String getRemoteAddress(int pid);
 
+    int getStatementCacheHits();
+    int getStatementCacheMisses();
+
 }
