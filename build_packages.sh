@@ -24,12 +24,23 @@ platform=$1
 bzr_revno=`bzr revno`
 
 if [ ${platform} == "debian" ]; then
+    cp packages-common/* ${platform}
     mvn -Dmaven.test.skip=true clean install -DBZR_REVISION=${bzr_revno}
     debuild
 elif [ ${platform} == "redhat" ]; then
-    cat ${PWD}/redhat/akiban-server.spec | sed "9,9s/REVISION/${bzr_revno}/g" > ${PWD}/redhat/akiban-server-${bzr_revno}.spec
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
-    bzr export --format=tgz ${PWD}/redhat/rpmbuild/SOURCES/akserver.tar.gz
+    tar_file=${PWD}/redhat/rpmbuild/SOURCES/akserver.tar
+    bzr export --format=tar $tar_file
+    cp packages-common/* ${PWD}/redhat/akserver/redhat
+    pushd redhat
+# bzr st -S outs lines like "? redhat/akserver/redhat/log4j.properties"
+# we want to turn those to just "akserver/redhat/log4j.properties"
+    for to_add in $(bzr st -S . | sed 's/\?\s\+redhat\///'); do
+        tar --append -f $tar_file $to_add
+    done
+    popd
+    gzip $tar_file
+    cat ${PWD}/redhat/akiban-server.spec | sed "9,9s/REVISION/${bzr_revno}/g" > ${PWD}/redhat/akiban-server-${bzr_revno}.spec
     rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -ba ${PWD}/redhat/akiban-server-${bzr_revno}.spec
 else
     echo "Invalid Argument: ${platform}"
