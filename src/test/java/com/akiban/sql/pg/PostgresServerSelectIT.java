@@ -14,6 +14,7 @@
  */
 
 package com.akiban.sql.pg;
+
 import com.akiban.sql.TestBase;
 
 import org.junit.Before;

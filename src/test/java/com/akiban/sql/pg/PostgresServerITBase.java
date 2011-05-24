@@ -202,12 +202,16 @@ public class PostgresServerITBase extends ITBase
     protected String caseName, sql, expected;
     protected String[] params;
 
-    public PostgresServerITBase(String caseName, String sql, String expected, 
-                                String[] params) {
+    /** Parameterized version. */
+    protected PostgresServerITBase(String caseName, String sql, String expected, 
+                                   String[] params) {
         this.caseName = caseName;
         this.sql = sql.trim();
         this.expected = expected;
         this.params = params;
+    }
+
+    protected PostgresServerITBase() {
     }
 
 }
