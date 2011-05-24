@@ -338,8 +338,7 @@ public class ApiTestBase {
         ListRowOutput output = new ListRowOutput();
         CursorId cursorId = dml().openCursor(session, aisGeneration(), request);
 
-        while(dml().scanSome(session, cursorId, output))
-        {}
+        dml().scanSome(session, cursorId, output);
         dml().closeCursor(session, cursorId);
 
         return output.getRows();

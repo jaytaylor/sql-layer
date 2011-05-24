@@ -137,10 +137,7 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
             }
             output = new ApiTestBase.ListRowOutput();
             timePoints.mark("SCAN: START");
-            if (dml.scanSome(session, cursorId, output)) {
-                timePoints.mark("SCAN: EARLY FINISH");
-                return output.getRows();
-            }
+            dml.scanSome(session, cursorId, output);
             dml.closeCursor(session, cursorId);
 
             if (ConcurrencyAtomicsDXLService.isScanHookInstalled(session)) {

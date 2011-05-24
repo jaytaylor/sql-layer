@@ -42,10 +42,6 @@ public interface Store extends Service<Store> {
 
     RowDefCache getRowDefCache();
 
-    boolean isVerbose();
-
-    void setVerbose(final boolean verbose);
-
     void writeRow(final Session session, final RowData rowData)
             throws Exception;
 

@@ -46,21 +46,6 @@ public class ManageMXBeanImpl implements ManageMXBean {
     }
 
     @Override
-    public boolean isVerboseLoggingEnabled() {
-        return akserver.getServiceManager().getStore().isVerbose();
-    }
-
-    @Override
-    public void disableVerboseLogging() {
-        akserver.getServiceManager().getStore().setVerbose(false);
-    }
-
-    @Override
-    public void enableVerboseLogging() {
-        akserver.getServiceManager().getStore().setVerbose(true);
-    }
-
-    @Override
     public boolean isDeferIndexesEnabled() {
         return akserver.getServiceManager().getStore().isDeferIndexes();
     }
