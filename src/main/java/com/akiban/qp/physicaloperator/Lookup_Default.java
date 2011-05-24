@@ -22,7 +22,6 @@ import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.util.Undef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,11 +101,6 @@ public class Lookup_Default extends PhysicalOperator
         this.limit = limit;
     }
 
-    @Override
-    public boolean cursorAbilitiesInclude(CursorAbility ability) {
-        return CursorAbility.MODIFY.equals(ability);
-    }
-
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(Lookup_Default.class);
@@ -174,28 +168,6 @@ public class Lookup_Default extends PhysicalOperator
             lookupRow.set(null);
         }
 
-        @Override
-        public boolean cursorAbilitiesInclude(CursorAbility ability) {
-            return lookupCursor.cursorAbilitiesInclude(ability);
-        }
-
-        @Override
-        public void removeCurrentRow() {
-            checkModifiableState();
-            lookupCursor.removeCurrentRow();
-        }
-
-        @Override
-        public void updateCurrentRow(Row newRow) {
-            checkModifiableState();
-            lookupCursor.updateCurrentRow(newRow);
-        }
-
-        @Override
-        public ModifiableCursorBackingStore backingStore() {
-            return lookupCursor.backingStore();
-        }
-
         // Execution interface
 
         Execution(StoreAdapter adapter, Cursor input)
@@ -252,12 +224,6 @@ public class Lookup_Default extends PhysicalOperator
         {
             inputRowHKey.copyTo(lookupRowHKey);
             lookupRowHKey.useSegments(commonSegments);
-        }
-
-        private void checkModifiableState() {
-            if (lookupRow.isNull()) {
-                throw new IllegalStateException("no active row to operate on");
-            }
         }
 
         // Object state

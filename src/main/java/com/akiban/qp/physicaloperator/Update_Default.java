@@ -18,9 +18,6 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.qp.exec.CudPlannable;
 import com.akiban.qp.exec.CudResult;
 import com.akiban.qp.row.Row;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
-import com.akiban.server.store.PersistitStore;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Strings;
 
@@ -40,9 +37,6 @@ public final class Update_Default implements CudPlannable {
 
     public Update_Default(PhysicalOperator inputOperator, UpdateFunction updateFunction) {
         ArgumentValidation.notNull("update lambda", updateFunction);
-        if (!inputOperator.cursorAbilitiesInclude(CursorAbility.MODIFY)) {
-            throw new IllegalArgumentException("input operator must be modifiable: " + inputOperator.getClass());
-        }
         
         this.inputOperator = inputOperator;
         this.updateFunction = updateFunction;
@@ -55,7 +49,6 @@ public final class Update_Default implements CudPlannable {
         int seen = 0;
         long start = System.currentTimeMillis();
         Cursor inputCursor = inputOperator.cursor(adapter);
-        //Cursor execution =  new Execution(inputCursor, updateFunction);
         inputCursor.open(bindings);
         try {
             while (inputCursor.next()) {

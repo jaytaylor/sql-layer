@@ -43,32 +43,4 @@ public interface Cursor
      * @return The current row of the underlying table or index, or null if the scan has ended.
      */
     Row currentRow();
-
-    /**
-     * Removes from the backing structure whatever row would be returned by {@link Cursor#currentRow()}
-     * @throws CursorUpdateException if the current row couldn't be removed due to an underlying exception
-     */
-    void removeCurrentRow();
-
-    /**
-     * Updates in the backing structure whatever row would be returned by {@link Cursor#currentRow()}
-     *
-     * @param newRow the new row's value
-     * @throws IncompatibleRowException if the given row is incompatible with the current row
-     * @throws CursorUpdateException if the current row couldn't be updated due to an underlying exception
-     */
-    void updateCurrentRow(Row newRow);
-
-    /**
-     * Gets the store that backs this modifiable cursor.
-     * @return the cursor's backing store
-     */
-    ModifiableCursorBackingStore backingStore();
-
-    /**
-     * Specifies whether this cursor can support a given ability.
-     * @param ability the ability to check for
-     * @return whether the ability is supported
-     */
-    boolean cursorAbilitiesInclude(CursorAbility ability);
 }

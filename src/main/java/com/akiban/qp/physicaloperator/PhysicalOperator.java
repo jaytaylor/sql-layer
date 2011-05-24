@@ -20,7 +20,6 @@ import com.akiban.qp.rowtype.RowType;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 public abstract class PhysicalOperator implements Plannable
 {
@@ -40,10 +39,6 @@ public abstract class PhysicalOperator implements Plannable
     }
 
     protected abstract Cursor cursor(StoreAdapter adapter);
-
-    public boolean cursorAbilitiesInclude(CursorAbility ability) {
-        return false;
-    }
 
     @Override
     public String describePlan()
