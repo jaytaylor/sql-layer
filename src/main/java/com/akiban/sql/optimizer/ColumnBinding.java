@@ -97,10 +97,12 @@ public class ColumnBinding
         }
         else
             result.append(column);
-        result.append(" from ");
-        result.append(fromTable.getClass().getName());
-        result.append('@');
-        result.append(Integer.toHexString(fromTable.hashCode()));
+        if (fromTable != null) {
+            result.append(" from ");
+            result.append(fromTable.getClass().getName());
+            result.append('@');
+            result.append(Integer.toHexString(fromTable.hashCode()));
+        }
         return result.toString();
     }
 }

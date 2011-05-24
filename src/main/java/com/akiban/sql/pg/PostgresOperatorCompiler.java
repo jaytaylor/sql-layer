@@ -20,8 +20,8 @@ import com.akiban.sql.StandardException;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.ExpressionRow;
 
+import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.sql.views.ViewDefinition;
@@ -88,18 +88,25 @@ public class PostgresOperatorCompiler extends OperatorCompiler
     public PostgresStatement generate(PostgresServerSession session,
                                       StatementNode stmt, int[] paramTypes)
             throws StandardException {
-        if (!(stmt instanceof CursorNode))
+        if (!(stmt instanceof DMLStatementNode))
             return null;
-        CursorNode cursor = (CursorNode)stmt;
-        Result result = compile(cursor);
+        DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
+        Result result = compile(dmlStmt);
 
         logger.debug("Operator:\n{}", result);
 
-        return new PostgresOperatorStatement(adapter, 
-                                             result.getResultOperator(),
-                                             result.getResultRowType(),
-                                             result.getResultColumns(),
-                                             result.getResultColumnOffsets());
+        if (result.isModify())
+            return new PostgresModifyOperatorStatement(stmt.statementToString(),
+                                                       adapter,
+                                                       result.getResultOperator());
+        else
+            return new PostgresOperatorStatement(adapter, 
+                                                 result.getResultOperator(),
+                                                 result.getResultRowType(),
+                                                 result.getResultColumns(),
+                                                 result.getResultColumnOffsets(),
+                                                 result.getOffset(),
+                                                 result.getLimit());
     }
 
     // The current implementation of index cursors expects that the

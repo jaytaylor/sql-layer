@@ -16,7 +16,7 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.sql.TestBase;
-import com.akiban.sql.parser.CursorNode;
+import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.SQLParser;
 
@@ -119,7 +119,7 @@ public class OperatorCompilerTest extends TestBase
     @Test
     public void testOperator() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
-        OperatorCompiler.Result result = compiler.compile((CursorNode)stmt);
+        OperatorCompiler.Result result = compiler.compile((DMLStatementNode)stmt);
         assertEqualsWithoutHashes(caseName, expected, result.toString());
     }
 

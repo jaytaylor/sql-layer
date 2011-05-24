@@ -170,6 +170,8 @@ public class PostgresType
             oid = CHAR_TYPE_OID;
         else if ("int".equals(name))
             oid = INT4_TYPE_OID;
+        else if ("bigint".equals(name))
+            oid = INT8_TYPE_OID;
         else if ("date".equals(name))
             oid = DATE_TYPE_OID;
         else if ("datetime".equals(name))

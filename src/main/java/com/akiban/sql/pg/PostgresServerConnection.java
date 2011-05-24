@@ -18,7 +18,6 @@ package com.akiban.sql.pg;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.parser.CursorNode;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
