@@ -18,6 +18,9 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.qp.exec.CudPlannable;
 import com.akiban.qp.exec.CudResult;
 import com.akiban.qp.row.Row;
+import com.akiban.server.RowData;
+import com.akiban.server.RowDef;
+import com.akiban.server.store.PersistitStore;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Strings;
 
@@ -49,20 +52,25 @@ public final class Update_Default implements CudPlannable {
 
     @Override
     public CudResult run(Bindings bindings, StoreAdapter adapter) {
-        int touched = 0;
+        int seen = 0;
         long start = System.currentTimeMillis();
         Cursor inputCursor = inputOperator.cursor(adapter);
-        Cursor execution =  new Execution(inputCursor, updateFunction);
-        execution.open(bindings);
+        //Cursor execution =  new Execution(inputCursor, updateFunction);
+        inputCursor.open(bindings);
         try {
-            while (execution.next()) {
-                ++touched;
+            while (inputCursor.next()) {
+                ++seen;
+                Row oldRow = inputCursor.currentRow();
+                if (updateFunction.rowIsSelected(oldRow)) {
+                    Row newRow = updateFunction.evaluate(oldRow, bindings);
+                    adapter.updateRow(oldRow, newRow, bindings);
+                }
             }
         } finally {
-            execution.close();
+            inputCursor.close();
         }
         long end = System.currentTimeMillis();
-        return new StandardCudResult(end - start, touched, touched);
+        return new StandardCudResult(end - start, seen, seen);
     }
 
     // Plannable interface
@@ -87,43 +95,5 @@ public final class Update_Default implements CudPlannable {
 
     private final PhysicalOperator inputOperator;
     private final UpdateFunction updateFunction;
-
-    // Inner classes
-
-    private class Execution extends ChainedCursor {
-
-        private final UpdateFunction updateFunction;
-        private Bindings bindings;
-
-        public Execution(Cursor input, UpdateFunction updateFunction) {
-            super(input);
-            this.updateFunction = updateFunction;
-            this.bindings = UndefBindings.only();
-        }
-
-        // Cursor interface
-
-
-        @Override
-        public void open(Bindings bindings) {
-            super.open(bindings);
-            this.bindings = bindings;
-        }
-
-        @Override
-        public boolean next() {
-            if (input.next()) {
-                Row row = this.input.currentRow();
-                if (!updateFunction.rowIsSelected(row)) {
-                    return true;
-                }
-                Row currentRow = updateFunction.evaluate(row, bindings);
-                input.updateCurrentRow(currentRow);
-                return true;
-            }
-            return false;
-        }
-    }
-
     
 }
