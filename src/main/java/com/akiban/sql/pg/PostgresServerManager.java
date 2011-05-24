@@ -85,6 +85,10 @@ public class PostgresServerManager implements PostgresService,
         return port;
     }
     
+    public PostgresServer getServer() {
+        return server;
+    }
+
     /*** JmxManageable ***/
     
     @Override

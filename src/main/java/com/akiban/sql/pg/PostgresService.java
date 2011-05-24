@@ -19,4 +19,6 @@ package com.akiban.sql.pg;
 public interface PostgresService {
     /** Get the port on which the server is listening. */
     public int getPort();
+    /** Get the server itself. */
+    public PostgresServer getServer();
 }

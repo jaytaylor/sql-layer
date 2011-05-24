@@ -45,8 +45,8 @@ public class PostgresServerCacheIT extends PostgresServerITBase
                                                   Integer.toString(CAPACITY)));
     }
 
-    @Override
-    protected void beforeOpenConnection() throws Exception {
+    @Before
+    public void createData() throws Exception {
         int tid = createTable(SCHEMA_NAME, "t1", "id int primary key");
         NewRow[] rows = new NewRow[NROWS];
         for (int i = 0; i < NROWS; i++) {
@@ -56,12 +56,25 @@ public class PostgresServerCacheIT extends PostgresServerITBase
     }
 
     @Test
+    public void testRepeated() throws Exception {
+        Statement stmt = connection.createStatement();
+        for (int i = 0; i < 1000; i++) {
+            query(stmt, i / NROWS);
+        }
+        stmt.close();
+        assertEquals("Cache hits matches", 990, server().getStatementCacheHits());
+        assertEquals("Cache misses matches", 10, server().getStatementCacheMisses());
+    }
+
+    @Test
     public void testSequential() throws Exception {
         Statement stmt = connection.createStatement();
-        for (int i = 0; i < NROWS * 10; i++) {
+        for (int i = 0; i < 1000; i++) {
             query(stmt, i % NROWS);
         }
         stmt.close();
+        assertEquals("Cache hits matches", 0, server().getStatementCacheHits());
+        assertEquals("Cache misses matches", 1000, server().getStatementCacheMisses());
     }
 
     protected void query(Statement stmt, int n) throws Exception {

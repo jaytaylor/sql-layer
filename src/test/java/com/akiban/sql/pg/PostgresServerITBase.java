@@ -164,7 +164,7 @@ public class PostgresServerITBase extends ITBase
 
     protected Connection openConnection() throws Exception {
         int port = serviceManager().getPostgresService().getPort();
-        if (port < 0) {
+        if (port <= 0) {
             throw new Exception("akserver.postgres.port is not set.");
         }
         String url = String.format(CONNECTION_URL, port);
@@ -178,6 +178,10 @@ public class PostgresServerITBase extends ITBase
         }
         catch (SQLException ex) {
         }
+    }
+
+    protected PostgresServer server() {
+        return serviceManager().getPostgresService().getServer();
     }
 
     protected Connection connection;
