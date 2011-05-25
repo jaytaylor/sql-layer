@@ -19,5 +19,5 @@ import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.StoreAdapter;
 
 public interface UpdatePlannable extends Plannable {
-    CudResult run(Bindings bindings, StoreAdapter adapter);
+    UpdateResult run(Bindings bindings, StoreAdapter adapter);
 }

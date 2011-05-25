@@ -15,10 +15,10 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.exec.CudResult;
+import com.akiban.qp.exec.UpdateResult;
 
 
-public final class StandardCudResult implements CudResult {
+public final class StandardUpdateResult implements UpdateResult {
 
     // CudResult interface
     @Override
@@ -55,7 +55,7 @@ public final class StandardCudResult implements CudResult {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        StandardCudResult that = (StandardCudResult) o;
+        StandardUpdateResult that = (StandardUpdateResult) o;
 
         return modified == that.modified && time == that.time && touched == that.touched;
 
@@ -71,7 +71,7 @@ public final class StandardCudResult implements CudResult {
 
     // StandardCudResult interface
 
-    public StandardCudResult(long timeTookMS, int rowsTouched, int rowsModified) {
+    public StandardUpdateResult(long timeTookMS, int rowsTouched, int rowsModified) {
         this.time = timeTookMS;
         this.touched = rowsTouched;
         this.modified = rowsModified;

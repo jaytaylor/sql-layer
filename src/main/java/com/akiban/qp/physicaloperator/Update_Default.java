@@ -16,7 +16,7 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.exec.CudResult;
+import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Strings;
@@ -45,7 +45,7 @@ public final class Update_Default implements UpdatePlannable {
     // CudResult interface
 
     @Override
-    public CudResult run(Bindings bindings, StoreAdapter adapter) {
+    public UpdateResult run(Bindings bindings, StoreAdapter adapter) {
         int seen = 0;
         long start = System.currentTimeMillis();
         Cursor inputCursor = inputOperator.cursor(adapter);
@@ -63,7 +63,7 @@ public final class Update_Default implements UpdatePlannable {
             inputCursor.close();
         }
         long end = System.currentTimeMillis();
-        return new StandardCudResult(end - start, seen, seen);
+        return new StandardUpdateResult(end - start, seen, seen);
     }
 
     // Plannable interface

@@ -15,7 +15,7 @@
 
 package com.akiban.qp.exec;
 
-public interface CudResult {
+public interface UpdateResult {
     /**
      * <p>How long the query took to execute, in milliseconds.</p>
      * @return the amount of time it took to execute this CUD query. May not be negative.

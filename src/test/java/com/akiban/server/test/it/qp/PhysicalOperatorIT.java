@@ -17,7 +17,7 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.*;
 import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.exec.CudResult;
+import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -70,7 +70,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
 
         PhysicalOperator groupScan = groupScan_Default(coi);
         UpdatePlannable updateOperator = new Update_Default(groupScan, updateFunction);
-        CudResult result = updateOperator.run(NO_BINDINGS, adapter);
+        UpdateResult result = updateOperator.run(NO_BINDINGS, adapter);
         assertEquals("rows modified", db.length, result.rowsModified());
         assertEquals("rows touched", db.length, result.rowsTouched());
 
