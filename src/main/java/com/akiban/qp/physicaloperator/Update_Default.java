@@ -15,7 +15,7 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.exec.CudPlannable;
+import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.CudResult;
 import com.akiban.qp.row.Row;
 import com.akiban.util.ArgumentValidation;
@@ -24,7 +24,7 @@ import com.akiban.util.Strings;
 import java.util.Collections;
 import java.util.List;
 
-public final class Update_Default implements CudPlannable {
+public final class Update_Default implements UpdatePlannable {
 
     // Object interface
 

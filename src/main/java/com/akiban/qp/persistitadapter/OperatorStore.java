@@ -20,7 +20,7 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.message.ErrorCode;
-import com.akiban.qp.exec.CudPlannable;
+import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.CudResult;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -95,7 +95,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
 
-    private static void runCursor(RowData oldRowData, RowDef rowDef, CudPlannable plannable, PersistitAdapter adapter)
+    private static void runCursor(RowData oldRowData, RowDef rowDef, UpdatePlannable plannable, PersistitAdapter adapter)
             throws DuplicateKeyException, NoSuchRowException
     {
         final CudResult result;
