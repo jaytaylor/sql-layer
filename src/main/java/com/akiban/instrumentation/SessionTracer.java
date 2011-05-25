@@ -1,5 +1,7 @@
 package com.akiban.instrumentation;
 
+import java.util.Date;
+
 public interface SessionTracer {
     
     public void beginEvent(String eventName);
@@ -19,5 +21,13 @@ public interface SessionTracer {
     public void disable();
     
     public boolean isEnabled();
+    
+    public String getCurrentStatement();
+    
+    public String getRemoteAddress();
+    
+    public Date getStartTime();
+        
+    public long getProcessingTime();
 
 }

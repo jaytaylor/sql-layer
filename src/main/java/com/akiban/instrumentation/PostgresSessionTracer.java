@@ -1,5 +1,6 @@
 package com.akiban.instrumentation;
 
+import java.util.Date;
 import java.util.EmptyStackException;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -9,23 +10,42 @@ import java.util.Stack;
 
 public class PostgresSessionTracer implements SessionTracer {
     
-    private final static int MAX_EVENTS = 100;
-
-    private int sessionId;
-    private int traceLevel;
-    private boolean enabled;
-    private Map<String, Event> events;
-    private Queue<Event> completedEvents;
-    private Stack<Event> currentEvents;
+    // PostgresSessionTracer interface
     
     public PostgresSessionTracer(int sessionId) {
         this.sessionId = sessionId;
+        this.currentStatement = null;
+        this.remoteAddress = null;
+        this.startTime = System.currentTimeMillis();
         this.traceLevel = 0;
         this.enabled = false;
-        events = new HashMap<String, Event>();
-        completedEvents = new LinkedList<Event>();
-        currentEvents = new Stack<Event>();
+        this.events = new HashMap<String, Event>();
+        this.completedEvents = new LinkedList<Event>();
+        this.currentEvents = new Stack<Event>();
     }
+    
+    public PostgresSessionTracer(int sessionId,
+                                 boolean enabled) {
+        this.sessionId = sessionId;
+        this.currentStatement = null;
+        this.remoteAddress = null;
+        this.startTime = System.currentTimeMillis();
+        this.traceLevel = 0;
+        this.enabled = enabled;
+        this.events = new HashMap<String, Event>();
+        this.completedEvents = new LinkedList<Event>();
+        this.currentEvents = new Stack<Event>();
+    }
+    
+    public void setCurrentStatement(String stmt) {
+        currentStatement = stmt;
+    }
+    
+    public void setRemoteAddress(String remoteAddress) {
+        this.remoteAddress = remoteAddress;
+    }
+    
+    // SessionTracer interface
     
     @Override
     public void beginEvent(String eventName) {
@@ -107,11 +127,47 @@ public class PostgresSessionTracer implements SessionTracer {
         return enabled;
     }
     
+    @Override
+    public String getCurrentStatement() {
+        return currentStatement;
+    }
+    
+    @Override
+    public String getRemoteAddress() {
+        return remoteAddress;
+    }
+
+    @Override
+    public Date getStartTime() {
+        return new Date(startTime);
+    }
+    
+    @Override
+    public long getProcessingTime() {
+        return (System.currentTimeMillis() - startTime);
+    }
+    
+    // helper methods
+    
     private void addCompletedEvent(Event ev) {
         completedEvents.add(ev);
         if (completedEvents.size() > MAX_EVENTS) {
             completedEvents.remove();
         }
     }
+    
+    // state
+    
+    private final static int MAX_EVENTS = 100;
+
+    private int sessionId;
+    private String currentStatement;
+    private String remoteAddress;
+    private long startTime;
+    private int traceLevel;
+    private boolean enabled;
+    private Map<String, Event> events;
+    private Queue<Event> completedEvents;
+    private Stack<Event> currentEvents;
     
 }

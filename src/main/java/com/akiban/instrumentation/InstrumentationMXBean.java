@@ -15,11 +15,12 @@
 
 package com.akiban.instrumentation;
 
+import java.util.Date;
 import java.util.Set;
 
 public interface InstrumentationMXBean {
     
-    Set<Integer> getCurrentConnections();
+    Set<Integer> getCurrentSessions();
     
     /*
      * whether instrumentation is enabled for all sessions
@@ -34,5 +35,15 @@ public interface InstrumentationMXBean {
     boolean isEnabled(int sessionId);
     void enable(int sessionId);
     void disable(int sessionId);
+    
+    /*
+     * information on individual sessions being traced
+     */
+    String getSqlText(int sessionId);
+    String getRemoteAddress(int sessionId);
+    Date getStartTime(int sessionId);
+    long getProcessingTime(int sessionId);
+    
+    Object[] getCurrentEvents(int sessionId);
 
 }

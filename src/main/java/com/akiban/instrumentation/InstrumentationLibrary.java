@@ -1,5 +1,6 @@
 package com.akiban.instrumentation;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -23,7 +24,7 @@ public class InstrumentationLibrary implements InstrumentationMXBean {
     }
     
     public synchronized SessionTracer createSqlSessionTracer(int sessionId) {
-        SessionTracer ret = new PostgresSessionTracer(sessionId);
+        SessionTracer ret = new PostgresSessionTracer(sessionId, enabled.get());
         currentSqlSessions.put(sessionId, ret);
         return ret;
     }
@@ -38,14 +39,17 @@ public class InstrumentationLibrary implements InstrumentationMXBean {
     
     // InstrumentationMXBean
     
-    public synchronized Set<Integer> getCurrentConnections() {
+    @Override
+    public synchronized Set<Integer> getCurrentSessions() {
         return new HashSet<Integer>(currentSqlSessions.keySet());
     }
     
+    @Override
     public boolean isEnabled() {
         return enabled.get();
     }    
     
+    @Override
     public void enable() {
         for (SessionTracer tracer : currentSqlSessions.values()) {
             tracer.enable();
@@ -53,6 +57,7 @@ public class InstrumentationLibrary implements InstrumentationMXBean {
         enabled.set(true);
     }
     
+    @Override
     public void disable() {
         for (SessionTracer tracer : currentSqlSessions.values()) {
             tracer.disable();
@@ -60,18 +65,42 @@ public class InstrumentationLibrary implements InstrumentationMXBean {
         enabled.set(false);
     }
 
+    @Override
     public boolean isEnabled(int sessionId) {
         return getSqlSessionTracer(sessionId).isEnabled();
     }
 
+    @Override
     public void enable(int sessionId) {
         getSqlSessionTracer(sessionId).enable();
     }
     
+    @Override
     public void disable(int sessionId) {
         getSqlSessionTracer(sessionId).disable();
     }
+
+    @Override
+    public String getSqlText(int sessionId) {
+        return getSqlSessionTracer(sessionId).getCurrentStatement();
+    }
     
+    @Override
+    public String getRemoteAddress(int sessionId) {
+        return getSqlSessionTracer(sessionId).getRemoteAddress();
+    }
+    
+    @Override
+    public Date getStartTime(int sessionId) {
+        return getSqlSessionTracer(sessionId).getStartTime();
+    }
+    
+    @Override
+    public long getProcessingTime(int sessionId) {
+        return getSqlSessionTracer(sessionId).getProcessingTime();
+    }
+    
+    @Override
     public Object[] getCurrentEvents(int sessionId) {
         return getSqlSessionTracer(sessionId).getCurrentEvents();
     }
