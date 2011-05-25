@@ -46,7 +46,7 @@ public final class Update_Default implements UpdatePlannable {
 
     @Override
     public UpdateResult run(Bindings bindings, StoreAdapter adapter) {
-        int seen = 0;
+        int seen = 0, modified = 0;
         long start = System.currentTimeMillis();
         Cursor inputCursor = inputOperator.cursor(adapter);
         inputCursor.open(bindings);
@@ -57,13 +57,14 @@ public final class Update_Default implements UpdatePlannable {
                 if (updateFunction.rowIsSelected(oldRow)) {
                     Row newRow = updateFunction.evaluate(oldRow, bindings);
                     adapter.updateRow(oldRow, newRow, bindings);
+                    ++modified;
                 }
             }
         } finally {
             inputCursor.close();
         }
         long end = System.currentTimeMillis();
-        return new StandardUpdateResult(end - start, seen, seen);
+        return new StandardUpdateResult(end - start, seen, modified);
     }
 
     // Plannable interface
