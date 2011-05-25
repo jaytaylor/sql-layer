@@ -144,7 +144,7 @@ public class PostgresHapiRequest extends PostgresBaseStatement implements HapiGe
     }
 
     @Override
-    public void execute(PostgresServerSession server, int maxrows) 
+    public int execute(PostgresServerSession server, int maxrows) 
             throws IOException, StandardException {
         PostgresMessenger messenger = server.getMessenger();
         Session session = server.getSession();
@@ -161,6 +161,7 @@ public class PostgresHapiRequest extends PostgresBaseStatement implements HapiGe
         messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
         messenger.writeString("SELECT " + nrows);
         messenger.sendMessage();
+        return nrows;
     }
 
 }

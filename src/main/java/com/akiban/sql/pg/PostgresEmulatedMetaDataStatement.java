@@ -93,7 +93,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     @Override
-    public void execute(PostgresServerSession server, int maxrows)
+    public int execute(PostgresServerSession server, int maxrows)
         throws IOException, StandardException {
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
@@ -107,6 +107,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
           messenger.writeString("SELECT " + nrows);
           messenger.sendMessage();
         }
+        return nrows;
     }
 
     private int odbcLoTypeQuery(PostgresMessenger messenger, int maxrows) {

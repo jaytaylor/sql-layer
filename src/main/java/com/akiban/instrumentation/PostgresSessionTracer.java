@@ -17,6 +17,7 @@ public class PostgresSessionTracer implements SessionTracer {
         this.currentStatement = null;
         this.remoteAddress = null;
         this.startTime = System.currentTimeMillis();
+        this.nrows = 0;
         this.traceLevel = 0;
         this.enabled = false;
         this.events = new HashMap<String, Event>();
@@ -30,6 +31,7 @@ public class PostgresSessionTracer implements SessionTracer {
         this.currentStatement = null;
         this.remoteAddress = null;
         this.startTime = System.currentTimeMillis();
+        this.nrows = 0;
         this.traceLevel = 0;
         this.enabled = enabled;
         this.events = new HashMap<String, Event>();
@@ -67,6 +69,14 @@ public class PostgresSessionTracer implements SessionTracer {
             return execEvent.getLastDuration();
         }
         return 0;
+    }
+    
+    public void setNumberOfRowsReturned(int nrows) {
+        this.nrows = nrows;
+    }
+    
+    public int getNumberOfRowsReturned() {
+        return nrows;
     }
     
     // SessionTracer interface
@@ -188,6 +198,7 @@ public class PostgresSessionTracer implements SessionTracer {
     private String currentStatement;
     private String remoteAddress;
     private long startTime;
+    private int nrows;
     private int traceLevel;
     private boolean enabled;
     private Map<String, Event> events;

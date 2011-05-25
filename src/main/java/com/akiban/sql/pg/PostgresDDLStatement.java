@@ -61,7 +61,7 @@ public class PostgresDDLStatement implements PostgresStatement
         }
     }
 
-    public void execute(PostgresServerSession server, int maxrows)
+    public int execute(PostgresServerSession server, int maxrows)
             throws IOException, StandardException {
         AkibanInformationSchema ais = server.getAIS();
         String schema = server.getDefaultSchemaName();
@@ -87,6 +87,7 @@ public class PostgresDDLStatement implements PostgresStatement
             messenger.writeString(ddl.statementToString());
             messenger.sendMessage();
         }
+        return 0;
     }
 
 }

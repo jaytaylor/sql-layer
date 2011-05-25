@@ -57,7 +57,7 @@ public class PostgresSessionStatement implements PostgresStatement
     }
 
     @Override
-    public void execute(PostgresServerSession server, int maxrows)
+    public int execute(PostgresServerSession server, int maxrows)
             throws IOException, StandardException {
         switch (operation) {
         case USE:
@@ -73,6 +73,7 @@ public class PostgresSessionStatement implements PostgresStatement
             messenger.writeString(statement.statementToString());
             messenger.sendMessage();
         }
+        return 0;
     }
 
 }

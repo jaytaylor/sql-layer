@@ -116,6 +116,11 @@ public class InstrumentationLibrary implements InstrumentationMXBean {
     }
     
     @Override
+    public int getNumberOfRowsReturned(int sessionId) {
+        return getSqlSessionTracer(sessionId).getNumberOfRowsReturned();
+    }
+    
+    @Override
     public Object[] getCurrentEvents(int sessionId) {
         return getSqlSessionTracer(sessionId).getCurrentEvents();
     }
