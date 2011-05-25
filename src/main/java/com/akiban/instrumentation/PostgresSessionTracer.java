@@ -1,5 +1,6 @@
 package com.akiban.instrumentation;
 
+import java.util.EmptyStackException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -28,23 +29,36 @@ public class PostgresSessionTracer implements SessionTracer {
     
     @Override
     public void beginEvent(String eventName) {
-        Event ev = events.get(eventName);
-        if (ev == null) {
-            ev = new EventImpl(eventName, sessionId);
-            events.put(eventName, ev);
+        if (enabled) {
+            Event ev = events.get(eventName);
+            if (ev == null) {
+                ev = new EventImpl(eventName, sessionId);
+                events.put(eventName, ev);
+            }
+            ev.start();
+            currentEvents.push(ev);
         }
-        ev.start();
-        currentEvents.push(ev);
     }
 
     @Override
     public void endEvent(String eventName) {
-        Event ev = currentEvents.pop();
-        if (ev == null) {
-            /* this should never happen, thrown an exception */
+        if (enabled) {
+            try {
+                Event ev = currentEvents.pop();
+                if (ev == null) {
+                    /*
+                     * this could happen if instrumentation was enabled during
+                     * an event. The same is true for the EmptyStackException
+                     * that could be thrown by the call to pop() above.
+                     */
+                    return;
+                }
+                ev.stop();
+                addCompletedEvent(ev);
+            } catch (EmptyStackException e) {
+                return;
+            }
         }
-        ev.stop();
-        addCompletedEvent(ev);
     }
 
     @Override
