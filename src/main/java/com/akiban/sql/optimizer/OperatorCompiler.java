@@ -224,7 +224,7 @@ public class OperatorCompiler
             }
             if (!addAncestors.isEmpty())
                 resultOperator = ancestorLookup_Default(resultOperator, groupTable,
-                                                        tableType, addAncestors);
+                                                        tableType, addAncestors, true);
         }
         else {
             resultOperator = groupScan_Default(groupTable);
