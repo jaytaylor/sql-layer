@@ -8,6 +8,8 @@ public interface SessionTracer {
     
     public Event getEvent(String eventName);
     
+    public Object[] getCurrentEvents();
+    
     public void setTraceLevel(int level);
     
     public int getTraceLevel();

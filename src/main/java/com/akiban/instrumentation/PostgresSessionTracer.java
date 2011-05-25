@@ -65,6 +65,11 @@ public class PostgresSessionTracer implements SessionTracer {
     public Event getEvent(String eventName) {
         return events.get(eventName);
     }
+    
+    @Override
+    public Object[] getCurrentEvents() {
+        return currentEvents.toArray();
+    }
 
     @Override
     public void setTraceLevel(int level) {
