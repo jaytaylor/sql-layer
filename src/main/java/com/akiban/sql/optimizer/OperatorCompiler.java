@@ -214,7 +214,7 @@ public class OperatorCompiler
                                                                index.isReverse(),
                                                                index.getIndexKeyRange());
             resultOperator = lookup_Default(indexOperator, groupTable,
-                                            indexType, tableType);
+                                            indexType, tableType, false);
             // All selected rows above this need to be output by hkey left
             // segment random access.
             List<RowType> addAncestors = new ArrayList<RowType>();
@@ -301,7 +301,7 @@ public class OperatorCompiler
                                                                index.isReverse(),
                                                                index.getIndexKeyRange());
             resultOperator = lookup_Default(indexOperator, groupTable,
-                                            indexType, targetRowType);
+                                            indexType, targetRowType, false);
         }
         else {
             resultOperator = groupScan_Default(groupTable);

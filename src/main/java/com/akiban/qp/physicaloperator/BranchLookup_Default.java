@@ -16,20 +16,22 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.util.Undef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class Lookup_Default extends PhysicalOperator
+import static java.lang.Math.min;
+
+public class BranchLookup_Default extends PhysicalOperator
 {
     // Object interface
 
@@ -66,13 +68,14 @@ public class Lookup_Default extends PhysicalOperator
         return describePlan(inputOperator);
     }
 
-    // Lookup_Default interface
+    // BranchLookup_Default interface
 
-    public Lookup_Default(PhysicalOperator inputOperator,
-                          GroupTable groupTable,
-                          RowType inputRowType,
-                          RowType outputRowType,
-                          Limit limit)
+    public BranchLookup_Default(PhysicalOperator inputOperator,
+                                GroupTable groupTable,
+                                RowType inputRowType,
+                                RowType outputRowType,
+                                boolean keepInput,
+                                Limit limit)
     {
         if (inputRowType == null) {
             throw new IllegalArgumentException();
@@ -80,27 +83,46 @@ public class Lookup_Default extends PhysicalOperator
         if (outputRowType == null) {
             throw new IllegalArgumentException();
         }
-        // TODO: Is emitInputRow = true ever useful? Definitely not if input is an index row. What about
-        // TODO: a group row? Makes sense for AncestorLookup. Not so sure about Lookup. If emitInputRow
-        // TODO: is always false, then implementation of Execution.next() can be simplified.
-        this.emitInputRow = false;
-        UserTableRowType inputTableType;
-        if (inputRowType instanceof UserTableRowType) {
-            if (outputRowType == inputRowType) {
-                throw new IllegalArgumentException();
-            }
-            inputTableType = (UserTableRowType) inputRowType;
-            // this.emitInputRow = true;
-        } else {
-            inputTableType = ((IndexRowType) inputRowType).tableType();
-            // this.emitInputRow = false;
+        if (limit == null) {
+            throw new IllegalArgumentException();
         }
+        if (inputRowType instanceof UserTableRowType && outputRowType == inputRowType) {
+            throw new IllegalArgumentException();
+        }
+        if (inputRowType instanceof IndexRowType && keepInput) {
+            throw new IllegalArgumentException();
+        }
+        UserTableRowType inputTableType = null;
+        if (inputRowType instanceof UserTableRowType) {
+            inputTableType = (UserTableRowType) inputRowType;
+        } else if (inputRowType instanceof IndexRowType) {
+            inputTableType = ((IndexRowType) inputRowType).tableType();
+        }
+        assert inputTableType != null : inputRowType;
+        UserTable inputTable = inputTableType.userTable();
+        UserTable outputTable = outputRowType.userTable();
+        if (inputTable.getGroup() != outputTable.getGroup()) {
+            throw new IllegalArgumentException();
+        }
+        this.keepInput = keepInput;
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
         this.inputRowType = inputRowType;
         this.outputRowType = outputRowType;
         this.commonSegments = inputTableType.ancestry().commonSegments(outputRowType.ancestry());
         this.limit = limit;
+        UserTable commonAncestor = commonAncestor(inputTable, outputTable);
+        switch (outputTable.getDepth() - commonAncestor.getDepth()) {
+            case 0:
+                branchRoot = null;
+                break;
+            case 1:
+                branchRoot = outputTable;
+                break;
+            default:
+                throw new IllegalArgumentException();
+        }
+
     }
 
     @Override
@@ -108,9 +130,29 @@ public class Lookup_Default extends PhysicalOperator
         return CursorAbility.MODIFY.equals(ability);
     }
 
+    // For use by this class
+
+    private static UserTable commonAncestor(UserTable inputTable, UserTable outputTable)
+    {
+        int minLevel = min(inputTable.getDepth(), outputTable.getDepth());
+        UserTable inputAncestor = inputTable;
+        while (inputAncestor.getDepth() > minLevel) {
+            inputAncestor = inputAncestor.parentTable();
+        }
+        UserTable outputAncestor = outputTable;
+        while (outputAncestor.getDepth() > minLevel) {
+            outputAncestor = outputAncestor.parentTable();
+        }
+        while (inputAncestor != outputAncestor) {
+            inputAncestor = inputAncestor.parentTable();
+            outputAncestor = outputAncestor.parentTable();
+        }
+        return outputAncestor;
+    }
+
     // Class state
 
-    private static final Logger LOG = LoggerFactory.getLogger(Lookup_Default.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BranchLookup_Default.class);
 
     // Object state
 
@@ -118,8 +160,9 @@ public class Lookup_Default extends PhysicalOperator
     private final GroupTable groupTable;
     private final RowType inputRowType;
     private final RowType outputRowType;
-    private final boolean emitInputRow;
+    private final boolean keepInput;
     private final int commonSegments;
+    private final UserTable branchRoot;
     private final Limit limit;
 
     private class Execution extends SingleRowCachingCursor
@@ -142,7 +185,7 @@ public class Lookup_Default extends PhysicalOperator
                     case BEFORE:
                         // Input row shows up before lookup rows. That might not be strictly in hkey order, but it
                         // shouldn't matter because outputRowType is not an ancestor of inputRowType.
-                        if (emitInputRow) {
+                        if (keepInput) {
                             nextRow = inputRow.get();
                         }
                         lookupState = LookupState.SCANNING;
@@ -257,6 +300,9 @@ public class Lookup_Default extends PhysicalOperator
         {
             inputRowHKey.copyTo(lookupRowHKey);
             lookupRowHKey.useSegments(commonSegments);
+            if (branchRoot != null) {
+                lookupRowHKey.extend(branchRoot);
+            }
         }
 
         private void checkModifiableState() {

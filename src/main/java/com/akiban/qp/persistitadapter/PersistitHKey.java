@@ -15,7 +15,9 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
+import com.akiban.server.RowDef;
 import com.persistit.Key;
 
 class PersistitHKey implements HKey
@@ -75,6 +77,12 @@ class PersistitHKey implements HKey
         assert target instanceof PersistitHKey;
         PersistitHKey that = (PersistitHKey) target;
         that.copyFrom(hKey);
+    }
+
+    @Override
+    public void extend(UserTable userTable)
+    {
+        hKey.append(((RowDef)userTable.rowDef()).getOrdinal());
     }
 
     // PersistitHKey interface
