@@ -19,8 +19,6 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.CursorAbility;
-import com.akiban.qp.physicaloperator.CursorStub;
 import com.akiban.qp.physicaloperator.GroupCursor;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
@@ -44,7 +42,7 @@ import org.slf4j.LoggerFactory;
  */
 
 
-class PersistitGroupCursor extends CursorStub implements GroupCursor
+class PersistitGroupCursor implements GroupCursor
 {
     // GroupCursor interface
 
@@ -117,11 +115,6 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
         return row.get();
     }
 
-    @Override
-    public boolean cursorAbilitiesInclude(CursorAbility ability) {
-        return false;
-    }
-
     // For use by this package
 
     PersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable, IndexKeyRange indexKeyRange)
@@ -138,7 +131,7 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
 
     private RowHolder<PersistitGroupRow> unsharedRow()
     {
-        if (row.get().isShared()) {
+        if (row.isNull() || row.get().isShared()) {
             row.set(adapter.newGroupRow());
         }
         return row;

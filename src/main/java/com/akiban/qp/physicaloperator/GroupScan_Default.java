@@ -44,15 +44,7 @@ class GroupScan_Default extends PhysicalOperator
     @Override
     protected Cursor cursor(StoreAdapter adapter)
     {
-        Cursor cursor = new Execution(adapter, indexKeyRange);
-        assert cursor.cursorAbilitiesInclude(CursorAbility.MODIFY) : "cursor must be modifiable";
-        return cursor;
-    }
-
-    @Override
-    public boolean cursorAbilitiesInclude(CursorAbility ability)
-    {
-        return CursorAbility.MODIFY.equals(ability) || super.cursorAbilitiesInclude(ability);
+        return new Execution(adapter, indexKeyRange);
     }
 
     // GroupScan_Default interface
@@ -106,38 +98,6 @@ class GroupScan_Default extends PhysicalOperator
         {
             outputRow(null);
             cursor.close();
-        }
-
-        @Override
-        public void removeCurrentRow() {
-            checkHasRow();
-            cursor.removeCurrentRow();
-            outputRow(null);
-        }
-
-        @Override
-        public void updateCurrentRow(Row newRow) {
-            checkHasRow();
-            cursor.updateCurrentRow(newRow);
-            outputRow(newRow);
-        }
-
-        @Override
-        public ModifiableCursorBackingStore backingStore() {
-            return super.backingStore();
-        }
-
-        @Override
-        public boolean cursorAbilitiesInclude(CursorAbility ability) {
-            return cursor.cursorAbilitiesInclude(ability);
-        }
-
-        // private
-
-        private void checkHasRow() {
-            if (!hasCachedRow()) {
-                throw new IllegalStateException("no cached row available");
-            }
         }
 
         // Execution interface

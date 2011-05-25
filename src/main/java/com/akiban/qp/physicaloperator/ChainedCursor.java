@@ -43,24 +43,4 @@ public abstract class ChainedCursor implements Cursor {
     public Row currentRow() {
         return input.currentRow();
     }
-
-    @Override
-    public void removeCurrentRow() {
-        input.removeCurrentRow();
-    }
-
-    @Override
-    public void updateCurrentRow(Row newRow) {
-        input.updateCurrentRow(newRow);
-    }
-
-    @Override
-    public ModifiableCursorBackingStore backingStore() {
-        return input.backingStore();
-    }
-
-    @Override
-    public boolean cursorAbilitiesInclude(CursorAbility ability) {
-        return input.cursorAbilitiesInclude(ability);
-    }
 }
