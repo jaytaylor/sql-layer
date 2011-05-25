@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.ais.model.TableIndex;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.sql.optimizer.SimplifiedQuery.*;
 
 import com.akiban.sql.parser.*;
@@ -83,14 +84,14 @@ public class OperatorCompiler
     }
 
     public static class Result {
-        private PhysicalOperator resultOperator;
+        private Plannable resultOperator;
         private RowType resultRowType;
         private List<Column> resultColumns;
         private int[] resultColumnOffsets;
         private int offset = 0;
         private int limit = -1;
 
-        public Result(PhysicalOperator resultOperator,
+        public Result(Plannable resultOperator,
                       RowType resultRowType,
                       List<Column> resultColumns,
                       int[] resultColumnOffsets,
@@ -103,13 +104,13 @@ public class OperatorCompiler
             this.offset = offset;
             this.limit = limit;
         }
-        public Result(PhysicalOperator resultOperator,
+        public Result(Plannable resultOperator,
                       RowType resultRowType) {
             this.resultOperator = resultOperator;
             this.resultRowType = resultRowType;
         }
 
-        public PhysicalOperator getResultOperator() {
+        public Plannable getResultOperator() {
             return resultOperator;
         }
         public RowType getResultRowType() {
@@ -148,7 +149,7 @@ public class OperatorCompiler
             return result;
         }
 
-        protected static void explainPlan(PhysicalOperator operator, 
+        protected static void explainPlan(Plannable operator,
                                           List<String> into, int depth) {
             
             StringBuilder sb = new StringBuilder();
@@ -326,9 +327,9 @@ public class OperatorCompiler
         }
         ExpressionRow updateRow = new ExpressionRow(targetRowType, updates);
 
-        resultOperator = new com.akiban.qp.physicaloperator.Update_Default(resultOperator,
+        Plannable updatePlan = new com.akiban.qp.physicaloperator.Update_Default(resultOperator,
                                             new ExpressionRowUpdateFunction(updateRow));
-        return new Result(resultOperator, targetRowType);
+        return new Result(updatePlan, targetRowType);
     }
 
     public Result compileInsert(InsertNode insert) throws StandardException {
