@@ -228,7 +228,8 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
         PhysicalOperator ancestorLookup = ancestorLookup_Default(lookup,
                                                                  coi,
                                                                  orderRowType,
-                                                                 Arrays.asList(customerRowType));
+                                                                 Arrays.asList(customerRowType),
+                                                                 true);
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
                                            row(orderRowType, 12L, 1L, "david"),
                                            row(itemRowType, 121L, 12L),
@@ -256,7 +257,8 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
         PhysicalOperator ancestorLookup = ancestorLookup_Default(lookup,
                                                                  coi,
                                                                  itemRowType,
-                                                                 Arrays.asList(customerRowType, orderRowType));
+                                                                 Arrays.asList(customerRowType, orderRowType),
+                                                                 true);
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
                                            row(orderRowType, 11L, 1L, "ori"),
                                            row(itemRowType, 111L, 11L),
@@ -324,7 +326,8 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
         PhysicalOperator ancestorLookup = ancestorLookup_Default(indexScan,
                                                                  coi,
                                                                  orderSalesmanIndexRowType,
-                                                                 Arrays.asList(customerRowType));
+                                                                 Arrays.asList(customerRowType),
+                                                                 false);
         RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc")};
         compareRows(expected, cursor(ancestorLookup, adapter));
     }

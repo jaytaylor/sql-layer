@@ -254,7 +254,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (queryRootType != predicateType) {
             List<RowType> ancestorTypes = ancestorTypes();
             if (!ancestorTypes.isEmpty()) {
-                rootOperator = ancestorLookup_Default(rootOperator, groupTable, predicateType, ancestorTypes);
+                rootOperator = ancestorLookup_Default(rootOperator, groupTable, predicateType, ancestorTypes, true);
             }
         }
         // Get rid of everything above query root table.

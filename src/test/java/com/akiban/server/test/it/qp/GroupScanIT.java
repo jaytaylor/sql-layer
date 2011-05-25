@@ -84,7 +84,8 @@ public class GroupScanIT extends PhysicalOperatorITBase
         PhysicalOperator ancestorLookup = ancestorLookup_Default(groupScan,
                                                                  coi,
                                                                  orderSalesmanIndexRowType,
-                                                                 Arrays.asList(customerRowType));
+                                                                 Arrays.asList(customerRowType),
+                                                                 false);
         Cursor cursor = cursor(ancestorLookup, adapter);
         RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc")};
         compareRows(expected, cursor);
