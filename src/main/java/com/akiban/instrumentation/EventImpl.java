@@ -4,11 +4,6 @@ import com.akiban.util.Tap;
 
 public class EventImpl implements Event {
 
-    private String name;
-    private int sessionId;
-    private String tapName;
-    private boolean enabled;
-    private final Tap eventTap;
     
     public EventImpl(String name, int sessionId) {
         this.name = name;
@@ -17,6 +12,8 @@ public class EventImpl implements Event {
         this.enabled = false;
         this.eventTap = Tap.add(new Tap.PerThread(this.tapName, Tap.TimeAndCount.class));
     }
+    
+    // Event interface
 
     @Override
     public void start() {
@@ -60,5 +57,13 @@ public class EventImpl implements Event {
     public boolean isEnabled() {
         return enabled;
     }
+    
+    // state
+
+    private String name;
+    private int sessionId;
+    private String tapName;
+    private boolean enabled;
+    private final Tap eventTap;
     
 }
