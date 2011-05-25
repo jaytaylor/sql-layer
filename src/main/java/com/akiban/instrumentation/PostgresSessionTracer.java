@@ -95,7 +95,7 @@ public class PostgresSessionTracer implements SessionTracer {
     }
 
     @Override
-    public void endEvent(String eventName) {
+    public void endEvent() {
         if (enabled) {
             try {
                 Event ev = currentEvents.pop();

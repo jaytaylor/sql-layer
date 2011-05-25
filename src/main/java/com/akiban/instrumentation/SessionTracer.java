@@ -6,7 +6,7 @@ public interface SessionTracer {
     
     public void beginEvent(String eventName);
     
-    public void endEvent(String eventName);
+    public void endEvent();
     
     public Event getEvent(String eventName);
     

@@ -23,6 +23,8 @@ import com.akiban.sql.parser.CursorNode;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
+import com.akiban.instrumentation.InstrumentationLibrary;
+import com.akiban.instrumentation.PostgresSessionTracer;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
@@ -43,10 +45,6 @@ import java.util.*;
 public class PostgresServerConnection implements PostgresServerSession, Runnable
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresServerConnection.class);
-    
-    private final Tap parserTap;
-    private final Tap optimizerTap;
-    private final Tap executorTap;
     
     private PostgresServer server;
     private boolean running = false, ignoreUntilSync = false;
@@ -72,6 +70,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     
     private boolean instrumentationEnabled = false;
     private String sql;
+    private PostgresSessionTracer session_tracer;
 
     public PostgresServerConnection(PostgresServer server, Socket socket, 
                                     int pid, int secret) {
@@ -79,9 +78,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         this.socket = socket;
         this.pid = pid;
         this.secret = secret;
-        this.parserTap = Tap.add(new Tap.PerThread("sql: parse: " + pid, Tap.TimeAndCount.class));
-        this.optimizerTap = Tap.add(new Tap.PerThread("sql: optimize: " + pid, Tap.TimeAndCount.class));
-        this.executorTap = Tap.add(new Tap.PerThread("sql: execute: " + pid, Tap.TimeAndCount.class));
+        this.session_tracer = InstrumentationLibrary.initialize().createSqlSessionTracer(pid);
     }
 
     public void start() {
@@ -308,32 +305,32 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         if (pstmt != null) {
             pstmt.sendDescription(this, false);
             try {
-                executorTap.in();
+                session_tracer.beginEvent("sql: execute");
                 pstmt.execute(this, -1);
             }
             finally {
-                executorTap.out();
+                session_tracer.endEvent();
             }
         }
         else {
             // Parse as a _list_ of statements and process each in turn.
             List<StatementNode> stmts;
             try {
-                parserTap.in();
+                session_tracer.beginEvent("sql: parse");
                 stmts = parser.parseStatements(sql);
             }
             finally {
-                parserTap.out();
+                session_tracer.endEvent();
             }
             for (StatementNode stmt : stmts) {
                 pstmt = generateStatement(stmt, null);
                 pstmt.sendDescription(this, false);
                 try {
-                    executorTap.in();
+                    session_tracer.beginEvent("sql: execute");
                     pstmt.execute(this, -1);
                 }
                 finally {
-                    executorTap.out();
+                    session_tracer.endEvent();
                 }
             }
         }
@@ -351,11 +348,11 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
         StatementNode stmt;
         try {
-            parserTap.in();
+            session_tracer.beginEvent("sql: parse");
             stmt = parser.parseStatement(sql);
         }
         finally {
-            parserTap.out();
+            session_tracer.endEvent();
         }
         PostgresStatement pstmt = generateStatement(stmt, paramTypes);
         preparedStatements.put(stmtName, pstmt);
@@ -504,14 +501,14 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     protected PostgresStatement generateStatement(StatementNode stmt, int[] paramTypes)
             throws StandardException {
         try {
-            optimizerTap.in();
+            session_tracer.beginEvent("sql: optimize");
             for (PostgresStatementGenerator generator : parsedGenerators) {
                 PostgresStatement pstmt = generator.generate(this, stmt, paramTypes);
                 if (pstmt != null) return pstmt;
             }
         }
         finally {
-            optimizerTap.out();
+            session_tracer.endEvent();
         }
         throw new StandardException("Unsupported SQL statement");
     }
@@ -595,19 +592,12 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
     
     public void enableInstrumentation() {
-        parserTap.reset();
-        optimizerTap.reset();
-        executorTap.reset();
-        Tap.setEnabled("sql: parse: " + pid, true);
-        Tap.setEnabled("sql: optimize: " + pid, true);
-        Tap.setEnabled("sql: execute: " + pid, true);
+        session_tracer.enable();
         instrumentationEnabled = true;
     }
     
     public void disableInstrumentation() {
-        Tap.setEnabled("sql: parse: " + pid, true);
-        Tap.setEnabled("sql: optimize: " + pid, true);
-        Tap.setEnabled("sql: execute: " + pid, true);
+        session_tracer.disable();
         instrumentationEnabled = false;
     }
     
