@@ -43,6 +43,10 @@ public interface InstrumentationMXBean {
     String getRemoteAddress(int sessionId);
     Date getStartTime(int sessionId);
     long getProcessingTime(int sessionId);
+    /* times below are only for the last statement executed */
+    long getParseTime(int sessionId);
+    long getOptimizeTime(int sessionId);
+    long getExecuteTime(int sessionId);
     
     Object[] getCurrentEvents(int sessionId);
 

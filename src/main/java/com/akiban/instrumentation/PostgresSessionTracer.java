@@ -45,6 +45,30 @@ public class PostgresSessionTracer implements SessionTracer {
         this.remoteAddress = remoteAddress;
     }
     
+    public long getParseTime() {
+        Event parseEvent = events.get("sql: parse");
+        if (parseEvent != null) {
+            return parseEvent.getLastDuration();
+        }
+        return 0;
+    }
+    
+    public long getOptimizeTime() {
+        Event optEvent = events.get("sql: optimize");
+        if (optEvent != null) {
+            return optEvent.getLastDuration();
+        }
+        return 0;
+    }
+    
+    public long getExecuteTime() {
+        Event execEvent = events.get("sql: execute");
+        if (execEvent != null) {
+            return execEvent.getLastDuration();
+        }
+        return 0;
+    }
+    
     // SessionTracer interface
     
     @Override

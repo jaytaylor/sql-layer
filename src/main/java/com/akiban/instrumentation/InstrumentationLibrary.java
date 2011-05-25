@@ -12,7 +12,7 @@ public class InstrumentationLibrary implements InstrumentationMXBean {
     // InstrumentationLibrary interface
     
     private InstrumentationLibrary() {
-        this.currentSqlSessions = new HashMap<Integer, SessionTracer>();
+        this.currentSqlSessions = new HashMap<Integer, PostgresSessionTracer>();
         this.enabled = new AtomicBoolean(false);
     }
     
@@ -23,8 +23,8 @@ public class InstrumentationLibrary implements InstrumentationMXBean {
         return lib;
     }
     
-    public synchronized SessionTracer createSqlSessionTracer(int sessionId) {
-        SessionTracer ret = new PostgresSessionTracer(sessionId, enabled.get());
+    public synchronized PostgresSessionTracer createSqlSessionTracer(int sessionId) {
+        PostgresSessionTracer ret = new PostgresSessionTracer(sessionId, enabled.get());
         currentSqlSessions.put(sessionId, ret);
         return ret;
     }
@@ -33,7 +33,7 @@ public class InstrumentationLibrary implements InstrumentationMXBean {
         currentSqlSessions.remove(sessionId);
     }
     
-    public synchronized SessionTracer getSqlSessionTracer(int sessionId) {
+    public synchronized PostgresSessionTracer getSqlSessionTracer(int sessionId) {
         return currentSqlSessions.get(sessionId);
     }
     
@@ -101,6 +101,21 @@ public class InstrumentationLibrary implements InstrumentationMXBean {
     }
     
     @Override
+    public long getParseTime(int sessionId) {
+        return getSqlSessionTracer(sessionId).getParseTime();
+    }
+    
+    @Override
+    public long getOptimizeTime(int sessionId) {
+        return getSqlSessionTracer(sessionId).getOptimizeTime();
+    }
+    
+    @Override
+    public long getExecuteTime(int sessionId) {
+        return getSqlSessionTracer(sessionId).getExecuteTime();
+    }
+    
+    @Override
     public Object[] getCurrentEvents(int sessionId) {
         return getSqlSessionTracer(sessionId).getCurrentEvents();
     }
@@ -109,7 +124,7 @@ public class InstrumentationLibrary implements InstrumentationMXBean {
     
     private static InstrumentationLibrary lib = null;
     
-    private Map<Integer, SessionTracer> currentSqlSessions;
+    private Map<Integer, PostgresSessionTracer> currentSqlSessions;
     
     private AtomicBoolean enabled;
 
