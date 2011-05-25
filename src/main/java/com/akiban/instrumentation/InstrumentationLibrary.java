@@ -15,6 +15,7 @@
 
 package com.akiban.instrumentation;
 
+import java.lang.management.ManagementFactory;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,7 +23,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class InstrumentationLibrary implements InstrumentationMXBean {
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+
+import com.akiban.util.TapMXBeanImpl;
+
+public class InstrumentationLibrary 
+    implements InstrumentationMXBean {
     
     // InstrumentationLibrary interface
     
@@ -135,9 +142,40 @@ public class InstrumentationLibrary implements InstrumentationMXBean {
         return getSqlSessionTracer(sessionId).getNumberOfRowsReturned();
     }
     
-    @Override
+    /*@Override
     public Object[] getCurrentEvents(int sessionId) {
         return getSqlSessionTracer(sessionId).getCurrentEvents();
+    }*/
+    
+    /**
+     * Register an MXBean to make methods of this class available remotely from
+     * JConsole or other JMX client. Does nothing if there already is a
+     * registered MXBean.
+     * 
+     * @throws Exception
+     */
+    public synchronized void registerMXBean() throws Exception {
+        if (!registered) {
+            ObjectName mxbeanName = new ObjectName("com.akiban:type=Instrumentation");
+            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+            mbs.registerMBean(this, mxbeanName);
+            registered = true;
+        }
+    }
+
+    /**
+     * Unregister the MXBean created by {@link #registerMXBean()}. Does nothing
+     * if there is no registered MXBean.
+     * 
+     * @throws Exception
+     */
+    public synchronized void unregisterMXBean() throws Exception {
+        if (registered) {
+            ObjectName mxbeanName = new ObjectName("com.akiban:type=Instrumentation");
+            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+            mbs.unregisterMBean(mxbeanName);
+            registered = false;
+        }
     }
     
     // state
@@ -147,5 +185,7 @@ public class InstrumentationLibrary implements InstrumentationMXBean {
     private Map<Integer, PostgresSessionTracer> currentSqlSessions;
     
     private AtomicBoolean enabled;
+    
+    private boolean registered = false;
 
 }

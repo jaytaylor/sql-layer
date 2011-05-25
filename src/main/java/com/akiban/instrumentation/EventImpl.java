@@ -28,6 +28,16 @@ public class EventImpl implements Event {
         this.eventTap = Tap.add(new Tap.PerThread(this.tapName, Tap.TimeAndCount.class));
     }
     
+    public EventImpl(String name, int sessionId, boolean enabled) {
+        this.name = name;
+        this.sessionId = sessionId;
+        this.tapName = this.name + ":" + this.sessionId;
+        this.eventTap = Tap.add(new Tap.PerThread(this.tapName, Tap.TimeAndCount.class));
+        if (enabled) {
+            enable();
+        }
+    }
+    
     // Event interface
 
     @Override

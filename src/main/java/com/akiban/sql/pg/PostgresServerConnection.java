@@ -79,6 +79,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         this.pid = pid;
         this.secret = secret;
         this.session_tracer = InstrumentationLibrary.initialize().createSqlSessionTracer(pid);
+        session_tracer.setRemoteAddress(socket.getInetAddress().getHostAddress());
     }
 
     public void start() {
@@ -294,6 +295,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     protected void processQuery() throws IOException, StandardException {
         sql = messenger.readString();
+        session_tracer.setCurrentStatement(sql);
         logger.info("Query: {}", sql);
         PostgresStatement pstmt = null;
         for (PostgresStatementParser parser : unparsedGenerators) {

@@ -49,6 +49,6 @@ public interface InstrumentationMXBean {
     long getExecuteTime(int sessionId);
     int getNumberOfRowsReturned(int sessionId);
     
-    Object[] getCurrentEvents(int sessionId);
+    //Object[] getCurrentEvents(int sessionId);
 
 }

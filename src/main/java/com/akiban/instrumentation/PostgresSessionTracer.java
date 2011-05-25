@@ -101,7 +101,7 @@ public class PostgresSessionTracer implements SessionTracer {
         if (enabled) {
             Event ev = events.get(eventName);
             if (ev == null) {
-                ev = new EventImpl(eventName, sessionId);
+                ev = new EventImpl(eventName, sessionId, true);
                 events.put(eventName, ev);
             }
             ev.start();
