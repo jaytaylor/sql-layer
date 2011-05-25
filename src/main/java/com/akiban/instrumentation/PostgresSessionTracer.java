@@ -92,6 +92,8 @@ public class PostgresSessionTracer implements SessionTracer {
             ev.disable();
         }
         events.clear(); /* should we do this? */
+        completedEvents.clear();
+        currentEvents.clear();
         enabled = false;
     }
 
