@@ -126,7 +126,7 @@ class AncestorLookup_Default extends PhysicalOperator
             if (!ancestorType.ancestorOf(tableRowType)) {
                 throw new IllegalArgumentException(ancestorType.toString());
             }
-            if (ancestorType.userTable().getGroup() != rowType.userTable().getGroup()) {
+            if (ancestorType.userTable().getGroup() != tableRowType.userTable().getGroup()) {
                 throw new IllegalArgumentException(ancestorType.toString());
             }
         }
@@ -167,7 +167,7 @@ class AncestorLookup_Default extends PhysicalOperator
             Row row = pending.take();
             outputRow(row);
             if (LOG.isInfoEnabled()) {
-                LOG.info("Exhume: {}", row == null ? null : row);
+                LOG.info("AncestorLookup: {}", row == null ? null : row);
             }
             return row != null;
         }

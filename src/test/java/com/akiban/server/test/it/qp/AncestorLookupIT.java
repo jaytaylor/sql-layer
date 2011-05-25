@@ -177,6 +177,17 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
         compareRows(expected, cursor);
     }
 
+    @Test
+    public void testOrphanItemIndexToItem()
+    {
+        PhysicalOperator plan = indexRowToAncestorPlan(311, itemRowType);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+            row(itemRowType, 311L, 31L)
+        };
+        compareRows(expected, cursor);
+    }
+
     // Test ancestor lookup given group row
 
     @Test
