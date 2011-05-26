@@ -20,10 +20,10 @@ import com.akiban.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.instrumentation.InstrumentationLibrary;
 import com.akiban.server.manage.ManageMXBean;
 import com.akiban.server.manage.ManageMXBeanImpl;
 import com.akiban.server.service.DefaultServiceFactory;
+import com.akiban.server.service.instrumentation.InstrumentationLibrary;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;

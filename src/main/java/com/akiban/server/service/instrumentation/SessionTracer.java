@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.instrumentation;
+package com.akiban.server.service.instrumentation;
 
 import java.util.Date;
 
