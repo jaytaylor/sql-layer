@@ -94,9 +94,6 @@ launch_service()
         echo ${akiban_home}
         # use log4j to log output
         akiban_parms="$akiban_parms -Dlog4j.configuration=file:$AKIBAN_CONF/config/log4j.properties"
-        echo "JVM_OPTS: $JVM_OPTS"
-        echo "akiban_parms: $akiban_parms"
-        echo "props: $props"
         exec $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props <&- &
     fi
 
