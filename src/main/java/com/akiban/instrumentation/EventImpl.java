@@ -26,6 +26,8 @@ public class EventImpl implements Event {
         this.tapName = this.name + ":" + this.sessionId;
         this.enabled = false;
         this.eventTap = Tap.add(new Tap.PerThread(this.tapName, Tap.TimeAndCount.class));
+        this.lastDuration = 0;
+        this.totalTime = 0;
     }
     
     public EventImpl(String name, int sessionId, boolean enabled) {
@@ -36,6 +38,8 @@ public class EventImpl implements Event {
         if (enabled) {
             enable();
         }
+        this.lastDuration = 0;
+        this.totalTime = 0;
     }
     
     // Event interface
@@ -48,16 +52,25 @@ public class EventImpl implements Event {
     @Override
     public void stop() {
         eventTap.out();
+        lastDuration = eventTap.getDuration();
+        totalTime += lastDuration;
     }
 
     @Override
     public void reset() {
         eventTap.reset();
+        lastDuration = 0;
+        totalTime = 0;
     }
 
     @Override
     public long getLastDuration() {
-        return eventTap.getDuration();
+        return lastDuration;
+    }
+    
+    @Override
+    public long getTotalTime() {
+        return totalTime;
     }
 
     @Override
@@ -90,5 +103,7 @@ public class EventImpl implements Event {
     private String tapName;
     private boolean enabled;
     private final Tap eventTap;
+    private long lastDuration;
+    private long totalTime;
     
 }

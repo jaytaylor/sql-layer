@@ -44,5 +44,9 @@ public interface SessionTracer {
     public Date getStartTime();
         
     public long getProcessingTime();
+    
+    public long getEventTime(String eventName);
+    
+    public long getTotalEventTime(String eventName);
 
 }

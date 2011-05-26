@@ -25,6 +25,8 @@ public interface Event {
     
     public long getLastDuration();
     
+    public long getTotalTime();
+    
     public String getName();
     
     public void enable();

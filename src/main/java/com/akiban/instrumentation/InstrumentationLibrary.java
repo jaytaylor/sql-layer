@@ -124,17 +124,27 @@ public class InstrumentationLibrary
     
     @Override
     public long getParseTime(int sessionId) {
-        return getSqlSessionTracer(sessionId).getParseTime();
+        return getSqlSessionTracer(sessionId).getEventTime("sql: parse");
     }
     
     @Override
     public long getOptimizeTime(int sessionId) {
-        return getSqlSessionTracer(sessionId).getOptimizeTime();
+        return getSqlSessionTracer(sessionId).getEventTime("sql: optimize");
     }
     
     @Override
     public long getExecuteTime(int sessionId) {
-        return getSqlSessionTracer(sessionId).getExecuteTime();
+        return getSqlSessionTracer(sessionId).getEventTime("sql: execute");
+    }
+    
+    @Override
+    public long getEventTime(int sessionId, String eventName) {
+        return getSqlSessionTracer(sessionId).getEventTime(eventName);
+    }
+    
+    @Override
+    public long getTotalEventTime(int sessionId, String eventName) {
+        return getSqlSessionTracer(sessionId).getTotalEventTime(eventName);
     }
     
     @Override

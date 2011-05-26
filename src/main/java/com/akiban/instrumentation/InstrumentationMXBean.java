@@ -47,6 +47,8 @@ public interface InstrumentationMXBean {
     long getParseTime(int sessionId);
     long getOptimizeTime(int sessionId);
     long getExecuteTime(int sessionId);
+    long getEventTime(int sessionId, String eventName);
+    long getTotalEventTime(int sessionId, String eventName);
     int getNumberOfRowsReturned(int sessionId);
     
     //Object[] getCurrentEvents(int sessionId);

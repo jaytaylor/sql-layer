@@ -62,30 +62,6 @@ public class PostgresSessionTracer implements SessionTracer {
         this.remoteAddress = remoteAddress;
     }
     
-    public long getParseTime() {
-        Event parseEvent = events.get("sql: parse");
-        if (parseEvent != null) {
-            return parseEvent.getLastDuration();
-        }
-        return 0;
-    }
-    
-    public long getOptimizeTime() {
-        Event optEvent = events.get("sql: optimize");
-        if (optEvent != null) {
-            return optEvent.getLastDuration();
-        }
-        return 0;
-    }
-    
-    public long getExecuteTime() {
-        Event execEvent = events.get("sql: execute");
-        if (execEvent != null) {
-            return execEvent.getLastDuration();
-        }
-        return 0;
-    }
-    
     public void setNumberOfRowsReturned(int nrows) {
         this.nrows = nrows;
     }
@@ -194,6 +170,24 @@ public class PostgresSessionTracer implements SessionTracer {
     @Override
     public long getProcessingTime() {
         return (System.currentTimeMillis() - startTime);
+    }
+    
+    @Override
+    public long getEventTime(String eventName) {
+        Event ev = events.get(eventName);
+        if (ev != null) {
+            return ev.getLastDuration();
+        }
+        return 0;
+    }
+    
+    @Override
+    public long getTotalEventTime(String eventName) {
+        Event ev = events.get(eventName);
+        if (ev != null) {
+            return ev.getTotalTime();
+        }
+        return 0;
     }
     
     // helper methods
