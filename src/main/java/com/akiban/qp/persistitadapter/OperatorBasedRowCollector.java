@@ -219,7 +219,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         boolean descending = (scanFlags & SCAN_FLAGS_DESCENDING) != 0;
         boolean deep = (scanFlags & SCAN_FLAGS_DEEP) != 0;
         rowCollector.createPlan(scanLimit, singleRow, descending, deep);
-        LOG.info(rowCollector.operator.describePlan());
         return rowCollector;
     }
     
