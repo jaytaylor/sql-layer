@@ -202,8 +202,8 @@ public class BranchLookup_Default extends PhysicalOperator
                 }
             }
             outputRow(nextRow);
-            if (LOG.isInfoEnabled()) {
-                LOG.info("Lookup: {}", lookupRow.isNull() ? null : lookupRow.get());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Lookup: {}", lookupRow.isNull() ? null : lookupRow.get());
             }
             return nextRow != null;
         }
