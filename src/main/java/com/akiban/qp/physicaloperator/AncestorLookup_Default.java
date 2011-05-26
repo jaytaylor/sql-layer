@@ -166,8 +166,8 @@ class AncestorLookup_Default extends PhysicalOperator
             }
             Row row = pending.take();
             outputRow(row);
-            if (LOG.isInfoEnabled()) {
-                LOG.info("AncestorLookup: {}", row == null ? null : row);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("AncestorLookup: {}", row == null ? null : row);
             }
             return row != null;
         }

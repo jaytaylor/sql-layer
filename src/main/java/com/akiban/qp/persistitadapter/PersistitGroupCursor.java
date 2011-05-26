@@ -90,8 +90,8 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
                     row.copyFromExchange(exchange);
                 }
             }
-            if (LOG.isInfoEnabled()) {
-                LOG.info("PersistitGroupCursor: {}", next ? row : null);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("PersistitGroupCursor: {}", next ? row : null);
             }
             return next;
         } catch (PersistitException e) {
