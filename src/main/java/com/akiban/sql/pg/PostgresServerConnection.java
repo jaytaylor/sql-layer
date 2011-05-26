@@ -261,7 +261,12 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     protected void processSSLMessage() throws IOException {
-        throw new IOException("NIY");
+        OutputStream raw = messenger.getOutputStream();
+        raw.write('N');         // No SSL support.
+        raw.flush();
+        // Now try to read a regular StartupMessage.
+        messenger.readMessage(false);
+        processStartupMessage();
     }
 
     protected void processPasswordMessage() throws IOException {
