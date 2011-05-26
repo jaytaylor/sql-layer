@@ -2,5 +2,5 @@ OPERATORS
 Flatten_HKeyOrdered(flatten(user.customers, user.orders) INNER user.items)
   Flatten_HKeyOrdered(user.customers INNER user.orders)
     AncestorLookup_Default(user.items -> [user.customers, user.orders]
-      Lookup_Default(_akiban_customers Index(user.items.sku[IndexColumn(sku)]) -> user.items limit NO LIMIT)
+      BranchLookup_Default(_akiban_customers Index(user.items.sku[IndexColumn(sku)]) -> user.items limit NO LIMIT)
         IndexScan_Default(Index(user.items.sku[IndexColumn(sku)]) (,<user.items=ExpressionRow[, , Literal(8888), ]))
