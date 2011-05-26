@@ -246,6 +246,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                                           groupTable,
                                           predicateType.indexRowType(predicateIndex),
                                           predicateType,
+                                          false,
                                           limit);
         } else {
             // assert !descending;
