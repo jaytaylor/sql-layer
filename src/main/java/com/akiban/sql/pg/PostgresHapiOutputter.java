@@ -91,7 +91,7 @@ public class PostgresHapiOutputter implements HapiOutputter {
                         Column column = columns.get(i);
                         Object value = row.get(column.getPosition());
                         PostgresType type = types.get(i);
-                        outputData[i] = type.encodeValue(value, column, 
+                        outputData[i] = type.encodeValue(value,
                                                          messenger.getEncoding(),
                                                          request.isColumnBinary(i));
                     }

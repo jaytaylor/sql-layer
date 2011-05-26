@@ -21,6 +21,8 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 
 import com.akiban.server.encoding.EncoderFactory;
+import com.akiban.server.encoding.Encoding;
+import com.akiban.server.encoding.LongEncoderBase;
 
 import java.io.*;
 import java.text.*;
@@ -139,6 +141,7 @@ public class PostgresType
     private int oid;
     private short length;
     private int modifier;
+    private LongEncoderBase encoder;
 
     public PostgresType(int oid, short length, int modifier) {
         this.oid = oid;
@@ -162,26 +165,52 @@ public class PostgresType
         int modifier = -1;
 
         Type aisType = aisColumn.getType();
-        String name = aisType.name();
+        String encoding = aisType.encoding();
 
-        if ("varchar".equals(name))
+        if ("VARCHAR".equals(encoding))
             oid = VARCHAR_TYPE_OID;
-        else if ("char".equals(name))
-            oid = CHAR_TYPE_OID;
-        else if ("int".equals(name))
-            oid = INT4_TYPE_OID;
-        else if ("bigint".equals(name))
-            oid = INT8_TYPE_OID;
-        else if ("date".equals(name))
+        else if ("INT".equals(encoding) ||
+                 "U_INT".equals(encoding)) {
+            switch (aisType.maxSizeBytes().intValue()) {
+            case 1:
+                oid = BYTEA_TYPE_OID;
+                break;
+            case 2:
+                oid = INT2_TYPE_OID;
+                break;
+            case 4:
+                oid = INT4_TYPE_OID;
+                break;
+            case 8:
+                oid = INT8_TYPE_OID;
+                break;
+            default:
+                throw new StandardException("Don't know size for " + aisType);
+            }
+        }
+        else if ("DATE".equals(encoding))
             oid = DATE_TYPE_OID;
-        else if ("datetime".equals(name))
-            // TODO: May need this for timestamp as well, which
-            // Postgres doesn't distinguish. In which case some
-            // additional instance fields may be needed to remember
-            // the original.
+        else if ("TIME".equals(encoding))
+            oid = TIME_TYPE_OID;
+        else if ("DATETIME".equals(encoding) ||
+                 "TIMESTAMP".equals(encoding))
             oid = TIMESTAMP_TYPE_OID;
+        else if ("BLOB".equals(encoding) ||
+                 "TEXT".equals(encoding))
+            oid = TEXT_TYPE_OID;
+        else if ("YEAR".equals(encoding))
+            oid = BYTEA_TYPE_OID;
+        else if ("DECIMAL".equals(encoding) ||
+                 "U_DECIMAL".equals(encoding))
+            oid = MONEY_TYPE_OID;
+        else if ("FLOAT".equals(encoding) ||
+                 "U_FLOAT".equals(encoding))
+            oid = FLOAT4_TYPE_OID;
+        else if ("DOUBLE".equals(encoding) ||
+                 "U_DOUBLE".equals(encoding))
+            oid = FLOAT8_TYPE_OID;
         else
-            throw new StandardException("Don't know type for " + name);
+            throw new StandardException("Don't know type for " + encoding);
 
         if (aisType.fixedSize())
             length = aisType.maxSizeBytes().shortValue();
@@ -192,14 +221,23 @@ public class PostgresType
             break;
         }
 
-        return new PostgresType(oid, length, modifier);
+        PostgresType result = new PostgresType(oid, length, modifier);
+
+        // TODO: For now, these are the only ones needing special treatment.
+        // When we are better able to work with the encoder to get the
+        // raw bytes, can use this for all.
+        Encoding<?> encoder = EncoderFactory.valueOf(encoding, aisType);
+        if (encoder instanceof LongEncoderBase)
+            result.encoder = (LongEncoderBase)encoder;
+
+        return result;
     }
 
     public static final DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
+    public static final DateFormat timeFormatter = new SimpleDateFormat("hh:mm:ss");
     public static final DateFormat datetimeFormatter = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 
-    public byte[] encodeValue(Object value, Column aisColumn, 
-                              String encoding, boolean binary) 
+    public byte[] encodeValue(Object value, String encoding, boolean binary) 
             throws IOException, StandardException {
         if (value == null)
             return null;
@@ -207,22 +245,24 @@ public class PostgresType
             if (binary) {
                 throw new StandardException("Binary encoding not yet supported.");
             }
-            else {
+            else if (encoder != null) {
+                value = encoder.decodeToString((Long)value);
+            }
+            else if (value instanceof Date) {
+                DateFormat format = null;
                 switch (oid) {
                 case DATE_TYPE_OID:
-                    if (value instanceof Date)
-                        value = dateFormatter.format((Date)value);
-                    else
-                        value = EncoderFactory.DATE.decodeToString((Long)value);
+                    format = dateFormatter;
+                    break;
+                case TIME_TYPE_OID:
+                    format = timeFormatter;
                     break;
                 case TIMESTAMP_TYPE_OID:
-                    if (value instanceof Date)
-                        value = datetimeFormatter.format((Date)value);
-                    else
-                        // TODO: See above: maybe TIMESTAMP sometimes.
-                        value = EncoderFactory.DATETIME.decodeToString((Long)value);
+                    format = datetimeFormatter;
                     break;
                 }
+                if (format != null)
+                    value = format.format((Date)value);
             }
             return value.toString().getBytes(encoding);
         }
