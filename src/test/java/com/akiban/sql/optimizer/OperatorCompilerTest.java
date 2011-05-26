@@ -35,6 +35,7 @@ import com.akiban.server.TableStatus;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.server.service.instrumentation.PostgresSessionTracer;
 import com.akiban.server.test.it.qp.TestRow;
 
 import org.junit.Before;
@@ -119,7 +120,8 @@ public class OperatorCompilerTest extends TestBase
     @Test
     public void testOperator() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
-        OperatorCompiler.Result result = compiler.compile((CursorNode)stmt);
+        OperatorCompiler.Result result = compiler.compile(new PostgresSessionTracer(1),
+                                                          (CursorNode)stmt);
         assertEqualsWithoutHashes(caseName, expected, result.toString());
     }
 

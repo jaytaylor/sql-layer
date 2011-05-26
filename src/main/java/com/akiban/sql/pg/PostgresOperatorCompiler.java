@@ -91,7 +91,13 @@ public class PostgresOperatorCompiler extends OperatorCompiler
         if (!(stmt instanceof CursorNode))
             return null;
         CursorNode cursor = (CursorNode)stmt;
-        Result result = compile(cursor);
+        Result result = null;
+        try {
+            session.getSessionTracer().beginEvent("sql: optimize: compile");
+            result = compile(session.getSessionTracer(), cursor);
+        } finally {
+            session.getSessionTracer().endEvent();
+        }
 
         logger.debug("Operator:\n{}", result);
 

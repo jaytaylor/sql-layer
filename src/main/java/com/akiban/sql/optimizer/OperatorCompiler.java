@@ -32,6 +32,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.service.instrumentation.SessionTracer;
 
 import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;
@@ -140,21 +141,48 @@ public class OperatorCompiler
         }
     }
 
-    public Result compile(CursorNode cursor) throws StandardException {
-        // Get into standard form.
-        binder.bind(cursor);
+    public Result compile(SessionTracer tracer, CursorNode cursor) throws StandardException {
+        try {
+            tracer.beginEvent("sql: optimize: bind");
+            // Get into standard form.
+            binder.bind(cursor);
+        } finally {
+            tracer.endEvent();
+        }
         cursor = (CursorNode)booleanNormalizer.normalize(cursor);
-        typeComputer.compute(cursor);
+        try {
+            tracer.beginEvent("sql: optimize: aistypecompute");
+            typeComputer.compute(cursor);
+        } finally {
+            tracer.endEvent();
+        }
         cursor = (CursorNode)subqueryFlattener.flatten(cursor);
-        grouper.group(cursor);
+        try {
+            tracer.beginEvent("sql: optimize: grouper");
+            grouper.group(cursor);
+        } finally {
+            tracer.endEvent();
+        }
 
-        SimplifiedSelectQuery squery = 
-            new SimplifiedSelectQuery(cursor, grouper.getJoinConditions());
+        SimplifiedSelectQuery squery = null;
+        try {
+            tracer.beginEvent("sql: optimize: createquery");
+            squery = 
+                new SimplifiedSelectQuery(cursor, grouper.getJoinConditions());
+        } finally {
+            tracer.endEvent();
+        }
         GroupBinding group = squery.getGroup();
         GroupTable groupTable = group.getGroup().getGroupTable();
         
         // Try to use an index.
-        IndexUsage index = pickBestIndex(squery);
+        IndexUsage index = null;
+        try {
+            tracer.beginEvent("sql: optimize: pickbestindex");
+            index = pickBestIndex(squery);
+        } finally {
+            tracer.endEvent();
+        }
         if (squery.getSortColumns() != null)
             throw new UnsupportedSQLException("Unsupported ORDER BY");
         
@@ -178,9 +206,10 @@ public class OperatorCompiler
                 if ((table != indexTable) && isAncestorTable(table, indexTable))
                     addAncestors.add(userTableRowType(table));
             }
-            if (!addAncestors.isEmpty())
+            if (!addAncestors.isEmpty()) {
                 resultOperator = ancestorLookup_Default(resultOperator, groupTable,
                                                         tableType, addAncestors);
+            }
         }
         else {
             resultOperator = groupScan_Default(groupTable);
@@ -194,7 +223,13 @@ public class OperatorCompiler
         // containing the condition).
 
         Flattener fl = new Flattener(resultOperator);
-        FlattenState fls = fl.flatten(squery.getJoins());
+        FlattenState fls = null;
+        try {
+            tracer.beginEvent("sql: optimize: flatten");
+            fls = fl.flatten(squery.getJoins());
+        } finally {
+            tracer.endEvent();
+        }
         resultOperator = fl.getResultOperator();
         RowType resultRowType = fls.getResultRowType();
         Map<UserTable,Integer> fieldOffsets = fls.getFieldOffsets();

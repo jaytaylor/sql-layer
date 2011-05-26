@@ -24,6 +24,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.service.instrumentation.PostgresSessionTracer;
+import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
@@ -585,6 +586,11 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     @Override
     public SQLParser getParser() {
         return parser;
+    }
+    
+    @Override
+    public SessionTracer getSessionTracer() {
+        return sessionTracer;
     }
     
     public boolean isInstrumentationEnabled() {

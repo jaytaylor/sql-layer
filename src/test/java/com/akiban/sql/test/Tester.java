@@ -15,6 +15,7 @@
 
 package com.akiban.sql.test;
 
+import com.akiban.server.service.instrumentation.PostgresSessionTracer;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.compiler.BooleanNormalizer;
 import com.akiban.sql.optimizer.AISTypeComputer;
@@ -155,7 +156,8 @@ public class Tester
                 break;
             case OPERATORS:
                 {
-                    Object compiled = operatorCompiler.compile((CursorNode)stmt);
+                    Object compiled = operatorCompiler.compile(new PostgresSessionTracer(1),
+                                                               (CursorNode)stmt);
                     if (!silent)
                         System.out.println(compiled);
                 }
