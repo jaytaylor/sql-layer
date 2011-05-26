@@ -172,12 +172,8 @@ public class PostgresServerITBase extends ITBase
         return DriverManager.getConnection(url, USER_NAME, USER_PASSWORD);
     }
 
-    protected void closeConnection(Connection Connection) {
-        try {
-            connection.close();
-        }
-        catch (SQLException ex) {
-        }
+    protected void closeConnection(Connection Connection) throws Exception {
+        connection.close();
     }
 
     protected PostgresServer server() {
@@ -192,7 +188,7 @@ public class PostgresServerITBase extends ITBase
     }
 
     @After
-    public void closeTheConnection() {
+    public void closeTheConnection() throws Exception {
         if (connection != null) {
             closeConnection(connection);
             connection = null;
