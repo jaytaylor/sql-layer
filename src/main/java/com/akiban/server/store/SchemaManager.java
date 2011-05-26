@@ -20,7 +20,8 @@ import java.util.List;
 import java.util.SortedMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
+import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.service.session.Session;
@@ -51,7 +52,17 @@ public interface SchemaManager {
      * @throws Exception If the request is invalid (e.g. duplicate index name, malformed Index) or there
      * was an internal error.
      */
-    void alterTableAddIndexes(Session session, TableName tableName, Collection<Index> indexes) throws Exception;
+    void alterTableAddIndexes(Session session, TableName tableName, Collection<TableIndex> indexes) throws Exception;
+
+    /**
+     * Alter an existing group by adding an index.
+     * @param session Session to operate under.
+     * @param groupName Group to add index to.
+     * @param index Index to add.
+     * @throws Exception If the request is invalid (e.g. duplicate index name, malformed Index) or there
+     * was an internal error.
+     */
+    void alterGroupAddIndex(Session session, String groupName, GroupIndex index) throws Exception;
 
     /**
      * Alter an existing table by removing index(es) from it.
@@ -63,6 +74,17 @@ public interface SchemaManager {
      * @throws Exception If there was an internal error.
      */
     void alterTableDropIndexes(Session session, TableName tableName, Collection<String> indexNames) throws Exception;
+
+    /**
+     * Alter an existing group by removing an index from it.
+     * <p><b>Due to implementation requirements, this method does no validation. Callers
+     * must ensure the request is valid.</b></p>
+     * @param session Session to operate under.
+     * @param groupName Group to remove index from.
+     * @param indexName Name of the index to drop.
+     * @throws Exception If there was an internal error.
+     */
+    void alterGroupDropIndex(Session session, String groupName, String indexName) throws Exception;
 
     /**
      * Delete the definition of the table with the given name. This method does nothing if

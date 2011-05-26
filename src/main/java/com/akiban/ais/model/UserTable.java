@@ -42,7 +42,7 @@ public class UserTable extends Table
     }
 
     @Override
-    protected void addIndex(Index index)
+    protected void addIndex(TableIndex index)
     {
         super.addIndex(index);
         if (index.isPrimaryKey()) {
@@ -121,21 +121,21 @@ public class UserTable extends Table
     }
 
     @Override
-    public Collection<Index> getIndexes()
+    public Collection<TableIndex> getIndexes()
     {
-        Collection<Index> indexes = super.getIndexes();
+        Collection<TableIndex> indexes = super.getIndexes();
         return removeInternalColumnIndexes(indexes);
     }
 
-    public Collection<Index> getIndexesIncludingInternal()
+    public Collection<TableIndex> getIndexesIncludingInternal()
     {
         return super.getIndexes();
     }
 
     @Override
-    public Index getIndex(String indexName)
+    public TableIndex getIndex(String indexName)
     {
-        Index index = null;
+        TableIndex index = null;
         if (indexName.equals(Index.PRIMARY_KEY_CONSTRAINT)) {
             // getPrimaryKey has logic for handling Akiban PK
             PrimaryKey primaryKey = getPrimaryKey();
@@ -206,8 +206,8 @@ public class UserTable extends Table
         // Creates a PK for a pk-less table.
         if (primaryKey == null) {
             // Find primary key index
-            Index primaryKeyIndex = null;
-            for (Index index : getIndexesIncludingInternal()) {
+            TableIndex primaryKeyIndex = null;
+            for (TableIndex index : getIndexesIncludingInternal()) {
                 if (index.isPrimaryKey()) {
                     primaryKeyIndex = index;
                 }
@@ -353,7 +353,7 @@ public class UserTable extends Table
         }
     }
 
-    private Index createAkibanPrimaryKeyIndex()
+    private TableIndex createAkibanPrimaryKeyIndex()
     {
         // Create a column for a PK
         Column pkColumn = Column.create(this,
@@ -368,22 +368,22 @@ public class UserTable extends Table
                 maxIndexId = index.getIndexId();
             }
         }
-        Index pkIndex = Index.create(ais,
-                                     this,
-                                     Index.PRIMARY_KEY_CONSTRAINT,
-                                     maxIndexId + 1,
-                                     true,
-                                     Index.PRIMARY_KEY_CONSTRAINT);
+        TableIndex pkIndex = TableIndex.create(ais,
+                                               this,
+                                               Index.PRIMARY_KEY_CONSTRAINT,
+                                               maxIndexId + 1,
+                                               true,
+                                               Index.PRIMARY_KEY_CONSTRAINT);
         IndexColumn pkIndexColumn = new IndexColumn(pkIndex, pkColumn, 0, true, null);
         pkIndex.addColumn(pkIndexColumn);
         return pkIndex;
     }
 
-    private static Collection<Index> removeInternalColumnIndexes(Collection<Index> indexes)
+    private static Collection<TableIndex> removeInternalColumnIndexes(Collection<TableIndex> indexes)
     {
-        Collection<Index> declaredIndexes = new ArrayList<Index>(indexes);
-        for (Iterator<Index> iterator = declaredIndexes.iterator(); iterator.hasNext();) {
-            Index index = iterator.next();
+        Collection<TableIndex> declaredIndexes = new ArrayList<TableIndex>(indexes);
+        for (Iterator<TableIndex> iterator = declaredIndexes.iterator(); iterator.hasNext();) {
+            TableIndex index = iterator.next();
             List<IndexColumn> indexColumns = index.getColumns();
             if (indexColumns.size() == 1 && indexColumns.get(0).getColumn().isAkibanPKColumn()) {
                 iterator.remove();

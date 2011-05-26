@@ -16,8 +16,12 @@
 package com.akiban.ais.model;
 
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class Group implements Serializable, ModelNames
 {
@@ -44,11 +48,13 @@ public class Group implements Serializable, ModelNames
     private Group()
     {
         // GWT requires empty constructor
+        this.LOCK = new Object();
     }
 
     public Group(final String name)
     {
         this.name = name;
+        this.LOCK = new Object();
     }
 
     @Override
@@ -77,8 +83,90 @@ public class Group implements Serializable, ModelNames
         this.groupTable = groupTable;
     }
 
+    public Collection<GroupIndex> getIndexes()
+    {
+        return Collections.unmodifiableCollection(internalGetIndexMap().values());
+    }
+
+    public GroupIndex getIndex(String indexName)
+    {
+        return internalGetIndexMap().get(indexName.toLowerCase());
+    }
+
+    public void checkIntegrity(List<String> out)
+    {
+        for (Map.Entry<String, GroupIndex> entry : internalGetIndexMap().entrySet()) {
+            String name = entry.getKey();
+            GroupIndex index = entry.getValue();
+            if (name == null) {
+                out.add("null name for index: " + index);
+            } else if (index == null) {
+                out.add("null index for name: " + name);
+            } else if (index.getGroup() != this) {
+                out.add("group's index.getGroup() wasn't the group" + index + " <--> " + this);
+            }
+            if (index != null) {
+                for (IndexColumn indexColumn : index.getColumns()) {
+                    if (!index.equals(indexColumn.getIndex())) {
+                        out.add("index's indexColumn.getIndex() wasn't index: " + indexColumn);
+                    }
+                    Column column = indexColumn.getColumn();
+                    if (column == null) {
+                        out.add("column was null in index column: " + indexColumn);
+                    }
+                    else if(column.getTable() == null) {
+                        out.add("column's table was null: " + column);
+                    }
+                    else if(column.getTable().getGroup() != this) {
+                        out.add("column table's group was wrong " + column.getTable().getGroup() + "<-->" + this);
+                    }
+                }
+            }
+        }
+    }
+
+    public void addIndex(GroupIndex index)
+    {
+        Map<String, GroupIndex> old;
+        Map<String, GroupIndex> withNewIndex;
+        do {
+            old = internalGetIndexMap();
+            withNewIndex = new TreeMap<String, GroupIndex>(old);
+            withNewIndex.put(index.getIndexName().getName().toLowerCase(), index);
+        } while(!internalIndexMapCAS(old, withNewIndex));
+    }
+
+    public void removeIndexes(Collection<GroupIndex> indexesToDrop)
+    {
+        Map<String, GroupIndex> old;
+        Map<String, GroupIndex> remaining;
+        do {
+            old = internalGetIndexMap();
+            remaining = new TreeMap<String, GroupIndex>(old);
+            remaining.values().removeAll(indexesToDrop);
+        } while (!internalIndexMapCAS(old, remaining));
+    }
+
+    private Map<String, GroupIndex> internalGetIndexMap() {
+        return indexMap;
+    }
+
+    private boolean internalIndexMapCAS(Map<String, GroupIndex> expected, Map<String, GroupIndex> update)
+    {
+        // GWT-friendly CAS
+        synchronized (LOCK) {
+            if (indexMap != expected) {
+                return false;
+            }
+            indexMap = update;
+            return true;
+        }
+    }
+
     // State
 
     private String name;
     private GroupTable groupTable;
+    private transient final Object LOCK;
+    private volatile Map<String, GroupIndex> indexMap = Collections.emptyMap();
 }

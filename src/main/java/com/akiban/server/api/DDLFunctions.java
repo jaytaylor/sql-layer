@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -221,6 +222,19 @@ public interface DDLFunctions {
             GenericInvalidOperationException;
 
     /**
+     * Create a new index on an existing group. The specified index ID will not be used as it is
+     * recalculated later. Blocks until the actual index data has been created.
+     * @param session Session to use.
+     * @param groupName Name of group to add index to.
+     * @param indexToAdd Index definition to use.
+     * @throws IndexAlterException For an index related error.
+     * @throws GenericInvalidOperationException For any other error.
+     */
+    void createGroupIndex(Session session, String groupName, GroupIndex indexToAdd)
+            throws IndexAlterException,
+            GenericInvalidOperationException;
+
+    /**
      * Drop indexes on an existing table.
      * @param tableName the table containing the indexes to drop
      * @param indexesToDrop list of indexes to drop
@@ -229,5 +243,14 @@ public interface DDLFunctions {
     void dropIndexes(Session session, TableName tableName, Collection<String> indexesToDrop)
             throws NoSuchTableException,
             IndexAlterException,
+            GenericInvalidOperationException;
+
+    /**
+     * Drop an index from an existing group.
+     * @param indexToDrop Name of index to drop.
+     * @throws InvalidOperationException
+     */
+    void dropGroupIndex(Session session, String groupName, String indexToDrop)
+            throws IndexAlterException,
             GenericInvalidOperationException;
 }

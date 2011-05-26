@@ -23,6 +23,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.common.NoSuchTableException;
@@ -45,7 +46,7 @@ public class AlterTestBase extends ITBase {
             String[] refColumns, boolean isUnique) {
         Table table = ais.getTable(sname, tname);
         Table curTable = ddl().getAIS(session()).getTable(sname, tname);
-        Index index = Index.create(ais, table, iname, -1, isUnique, isUnique ? "UNIQUE" : "KEY");
+        Index index = TableIndex.create(ais, table, iname, -1, isUnique, isUnique ? "UNIQUE" : "KEY");
 
         if(refColumns != null) {
             int pos = 0;

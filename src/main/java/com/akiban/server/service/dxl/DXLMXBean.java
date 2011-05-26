@@ -24,7 +24,11 @@ public interface DXLMXBean {
 
     void createTable(String ddl);
 
+    void createGroupIndex(String groupName, String indexName, String tableColumnList);
+
     void dropTable(String tableName);
+
+    void dropGroupIndex(String groupName, String indexName);
 
     void dropGroup(String groupName);
     

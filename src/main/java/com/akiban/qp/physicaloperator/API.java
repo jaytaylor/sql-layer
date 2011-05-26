@@ -16,7 +16,6 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.RowBase;
@@ -64,26 +63,29 @@ public class API
     public static PhysicalOperator lookup_Default(PhysicalOperator inputOperator,
                                                   GroupTable groupTable,
                                                   RowType inputRowType,
-                                                  RowType outputRowType)
+                                                  RowType outputRowType,
+                                                  boolean keepInput)
     {
-        return lookup_Default(inputOperator, groupTable, inputRowType, outputRowType, NO_LIMIT);
+        return lookup_Default(inputOperator, groupTable, inputRowType, outputRowType, keepInput, NO_LIMIT);
     }
 
     public static PhysicalOperator lookup_Default(PhysicalOperator inputOperator,
                                                   GroupTable groupTable,
                                                   RowType inputRowType,
                                                   RowType outputRowType,
+                                                  boolean keepInput,
                                                   Limit limit)
     {
-        return new Lookup_Default(inputOperator, groupTable, inputRowType, outputRowType, limit);
+        return new BranchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, keepInput, limit);
     }
 
     public static PhysicalOperator ancestorLookup_Default(PhysicalOperator inputOperator,
                                                           GroupTable groupTable,
                                                           RowType rowType,
-                                                          List<RowType> ancestorTypes)
+                                                          List<RowType> ancestorTypes,
+                                                          boolean keepInput)
     {
-        return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes);
+        return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, keepInput);
     }
 
     public static PhysicalOperator indexScan_Default(IndexRowType indexType)

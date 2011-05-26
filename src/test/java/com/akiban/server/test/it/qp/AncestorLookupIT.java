@@ -67,7 +67,8 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
         ancestorLookup_Default(groupScan_Default(coi),
                                coi,
                                customerRowType,
-                               list());
+                               list(),
+                               true);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -76,7 +77,8 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
         ancestorLookup_Default(groupScan_Default(coi),
                                coi,
                                customerRowType,
-                               list(itemRowType));
+                               list(itemRowType),
+                               true);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -85,7 +87,18 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
         ancestorLookup_Default(groupScan_Default(coi),
                                coi,
                                customerRowType,
-                               list(customerRowType));
+                               list(customerRowType),
+                               true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testKeepIndexInput()
+    {
+        ancestorLookup_Default(groupScan_Default(coi),
+                               coi,
+                               customerNameIndexRowType,
+                               list(customerRowType),
+                               true);
     }
 
     // Test ancestor lookup given index row
@@ -164,12 +177,23 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
         compareRows(expected, cursor);
     }
 
+    @Test
+    public void testOrphanItemIndexToItem()
+    {
+        PhysicalOperator plan = indexRowToAncestorPlan(311, itemRowType);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+            row(itemRowType, 311L, 31L)
+        };
+        compareRows(expected, cursor);
+    }
+
     // Test ancestor lookup given group row
 
     @Test
     public void testItemRowToMissingCustomerAndOrder()
     {
-        PhysicalOperator plan = groupRowToAncestorPlan(999, customerRowType, orderRowType);
+        PhysicalOperator plan = groupRowToAncestorPlan(999, true, customerRowType, orderRowType);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{};
         compareRows(expected, cursor);
@@ -178,12 +202,21 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
     @Test
     public void testItemRowToCustomerAndOrder()
     {
-        PhysicalOperator plan = groupRowToAncestorPlan(111, customerRowType, orderRowType);
+        // Keep input
+        PhysicalOperator plan = groupRowToAncestorPlan(111, true, customerRowType, orderRowType);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L)
+        };
+        compareRows(expected, cursor);
+        // Don't keep input
+        plan = groupRowToAncestorPlan(111, false, customerRowType, orderRowType);
+        cursor = cursor(plan, adapter);
+        expected = new RowBase[]{
+            row(customerRowType, 1L, "northbridge"),
+            row(orderRowType, 11L, 1L, "ori")
         };
         compareRows(expected, cursor);
     }
@@ -191,11 +224,19 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
     @Test
     public void testItemRowToCustomerOnly()
     {
-        PhysicalOperator plan = groupRowToAncestorPlan(111, customerRowType);
+        // Keep input
+        PhysicalOperator plan = groupRowToAncestorPlan(111, true, customerRowType);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(itemRowType, 111L, 11L)
+        };
+        compareRows(expected, cursor);
+        // Don't keep input
+        plan = groupRowToAncestorPlan(111, false, customerRowType);
+        cursor = cursor(plan, adapter);
+        expected = new RowBase[]{
+            row(customerRowType, 1L, "northbridge")
         };
         compareRows(expected, cursor);
     }
@@ -203,11 +244,19 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
     @Test
     public void testItemRowToOrderOnly()
     {
-        PhysicalOperator plan = groupRowToAncestorPlan(111, orderRowType);
+        // Keep input
+        PhysicalOperator plan = groupRowToAncestorPlan(111, true, orderRowType);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L)
+        };
+        compareRows(expected, cursor);
+        // Don't keep input
+        plan = groupRowToAncestorPlan(111, false, orderRowType);
+        cursor = cursor(plan, adapter);
+        expected = new RowBase[]{
+            row(orderRowType, 11L, 1L, "ori")
         };
         compareRows(expected, cursor);
     }
@@ -215,11 +264,19 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
     @Test
     public void testOrphanItemRowToCustomerAndOrder()
     {
-        PhysicalOperator plan = groupRowToAncestorPlan(311, customerRowType, orderRowType);
+        // Keep input
+        PhysicalOperator plan = groupRowToAncestorPlan(311, true, customerRowType, orderRowType);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 31L, 3L, "peter"),
             row(itemRowType, 311L, 31L)
+        };
+        compareRows(expected, cursor);
+        // Don't keep input
+        plan = groupRowToAncestorPlan(311, false, customerRowType, orderRowType);
+        cursor = cursor(plan, adapter);
+        expected = new RowBase[]{
+            row(orderRowType, 31L, 3L, "peter")
         };
         compareRows(expected, cursor);
     }
@@ -227,10 +284,17 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
     @Test
     public void testOrphanItemRowToCustomerOnly()
     {
-        PhysicalOperator plan = groupRowToAncestorPlan(311, customerRowType);
+        // Keep input
+        PhysicalOperator plan = groupRowToAncestorPlan(311, true, customerRowType);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(itemRowType, 311L, 31L)
+        };
+        compareRows(expected, cursor);
+        // Don't keep input
+        plan = groupRowToAncestorPlan(311, false, customerRowType);
+        cursor = cursor(plan, adapter);
+        expected = new RowBase[]{
         };
         compareRows(expected, cursor);
     }
@@ -238,11 +302,19 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
     @Test
     public void testOrphanItemRowToOrderOnly()
     {
-        PhysicalOperator plan = groupRowToAncestorPlan(311, orderRowType);
+        // Keep input
+        PhysicalOperator plan = groupRowToAncestorPlan(311, true, orderRowType);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 31L, 3L, "peter"),
             row(itemRowType, 311L, 31L)
+        };
+        compareRows(expected, cursor);
+        // Don't keep input
+        plan = groupRowToAncestorPlan(311, false, orderRowType);
+        cursor = cursor(plan, adapter);
+        expected = new RowBase[]{
+            row(orderRowType, 31L, 3L, "peter")
         };
         compareRows(expected, cursor);
     }
@@ -256,10 +328,11 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
                 (indexScan_Default(itemIidIndexRowType, false, itemIidEQ(iid)),
                  coi,
                  itemIidIndexRowType,
-                 list(rowTypes));
+                 list(rowTypes),
+                 false);
     }
 
-    private PhysicalOperator groupRowToAncestorPlan(int iid, RowType ... rowTypes)
+    private PhysicalOperator groupRowToAncestorPlan(int iid, boolean keepInput, RowType ... rowTypes)
     {
         return
             ancestorLookup_Default
@@ -267,10 +340,12 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
                      (indexScan_Default(itemIidIndexRowType, false, itemIidEQ(iid)),
                       coi,
                       itemIidIndexRowType,
-                      itemRowType),
+                      itemRowType,
+                      false),
                  coi,
                  itemRowType,
-                 list(rowTypes));
+                 list(rowTypes),
+                 keepInput);
     }
 
     private IndexKeyRange itemIidEQ(int iid)

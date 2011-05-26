@@ -84,7 +84,8 @@ public class GroupScanIT extends PhysicalOperatorITBase
         PhysicalOperator ancestorLookup = ancestorLookup_Default(groupScan,
                                                                  coi,
                                                                  orderSalesmanIndexRowType,
-                                                                 Arrays.asList(customerRowType));
+                                                                 Arrays.asList(customerRowType),
+                                                                 false);
         Cursor cursor = cursor(ancestorLookup, adapter);
         RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc")};
         compareRows(expected, cursor);
@@ -107,7 +108,7 @@ public class GroupScanIT extends PhysicalOperatorITBase
         IndexBound tom = orderSalesmanIndexBound("tom");
         IndexKeyRange indexKeyRange = new IndexKeyRange(tom, true, tom, true);
         PhysicalOperator groupScan = indexScan_Default(orderSalesmanIndexRowType, false, indexKeyRange);
-        PhysicalOperator lookup = lookup_Default(groupScan, coi, orderSalesmanIndexRowType, orderRowType);
+        PhysicalOperator lookup = lookup_Default(groupScan, coi, orderSalesmanIndexRowType, orderRowType, false);
         Cursor cursor = cursor(lookup, adapter);
         RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
                                            row(itemRowType, 211L, 21L),

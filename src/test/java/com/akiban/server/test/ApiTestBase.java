@@ -37,10 +37,12 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
+import com.akiban.server.util.GroupIndexCreator;
 import com.akiban.util.Undef;
 import junit.framework.Assert;
 
@@ -306,6 +308,18 @@ public class ApiTestBase {
         }
         unifiedDef.setLength( unifiedDef.length() - 1);
         return createTable(schema, table, unifiedDef.toString());
+    }
+
+    protected final void createGroupIndex(String groupName, String indexName, String tableColumnPairs)
+            throws InvalidOperationException {
+        AkibanInformationSchema ais = ddl().getAIS(session());
+        final GroupIndex index;
+        try {
+            index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnPairs);
+        } catch(GroupIndexCreator.GroupIndexCreatorException e) {
+            throw new InvalidOperationException(e);
+        }
+        ddl().createGroupIndex(session(), groupName, index);
     }
 
     /**

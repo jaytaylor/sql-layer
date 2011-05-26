@@ -245,6 +245,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                                           groupTable,
                                           predicateType.indexRowType(predicateIndex),
                                           predicateType,
+                                          false,
                                           limit);
         } else {
             // assert !descending;
@@ -254,7 +255,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (queryRootType != predicateType) {
             List<RowType> ancestorTypes = ancestorTypes();
             if (!ancestorTypes.isEmpty()) {
-                rootOperator = ancestorLookup_Default(rootOperator, groupTable, predicateType, ancestorTypes);
+                rootOperator = ancestorLookup_Default(rootOperator, groupTable, predicateType, ancestorTypes, true);
             }
         }
         // Get rid of everything above query root table.
@@ -352,7 +353,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     protected PersistitAdapter adapter;
     protected UserTable queryRootTable;
     protected UserTableRowType queryRootType;
-    protected Index predicateIndex;
+    protected TableIndex predicateIndex;
     protected UserTableRowType predicateType;
     // If we're querying a user table, then requiredUserTables contains just queryRootTable
     // If we're querying a group table, it contains those user tables containing columns in the
