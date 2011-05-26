@@ -15,7 +15,6 @@
 
 package com.akiban.server.service.instrumentation;
 
-import java.lang.management.ManagementFactory;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,27 +22,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
+import com.akiban.server.service.Service;
+import com.akiban.server.service.jmx.JmxManageable;
 
-import com.akiban.util.TapMXBeanImpl;
-
-public class InstrumentationLibrary 
-    implements InstrumentationMXBean {
+public class InstrumentationServiceImpl implements
+    InstrumentationService, JmxManageable, Service<InstrumentationService>, 
+    InstrumentationMXBean {
     
-    // InstrumentationLibrary interface
-    
-    private InstrumentationLibrary() {
-        this.currentSqlSessions = new HashMap<Integer, PostgresSessionTracer>();
-        this.enabled = new AtomicBoolean(false);
-    }
-    
-    public static synchronized InstrumentationLibrary initialize() {
-        if (lib == null) {
-            lib = new InstrumentationLibrary();
-        }
-        return lib;
-    }
+    // InstrumentationService interface
     
     public synchronized PostgresSessionTracer createSqlSessionTracer(int sessionId) {
         PostgresSessionTracer ret = new PostgresSessionTracer(sessionId, enabled.get());
@@ -58,19 +44,58 @@ public class InstrumentationLibrary
     public synchronized PostgresSessionTracer getSqlSessionTracer(int sessionId) {
         return currentSqlSessions.get(sessionId);
     }
-    
-    // InstrumentationMXBean
+
+    // Service interface
     
     @Override
-    public synchronized Set<Integer> getCurrentSessions() {
-        return new HashSet<Integer>(currentSqlSessions.keySet());
+    public InstrumentationService cast() {
+        return this;
+    }
+
+    @Override
+    public Class<InstrumentationService> castClass() {
+        return InstrumentationService.class;
+    }
+
+    @Override
+    public void start() throws Exception {
+        // do we need to synchronize?
+        currentSqlSessions = new HashMap<Integer, PostgresSessionTracer>();
+        enabled = new AtomicBoolean(false);
+    }
+
+    @Override
+    public void stop() throws Exception {
+        // anything to do?
+        currentSqlSessions.clear();
+        enabled.set(false);
+    }
+
+    @Override
+    public void crash() throws Exception {
+        // anything to do?
     }
     
+    // JmxManageable interface
+
+    @Override
+    public final JmxObjectInfo getJmxObjectInfo() {
+        return new JmxObjectInfo("Instrumentation", this, InstrumentationMXBean.class);
+    }
+    
+    // InstrumentationMXBean
+
+    @Override
+    public Set<Integer> getCurrentSessions() {
+        return new HashSet<Integer>(currentSqlSessions.keySet());
+
+    }
+
     @Override
     public boolean isEnabled() {
         return enabled.get();
-    }    
-    
+    }
+
     @Override
     public void enable() {
         for (SessionTracer tracer : currentSqlSessions.values()) {
@@ -78,13 +103,13 @@ public class InstrumentationLibrary
         }
         enabled.set(true);
     }
-    
+
     @Override
     public void disable() {
         for (SessionTracer tracer : currentSqlSessions.values()) {
             tracer.disable();
         }
-        enabled.set(false);
+        enabled.set(false);  
     }
 
     @Override
@@ -94,11 +119,11 @@ public class InstrumentationLibrary
 
     @Override
     public void enable(int sessionId) {
-        getSqlSessionTracer(sessionId).enable();
+        getSqlSessionTracer(sessionId).enable();   
     }
-    
+
     @Override
-    public void disable(int sessionId) {
+    public void disable(int sessionId) {  
         getSqlSessionTracer(sessionId).disable();
     }
 
@@ -106,96 +131,56 @@ public class InstrumentationLibrary
     public String getSqlText(int sessionId) {
         return getSqlSessionTracer(sessionId).getCurrentStatement();
     }
-    
+
     @Override
     public String getRemoteAddress(int sessionId) {
         return getSqlSessionTracer(sessionId).getRemoteAddress();
     }
-    
+
     @Override
     public Date getStartTime(int sessionId) {
         return getSqlSessionTracer(sessionId).getStartTime();
     }
-    
+
     @Override
     public long getProcessingTime(int sessionId) {
         return getSqlSessionTracer(sessionId).getProcessingTime();
     }
-    
+
     @Override
     public long getParseTime(int sessionId) {
         return getSqlSessionTracer(sessionId).getEventTime("sql: parse");
     }
-    
+
     @Override
     public long getOptimizeTime(int sessionId) {
         return getSqlSessionTracer(sessionId).getEventTime("sql: optimize");
     }
-    
+
     @Override
     public long getExecuteTime(int sessionId) {
         return getSqlSessionTracer(sessionId).getEventTime("sql: execute");
     }
-    
+
     @Override
     public long getEventTime(int sessionId, String eventName) {
         return getSqlSessionTracer(sessionId).getEventTime(eventName);
     }
-    
+
     @Override
     public long getTotalEventTime(int sessionId, String eventName) {
         return getSqlSessionTracer(sessionId).getTotalEventTime(eventName);
     }
-    
+
     @Override
     public int getNumberOfRowsReturned(int sessionId) {
         return getSqlSessionTracer(sessionId).getNumberOfRowsReturned();
     }
     
-    /*@Override
-    public Object[] getCurrentEvents(int sessionId) {
-        return getSqlSessionTracer(sessionId).getCurrentEvents();
-    }*/
-    
-    /**
-     * Register an MXBean to make methods of this class available remotely from
-     * JConsole or other JMX client. Does nothing if there already is a
-     * registered MXBean.
-     * 
-     * @throws Exception
-     */
-    public synchronized void registerMXBean() throws Exception {
-        if (!registered) {
-            ObjectName mxbeanName = new ObjectName("com.akiban:type=Instrumentation");
-            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            mbs.registerMBean(this, mxbeanName);
-            registered = true;
-        }
-    }
-
-    /**
-     * Unregister the MXBean created by {@link #registerMXBean()}. Does nothing
-     * if there is no registered MXBean.
-     * 
-     * @throws Exception
-     */
-    public synchronized void unregisterMXBean() throws Exception {
-        if (registered) {
-            ObjectName mxbeanName = new ObjectName("com.akiban:type=Instrumentation");
-            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            mbs.unregisterMBean(mxbeanName);
-            registered = false;
-        }
-    }
-    
     // state
-    
-    private static InstrumentationLibrary lib = null;
     
     private Map<Integer, PostgresSessionTracer> currentSqlSessions;
     
     private AtomicBoolean enabled;
-    
-    private boolean registered = false;
 
 }

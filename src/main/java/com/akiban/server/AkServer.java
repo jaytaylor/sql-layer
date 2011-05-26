@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import com.akiban.server.manage.ManageMXBean;
 import com.akiban.server.manage.ManageMXBeanImpl;
 import com.akiban.server.service.DefaultServiceFactory;
-import com.akiban.server.service.instrumentation.InstrumentationLibrary;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
@@ -59,8 +58,6 @@ public class AkServer implements Service<AkServer>, JmxManageable {
     public void start() throws Exception {
         LOG.info("Starting AkServer {}", AKSERVER_NAME);
         Tap.registerMXBean();
-        /* TODO: make this a service like everything else */
-        InstrumentationLibrary.initialize().registerMXBean();
     }
 
     @Override
@@ -68,7 +65,6 @@ public class AkServer implements Service<AkServer>, JmxManageable {
     {
         LOG.info("Stopping AkServer {}", AKSERVER_NAME);
         Tap.unregisterMXBean();
-        InstrumentationLibrary.initialize().unregisterMXBean();
     }
     
     @Override

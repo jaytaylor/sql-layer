@@ -23,12 +23,10 @@ import com.akiban.sql.parser.CursorNode;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.service.instrumentation.InstrumentationLibrary;
 import com.akiban.server.service.instrumentation.PostgresSessionTracer;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
-import com.akiban.util.Tap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,7 +68,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     
     private boolean instrumentationEnabled = false;
     private String sql;
-    private PostgresSessionTracer session_tracer;
+    private PostgresSessionTracer sessionTracer;
 
     public PostgresServerConnection(PostgresServer server, Socket socket, 
                                     int pid, int secret) {
@@ -78,8 +76,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         this.socket = socket;
         this.pid = pid;
         this.secret = secret;
-        this.session_tracer = InstrumentationLibrary.initialize().createSqlSessionTracer(pid);
-        session_tracer.setRemoteAddress(socket.getInetAddress().getHostAddress());
+        this.sessionTracer = ServiceManagerImpl.get().getInstrumentationService().createSqlSessionTracer(pid);
+        sessionTracer.setRemoteAddress(socket.getInetAddress().getHostAddress());
     }
 
     public void start() {
@@ -295,7 +293,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     protected void processQuery() throws IOException, StandardException {
         sql = messenger.readString();
-        session_tracer.setCurrentStatement(sql);
+        sessionTracer.setCurrentStatement(sql);
         logger.info("Query: {}", sql);
         PostgresStatement pstmt = null;
         for (PostgresStatementParser parser : unparsedGenerators) {
@@ -307,32 +305,32 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         if (pstmt != null) {
             pstmt.sendDescription(this, false);
             try {
-                session_tracer.beginEvent("sql: execute");
+                sessionTracer.beginEvent("sql: execute");
                 pstmt.execute(this, -1);
             }
             finally {
-                session_tracer.endEvent();
+                sessionTracer.endEvent();
             }
         }
         else {
             // Parse as a _list_ of statements and process each in turn.
             List<StatementNode> stmts;
             try {
-                session_tracer.beginEvent("sql: parse");
+                sessionTracer.beginEvent("sql: parse");
                 stmts = parser.parseStatements(sql);
             }
             finally {
-                session_tracer.endEvent();
+                sessionTracer.endEvent();
             }
             for (StatementNode stmt : stmts) {
                 pstmt = generateStatement(stmt, null);
                 pstmt.sendDescription(this, false);
                 try {
-                    session_tracer.beginEvent("sql: execute");
+                    sessionTracer.beginEvent("sql: execute");
                     pstmt.execute(this, -1);
                 }
                 finally {
-                    session_tracer.endEvent();
+                    sessionTracer.endEvent();
                 }
             }
         }
@@ -350,11 +348,11 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
         StatementNode stmt;
         try {
-            session_tracer.beginEvent("sql: parse");
+            sessionTracer.beginEvent("sql: parse");
             stmt = parser.parseStatement(sql);
         }
         finally {
-            session_tracer.endEvent();
+            sessionTracer.endEvent();
         }
         PostgresStatement pstmt = generateStatement(stmt, paramTypes);
         preparedStatements.put(stmtName, pstmt);
@@ -503,14 +501,14 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     protected PostgresStatement generateStatement(StatementNode stmt, int[] paramTypes)
             throws StandardException {
         try {
-            session_tracer.beginEvent("sql: optimize");
+            sessionTracer.beginEvent("sql: optimize");
             for (PostgresStatementGenerator generator : parsedGenerators) {
                 PostgresStatement pstmt = generator.generate(this, stmt, paramTypes);
                 if (pstmt != null) return pstmt;
             }
         }
         finally {
-            session_tracer.endEvent();
+            sessionTracer.endEvent();
         }
         throw new StandardException("Unsupported SQL statement");
     }
@@ -594,12 +592,12 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
     
     public void enableInstrumentation() {
-        session_tracer.enable();
+        sessionTracer.enable();
         instrumentationEnabled = true;
     }
     
     public void disableInstrumentation() {
-        session_tracer.disable();
+        sessionTracer.disable();
         instrumentationEnabled = false;
     }
     
