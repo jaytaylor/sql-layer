@@ -266,7 +266,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         stop();                                         // That's all for this connection.
     }
 
-    protected void processSSLMessage() throws IOException {
+    protected void processSSLMessage() throws IOException, StandardException {
         OutputStream raw = messenger.getOutputStream();
         raw.write('N');         // No SSL support.
         raw.flush();
