@@ -498,20 +498,14 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     // point to obsolete objects.
     protected void updateAIS() throws StandardException {
         DDLFunctions ddl = serviceManager.getDXL().ddlFunctions();
-        boolean changed = false;
-        // TODO: This could be simpler if the AIS object itself also
-        // knew its generation.
-        while (true) {
-            int currentGeneration = ddl.getGeneration();
-            if (aisGeneration != currentGeneration) {
-                aisGeneration = currentGeneration;
-                ais = ddl.getAIS(session);
-                changed = true;
-            }
-            else
-                break;
-        }
-        if (!changed) return;
+        // TODO: This could be more reliable if the AIS object itself
+        // also knew its generation. Right now, can get new generation
+        // # and old AIS and not notice until next change.
+        int currentGeneration = ddl.getGeneration();
+        if (aisGeneration == currentGeneration) 
+            return;             // Unchanged.
+        aisGeneration = currentGeneration;
+        ais = ddl.getAIS(session);
 
         parser = new SQLParser();
 
