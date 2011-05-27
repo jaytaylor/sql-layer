@@ -79,6 +79,8 @@ public class ManageMXBeanImpl implements ManageMXBean {
         try {
             Collection<Index> indexes = gatherIndexes(session, arg);
             getStore().deleteIndexes(session, indexes);
+        } catch(Exception t) {
+            throw new RuntimeException(t);
         } finally {
             session.close();
         }
@@ -89,6 +91,8 @@ public class ManageMXBeanImpl implements ManageMXBean {
         Session session = ServiceManagerImpl.newSession();
         try {
             getStore().flushIndexes(session);
+        } catch(Exception t) {
+            throw new RuntimeException(t);
         } finally {
             session.close();
         }

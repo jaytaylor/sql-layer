@@ -135,7 +135,7 @@ public class DelegatingStore<S extends Store> implements Store {
         delegate.analyzeTable(session, tableId, sampleSize);
     }
 
-    public void flushIndexes(final Session session) {
+    public void flushIndexes(final Session session) throws Exception {
         delegate.flushIndexes(session);
     }
 
@@ -143,7 +143,7 @@ public class DelegatingStore<S extends Store> implements Store {
         delegate.buildIndexes(session, indexes, defer);
     }
 
-    public void deleteIndexes(Session session, Collection<Index> indexes) {
+    public void deleteIndexes(Session session, Collection<Index> indexes) throws Exception {
         delegate.deleteIndexes(session, indexes);
     }
 

@@ -1381,7 +1381,7 @@ public class PersistitStore implements Store {
                     }
                 }
             } catch (Exception e) {
-                LOG.error("Exception while inserting index into {}: {}", rowDef.table().getName(), e);
+                LOG.debug("Exception while inserting index into: " + rowDef.table().getName(), e);
                 throw e;
             }
             flushIndexes(session);
@@ -1389,16 +1389,16 @@ public class PersistitStore implements Store {
         }
     }
 
-    public void flushIndexes(final Session session) {
+    public void flushIndexes(final Session session) throws Exception {
         try {
             putAllDeferredIndexKeys(session);
         } catch (Exception e) {
-            LOG.error("Exception while trying "
-                    + " to flush deferred index keys", e);
+            LOG.debug("Exception while trying to flush deferred index keys", e);
+            throw e;
         }
     }
 
-    public void deleteIndexes(final Session session, final Collection<Index> indexes) {
+    public void deleteIndexes(final Session session, final Collection<Index> indexes) throws Exception {
         for(Index index : indexes) {
             final IndexDef indexDef = (IndexDef) index.indexDef();
             if(indexDef == null) {
@@ -1408,7 +1408,8 @@ public class PersistitStore implements Store {
                 Exchange iEx = getExchange(session, indexDef.getRowDef(), indexDef);
                 iEx.removeAll();
             } catch (Exception e) {
-                LOG.error("Exception while trying to remove index tree: " + indexDef.getTreeName(), e);
+                LOG.debug("Exception while trying to remove index tree: " + indexDef.getTreeName(), e);
+                throw e;
             }
         }
     }

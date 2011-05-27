@@ -385,10 +385,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             indexes.add(index);
         }
         
-        // Drop them from the Store before schema change while IndexDefs still exist
-        store().deleteIndexes(session, indexes);
-        
         try {
+            // Drop them from the Store before while IndexDefs still exist
+            store().deleteIndexes(session, indexes);
             schemaManager().dropIndexes(session, indexes);
             checkCursorsForDDLModification(session, table);
         } catch(Exception e) {
