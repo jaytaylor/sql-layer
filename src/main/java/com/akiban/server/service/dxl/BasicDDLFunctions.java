@@ -30,6 +30,7 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
@@ -334,10 +335,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new GenericInvalidOperationException(e);
         }
 
-        final Table newTable = getTable(session, table.getName());
+
         Collection<Index> newIndexes = new HashSet<Index>();
         for(Index index : indexesToAdd) {
-            newIndexes.add(newTable.getIndex(index.getIndexName().getName()));
+            IndexName name = index.getIndexName();
+            final Table newTable = getTable(session, new TableName(name.getSchemaName(), name.getTableName()));
+            newIndexes.add(newTable.getIndex(name.getName()));
         }
 
         try {
