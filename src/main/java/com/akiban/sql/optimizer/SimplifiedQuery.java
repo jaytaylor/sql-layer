@@ -48,6 +48,8 @@ public class SimplifiedQuery
 
     public static class TableNode extends TableTreeBase.TableNodeBase<TableNode> {
         private boolean used;
+        private List<ColumnCondition> conditions;
+        private List<ColumnExpression> selectColumns;
 
         public TableNode(UserTable table) {
             super(table);
@@ -58,6 +60,42 @@ public class SimplifiedQuery
         }
         public void setUsed(boolean used) {
             this.used = used;
+        }
+
+        public boolean hasConditions() {
+            return ((conditions != null) && !conditions.isEmpty());
+        }
+
+        public List<ColumnCondition> getConditions() {
+            return conditions;
+        }
+
+        protected void addCondition(ColumnCondition condition) {
+            if (conditions == null)
+                conditions = new ArrayList<ColumnCondition>();
+            conditions.add(condition);
+        }
+
+        public boolean hasSelectColumns() {
+            return ((selectColumns != null) && !selectColumns.isEmpty());
+        }
+
+        public List<ColumnExpression> getSelectColumns() {
+            return selectColumns;
+        }
+
+        protected void addSelectColumn(ColumnExpression selectColumn) {
+            if (selectColumns == null)
+                selectColumns = new ArrayList<ColumnExpression>();
+            selectColumns.add(selectColumn);
+        }
+
+        /** Is this table or any beneath it included in the query? */
+        public boolean subtreeUsed() {
+            for (TableNode descendant : subtree())
+                if (descendant.isUsed())
+                    return true;
+            return false;
         }
     }
 
@@ -75,7 +113,7 @@ public class SimplifiedQuery
 
         // Return true if conditions mean this node cannot be left
         // out, after adjusting for such inputs.
-        public abstract boolean promoteOuterJoins(Set<TableNode> conditionTables);
+        public abstract boolean promoteOuterJoins(Collection<TableNode> conditionTables);
     }
 
     // A join to an actual table.
@@ -101,7 +139,7 @@ public class SimplifiedQuery
             return true;
         }
 
-        public boolean promoteOuterJoins(Set<TableNode> conditionTables) {
+        public boolean promoteOuterJoins(Collection<TableNode> conditionTables) {
             return conditionTables.contains(table);
         }
 
@@ -168,7 +206,7 @@ public class SimplifiedQuery
 
         // If the optional side of an outer join cannot be null, turn it into inner.
         // If either side of a join has a condition, then the join result does.
-        public boolean promoteOuterJoins(Set<TableNode> conditionTables) {
+        public boolean promoteOuterJoins(Collection<TableNode> conditionTables) {
             boolean lp = left.promoteOuterJoins(conditionTables);
             boolean rp = right.promoteOuterJoins(conditionTables);
             switch (joinType) {
@@ -299,6 +337,12 @@ public class SimplifiedQuery
             this.left = left;
             this.right = right;
             this.operation = operation;
+
+            getTable().addCondition(this);
+        }
+
+        public TableNode getTable() {
+            return left.getTable();
         }
 
         public ColumnExpression getLeft() {
@@ -307,6 +351,7 @@ public class SimplifiedQuery
         public SimpleExpression getRight() {
             return right;
         }
+
         public Comparison getOperation() {
             return operation;
         }
@@ -493,6 +538,10 @@ public class SimplifiedQuery
             for (ResultColumn result : select.getResultColumns()) {
                 SimpleExpression column = getSimpleExpression(result.getExpression());
                 selectColumns.add(column);
+                if (column instanceof ColumnExpression) {
+                    ColumnExpression selectColumn = (ColumnExpression)column;
+                    selectColumn.getTable().addSelectColumn(selectColumn);
+                }
             }
         }
 
@@ -798,9 +847,9 @@ public class SimplifiedQuery
     // Such outer joins usually arise from programmatically generated
     // queries, such as views.
     protected void promoteImpossibleOuterJoins() throws StandardException {
-        Set<TableNode> conditionTables = new HashSet<TableNode>();
+        Collection<TableNode> conditionTables = new HashSet<TableNode>();
         for (ColumnCondition condition : conditions) {
-            conditionTables.add(condition.getLeft().getTable());
+            conditionTables.add(condition.getTable());
             if (condition.getRight().isColumn())
                 conditionTables.add(((ColumnExpression)
                                      condition.getRight()).getTable());
@@ -876,6 +925,12 @@ public class SimplifiedQuery
     // Is this column constant due to equality constraint?
     public boolean isColumnConstant(Column column) {
         return (findColumnConstantCondition(column, Comparison.EQ) != null);
+    }
+
+    public void removeConditions(Set<ColumnCondition> conditions) {
+        this.conditions.removeAll(conditions);
+        for (ColumnCondition condition : conditions)
+            condition.getTable().getConditions().remove(condition);
     }
 
 }

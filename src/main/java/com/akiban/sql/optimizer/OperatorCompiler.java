@@ -202,10 +202,9 @@ public class OperatorCompiler
             !((index != null) && index.isSorting()))
             throw new UnsupportedSQLException("Unsupported ORDER BY");
         
-        Set<ColumnCondition> indexConditions = null;
         PhysicalOperator resultOperator;
         if (index != null) {
-            indexConditions = index.getIndexConditions();
+            squery.removeConditions(index.getIndexConditions());
             TableIndex iindex = index.getIndex();
             TableNode indexTable = index.getTable();
             UserTableRowType tableType = tableRowType(indexTable);
@@ -246,8 +245,6 @@ public class OperatorCompiler
         Map<TableNode,Integer> fieldOffsets = fls.getFieldOffsets();
 
         for (ColumnCondition condition : squery.getConditions()) {
-            if ((indexConditions != null) && indexConditions.contains(condition))
-                continue;
             Expression predicate = condition.generateExpression(fieldOffsets);
             resultOperator = select_HKeyOrdered(resultOperator,
                                                 resultRowType,
@@ -292,11 +289,10 @@ public class OperatorCompiler
         // flattened in before non-index conditions.
 
         IndexUsage index = pickBestIndex(supdate);
-        Set<ColumnCondition> indexConditions = null;
         PhysicalOperator resultOperator;
         if (index != null) {
             assert (targetTable == index.getTable());
-            indexConditions = index.getIndexConditions();
+            supdate.removeConditions(index.getIndexConditions());
             TableIndex iindex = index.getIndex();
             IndexRowType indexType = targetRowType.indexRowType(iindex);
             PhysicalOperator indexOperator = indexScan_Default(indexType, 
@@ -312,8 +308,6 @@ public class OperatorCompiler
         Map<TableNode,Integer> fieldOffsets = new HashMap<TableNode,Integer>(1);
         fieldOffsets.put(targetTable, 0);
         for (ColumnCondition condition : supdate.getConditions()) {
-            if ((indexConditions != null) && indexConditions.contains(condition))
-                continue;
             Expression predicate = condition.generateExpression(fieldOffsets);
             resultOperator = select_HKeyOrdered(resultOperator,
                                                 targetRowType,

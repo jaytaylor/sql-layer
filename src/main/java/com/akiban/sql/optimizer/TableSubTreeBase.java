@@ -135,7 +135,7 @@ public class TableSubTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
 
     protected T root;
 
-    public TableSubTreeBase(T root) {
+    protected TableSubTreeBase(T root) {
         this.root = root;
     }
 
