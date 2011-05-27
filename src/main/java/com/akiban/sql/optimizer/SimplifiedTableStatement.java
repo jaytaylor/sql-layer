@@ -39,7 +39,7 @@ public class SimplifiedTableStatement extends SimplifiedQuery
         UserTable table = (UserTable)statement.getTargetTableName().getUserData();
         if (table == null)
             throw new StandardException("Table not bound properly.");
-        targetTable = getTables().addNode(table, true);
+        targetTable = getTables().addNode(table);
     }
 
     public TableNode getTargetTable() {

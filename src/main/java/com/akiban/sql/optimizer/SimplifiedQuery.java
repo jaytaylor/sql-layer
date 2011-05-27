@@ -671,6 +671,8 @@ public class SimplifiedQuery
             else if (group != gb)
                 throw new UnsupportedSQLException("Unsupported multiple groups");
             TableNode table = tables.addNode((UserTable)tb.getTable());
+            if (table.isUsed())
+                throw new UnsupportedSQLException("Unsupported self join");
             table.setUsed(true);
             return new TableJoinNode(table);
         }

@@ -41,16 +41,9 @@ public abstract class TableTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
     protected abstract T createNode(UserTable table) throws StandardException;
 
     public T addNode(UserTable table) throws StandardException {
-        return addNode(table, false);
-    }
-
-    public T addNode(UserTable table, boolean useExisting) throws StandardException {
         T node = getNode(table);
-        if (node != null) {
-            if (!useExisting)
-                throw new StandardException("Table " + table + " already present");
+        if (node != null)
             return node;
-        }
         node = createNode(table);
         map.put(table, node);
         if (root == null) {
@@ -64,7 +57,7 @@ public abstract class TableTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
         }
         UserTable parentTable = ((UserTable)toInsert.getTable()).parentTable();
         assert (parentTable != null);
-        T parent = addNode(parentTable, true);
+        T parent = addNode(parentTable);
         assert ((toInsert.getParent() == null) && // Brand new or old root.
                 (toInsert.getNextSibling() == null));
         toInsert.setParent(parent);
