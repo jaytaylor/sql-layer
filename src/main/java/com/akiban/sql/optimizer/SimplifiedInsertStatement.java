@@ -40,7 +40,7 @@ public class SimplifiedInsertStatement extends SimplifiedTableStatement
         else {
             // No explicit column list: use DDL order.
             int ncols = insert.getResultSetNode().getResultColumns().size();
-            List<Column> aisColumns = getTargetTable().getColumns();
+            List<Column> aisColumns = getTargetTable().getTable().getColumns();
             if (ncols > aisColumns.size())
                 ncols = aisColumns.size();
             targetColumns = new ArrayList<Column>(ncols);
