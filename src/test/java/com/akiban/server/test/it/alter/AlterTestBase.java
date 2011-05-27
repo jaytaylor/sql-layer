@@ -31,44 +31,5 @@ import com.akiban.server.api.common.ResolutionException;
 import com.akiban.server.test.it.ITBase;
 
 public class AlterTestBase extends ITBase {
-    public AkibanInformationSchema createAISWithTable(int tableId) throws NoSuchTableException, ResolutionException {
-        TableName tname = tableName(tableId);
-        String schemaName = tname.getSchemaName();
-        String tableName = tname.getTableName();
 
-        AkibanInformationSchema ais = new AkibanInformationSchema();
-        UserTable.create(ais, schemaName, tableName, tableId);
-        
-        return ais;
-    }
-
-    public Index addIndexToAIS(AkibanInformationSchema ais, String sname, String tname, String iname,
-            String[] refColumns, boolean isUnique) {
-        Table table = ais.getTable(sname, tname);
-        Table curTable = ddl().getAIS(session()).getTable(sname, tname);
-        Index index = TableIndex.create(ais, table, iname, -1, isUnique, isUnique ? "UNIQUE" : "KEY");
-
-        if(refColumns != null) {
-            int pos = 0;
-            for (String colName : refColumns) {
-                Column col = curTable.getColumn(colName);
-                Column refCol = Column.create(table, col.getName(), col.getPosition(), col.getType());
-                refCol.setTypeParameter1(col.getTypeParameter1());
-                refCol.setTypeParameter2(col.getTypeParameter2());
-                Integer indexedLen = col.getMaxStorageSize().intValue();
-                index.addColumn(new IndexColumn(index, refCol, pos++, true, indexedLen));
-            }
-        }
-        
-        return index;
-    }
-    
-    public List<Index> getAllIndexes(AkibanInformationSchema ais)
-    {
-        ArrayList<Index> indexes = new ArrayList<Index>();
-        for(UserTable tbl : ais.getUserTables().values()) {
-            indexes.addAll(tbl.getIndexes());
-        }
-        return indexes;
-    }
 }
