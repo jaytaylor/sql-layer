@@ -75,13 +75,17 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         IndexBound bound = new IndexBound(userTable, oldRow, ConstantColumnSelector.ALL_ON);
         IndexKeyRange range = new IndexKeyRange(bound, true, bound, true);
 
-        final PhysicalOperator scanOp;
+        PhysicalOperator scanOp;
         Index index = userTable.getPrimaryKeyIncludingInternal().getIndex();
         assert index != null : userTable;
         UserTableRowType tableType = schema.userTableRowType(userTable);
         IndexRowType indexType = tableType.indexRowType(index);
         PhysicalOperator indexScan = indexScan_Default(indexType, false, range);
         scanOp = lookup_Default(indexScan, groupTable, indexType, tableType);
+
+        // MVCC will render this useless, but for now, a limit of 1 ensures we won't see the row we just updated,
+        // and therefore scan through two rows -- once to update old -> new, then to update new -> copy of new
+        scanOp = com.akiban.qp.physicaloperator.API.limit_Default(scanOp, 1);
 
         Update_Default updateOp = new Update_Default(scanOp, updateFunction);
 

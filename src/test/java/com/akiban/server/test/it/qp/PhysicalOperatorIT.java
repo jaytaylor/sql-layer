@@ -71,7 +71,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
         PhysicalOperator groupScan = groupScan_Default(coi);
         UpdatePlannable updateOperator = new Update_Default(groupScan, updateFunction);
         UpdateResult result = updateOperator.run(NO_BINDINGS, adapter);
-        assertEquals("rows modified", db.length, result.rowsModified());
+        assertEquals("rows modified", 2, result.rowsModified());
         assertEquals("rows touched", db.length, result.rowsTouched());
 
         Cursor executable = cursor(groupScan, adapter);
