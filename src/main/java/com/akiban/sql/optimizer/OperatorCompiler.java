@@ -193,6 +193,7 @@ public class OperatorCompiler
         cursor = (CursorNode)bindAndGroup(cursor);
         SimplifiedSelectQuery squery = 
             new SimplifiedSelectQuery(cursor, grouper.getJoinConditions());
+        squery.reorderJoins();
         GroupBinding group = squery.getGroup();
         GroupTable groupTable = group.getGroup().getGroupTable();
         
@@ -278,6 +279,7 @@ public class OperatorCompiler
         update = (UpdateNode)bindAndGroup(update);
         SimplifiedUpdateStatement supdate = 
             new SimplifiedUpdateStatement(update, grouper.getJoinConditions());
+        supdate.reorderJoins();
 
         TableNode targetTable = supdate.getTargetTable();
         GroupTable groupTable = targetTable.getGroupTable();
