@@ -23,7 +23,7 @@ import com.akiban.server.RowDef;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
-abstract class LongEncoderBase extends EncodingBase<Long> {
+public abstract class LongEncoderBase extends EncodingBase<Long> {
     LongEncoderBase() {
     }
     

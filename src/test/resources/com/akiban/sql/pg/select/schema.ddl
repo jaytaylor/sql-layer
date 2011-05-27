@@ -27,3 +27,22 @@ CREATE TABLE items
   quan int NOT NULL,
   CONSTRAINT `__akiban_fk_1` FOREIGN KEY `__akiban_fk_1` (oid) REFERENCES orders(oid)
 ) engine=akibandb;
+
+CREATE TABLE types
+(
+  a_int int PRIMARY KEY,
+  a_uint int unsigned,
+  a_float float,
+  a_ufloat float unsigned,
+  a_double double,
+  a_udouble double unsigned,
+  a_decimal decimal(5,2),
+  a_udecimal decimal(5,2) unsigned,
+  a_varchar varchar(16),
+  a_date date,
+  a_time time,
+  a_datetime datetime,
+  a_timestamp timestamp,
+  a_year year,
+  a_text text
+) engine=akibandb;
