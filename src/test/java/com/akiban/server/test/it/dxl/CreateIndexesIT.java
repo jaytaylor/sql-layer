@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.test.it.alter;
+package com.akiban.server.test.it.dxl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,13 +39,14 @@ import com.akiban.server.api.ddl.IndexAlterException;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.NewRow;
 
+import com.akiban.server.test.it.ITBase;
 import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-public final class CreateIndexesIT extends AlterTestBase {
+public final class CreateIndexesIT extends ITBase {
     private AkibanInformationSchema createAISWithTable(Integer tableId) {
         final UserTable curTable = getUserTable(tableId);
         AkibanInformationSchema ais = new AkibanInformationSchema();

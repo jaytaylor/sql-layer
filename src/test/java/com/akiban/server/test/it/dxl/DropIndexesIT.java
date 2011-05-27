@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.test.it.alter;
+package com.akiban.server.test.it.dxl;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,12 +27,13 @@ import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.IndexAlterException;
 import com.akiban.server.api.dml.scan.NewRow;
 
+import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 
-public final class DropIndexesIT extends AlterTestBase {
+public final class DropIndexesIT extends ITBase {
     private void checkDDL(Integer tableId, String expected) {
         final UserTable table = getUserTable(tableId);
         DDLGenerator gen = new DDLGenerator();
