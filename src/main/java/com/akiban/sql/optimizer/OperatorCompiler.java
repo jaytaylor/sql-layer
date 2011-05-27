@@ -532,7 +532,7 @@ public class OperatorCompiler
 
         IndexUsage bestIndex = null;
         for (TableNode table : squery.getTables()) {
-            if (table.isUsed()) {
+            if (table.isUsed() && !table.isOuter()) {
                 for (TableIndex index : table.getTable().getIndexes()) { // TODO: getIndexesIncludingInternal()
                     IndexUsage candidate = new IndexUsage(table, index);
                     if (candidate.usable(squery)) {

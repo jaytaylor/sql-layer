@@ -47,7 +47,7 @@ public class SimplifiedQuery
     }
 
     public static class TableNode extends TableTreeBase.TableNodeBase<TableNode> {
-        private boolean used;
+        private boolean used, outer;
         private List<ColumnCondition> conditions;
         private List<ColumnExpression> selectColumns;
 
@@ -60,6 +60,14 @@ public class SimplifiedQuery
         }
         public void setUsed(boolean used) {
             this.used = used;
+        }
+
+        /** Is this table on the optional end of an outer join? */
+        public boolean isOuter() {
+            return outer;
+        }
+        public void setOuter(boolean outer) {
+            this.outer = outer;
         }
 
         public boolean hasConditions() {
@@ -140,7 +148,11 @@ public class SimplifiedQuery
         }
 
         public boolean promoteOuterJoins(Collection<TableNode> conditionTables) {
-            return conditionTables.contains(table);
+            if (conditionTables.contains(table)) {
+                table.setOuter(false);
+                return true;
+            }
+            return false;
         }
 
         public String toString() {
@@ -513,9 +525,9 @@ public class SimplifiedQuery
 
         for (FromTable fromTable : select.getFromList()) {
             if (joins == null)
-                joins = getJoinNode(fromTable);
+                joins = getJoinNode(fromTable, false);
             else
-                joins = joinNodes(joins, getJoinNode(fromTable), JoinType.INNER);
+                joins = joinNodes(joins, getJoinNode(fromTable, false), JoinType.INNER);
         }
 
         ValueNode whereClause = select.getWhereClause();
@@ -656,7 +668,8 @@ public class SimplifiedQuery
         limit = getIntegerConstant(limitClause, "Unsupported LIMIT");
     }
 
-    protected BaseJoinNode getJoinNode(FromTable fromTable) throws StandardException {
+    protected BaseJoinNode getJoinNode(FromTable fromTable, boolean outer) 
+            throws StandardException {
         if (fromTable instanceof FromBaseTable) {
             TableBinding tb = (TableBinding)fromTable.getUserData();
             if (tb == null) 
@@ -674,6 +687,7 @@ public class SimplifiedQuery
             if (table.isUsed())
                 throw new UnsupportedSQLException("Unsupported self join");
             table.setUsed(true);
+            table.setOuter(outer);
             return new TableJoinNode(table);
         }
         else if (fromTable instanceof JoinNode) {
@@ -692,8 +706,12 @@ public class SimplifiedQuery
             default:
                 throw new UnsupportedSQLException("Unsupported join type", joinNode);
             }
-            return joinNodes(getJoinNode((FromTable)joinNode.getLeftResultSet()),
-                             getJoinNode((FromTable)joinNode.getRightResultSet()),
+            return joinNodes(getJoinNode((FromTable)joinNode.getLeftResultSet(),
+                                         outer || ((joinType == JoinType.RIGHT) ||
+                                                   (joinType == JoinType.FULL))),
+                             getJoinNode((FromTable)joinNode.getRightResultSet(),
+                                         outer || ((joinType == JoinType.LEFT) ||
+                                                   (joinType == JoinType.FULL))),
                              joinType);
         }
         else
