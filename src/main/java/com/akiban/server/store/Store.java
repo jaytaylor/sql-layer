@@ -15,6 +15,7 @@
 
 package com.akiban.server.store;
 
+import com.akiban.ais.model.Index;
 import com.akiban.server.FieldDef;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
@@ -27,6 +28,8 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
+
+import java.util.Collection;
 
 /**
  * An abstraction for a layer that stores and retrieves data
@@ -146,13 +149,9 @@ public interface Store extends Service<Store> {
     void analyzeTable(final Session session, int tableId, int sampleSize) throws Exception;
 
     boolean isDeferIndexes();
-
     void setDeferIndexes(final boolean b);
-
-    void deleteIndexes(Session session, String string);
-
-    void buildIndexes(Session session, String string, boolean deferIndexes) throws Exception;
-    
     void flushIndexes(Session session);
-
+    void deleteIndexes(Session session, Collection<Index> indexes);
+    void buildAllIndexes(Session session, boolean deferIndexes) throws Exception;
+    void buildIndexes(Session session, Collection<Index> indexes, boolean deferIndexes) throws Exception;
 }

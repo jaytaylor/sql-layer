@@ -15,6 +15,7 @@
 
 package com.akiban.server.store;
 
+import com.akiban.ais.model.Index;
 import com.akiban.server.FieldDef;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
@@ -26,6 +27,8 @@ import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.service.session.Session;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
+
+import java.util.Collection;
 
 public class DelegatingStore<S extends Store> implements Store {
 
@@ -132,16 +135,21 @@ public class DelegatingStore<S extends Store> implements Store {
         delegate.analyzeTable(session, tableId, sampleSize);
     }
 
-    public void buildIndexes(final Session session, final String ddl, final boolean defer) throws Exception {
-        delegate.buildIndexes(session, ddl, defer);
-    }
-
     public void flushIndexes(final Session session) {
         delegate.flushIndexes(session);
     }
 
-    public void deleteIndexes(final Session session, final String ddl) {
-        delegate.deleteIndexes(session, ddl);
+    public void buildIndexes(Session session, Collection<Index> indexes, boolean defer) throws Exception {
+        delegate.buildIndexes(session, indexes, defer);
+    }
+
+    public void deleteIndexes(Session session, Collection<Index> indexes) {
+        delegate.deleteIndexes(session, indexes);
+    }
+
+    @Override
+    public void buildAllIndexes(Session session, boolean deferIndexes) throws Exception {
+        delegate.buildAllIndexes(session, deferIndexes);
     }
 
     public boolean isDeferIndexes() {
