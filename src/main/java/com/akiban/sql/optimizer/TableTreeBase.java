@@ -25,84 +25,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public abstract class TableTreeBase<T extends TableTreeBase.TableNodeBase<T>> 
-                implements Iterable<T>
+public abstract class TableTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
+                        extends TableSubTreeBase<T>
 {
-    public static class TableNodeBase<T extends TableNodeBase<T>> {
-        private UserTable table;
-        private T parent, firstChild, nextSibling;
-
-        public TableNodeBase(UserTable table) {
-            this.table = table;
-        }
-
-        public UserTable getTable() {
-            return table;
-        }
-
-        public Group getGroup() {
-            return table.getGroup();
-        }
-
-        public GroupTable getGroupTable() {
-            return table.getGroup().getGroupTable();
-        }
-
-        public int getNFields() {
-            return table.getColumns().size();
-        }
-
-        public int getDepth() {
-            return table.getDepth();
-        }
-
-        /** Is <code>this</code> an ancestor of <code>other</code>? */
-        public boolean isAncestor(T other) {
-            if (getDepth() >= other.getDepth()) 
-                return false;
-            while (true) {
-                if (other == this)
-                    return true;
-                other = other.getParent();
-                if (other == null)
-                    return false;
-            }
-        }
-
-        public T getParent() {
-            return parent;
-        }
-
-        public T getFirstChild() {
-            return firstChild;
-        }
-
-        public T getNextSibling() {
-            return nextSibling;
-        }
-
-        public void setParent(T parent) {
-            this.parent = parent;
-        }
-
-        public void setFirstChild(T firstChild) {
-            this.firstChild = firstChild;
-        }
-
-        public void setNextSibling(T nextSibling) {
-            this.nextSibling = nextSibling;
-        }
-
-        public String toString() {
-            return table.toString();
-        }
-    }
-
-    private T root;
     private Map<UserTable,T> map = new HashMap<UserTable,T>();
 
-    public T getRoot() {
-        return root;
+    public TableTreeBase() {
+        super(null);
     }
 
     public T getNode(UserTable table) {
@@ -144,38 +73,4 @@ public abstract class TableTreeBase<T extends TableTreeBase.TableNodeBase<T>>
         return node;
     }
 
-    static class NodeIterator<T extends TableNodeBase<T>> implements Iterator<T> {
-        private T next;
-
-        NodeIterator(T root) {
-            next = root;
-        }
-
-        public boolean hasNext() {
-            return (next != null);
-        }
-
-        public T next() {
-            T onext = next;
-            next = onext.getFirstChild();
-            if (next == null) {
-                T node = onext;
-                while (true) {
-                    next = node.getNextSibling();
-                    if (next != null) break;
-                    node = node.getParent();
-                    if (node == null) break;
-                }
-            }
-            return onext;
-        }
-        
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-    }
-    
-    public Iterator<T> iterator() {
-        return new NodeIterator<T>(root);
-    }
 }
