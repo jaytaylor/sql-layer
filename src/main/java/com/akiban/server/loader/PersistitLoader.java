@@ -56,7 +56,7 @@ public class PersistitLoader
                 load(task, connection);
             }
             
-            store.buildIndexes(session, "", BUILD_INDEXES_DEFERRED);
+            store.buildAllIndexes(session, BUILD_INDEXES_DEFERRED);
             // transaction.commit();
         } catch (PersistitException e) {
             tracker.error("Caught exception while loading persistit", e);

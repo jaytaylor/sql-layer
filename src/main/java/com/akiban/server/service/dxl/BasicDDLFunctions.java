@@ -333,22 +333,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         catch(Exception e) {
             throw new GenericInvalidOperationException(e);
         }
-        
-        // Build special string used/required by Store
-        StringBuilder sb = new StringBuilder();
-        sb.append("table=(");
-        sb.append(table.getName().getTableName());
-        sb.append(") ");
-        
-        for(Index idx : indexesToAdd) {
-            sb.append("index=(");
-            sb.append(idx.getIndexName().getName());
-            sb.append(")");
+
+        final Table newTable = getTable(session, table.getName());
+        Collection<Index> newIndexes = new HashSet<Index>();
+        for(Index index : indexesToAdd) {
+            newIndexes.add(newTable.getIndex(index.getIndexName().getName()));
         }
 
-        final String indexString = sb.toString();
         try {
-            store().buildIndexes(session, indexString, false);
+            store().buildIndexes(session, newIndexes, false);
         } catch(Exception e) {
             // Try and roll back
             List<String> indexNames = new ArrayList<String>(indexesToAdd.size());
@@ -358,7 +351,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             try {
                 dropIndexes(session, table.getName(), indexNames);
             } catch(Exception e2) {
-                logger.error("Exception while rolling back failed createIndex : " + indexString, e2);
+                logger.error("Exception while rolling back failed createIndex: " + newIndexes, e2);
             }
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ioe, DuplicateKeyException.class);
@@ -394,17 +387,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
-        final Table table = getAIS(session).getTable(tableName);
-        if (table == null) {
-            throw new NoSuchTableException(tableName);
-        }
-        
-        StringBuilder sb = new StringBuilder();
-        sb.append("table=(");
-        sb.append(tableName.getTableName());
-        sb.append(") ");
+        final Table table = getTable(session, tableName);
+        Collection<Index> indexes = new HashSet<Index>();
 
-        // Validate and build string for Store
+        // Validate
         for(String indexName : indexNamesToDrop) {
             Index index = table.getIndex(indexName);
             if(index == null) {
@@ -413,13 +399,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             if(index.isPrimaryKey()) {
                 throw new IndexAlterException(ErrorCode.UNSUPPORTED_OPERATION, "Cannot drop primary key index");
             }
-            sb.append("index=(");
-            sb.append(indexName);
-            sb.append(") ");
+            indexes.add(index);
         }
         
         // Drop them from the Store before schema change while IndexDefs still exist
-        store().deleteIndexes(session, sb.toString());
+        store().deleteIndexes(session, indexes);
         
         try {
             schemaManager().alterTableDropIndexes(session, tableName, indexNamesToDrop);
