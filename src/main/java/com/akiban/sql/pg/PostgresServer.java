@@ -29,6 +29,7 @@ import java.util.*;
 */
 public class PostgresServer implements Runnable, PostgresMXBean {
     private int port;
+    private PostgresStatementCache statementCache;
     private ServerSocket socket = null;
     private boolean running = false;
     private Map<Integer,PostgresServerConnection> connections =
@@ -37,8 +38,10 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
-    public PostgresServer(int port) {
+    public PostgresServer(int port, int statementCacheCapacity) {
         this.port = port;
+        if (statementCacheCapacity > 0)
+            statementCache = new PostgresStatementCache(statementCacheCapacity);
     }
 
     /** Called from the (AkServer's) main thread to start a server
@@ -159,4 +162,51 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         return getConnection(pid).getRemoteAddress();
     }
 
+    public PostgresStatementCache getStatementCache() {
+        return statementCache;
+    }
+
+    /** This is the version for use by connections. */
+    // TODO: This could create a new one if we didn't want to share them.
+    public PostgresStatementCache getStatementCache(int generation) {
+        if (statementCache != null)
+            statementCache.checkGeneration(generation);
+        return statementCache;
+    }
+
+    @Override
+    public int getStatementCacheCapacity() {
+        if (statementCache == null)
+            return 0;
+        else
+            return statementCache.getCapacity();
+    }
+
+    @Override
+    public void setStatementCacheCapacity(int capacity) {
+        if (capacity <= 0) {
+            statementCache = null;
+        }
+        else if (statementCache == null)
+            statementCache = new PostgresStatementCache(capacity);
+        else
+            statementCache.setCapacity(capacity);
+    }
+
+    @Override
+    public int getStatementCacheHits() {
+        if (statementCache == null)
+            return 0;
+        else
+            return statementCache.getHits();
+    }
+
+    @Override
+    public int getStatementCacheMisses() {
+        if (statementCache == null)
+            return 0;
+        else
+            return statementCache.getMisses();
+    }
+    
 }
