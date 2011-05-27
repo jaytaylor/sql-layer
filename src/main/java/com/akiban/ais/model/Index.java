@@ -69,7 +69,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     public abstract HKey hKey();
 
     @SuppressWarnings("unused")
-    private Index()
+    protected Index()
     {
         // GWT
     }
