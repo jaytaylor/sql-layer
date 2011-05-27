@@ -232,7 +232,9 @@ public class PhysicalOperatorITBase extends ITBase
         for (int i = 0; equal && i < actual.rowType().nFields(); i++) {
             Object expectedField = expected.field(i, NO_BINDINGS);
             Object actualField = actual.field(i, NO_BINDINGS);
-            equal = expectedField.equals(actualField);
+            equal =
+                expectedField == actualField || // handles case in which both are null
+                expectedField != null && actualField != null && expectedField.equals(actualField);
         }
         return equal;
     }

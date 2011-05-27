@@ -36,13 +36,15 @@ class IndexScan_Default extends PhysicalOperator
     @Override
     protected Cursor cursor(StoreAdapter adapter)
     {
-        return new Execution(adapter, indexKeyRange);
+        return new Execution(adapter);
     }
 
     // IndexScan_Default interface
 
     public IndexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
     {
+        checkArgument(indexType != null);
+        assert indexType != null;
         this.index = indexType.index();
         this.reverse = reverse;
         this.indexKeyRange = indexKeyRange;
@@ -96,9 +98,9 @@ class IndexScan_Default extends PhysicalOperator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, IndexKeyRange keyRange)
+        Execution(StoreAdapter adapter)
         {
-            this.cursor = adapter.newIndexCursor(index, reverse, keyRange);
+            this.cursor = adapter.newIndexCursor(index, reverse, indexKeyRange);
         }
 
         // Object state

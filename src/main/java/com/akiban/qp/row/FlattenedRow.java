@@ -42,9 +42,9 @@ public class FlattenedRow extends AbstractRow
     {
         Object field;
         if (i < nParentFields) {
-            field = parent.get().field(i, bindings);
+            field = parent.isNull() ? null : parent.get().field(i, bindings);
         } else {
-            field = child.get().field(i - nParentFields, bindings);
+            field = child.isNull() ? null : child.get().field(i - nParentFields, bindings);
         }
         return field;
     }
@@ -62,7 +62,7 @@ public class FlattenedRow extends AbstractRow
         this.rowType = rowType;
         this.parent.set(parent);
         this.child.set(child);
-        this.nParentFields = parent.rowType().nFields();
+        this.nParentFields = rowType.parentType().nFields();
     }
 
     // Object state
