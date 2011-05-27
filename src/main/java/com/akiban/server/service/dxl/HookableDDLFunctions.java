@@ -25,6 +25,7 @@ import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.GenericInvalidOperationException;
+import com.akiban.server.api.common.NoSuchGroupException;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.DuplicateColumnNameException;
 import com.akiban.server.api.ddl.DuplicateTableNameException;
@@ -337,27 +338,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.CREATE_INDEXES, t);
             throwIfInstanceOf(t, NoSuchTableException.class);
-            throwIfInstanceOf(t, DuplicateKeyException.class);
-            throwIfInstanceOf(t, IndexAlterException.class);
-            throwIfInstanceOf(t, GenericInvalidOperationException.class);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.CREATE_INDEXES, thrown);
-        }
-    }
-
-    @Override
-    public void createGroupIndex(Session session, String groupName, GroupIndex indexToAdd)
-            throws IndexAlterException, GenericInvalidOperationException {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.CREATE_INDEXES);
-            delegate.createGroupIndex(session, groupName, indexToAdd);
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.CREATE_INDEXES, t);
-            throwIfInstanceOf(t, NoSuchTableException.class);
-            throwIfInstanceOf(t, DuplicateKeyException.class);
+            throwIfInstanceOf(t, NoSuchGroupException.class);
             throwIfInstanceOf(t, IndexAlterException.class);
             throwIfInstanceOf(t, GenericInvalidOperationException.class);
             throw throwAlways(t);

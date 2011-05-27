@@ -20,8 +20,7 @@ import java.util.List;
 import java.util.SortedMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.service.session.Session;
@@ -43,26 +42,14 @@ public interface SchemaManager {
     TableName createTableDefinition(Session session, String defaultSchemaName, String statement) throws Exception;
 
     /**
-     * Alter an existing table by adding index(es) to it. All indexes must refer to the
-     * same table and must otherwise be valid Index. If indexes is empty, this method
-     * does nothing.
+     * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are
+     * supported through this interface. If indexes is empty, this method does nothing.
      * @param session Session to operate under.
-     * @param tableName Table to add indexes to.
      * @param indexes List of index definitions to add.
      * @throws Exception If the request is invalid (e.g. duplicate index name, malformed Index) or there
      * was an internal error.
      */
-    void alterTableAddIndexes(Session session, TableName tableName, Collection<TableIndex> indexes) throws Exception;
-
-    /**
-     * Alter an existing group by adding an index.
-     * @param session Session to operate under.
-     * @param groupName Group to add index to.
-     * @param index Index to add.
-     * @throws Exception If the request is invalid (e.g. duplicate index name, malformed Index) or there
-     * was an internal error.
-     */
-    void alterGroupAddIndex(Session session, String groupName, GroupIndex index) throws Exception;
+    void createIndexes(Session session, Collection<Index> indexes) throws Exception;
 
     /**
      * Alter an existing table by removing index(es) from it.

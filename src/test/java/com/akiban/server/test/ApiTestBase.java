@@ -313,13 +313,13 @@ public class ApiTestBase {
     protected final void createGroupIndex(String groupName, String indexName, String tableColumnPairs)
             throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
-        final GroupIndex index;
+        final Index index;
         try {
             index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnPairs);
         } catch(GroupIndexCreator.GroupIndexCreatorException e) {
             throw new InvalidOperationException(e);
         }
-        ddl().createGroupIndex(session(), groupName, index);
+        ddl().createIndexes(session(), Collections.singleton(index));
     }
 
     /**

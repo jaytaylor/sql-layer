@@ -16,6 +16,7 @@
 package com.akiban.server.service.dxl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -42,6 +43,7 @@ import com.akiban.server.RowDef;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.GenericInvalidOperationException;
+import com.akiban.server.api.common.NoSuchGroupException;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.DuplicateColumnNameException;
 import com.akiban.server.api.ddl.DuplicateTableNameException;
@@ -315,70 +317,48 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
-        Collection<TableIndex> tableIndexesToAdd = new ArrayList<TableIndex>();
-        for(Index index : indexesToAdd) {
-            if(!index.isTableIndex()) {
-                throw new IllegalArgumentException("Only TableIndexes can be added");
-            }
-            tableIndexesToAdd.add((TableIndex)index);
-        }
-
-        final Table table = getTable(session, tableIndexesToAdd.iterator().next().getTable().getName());
         try {
-            schemaManager().alterTableAddIndexes(session, table.getName(), tableIndexesToAdd);
-            checkCursorsForDDLModification(session, table);
+            schemaManager().createIndexes(session, indexesToAdd);
         }
         catch(InvalidOperationException e) {
+            throwIfInstanceOf(e, NoSuchTableException.class, NoSuchGroupException.class);
             throw new IndexAlterException(e);
         }
         catch(Exception e) {
             throw new GenericInvalidOperationException(e);
         }
 
-
-        Collection<Index> newIndexes = new HashSet<Index>();
+        // TODO: Keep GroupIndexes in main list when implemented at the store level
+        Collection<Index> newIndexes = new ArrayList<Index>();
         for(Index index : indexesToAdd) {
-            IndexName name = index.getIndexName();
-            final Table newTable = getTable(session, new TableName(name.getSchemaName(), name.getTableName()));
-            newIndexes.add(newTable.getIndex(name.getName()));
+            if(index.isTableIndex()) {
+                Table table = getTable(session, ((TableIndex)index).getTable().getName());
+                newIndexes.add(table.getIndex(index.getIndexName().getName()));
+                checkCursorsForDDLModification(session, table);
+            }
         }
 
         try {
             store().buildIndexes(session, newIndexes, false);
         } catch(Exception e) {
-            // Try and roll back
-            List<String> indexNames = new ArrayList<String>(indexesToAdd.size());
-            for(Index idx : indexesToAdd) {
-                indexNames.add(idx.getIndexName().getName());
-            }
+            // Try and roll back all changes
             try {
-                dropIndexes(session, table.getName(), indexNames);
+                for(Index index : indexesToAdd) {
+                    IndexName name = index.getIndexName();
+                    if(index.isTableIndex()) {
+                        dropIndexes(session, new TableName(name.getSchemaName(), name.getTableName()), Arrays.asList(name.getName()));
+                    }
+                    else {
+                        dropGroupIndex(session, name.getTableName(), name.getName());
+                    }
+                }
             } catch(Exception e2) {
-                logger.error("Exception while rolling back failed createIndex: " + newIndexes, e2);
+                logger.error("Exception while rolling back failed createIndex: " + indexesToAdd, e2);
             }
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ioe, DuplicateKeyException.class);
             throw new GenericInvalidOperationException(ioe);
         }
-    }
-
-    @Override
-    public void createGroupIndex(Session session, String groupName, GroupIndex indexToAdd)
-            throws IndexAlterException, GenericInvalidOperationException {
-        logger.trace("creating indexes {}", indexToAdd);
-
-        try {
-            schemaManager().alterGroupAddIndex(session, groupName, indexToAdd);
-            // TODO: checkCursorsForDDLModification ?
-        }
-        catch(InvalidOperationException e) {
-            throw new IndexAlterException(e);
-        }
-        catch(Exception e) {
-            throw new GenericInvalidOperationException(e);
-        }
-
-        // TODO: Refactor Store interface to allow building group indexes
     }
 
     @Override

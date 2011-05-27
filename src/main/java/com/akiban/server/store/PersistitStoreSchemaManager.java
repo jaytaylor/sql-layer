@@ -24,6 +24,7 @@ import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -186,8 +187,33 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return newTable.getName();
     }
 
-
-    public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) throws Exception {
+    private static boolean inSameBranch(UserTable t1, UserTable t2) {
+        if(t1 == t2) {
+            return true;
+        }
+        // search for t2 in t1->root
+        Join join = t1.getParentJoin();
+        while(join != null) {
+            final UserTable parent = join.getParent();
+            if(parent == t2) {
+                return true;
+            }
+            join = parent.getParentJoin();
+        }
+        // search fo t1 in t2->root
+        join = t2.getParentJoin();
+        while(join != null) {
+            final UserTable parent = join.getParent();
+            if(parent == t1) {
+                return true;
+            }
+            join = parent.getParentJoin();
+        }
+        return false;
+    }
+    
+    @Override
+    public void createIndexes(Session session, Collection<Index> indexesToAdd) throws Exception {
         if(indexesToAdd.isEmpty()) {
             return;
         }
@@ -287,85 +313,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         for(String schema : schemaNames) {
             commitAISChange(session, newAIS, schema, null);
         }
-    }
-
-    @Override
-    public void alterTableAddIndexes(Session session, TableName tableName, Collection<TableIndex> indexes) throws Exception {
-        createIndexes(session, indexes);
-    }
-
-    private boolean inSameBranch(UserTable t1, UserTable t2) {
-        if(t1 == t2) {
-            return true;
-        }
-        // search for t2 in t1->root
-        Join join = t1.getParentJoin();
-        while(join != null) {
-            final UserTable parent = join.getParent();
-            if(parent == t2) {
-                return true;
-            }
-            join = parent.getParentJoin();
-        }
-        // search fo t1 in t2->root
-        join = t2.getParentJoin();
-        while(join != null) {
-            final UserTable parent = join.getParent();
-            if(parent == t1) {
-                return true;
-            }
-            join = parent.getParentJoin();
-        }
-        return false;
-    }
-
-
-    @Override
-    public void alterGroupAddIndex(Session session, String groupName, GroupIndex index) throws Exception {
-        final AkibanInformationSchema ais = getAis(session);
-        final Group curGroup = ais.getGroup(groupName);
-
-        if(curGroup == null) {
-            throw new InvalidOperationException(ErrorCode.NO_SUCH_GROUP, "Unknown group: " + groupName);
-        }
-
-        UserTable lastTable = null;
-        for(IndexColumn col : index.getColumns()) {
-            final TableName tableName = col.getColumn().getTable().getName();
-            final UserTable curTable = ais.getUserTable(tableName);
-            if(curTable == null) {
-                throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE, "Unknown user table: " + tableName);
-            }
-            if(!curTable.getGroup().getName().equals(groupName)) {
-                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION, "Table not in group: " + curTable);
-            }
-            if(lastTable != null && !inSameBranch(lastTable, curTable)) {
-                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
-                                                    "Branching group index: " + lastTable + "," + curTable);
-            }
-            lastTable = curTable;
-        }
-
-        final AkibanInformationSchema newAIS = new AkibanInformationSchema();
-        new Writer(new AISTarget(newAIS)).save(ais);
-        final Group newGroup = newAIS.getGroup(groupName);
-        final GroupIndex newIndex = GroupIndex.create(newAIS,  newGroup, index.getIndexName().getName(),
-                                                      SchemaDefToAis.findMaxIndexIDInGroup(newAIS, newGroup) + 1,
-                                                      index.isUnique(), index.getConstraint());
-
-        for(IndexColumn idxCol : index.getColumns()) {
-            final Table refTable = newAIS.getTable(idxCol.getColumn().getTable().getName());
-            final Column refCol = refTable.getColumn(idxCol.getColumn().getName());
-            IndexColumn indexCol = new IndexColumn(newIndex, refCol, idxCol.getPosition(),
-                                                   idxCol.isAscending(), idxCol.getIndexedLength());
-            newIndex.addColumn(indexCol);
-        }
-        newIndex.freezeColumns();
-
-        new AISBuilder(newAIS).generateGroupTableIndexes(newGroup);
-        // Until a) groups have trees b) groups are in a schema
-        final String schema = newGroup.getGroupTable().getName().getSchemaName();
-        commitAISChange(session, newAIS, schema, null);
     }
 
     @Override

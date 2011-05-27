@@ -17,6 +17,7 @@ package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.staticgrouping.Group;
@@ -34,6 +35,7 @@ import com.akiban.server.util.GroupIndexCreator;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -77,8 +79,8 @@ class DXLMXBeanImpl implements DXLMXBean {
         try {
             DDLFunctions ddlFunctions = dxlService.ddlFunctions();
             AkibanInformationSchema ais = ddlFunctions.getAIS(session);
-            GroupIndex index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnList);
-            ddlFunctions.createGroupIndex(session, groupName, index);
+            Index index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnList);
+            ddlFunctions.createIndexes(session, Collections.singleton(index));
         }
         catch(Exception e) {
             throw new RuntimeException(e);

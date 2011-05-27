@@ -209,7 +209,7 @@ public interface DDLFunctions {
     void forceGenerationUpdate();
     
     /**
-     * Create new indexes on an existing table. All indexes must exist on the same table. Primary
+     * Create new indexes on existing table(s). Both Table and Group indexes are supported. Primary
      * keys can not be created through this interface. Specified index IDs will not be used as they
      * are recalculated later. Blocks until the actual index data has been created.
      * @param indexesToAdd a list of indexes to add to the existing AIS
@@ -219,19 +219,6 @@ public interface DDLFunctions {
             throws NoSuchTableException,
             DuplicateKeyException,
             IndexAlterException,
-            GenericInvalidOperationException;
-
-    /**
-     * Create a new index on an existing group. The specified index ID will not be used as it is
-     * recalculated later. Blocks until the actual index data has been created.
-     * @param session Session to use.
-     * @param groupName Name of group to add index to.
-     * @param indexToAdd Index definition to use.
-     * @throws IndexAlterException For an index related error.
-     * @throws GenericInvalidOperationException For any other error.
-     */
-    void createGroupIndex(Session session, String groupName, GroupIndex indexToAdd)
-            throws IndexAlterException,
             GenericInvalidOperationException;
 
     /**
