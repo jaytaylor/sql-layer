@@ -343,15 +343,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         } catch(Exception e) {
             // Try and roll back all changes
             try {
-                for(Index index : indexesToAdd) {
-                    IndexName name = index.getIndexName();
-                    if(index.isTableIndex()) {
-                        dropIndexes(session, new TableName(name.getSchemaName(), name.getTableName()), Arrays.asList(name.getName()));
-                    }
-                    else {
-                        dropGroupIndex(session, name.getTableName(), name.getName());
-                    }
-                }
+                store().deleteIndexes(session, newIndexes);
+                schemaManager().dropIndexes(session, indexesToAdd);
             } catch(Exception e2) {
                 logger.error("Exception while rolling back failed createIndex: " + indexesToAdd, e2);
             }

@@ -215,10 +215,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     
     @Override
     public void createIndexes(Session session, Collection<Index> indexesToAdd) throws Exception {
-        if(indexesToAdd.isEmpty()) {
-            return;
-        }
-
         final Set<String> schemaNames = new HashSet<String>();
         final AkibanInformationSchema newAIS = new AkibanInformationSchema();
         new Writer(new AISTarget(newAIS)).save(ais);
