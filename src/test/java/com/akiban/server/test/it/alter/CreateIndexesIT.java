@@ -26,7 +26,6 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
@@ -39,8 +38,6 @@ import com.akiban.server.api.ddl.IndexAlterException;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.ColumnSet;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.api.dml.scan.ScanAllRequest;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -50,10 +47,6 @@ import static org.junit.Assert.assertNull;
 
 
 public final class CreateIndexesIT extends AlterTestBase {
-    /*
-     * Test DDL.createIndexes() API 
-     */
-
     @Test
     public void createIndexNoIndexes() throws InvalidOperationException {
         // Passing an empty list should work
@@ -125,11 +118,6 @@ public final class CreateIndexesIT extends AlterTestBase {
         ddl().createIndexes(session(), getAllIndexes(ais));
     }
     
-    
-    /* 
-     * Test creating various types of indexes
-     */
-    
     @Test
     public void createIndexConfirmAIS() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key, name varchar(255)");
@@ -171,8 +159,7 @@ public final class CreateIndexesIT extends AlterTestBase {
                      "create table `test`.`t`(`id` int, `name` varchar(255), PRIMARY KEY(`id`), KEY `name`(`name`)) engine=akibandb",
                      gen.createTable(ddl().getAIS(session()).getUserTable("test", "t")));
         
-        final int indexId = getUserTable(tId).getIndex("name").getIndexId();
-        List<NewRow> rows = scanAll(new ScanAllRequest(tId, ColumnSet.ofPositions(1), indexId, null));
+        List<NewRow> rows = scanAllIndex(getUserTable(tId).getIndex("name"));
         assertEquals("rows from index scan", 2, rows.size());
     }
     
@@ -215,17 +202,16 @@ public final class CreateIndexesIT extends AlterTestBase {
                      gen.createTable(ddl().getAIS(session()).getUserTable("coi", "o")));
         
         // Get all customers
-        List<NewRow> rows = scanAll(new ScanAllRequest(cId, null));
+        List<NewRow> rows = scanAll(scanAllRequest(cId));
         assertEquals("customers from table scan", 1, rows.size());
         // Get all orders
-        rows = scanAll(new ScanAllRequest(oId, null));
+        rows = scanAll(scanAllRequest(oId));
         assertEquals("orders from table scan", 2, rows.size());
         // Get all items
-        rows = scanAll(new ScanAllRequest(iId, null));
+        rows = scanAll(scanAllRequest(iId));
         assertEquals("items from table scan", 5, rows.size());
         // Index scan on new index
-        final int indexId = getUserTable(oId).getIndex("tag").getIndexId();
-        rows = scanAll(new ScanAllRequest(oId, ColumnSet.ofPositions(2), indexId, null));
+        rows = scanAllIndex(getUserTable(oId).getIndex("tag"));
         assertEquals("orders from index scan", 2, rows.size());
     }
     
@@ -251,8 +237,7 @@ public final class CreateIndexesIT extends AlterTestBase {
                      "create table `test`.`t`(`id` int, `first` varchar(255), `last` varchar(255), PRIMARY KEY(`id`), KEY `name`(`first`, `last`)) engine=akibandb",
                      gen.createTable(ddl().getAIS(session()).getUserTable("test", "t")));
         
-        final int indexId = getUserTable(tId).getIndex("name").getIndexId();
-        List<NewRow> rows = scanAll(new ScanAllRequest(tId, ColumnSet.ofPositions(1,2), indexId, null));
+        List<NewRow> rows = scanAllIndex(getUserTable(tId).getIndex("name"));
         assertEquals("rows from index scan", 3, rows.size());
     }
     
@@ -278,8 +263,7 @@ public final class CreateIndexesIT extends AlterTestBase {
                      "create table `test`.`t`(`id` int, `state` char(2), PRIMARY KEY(`id`), UNIQUE `state`(`state`)) engine=akibandb",
                      gen.createTable(ddl().getAIS(session()).getUserTable("test", "t")));
         
-        final int indexId = getUserTable(tId).getIndex("state").getIndexId();
-        List<NewRow> rows = scanAll(new ScanAllRequest(tId, ColumnSet.ofPositions(1), indexId, null));
+        List<NewRow> rows = scanAllIndex(getUserTable(tId).getIndex("state"));
         assertEquals("rows from index scan", 3, rows.size());
     }
 
@@ -310,7 +294,7 @@ public final class CreateIndexesIT extends AlterTestBase {
         assertNotNull("pk index doesn't exist", table.getIndex("PRIMARY"));
         assertEquals("Index count", 1, table.getIndexes().size());
 
-        List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
+        List<NewRow> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 4, rows.size());
     }
     
@@ -337,12 +321,10 @@ public final class CreateIndexesIT extends AlterTestBase {
                      "create table `test`.`t`(`id` int, `otherId` int, `price` decimal(10, 2), PRIMARY KEY(`id`), UNIQUE `otherId`(`otherId`), KEY `price`(`price`)) engine=akibandb",
                      gen.createTable(ddl().getAIS(session()).getUserTable("test", "t")));
         
-        int indexId = getUserTable(tId).getIndex("otherId").getIndexId();
-        List<NewRow> rows = scanAll(new ScanAllRequest(tId, ColumnSet.ofPositions(1), indexId, null));
+        List<NewRow> rows = scanAllIndex(getUserTable(tId).getIndex("otherId"));
         assertEquals("rows from index scan", 3, rows.size());
 
-        indexId = getUserTable(tId).getIndex("price").getIndexId();
-        rows = scanAll(new ScanAllRequest(tId, ColumnSet.ofPositions(2), indexId, null));
+        rows = scanAllIndex(getUserTable(tId).getIndex("price"));
         assertEquals("rows from index scan", 3, rows.size());
     }
 
@@ -362,7 +344,7 @@ public final class CreateIndexesIT extends AlterTestBase {
 
         try {
             ddl().createIndexes(session(), getAllIndexes(ais));
-            Assert.fail("DuplicateKeyExcpetion expected!");
+            Assert.fail("DuplicateKeyException expected!");
         } catch(DuplicateKeyException e) {
             // Expected
         }
@@ -376,7 +358,7 @@ public final class CreateIndexesIT extends AlterTestBase {
         assertNotNull("i1 index doesn't exist", table.getIndex("i1"));
         assertEquals("Index count", 2, table.getIndexes().size());
 
-        List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
+        List<NewRow> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 4, rows.size());
     }
 
