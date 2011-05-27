@@ -670,8 +670,8 @@ public class SimplifiedQuery
     protected SimpleExpression getSimpleExpression(ValueNode operand) 
             throws StandardException {
         if (operand instanceof ColumnReference)
-            return getColumnExpression(getColumnReferenceColumn(operand, 
-                                                                "Unsupported WHERE operand"));
+            return getColumnExpression(getColumnReferenceColumn(operand,
+                                                                "Unsupported operand"));
         else if (operand instanceof ConstantNode)
             return new LiteralExpression(((ConstantNode)operand).getValue());
         else if (operand instanceof ParameterNode)
@@ -682,8 +682,7 @@ public class SimplifiedQuery
             // attempt to do some here.
             return getSimpleExpression(((CastNode)operand).getCastOperand());
         else
-            throw new UnsupportedSQLException("Unsupported WHERE operand",
-                                              operand);
+            throw new UnsupportedSQLException("Unsupported operand", operand);
     }
 
     // Get the column that this node references or else return null or throw given error.
