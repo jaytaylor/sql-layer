@@ -68,10 +68,6 @@ public class DelegatingStore<S extends Store> implements Store {
         return delegate.getRowDefCache();
     }
 
-    public IndexManager getIndexManager() {
-        return delegate.getIndexManager();
-    }
-
     public void writeRow(final Session session, final RowData rowData) throws Exception {
         delegate.writeRow(session, rowData);
     }
@@ -130,6 +126,10 @@ public class DelegatingStore<S extends Store> implements Store {
 
     public void analyzeTable(final Session session, final int tableId) throws Exception {
         delegate.analyzeTable(session, tableId);
+    }
+
+    public void analyzeTable(final Session session, final int tableId, final int sampleSize) throws Exception {
+        delegate.analyzeTable(session, tableId, sampleSize);
     }
 
     public void buildIndexes(final Session session, final String ddl, final boolean defer) throws Exception {
