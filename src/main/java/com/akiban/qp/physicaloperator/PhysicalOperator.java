@@ -39,6 +39,13 @@ public abstract class PhysicalOperator
 
     protected abstract Cursor cursor(StoreAdapter adapter);
 
+    protected static void checkArgument(boolean assertion) throws IllegalArgumentException
+    {
+        if (!assertion) {
+            throw new IllegalArgumentException();
+        }
+    }
+
     public boolean cursorAbilitiesInclude(CursorAbility ability) {
         return false;
     }

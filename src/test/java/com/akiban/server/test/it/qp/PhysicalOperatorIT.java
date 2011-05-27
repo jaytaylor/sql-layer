@@ -179,7 +179,6 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     @Test
     public void testIndexScan1()
     {
-        System.out.println("customer hkeys, by customer.name");
         PhysicalOperator indexScan = indexScan_Default(indexType(customer, "name"));
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
         String[] expected = new String[]{"{1,(long)2}",
@@ -190,7 +189,6 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     @Test
     public void testIndexScan2()
     {
-        System.out.println("order hkeys, by order.salesman");
         PhysicalOperator indexScan = indexScan_Default(indexType(order, "salesman"));
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
         String[] expected = new String[]{"{1,(long)1,2,(long)12}",

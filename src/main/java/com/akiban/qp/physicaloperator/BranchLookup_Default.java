@@ -77,21 +77,11 @@ public class BranchLookup_Default extends PhysicalOperator
                                 boolean keepInput,
                                 Limit limit)
     {
-        if (inputRowType == null) {
-            throw new IllegalArgumentException();
-        }
-        if (outputRowType == null) {
-            throw new IllegalArgumentException();
-        }
-        if (limit == null) {
-            throw new IllegalArgumentException();
-        }
-        if (inputRowType instanceof UserTableRowType && outputRowType == inputRowType) {
-            throw new IllegalArgumentException();
-        }
-        if (inputRowType instanceof IndexRowType && keepInput) {
-            throw new IllegalArgumentException();
-        }
+        checkArgument(inputRowType != null);
+        checkArgument(outputRowType != null);
+        checkArgument(limit != null);
+        checkArgument(inputRowType instanceof IndexRowType || outputRowType != inputRowType);
+        checkArgument(inputRowType instanceof UserTableRowType || !keepInput);
         UserTableRowType inputTableType = null;
         if (inputRowType instanceof UserTableRowType) {
             inputTableType = (UserTableRowType) inputRowType;
@@ -101,9 +91,7 @@ public class BranchLookup_Default extends PhysicalOperator
         assert inputTableType != null : inputRowType;
         UserTable inputTable = inputTableType.userTable();
         UserTable outputTable = outputRowType.userTable();
-        if (inputTable.getGroup() != outputTable.getGroup()) {
-            throw new IllegalArgumentException();
-        }
+        checkArgument(inputTable.getGroup() == outputTable.getGroup());
         this.keepInput = keepInput;
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
@@ -120,7 +108,8 @@ public class BranchLookup_Default extends PhysicalOperator
                 branchRoot = outputTable;
                 break;
             default:
-                throw new IllegalArgumentException();
+                branchRoot = null;
+                checkArgument(false);
         }
 
     }

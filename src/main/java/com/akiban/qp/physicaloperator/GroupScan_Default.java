@@ -59,6 +59,7 @@ class GroupScan_Default extends PhysicalOperator
 
     public GroupScan_Default(GroupTable groupTable, Limit limit, IndexKeyRange indexKeyRange)
     {
+        checkArgument(groupTable != null);
         this.groupTable = groupTable;
         this.limit = limit;
         this.indexKeyRange = indexKeyRange;

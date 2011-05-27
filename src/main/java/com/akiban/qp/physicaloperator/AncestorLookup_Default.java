@@ -73,7 +73,21 @@ class AncestorLookup_Default extends PhysicalOperator
                                   List<RowType> ancestorTypes,
                                   boolean keepInput)
     {
-        checkArguments(rowType, ancestorTypes, keepInput);
+        checkArgument(!ancestorTypes.isEmpty());
+        // Keeping index rows not currently supported
+        boolean inputFromIndex = rowType instanceof IndexRowType;
+        checkArgument(!(keepInput && inputFromIndex));
+        RowType tableRowType =
+            inputFromIndex
+            ? ((IndexRowType) rowType).tableType()
+            : rowType;
+        // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
+        // is from an index. I.e., this operator can be used for an index lookup.
+        for (RowType ancestorType1 : ancestorTypes) {
+            checkArgument(inputFromIndex || ancestorType1 != tableRowType);
+            checkArgument(ancestorType1.ancestorOf(tableRowType));
+            checkArgument(ancestorType1.userTable().getGroup() == tableRowType.userTable().getGroup());
+        }
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
         this.rowType = rowType;
@@ -98,37 +112,6 @@ class AncestorLookup_Default extends PhysicalOperator
         for (RowType ancestorType : this.ancestorTypes) {
             UserTable userTable = ((UserTableRowType) ancestorType).userTable();
             this.ancestorTypeDepth[a++] = userTable.getDepth() + 1;
-        }
-    }
-
-    // For use by this class
-
-    private static void checkArguments(RowType rowType, List<RowType> ancestorTypes, boolean keepInput)
-    {
-        if (ancestorTypes.isEmpty()) {
-            throw new IllegalArgumentException();
-        }
-        // Keeping index rows not currently supported
-        boolean inputFromIndex = rowType instanceof IndexRowType;
-        if (keepInput && inputFromIndex) {
-            throw new IllegalArgumentException();
-        }
-        RowType tableRowType =
-            inputFromIndex
-            ? ((IndexRowType)rowType).tableType()
-            : rowType;
-        // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
-        // is from an index. I.e., this operator can be used for an index lookup.
-        for (RowType ancestorType : ancestorTypes) {
-            if (!inputFromIndex && ancestorType == tableRowType) {
-                throw new IllegalArgumentException(ancestorType.toString());
-            }
-            if (!ancestorType.ancestorOf(tableRowType)) {
-                throw new IllegalArgumentException(ancestorType.toString());
-            }
-            if (ancestorType.userTable().getGroup() != tableRowType.userTable().getGroup()) {
-                throw new IllegalArgumentException(ancestorType.toString());
-            }
         }
     }
 
