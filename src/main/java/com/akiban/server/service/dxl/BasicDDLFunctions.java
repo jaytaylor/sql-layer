@@ -389,7 +389,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         store().deleteIndexes(session, indexes);
         
         try {
-            schemaManager().alterTableDropIndexes(session, tableName, indexNamesToDrop);
+            schemaManager().dropIndexes(session, indexes);
             checkCursorsForDDLModification(session, table);
         } catch(Exception e) {
             throw new GenericInvalidOperationException(e);
@@ -412,7 +412,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         // TODO: Drop group indexes through store interface
 
         try {
-            schemaManager().alterGroupDropIndex(session, groupName, indexToDrop);
+            schemaManager().dropIndexes(session, Collections.singleton(index));
             // TODO: checkCursorsForDDLModification ?
         } catch(Exception e) {
             throw new GenericInvalidOperationException(e);

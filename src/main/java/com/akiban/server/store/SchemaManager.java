@@ -52,26 +52,13 @@ public interface SchemaManager {
     void createIndexes(Session session, Collection<Index> indexes) throws Exception;
 
     /**
-     * Alter an existing table by removing index(es) from it.
-     * <p><b>Due to implementation requirements, this method does no validation. Callers
-     * must ensure the request is valid.</b></p>
+     * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are
+     * supported through this interface.
      * @param session Session to operate under.
-     * @param tableName Table to remove indexes from.
-     * @param indexNames Names of the indexes to drop.
+     * @param indexes List of indexes to drop.
      * @throws Exception If there was an internal error.
      */
-    void alterTableDropIndexes(Session session, TableName tableName, Collection<String> indexNames) throws Exception;
-
-    /**
-     * Alter an existing group by removing an index from it.
-     * <p><b>Due to implementation requirements, this method does no validation. Callers
-     * must ensure the request is valid.</b></p>
-     * @param session Session to operate under.
-     * @param groupName Group to remove index from.
-     * @param indexName Name of the index to drop.
-     * @throws Exception If there was an internal error.
-     */
-    void alterGroupDropIndex(Session session, String groupName, String indexName) throws Exception;
+    void dropIndexes(Session session, Collection<Index> indexes) throws Exception;
 
     /**
      * Delete the definition of the table with the given name. This method does nothing if

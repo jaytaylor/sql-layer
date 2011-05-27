@@ -65,7 +65,7 @@ public final class CreateIndexesIT extends AlterTestBase {
         // Attempt to add index to unknown table
         AkibanInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "index", null, false);
-        ddl().getAIS(session()).getUserTables().remove(new TableName("test", "t"));
+        ddl().dropTable(session(), new TableName("test", "t"));
         ddl().createIndexes(session(), getAllIndexes(ais));
     }
     

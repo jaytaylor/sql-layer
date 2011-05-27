@@ -26,6 +26,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -316,40 +317,40 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     @Override
-    public void alterTableDropIndexes(Session session, TableName tableName, Collection<String> indexNames)
-            throws Exception {
-        if(indexNames.isEmpty()) {
-            return;
-        }
-
+    public void dropIndexes(Session session, Collection<Index> indexesToDrop) throws Exception {
         final AkibanInformationSchema newAIS = new AkibanInformationSchema();
         new Writer(new AISTarget(newAIS)).save(ais);
-        final Table newTable = newAIS.getTable(tableName);
-        List<TableIndex> indexesToDrop = new ArrayList<TableIndex>();
-        for(String indexName : indexNames) {
-            final TableIndex index = newTable.getIndex(indexName);
-            indexesToDrop.add(index);
+        final AISBuilder builder = new AISBuilder(newAIS);
+        final Set<String> schemaNames = new HashSet<String>();
+
+        for(Index index : indexesToDrop) {
+            final IndexName name = index.getIndexName();
+            switch(index.getIndexType()) {
+                case TABLE:
+                    schemaNames.add(name.getSchemaName());
+                    Table newTable = newAIS.getUserTable(new TableName(name.getSchemaName(), name.getTableName()));
+                    if(newTable != null) {
+                        newTable.removeIndexes(Collections.singleton(newTable.getIndex(name.getName())));
+                        builder.generateGroupTableIndexes(newTable.getGroup());
+                    }
+                break;
+                case GROUP:
+                    Group newGroup = newAIS.getGroup(name.getTableName());
+                    if(newGroup != null) {
+                        schemaNames.add(newGroup.getGroupTable().getName().getSchemaName());
+                        newGroup.removeIndexes(Collections.singleton(newGroup.getIndex(name.getName())));
+                    }
+                break;
+                default:
+                    throw new IllegalArgumentException("Unknown index type: " + index);
+            }
         }
 
-        newTable.removeIndexes(indexesToDrop);
-        new AISBuilder(newAIS).generateGroupTableIndexes(newTable.getGroup());
-        commitAISChange(session, newAIS, tableName.getSchemaName(), null);
+        for(String schema : schemaNames) {
+            commitAISChange(session, newAIS, schema, null);
+        }
     }
 
-    @Override
-    public void alterGroupDropIndex(Session session, String groupName, String indexName) throws Exception {
-        final AkibanInformationSchema newAIS = new AkibanInformationSchema();
-        new Writer(new AISTarget(newAIS)).save(ais);
-
-        final Group newGroup = newAIS.getGroup(groupName);
-        List<GroupIndex> indexesToDrop = new ArrayList<GroupIndex>();
-        indexesToDrop.add(newGroup.getIndex(indexName));
-        newGroup.removeIndexes(indexesToDrop);
-
-        // Until a) groups have trees b) groups are in a schema
-        final String schema = newGroup.getGroupTable().getName().getSchemaName();
-        commitAISChange(session, newAIS, schema, null);
-    }
 
     @Override
     public void deleteTableDefinition(final Session session, final String schemaName,
