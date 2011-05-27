@@ -16,7 +16,6 @@
 package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -348,12 +347,12 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void dropIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
+    public void dropTableIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
             throws NoSuchTableException, IndexAlterException, GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.DROP_INDEXES);
-            delegate.dropIndexes(session, tableName, indexNamesToDrop);
+            delegate.dropTableIndexes(session, tableName, indexNamesToDrop);
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.DROP_INDEXES, t);
@@ -367,16 +366,16 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void dropGroupIndex(Session session, String groupName, String indexToDrop)
-            throws IndexAlterException, GenericInvalidOperationException {
+    public void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop)
+            throws NoSuchGroupException, IndexAlterException, GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.DROP_INDEXES);
-            delegate.dropGroupIndex(session, groupName, indexToDrop);
+            delegate.dropGroupIndexes(session, groupName, indexesToDrop);
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.DROP_INDEXES, t);
-            throwIfInstanceOf(t, NoSuchTableException.class);
+            throwIfInstanceOf(t, NoSuchGroupException.class);
             throwIfInstanceOf(t, IndexAlterException.class);
             throwIfInstanceOf(t, GenericInvalidOperationException.class);
             throw throwAlways(t);

@@ -16,7 +16,6 @@
 package com.akiban.server.service.dxl;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -26,18 +25,13 @@ import java.util.Map;
 import java.util.Set;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.ais.util.DDLGenerator;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.DDLFunctions;
@@ -355,18 +349,16 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public void dropIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
+    public void dropTableIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
             throws NoSuchTableException, IndexAlterException, GenericInvalidOperationException
     {
-        logger.trace("dropping indexes {}", indexNamesToDrop);
+        logger.trace("dropping table indexes {} {}", tableName, indexNamesToDrop);
         if(indexNamesToDrop.isEmpty() == true) {
             return;
         }
 
         final Table table = getTable(session, tableName);
         Collection<Index> indexes = new HashSet<Index>();
-
-        // Validate
         for(String indexName : indexNamesToDrop) {
             Index index = table.getIndex(indexName);
             if(index == null) {
@@ -389,22 +381,31 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public void dropGroupIndex(Session session, String groupName, String indexToDrop)
-            throws IndexAlterException, GenericInvalidOperationException {
-                logger.trace("dropping index {}", indexToDrop);
+    public void dropGroupIndexes(Session session, String groupName, Collection<String> indexNamesToDrop)
+            throws NoSuchGroupException, IndexAlterException, GenericInvalidOperationException {
+        logger.trace("dropping group indexes {} {}", groupName, indexNamesToDrop);
+        if(indexNamesToDrop.isEmpty()) {
+            return;
+        }
+
         final Group group = getAIS(session).getGroup(groupName);
         if (group == null) {
-            throw new IndexAlterException(ErrorCode.NO_SUCH_GROUP, "Unknown group: " + groupName);
-        }
-        final Index index = group.getIndex(indexToDrop);
-        if(index == null) {
-            throw new IndexAlterException(ErrorCode.NO_INDEX, "Unknown index: " + indexToDrop);
+            throw new NoSuchGroupException(groupName);
         }
 
-        // TODO: Drop group indexes through store interface
+        Collection<Index> indexes = new HashSet<Index>();
+        for(String indexName : indexNamesToDrop) {
+            final Index index = group.getIndex(indexName);
+            if(index == null) {
+                throw new IndexAlterException(ErrorCode.NO_INDEX, "Unknown index: " + indexName);
+            }
+            indexes.add(index);
+        }
 
         try {
-            schemaManager().dropIndexes(session, Collections.singleton(index));
+            // TODO: Delete group index data when store supports it
+            //store().deleteIndexes(session, indexes);
+            schemaManager().dropIndexes(session, indexes);
             // TODO: checkCursorsForDDLModification ?
         } catch(Exception e) {
             throw new GenericInvalidOperationException(e);

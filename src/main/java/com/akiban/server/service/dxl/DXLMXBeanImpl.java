@@ -16,7 +16,6 @@
 package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -110,7 +109,7 @@ class DXLMXBeanImpl implements DXLMXBean {
     public void dropGroupIndex(String groupName, String indexName) {
         Session session = ServiceManagerImpl.newSession();
         try {
-            dxlService.ddlFunctions().dropGroupIndex(session, groupName, indexName);
+            dxlService.ddlFunctions().dropGroupIndexes(session, groupName, Collections.singleton(indexName));
         } catch (InvalidOperationException e) {
             throw new RuntimeException(e);
         } finally {

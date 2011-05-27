@@ -45,36 +45,36 @@ public final class DropIndexesIT extends ITBase {
     @Test
     public void emptyIndexList() throws InvalidOperationException {
         int tid = createTable("test", "t", "id int key");
-        ddl().dropIndexes(session(), tableName(tid), Collections.<String>emptyList());
+        ddl().dropTableIndexes(session(), tableName(tid), Collections.<String>emptyList());
     }
     
     @Test(expected=NoSuchTableException.class)
     public void unknownTable() throws InvalidOperationException {
-        ddl().dropIndexes(session(), tableName("test","bar"), Arrays.asList("bar"));
+        ddl().dropTableIndexes(session(), tableName("test", "bar"), Arrays.asList("bar"));
     }
     
     @Test(expected=IndexAlterException.class)
     public void unknownIndex() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key, name varchar(255)");
-        ddl().dropIndexes(session(), tableName(tId), Arrays.asList("name"));
+        ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
     }
 
     @Test(expected=IndexAlterException.class)
     public void hiddenPrimaryKey() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int, name varchar(255)");
-        ddl().dropIndexes(session(), tableName(tId), Arrays.asList("PRIMARY"));
+        ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("PRIMARY"));
     }
     
     @Test(expected=IndexAlterException.class)
     public void declaredPrimaryKey() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key, name varchar(255)");
-        ddl().dropIndexes(session(), tableName(tId), Arrays.asList("PRIMARY"));
+        ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("PRIMARY"));
     }
 
     @Test
     public void basicConfirmNotInAIS() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key, name varchar(255), index name(name)");
-        ddl().dropIndexes(session(), tableName(tId), Arrays.asList("name"));
+        ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
 
         // Index should be gone from UserTable
         UserTable uTable = getUserTable("test", "t");
@@ -92,7 +92,7 @@ public final class DropIndexesIT extends ITBase {
         int tId = createTable("test", "t", "id int primary key, name varchar(255), index name(name)");
         dml().writeRow(session(), createNewRow(tId, 1, "bob"));
         dml().writeRow(session(), createNewRow(tId, 2, "jim"));
-        ddl().dropIndexes(session(), tableName(tId), Arrays.asList("name"));
+        ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
         updateAISGeneration();
 
         checkDDL(tId, "create table `test`.`t`(`id` int, `name` varchar(255), PRIMARY KEY(`id`)) engine=akibandb");
@@ -117,7 +117,7 @@ public final class DropIndexesIT extends ITBase {
         dml().writeRow(session(), createNewRow(iId, 4, 2, "fob"));
         dml().writeRow(session(), createNewRow(iId, 5, 2, "baz"));
         
-        ddl().dropIndexes(session(), tableName(oId), Arrays.asList("tag"));
+        ddl().dropTableIndexes(session(), tableName(oId), Arrays.asList("tag"));
         updateAISGeneration();
         
         checkDDL(oId, "create table `coi`.`o`(`oid` int, `c_id` int, `tag` varchar(32), PRIMARY KEY(`oid`), "+
@@ -137,7 +137,7 @@ public final class DropIndexesIT extends ITBase {
         dml().writeRow(session(), createNewRow(tId, 1, "foo", "bar"));
         dml().writeRow(session(), createNewRow(tId, 2, "zap", "snap"));
         dml().writeRow(session(), createNewRow(tId, 3, "baz", "fob"));
-        ddl().dropIndexes(session(), tableName(tId), Arrays.asList("name"));
+        ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
         updateAISGeneration();
         
         checkDDL(tId, "create table `test`.`t`(`id` int, `first` varchar(255), `last` varchar(255), PRIMARY KEY(`id`)) engine=akibandb");
@@ -153,7 +153,7 @@ public final class DropIndexesIT extends ITBase {
         dml().writeRow(session(), createNewRow(tId, 2, "WA"));
         dml().writeRow(session(), createNewRow(tId, 3, "MA"));
         
-        ddl().dropIndexes(session(), tableName(tId), Arrays.asList("state"));
+        ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("state"));
         updateAISGeneration();
         
         checkDDL(tId, "create table `test`.`t`(`id` int, `state` char(2), PRIMARY KEY(`id`)) engine=akibandb");
@@ -169,7 +169,7 @@ public final class DropIndexesIT extends ITBase {
         dml().writeRow(session(), createNewRow(tId, 2, 5000, "10.50"));
         dml().writeRow(session(), createNewRow(tId, 3, 47000, "9.99"));
         
-        ddl().dropIndexes(session(), tableName(tId), Arrays.asList("otherId", "price"));
+        ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("otherId", "price"));
         updateAISGeneration();
         
         checkDDL(tId, "create table `test`.`t`(`id` int, `otherId` int, `price` decimal(10, 2), PRIMARY KEY(`id`)) engine=akibandb");
