@@ -324,8 +324,14 @@ public class OperatorCompiler
             resultOperator = indexScan_Default(indexType, 
                                                index.isReverse(),
                                                index.getIndexKeyRange());
+            if (false) {
+            List<RowType> ancestors = Collections.<RowType>singletonList(targetRowType);
+            resultOperator = ancestorLookup_Default(resultOperator, groupTable,
+                                                    indexType, ancestors, false);
+            } else {
             resultOperator = lookup_Default(resultOperator, groupTable,
                                             indexType, targetRowType, false);
+            }
         }
         else {
             resultOperator = groupScan_Default(groupTable);
