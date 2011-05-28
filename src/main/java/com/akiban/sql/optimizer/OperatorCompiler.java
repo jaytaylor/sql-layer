@@ -212,23 +212,45 @@ public class OperatorCompiler
             squery.getTables().setLeftBranch(indexTable);
             UserTableRowType tableType = tableRowType(indexTable);
             IndexRowType indexType = tableType.indexRowType(iindex);
-            PhysicalOperator indexOperator = indexScan_Default(indexType, 
-                                                               index.isReverse(),
-                                                               index.getIndexKeyRange());
-            resultOperator = lookup_Default(indexOperator, groupTable,
-                                            indexType, tableType, false);
-            // All selected rows above this need to be output by hkey left
-            // segment random access.
+            resultOperator = indexScan_Default(indexType, 
+                                               index.isReverse(),
+                                               index.getIndexKeyRange());
+            // Decide whether to use BranchLookup, which gets all
+            // descendants, or AncestorLookup, which gets just the
+            // given type with the same number of B-tree accesses and
+            // so is more efficient, for the index's target table.
+            boolean tableUsed = false, descendantUsed = false;
+            for (TableNode table : indexTable.subtree()) {
+                if (table == indexTable) {
+                    tableUsed = table.isUsed();
+                }
+                else if (table.isUsed()) {
+                    descendantUsed = true;
+                    break;
+                }
+            }
+            RowType ancestorType = indexType;
+            if (descendantUsed) {
+                resultOperator = lookup_Default(resultOperator, groupTable,
+                                                indexType, tableType, false);
+                ancestorType = tableType; // Index no longer in stream.
+            }
+            // All needed tables above this need to be output by hkey
+            // left segment random access.
             List<RowType> addAncestors = new ArrayList<RowType>();
-            for (TableNode table : squery.getTables()) {
-                if (table.isUsed()) {
-                    if ((table != indexTable) && table.isAncestor(indexTable))
-                        addAncestors.add(tableRowType(table));
+            for (TableNode table = indexTable; 
+                 table != null; 
+                 table = table.getParent()) {
+                if ((table == indexTable) ?
+                    (!descendantUsed && tableUsed) :
+                    table.isUsed()) {
+                    addAncestors.add(tableRowType(table));
                 }
             }
             if (!addAncestors.isEmpty())
                 resultOperator = ancestorLookup_Default(resultOperator, groupTable,
-                                                        tableType, addAncestors, true);
+                                                        ancestorType, addAncestors, 
+                                                        (descendantUsed && tableUsed));
         }
         else {
             resultOperator = groupScan_Default(groupTable);
@@ -299,10 +321,10 @@ public class OperatorCompiler
             supdate.removeConditions(index.getIndexConditions());
             TableIndex iindex = index.getIndex();
             IndexRowType indexType = targetRowType.indexRowType(iindex);
-            PhysicalOperator indexOperator = indexScan_Default(indexType, 
-                                                               index.isReverse(),
-                                                               index.getIndexKeyRange());
-            resultOperator = lookup_Default(indexOperator, groupTable,
+            resultOperator = indexScan_Default(indexType, 
+                                               index.isReverse(),
+                                               index.getIndexKeyRange());
+            resultOperator = lookup_Default(resultOperator, groupTable,
                                             indexType, targetRowType, false);
         }
         else {

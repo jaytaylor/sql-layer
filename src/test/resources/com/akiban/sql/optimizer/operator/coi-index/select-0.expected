@@ -1,2 +1,2 @@
-BranchLookup_Default(_akiban_customers Index(user.customers.PRIMARY[IndexColumn(cid)]) -> user.customers limit NO LIMIT)
+AncestorLookup_Default(Index(user.customers.PRIMARY[IndexColumn(cid)]) -> [user.customers]
   IndexScan_Default(Index(user.customers.PRIMARY[IndexColumn(cid)]) (>=user.customers=ExpressionRow[Literal(1)],<=user.customers=ExpressionRow[Literal(1)]))

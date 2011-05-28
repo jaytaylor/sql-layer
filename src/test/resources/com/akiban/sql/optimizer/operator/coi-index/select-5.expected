@@ -1,4 +1,3 @@
 Flatten_HKeyOrdered(user.customers INNER user.orders)
-  AncestorLookup_Default(user.orders -> [user.customers]
-    BranchLookup_Default(_akiban_customers Index(user.orders.order_date[IndexColumn(order_date)]) -> user.orders limit NO LIMIT)
-      IndexScan_Default(Index(user.orders.order_date[IndexColumn(order_date)]) (,) reverse)
+  AncestorLookup_Default(Index(user.orders.order_date[IndexColumn(order_date)]) -> [user.customers, user.orders]
+    IndexScan_Default(Index(user.orders.order_date[IndexColumn(order_date)]) (,) reverse)
