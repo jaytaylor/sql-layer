@@ -207,6 +207,7 @@ public class OperatorCompiler
         if (index != null) {
             squery.removeConditions(index.getIndexConditions());
             squery.recomputeUsed();
+            squery.removeUnusedJoins();            
             TableIndex iindex = index.getIndex();
             TableNode indexTable = index.getTable();
             squery.getTables().setLeftBranch(indexTable);

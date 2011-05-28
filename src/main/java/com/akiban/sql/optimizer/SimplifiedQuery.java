@@ -1004,4 +1004,37 @@ public class SimplifiedQuery
         }
     }
 
+    public void removeUnusedJoins() {
+        joins = removeUnusedJoins(joins);
+    }
+
+    protected BaseJoinNode removeUnusedJoins(BaseJoinNode join) {
+        if (join.isTable()) {
+            TableJoinNode tjoin = (TableJoinNode)join;
+            if (tjoin.getTable().isUsed())
+                return join;
+            else
+                return null;
+        }
+        else {
+            JoinJoinNode jjoin = (JoinJoinNode)join;
+            BaseJoinNode left = removeUnusedJoins(jjoin.getLeft());
+            BaseJoinNode right = removeUnusedJoins(jjoin.getRight());
+            if (left != null) {
+                if (right != null) {
+                    jjoin.setLeft(left);
+                    jjoin.setRight(right);
+                    return join;
+                }
+                else
+                    return left;
+            }
+            else if (right != null) {
+                return right;
+            }
+            else
+                return null;
+        }
+    }
+
 }
