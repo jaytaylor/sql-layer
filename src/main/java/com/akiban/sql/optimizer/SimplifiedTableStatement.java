@@ -46,4 +46,9 @@ public class SimplifiedTableStatement extends SimplifiedQuery
         return targetTable;
     }
 
+    public void recomputeUsed() {
+        super.recomputeUsed();
+        targetTable.setUsed(true);
+    }
+
 }

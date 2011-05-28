@@ -992,4 +992,16 @@ public class SimplifiedQuery
             condition.getTable().getConditions().remove(condition);
     }
 
+    /** Used flags are initially set based on presence in the original query.  
+     * Refine them after conditions have been changed / removed to be
+     * just those tables needed in output results.
+     * Navigation through intermediate tables is implicit in the group
+     * structure.
+     */
+    public void recomputeUsed() {
+        for (TableNode table : tables) {
+            table.setUsed(table.hasSelectColumns() || table.hasConditions());
+        }
+    }
+
 }

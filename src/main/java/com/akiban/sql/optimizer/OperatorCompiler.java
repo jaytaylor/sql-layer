@@ -206,6 +206,7 @@ public class OperatorCompiler
         PhysicalOperator resultOperator;
         if (index != null) {
             squery.removeConditions(index.getIndexConditions());
+            squery.recomputeUsed();
             TableIndex iindex = index.getIndex();
             TableNode indexTable = index.getTable();
             squery.getTables().setLeftBranch(indexTable);
