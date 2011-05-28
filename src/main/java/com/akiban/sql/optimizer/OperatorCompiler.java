@@ -233,27 +233,57 @@ public class OperatorCompiler
             if (descendantUsed) {
                 resultOperator = lookup_Default(resultOperator, groupTable,
                                                 indexType, tableType, false);
+                checkForCrossProducts(indexTable);
                 ancestorType = tableType; // Index no longer in stream.
             }
-            // All needed tables above this need to be output by hkey
-            // left segment random access.
+            // Tables above this that also need to be output.
             List<RowType> addAncestors = new ArrayList<RowType>();
-            for (TableNode table = indexTable; 
-                 table != null; 
-                 table = table.getParent()) {
-                if ((table == indexTable) ?
+            // Any other branches need to be added beside the main one.
+            List<RowType> addBranches = new ArrayList<RowType>();
+            for (TableNode left = indexTable; 
+                 left != null; 
+                 left = left.getParent()) {
+                if ((left == indexTable) ?
                     (!descendantUsed && tableUsed) :
-                    table.isUsed()) {
-                    addAncestors.add(tableRowType(table));
+                    left.isUsed()) {
+                    addAncestors.add(tableRowType(left));
+                }
+                {
+                    TableNode previous = null;
+                    TableNode sibling = left;
+                    while (true) {
+                        sibling = sibling.getNextSibling();
+                        if (sibling == null) break;
+                        if (sibling.subtreeUsed()) {
+                            if (!descendantUsed && !tableUsed) {
+                                // TODO: Better would be to set a flag
+                                // for ancestorLookup below to keep
+                                // the index type in the output and
+                                // use it for the branch lookup.
+                                addAncestors.add(0, tableRowType(indexTable));
+                                tableUsed = true;
+                            }
+                            addBranches.add(tableRowType(sibling));
+                            if (previous != null)
+                                needCrossProduct(previous, sibling);
+                            previous = sibling;
+                        }
+                    }
                 }
             }
-            if (!addAncestors.isEmpty())
+            if (!addAncestors.isEmpty()) {
                 resultOperator = ancestorLookup_Default(resultOperator, groupTable,
                                                         ancestorType, addAncestors, 
                                                         (descendantUsed && tableUsed));
+            }
+            for (RowType branchType : addBranches) {
+                resultOperator = lookup_Default(resultOperator, groupTable,
+                                                tableType, branchType, true);
+            }
         }
         else {
             resultOperator = groupScan_Default(groupTable);
+            checkForCrossProducts(squery.getTables().getRoot());
         }
         
         // TODO: Can apply most Select conditions before flattening.
@@ -688,6 +718,33 @@ public class OperatorCompiler
 
     protected Row getIndexExpressionRow(TableIndex index, Expression[] keys) {
         return new ExpressionRow(schema.indexRowType(index), keys);
+    }
+
+    /** Check whether any list of children has a cross-product join,
+     * since that does not come from the group structure. */
+    protected void checkForCrossProducts(TableNode node) 
+            throws StandardException {
+        for (TableNode parent : node.subtree()) {
+            TableNode previous = null;
+            for (TableNode child = parent.getFirstChild(); 
+                 child != null; 
+                 child = child.getNextSibling()) {
+                if (child.subtreeUsed()) {
+                    if (previous != null)
+                        needCrossProduct(previous, child);
+                    previous = child;
+                }
+            }
+        }
+    }
+
+    // TODO: One slow way to do a cross product might be to filter out
+    // any existing right rows and then lookup to get all of them for
+    // the left's hkey.
+    protected void needCrossProduct(TableNode left, TableNode right) 
+            throws StandardException {
+        throw new UnsupportedSQLException("Need cross product between " + left +
+                                          " and " + right);
     }
 
 }
