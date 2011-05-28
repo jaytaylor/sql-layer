@@ -44,6 +44,32 @@ public class SimplifiedQuery
         protected TableNode createNode(UserTable table) {
             return new TableNode(table);
         }
+
+        /** Make the given node and its ancestors the left branch (the
+         * one reached by just firstChild() links. */
+        public void setLeftBranch(TableNode node) {
+            while (true) {
+                TableNode parent = node.getParent();
+                if (parent == null) break;
+                TableNode firstSibling = parent.getFirstChild();
+                if (node != firstSibling) {
+                    TableNode sibling = firstSibling;
+                    while (true) {
+                        assert (sibling != null) : "node not in sibling list";
+                        TableNode next = sibling.getNextSibling();
+                        if (next == node) {
+                            // Splice node out.
+                            sibling.setNextSibling(node.getNextSibling());
+                            break;
+                        }
+                        sibling = next;
+                    }
+                    node.setNextSibling(firstSibling);
+                    parent.setFirstChild(node);
+                }
+                node = parent;
+            }
+        }
     }
 
     public static class TableNode extends TableTreeBase.TableNodeBase<TableNode> {

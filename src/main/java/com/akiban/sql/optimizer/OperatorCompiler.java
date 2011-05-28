@@ -208,6 +208,7 @@ public class OperatorCompiler
             squery.removeConditions(index.getIndexConditions());
             TableIndex iindex = index.getIndex();
             TableNode indexTable = index.getTable();
+            squery.getTables().setLeftBranch(indexTable);
             UserTableRowType tableType = tableRowType(indexTable);
             IndexRowType indexType = tableType.indexRowType(iindex);
             PhysicalOperator indexOperator = indexScan_Default(indexType, 
