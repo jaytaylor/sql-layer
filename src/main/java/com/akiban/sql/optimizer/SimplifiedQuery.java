@@ -122,6 +122,7 @@ public class SimplifiedQuery
         // Return true if conditions mean this node cannot be left
         // out, after adjusting for such inputs.
         public abstract boolean promoteOuterJoins(Collection<TableNode> conditionTables);
+        public abstract void promotedOuterJoin();
     }
 
     // A join to an actual table.
@@ -148,11 +149,11 @@ public class SimplifiedQuery
         }
 
         public boolean promoteOuterJoins(Collection<TableNode> conditionTables) {
-            if (conditionTables.contains(table)) {
-                table.setOuter(false);
-                return true;
-            }
-            return false;
+            return conditionTables.contains(table);
+        }
+
+        public void promotedOuterJoin() {
+            table.setOuter(false);            
         }
 
         public String toString() {
@@ -221,15 +222,27 @@ public class SimplifiedQuery
         public boolean promoteOuterJoins(Collection<TableNode> conditionTables) {
             boolean lp = left.promoteOuterJoins(conditionTables);
             boolean rp = right.promoteOuterJoins(conditionTables);
+            boolean promoted = false;
             switch (joinType) {
             case LEFT:
-                if (rp) joinType = JoinType.INNER;
+                promoted = rp;
                 break;
             case RIGHT:
-                if (lp) joinType = JoinType.INNER;
+                promoted = lp;
                 break;
             }
+            if (promoted) {
+                joinType = JoinType.INNER;
+                promotedOuterJoin();
+            }
             return lp || rp;
+        }
+
+        public void promotedOuterJoin() {
+            if (joinType == JoinType.INNER) {
+                left.promotedOuterJoin();
+                right.promotedOuterJoin();
+            }
         }
 
         // Reverse operands and outer join direction if necessary.
