@@ -18,9 +18,10 @@ package com.akiban.server.test.it.dxl;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.api.ddl.IndexAlterException;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
+
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -52,7 +53,7 @@ public class GroupIndexIT extends ITBase {
         final String groupName = getUserTable("test","c").getGroup().getName();
         createGroupIndex(groupName, "name_date", "c.name, o.odate");
         assertNotNull("name_date exists", ddl().getAIS(session()).getGroup(groupName).getIndex("name_date"));
-        ddl().dropGroupIndex(session(), groupName, "name_date");
+        ddl().dropGroupIndexes(session(), groupName, Collections.singleton("name_date"));
         assertNull("name_date does not exist", ddl().getAIS(session()).getGroup(groupName).getIndex("name_date"));
     }
 

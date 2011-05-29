@@ -152,7 +152,7 @@ public final class AddDropIndexMT extends HapiMTBase {
                         createForString = ! createForString;
                     }
                     else {
-                        ddl.dropIndexes(session, tableName, indexNameCollection);
+                        ddl.dropTableIndexes(session, tableName, indexNameCollection);
                     }
                     shouldCreate = ! shouldCreate;
                 }
