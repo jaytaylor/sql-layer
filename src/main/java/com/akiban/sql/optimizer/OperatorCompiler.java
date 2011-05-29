@@ -26,6 +26,8 @@ import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
@@ -596,15 +598,24 @@ public class OperatorCompiler
         IndexUsage bestIndex = null;
         for (TableNode table : squery.getTables()) {
             if (table.isUsed() && !table.isOuter()) {
-                for (TableIndex index : table.getTable().getIndexes()) { // TODO: getIndexesIncludingInternal()
+                for (TableIndex index : table.getTable().getIndexes()) {
                     IndexUsage candidate = new IndexUsage(table, index);
-                    if (candidate.usable(squery)) {
-                        if ((bestIndex == null) ||
-                            (candidate.compareTo(bestIndex) > 0))
-                            bestIndex = candidate;
-                    }
+                    bestIndex = betterIndex(squery, bestIndex, candidate);
                 }
             }
+        }
+        for (GroupIndex index : squery.getGroup().getGroup().getIndexes()) {
+            // TODO: Need to get lowest table.
+        }
+        return bestIndex;
+    }
+
+    protected IndexUsage betterIndex(SimplifiedQuery squery,
+                                     IndexUsage bestIndex, IndexUsage candidate) {
+        if (candidate.usable(squery)) {
+            if ((bestIndex == null) ||
+                (candidate.compareTo(bestIndex) > 0))
+                return candidate;
         }
         return bestIndex;
     }
