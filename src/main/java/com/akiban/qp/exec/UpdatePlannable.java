@@ -13,22 +13,11 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.physicaloperator;
+package com.akiban.qp.exec;
 
-public final class WrappingPhysicalOperator extends PhysicalOperator {
-    private final Cursor cursor;
+import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.physicaloperator.StoreAdapter;
 
-    public WrappingPhysicalOperator(Cursor cursor) {
-        this.cursor = cursor;
-    }
-
-    @Override
-    protected Cursor cursor(StoreAdapter adapter) {
-        return cursor;
-    }
-
-    @Override
-    public boolean cursorAbilitiesInclude(CursorAbility ability) {
-        return cursor.cursorAbilitiesInclude(ability);
-    }
+public interface UpdatePlannable extends Plannable {
+    UpdateResult run(Bindings bindings, StoreAdapter adapter);
 }

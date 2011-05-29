@@ -16,9 +16,6 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowBase;
-import com.akiban.server.api.common.NoSuchTableException;
-import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.util.Tap;
 
 class TopLevelWrappingCursor extends ChainedCursor {
@@ -63,39 +60,6 @@ class TopLevelWrappingCursor extends ChainedCursor {
         } catch (RuntimeException e) {
             throw launder(e);
         }
-    }
-
-    @Override
-    public void removeCurrentRow() {
-        try {
-            super.removeCurrentRow();
-        } catch (RuntimeException e) {
-            throw launder(e);
-        }
-    }
-
-    @Override
-    public void updateCurrentRow(Row newRow) {
-        try {
-            super.updateCurrentRow(newRow);
-        } catch (RuntimeException e) {
-            throw launder(e);
-        }
-    }
-
-    @Override
-    public ModifiableCursorBackingStore backingStore() {
-        final ModifiableCursorBackingStore delegate = super.backingStore();
-        return new ModifiableCursorBackingStore() {
-            @Override
-            public void addRow(RowBase newRow) {
-                try {
-                    delegate.addRow(newRow);
-                } catch (RuntimeException e) {
-                    throw launder(e);
-                }
-            }
-        };
     }
 
     // WrappingCursor interface

@@ -20,8 +20,12 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.HKey;
+import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.RowData;
+import com.akiban.server.RowDef;
 
 public abstract class StoreAdapter
 {
@@ -45,6 +49,10 @@ public abstract class StoreAdapter
     {
         return schema;
     }
+
+    public abstract void updateRow(Row oldRow, Row newRow, Bindings bindings);
+
+    public abstract RowData rowData(RowDef rowDef, RowBase row, Bindings bindings);
 
     // For use by subclasses
 

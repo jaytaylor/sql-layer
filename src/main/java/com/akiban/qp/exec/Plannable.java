@@ -13,15 +13,16 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.physicaloperator;
+package com.akiban.qp.exec;
 
-import com.akiban.qp.row.RowBase;
+import com.akiban.qp.physicaloperator.PhysicalOperator;
 
-public interface ModifiableCursorBackingStore {
-    /**
-     * Adds a row to the backing structure, in some unspecified location.
-     * @param newRow the row to be added
-     * @throws CursorUpdateException if the given row couldn't be added due to an underlying exception
-     */
-    void addRow(RowBase newRow);
+import java.util.List;
+
+public interface Plannable {
+    List<PhysicalOperator> getInputOperators();
+
+    String describePlan();
+
+    String describePlan(PhysicalOperator inputOperator);
 }
