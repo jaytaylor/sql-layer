@@ -240,7 +240,7 @@ public class OperatorCompiler
             // Tables above this that also need to be output.
             List<RowType> addAncestors = new ArrayList<RowType>();
             // Any other branches need to be added beside the main one.
-            List<RowType> addBranches = new ArrayList<RowType>();
+            List<TableNode> addBranches = new ArrayList<TableNode>();
             for (TableNode left = indexTable; 
                  left != null; 
                  left = left.getParent()) {
@@ -261,10 +261,10 @@ public class OperatorCompiler
                                 // for ancestorLookup below to keep
                                 // the index type in the output and
                                 // use it for the branch lookup.
-                                addAncestors.add(0, tableRowType(indexTable));
+                                addAncestors.add(0, tableType);
                                 tableUsed = true;
                             }
-                            addBranches.add(tableRowType(sibling));
+                            addBranches.add(sibling);
                             if (previous != null)
                                 needCrossProduct(previous, sibling);
                             previous = sibling;
@@ -277,9 +277,11 @@ public class OperatorCompiler
                                                         ancestorType, addAncestors, 
                                                         (descendantUsed && tableUsed));
             }
-            for (RowType branchType : addBranches) {
+            for (TableNode branchTable : addBranches) {
                 resultOperator = lookup_Default(resultOperator, groupTable,
-                                                tableType, branchType, true);
+                                                tableType, tableRowType(branchTable), 
+                                                true);
+                checkForCrossProducts(branchTable);
             }
         }
         else {
