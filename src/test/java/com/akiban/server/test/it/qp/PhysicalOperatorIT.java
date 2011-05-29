@@ -16,13 +16,14 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.*;
+import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.physicaloperator.UpdateFunction;
 import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.row.OverlayingRow;
@@ -68,16 +69,10 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
         };
 
         PhysicalOperator groupScan = groupScan_Default(coi);
-        PhysicalOperator updateOperator = new Update_Default(groupScan, updateFunction);
-        Cursor updateCursor = cursor(updateOperator, adapter);
-        int nexts = 0;
-        updateCursor.open(NO_BINDINGS);
-        while (updateCursor.next()) {
-            ++nexts;
-        }
-        updateCursor.close();
-        adapter.commitAllTransactions();
-        assertEquals("invocations of next()", db.length, nexts);
+        UpdatePlannable updateOperator = new Update_Default(groupScan, updateFunction);
+        UpdateResult result = updateOperator.run(NO_BINDINGS, adapter);
+        assertEquals("rows modified", 2, result.rowsModified());
+        assertEquals("rows touched", db.length, result.rowsTouched());
 
         Cursor executable = cursor(groupScan, adapter);
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "XYZXYZ"),

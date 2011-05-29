@@ -15,13 +15,16 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.Strings;
 
 import java.util.Collections;
 import java.util.List;
 
-public final class Update_Default extends PhysicalOperator {
+public final class Update_Default implements UpdatePlannable {
 
     // Object interface
 
@@ -34,21 +37,37 @@ public final class Update_Default extends PhysicalOperator {
 
     public Update_Default(PhysicalOperator inputOperator, UpdateFunction updateFunction) {
         ArgumentValidation.notNull("update lambda", updateFunction);
-        if (!inputOperator.cursorAbilitiesInclude(CursorAbility.MODIFY)) {
-            throw new IllegalArgumentException("input operator must be modifiable: " + inputOperator.getClass());
-        }
         
         this.inputOperator = inputOperator;
         this.updateFunction = updateFunction;
     }
 
-    // PhysicalOperator interface
+    // CudResult interface
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter) {
+    public UpdateResult run(Bindings bindings, StoreAdapter adapter) {
+        int seen = 0, modified = 0;
+        long start = System.currentTimeMillis();
         Cursor inputCursor = inputOperator.cursor(adapter);
-        return new Execution(inputCursor, updateFunction);
+        inputCursor.open(bindings);
+        try {
+            while (inputCursor.next()) {
+                ++seen;
+                Row oldRow = inputCursor.currentRow();
+                if (updateFunction.rowIsSelected(oldRow)) {
+                    Row newRow = updateFunction.evaluate(oldRow, bindings);
+                    adapter.updateRow(oldRow, newRow, bindings);
+                    ++modified;
+                }
+            }
+        } finally {
+            inputCursor.close();
+        }
+        long end = System.currentTimeMillis();
+        return new StandardUpdateResult(end - start, seen, modified);
     }
+
+    // Plannable interface
 
     @Override
     public List<PhysicalOperator> getInputOperators() {
@@ -61,47 +80,14 @@ public final class Update_Default extends PhysicalOperator {
         return describePlan(inputOperator);
     }
 
+    @Override
+    public String describePlan(PhysicalOperator inputOperator) {
+        return inputOperator + Strings.nl() + this;
+    }
+
     // Object state
 
     private final PhysicalOperator inputOperator;
     private final UpdateFunction updateFunction;
-
-    // Inner classes
-
-    private class Execution extends ChainedCursor {
-
-        private final UpdateFunction updateFunction;
-        private Bindings bindings;
-
-        public Execution(Cursor input, UpdateFunction updateFunction) {
-            super(input);
-            this.updateFunction = updateFunction;
-            this.bindings = UndefBindings.only();
-        }
-
-        // Cursor interface
-
-
-        @Override
-        public void open(Bindings bindings) {
-            super.open(bindings);
-            this.bindings = bindings;
-        }
-
-        @Override
-        public boolean next() {
-            if (input.next()) {
-                Row row = this.input.currentRow();
-                if (!updateFunction.rowIsSelected(row)) {
-                    return true;
-                }
-                Row currentRow = updateFunction.evaluate(row, bindings);
-                input.updateCurrentRow(currentRow);
-                return true;
-            }
-            return false;
-        }
-    }
-
     
 }

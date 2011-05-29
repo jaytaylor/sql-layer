@@ -18,7 +18,7 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 
-abstract class SingleRowCachingCursor extends CursorStub
+abstract class SingleRowCachingCursor implements Cursor
 {
     // Object interface
 
@@ -34,11 +34,6 @@ abstract class SingleRowCachingCursor extends CursorStub
     public final Row currentRow()
     {
         return row.get();
-    }
-
-    @Override
-    public boolean cursorAbilitiesInclude(CursorAbility ability) {
-        return false;
     }
 
     // SingleRowCachingCursor interface

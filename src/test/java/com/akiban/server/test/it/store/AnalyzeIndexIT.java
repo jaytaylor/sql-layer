@@ -19,6 +19,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.UserTable;
+import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.api.DMLFunctions;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.akiban.server.IndexDef;
@@ -28,11 +32,11 @@ import com.akiban.server.TableStatistics;
 
 public class AnalyzeIndexIT extends AbstractScanBase {
     
-    @Test
-    public void testAnalyzeAllIndexes() throws Exception {
+    @BeforeClass
+    static public void setUpTest() throws Exception {
         for (final RowDef rowDef : rowDefCache.getRowDefs()) {
-            for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-                store.getIndexManager().analyzeIndex(session, indexDef, 10);
+            if(rowDef.isUserTable()) {
+                store.analyzeTable(session, rowDef.getRowDefId(), 10);
             }
         }
     }
@@ -41,8 +45,7 @@ public class AnalyzeIndexIT extends AbstractScanBase {
     public void testPopulateTableStatistics() throws Exception {
         final RowDef rowDef = rowDef("aa");
         store.analyzeTable(session, rowDef.getRowDefId());
-        final TableStatistics ts = new TableStatistics(rowDef.getRowDefId());
-        store.getIndexManager().populateTableStatistics(session, ts);
+        final TableStatistics ts = store.getTableStatistics(session, rowDef.getRowDefId());
         {
             // Checks a secondary index
             //
@@ -79,8 +82,7 @@ public class AnalyzeIndexIT extends AbstractScanBase {
     public void testGroupTableStatistics() throws Exception {
         final RowDef rowDef = rowDef("_akiban_a");
         store.analyzeTable(session, rowDef.getRowDefId());
-        final TableStatistics ts = new TableStatistics(rowDef.getRowDefId());
-        store.getIndexManager().populateTableStatistics(session, ts);
+        final TableStatistics ts = store.getTableStatistics(session, rowDef.getRowDefId());
         final int indexId = findIndexId(rowDef, "aa$str");
         TableStatistics.Histogram histogram = null;
         for (TableStatistics.Histogram h : ts.getHistogramList()) {
@@ -106,23 +108,4 @@ public class AnalyzeIndexIT extends AbstractScanBase {
             fail("Bug 253 strikes again!");
         }
     }
-    
-// This test breaks the build - need to populate and then drop a different table.
-//    @Test
-//    public void testDropTable() throws Exception {
-//        final RowDef rowDef = groupRowDef("_akiban_srt");
-//        store.analyzeTable(rowDef.getRowDefId());
-//        for (final RowDef userRowDef : rowDef.getUserTableRowDefs()) {
-//            store.analyzeTable(userRowDef.getRowDefId());
-//        }
-//        final TableStatistics ts1 = new TableStatistics(rowDef.getRowDefId());
-//        store.getIndexManager().populateTableStatistics(ts1);
-//        assertTrue(!ts1.getHistogramList().isEmpty());
-//        for (final RowDef userRowDef : rowDef.getUserTableRowDefs()) {
-//            store.dropTable(userRowDef.getRowDefId());
-//        }
-//        final TableStatistics ts2 = new TableStatistics(rowDef.getRowDefId());
-//        store.getIndexManager().populateTableStatistics(ts2);
-//        assertTrue(ts2.getHistogramList().isEmpty());
-//    }
 }

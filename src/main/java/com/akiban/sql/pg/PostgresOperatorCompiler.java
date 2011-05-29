@@ -16,6 +16,8 @@
 package com.akiban.sql.pg;
 
 import com.akiban.ais.model.TableIndex;
+import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.sql.StandardException;
 
 import com.akiban.sql.optimizer.OperatorCompiler;
@@ -99,10 +101,10 @@ public class PostgresOperatorCompiler extends OperatorCompiler
         if (result.isModify())
             return new PostgresModifyOperatorStatement(stmt.statementToString(),
                                                        adapter,
-                                                       result.getResultOperator());
+                                                       (UpdatePlannable) result.getResultOperator());
         else
-            return new PostgresOperatorStatement(adapter, 
-                                                 result.getResultOperator(),
+            return new PostgresOperatorStatement(adapter,
+                                                 (PhysicalOperator) result.getResultOperator(),
                                                  result.getResultRowType(),
                                                  result.getResultColumns(),
                                                  result.getResultColumnOffsets(),
