@@ -216,6 +216,9 @@ public class OperatorCompiler
             squery.getTables().setLeftBranch(indexTable);
             UserTableRowType tableType = tableRowType(indexTable);
             IndexRowType indexType = tableType.indexRowType(iindex);
+            // TODO: See comment on this class.
+            if (indexType == null)
+                indexType = new UnknownIndexRowType(schema, tableType, iindex);
             resultOperator = indexScan_Default(indexType, 
                                                index.isReverse(),
                                                index.getIndexKeyRange());
@@ -414,12 +417,14 @@ public class OperatorCompiler
         private ColumnCondition lowCondition, highCondition;
         private boolean sorting, reverse;
         
-        public IndexUsage(TableNode table, Index index) {
-            this.table = table;
+        public IndexUsage(Index index, TableNode table) {
             this.index = index;
+            this.table = table; // Can be null: will be computed from columns.
         }
 
         public TableNode getTable() {
+            if (table == null)
+                table = computeDeepestTable();
             return table;
         }
 
@@ -583,6 +588,21 @@ public class OperatorCompiler
                 return new IndexKeyRange(lo, lowInc, hi, highInc);
             }
         }
+
+        // A group index has an hkey from the deepest table it indexes.
+        // Take the deepest that we are actually using, for which that
+        // hkey should work, since all indexed columns must be in a
+        // single branch.
+        protected TableNode computeDeepestTable() {
+            TableNode deepest = null;
+            for (ColumnCondition columnCondition : getIndexConditions()) {
+                TableNode table = columnCondition.getTable();
+                if ((deepest == null) || (deepest.getDepth() < table.getDepth()))
+                    deepest = table;
+            }
+            assert (deepest != null);
+            return deepest;
+        }
     }
 
     // Pick an index to use.
@@ -595,13 +615,15 @@ public class OperatorCompiler
         for (TableNode table : squery.getTables()) {
             if (table.isUsed() && !table.isOuter()) {
                 for (TableIndex index : table.getTable().getIndexes()) {
-                    IndexUsage candidate = new IndexUsage(table, index);
+                    IndexUsage candidate = new IndexUsage(index, table);
                     bestIndex = betterIndex(squery, bestIndex, candidate);
                 }
             }
         }
         for (GroupIndex index : squery.getGroup().getGroup().getIndexes()) {
-            // TODO: Need to get lowest table.
+            IndexUsage candidate = new IndexUsage(index, null);
+            bestIndex = betterIndex(squery, bestIndex, candidate);
+            
         }
         return bestIndex;
     }
@@ -730,11 +752,42 @@ public class OperatorCompiler
             };
     }
 
+    // TODO: This is just good enough to print properly in plan, not
+    // to actually run.
+    static class UnknownIndexRowType extends IndexRowType {
+
+        @Override
+        public String toString()
+        {
+            return index.toString();
+        }
+
+        // RowType interface
+
+        @Override
+        public int nFields()
+        {
+            return index.getColumns().size();
+        }
+
+        public UnknownIndexRowType(Schema schema, UserTableRowType tableType, Index index)
+        {
+            super(schema, tableType, null);
+            this.index = index;
+        }
+
+        // Object state
+
+        private final Index index;
+    }
+
     protected Row getIndexExpressionRow(Index index, Expression[] keys) {
         RowType rowType = null;
         if (index.isTableIndex())
             rowType = schema.indexRowType((TableIndex)index);
-        // TODO: group index row type.
+        else
+            // TODO: See comment above.
+            rowType = new UnknownIndexRowType(schema, null, index);
         return new ExpressionRow(rowType, keys);
     }
 
