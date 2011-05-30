@@ -215,9 +215,11 @@ public class OperatorCompiler
             TableNode indexTable = index.getTable();
             squery.getTables().setLeftBranch(indexTable);
             UserTableRowType tableType = tableRowType(indexTable);
-            IndexRowType indexType = tableType.indexRowType(iindex);
+            IndexRowType indexType;
             // TODO: See comment on this class.
-            if (indexType == null)
+            if (iindex.isTableIndex())
+                indexType = tableType.indexRowType(iindex);
+            else
                 indexType = new UnknownIndexRowType(schema, tableType, iindex);
             resultOperator = indexScan_Default(indexType, 
                                                index.isReverse(),

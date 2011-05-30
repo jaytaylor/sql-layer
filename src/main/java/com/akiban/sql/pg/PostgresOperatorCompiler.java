@@ -117,6 +117,8 @@ public class PostgresOperatorCompiler extends OperatorCompiler
     // index itself.
     @Override
     protected Row getIndexExpressionRow(Index index, Expression[] keys) {
+        if (!index.isTableIndex())
+            return super.getIndexExpressionRow(index, keys);
         UserTable userTable = (UserTable)((TableIndex)index).getTable();
         RowType rowType = schema.userTableRowType(userTable);
         Expression[] userKeys = new Expression[rowType.nFields()];
