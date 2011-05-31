@@ -35,7 +35,7 @@ class RowDataDisplayFilter implements DisplayFilter {
     private final static String[] PROTECTED_VOLUME_NAMES = { "akiban_system",
             "akiban_txn" };
 
-    private final static String[] PROTECTED_TREE_NAMES = { TreeService.SCHEMA_TREE_NAME,
+    private final static String[] PROTECTED_TREE_NAMES = { TreeService.STATUS_TREE_NAME,
             TreeService.SCHEMA_TREE_NAME, "_txn_" };
     private final PersistitStore persistitStore;
     private final TreeService treeService;
