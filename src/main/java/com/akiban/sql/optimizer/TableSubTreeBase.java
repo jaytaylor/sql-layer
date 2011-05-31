@@ -103,10 +103,10 @@ public class TableSubTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
     }
 
     static class NodeIterator<T extends TableNodeBase<T>> implements Iterator<T> {
-        private T next;
+        private T root, next;
 
         NodeIterator(T root) {
-            next = root;
+            this.next = this.root = root;
         }
 
         public boolean hasNext() {
@@ -118,11 +118,10 @@ public class TableSubTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
             next = onext.getFirstChild();
             if (next == null) {
                 T node = onext;
-                while (true) {
+                while (node != root) {
                     next = node.getNextSibling();
                     if (next != null) break;
                     node = node.getParent();
-                    if (node == null) break;
                 }
             }
             return onext;

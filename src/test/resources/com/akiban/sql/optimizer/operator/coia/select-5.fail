@@ -1,0 +1,1 @@
+com.akiban.sql.optimizer.UnsupportedSQLException: Need cross product between user.addresses and user.orders

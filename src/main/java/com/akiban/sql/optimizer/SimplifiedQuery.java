@@ -44,6 +44,32 @@ public class SimplifiedQuery
         protected TableNode createNode(UserTable table) {
             return new TableNode(table);
         }
+
+        /** Make the given node and its ancestors the left branch (the
+         * one reached by just firstChild() links. */
+        public void setLeftBranch(TableNode node) {
+            while (true) {
+                TableNode parent = node.getParent();
+                if (parent == null) break;
+                TableNode firstSibling = parent.getFirstChild();
+                if (node != firstSibling) {
+                    TableNode sibling = firstSibling;
+                    while (true) {
+                        assert (sibling != null) : "node not in sibling list";
+                        TableNode next = sibling.getNextSibling();
+                        if (next == node) {
+                            // Splice node out.
+                            sibling.setNextSibling(node.getNextSibling());
+                            break;
+                        }
+                        sibling = next;
+                    }
+                    node.setNextSibling(firstSibling);
+                    parent.setFirstChild(node);
+                }
+                node = parent;
+            }
+        }
     }
 
     public static class TableNode extends TableTreeBase.TableNodeBase<TableNode> {
@@ -122,6 +148,7 @@ public class SimplifiedQuery
         // Return true if conditions mean this node cannot be left
         // out, after adjusting for such inputs.
         public abstract boolean promoteOuterJoins(Collection<TableNode> conditionTables);
+        public abstract void promotedOuterJoin();
     }
 
     // A join to an actual table.
@@ -148,11 +175,11 @@ public class SimplifiedQuery
         }
 
         public boolean promoteOuterJoins(Collection<TableNode> conditionTables) {
-            if (conditionTables.contains(table)) {
-                table.setOuter(false);
-                return true;
-            }
-            return false;
+            return conditionTables.contains(table);
+        }
+
+        public void promotedOuterJoin() {
+            table.setOuter(false);            
         }
 
         public String toString() {
@@ -221,15 +248,27 @@ public class SimplifiedQuery
         public boolean promoteOuterJoins(Collection<TableNode> conditionTables) {
             boolean lp = left.promoteOuterJoins(conditionTables);
             boolean rp = right.promoteOuterJoins(conditionTables);
+            boolean promoted = false;
             switch (joinType) {
             case LEFT:
-                if (rp) joinType = JoinType.INNER;
+                promoted = rp;
                 break;
             case RIGHT:
-                if (lp) joinType = JoinType.INNER;
+                promoted = lp;
                 break;
             }
+            if (promoted) {
+                joinType = JoinType.INNER;
+                promotedOuterJoin();
+            }
             return lp || rp;
+        }
+
+        public void promotedOuterJoin() {
+            if (joinType == JoinType.INNER) {
+                left.promotedOuterJoin();
+                right.promotedOuterJoin();
+            }
         }
 
         // Reverse operands and outer join direction if necessary.
@@ -951,6 +990,51 @@ public class SimplifiedQuery
         this.conditions.removeAll(conditions);
         for (ColumnCondition condition : conditions)
             condition.getTable().getConditions().remove(condition);
+    }
+
+    /** Used flags are initially set based on presence in the original query.  
+     * Refine them after conditions have been changed / removed to be
+     * just those tables needed in output results.
+     * Navigation through intermediate tables is implicit in the group
+     * structure.
+     */
+    public void recomputeUsed() {
+        for (TableNode table : tables) {
+            table.setUsed(table.hasSelectColumns() || table.hasConditions());
+        }
+    }
+
+    public void removeUnusedJoins() {
+        joins = removeUnusedJoins(joins);
+    }
+
+    protected BaseJoinNode removeUnusedJoins(BaseJoinNode join) {
+        if (join.isTable()) {
+            TableJoinNode tjoin = (TableJoinNode)join;
+            if (tjoin.getTable().isUsed())
+                return join;
+            else
+                return null;
+        }
+        else {
+            JoinJoinNode jjoin = (JoinJoinNode)join;
+            BaseJoinNode left = removeUnusedJoins(jjoin.getLeft());
+            BaseJoinNode right = removeUnusedJoins(jjoin.getRight());
+            if (left != null) {
+                if (right != null) {
+                    jjoin.setLeft(left);
+                    jjoin.setRight(right);
+                    return join;
+                }
+                else
+                    return left;
+            }
+            else if (right != null) {
+                return right;
+            }
+            else
+                return null;
+        }
     }
 
 }
