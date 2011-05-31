@@ -98,7 +98,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
         catch (IOException ex) {
         }
-        if (thread != null) {
+        if ((thread != null) && (thread != Thread.currentThread())) {
             try {
                 // Wait a bit, but don't hang up shutdown if thread is wedged.
                 thread.join(500);
