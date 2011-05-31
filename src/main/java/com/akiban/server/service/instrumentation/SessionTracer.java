@@ -27,6 +27,8 @@ public interface SessionTracer {
     
     public Object[] getCurrentEvents();
     
+    public Object[] getCompletedEvents();
+    
     public void setTraceLevel(int level);
     
     public int getTraceLevel();
