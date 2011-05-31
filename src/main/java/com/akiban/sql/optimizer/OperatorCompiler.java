@@ -461,6 +461,7 @@ public class OperatorCompiler
         public int compareTo(IndexUsage other) {
             if (sorting) {
                 if (!other.sorting)
+                    // Sorted better than unsorted.
                     return +1;
             }
             else if (other.sorting)
@@ -470,6 +471,7 @@ public class OperatorCompiler
                     return +1;
                 else if (equalityConditions.size() != other.equalityConditions.size())
                     return (equalityConditions.size() > other.equalityConditions.size()) 
+                        // More conditions tested better than fewer.
                         ? +1 : -1;
             }
             else if (other.equalityConditions != null)
@@ -485,6 +487,11 @@ public class OperatorCompiler
                 on++;
             if (n != on) 
                 return (n > on) ? +1 : -1;
+            if (index.getColumns().size() != other.index.getColumns().size())
+                    return (index.getColumns().size() < other.index.getColumns().size()) 
+                        // Fewer columns indexed better than more.
+                        ? +1 : -1;
+            // Deeper better than shallower.
             return getTable().getTable().getTableId().compareTo(other.getTable().getTable().getTableId());
         }
 
