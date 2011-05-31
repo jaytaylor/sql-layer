@@ -15,13 +15,13 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.rowtype.RowType;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
-public abstract class PhysicalOperator
+public abstract class PhysicalOperator implements Plannable
 {
     // I'm not sure I like having this as part of the interface. On one hand, operators like Flatten create new
     // RowTypes and it's handy to get access to those new RowTypes. On the other hand, not all operators do this,
@@ -32,6 +32,7 @@ public abstract class PhysicalOperator
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public List<PhysicalOperator> getInputOperators()
     {
         return Collections.emptyList();
@@ -46,15 +47,13 @@ public abstract class PhysicalOperator
         }
     }
 
-    public boolean cursorAbilitiesInclude(CursorAbility ability) {
-        return false;
-    }
-
+    @Override
     public String describePlan()
     {
         return toString();
     }
 
+    @Override
     public final String describePlan(PhysicalOperator inputOperator)
     {
         StringBuilder buffer = new StringBuilder();

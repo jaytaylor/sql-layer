@@ -17,8 +17,13 @@ package com.akiban.server.manage;
 
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServer;
 import com.akiban.server.CustomQuery;
 import com.akiban.server.service.ServiceManagerImpl;
@@ -59,7 +64,8 @@ public class ManageMXBeanImpl implements ManageMXBean {
     public void buildIndexes(final String arg, final boolean deferIndexes) {
         Session session = ServiceManagerImpl.newSession();
         try {
-            getStore().buildIndexes(session, arg, deferIndexes);
+            Collection<Index> indexes = gatherIndexes(session, arg);
+            getStore().buildIndexes(session, indexes, deferIndexes);
         } catch(Exception t) {
             throw new RuntimeException(t);
         } finally {
@@ -71,7 +77,10 @@ public class ManageMXBeanImpl implements ManageMXBean {
     public void deleteIndexes(final String arg) {
         Session session = ServiceManagerImpl.newSession();
         try {
-            getStore().deleteIndexes(session, arg);
+            Collection<Index> indexes = gatherIndexes(session, arg);
+            getStore().deleteIndexes(session, indexes);
+        } catch(Exception t) {
+            throw new RuntimeException(t);
         } finally {
             session.close();
         }
@@ -82,6 +91,8 @@ public class ManageMXBeanImpl implements ManageMXBean {
         Session session = ServiceManagerImpl.newSession();
         try {
             getStore().flushIndexes(session);
+        } catch(Exception t) {
+            throw new RuntimeException(t);
         } finally {
             session.close();
         }
@@ -170,12 +181,49 @@ public class ManageMXBeanImpl implements ManageMXBean {
         }
     }
 
+    @Override
+    public String getVersionString() {
+        return AkServer.VERSION_STRING;
+    }
+
+
     private Store getStore() {
         return akserver.getServiceManager().getStore();
     }
 
-    @Override
-    public String getVersionString() {
-        return AkServer.VERSION_STRING;
+    /**
+     * Test if a given index is selected in the argument string. Format is:
+     * <p><code>table=(table_name) index=(index_name)</code></p>
+     * This can contain as many table=() and index=() segments as desired.
+     * @param index Index to check
+     * @param arg Index selection string as described above
+     * @return
+     */
+    private boolean isIndexSelected(Index index, String arg) {
+        return (!arg.contains("table=") ||
+                arg.contains("table=(" +index.getIndexName().getTableName() + ")"))
+               &&
+               (!arg.contains("index=") ||
+                arg.contains("index=(" + index.getIndexName().getName() + ")"));
+    }
+
+    /**
+     * Create a collection of all indexes from all user tables in the current AIS
+     * that are selected by arg.
+     * @param session Session to use
+     * @param arg Index selection string
+     * @return Collection of selected Indexes
+     */
+    private Collection<Index> gatherIndexes(Session session, String arg) {
+        AkibanInformationSchema ais = akserver.getServiceManager().getDXL().ddlFunctions().getAIS(session);
+        Collection<Index> indexes = new HashSet<Index>();
+        for(UserTable table : ais.getUserTables().values()) {
+            for(Index index : table.getIndexes()) {
+                if(isIndexSelected(index, arg)) {
+                    indexes.add(index);
+                }
+            }
+        }
+        return indexes;
     }
 }

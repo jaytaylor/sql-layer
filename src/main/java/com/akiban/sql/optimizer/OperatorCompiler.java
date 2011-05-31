@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.ais.model.TableIndex;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.sql.optimizer.SimplifiedQuery.*;
 
 import com.akiban.sql.parser.*;
@@ -83,14 +84,14 @@ public class OperatorCompiler
     }
 
     public static class Result {
-        private PhysicalOperator resultOperator;
+        private Plannable resultOperator;
         private RowType resultRowType;
         private List<Column> resultColumns;
         private int[] resultColumnOffsets;
         private int offset = 0;
         private int limit = -1;
 
-        public Result(PhysicalOperator resultOperator,
+        public Result(Plannable resultOperator,
                       RowType resultRowType,
                       List<Column> resultColumns,
                       int[] resultColumnOffsets,
@@ -103,13 +104,13 @@ public class OperatorCompiler
             this.offset = offset;
             this.limit = limit;
         }
-        public Result(PhysicalOperator resultOperator,
+        public Result(Plannable resultOperator,
                       RowType resultRowType) {
             this.resultOperator = resultOperator;
             this.resultRowType = resultRowType;
         }
 
-        public PhysicalOperator getResultOperator() {
+        public Plannable getResultOperator() {
             return resultOperator;
         }
         public RowType getResultRowType() {
@@ -148,7 +149,7 @@ public class OperatorCompiler
             return result;
         }
 
-        protected static void explainPlan(PhysicalOperator operator, 
+        protected static void explainPlan(Plannable operator,
                                           List<String> into, int depth) {
             
             StringBuilder sb = new StringBuilder();
@@ -193,6 +194,7 @@ public class OperatorCompiler
         cursor = (CursorNode)bindAndGroup(cursor);
         SimplifiedSelectQuery squery = 
             new SimplifiedSelectQuery(cursor, grouper.getJoinConditions());
+        squery.reorderJoins();
         GroupBinding group = squery.getGroup();
         GroupTable groupTable = group.getGroup().getGroupTable();
         
@@ -202,13 +204,12 @@ public class OperatorCompiler
             !((index != null) && index.isSorting()))
             throw new UnsupportedSQLException("Unsupported ORDER BY");
         
-        Set<ColumnCondition> indexConditions = null;
         PhysicalOperator resultOperator;
         if (index != null) {
-            indexConditions = index.getIndexConditions();
+            squery.removeConditions(index.getIndexConditions());
             TableIndex iindex = index.getIndex();
-            UserTable indexTable = (UserTable)iindex.getTable();
-            UserTableRowType tableType = userTableRowType(indexTable);
+            TableNode indexTable = index.getTable();
+            UserTableRowType tableType = tableRowType(indexTable);
             IndexRowType indexType = tableType.indexRowType(iindex);
             PhysicalOperator indexOperator = indexScan_Default(indexType, 
                                                                index.isReverse(),
@@ -218,9 +219,11 @@ public class OperatorCompiler
             // All selected rows above this need to be output by hkey left
             // segment random access.
             List<RowType> addAncestors = new ArrayList<RowType>();
-            for (UserTable table : squery.getTables()) {
-                if ((table != indexTable) && isAncestorTable(table, indexTable))
-                    addAncestors.add(userTableRowType(table));
+            for (TableNode table : squery.getTables()) {
+                if (table.isUsed()) {
+                    if ((table != indexTable) && table.isAncestor(indexTable))
+                        addAncestors.add(tableRowType(table));
+                }
             }
             if (!addAncestors.isEmpty())
                 resultOperator = ancestorLookup_Default(resultOperator, groupTable,
@@ -241,11 +244,9 @@ public class OperatorCompiler
         FlattenState fls = fl.flatten(squery.getJoins());
         resultOperator = fl.getResultOperator();
         RowType resultRowType = fls.getResultRowType();
-        Map<UserTable,Integer> fieldOffsets = fls.getFieldOffsets();
-        
+        Map<TableNode,Integer> fieldOffsets = fls.getFieldOffsets();
+
         for (ColumnCondition condition : squery.getConditions()) {
-            if ((indexConditions != null) && indexConditions.contains(condition))
-                continue;
             Expression predicate = condition.generateExpression(fieldOffsets);
             resultOperator = select_HKeyOrdered(resultOperator,
                                                 resultRowType,
@@ -254,17 +255,17 @@ public class OperatorCompiler
 
         int ncols = squery.getSelectColumns().size();
         List<Column> resultColumns = new ArrayList<Column>(ncols);
-        for (SimpleExpression selectColumn : squery.getSelectColumns()) {
-            if (!selectColumn.isColumn())
-                throw new UnsupportedSQLException("Unsupported result column: " + 
-                                                  selectColumn);
-            resultColumns.add(((ColumnExpression)selectColumn).getColumn());
-        }
         int[] resultColumnOffsets = new int[ncols];
-        for (int i = 0; i < ncols; i++) {
-            Column column = resultColumns.get(i);
-            UserTable table = column.getUserTable();
-            resultColumnOffsets[i] = fieldOffsets.get(table) + column.getPosition();
+        int i = 0;
+        for (SimpleExpression selectExpr : squery.getSelectColumns()) {
+            if (!selectExpr.isColumn())
+                throw new UnsupportedSQLException("Unsupported result column: " + 
+                                                  selectExpr);
+            ColumnExpression selectColumn = (ColumnExpression)selectExpr;
+            TableNode table = selectColumn.getTable();
+            Column column = selectColumn.getColumn();
+            resultColumns.add(column);
+            resultColumnOffsets[i++] = fieldOffsets.get(table) + column.getPosition();
         }
 
         int offset = squery.getOffset();
@@ -279,10 +280,11 @@ public class OperatorCompiler
         update = (UpdateNode)bindAndGroup(update);
         SimplifiedUpdateStatement supdate = 
             new SimplifiedUpdateStatement(update, grouper.getJoinConditions());
+        supdate.reorderJoins();
 
-        UserTable targetTable = supdate.getTargetTable();
-        GroupTable groupTable = targetTable.getGroup().getGroupTable();
-        UserTableRowType targetRowType = userTableRowType(targetTable);
+        TableNode targetTable = supdate.getTargetTable();
+        GroupTable groupTable = targetTable.getGroupTable();
+        UserTableRowType targetRowType = tableRowType(targetTable);
         
         // TODO: If we flattened subqueries (e.g., IN or EXISTS) into
         // the main result set, then the index and conditions might be
@@ -290,12 +292,11 @@ public class OperatorCompiler
         // flattened in before non-index conditions.
 
         IndexUsage index = pickBestIndex(supdate);
-        Set<ColumnCondition> indexConditions = null;
         PhysicalOperator resultOperator;
         if (index != null) {
-            indexConditions = index.getIndexConditions();
+            assert (targetTable == index.getTable());
+            supdate.removeConditions(index.getIndexConditions());
             TableIndex iindex = index.getIndex();
-            assert (targetTable == iindex.getTable());
             IndexRowType indexType = targetRowType.indexRowType(iindex);
             PhysicalOperator indexOperator = indexScan_Default(indexType, 
                                                                index.isReverse(),
@@ -307,11 +308,9 @@ public class OperatorCompiler
             resultOperator = groupScan_Default(groupTable);
         }
         
-        Map<UserTable,Integer> fieldOffsets = new HashMap<UserTable,Integer>(1);
+        Map<TableNode,Integer> fieldOffsets = new HashMap<TableNode,Integer>(1);
         fieldOffsets.put(targetTable, 0);
         for (ColumnCondition condition : supdate.getConditions()) {
-            if ((indexConditions != null) && indexConditions.contains(condition))
-                continue;
             Expression predicate = condition.generateExpression(fieldOffsets);
             resultOperator = select_HKeyOrdered(resultOperator,
                                                 targetRowType,
@@ -326,9 +325,9 @@ public class OperatorCompiler
         }
         ExpressionRow updateRow = new ExpressionRow(targetRowType, updates);
 
-        resultOperator = new com.akiban.qp.physicaloperator.Update_Default(resultOperator,
+        Plannable updatePlan = new com.akiban.qp.physicaloperator.Update_Default(resultOperator,
                                             new ExpressionRowUpdateFunction(updateRow));
-        return new Result(resultOperator, targetRowType);
+        return new Result(updatePlan, targetRowType);
     }
 
     public Result compileInsert(InsertNode insert) throws StandardException {
@@ -349,13 +348,19 @@ public class OperatorCompiler
 
     // A possible index.
     class IndexUsage implements Comparable<IndexUsage> {
+        private TableNode table;
         private TableIndex index;
         private List<ColumnCondition> equalityConditions;
         private ColumnCondition lowCondition, highCondition;
         private boolean sorting, reverse;
         
-        public IndexUsage(TableIndex index) {
+        public IndexUsage(TableNode table, TableIndex index) {
+            this.table = table;
             this.index = index;
+        }
+
+        public TableNode getTable() {
+            return table;
         }
 
         public TableIndex getIndex() {
@@ -527,13 +532,15 @@ public class OperatorCompiler
             return null;
 
         IndexUsage bestIndex = null;
-        for (UserTable table : squery.getTables()) {
-            for (TableIndex index : table.getIndexes()) { // TODO: getIndexesIncludingInternal()
-                IndexUsage candidate = new IndexUsage(index);
-                if (candidate.usable(squery)) {
-                    if ((bestIndex == null) ||
-                        (candidate.compareTo(bestIndex) > 0))
-                        bestIndex = candidate;
+        for (TableNode table : squery.getTables()) {
+            if (table.isUsed() && !table.isOuter()) {
+                for (TableIndex index : table.getTable().getIndexes()) { // TODO: getIndexesIncludingInternal()
+                    IndexUsage candidate = new IndexUsage(table, index);
+                    if (candidate.usable(squery)) {
+                        if ((bestIndex == null) ||
+                            (candidate.compareTo(bestIndex) > 0))
+                            bestIndex = candidate;
+                    }
                 }
             }
         }
@@ -542,11 +549,11 @@ public class OperatorCompiler
 
     static class FlattenState {
         private RowType resultRowType;
-        private Map<UserTable,Integer> fieldOffsets;
+        private Map<TableNode,Integer> fieldOffsets;
         int nfields;
 
         public FlattenState(RowType resultRowType,
-                            Map<UserTable,Integer> fieldOffsets,
+                            Map<TableNode,Integer> fieldOffsets,
                             int nfields) {
             this.resultRowType = resultRowType;
             this.fieldOffsets = fieldOffsets;
@@ -560,7 +567,7 @@ public class OperatorCompiler
             this.resultRowType = resultRowType;
         }
 
-        public Map<UserTable,Integer> getFieldOffsets() {
+        public Map<TableNode,Integer> getFieldOffsets() {
             return fieldOffsets;
         }
         public int getNfields() {
@@ -569,7 +576,7 @@ public class OperatorCompiler
 
         
         public void mergeFields(FlattenState other) {
-            for (UserTable table : other.fieldOffsets.keySet()) {
+            for (TableNode table : other.fieldOffsets.keySet()) {
                 fieldOffsets.put(table, other.fieldOffsets.get(table) + nfields);
             }
             nfields += other.nfields;
@@ -591,12 +598,12 @@ public class OperatorCompiler
 
         public FlattenState flatten(BaseJoinNode join) {
             if (join.isTable()) {
-                UserTable table = ((TableJoinNode)join).getTable();
-                Map<UserTable,Integer> fieldOffsets = new HashMap<UserTable,Integer>();
+                TableNode table = ((TableJoinNode)join).getTable();
+                Map<TableNode,Integer> fieldOffsets = new HashMap<TableNode,Integer>();
                 fieldOffsets.put(table, 0);
-                return new FlattenState(userTableRowType(table),
+                return new FlattenState(tableRowType(table),
                                         fieldOffsets,
-                                        table.getColumns().size());
+                                        table.getNFields());
             }
             else {
                 JoinJoinNode jjoin = (JoinJoinNode)join;
@@ -624,23 +631,8 @@ public class OperatorCompiler
         }
     }
 
-    protected UserTableRowType userTableRowType(UserTable table) {
-        return schema.userTableRowType(table);
-    }
-
-    /** Is t1 an ancestor of t2? */
-    protected static boolean isAncestorTable(UserTable t1, UserTable t2) {
-        while (true) {
-            Join j = t2.getParentJoin();
-            if (j == null)
-                return false;
-            UserTable parent = j.getParent();
-            if (parent == null)
-                return false;
-            if (parent == t1)
-                return true;
-            t2 = parent;
-        }
+    protected UserTableRowType tableRowType(TableNode table) {
+        return schema.userTableRowType(table.getTable());
     }
 
     protected IndexBound getIndexBound(TableIndex index, Expression[] keys) {

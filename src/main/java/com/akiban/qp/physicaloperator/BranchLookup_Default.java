@@ -114,11 +114,6 @@ public class BranchLookup_Default extends PhysicalOperator
 
     }
 
-    @Override
-    public boolean cursorAbilitiesInclude(CursorAbility ability) {
-        return CursorAbility.MODIFY.equals(ability);
-    }
-
     // For use by this class
 
     private static UserTable commonAncestor(UserTable inputTable, UserTable outputTable)
@@ -207,32 +202,6 @@ public class BranchLookup_Default extends PhysicalOperator
             lookupRow.set(null);
         }
 
-        @Override
-        public boolean cursorAbilitiesInclude(CursorAbility ability)
-        {
-            return lookupCursor.cursorAbilitiesInclude(ability);
-        }
-
-        @Override
-        public void removeCurrentRow()
-        {
-            checkModifiableState();
-            lookupCursor.removeCurrentRow();
-        }
-
-        @Override
-        public void updateCurrentRow(Row newRow)
-        {
-            checkModifiableState();
-            lookupCursor.updateCurrentRow(newRow);
-        }
-
-        @Override
-        public ModifiableCursorBackingStore backingStore()
-        {
-            return lookupCursor.backingStore();
-        }
-
         // Execution interface
 
         Execution(StoreAdapter adapter, Cursor input)
@@ -291,12 +260,6 @@ public class BranchLookup_Default extends PhysicalOperator
             lookupRowHKey.useSegments(commonSegments);
             if (branchRoot != null) {
                 lookupRowHKey.extend(branchRoot);
-            }
-        }
-
-        private void checkModifiableState() {
-            if (lookupRow.isNull()) {
-                throw new IllegalStateException("no active row to operate on");
             }
         }
 

@@ -29,19 +29,20 @@ import java.util.*;
  */
 public class SimplifiedTableStatement extends SimplifiedQuery
 {
-    private UserTable targetTable;
+    private TableNode targetTable;
 
     public SimplifiedTableStatement(DMLModStatementNode statement, 
                                     Set<ValueNode> joinConditions)
             throws StandardException {
         super(statement, joinConditions);
 
-        targetTable = (UserTable)statement.getTargetTableName().getUserData();
-        if (targetTable == null)
+        UserTable table = (UserTable)statement.getTargetTableName().getUserData();
+        if (table == null)
             throw new StandardException("Table not bound properly.");
+        targetTable = getTables().addNode(table);
     }
 
-    public UserTable getTargetTable() {
+    public TableNode getTargetTable() {
         return targetTable;
     }
 

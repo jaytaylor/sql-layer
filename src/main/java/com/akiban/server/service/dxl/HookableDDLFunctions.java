@@ -16,7 +16,6 @@
 package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -25,6 +24,7 @@ import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.GenericInvalidOperationException;
+import com.akiban.server.api.common.NoSuchGroupException;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.DuplicateColumnNameException;
 import com.akiban.server.api.ddl.DuplicateTableNameException;
@@ -337,7 +337,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.CREATE_INDEXES, t);
             throwIfInstanceOf(t, NoSuchTableException.class);
-            throwIfInstanceOf(t, DuplicateKeyException.class);
+            throwIfInstanceOf(t, NoSuchGroupException.class);
             throwIfInstanceOf(t, IndexAlterException.class);
             throwIfInstanceOf(t, GenericInvalidOperationException.class);
             throw throwAlways(t);
@@ -347,32 +347,12 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void createGroupIndex(Session session, String groupName, GroupIndex indexToAdd)
-            throws IndexAlterException, GenericInvalidOperationException {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.CREATE_INDEXES);
-            delegate.createGroupIndex(session, groupName, indexToAdd);
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.CREATE_INDEXES, t);
-            throwIfInstanceOf(t, NoSuchTableException.class);
-            throwIfInstanceOf(t, DuplicateKeyException.class);
-            throwIfInstanceOf(t, IndexAlterException.class);
-            throwIfInstanceOf(t, GenericInvalidOperationException.class);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.CREATE_INDEXES, thrown);
-        }
-    }
-
-    @Override
-    public void dropIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
+    public void dropTableIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
             throws NoSuchTableException, IndexAlterException, GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.DROP_INDEXES);
-            delegate.dropIndexes(session, tableName, indexNamesToDrop);
+            delegate.dropTableIndexes(session, tableName, indexNamesToDrop);
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.DROP_INDEXES, t);
@@ -386,16 +366,16 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void dropGroupIndex(Session session, String groupName, String indexToDrop)
-            throws IndexAlterException, GenericInvalidOperationException {
+    public void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop)
+            throws NoSuchGroupException, IndexAlterException, GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.DROP_INDEXES);
-            delegate.dropGroupIndex(session, groupName, indexToDrop);
+            delegate.dropGroupIndexes(session, groupName, indexesToDrop);
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.DROP_INDEXES, t);
-            throwIfInstanceOf(t, NoSuchTableException.class);
+            throwIfInstanceOf(t, NoSuchGroupException.class);
             throwIfInstanceOf(t, IndexAlterException.class);
             throwIfInstanceOf(t, GenericInvalidOperationException.class);
             throw throwAlways(t);

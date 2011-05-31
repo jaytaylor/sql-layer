@@ -15,13 +15,12 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.exec.UpdateResult;
 import com.akiban.sql.StandardException;
 
-import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.ArrayBindings;
 import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.StoreAdapter;
 import com.akiban.qp.physicaloperator.UndefBindings;
 
@@ -36,11 +35,11 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
 {
     private String statementType;
     private StoreAdapter store;
-    private PhysicalOperator resultOperator;
+    private UpdatePlannable resultOperator;
         
     public PostgresModifyOperatorStatement(String statementType,
                                            StoreAdapter store,
-                                           PhysicalOperator resultOperator) {
+                                           UpdatePlannable resultOperator) {
         this.statementType = statementType;
         this.store = store;
         this.resultOperator = resultOperator;
@@ -50,21 +49,10 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         throws IOException, StandardException {
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
-        Cursor cursor = API.cursor(resultOperator, store);
-        int nmodified = 0;
-        try {
-            cursor.open(bindings);
-            int nnext = 0;
-            while (cursor.next()) {
-                nmodified++;    // TODO: This is not right.
-            }
-        } 
-        finally {
-            cursor.close();
-        }
+        UpdateResult updateResult = resultOperator.run(bindings, store);
         {        
             messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
-            messenger.writeString(statementType + " " + nmodified);
+            messenger.writeString(statementType + " " + updateResult.rowsModified());
             messenger.sendMessage();
         }
     }
@@ -79,7 +67,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
 
         public BoundStatement(String statementType,
                               StoreAdapter store,
-                              PhysicalOperator resultOperator,
+                              UpdatePlannable resultOperator,
                               Bindings bindings) {
             super(statementType, store, resultOperator);
             this.bindings = bindings;

@@ -40,6 +40,73 @@ import java.util.*;
  */
 public class SimplifiedQuery
 {
+    public static class TableTree extends TableTreeBase<TableNode> {
+        protected TableNode createNode(UserTable table) {
+            return new TableNode(table);
+        }
+    }
+
+    public static class TableNode extends TableTreeBase.TableNodeBase<TableNode> {
+        private boolean used, outer;
+        private List<ColumnCondition> conditions;
+        private List<ColumnExpression> selectColumns;
+
+        public TableNode(UserTable table) {
+            super(table);
+        }
+
+        public boolean isUsed() {
+            return used;
+        }
+        public void setUsed(boolean used) {
+            this.used = used;
+        }
+
+        /** Is this table on the optional end of an outer join? */
+        public boolean isOuter() {
+            return outer;
+        }
+        public void setOuter(boolean outer) {
+            this.outer = outer;
+        }
+
+        public boolean hasConditions() {
+            return ((conditions != null) && !conditions.isEmpty());
+        }
+
+        public List<ColumnCondition> getConditions() {
+            return conditions;
+        }
+
+        protected void addCondition(ColumnCondition condition) {
+            if (conditions == null)
+                conditions = new ArrayList<ColumnCondition>();
+            conditions.add(condition);
+        }
+
+        public boolean hasSelectColumns() {
+            return ((selectColumns != null) && !selectColumns.isEmpty());
+        }
+
+        public List<ColumnExpression> getSelectColumns() {
+            return selectColumns;
+        }
+
+        protected void addSelectColumn(ColumnExpression selectColumn) {
+            if (selectColumns == null)
+                selectColumns = new ArrayList<ColumnExpression>();
+            selectColumns.add(selectColumn);
+        }
+
+        /** Is this table or any beneath it included in the query? */
+        public boolean subtreeUsed() {
+            for (TableNode descendant : subtree())
+                if (descendant.isUsed())
+                    return true;
+            return false;
+        }
+    }
+
     public static abstract class BaseJoinNode {
         // For now, order by tableId, i.e. creation time.
         public abstract Integer getMinOrdinal();
@@ -54,34 +121,38 @@ public class SimplifiedQuery
 
         // Return true if conditions mean this node cannot be left
         // out, after adjusting for such inputs.
-        public abstract boolean promoteOuterJoins(Set<UserTable> conditionTables);
+        public abstract boolean promoteOuterJoins(Collection<TableNode> conditionTables);
     }
 
     // A join to an actual table.
     public static class TableJoinNode extends BaseJoinNode {
-        private UserTable table;
+        private TableNode table;
 
-        public TableJoinNode(UserTable table) {
+        public TableJoinNode(TableNode table) {
             this.table = table;
         }
 
-        public UserTable getTable() {
+        public TableNode getTable() {
             return table;
         }
 
         public Integer getMinOrdinal() {
-            return table.getTableId();
+            return table.getTable().getTableId();
         }
         public Integer getMaxOrdinal() {
-            return table.getTableId();
+            return table.getTable().getTableId();
         }
 
         public boolean isTable() {
             return true;
         }
 
-        public boolean promoteOuterJoins(Set<UserTable> conditionTables) {
-            return conditionTables.contains(table);
+        public boolean promoteOuterJoins(Collection<TableNode> conditionTables) {
+            if (conditionTables.contains(table)) {
+                table.setOuter(false);
+                return true;
+            }
+            return false;
         }
 
         public String toString() {
@@ -147,7 +218,7 @@ public class SimplifiedQuery
 
         // If the optional side of an outer join cannot be null, turn it into inner.
         // If either side of a join has a condition, then the join result does.
-        public boolean promoteOuterJoins(Set<UserTable> conditionTables) {
+        public boolean promoteOuterJoins(Collection<TableNode> conditionTables) {
             boolean lp = left.promoteOuterJoins(conditionTables);
             boolean rp = right.promoteOuterJoins(conditionTables);
             switch (joinType) {
@@ -187,15 +258,21 @@ public class SimplifiedQuery
         public boolean isColumn() {
             return false;
         }
-        public abstract Expression generateExpression(Map<UserTable,Integer> fieldOffsets);
+        public abstract Expression generateExpression(Map<TableNode,Integer> fieldOffsets);
     }
 
     // An operand from a table column.
     public static class ColumnExpression extends SimpleExpression {
+        private TableNode table;
         private Column column;
         
-        public ColumnExpression(Column column) {
+        public ColumnExpression(TableNode table, Column column) {
+            this.table = table;
             this.column = column;
+        }
+
+        public TableNode getTable() {
+            return table;
         }
 
         public Column getColumn() {
@@ -210,8 +287,7 @@ public class SimplifiedQuery
             return true;
         }
 
-        public Expression generateExpression(Map<UserTable,Integer> fieldOffsets) {
-            UserTable table = column.getUserTable();
+        public Expression generateExpression(Map<TableNode,Integer> fieldOffsets) {
             return field(fieldOffsets.get(table) + column.getPosition());
         }
     }
@@ -234,7 +310,7 @@ public class SimplifiedQuery
             return value.toString();
         }
 
-        public Expression generateExpression(Map<UserTable,Integer> fieldOffsets) {
+        public Expression generateExpression(Map<TableNode,Integer> fieldOffsets) {
             return literal(value);
         }
     }
@@ -255,7 +331,7 @@ public class SimplifiedQuery
             return "$" + position;
         }
 
-        public Expression generateExpression(Map<UserTable,Integer> fieldOffsets) {
+        public Expression generateExpression(Map<TableNode,Integer> fieldOffsets) {
             return variable(position);
         }
     }
@@ -273,6 +349,12 @@ public class SimplifiedQuery
             this.left = left;
             this.right = right;
             this.operation = operation;
+
+            getTable().addCondition(this);
+        }
+
+        public TableNode getTable() {
+            return left.getTable();
         }
 
         public ColumnExpression getLeft() {
@@ -281,6 +363,7 @@ public class SimplifiedQuery
         public SimpleExpression getRight() {
             return right;
         }
+
         public Comparison getOperation() {
             return operation;
         }
@@ -351,7 +434,7 @@ public class SimplifiedQuery
         }
 
         // Turn this condition into an operator Expression.
-        public Expression generateExpression(Map<UserTable,Integer> fieldOffsets) {
+        public Expression generateExpression(Map<TableNode,Integer> fieldOffsets) {
             return compare(left.generateExpression(fieldOffsets),
                            operation,
                            right.generateExpression(fieldOffsets));
@@ -386,7 +469,7 @@ public class SimplifiedQuery
     private GroupBinding group = null;
     private BaseJoinNode joins = null;
     private List<List<SimpleExpression>> values = null;
-    private Set<UserTable> tables = new HashSet<UserTable>();
+    private TableTree tables = new TableTree();
     private List<SimpleExpression> selectColumns = null;
     private List<ColumnCondition> conditions = new ArrayList<ColumnCondition>();
     private List<SortColumn> sortColumns = null;
@@ -442,9 +525,9 @@ public class SimplifiedQuery
 
         for (FromTable fromTable : select.getFromList()) {
             if (joins == null)
-                joins = getJoinNode(fromTable);
+                joins = getJoinNode(fromTable, false);
             else
-                joins = joinNodes(joins, getJoinNode(fromTable), JoinType.INNER);
+                joins = joinNodes(joins, getJoinNode(fromTable, false), JoinType.INNER);
         }
 
         ValueNode whereClause = select.getWhereClause();
@@ -467,6 +550,10 @@ public class SimplifiedQuery
             for (ResultColumn result : select.getResultColumns()) {
                 SimpleExpression column = getSimpleExpression(result.getExpression());
                 selectColumns.add(column);
+                if (column instanceof ColumnExpression) {
+                    ColumnExpression selectColumn = (ColumnExpression)column;
+                    selectColumn.getTable().addSelectColumn(selectColumn);
+                }
             }
         }
 
@@ -581,7 +668,8 @@ public class SimplifiedQuery
         limit = getIntegerConstant(limitClause, "Unsupported LIMIT");
     }
 
-    protected BaseJoinNode getJoinNode(FromTable fromTable) throws StandardException {
+    protected BaseJoinNode getJoinNode(FromTable fromTable, boolean outer) 
+            throws StandardException {
         if (fromTable instanceof FromBaseTable) {
             TableBinding tb = (TableBinding)fromTable.getUserData();
             if (tb == null) 
@@ -595,9 +683,11 @@ public class SimplifiedQuery
                 group = gb;
             else if (group != gb)
                 throw new UnsupportedSQLException("Unsupported multiple groups");
-            UserTable table = (UserTable)tb.getTable();
-            if (!tables.add(table))
+            TableNode table = tables.addNode((UserTable)tb.getTable());
+            if (table.isUsed())
                 throw new UnsupportedSQLException("Unsupported self join");
+            table.setUsed(true);
+            table.setOuter(outer);
             return new TableJoinNode(table);
         }
         else if (fromTable instanceof JoinNode) {
@@ -616,8 +706,12 @@ public class SimplifiedQuery
             default:
                 throw new UnsupportedSQLException("Unsupported join type", joinNode);
             }
-            return joinNodes(getJoinNode((FromTable)joinNode.getLeftResultSet()),
-                             getJoinNode((FromTable)joinNode.getRightResultSet()),
+            return joinNodes(getJoinNode((FromTable)joinNode.getLeftResultSet(),
+                                         outer || ((joinType == JoinType.RIGHT) ||
+                                                   (joinType == JoinType.FULL))),
+                             getJoinNode((FromTable)joinNode.getRightResultSet(),
+                                         outer || ((joinType == JoinType.LEFT) ||
+                                                   (joinType == JoinType.FULL))),
                              joinType);
         }
         else
@@ -629,18 +723,24 @@ public class SimplifiedQuery
         return new JoinJoinNode(left, right, joinType);
     }
 
+    protected ColumnExpression getColumnExpression(Column column)
+            throws StandardException {
+        TableNode table = tables.getNode(column.getUserTable());
+        return new ColumnExpression(table, column);
+    }
+
     protected ColumnExpression getColumnExpression(ValueNode operand)
             throws StandardException {
         Column column = getColumnReferenceColumn(operand, null);
         if (column == null) return null;
-        return new ColumnExpression(column);
+        return getColumnExpression(column);
     }
 
     protected SimpleExpression getSimpleExpression(ValueNode operand) 
             throws StandardException {
         if (operand instanceof ColumnReference)
-            return new ColumnExpression(getColumnReferenceColumn(operand, 
-                                                                 "Unsupported WHERE operand"));
+            return getColumnExpression(getColumnReferenceColumn(operand,
+                                                                "Unsupported operand"));
         else if (operand instanceof ConstantNode)
             return new LiteralExpression(((ConstantNode)operand).getValue());
         else if (operand instanceof ParameterNode)
@@ -651,8 +751,7 @@ public class SimplifiedQuery
             // attempt to do some here.
             return getSimpleExpression(((CastNode)operand).getCastOperand());
         else
-            throw new UnsupportedSQLException("Unsupported WHERE operand",
-                                              operand);
+            throw new UnsupportedSQLException("Unsupported operand", operand);
     }
 
     // Get the column that this node references or else return null or throw given error.
@@ -692,7 +791,7 @@ public class SimplifiedQuery
     public List<List<SimpleExpression>> getValues() {
         return values;
     }
-    public Set<UserTable> getTables() {
+    public TableTree getTables() {
         return tables;
     }
     public List<SimpleExpression> getSelectColumns() {
@@ -768,12 +867,12 @@ public class SimplifiedQuery
     // Such outer joins usually arise from programmatically generated
     // queries, such as views.
     protected void promoteImpossibleOuterJoins() throws StandardException {
-        Set<UserTable> conditionTables = new HashSet<UserTable>();
+        Collection<TableNode> conditionTables = new HashSet<TableNode>();
         for (ColumnCondition condition : conditions) {
-            conditionTables.add(condition.getLeft().getColumn().getUserTable());
+            conditionTables.add(condition.getTable());
             if (condition.getRight().isColumn())
                 conditionTables.add(((ColumnExpression)
-                                     condition.getRight()).getColumn().getUserTable());
+                                     condition.getRight()).getTable());
         }
         joins.promoteOuterJoins(conditionTables);
     }
@@ -846,6 +945,12 @@ public class SimplifiedQuery
     // Is this column constant due to equality constraint?
     public boolean isColumnConstant(Column column) {
         return (findColumnConstantCondition(column, Comparison.EQ) != null);
+    }
+
+    public void removeConditions(Set<ColumnCondition> conditions) {
+        this.conditions.removeAll(conditions);
+        for (ColumnCondition condition : conditions)
+            condition.getTable().getConditions().remove(condition);
     }
 
 }

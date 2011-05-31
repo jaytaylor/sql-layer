@@ -90,7 +90,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                         Column column = columns.get(i);
                         Object field = row.field(resultColumnOffsets[i], bindings);
                         PostgresType type = types.get(i);
-                        byte[] value = type.encodeValue(field, column, 
+                        byte[] value = type.encodeValue(field,
                                                         messenger.getEncoding(),
                                                         isColumnBinary(i));
                         if (value == null) {

@@ -215,7 +215,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
                 Timing.sleep(2500);
                 timePoints.mark("DROP: IN");
-                ddl().dropIndexes(session, tableName, Collections.singleton("name"));
+                ddl().dropTableIndexes(session, tableName, Collections.singleton("name"));
                 timePoints.mark("DROP: OUT");
                 return null;
             }
@@ -449,7 +449,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 TableName table = new TableName(SCHEMA, TABLE);
                 Timing.sleep(2000);
                 timePoints.mark("INDEX: DROP>");
-                ddl().dropIndexes(ServiceManagerImpl.newSession(), table, Collections.singleton("name"));
+                ddl().dropTableIndexes(ServiceManagerImpl.newSession(), table, Collections.singleton("name"));
                 timePoints.mark("INDEX: <DROP");
                 return null;
             }
@@ -520,7 +520,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                         }
                 );
 
-                ddl().dropIndexes(session, tableName, indexNameCollection);
+                ddl().dropTableIndexes(session, tableName, indexNameCollection);
                 assertFalse("drop hook not removed!", ConcurrencyAtomicsDXLService.isDropIndexHookInstalled(session));
             }
         };

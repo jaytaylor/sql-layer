@@ -86,6 +86,10 @@ public class API
         return new BranchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, keepInput, limit);
     }
 
+    public static PhysicalOperator limit_Default(PhysicalOperator inputOperator, int rows) {
+        return new Limit_Default(inputOperator, rows);
+    }
+
     public static PhysicalOperator ancestorLookup_Default(PhysicalOperator inputOperator,
                                                           GroupTable groupTable,
                                                           RowType rowType,

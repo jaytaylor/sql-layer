@@ -32,6 +32,7 @@ public class PostgresServerManager implements PostgresService,
     Service<PostgresService>, JmxManageable {
     private ServiceManager serviceManager;
     private int port;
+    private int statementCacheCapacity;
     private PostgresServer server = null;
 
     public PostgresServerManager() {
@@ -40,6 +41,11 @@ public class PostgresServerManager implements PostgresService,
             .getProperty("akserver.postgres.port", "");
         if (portString.length() > 0) {
             this.port = Integer.parseInt(portString);
+        }
+        String capacityString = serviceManager.getConfigurationService()
+            .getProperty("akserver.postgres.statementCacheCapacity", "");
+        if (capacityString.length() > 0) {
+            this.statementCacheCapacity = Integer.parseInt(capacityString);
         }
     }
 
@@ -55,7 +61,7 @@ public class PostgresServerManager implements PostgresService,
 
     public void start() throws ServiceStartupException {
         if (port > 0) {
-            server = new PostgresServer(port);
+            server = new PostgresServer(port, statementCacheCapacity);
             server.start();
         } else {
             throw new ServiceStartupException("Invalid port specified for Postgres Server");
@@ -79,6 +85,10 @@ public class PostgresServerManager implements PostgresService,
         return port;
     }
     
+    public PostgresServer getServer() {
+        return server;
+    }
+
     /*** JmxManageable ***/
     
     @Override

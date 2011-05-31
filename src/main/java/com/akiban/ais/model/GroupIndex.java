@@ -47,6 +47,12 @@ public class GroupIndex extends Index
     {
         throw new UnsupportedOperationException("Define hkey() on GroupIndex");
     }
+    
+    @SuppressWarnings("unused")
+    private GroupIndex()
+    {
+        // GWT
+    }
 
     private Group group;
 }
