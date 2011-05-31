@@ -13,26 +13,30 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-/**
- * 
- */
 package com.akiban.server.store;
 
+import com.akiban.ais.io.CSVTarget;
+import com.akiban.ais.io.MessageSource;
+import com.akiban.ais.io.Reader;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.service.tree.TreeService;
 import com.persistit.Exchange;
+import com.persistit.Key;
 import com.persistit.Management.DisplayFilter;
 import com.persistit.Value;
+
+import java.nio.ByteBuffer;
 
 class RowDataDisplayFilter implements DisplayFilter {
 
     private final static String[] PROTECTED_VOLUME_NAMES = { "akiban_system",
             "akiban_txn" };
 
-    private final static String[] PROTECTED_TREE_NAMES = { "_status_",
-            "_schema_", "_txn_" };
+    private final static String[] PROTECTED_TREE_NAMES = { TreeService.SCHEMA_TREE_NAME,
+            TreeService.SCHEMA_TREE_NAME, "_txn_" };
     private final PersistitStore persistitStore;
     private final TreeService treeService;
     private DisplayFilter defaultFilter;
@@ -80,6 +84,15 @@ class RowDataDisplayFilter implements DisplayFilter {
                 final RowData rowData = new RowData(bytes);
                 persistitStore.expandRowData(exchange, rowData);
                 return rowData.toString(rowDef);
+            }
+            else if(treeName.equals(TreeService.SCHEMA_TREE_NAME)) {
+                final Key key = exchange.getKey();
+                if(key.decodeString().equals("byAIS")) {
+                    byte[] storedAIS = exchange.fetch().getValue().getByteArray();
+                    ByteBuffer buffer = ByteBuffer.wrap(storedAIS);
+                    AkibanInformationSchema ais = new Reader(new MessageSource(buffer)).load();
+                    return CSVTarget.toString(ais);
+                }
             }
         } catch (Exception e) {
             // fall through

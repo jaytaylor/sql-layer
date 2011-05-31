@@ -911,8 +911,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 new TableSubsetWriter(new MessageTarget(aisByteBuffer)) {
                     @Override
                     public boolean shouldSaveTable(Table table) {
-                        final String tmpVolume = getVolumeForSchemaTree(table.getName().getSchemaName());
-                        return tmpVolume.equals(volumeName);
+                        final String schemaName = table.getName().getSchemaName();
+                        return !schemaName.equals(AKIBAN_INFORMATION_SCHEMA) &&
+                               getVolumeForSchemaTree(schemaName).equals(volumeName);
                     }
                 }.save(newAIS);
                 aisByteBuffer.flip();
