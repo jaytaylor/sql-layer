@@ -20,6 +20,7 @@ import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.util.ArgumentValidation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,11 +66,8 @@ class Project_Default extends PhysicalOperator
 
     public Project_Default(PhysicalOperator inputOperator, RowType rowType, List<Expression> projections)
     {
-        checkArgument(rowType != null);
-        assert rowType != null;
-        checkArgument(projections != null);
-        assert projections != null;
-        checkArgument(!projections.isEmpty());
+        ArgumentValidation.notNull("rowType", rowType);
+        ArgumentValidation.notEmpty("projections", projections);
         this.inputOperator = inputOperator;
         this.rowType = rowType;
         this.projections = new ArrayList<Expression>(projections);

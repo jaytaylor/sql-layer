@@ -18,6 +18,7 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
+import com.akiban.util.ArgumentValidation;
 
 class GroupScan_Default extends PhysicalOperator
 {
@@ -51,7 +52,7 @@ class GroupScan_Default extends PhysicalOperator
 
     public GroupScan_Default(GroupTable groupTable, Limit limit, IndexKeyRange indexKeyRange)
     {
-        checkArgument(groupTable != null);
+        ArgumentValidation.notNull("groupTable", groupTable);
         this.groupTable = groupTable;
         this.limit = limit;
         this.indexKeyRange = indexKeyRange;

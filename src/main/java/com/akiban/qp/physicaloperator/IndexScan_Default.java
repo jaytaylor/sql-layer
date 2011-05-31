@@ -18,6 +18,7 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,8 +44,7 @@ class IndexScan_Default extends PhysicalOperator
 
     public IndexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
     {
-        checkArgument(indexType != null);
-        assert indexType != null;
+        ArgumentValidation.notNull("indexType", indexType);
         this.index = indexType.index();
         this.reverse = reverse;
         this.indexKeyRange = indexKeyRange;

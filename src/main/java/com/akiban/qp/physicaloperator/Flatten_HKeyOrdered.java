@@ -20,6 +20,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.util.ArgumentValidation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,10 +86,12 @@ class Flatten_HKeyOrdered extends PhysicalOperator
 
     public Flatten_HKeyOrdered(PhysicalOperator inputOperator, RowType parentType, RowType childType, int flags)
     {
-        checkArgument(parentType != null);
-        checkArgument(childType != null);
-        checkArgument((flags & (INNER_JOIN | LEFT_JOIN)) != (INNER_JOIN | LEFT_JOIN));
-        checkArgument((flags & (INNER_JOIN | RIGHT_JOIN)) != (INNER_JOIN | RIGHT_JOIN));
+        ArgumentValidation.notNull("parentType", parentType);
+        ArgumentValidation.notNull("childType", childType);
+        ArgumentValidation.isTrue("(flags & (INNER_JOIN | LEFT_JOIN)) != (INNER_JOIN | LEFT_JOIN)",
+                                  (flags & (INNER_JOIN | LEFT_JOIN)) != (INNER_JOIN | LEFT_JOIN));
+        ArgumentValidation.isTrue("(flags & (INNER_JOIN | RIGHT_JOIN)) != (INNER_JOIN | RIGHT_JOIN)",
+                                  (flags & (INNER_JOIN | RIGHT_JOIN)) != (INNER_JOIN | RIGHT_JOIN));
         assert parentType != null;
         assert childType != null;
         this.inputOperator = inputOperator;
