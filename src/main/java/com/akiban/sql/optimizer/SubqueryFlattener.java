@@ -76,14 +76,12 @@ public class SubqueryFlattener
      * some kind of join that might need special EXISTS processing (like
      * Derby's) when it actually gets generated.
      */
-    public StatementNode flatten(StatementNode stmt) throws StandardException {
-        if (stmt.getNodeType() == NodeTypes.CURSOR_NODE) {
-            ResultSetNode resultSet = ((CursorNode)stmt).getResultSetNode();
-            if (resultSet.getNodeType() == NodeTypes.SELECT_NODE) {
-                selectStack = new Stack<SelectNode>();
-                currentSelectNode = null;
-                selectNode((SelectNode)resultSet);
-            }
+    public DMLStatementNode flatten(DMLStatementNode stmt) throws StandardException {
+        ResultSetNode resultSet = stmt.getResultSetNode();
+        if (resultSet.getNodeType() == NodeTypes.SELECT_NODE) {
+            selectStack = new Stack<SelectNode>();
+            currentSelectNode = null;
+            selectNode((SelectNode)resultSet);
         }
         return stmt;
     }

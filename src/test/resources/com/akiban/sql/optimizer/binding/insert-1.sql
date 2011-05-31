@@ -1,0 +1,1 @@
+INSERT INTO T1(y,x) SELECT w,1 FROM t2

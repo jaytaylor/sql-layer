@@ -25,20 +25,19 @@ import java.util.Map;
 import java.util.Set;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.ais.util.DDLGenerator;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.GenericInvalidOperationException;
+import com.akiban.server.api.common.NoSuchGroupException;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.DuplicateColumnNameException;
 import com.akiban.server.api.ddl.DuplicateTableNameException;
@@ -312,43 +311,36 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
-        final Table table = getTable(session, indexesToAdd.iterator().next().getTableName());
         try {
-            schemaManager().alterTableAddIndexes(session, table.getName(), indexesToAdd);
-            checkCursorsForDDLModification(session, table);
+            schemaManager().createIndexes(session, indexesToAdd);
         }
         catch(InvalidOperationException e) {
+            throwIfInstanceOf(e, NoSuchTableException.class, NoSuchGroupException.class);
             throw new IndexAlterException(e);
         }
         catch(Exception e) {
             throw new GenericInvalidOperationException(e);
         }
-        
-        // Build special string used/required by Store
-        StringBuilder sb = new StringBuilder();
-        sb.append("table=(");
-        sb.append(table.getName().getTableName());
-        sb.append(") ");
-        
-        for(Index idx : indexesToAdd) {
-            sb.append("index=(");
-            sb.append(idx.getIndexName().getName());
-            sb.append(")");
+
+        // TODO: Keep GroupIndexes in main list when implemented at the store level
+        Collection<Index> newIndexes = new ArrayList<Index>();
+        for(Index index : indexesToAdd) {
+            if(index.isTableIndex()) {
+                Table table = getTable(session, ((TableIndex)index).getTable().getName());
+                newIndexes.add(table.getIndex(index.getIndexName().getName()));
+                checkCursorsForDDLModification(session, table);
+            }
         }
 
-        final String indexString = sb.toString();
         try {
-            store().buildIndexes(session, indexString, false);
+            store().buildIndexes(session, newIndexes, false);
         } catch(Exception e) {
-            // Try and roll back
-            List<String> indexNames = new ArrayList<String>(indexesToAdd.size());
-            for(Index idx : indexesToAdd) {
-                indexNames.add(idx.getIndexName().getName());
-            }
+            // Try and roll back all changes
             try {
-                dropIndexes(session, table.getName(), indexNames);
+                store().deleteIndexes(session, newIndexes);
+                schemaManager().dropIndexes(session, indexesToAdd);
             } catch(Exception e2) {
-                logger.error("Exception while rolling back failed createIndex : " + indexString, e2);
+                logger.error("Exception while rolling back failed createIndex: " + indexesToAdd, e2);
             }
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ioe, DuplicateKeyException.class);
@@ -357,25 +349,16 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public void dropIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
+    public void dropTableIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
             throws NoSuchTableException, IndexAlterException, GenericInvalidOperationException
     {
-        logger.trace("dropping indexes {}", indexNamesToDrop);
+        logger.trace("dropping table indexes {} {}", tableName, indexNamesToDrop);
         if(indexNamesToDrop.isEmpty() == true) {
             return;
         }
 
-        final Table table = getAIS(session).getTable(tableName);
-        if (table == null) {
-            throw new NoSuchTableException(tableName);
-        }
-        
-        StringBuilder sb = new StringBuilder();
-        sb.append("table=(");
-        sb.append(tableName.getTableName());
-        sb.append(") ");
-
-        // Validate and build string for Store
+        final Table table = getTable(session, tableName);
+        Collection<Index> indexes = new HashSet<Index>();
         for(String indexName : indexNamesToDrop) {
             Index index = table.getIndex(indexName);
             if(index == null) {
@@ -384,17 +367,46 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             if(index.isPrimaryKey()) {
                 throw new IndexAlterException(ErrorCode.UNSUPPORTED_OPERATION, "Cannot drop primary key index");
             }
-            sb.append("index=(");
-            sb.append(indexName);
-            sb.append(") ");
+            indexes.add(index);
         }
         
-        // Drop them from the Store before schema change while IndexDefs still exist
-        store().deleteIndexes(session, sb.toString());
-        
         try {
-            schemaManager().alterTableDropIndexes(session, tableName, indexNamesToDrop);
+            // Drop them from the Store before while IndexDefs still exist
+            store().deleteIndexes(session, indexes);
+            schemaManager().dropIndexes(session, indexes);
             checkCursorsForDDLModification(session, table);
+        } catch(Exception e) {
+            throw new GenericInvalidOperationException(e);
+        }
+    }
+
+    @Override
+    public void dropGroupIndexes(Session session, String groupName, Collection<String> indexNamesToDrop)
+            throws NoSuchGroupException, IndexAlterException, GenericInvalidOperationException {
+        logger.trace("dropping group indexes {} {}", groupName, indexNamesToDrop);
+        if(indexNamesToDrop.isEmpty()) {
+            return;
+        }
+
+        final Group group = getAIS(session).getGroup(groupName);
+        if (group == null) {
+            throw new NoSuchGroupException(groupName);
+        }
+
+        Collection<Index> indexes = new HashSet<Index>();
+        for(String indexName : indexNamesToDrop) {
+            final Index index = group.getIndex(indexName);
+            if(index == null) {
+                throw new IndexAlterException(ErrorCode.NO_INDEX, "Unknown index: " + indexName);
+            }
+            indexes.add(index);
+        }
+
+        try {
+            // TODO: Delete group index data when store supports it
+            //store().deleteIndexes(session, indexes);
+            schemaManager().dropIndexes(session, indexes);
+            // TODO: checkCursorsForDDLModification ?
         } catch(Exception e) {
             throw new GenericInvalidOperationException(e);
         }

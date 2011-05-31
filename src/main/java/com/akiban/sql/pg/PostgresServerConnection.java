@@ -18,11 +18,11 @@ package com.akiban.sql.pg;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.parser.CursorNode;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.service.instrumentation.PostgresSessionTracer;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.ServiceManager;
@@ -60,9 +60,11 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     private Session session;
     private ServiceManager serviceManager;
+    private int aisGeneration = -1;
     private AkibanInformationSchema ais;
     private String defaultSchemaName;
     private SQLParser parser;
+    private PostgresStatementCache statementCache;
     private PostgresStatementParser[] unparsedGenerators;
     private PostgresStatementGenerator[] parsedGenerators;
     private Thread thread;
@@ -108,8 +110,12 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     public void run() {
         try {
+            // We flush() when we mean it. 
+            // So, turn off kernel delay, but wrap a buffer so every
+            // message isn't its own packet.
+            socket.setTcpNoDelay(true);
             messenger = new PostgresMessenger(socket.getInputStream(),
-                                              socket.getOutputStream());
+                                              new BufferedOutputStream(socket.getOutputStream()));
             topLevel();
         }
         catch (Exception ex) {
@@ -208,7 +214,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         messenger.sendMessage(true);
     }
 
-    protected void processStartupMessage() throws IOException {
+    protected void processStartupMessage() throws IOException, StandardException {
         int version = messenger.readInt();
         switch (version) {
         case PostgresMessenger.VERSION_CANCEL:
@@ -238,7 +244,10 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 messenger.setEncoding(enc);
         }
 
-        makeGenerators();
+        // Get initial version of AIS.
+        session = ServiceManagerImpl.newSession();
+        serviceManager = ServiceManagerImpl.get();
+        updateAIS();
 
         {
             messenger.beginMessage(PostgresMessenger.AUTHENTICATION_TYPE);
@@ -257,8 +266,13 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         stop();                                         // That's all for this connection.
     }
 
-    protected void processSSLMessage() throws IOException {
-        throw new IOException("NIY");
+    protected void processSSLMessage() throws IOException, StandardException {
+        OutputStream raw = messenger.getOutputStream();
+        raw.write('N');         // No SSL support.
+        raw.flush();
+        // Now try to read a regular StartupMessage.
+        messenger.readMessage(false);
+        processStartupMessage();
     }
 
     protected void processPasswordMessage() throws IOException {
@@ -296,12 +310,20 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         sql = messenger.readString();
         sessionTracer.setCurrentStatement(sql);
         logger.info("Query: {}", sql);
+
+        updateAIS();
+
         PostgresStatement pstmt = null;
-        for (PostgresStatementParser parser : unparsedGenerators) {
-            // Try special recognition first; only allowed to turn into one statement.
-            pstmt = parser.parse(this, sql, null);
-            if (pstmt != null)
-                break;
+        if (statementCache != null)
+            pstmt = statementCache.get(sql);
+        if (pstmt == null) {
+            for (PostgresStatementParser parser : unparsedGenerators) {
+                // Try special recognition first; only allowed to turn
+                // into one statement.
+                pstmt = parser.parse(this, sql, null);
+                if (pstmt != null)
+                    break;
+            }
         }
         if (pstmt != null) {
             pstmt.sendDescription(this, false);
@@ -325,6 +347,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             }
             for (StatementNode stmt : stmts) {
                 pstmt = generateStatement(stmt, null);
+                if ((statementCache != null) && (stmts.size() == 1))
+                    statementCache.put(sql, pstmt);
                 pstmt.sendDescription(this, false);
                 try {
                     sessionTracer.beginEvent("sql: execute");
@@ -347,15 +371,24 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             paramTypes[i] = messenger.readInt();
         logger.info("Parse: {}", sql);
 
-        StatementNode stmt;
-        try {
-            sessionTracer.beginEvent("sql: parse");
-            stmt = parser.parseStatement(sql);
+        updateAIS();
+
+        PostgresStatement pstmt = null;
+        if (statementCache != null)
+            pstmt = statementCache.get(sql);
+        if (pstmt == null) {
+            StatementNode stmt;
+            try {
+                sessionTracer.beginEvent("sql: parse");
+                stmt = parser.parseStatement(sql);
+            }
+            finally {
+                sessionTracer.endEvent();
+            }
+            pstmt = generateStatement(stmt, paramTypes);
+            if (statementCache != null)
+                statementCache.put(sql, pstmt);
         }
-        finally {
-            sessionTracer.endEvent();
-        }
-        PostgresStatement pstmt = generateStatement(stmt, paramTypes);
         preparedStatements.put(stmtName, pstmt);
         messenger.beginMessage(PostgresMessenger.PARSE_COMPLETE_TYPE);
         messenger.sendMessage();
@@ -436,7 +469,13 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         String portalName = messenger.readString();
         int maxrows = messenger.readInt();
         PostgresStatement pstmt = boundPortals.get(portalName);
-        pstmt.execute(this, maxrows);
+        try {
+            sessionTracer.beginEvent("sql: execute");
+            pstmt.execute(this, maxrows);
+        }
+        finally {
+            sessionTracer.endEvent();
+        }
     }
 
     protected void processClose() throws IOException {
@@ -461,10 +500,18 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         stop();
     }
 
-    protected void makeGenerators() {
-        session = ServiceManagerImpl.newSession();
-        serviceManager = ServiceManagerImpl.get();
-        ais = serviceManager.getDXL().ddlFunctions().getAIS(session);
+    // When the AIS changes, throw everything away, since it might
+    // point to obsolete objects.
+    protected void updateAIS() throws StandardException {
+        DDLFunctions ddl = serviceManager.getDXL().ddlFunctions();
+        // TODO: This could be more reliable if the AIS object itself
+        // also knew its generation. Right now, can get new generation
+        // # and old AIS and not notice until next change.
+        int currentGeneration = ddl.getGeneration();
+        if (aisGeneration == currentGeneration) 
+            return;             // Unchanged.
+        aisGeneration = currentGeneration;
+        ais = ddl.getAIS(session);
 
         parser = new SQLParser();
 
@@ -477,6 +524,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
+        statementCache = server.getStatementCache(aisGeneration);
         unparsedGenerators = new PostgresStatementParser[] {
             new PostgresEmulatedMetaDataStatementParser(this)
         };

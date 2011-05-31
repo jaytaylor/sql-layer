@@ -73,9 +73,7 @@ public class PostgresExplainStatement implements PostgresStatement
         for (String row : explanation) {
             messenger.beginMessage(PostgresMessenger.DATA_ROW_TYPE);
             messenger.writeShort(1);
-            byte[] value = colType.encodeValue(row, null, 
-                                               messenger.getEncoding(),
-                                               false);
+            byte[] value = colType.encodeValue(row, messenger.getEncoding(), false);
             messenger.writeInt(value.length);
             messenger.write(value);
             messenger.sendMessage();

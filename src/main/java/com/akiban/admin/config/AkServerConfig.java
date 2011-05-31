@@ -26,12 +26,6 @@ public class AkServerConfig
         return properties.getProperty(PROPERTY_DATAPATH);
     }
 
-    public Boolean verbose()
-    {
-        String verboseString = properties.getProperty(PROPERTY_VERBOSE);
-        return verboseString == null ? null : Boolean.valueOf(verboseString);
-    }
-
     public String mysqlInstallDir()
     {
         return properties.getProperty(PROPERTY_MYSQL_INSTALL_DIR, DEFAULT_MYSQL_INSTALL_DIR);
@@ -53,7 +47,6 @@ public class AkServerConfig
     }
 
     private static final String PROPERTY_DATAPATH = "akserver.datapath";
-    private static final String PROPERTY_VERBOSE = "akserver.verbose";
     private static final String PROPERTY_MYSQL_INSTALL_DIR = "akserver.mysql_install_dir";
     private static final String PROPERTY_JAR_FILE = "akserver.jar_file";
     private static final String PROPERTY_MAX_HEAP_MB = "akserver.max_heap_mb";

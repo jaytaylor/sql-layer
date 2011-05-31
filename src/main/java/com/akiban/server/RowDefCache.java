@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.akiban.ais.model.TableIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -183,7 +184,7 @@ public class RowDefCache {
      * ordinal is to be assigned may not be "dirty". A newly constructed
      * TableStatus is dirty; one that has been validated through the
      * loadTableStatusRecords method is not dirty.
-     * 
+     *
      * @param schemaManager
      * @throws PersistitException
      */
@@ -247,7 +248,7 @@ public class RowDefCache {
         return groupTable.getName().toString();
     }
     
-    private static String getTreeName(String groupName, Index index) {
+    private static String getTreeName(String groupName, TableIndex index) {
         IndexName iname = index.getIndexName();
         String schemaName = iname.getSchemaName();
         String tableName = iname.getTableName();
@@ -307,7 +308,7 @@ public class RowDefCache {
 
         // Secondary indexes
         List<IndexDef> indexDefList = new ArrayList<IndexDef>();
-        for (Index index : table.getIndexesIncludingInternal()) {
+        for (TableIndex index : table.getIndexesIncludingInternal()) {
             List<IndexColumn> indexColumns = index.getColumns();
             if (!indexColumns.isEmpty()) {
                 String treeName = getTreeName(groupTableName, index);
@@ -349,7 +350,7 @@ public class RowDefCache {
         final String groupTableTreeName = getTreeName(table);
         // Secondary indexes
         final List<IndexDef> indexDefList = new ArrayList<IndexDef>();
-        for (Index index : table.getIndexes()) {
+        for (TableIndex index : table.getIndexes()) {
             List<IndexColumn> indexColumns = index.getColumns();
             if (!indexColumns.isEmpty()) {
                 String treeName = getTreeName(groupTableName, index);

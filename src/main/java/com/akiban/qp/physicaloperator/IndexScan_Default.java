@@ -15,8 +15,9 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.rowtype.IndexRowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,14 +36,16 @@ class IndexScan_Default extends PhysicalOperator
     @Override
     protected Cursor cursor(StoreAdapter adapter)
     {
-        return new Execution(adapter, indexKeyRange);
+        return new Execution(adapter);
     }
 
     // IndexScan_Default interface
 
-    public IndexScan_Default(Index index, boolean reverse, IndexKeyRange indexKeyRange)
+    public IndexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
     {
-        this.index = index;
+        checkArgument(indexType != null);
+        assert indexType != null;
+        this.index = indexType.index();
         this.reverse = reverse;
         this.indexKeyRange = indexKeyRange;
     }
@@ -53,7 +56,7 @@ class IndexScan_Default extends PhysicalOperator
 
     // Object state
 
-    private final Index index;
+    private final TableIndex index;
     private final boolean reverse;
     private final IndexKeyRange indexKeyRange;
 
@@ -80,8 +83,8 @@ class IndexScan_Default extends PhysicalOperator
             } else {
                 close();
             }
-            if (LOG.isInfoEnabled()) {
-                LOG.info("IndexScan: {}", next ? outputRow() : null);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("IndexScan: {}", next ? outputRow() : null);
             }
             return next;
         }
@@ -95,9 +98,9 @@ class IndexScan_Default extends PhysicalOperator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, IndexKeyRange keyRange)
+        Execution(StoreAdapter adapter)
         {
-            this.cursor = adapter.newIndexCursor(index, reverse, keyRange);
+            this.cursor = adapter.newIndexCursor(index, reverse, indexKeyRange);
         }
 
         // Object state

@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 
 import org.junit.Before;
@@ -54,7 +55,7 @@ public class GrouperTest extends OptimizerTestBase
         binder.bind(stmt);
         stmt = booleanNormalizer.normalize(stmt);
         typeComputer.compute(stmt);
-        stmt = subqueryFlattener.flatten(stmt);
+        stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
         grouper.group(stmt);
         grouper.rewrite(stmt);
         assertEqualsWithoutPattern(caseName,

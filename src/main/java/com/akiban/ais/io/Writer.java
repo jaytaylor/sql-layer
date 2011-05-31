@@ -77,6 +77,7 @@ public class Writer
         target.writeCount(groups.size());
         for (Group group : groups) {
             target.writeGroup(group.map());
+            nIndexes += group.getIndexes().size();
         }
     }
 
@@ -126,8 +127,15 @@ public class Writer
         }
     }
 
-    private void saveIndexes(Collection<GroupTable> groupTables, Collection<UserTable> userTables) throws Exception {
+    private void saveIndexes(Collection<Group> groups, Collection<GroupTable> groupTables,
+                             Collection<UserTable> userTables) throws Exception {
         target.writeCount(nIndexes);
+        for (Group group : groups) {
+            for (Index index : group.getIndexes()) {
+                target.writeIndex(index.map());
+                nIndexColumns += index.getColumns().size();
+            }
+        }
         for (UserTable userTable : userTables) {
             for (Index index : userTable.getIndexesIncludingInternal()) {
                 target.writeIndex(index.map());
@@ -142,8 +150,16 @@ public class Writer
         }
     }
 
-    private void saveIndexColumns(Collection<GroupTable> groupTables, Collection<UserTable> userTables) throws Exception {
+    private void saveIndexColumns(Collection<Group> groups, Collection<GroupTable> groupTables,
+                                  Collection<UserTable> userTables) throws Exception {
         target.writeCount(nIndexColumns);
+        for (Group group : groups) {
+            for (Index index : group.getIndexes()) {
+                for (IndexColumn indexColumn : index.getColumns()) {
+                    target.writeIndexColumn(indexColumn.map());
+                }
+            }
+        }
         for (UserTable userTable : userTables) {
             for (Index index : userTable.getIndexesIncludingInternal()) {
                 for (IndexColumn indexColumn : index.getColumns()) {
@@ -176,8 +192,8 @@ public class Writer
             saveColumns(groupTables, userTables);
             saveJoins(joins);
             saveJoinColumns(joins);
-            saveIndexes(groupTables, userTables);
-            saveIndexColumns(groupTables, userTables);
+            saveIndexes(groups, groupTables, userTables);
+            saveIndexColumns(groups, groupTables, userTables);
         } finally {
             target.close();
         }

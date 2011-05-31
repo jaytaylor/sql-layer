@@ -24,7 +24,9 @@ import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -40,12 +42,17 @@ import com.akiban.ais.io.Reader;
 import com.akiban.ais.io.TableSubsetWriter;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.IndexName;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.Type;
+import com.akiban.server.api.common.NoSuchGroupException;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.encoding.EncoderFactory;
 import com.akiban.server.service.config.ConfigurationService;
@@ -181,92 +188,165 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return newTable.getName();
     }
 
-    @Override
-    public void alterTableAddIndexes(Session session, TableName tableName, Collection<Index> indexes) throws Exception {
-        if(indexes.isEmpty()) {
-            return;
+    private static boolean inSameBranch(UserTable t1, UserTable t2) {
+        if(t1 == t2) {
+            return true;
         }
-
-        final AkibanInformationSchema ais = getAis(session);
-        final Table existingTable = ais.getTable(tableName);
-        final Table firstIndexTable = indexes.iterator().next().getTable();
-
-        if(existingTable == null) {
-            throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE, "Unknown table: " + tableName);
-        }
-        if(!firstIndexTable.getTableId().equals(existingTable.getTableId())) {
-            throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE, "TableId mismatch");
-        }
-
-        // Input validation: same table, not a primary key, not a duplicate index name, and
-        // referenced columns are valid
-        for(Index idx : indexes) {
-            if(!idx.getTable().equals(firstIndexTable)) {
-                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
-                                                    "Cannot add indexes to multiple tables");
+        // search for t2 in t1->root
+        Join join = t1.getParentJoin();
+        while(join != null) {
+            final UserTable parent = join.getParent();
+            if(parent == t2) {
+                return true;
             }
-            if(idx.isPrimaryKey()) {
+            join = parent.getParentJoin();
+        }
+        // search fo t1 in t2->root
+        join = t2.getParentJoin();
+        while(join != null) {
+            final UserTable parent = join.getParent();
+            if(parent == t1) {
+                return true;
+            }
+            join = parent.getParentJoin();
+        }
+        return false;
+    }
+    
+    @Override
+    public void createIndexes(Session session, Collection<Index> indexesToAdd) throws Exception {
+        final Set<String> schemaNames = new HashSet<String>();
+        final AkibanInformationSchema newAIS = new AkibanInformationSchema();
+        new Writer(new AISTarget(newAIS)).save(ais);
+        final AISBuilder builder = new AISBuilder(newAIS);
+
+        for(Index index : indexesToAdd) {
+            if(index.isPrimaryKey()) {
                 throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION, "Cannot add primary key");
             }
-            final String indexName = idx.getIndexName().getName();
-            if(existingTable.getIndex(indexName) != null) {
-                throw new InvalidOperationException(ErrorCode.DUPLICATE_KEY, "Index already exists: " + indexName);
-            }
-            for(IndexColumn idxCol : idx.getColumns()) {
-                final Column refCol = idxCol.getColumn();
-                final Column tableCol = existingTable.getColumn(refCol.getPosition());
-                if (!refCol.getName().equals(tableCol.getName()) ||
-                    !refCol.getType().equals(tableCol.getType())) {
-                    throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
-                                                        "Index column does not match table column");
+
+            final Index curIndex;
+            final Index newIndex;
+            final Group newGroup;
+            final IndexName indexName = index.getIndexName();
+
+            switch(index.getIndexType()) {
+                case TABLE:
+                {
+                    final TableName tableName = new TableName(indexName.getSchemaName(), indexName.getTableName());
+                    final UserTable newTable = newAIS.getUserTable(tableName);
+                    if(newTable == null) {
+                        throw new NoSuchTableException(tableName);
+                    }
+                    curIndex = newTable.getIndex(indexName.getName());
+                    schemaNames.add(indexName.getSchemaName());
+                    newGroup = newTable.getGroup();
+                    Integer newId = SchemaDefToAis.findMaxIndexIDInGroup(newAIS, newGroup) + 1;
+                    newIndex = TableIndex.create(newAIS, newTable, indexName.getName(), newId, index.isUnique(),
+                                                 index.getConstraint());
                 }
+                break;
+                case GROUP:
+                {
+                    newGroup = newAIS.getGroup(indexName.getTableName());
+                    if(newGroup == null) {
+                        throw new NoSuchGroupException(indexName.getTableName());
+                    }
+                    curIndex = newGroup.getIndex(indexName.getName());
+                    schemaNames.add(newGroup.getGroupTable().getName().getSchemaName());
+                    Integer newId = SchemaDefToAis.findMaxIndexIDInGroup(newAIS, newGroup) + 1;
+                    newIndex = GroupIndex.create(newAIS, newGroup, indexName.getName(), newId, index.isUnique(),
+                                                 index.getConstraint());
+                }
+                break;
+                default:
+                    throw new IllegalArgumentException("Unknown index type: " + index);
             }
-        }
 
-        final AkibanInformationSchema newAIS = new AkibanInformationSchema();
-        new Writer(new AISTarget(newAIS)).save(ais);
-        final Table newTable = newAIS.getTable(tableName);
-
-        // All OK, add to current table
-        Integer curId = SchemaDefToAis.findMaxIndexIDInGroup(newAIS, newTable.getGroup());
-        assert curId != null : newTable;
-        for(Index idx : indexes) {
-            Index newIndex = Index.create(newAIS, newTable, idx.getIndexName().getName(), ++curId,
-                                          idx.isUnique(), idx.getConstraint());
-
-            for(IndexColumn idxCol : idx.getColumns()) {
-                Column refCol = newTable.getColumn(idxCol.getColumn().getPosition());
-                IndexColumn indexCol = new IndexColumn(newIndex, refCol, idxCol.getPosition(),
-                                                       idxCol.isAscending(), idxCol.getIndexedLength());
-                newIndex.addColumn(indexCol);
+            if(curIndex != null) {
+                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
+                                                    "Index already exists: " + indexName);
             }
+            if(index.getColumns().isEmpty()) {
+                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION, "Index has no columns: " + index);
+            }
+
+            UserTable lastTable = null;
+            for(IndexColumn indexCol : index.getColumns()) {
+                final TableName refTableName = indexCol.getColumn().getTable().getName();
+                final UserTable newRefTable = newAIS.getUserTable(refTableName);
+                if(newRefTable == null) {
+                    throw new NoSuchTableException(refTableName);
+                }
+                if(!newRefTable.getGroup().equals(newGroup)) {
+                    throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
+                                                        "Table not in group: " + refTableName);
+                }
+                if(lastTable != null && !inSameBranch(lastTable, newRefTable)) {
+                    throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
+                                                        "Branching group index: " + lastTable + "," + newRefTable);
+                }
+                lastTable = newRefTable;
+
+                final Column column = indexCol.getColumn();
+                final Column newColumn = newRefTable.getColumn(column.getName());
+                if(newColumn == null) {
+                    throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
+                                                        "Unknown column: " + column.getName());
+                }
+                if(!column.getType().equals(newColumn.getType())) {
+                    throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
+                                                        "Column type mismatch: "  + column + "," + newColumn);
+                }
+                IndexColumn newIndexCol = new IndexColumn(newIndex, newColumn, indexCol.getPosition(),
+                                                          indexCol.isAscending(), indexCol.getIndexedLength());
+                newIndex.addColumn(newIndexCol);
+            }
+
             newIndex.freezeColumns();
+            builder.generateGroupTableIndexes(newGroup);
         }
 
-        new AISBuilder(newAIS).generateGroupTableIndexes(newTable.getGroup());
-        commitAISChange(session, newAIS, tableName.getSchemaName(), null);
+        for(String schema : schemaNames) {
+            commitAISChange(session, newAIS, schema, null);
+        }
     }
 
     @Override
-    public void alterTableDropIndexes(Session session, TableName tableName, Collection<String> indexNames)
-            throws Exception {
-        if(indexNames.isEmpty()) {
-            return;
-        }
-
+    public void dropIndexes(Session session, Collection<Index> indexesToDrop) throws Exception {
         final AkibanInformationSchema newAIS = new AkibanInformationSchema();
         new Writer(new AISTarget(newAIS)).save(ais);
-        final Table newTable = newAIS.getTable(tableName);
-        List<Index> indexesToDrop = new ArrayList<Index>();
-        for(String indexName : indexNames) {
-            final Index index = newTable.getIndex(indexName);
-            indexesToDrop.add(index);
+        final AISBuilder builder = new AISBuilder(newAIS);
+        final Set<String> schemaNames = new HashSet<String>();
+
+        for(Index index : indexesToDrop) {
+            final IndexName name = index.getIndexName();
+            switch(index.getIndexType()) {
+                case TABLE:
+                    schemaNames.add(name.getSchemaName());
+                    Table newTable = newAIS.getUserTable(new TableName(name.getSchemaName(), name.getTableName()));
+                    if(newTable != null) {
+                        newTable.removeIndexes(Collections.singleton(newTable.getIndex(name.getName())));
+                        builder.generateGroupTableIndexes(newTable.getGroup());
+                    }
+                break;
+                case GROUP:
+                    Group newGroup = newAIS.getGroup(name.getTableName());
+                    if(newGroup != null) {
+                        schemaNames.add(newGroup.getGroupTable().getName().getSchemaName());
+                        newGroup.removeIndexes(Collections.singleton(newGroup.getIndex(name.getName())));
+                    }
+                break;
+                default:
+                    throw new IllegalArgumentException("Unknown index type: " + index);
+            }
         }
 
-        newTable.removeIndexes(indexesToDrop);
-        new AISBuilder(newAIS).generateGroupTableIndexes(newTable.getGroup());
-        commitAISChange(session, newAIS, tableName.getSchemaName(), null);
+        for(String schema : schemaNames) {
+            commitAISChange(session, newAIS, schema, null);
+        }
     }
+
 
     @Override
     public void deleteTableDefinition(final Session session, final String schemaName,
@@ -537,16 +617,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
                     // Load stored AIS data from each schema tree
                     treeService.visitStorage(session, new TreeVisitor() {
-                        @Override
-                        public void visit(Exchange ex) throws Exception {
-                            ex.clear().append(BY_AIS);
-                            if(ex.isValueDefined()) {
-                                byte[] storedAIS = ex.fetch().getValue().getByteArray();
-                                ByteBuffer buffer = ByteBuffer.wrap(storedAIS);
-                                new Reader(new MessageSource(buffer)).load(newAIS);
-                            }
-                        }
-                    }, SCHEMA_TREE_NAME);
+                                                 @Override
+                                                 public void visit(Exchange ex) throws Exception {
+                                                     ex.clear().append(BY_AIS);
+                                                     if(ex.isValueDefined()) {
+                                                         byte[] storedAIS = ex.fetch().getValue().getByteArray();
+                                                         ByteBuffer buffer = ByteBuffer.wrap(storedAIS);
+                                                         new Reader(new MessageSource(buffer)).load(newAIS);
+                                                     }
+                                                 }
+                                             }, SCHEMA_TREE_NAME);
 
                     forceNewTimestamp();
                     onTransactionCommit(newAIS, updateTimestamp.get());

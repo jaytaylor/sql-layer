@@ -19,7 +19,7 @@ import java.io.Serializable;
 
 public class IndexName implements Serializable
 {
-    private Table table;
+    private TableName tableName;
     private String indexName;
 
     @SuppressWarnings("unused")
@@ -28,26 +28,26 @@ public class IndexName implements Serializable
         // GWT
     }
 
-    public IndexName(Table table, String indexName)
+    public IndexName(TableName tableName, String indexName)
     {
-        this.table = table;
+        this.tableName = tableName;
         this.indexName = indexName;
     }
 
     @Override
     public String toString()
     {
-        return indexName;
+        return tableName.toString() + "." + indexName;
     }
 
     public String getSchemaName()
     {
-        return table.getName().getSchemaName();
+        return tableName.getSchemaName();
     }
 
     public String getTableName()
     {
-        return table.getName().getTableName();
+        return tableName.getTableName();
     }
 
     public String getName()

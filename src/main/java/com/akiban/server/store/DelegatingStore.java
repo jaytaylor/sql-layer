@@ -15,6 +15,7 @@
 
 package com.akiban.server.store;
 
+import com.akiban.ais.model.Index;
 import com.akiban.server.FieldDef;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
@@ -26,6 +27,8 @@ import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.service.session.Session;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
+
+import java.util.Collection;
 
 public class DelegatingStore<S extends Store> implements Store {
 
@@ -66,18 +69,6 @@ public class DelegatingStore<S extends Store> implements Store {
 
     public RowDefCache getRowDefCache() {
         return delegate.getRowDefCache();
-    }
-
-    public IndexManager getIndexManager() {
-        return delegate.getIndexManager();
-    }
-
-    public void setVerbose(final boolean verbose) {
-        delegate.setVerbose(verbose);
-    }
-
-    public boolean isVerbose() {
-        return delegate.isVerbose();
     }
 
     public void writeRow(final Session session, final RowData rowData) throws Exception {
@@ -140,16 +131,25 @@ public class DelegatingStore<S extends Store> implements Store {
         delegate.analyzeTable(session, tableId);
     }
 
-    public void buildIndexes(final Session session, final String ddl, final boolean defer) throws Exception {
-        delegate.buildIndexes(session, ddl, defer);
+    public void analyzeTable(final Session session, final int tableId, final int sampleSize) throws Exception {
+        delegate.analyzeTable(session, tableId, sampleSize);
     }
 
-    public void flushIndexes(final Session session) {
+    public void flushIndexes(final Session session) throws Exception {
         delegate.flushIndexes(session);
     }
 
-    public void deleteIndexes(final Session session, final String ddl) {
-        delegate.deleteIndexes(session, ddl);
+    public void buildIndexes(Session session, Collection<Index> indexes, boolean defer) throws Exception {
+        delegate.buildIndexes(session, indexes, defer);
+    }
+
+    public void deleteIndexes(Session session, Collection<Index> indexes) throws Exception {
+        delegate.deleteIndexes(session, indexes);
+    }
+
+    @Override
+    public void buildAllIndexes(Session session, boolean deferIndexes) throws Exception {
+        delegate.buildAllIndexes(session, deferIndexes);
     }
 
     public boolean isDeferIndexes() {

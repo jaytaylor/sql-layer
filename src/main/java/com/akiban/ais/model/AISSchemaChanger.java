@@ -63,7 +63,13 @@ public class AISSchemaChanger implements Visitor
     @Override
     public void visitIndex(Index index) throws Exception
     {
-        updateTableName( index.getTable() );
+        IndexName indexName = index.getIndexName();
+        if (!indexName.getSchemaName().equals(from)) {
+            return;
+        }
+        IndexName newName = new IndexName(new TableName(indexName.getSchemaName(), indexName.getTableName()),
+                                          indexName.getName());
+        index.setIndexName(newName);
     }
 
     @Override

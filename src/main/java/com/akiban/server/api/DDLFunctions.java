@@ -25,6 +25,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
+import com.akiban.server.api.common.NoSuchGroupException;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.DuplicateColumnNameException;
 import com.akiban.server.api.ddl.DuplicateTableNameException;
@@ -208,11 +209,11 @@ public interface DDLFunctions {
     void forceGenerationUpdate();
     
     /**
-     * Create new indexes on an existing table. All indexes must exist on the same table. Primary
+     * Create new indexes on existing table(s). Both Table and Group indexes are supported. Primary
      * keys can not be created through this interface. Specified index IDs will not be used as they
      * are recalculated later. Blocks until the actual index data has been created.
      * @param indexesToAdd a list of indexes to add to the existing AIS
-     * @throws IndexAlterException, InvalidOperationException
+     * @throws InvalidOperationException
      */
     void createIndexes(Session session, Collection<Index> indexesToAdd)
             throws NoSuchTableException,
@@ -226,8 +227,18 @@ public interface DDLFunctions {
      * @param indexesToDrop list of indexes to drop
      * @throws InvalidOperationException
      */
-    void dropIndexes(Session session, TableName tableName, Collection<String> indexesToDrop)
+    void dropTableIndexes(Session session, TableName tableName, Collection<String> indexesToDrop)
             throws NoSuchTableException,
+            IndexAlterException,
+            GenericInvalidOperationException;
+
+    /**
+     * Drop indexes on an existing roup.
+     * @param indexesToDrop
+     * @throws InvalidOperationException
+     */
+    void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop)
+            throws NoSuchGroupException,
             IndexAlterException,
             GenericInvalidOperationException;
 }

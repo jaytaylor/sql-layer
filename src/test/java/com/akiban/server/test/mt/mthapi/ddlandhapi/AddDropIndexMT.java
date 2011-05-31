@@ -17,6 +17,7 @@ package com.akiban.server.test.mt.mthapi.ddlandhapi;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
@@ -128,11 +129,11 @@ public final class AddDropIndexMT extends HapiMTBase {
 
                 UserTable parentTable = ddl.getUserTable(session, tableName);
 
-                Index stringIndex = new Index(parentTable, indexName, 2, false, "KEY");
+                Index stringIndex = TableIndex.create(null, parentTable, indexName, 2, false, "KEY");
                 stringIndex.addColumn(
                         new IndexColumn(stringIndex, parentTable.getColumn("aString"), 0, true, null)
                 );
-                Index numIndex = new Index(parentTable, indexName, 2, false, "KEY");
+                Index numIndex = TableIndex.create(null, parentTable, indexName, 2, false, "KEY");
                 numIndex.addColumn(
                         new IndexColumn(numIndex, parentTable.getColumn("anInt"), 0, true, null)
                 );
@@ -151,7 +152,7 @@ public final class AddDropIndexMT extends HapiMTBase {
                         createForString = ! createForString;
                     }
                     else {
-                        ddl.dropIndexes(session, tableName, indexNameCollection);
+                        ddl.dropTableIndexes(session, tableName, indexNameCollection);
                     }
                     shouldCreate = ! shouldCreate;
                 }

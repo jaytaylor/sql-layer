@@ -15,10 +15,13 @@
 
 package com.akiban.qp.row;
 
+import com.akiban.ais.model.UserTable;
+
 public interface HKey
 {
     boolean prefixOf(HKey hKey);
     int segments();
     void useSegments(int segments);
     void copyTo(HKey target);
+    void extend(UserTable userTable);
 }

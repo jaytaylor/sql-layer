@@ -23,95 +23,69 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Index implements Serializable, ModelNames, Traversable
+public abstract class Index implements Serializable, ModelNames, Traversable
 {
     public static Index create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         Index index = null;
         String schemaName = (String) map.get(index_schemaName);
         String tableName = (String) map.get(index_tableName);
+        String indexType = (String) map.get(index_indexType);
         String indexName = (String) map.get(index_indexName);
         Integer indexId = (Integer) map.get(index_indexId);
         Boolean unique = (Boolean) map.get(index_unique);
         String constraint = (String) map.get(index_constraint);
-        Table table = ais.getTable(schemaName, tableName);
-        if (table != null) {
-            index = Index.create(ais, table, indexName, indexId, unique, constraint);
-        }
-        return index;
-    }
-
-    public static Index create(AkibanInformationSchema ais,
-                               Table table,
-                               String indexName,
-                               Integer indexId,
-                               Boolean isUnique,
-                               String constraint)
-    {
-        Index index = new Index(table, indexName, indexId, isUnique, constraint);
-        table.addIndex(index);
-        return index;
-    }
-    
-    // For a user table index: the user table hkey
-    // For a group table index: the hkey of the leafmost user table, but with user table columns replaced by
-    // group table columns.
-    public HKey hKey()
-    {
-        if (hKey == null) {
-            if (table.isUserTable()) {
-                hKey = ((UserTable) table).hKey();
-            } else {
-                // Find the user table corresponding to this index. Currently, the columns of a group table index all
-                // correspond to the same user table.
-                UserTable userTable = null;
-                for (IndexColumn indexColumn : columns) {
-                    Column userColumn = indexColumn.getColumn().getUserColumn();
-                    if (userTable == null) {
-                        userTable = (UserTable) userColumn.getTable();
-                    } else {
-                        assert userTable == userColumn.getTable();
-                    }
-                }
-                // Construct an hkey like userTable.hKey(), but with group columns replacing user columns.
-                assert userTable != null : this;
-                hKey = userTable.branchHKey();
+        if(IndexType.TABLE.toString().equals(indexType)) {
+            Table table = ais.getTable(schemaName, tableName);
+            if (table != null) {
+                index = TableIndex.create(ais, table, indexName, indexId, unique, constraint);
             }
         }
-        return hKey;
+        else if(IndexType.GROUP.toString().equals(indexType)) {
+            Group group = ais.getGroup(tableName);
+            if (group != null) {
+                index = GroupIndex.create(ais, group, indexName, indexId, unique, constraint);
+            }
+        }
+        return index;
     }
 
-    @SuppressWarnings("unused")
-    private Index()
+    protected Index(TableName tableName, String indexName, Integer indexId, Boolean isUnique, String constraint)
     {
-        // GWT
-    }
-
-    public Index(Table table,
-                 String indexName,
-                 Integer indexId,
-                 Boolean isUnique,
-                 String constraint)
-    {
-        this.table = table;
-        this.indexName = new IndexName(table, indexName);
+        this.indexName = new IndexName(tableName, indexName);
         this.indexId = indexId;
         this.isUnique = isUnique;
         this.constraint = constraint;
         columns = new ArrayList<IndexColumn>();
     }
 
+    public abstract boolean isTableIndex();
+
+    public boolean isGroupIndex()
+    {
+        return !isTableIndex();
+    }
+
+    public abstract HKey hKey();
+
+    @SuppressWarnings("unused")
+    protected Index()
+    {
+        // GWT
+    }
+
     @Override
     public String toString()
     {
-        return "Index(" + table + "." + indexName + columns + ")";
+        return "Index(" + indexName + columns + ")";
     }
 
     public Map<String, Object> map()
     {
         Map<String, Object> map = new HashMap<String, Object>();
-        map.put(index_schemaName, table.getName().getSchemaName());
-        map.put(index_tableName, table.getName().getTableName());
+        map.put(index_schemaName, indexName.getSchemaName());
+        map.put(index_tableName, indexName.getTableName());
+        map.put(index_indexType, getIndexType().toString());
         map.put(index_indexName, indexName.getName());
         map.put(index_indexId, indexId);
         map.put(index_unique, isUnique);
@@ -145,24 +119,19 @@ public class Index implements Serializable, ModelNames, Traversable
         return constraint.equals(PRIMARY_KEY_CONSTRAINT);
     }
 
-    public Table getTable()
-    {
-        return table;
-    }
-
     public String getConstraint()
     {
         return constraint;
     }
 
-    public TableName getTableName()
-    {
-        return table.getName();
-    }
-
     public IndexName getIndexName()
     {
         return indexName;
+    }
+
+    public void setIndexName(IndexName name)
+    {
+        indexName = name;
     }
 
     public List<IndexColumn> getColumns()
@@ -183,7 +152,6 @@ public class Index implements Serializable, ModelNames, Traversable
             columnsStale = false;
         }
     }
-
 
     public Integer getIndexId()
     {
@@ -220,41 +188,33 @@ public class Index implements Serializable, ModelNames, Traversable
         this.indexDef = indexDef;
     }
 
-    public Index userTableIndex()
+    public final IndexType getIndexType()
     {
-        Index userTableIndex = null;
-        if (table.isUserTable()) {
-            userTableIndex = this;
-        } else {
-            List<Column> userColumns = new ArrayList<Column>();
-            UserTable userTable = null;
-            for (IndexColumn indexColumn : getColumns()) {
-                Column userColumn = indexColumn.getColumn().getUserColumn();
-                userColumns.add(userColumn);
-                if (userTable == null) {
-                    userTable = userColumn.getUserTable();
-                } else {
-                    assert userTable == userColumn.getUserTable() : userColumn;
-                }
-            }
-            assert userTable != null;
-            for (Index index : userTable.getIndexesIncludingInternal()) {
-                List<Column> indexColumns = new ArrayList<Column>();
-                for (IndexColumn indexColumn : index.getColumns()) {
-                    indexColumns.add(indexColumn.getColumn());
-                }
-                if (userColumns.equals(indexColumns)) {
-                    userTableIndex = index;
-                }
-            }
-            assert userTableIndex != null;
-        }
-        return userTableIndex;
+        return isTableIndex() ? IndexType.TABLE : IndexType.GROUP;
     }
 
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
+    public static final String UNIQUE_KEY_CONSTRAINT = "UNIQUE";
+    public static final String KEY_CONSTRAINT = "KEY";
 
-    private Table table;
+    public static enum IndexType {
+        TABLE("TABLE"),
+        GROUP("GROUP")
+        ;
+
+        private IndexType(String asString) {
+            this.asString = asString;
+        }
+
+        @Override
+        public final String toString() {
+            return asString;
+        }
+
+        private final String asString;
+    }
+
+
     private IndexName indexName;
     private Integer indexId;
     private Boolean isUnique;
@@ -262,7 +222,6 @@ public class Index implements Serializable, ModelNames, Traversable
     private boolean columnsStale = true;
     private List<IndexColumn> columns;
     private boolean columnsFrozen = false;
-    private transient HKey hKey;
     // It really is an IndexDef, but declaring it that way creates trouble for AIS. We don't want to pull in
     // all the RowDef stuff and have it visible to GWT.
     private transient /* IndexDef */ Object indexDef;

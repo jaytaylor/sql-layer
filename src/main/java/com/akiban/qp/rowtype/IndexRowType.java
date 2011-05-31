@@ -16,6 +16,7 @@
 package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.server.IndexDef;
 
 public class IndexRowType extends RowType
@@ -54,12 +55,12 @@ public class IndexRowType extends RowType
         return keyType;
     }
 
-    public Index index()
+    public TableIndex index()
     {
         return index;
     }
 
-    public IndexRowType(Schema schema, UserTableRowType tableType, Index index)
+    public IndexRowType(Schema schema, UserTableRowType tableType, TableIndex index)
     {
         super(schema, schema.nextTypeId(), null);
         this.tableType = tableType;
@@ -70,6 +71,6 @@ public class IndexRowType extends RowType
     // Object state
 
     private final UserTableRowType tableType;
-    private final Index index;
+    private final TableIndex index;
     private final IndexKeyType keyType;
 }

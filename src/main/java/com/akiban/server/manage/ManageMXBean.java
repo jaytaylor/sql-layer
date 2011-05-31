@@ -15,18 +15,13 @@
 
 package com.akiban.server.manage;
 
+@SuppressWarnings("unused") // used via JMX
 public interface ManageMXBean {
     static final String MANAGE_BEAN_NAME = "com.akiban:type=Manage";
 
     void ping();
 
     int getJmxPort();
-
-    boolean isVerboseLoggingEnabled();
-
-    void enableVerboseLogging();
-
-    void disableVerboseLogging();
 
     boolean isDeferIndexesEnabled();
 

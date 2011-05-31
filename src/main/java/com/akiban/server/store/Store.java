@@ -15,9 +15,7 @@
 
 package com.akiban.server.store;
 
-import java.nio.ByteBuffer;
-import java.util.List;
-
+import com.akiban.ais.model.Index;
 import com.akiban.server.FieldDef;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
@@ -26,11 +24,12 @@ import com.akiban.server.RowDefCache;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.message.ScanRowsRequest;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
+
+import java.util.Collection;
 
 /**
  * An abstraction for a layer that stores and retrieves data
@@ -41,10 +40,6 @@ import com.persistit.exception.PersistitException;
 public interface Store extends Service<Store> {
 
     RowDefCache getRowDefCache();
-
-    boolean isVerbose();
-
-    void setVerbose(final boolean verbose);
 
     void writeRow(final Session session, final RowData rowData)
             throws Exception;
@@ -65,7 +60,7 @@ public interface Store extends Service<Store> {
                    final ColumnSelector columnSelector) throws Exception;
 
     /**
-     * See {@link #newRowCollector(Session, int, int, int, byte[], RowData, ColumnSelector, RowData, ColumnSelector)}
+     * See {@link #newRowCollector(Session, int, int, int, byte[], RowData, ColumnSelector, RowData, ColumnSelector, ScanLimit)}
      * for parameter descriptions.
      *
      * @deprecated This constructor is ambiguous and may not return the expected rows. Fields from <code>start</code>
@@ -151,19 +146,12 @@ public interface Store extends Service<Store> {
      * @throws Exception
      */
     void analyzeTable(final Session session, int tableId) throws Exception;
+    void analyzeTable(final Session session, int tableId, int sampleSize) throws Exception;
 
     boolean isDeferIndexes();
-
     void setDeferIndexes(final boolean b);
-    
-    // TODO - temporary - we want this to be a separate service acquired
-    // from ServiceManager.
-    IndexManager getIndexManager();
-
-    void deleteIndexes(Session session, String string);
-
-    void buildIndexes(Session session, String string, boolean deferIndexes) throws Exception;
-    
-    void flushIndexes(Session session);
-
+    void flushIndexes(Session session) throws Exception;
+    void deleteIndexes(Session session, Collection<Index> indexes) throws Exception;
+    void buildAllIndexes(Session session, boolean deferIndexes) throws Exception;
+    void buildIndexes(Session session, Collection<Index> indexes, boolean deferIndexes) throws Exception;
 }

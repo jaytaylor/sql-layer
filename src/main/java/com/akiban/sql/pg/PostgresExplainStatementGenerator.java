@@ -17,7 +17,7 @@ package com.akiban.sql.pg;
 
 import com.akiban.sql.optimizer.OperatorCompiler;
 
-import com.akiban.sql.parser.CursorNode;
+import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.ExplainStatementNode;
 import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.StatementNode;
@@ -42,9 +42,10 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
         StatementNode innerStmt = ((ExplainStatementNode)stmt).getStatement();
         if (compiler == null)
             throw new StandardException("Optimizer does not support EXPLAIN");
-        if (!(innerStmt instanceof CursorNode))
+        if (!(innerStmt instanceof DMLStatementNode))
             throw new StandardException("Cannot EXPLAIN this statement");
-        OperatorCompiler.Result result = compiler.compile(server.getSessionTracer(), (CursorNode)innerStmt);
+        OperatorCompiler.Result result = compiler.compile(server.getSessionTracer(),
+                                                          (DMLStatementNode)innerStmt);
         return new PostgresExplainStatement(result.explainPlan());
     }
 

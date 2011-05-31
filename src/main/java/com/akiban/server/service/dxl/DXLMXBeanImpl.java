@@ -16,6 +16,7 @@
 package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.staticgrouping.Group;
@@ -23,14 +24,17 @@ import com.akiban.ais.model.staticgrouping.Grouping;
 import com.akiban.ais.model.staticgrouping.GroupingVisitorStub;
 import com.akiban.ais.model.staticgrouping.GroupsBuilder;
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.util.GroupIndexCreator;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -68,6 +72,23 @@ class DXLMXBeanImpl implements DXLMXBean {
         createTable(usingSchema.get(), ddl);
     }
 
+    @Override
+    public void createGroupIndex(String groupName, String indexName, String tableColumnList) {
+        Session session = ServiceManagerImpl.newSession();
+        try {
+            DDLFunctions ddlFunctions = dxlService.ddlFunctions();
+            AkibanInformationSchema ais = ddlFunctions.getAIS(session);
+            Index index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnList);
+            ddlFunctions.createIndexes(session, Collections.singleton(index));
+        }
+        catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+        finally {
+            session.close();
+        }
+    }
+
     public void dropTable(String schema, String tableName) {
         Session session = ServiceManagerImpl.newSession();
         try {
@@ -82,6 +103,18 @@ class DXLMXBeanImpl implements DXLMXBean {
     @Override
     public void dropTable(String tableName) {
         dropTable(usingSchema.get(), tableName);
+    }
+
+    @Override
+    public void dropGroupIndex(String groupName, String indexName) {
+        Session session = ServiceManagerImpl.newSession();
+        try {
+            dxlService.ddlFunctions().dropGroupIndexes(session, groupName, Collections.singleton(indexName));
+        } catch (InvalidOperationException e) {
+            throw new RuntimeException(e);
+        } finally {
+            session.close();
+        }
     }
 
     @Override

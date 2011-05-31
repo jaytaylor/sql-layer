@@ -15,13 +15,16 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.ais.model.TableIndex;
+import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.sql.StandardException;
 
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.ExpressionRow;
 
+import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.sql.views.ViewDefinition;
@@ -88,30 +91,37 @@ public class PostgresOperatorCompiler extends OperatorCompiler
     public PostgresStatement generate(PostgresServerSession session,
                                       StatementNode stmt, int[] paramTypes)
             throws StandardException {
-        if (!(stmt instanceof CursorNode))
+        if (!(stmt instanceof DMLStatementNode))
             return null;
-        CursorNode cursor = (CursorNode)stmt;
+        DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
         Result result = null;
         try {
             session.getSessionTracer().beginEvent("sql: optimize: compile");
-            result = compile(session.getSessionTracer(), cursor);
+            result = compile(session.getSessionTracer(), dmlStmt);
         } finally {
             session.getSessionTracer().endEvent();
         }
 
         logger.debug("Operator:\n{}", result);
 
-        return new PostgresOperatorStatement(adapter, 
-                                             result.getResultOperator(),
-                                             result.getResultRowType(),
-                                             result.getResultColumns(),
-                                             result.getResultColumnOffsets());
+        if (result.isModify())
+            return new PostgresModifyOperatorStatement(stmt.statementToString(),
+                                                       adapter,
+                                                       (UpdatePlannable) result.getResultOperator());
+        else
+            return new PostgresOperatorStatement(adapter,
+                                                 (PhysicalOperator) result.getResultOperator(),
+                                                 result.getResultRowType(),
+                                                 result.getResultColumns(),
+                                                 result.getResultColumnOffsets(),
+                                                 result.getOffset(),
+                                                 result.getLimit());
     }
 
     // The current implementation of index cursors expects that the
     // key bounds' rows are in the shape of the indexed table, not the
     // index itself.
-    protected Row getIndexExpressionRow(Index index, Expression[] keys) {
+    protected Row getIndexExpressionRow(TableIndex index, Expression[] keys) {
         UserTable userTable = (UserTable)index.getTable();
         RowType rowType = schema.userTableRowType(userTable);
         Expression[] userKeys = new Expression[rowType.nFields()];

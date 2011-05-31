@@ -1,0 +1,84 @@
+com.akiban.sql.parser.UpdateNode@3dbbd23f
+T1
+statementType: UPDATE
+resultSet: 	
+	com.akiban.sql.parser.SelectNode@75e845c2
+	isDistinct: false
+	resultColumns: 		
+		com.akiban.sql.parser.ResultColumnList@643c0007
+
+		[0]:		
+		com.akiban.sql.parser.ResultColumn@1f25fefa
+		exposedName: X
+		name: X
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.BinaryArithmeticOperatorNode@7786df0f
+			operator: +
+			methodName: plus
+			type: null
+			leftOperand: 				
+				com.akiban.sql.parser.ColumnReference@379e8f17
+				columnName: X
+				tableName: null
+				type: null
+				userData: t1.x from com.akiban.sql.parser.FromBaseTable@33d6f122
+			rightOperand: 				
+				com.akiban.sql.parser.NumericConstantNode@ac44b88
+				value: 1
+				type: INTEGER NOT NULL
+		reference: 			
+			com.akiban.sql.parser.ColumnReference@5d61dfb5
+			columnName: X
+			tableName: null
+			type: null
+			userData: t1.x
+		[1]:		
+		com.akiban.sql.parser.ResultColumn@5d3ad33d
+		exposedName: Y
+		name: Y
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.CharConstantNode@4102799c
+			value: foo
+			type: CHAR(3) NOT NULL
+		reference: 			
+			com.akiban.sql.parser.ColumnReference@44a613f8
+			columnName: Y
+			tableName: null
+			type: null
+			userData: t1.y
+	fromList: 		
+		com.akiban.sql.parser.FromList@97e121c
+
+		[0]:		
+		com.akiban.sql.parser.FromBaseTable@33d6f122
+		tableName: T1
+		updateOrDelete: UPDATE
+		null
+		correlation Name: null
+		null
+		userData: user.t1
+	whereClause: 		
+		com.akiban.sql.parser.BinaryRelationalOperatorNode@647109c4
+		operator: >
+		methodName: greaterThan
+		type: null
+		leftOperand: 			
+			com.akiban.sql.parser.ColumnReference@39385660
+			columnName: Z
+			tableName: null
+			type: null
+			userData: t1.z from com.akiban.sql.parser.FromBaseTable@33d6f122
+		rightOperand: 			
+			com.akiban.sql.parser.NumericConstantNode@21aed5f9
+			value: 100
+			type: INTEGER NOT NULL
+targetTableName: 	
+	com.akiban.sql.parser.TableName@a5d
+	T1
+	userData: user.t1

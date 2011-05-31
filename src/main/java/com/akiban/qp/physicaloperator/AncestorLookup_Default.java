@@ -70,27 +70,43 @@ class AncestorLookup_Default extends PhysicalOperator
     public AncestorLookup_Default(PhysicalOperator inputOperator,
                                   GroupTable groupTable,
                                   RowType rowType,
-                                  List<RowType> ancestorTypes)
+                                  List<RowType> ancestorTypes,
+                                  boolean keepInput)
     {
+        checkArgument(!ancestorTypes.isEmpty());
+        // Keeping index rows not currently supported
+        boolean inputFromIndex = rowType instanceof IndexRowType;
+        checkArgument(!(keepInput && inputFromIndex));
+        RowType tableRowType =
+            inputFromIndex
+            ? ((IndexRowType) rowType).tableType()
+            : rowType;
+        // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
+        // is from an index. I.e., this operator can be used for an index lookup.
+        for (RowType ancestorType1 : ancestorTypes) {
+            checkArgument(inputFromIndex || ancestorType1 != tableRowType);
+            checkArgument(ancestorType1.ancestorOf(tableRowType));
+            checkArgument(ancestorType1.userTable().getGroup() == tableRowType.userTable().getGroup());
+        }
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
         this.rowType = rowType;
-        // Handling of a group row is complete once it's been emitted (which happens later).
-        // An index row is handled as soon as it's read because it will not be emitted.
-        this.emitInputRow = !(rowType instanceof IndexRowType);
+        this.keepInput = keepInput;
         // Sort ancestor types by depth
         this.ancestorTypes = new ArrayList<RowType>(ancestorTypes);
-        Collections.sort(this.ancestorTypes,
-                         new Comparator<RowType>()
-                         {
-                             @Override
-                             public int compare(RowType x, RowType y)
+        if (this.ancestorTypes.size() > 1) {
+            Collections.sort(this.ancestorTypes,
+                             new Comparator<RowType>()
                              {
-                                 UserTable xTable = ((UserTableRowType) x).userTable();
-                                 UserTable yTable = ((UserTableRowType) y).userTable();
-                                 return xTable.getDepth() - yTable.getDepth();
-                             }
-                         });
+                                 @Override
+                                 public int compare(RowType x, RowType y)
+                                 {
+                                     UserTable xTable = x.userTable();
+                                     UserTable yTable = y.userTable();
+                                     return xTable.getDepth() - yTable.getDepth();
+                                 }
+                             });
+        }
         this.ancestorTypeDepth = new int[ancestorTypes.size()];
         int a = 0;
         for (RowType ancestorType : this.ancestorTypes) {
@@ -110,7 +126,7 @@ class AncestorLookup_Default extends PhysicalOperator
     private final RowType rowType;
     private final List<RowType> ancestorTypes;
     private final int[] ancestorTypeDepth;
-    private final boolean emitInputRow;
+    private final boolean keepInput;
 
     // Inner classes
 
@@ -133,8 +149,8 @@ class AncestorLookup_Default extends PhysicalOperator
             }
             Row row = pending.take();
             outputRow(row);
-            if (LOG.isInfoEnabled()) {
-                LOG.info("Exhume: {}", row == null ? null : row);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("AncestorLookup: {}", row == null ? null : row);
             }
             return row != null;
         }
@@ -157,7 +173,7 @@ class AncestorLookup_Default extends PhysicalOperator
                 if (currentRow.rowType() == rowType) {
                     findAncestors(currentRow);
                 }
-                if (emitInputRow) {
+                if (keepInput) {
                     pending.add(currentRow);
                 }
                 inputRow.set(currentRow);
@@ -202,7 +218,7 @@ class AncestorLookup_Default extends PhysicalOperator
                 ancestorCursor.open(UndefBindings.only());
                 if (ancestorCursor.next()) {
                     Row retrievedRow = ancestorCursor.currentRow();
-                    // Retrieved row might not actually what we were looking for -- not all ancestors are present,
+                    // Retrieved row might not actually be what we were looking for -- not all ancestors are present,
                     // (there are orphan rows).
                     ancestorRow.set(hKey.equals(retrievedRow.hKey()) ? retrievedRow : null);
                 } else {

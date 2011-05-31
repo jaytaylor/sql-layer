@@ -16,6 +16,8 @@
 package com.akiban.server.store;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -24,6 +26,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import com.akiban.ais.model.Index;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.ScanLimit;
@@ -106,8 +109,6 @@ public class PersistitStore implements Store {
     private final static byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     private final static String COLLECTORS_SESSION_KEY = "collectors";
-
-    private boolean verbose = false;
 
     private boolean deferIndexes = false;
 
@@ -466,16 +467,6 @@ public class PersistitStore implements Store {
 
     public IndexManager getIndexManager() {
         return errorIfNull("index manager", indexManager);
-    }
-
-    @Override
-    public void setVerbose(final boolean verbose) {
-        this.verbose = verbose;
-    }
-
-    @Override
-    public boolean isVerbose() {
-        return verbose;
     }
 
     /**
@@ -881,7 +872,7 @@ public class PersistitStore implements Store {
             groupRowDef = rowDefCache.getRowDef(groupRowDef.getGroupRowDefId());
         }
 
-        final Transaction transaction = treeService.getTransaction(session);
+        Transaction transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;
         for (;;) {
 
@@ -891,18 +882,13 @@ public class PersistitStore implements Store {
                 //
                 // Remove the index trees
                 //
-                for (final IndexDef indexDef : groupRowDef.getIndexDefs()) {
-                    if (!indexDef.isHKeyEquivalent()) {
-                        final Exchange iEx = getExchange(session, groupRowDef,
-                                indexDef);
-                        iEx.removeAll();
-                        releaseExchange(session, iEx);
-                    }
-                    indexManager.deleteIndexAnalysis(session, indexDef);
-                }
-                for (final RowDef userRowDef : groupRowDef
-                        .getUserTableRowDefs()) {
-                    for (final IndexDef indexDef : userRowDef.getIndexDefs()) {
+                for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
+                    for (IndexDef indexDef : userRowDef.getIndexDefs()) {
+                        if (!indexDef.isHKeyEquivalent()) {
+                            Exchange iEx = getExchange(session, userRowDef, indexDef);
+                            iEx.removeAll();
+                            releaseExchange(session, iEx);
+                        }
                         indexManager.deleteIndexAnalysis(session, indexDef);
                     }
                 }
@@ -1133,6 +1119,12 @@ public class PersistitStore implements Store {
         indexManager.analyzeTable(session, rowDef);
     }
 
+    @Override
+    public void analyzeTable(Session session, int tableId, int sampleSize) throws Exception {
+        final RowDef rowDef = rowDefCache.getRowDef(tableId);
+        indexManager.analyzeTable(session, rowDef, sampleSize);
+    }
+
     boolean hasNullIndexSegments(final RowData rowData, final IndexDef indexDef) {
         assert indexDef.getRowDef().getRowDefId() == rowData.getRowDefId();
         for (int i : indexDef.getFields()) {
@@ -1317,24 +1309,38 @@ public class PersistitStore implements Store {
         rowData.prepareRow(0);
     }
 
-    public void buildIndexes(final Session session, final String ddl, final boolean defer) throws Exception {
+    @Override
+    public void buildAllIndexes(Session session, boolean deferIndexes) throws Exception {
+        Collection<Index> indexes = new HashSet<Index>();
+        for(RowDef rowDef : rowDefCache.getRowDefs()) {
+            if(rowDef.isUserTable()) {
+                for(IndexDef indexDef : rowDef.getIndexDefs()) {
+                    indexes.add(indexDef.index());
+                }
+            }
+        }
+        buildIndexes(session, indexes, deferIndexes);
+    }
+
+    public void buildIndexes(final Session session, final Collection<Index> indexes, final boolean defer) throws Exception {
         flushIndexes(session);
 
         final Set<RowDef> userRowDefs = new HashSet<RowDef>();
         final Set<RowDef> groupRowDefs = new HashSet<RowDef>();
+        final Set<IndexDef> indexDefs = new HashSet<IndexDef>();
 
-        // Find the groups containing indexes selected for rebuild.
-        for (final RowDef rowDef : rowDefCache.getRowDefs()) {
-            if (!rowDef.isGroupTable()) {
-                for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-                    if (isIndexSelected(indexDef, ddl)) {
-                        userRowDefs.add(rowDef);
-                        final RowDef group = rowDefCache.getRowDef(rowDef
-                                .getGroupRowDefId());
-                        if (group != null) {
-                            groupRowDefs.add(group);
-                        }
-                    }
+        for(Index index : indexes) {
+            final IndexDef indexDef = (IndexDef) index.indexDef();
+            if(indexDef == null) {
+                throw new IllegalArgumentException("indexDef was null for index: " + index);
+            }
+            if(!indexDef.isHKeyEquivalent()) {
+                indexDefs.add(indexDef);
+                final RowDef rowDef = indexDef.getRowDef();
+                userRowDefs.add(rowDef);
+                final RowDef groupDef = rowDefCache.getRowDef(rowDef.getGroupRowDefId());
+                if(groupDef != null) {
+                    groupRowDefs.add(groupDef);
                 }
             }
         }
@@ -1363,11 +1369,9 @@ public class PersistitStore implements Store {
                     final int tableId = rowData.getRowDefId();
                     final RowDef userRowDef = rowDefCache.getRowDef(tableId);
                     if (userRowDefs.contains(userRowDef)) {
-                        for (final IndexDef indexDef : userRowDef
-                                .getIndexDefs()) {
-                            if (isIndexSelected(indexDef, ddl)) {
-                                insertIntoIndex(session, indexDef, rowData,
-                                        hEx.getKey(), defer);
+                        for (final IndexDef indexDef : userRowDef.getIndexDefs()) {
+                            if(indexDefs.contains(indexDef)) {
+                                insertIntoIndex(session, indexDef, rowData, hEx.getKey(), defer);
                                 indexKeyCount++;
                             }
                         }
@@ -1377,7 +1381,7 @@ public class PersistitStore implements Store {
                     }
                 }
             } catch (Exception e) {
-                LOG.error("Exception while inserting index into {}: {}", rowDef.table().getName(), e);
+                LOG.debug("Exception while inserting index into: " + rowDef.table().getName(), e);
                 throw e;
             }
             flushIndexes(session);
@@ -1385,41 +1389,29 @@ public class PersistitStore implements Store {
         }
     }
 
-    public void flushIndexes(final Session session) {
+    public void flushIndexes(final Session session) throws Exception {
         try {
             putAllDeferredIndexKeys(session);
         } catch (Exception e) {
-            LOG.error("Exception while trying "
-                    + " to flush deferred index keys", e);
+            LOG.debug("Exception while trying to flush deferred index keys", e);
+            throw e;
         }
     }
 
-    public void deleteIndexes(final Session session, final String ddl) {
-        for (final RowDef rowDef : rowDefCache.getRowDefs()) {
-            if (!rowDef.isGroupTable()) {
-                for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-                    if (isIndexSelected(indexDef, ddl)) {
-                        try {
-                            final Exchange iEx = getExchange(session, rowDef,
-                                    indexDef);
-                            iEx.removeAll();
-                        } catch (Exception e) {
-                            LOG.error(
-                                    "Exception while trying to remove index tree "
-                                            + indexDef.getTreeName(), e);
-                        }
-                    }
-                }
+    public void deleteIndexes(final Session session, final Collection<Index> indexes) throws Exception {
+        for(Index index : indexes) {
+            final IndexDef indexDef = (IndexDef) index.indexDef();
+            if(indexDef == null) {
+                throw new IllegalArgumentException("indexDef is null for index: " + index);
+            }
+            try {
+                Exchange iEx = getExchange(session, indexDef.getRowDef(), indexDef);
+                iEx.removeAll();
+            } catch (Exception e) {
+                LOG.debug("Exception while trying to remove index tree: " + indexDef.getTreeName(), e);
+                throw e;
             }
         }
-    }
-
-    private boolean isIndexSelected(final IndexDef indexDef, final String ddl) {
-        return !indexDef.isHKeyEquivalent()
-                && (!ddl.contains("table=") || ddl.contains("table=("
-                        + indexDef.getRowDef().getTableName() + ")"))
-                && (!ddl.contains("index=") || ddl.contains("index=("
-                        + indexDef.getName() + ")"));
     }
 
     private void buildIndexAddKeys(final SortedSet<KeyState> keys,

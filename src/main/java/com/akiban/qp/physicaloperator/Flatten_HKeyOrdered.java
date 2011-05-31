@@ -85,6 +85,12 @@ class Flatten_HKeyOrdered extends PhysicalOperator
 
     public Flatten_HKeyOrdered(PhysicalOperator inputOperator, RowType parentType, RowType childType, int flags)
     {
+        checkArgument(parentType != null);
+        checkArgument(childType != null);
+        checkArgument((flags & (INNER_JOIN | LEFT_JOIN)) != (INNER_JOIN | LEFT_JOIN));
+        checkArgument((flags & (INNER_JOIN | RIGHT_JOIN)) != (INNER_JOIN | RIGHT_JOIN));
+        assert parentType != null;
+        assert childType != null;
         this.inputOperator = inputOperator;
         this.parentType = parentType;
         this.childType = childType;
@@ -150,11 +156,12 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                         if (keepParent) {
                             addToPending();
                         }
-                        if (parent.isNotNull()) {
+                        if (parent.isNotNull() && childlessParent) {
                             // current parent row is childless, so it is left-join fodder.
                             generateLeftJoinRow(parent.get());
                         }
                         parent.set(inputRow);
+                        childlessParent = true;
                     } else if (inputRowType == childType) {
                         if (keepChild) {
                             addToPending();
@@ -162,6 +169,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                         if (parent.isNotNull() && parent.get().ancestorOf(inputRow)) {
                             // child is not an orphan
                             generateInnerJoinRow(parent.get(), inputRow);
+                            childlessParent = false;
                         } else {
                             // child is an orphan
                             parent.set(null);
@@ -169,11 +177,9 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                         }
                     } else {
                         addToPending();
-                        if (parentType.ancestorOf(inputRowType)) {
-                            if (parent.isNotNull() && !parent.get().ancestorOf(inputRow)) {
-                                // We're past all descendents of the current parent
-                                parent.set(null);
-                            }
+                        if (parent.isNotNull() && !parent.get().ancestorOf(inputRow)) {
+                            // We're past all descendents of the current parent
+                            parent.set(null);
                         }
                     }
                 }
@@ -232,5 +238,6 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         private final Cursor input;
         private final RowHolder<Row> parent = new RowHolder<Row>();
         private final PendingRows pending = new PendingRows(MAX_PENDING);
+        private boolean childlessParent;
     }
 }

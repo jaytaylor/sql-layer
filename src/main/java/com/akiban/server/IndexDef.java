@@ -27,6 +27,7 @@ import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
 
@@ -39,7 +40,7 @@ import com.akiban.server.service.tree.TreeLink;
  */
 public class IndexDef implements TreeLink {
 
-    private final Index index;
+    private final TableIndex index;
 
     private final String treeName;
 
@@ -162,7 +163,7 @@ public class IndexDef implements TreeLink {
         private final int indexKeyLoc;
     }
 
-    public IndexDef(String treeName, RowDef rowDef, Index index)
+    public IndexDef(String treeName, RowDef rowDef, TableIndex index)
     {
         this.index = index;
         index.indexDef(this);
@@ -255,7 +256,7 @@ public class IndexDef implements TreeLink {
     // TODO: 2) This won't work from group table indexes whose columns span multiple user tables.
     void computeFieldAssociations(RowDefCache rowDefCache, List<RowDef> path)
     {
-        computeHKeyEquivalence(path);
+        computeHKeyEquivalence();
         // indexKeyFields is a list of H2I objects which map row and hkey fields to the fields of an index.
         // The leading index fields are exactly the fields identified by IndexDef.fields, i.e., the declared
         // index columns. The remaining index fields are whatever fields are necessary to ensure that the
@@ -315,8 +316,10 @@ public class IndexDef implements TreeLink {
         hKeyFields = i2hList.toArray(new I2H[i2hList.size()]);
     }
 
-    private void computeHKeyEquivalence(List<RowDef> path)
+    private void computeHKeyEquivalence()
     {
+        hkeyEquivalent = false;
+/*
         hkeyEquivalent = true;
         // Collect the HKeyColumns of the index's hkey
         List<HKeyColumn> hKeyColumns = new ArrayList<HKeyColumn>();
@@ -334,6 +337,7 @@ public class IndexDef implements TreeLink {
         if (hkeyEquivalent && !hKeyColumnScan.hasNext() && indexColumnScan.hasNext()) {
             hkeyEquivalent = false;
         }
+*/
     }
 
     @Override

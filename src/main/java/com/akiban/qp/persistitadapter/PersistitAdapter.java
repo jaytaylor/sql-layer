@@ -17,6 +17,7 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
@@ -24,6 +25,7 @@ import com.akiban.qp.physicaloperator.GroupCursor;
 import com.akiban.qp.physicaloperator.StoreAdapter;
 import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
 import com.akiban.qp.row.HKey;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -32,6 +34,8 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
+import com.akiban.server.api.GenericInvalidOperationException;
+import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
@@ -50,11 +54,11 @@ public class PersistitAdapter extends StoreAdapter
     // StoreAdapter interface
 
     @Override
-    public GroupCursor newGroupCursor(GroupTable groupTable, boolean reverse, IndexKeyRange indexKeyRange)
+    public GroupCursor newGroupCursor(GroupTable groupTable, IndexKeyRange indexKeyRange)
     {
         GroupCursor cursor;
         try {
-            cursor = new ModifiablePersistitGroupCursor(this, groupTable, reverse, indexKeyRange);
+            cursor = new PersistitGroupCursor(this, groupTable, indexKeyRange);
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }
@@ -62,7 +66,7 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange)
+    public Cursor newIndexCursor(TableIndex index, boolean reverse, IndexKeyRange keyRange)
     {
         Cursor cursor;
         try {
@@ -94,13 +98,11 @@ public class PersistitAdapter extends StoreAdapter
 
     public PersistitGroupRow newGroupRow()
     {
-        // TODO: Pool rows?
         return PersistitGroupRow.newPersistitGroupRow(this);
     }
 
     public PersistitIndexRow newIndexRow(IndexRowType indexRowType) throws PersistitException
     {
-        // TODO: Pool rows?
         return new PersistitIndexRow(this, indexRowType);
     }
 
@@ -127,16 +129,20 @@ public class PersistitAdapter extends StoreAdapter
         return transact(persistit.getExchange(session, null, (IndexDef) index.indexDef()));
     }
 
-    public void updateIndex(IndexDef indexDef, RowBase oldRow, RowBase newRow, Key hKey, Bindings bindings)
-        throws PersistitAdapterException, DuplicateKeyException
-    {
-        RowDef rowDef = indexDef.getRowDef();
+    @Override
+    public void updateRow(Row oldRow, Row newRow, Bindings bindings) {
+        RowDef rowDef = (RowDef) oldRow.rowType().userTable().rowDef();
+        Object rowDefNewRow = newRow.rowType().userTable().rowDef();
+        if (rowDef != rowDefNewRow) {
+            throw new IllegalArgumentException(String.format("%s != %s", rowDef, rowDefNewRow));
+        }
+
         RowData oldRowData = rowData(rowDef, oldRow, bindings);
         RowData newRowData = rowData(rowDef, newRow, bindings);
         try {
-            persistit.updateIndex(session, indexDef, rowDef, oldRowData, newRowData, hKey);
+            persistit.updateRow(session, oldRowData, newRowData, null);
         } catch (PersistitException e) {
-            throw new PersistitAdapterException(e);
+            throw new GenericInvalidOperationException(e);
         }
     }
 

@@ -16,10 +16,10 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 
@@ -45,68 +45,61 @@ public class API
 
     public static PhysicalOperator groupScan_Default(GroupTable groupTable)
     {
-        return groupScan_Default(groupTable, false, NO_LIMIT);
+        return groupScan_Default(groupTable, NO_LIMIT);
     }
 
     public static PhysicalOperator groupScan_Default(GroupTable groupTable,
-                                                     boolean reverse,
                                                      Limit limit,
                                                      IndexKeyRange indexKeyRange)
     {
-        return new GroupScan_Default(groupTable, reverse, limit, indexKeyRange);
+        return new GroupScan_Default(groupTable, limit, indexKeyRange);
     }
 
-    public static PhysicalOperator groupScan_Default(GroupTable groupTable, boolean reverse, Limit limit)
+    public static PhysicalOperator groupScan_Default(GroupTable groupTable, Limit limit)
     {
-        return new GroupScan_Default(groupTable, reverse, limit, null);
-    }
-
-    public static PhysicalOperator lookup_Default(PhysicalOperator inputOperator,
-                                                  GroupTable groupTable,
-                                                  RowType inputRowType,
-                                                  RowType outputRowType)
-    {
-        return lookup_Default(inputOperator, groupTable, inputRowType, outputRowType, NO_LIMIT);
+        return new GroupScan_Default(groupTable, limit, null);
     }
 
     public static PhysicalOperator lookup_Default(PhysicalOperator inputOperator,
                                                   GroupTable groupTable,
                                                   RowType inputRowType,
                                                   RowType outputRowType,
+                                                  boolean keepInput)
+    {
+        return lookup_Default(inputOperator, groupTable, inputRowType, outputRowType, keepInput, NO_LIMIT);
+    }
+
+    public static PhysicalOperator lookup_Default(PhysicalOperator inputOperator,
+                                                  GroupTable groupTable,
+                                                  RowType inputRowType,
+                                                  RowType outputRowType,
+                                                  boolean keepInput,
                                                   Limit limit)
     {
-        return new Lookup_Default(inputOperator,
-                                  groupTable,
-                                  inputRowType,
-                                  outputRowType,
-                                  limit);
+        return new BranchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, keepInput, limit);
+    }
+
+    public static PhysicalOperator limit_Default(PhysicalOperator inputOperator, int rows) {
+        return new Limit_Default(inputOperator, rows);
     }
 
     public static PhysicalOperator ancestorLookup_Default(PhysicalOperator inputOperator,
                                                           GroupTable groupTable,
                                                           RowType rowType,
-                                                          List<RowType> ancestorTypes)
+                                                          List<RowType> ancestorTypes,
+                                                          boolean keepInput)
     {
-        return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes);
-/*
-        assert ancestorTypes.size() == 1;
-        return new Lookup_Default(inputOperator,
-                                  groupTable,
-                                  rowType,
-                                  ancestorTypes.get(0),
-                                  false,
-                                  NO_LIMIT);
-*/
+        return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, keepInput);
     }
 
-    public static PhysicalOperator indexScan_Default(Index index)
+    public static PhysicalOperator indexScan_Default(IndexRowType indexType)
     {
-        return indexScan_Default(index, false, null);
+        return indexScan_Default(indexType, false, null);
     }
 
-    public static PhysicalOperator indexScan_Default(Index index, boolean reverse, IndexKeyRange indexKeyRange)
+    public static PhysicalOperator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
     {
-        return new IndexScan_Default(index, reverse, indexKeyRange);
+        return new IndexScan_Default(indexType, reverse, indexKeyRange);
     }
 
     public static PhysicalOperator select_HKeyOrdered(PhysicalOperator inputOperator,
@@ -151,4 +144,13 @@ public class API
         // if all they need is the wrapped cursor, create it directly
         return new TopLevelWrappingCursor(root.cursor(adapter));
     }
+
+    // For all flags
+    public static final int DEFAULT = 0x00;
+    // Flattening flags
+    public static final int KEEP_PARENT = Flatten_HKeyOrdered.KEEP_PARENT;
+    public static final int KEEP_CHILD = Flatten_HKeyOrdered.KEEP_CHILD;
+    public static final int INNER_JOIN = Flatten_HKeyOrdered.INNER_JOIN;
+    public static final int LEFT_JOIN = Flatten_HKeyOrdered.LEFT_JOIN;
+    public static final int RIGHT_JOIN = Flatten_HKeyOrdered.RIGHT_JOIN;
 }

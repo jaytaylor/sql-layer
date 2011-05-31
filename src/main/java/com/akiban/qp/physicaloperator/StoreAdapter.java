@@ -17,26 +17,31 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.HKey;
+import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.RowData;
+import com.akiban.server.RowDef;
 
 public abstract class StoreAdapter
 {
     public final GroupCursor newGroupCursor(GroupTable groupTable)
     {
-        return newGroupCursor(groupTable, false, null);
+        return newGroupCursor(groupTable, null);
     }
 
-    public abstract GroupCursor newGroupCursor(GroupTable groupTable, boolean reverse, IndexKeyRange indexKeyRange);
+    public abstract GroupCursor newGroupCursor(GroupTable groupTable, IndexKeyRange indexKeyRange);
 
-    public final Cursor newIndexCursor(Index index)
+    public final Cursor newIndexCursor(TableIndex index)
     {
         return newIndexCursor(index, false, null);
     }
 
-    public abstract Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange);
+    public abstract Cursor newIndexCursor(TableIndex index, boolean reverse, IndexKeyRange keyRange);
 
     public abstract HKey newHKey(RowType rowType);
 
@@ -44,6 +49,10 @@ public abstract class StoreAdapter
     {
         return schema;
     }
+
+    public abstract void updateRow(Row oldRow, Row newRow, Bindings bindings);
+
+    public abstract RowData rowData(RowDef rowDef, RowBase row, Bindings bindings);
 
     // For use by subclasses
 

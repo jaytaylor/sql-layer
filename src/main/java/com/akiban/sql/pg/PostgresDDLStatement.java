@@ -19,6 +19,7 @@ import com.akiban.sql.aisddl.*;
 
 import com.akiban.sql.StandardException;
 
+import com.akiban.sql.parser.CreateIndexNode;
 import com.akiban.sql.parser.CreateTableNode;
 import com.akiban.sql.parser.CreateViewNode;
 import com.akiban.sql.parser.DropViewNode;
@@ -76,6 +77,9 @@ public class PostgresDDLStatement implements PostgresStatement
             break;
         case NodeTypes.DROP_VIEW_NODE:
             ((AISBinder)server.getAttribute("aisBinder")).removeView(((DropViewNode)ddl).getObjectName());
+            break;
+        case NodeTypes.CREATE_INDEX_NODE:
+            IndexDDL.createIndex(ais, schema, (CreateIndexNode)ddl);
             break;
         default:
             throw new StandardException(ddl.statementToString() + " not supported yet");

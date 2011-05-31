@@ -37,10 +37,14 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.OperatorStore;
+import com.akiban.server.api.dml.scan.ColumnSet;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
+import com.akiban.server.util.GroupIndexCreator;
 import com.akiban.util.Undef;
 import junit.framework.Assert;
 
@@ -308,6 +312,18 @@ public class ApiTestBase {
         return createTable(schema, table, unifiedDef.toString());
     }
 
+    protected final void createGroupIndex(String groupName, String indexName, String tableColumnPairs)
+            throws InvalidOperationException {
+        AkibanInformationSchema ais = ddl().getAIS(session());
+        final Index index;
+        try {
+            index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnPairs);
+        } catch(GroupIndexCreator.GroupIndexCreatorException e) {
+            throw new InvalidOperationException(e);
+        }
+        ddl().createIndexes(session(), Collections.singleton(index));
+    }
+
     /**
      * Expects an exact number of rows. This checks both the countRowExactly and countRowsApproximately
      * methods on DMLFunctions.
@@ -342,6 +358,14 @@ public class ApiTestBase {
         dml().closeCursor(session, cursorId);
 
         return output.getRows();
+    }
+
+    protected final List<NewRow> scanAllIndex(TableIndex index)  throws InvalidOperationException {
+        final Set<Integer> columns = new HashSet<Integer>();
+        for(IndexColumn icol : index.getColumns()) {
+            columns.add(icol.getColumn().getPosition());
+        }
+        return scanAll(new ScanAllRequest(index.getTable().getTableId(), columns, index.getIndexId(), null));
     }
 
     protected final void writeRows(NewRow... rows) throws InvalidOperationException {

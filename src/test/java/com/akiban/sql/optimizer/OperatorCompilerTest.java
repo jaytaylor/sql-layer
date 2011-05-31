@@ -16,7 +16,7 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.sql.TestBase;
-import com.akiban.sql.parser.CursorNode;
+import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.SQLParser;
 
@@ -121,7 +121,7 @@ public class OperatorCompilerTest extends TestBase
     public void testOperator() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
         OperatorCompiler.Result result = compiler.compile(new PostgresSessionTracer(1),
-                                                          (CursorNode)stmt);
+                                                          (DMLStatementNode)stmt);
         assertEqualsWithoutHashes(caseName, expected, result.toString());
     }
 

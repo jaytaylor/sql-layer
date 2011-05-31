@@ -15,7 +15,9 @@
 
 package com.akiban.sql.optimizer;
 
-import com.akiban.sql.optimizer.SimplifiedSelectQuery.*;
+import com.akiban.ais.model.TableIndex;
+import com.akiban.qp.exec.Plannable;
+import com.akiban.sql.optimizer.SimplifiedQuery.*;
 
 import com.akiban.sql.parser.*;
 import com.akiban.sql.compiler.*;
@@ -53,7 +55,7 @@ import java.util.*;
 
 /**
  * Compile SQL statements into operator trees.
- */
+ */ 
 public class OperatorCompiler
 {
     protected SQLParserContext parserContext;
@@ -83,22 +85,33 @@ public class OperatorCompiler
     }
 
     public static class Result {
-        private PhysicalOperator resultOperator;
+        private Plannable resultOperator;
         private RowType resultRowType;
         private List<Column> resultColumns;
         private int[] resultColumnOffsets;
+        private int offset = 0;
+        private int limit = -1;
 
-        public Result(PhysicalOperator resultOperator,
+        public Result(Plannable resultOperator,
                       RowType resultRowType,
                       List<Column> resultColumns,
-                      int[] resultColumnOffsets) {
+                      int[] resultColumnOffsets,
+                      int offset,
+                      int limit) {
             this.resultOperator = resultOperator;
             this.resultRowType = resultRowType;
             this.resultColumns = resultColumns;
             this.resultColumnOffsets = resultColumnOffsets;
+            this.offset = offset;
+            this.limit = limit;
+        }
+        public Result(Plannable resultOperator,
+                      RowType resultRowType) {
+            this.resultOperator = resultOperator;
+            this.resultRowType = resultRowType;
         }
 
-        public PhysicalOperator getResultOperator() {
+        public Plannable getResultOperator() {
             return resultOperator;
         }
         public RowType getResultRowType() {
@@ -109,6 +122,16 @@ public class OperatorCompiler
         }
         public int[] getResultColumnOffsets() {
             return resultColumnOffsets;
+        }
+        public int getOffset() {
+            return offset;
+        }
+        public int getLimit() {
+            return limit;
+        }
+
+        public boolean isModify() {
+            return (resultColumns == null);
         }
 
         @Override
@@ -127,7 +150,7 @@ public class OperatorCompiler
             return result;
         }
 
-        protected static void explainPlan(PhysicalOperator operator, 
+        protected static void explainPlan(Plannable operator,
                                           List<String> into, int depth) {
             
             StringBuilder sb = new StringBuilder();
@@ -141,37 +164,43 @@ public class OperatorCompiler
         }
     }
 
-    public Result compile(SessionTracer tracer, CursorNode cursor) throws StandardException {
-        try {
-            tracer.beginEvent("sql: optimize: bind");
-            // Get into standard form.
-            binder.bind(cursor);
-        } finally {
-            tracer.endEvent();
+    public Result compile(SessionTracer tracer, DMLStatementNode stmt) throws StandardException {
+        switch (stmt.getNodeType()) {
+        case NodeTypes.CURSOR_NODE:
+            return compileSelect(tracer, (CursorNode)stmt);
+        case NodeTypes.UPDATE_NODE:
+            return compileUpdate((UpdateNode)stmt);
+        case NodeTypes.INSERT_NODE:
+            return compileInsert((InsertNode)stmt);
+        case NodeTypes.DELETE_NODE:
+            return compileDelete((DeleteNode)stmt);
+        default:
+            throw new UnsupportedSQLException("Unsupported statement type: " + 
+                                              stmt.statementToString());
         }
-        cursor = (CursorNode)booleanNormalizer.normalize(cursor);
-        try {
-            tracer.beginEvent("sql: optimize: aistypecompute");
-            typeComputer.compute(cursor);
-        } finally {
-            tracer.endEvent();
-        }
-        cursor = (CursorNode)subqueryFlattener.flatten(cursor);
-        try {
-            tracer.beginEvent("sql: optimize: grouper");
-            grouper.group(cursor);
-        } finally {
-            tracer.endEvent();
-        }
+    }
 
-        SimplifiedSelectQuery squery = null;
+    protected DMLStatementNode bindAndGroup(DMLStatementNode stmt) 
+            throws StandardException {
+        binder.bind(stmt);
+        stmt = (DMLStatementNode)booleanNormalizer.normalize(stmt);
+        typeComputer.compute(stmt);
+        stmt = subqueryFlattener.flatten(stmt);
+        grouper.group(stmt);
+        return stmt;
+    }
+
+    public Result compileSelect(SessionTracer tracer, CursorNode cursor) throws StandardException {
         try {
-            tracer.beginEvent("sql: optimize: createquery");
-            squery = 
-                new SimplifiedSelectQuery(cursor, grouper.getJoinConditions());
+            // Get into standard form.
+            tracer.beginEvent("sql: optimize: bindandgroup");
+            cursor = (CursorNode)bindAndGroup(cursor);
         } finally {
             tracer.endEvent();
         }
+        SimplifiedSelectQuery squery = 
+            new SimplifiedSelectQuery(cursor, grouper.getJoinConditions());
+        squery.reorderJoins();
         GroupBinding group = squery.getGroup();
         GroupTable groupTable = group.getGroup().getGroupTable();
         
@@ -183,32 +212,34 @@ public class OperatorCompiler
         } finally {
             tracer.endEvent();
         }
-        if (squery.getSortColumns() != null)
+        if ((squery.getSortColumns() != null) &&
+            !((index != null) && index.isSorting()))
             throw new UnsupportedSQLException("Unsupported ORDER BY");
         
-        Set<ColumnCondition> indexConditions = null;
         PhysicalOperator resultOperator;
         if (index != null) {
-            indexConditions = index.getIndexConditions();
-            Index iindex = index.getIndex();
-            PhysicalOperator indexOperator = indexScan_Default(iindex, 
+            squery.removeConditions(index.getIndexConditions());
+            TableIndex iindex = index.getIndex();
+            TableNode indexTable = index.getTable();
+            UserTableRowType tableType = tableRowType(indexTable);
+            IndexRowType indexType = tableType.indexRowType(iindex);
+            PhysicalOperator indexOperator = indexScan_Default(indexType, 
                                                                index.isReverse(),
                                                                index.getIndexKeyRange());
-            UserTable indexTable = (UserTable)iindex.getTable();
-            UserTableRowType tableType = userTableRowType(indexTable);
-            IndexRowType indexType = tableType.indexRowType(iindex);
             resultOperator = lookup_Default(indexOperator, groupTable,
-                                            indexType, tableType);
+                                            indexType, tableType, false);
             // All selected rows above this need to be output by hkey left
             // segment random access.
             List<RowType> addAncestors = new ArrayList<RowType>();
-            for (UserTable table : squery.getTables()) {
-                if ((table != indexTable) && isAncestorTable(table, indexTable))
-                    addAncestors.add(userTableRowType(table));
+            for (TableNode table : squery.getTables()) {
+                if (table.isUsed()) {
+                    if ((table != indexTable) && table.isAncestor(indexTable))
+                        addAncestors.add(tableRowType(table));
+                }
             }
             if (!addAncestors.isEmpty()) {
                 resultOperator = ancestorLookup_Default(resultOperator, groupTable,
-                                                        tableType, addAncestors);
+                                                        tableType, addAncestors, true);
             }
         }
         else {
@@ -232,11 +263,9 @@ public class OperatorCompiler
         }
         resultOperator = fl.getResultOperator();
         RowType resultRowType = fls.getResultRowType();
-        Map<UserTable,Integer> fieldOffsets = fls.getFieldOffsets();
-        
+        Map<TableNode,Integer> fieldOffsets = fls.getFieldOffsets();
+
         for (ColumnCondition condition : squery.getConditions()) {
-            if ((indexConditions != null) && indexConditions.contains(condition))
-                continue;
             Expression predicate = condition.generateExpression(fieldOffsets);
             resultOperator = select_HKeyOrdered(resultOperator,
                                                 resultRowType,
@@ -245,31 +274,115 @@ public class OperatorCompiler
 
         int ncols = squery.getSelectColumns().size();
         List<Column> resultColumns = new ArrayList<Column>(ncols);
-        for (SelectColumn selectColumn : squery.getSelectColumns()) {
-            resultColumns.add(selectColumn.getColumn());
-        }
         int[] resultColumnOffsets = new int[ncols];
-        for (int i = 0; i < ncols; i++) {
-            Column column = resultColumns.get(i);
-            UserTable table = column.getUserTable();
-            resultColumnOffsets[i] = fieldOffsets.get(table) + column.getPosition();
+        int i = 0;
+        for (SimpleExpression selectExpr : squery.getSelectColumns()) {
+            if (!selectExpr.isColumn())
+                throw new UnsupportedSQLException("Unsupported result column: " + 
+                                                  selectExpr);
+            ColumnExpression selectColumn = (ColumnExpression)selectExpr;
+            TableNode table = selectColumn.getTable();
+            Column column = selectColumn.getColumn();
+            resultColumns.add(column);
+            resultColumnOffsets[i++] = fieldOffsets.get(table) + column.getPosition();
         }
 
+        int offset = squery.getOffset();
+        int limit = squery.getLimit();
+
         return new Result(resultOperator, resultRowType, 
-                          resultColumns, resultColumnOffsets);
+                          resultColumns, resultColumnOffsets,
+                          offset, limit);
+    }
+
+    public Result compileUpdate(UpdateNode update) throws StandardException {
+        update = (UpdateNode)bindAndGroup(update);
+        SimplifiedUpdateStatement supdate = 
+            new SimplifiedUpdateStatement(update, grouper.getJoinConditions());
+        supdate.reorderJoins();
+
+        TableNode targetTable = supdate.getTargetTable();
+        GroupTable groupTable = targetTable.getGroupTable();
+        UserTableRowType targetRowType = tableRowType(targetTable);
+        
+        // TODO: If we flattened subqueries (e.g., IN or EXISTS) into
+        // the main result set, then the index and conditions might be
+        // on joined tables, which might need to be looked up and / or
+        // flattened in before non-index conditions.
+
+        IndexUsage index = pickBestIndex(supdate);
+        PhysicalOperator resultOperator;
+        if (index != null) {
+            assert (targetTable == index.getTable());
+            supdate.removeConditions(index.getIndexConditions());
+            TableIndex iindex = index.getIndex();
+            IndexRowType indexType = targetRowType.indexRowType(iindex);
+            PhysicalOperator indexOperator = indexScan_Default(indexType, 
+                                                               index.isReverse(),
+                                                               index.getIndexKeyRange());
+            resultOperator = lookup_Default(indexOperator, groupTable,
+                                            indexType, targetRowType, false);
+        }
+        else {
+            resultOperator = groupScan_Default(groupTable);
+        }
+        
+        Map<TableNode,Integer> fieldOffsets = new HashMap<TableNode,Integer>(1);
+        fieldOffsets.put(targetTable, 0);
+        for (ColumnCondition condition : supdate.getConditions()) {
+            Expression predicate = condition.generateExpression(fieldOffsets);
+            resultOperator = select_HKeyOrdered(resultOperator,
+                                                targetRowType,
+                                                predicate);
+        }
+        
+        Expression[] updates = new Expression[targetRowType.nFields()];
+        for (SimplifiedUpdateStatement.UpdateColumn updateColumn : 
+                 supdate.getUpdateColumns()) {
+            updates[updateColumn.getColumn().getPosition()] =
+                updateColumn.getValue().generateExpression(fieldOffsets);
+        }
+        ExpressionRow updateRow = new ExpressionRow(targetRowType, updates);
+
+        Plannable updatePlan = new com.akiban.qp.physicaloperator.Update_Default(resultOperator,
+                                            new ExpressionRowUpdateFunction(updateRow));
+        return new Result(updatePlan, targetRowType);
+    }
+
+    public Result compileInsert(InsertNode insert) throws StandardException {
+        insert = (InsertNode)bindAndGroup(insert);
+        SimplifiedInsertStatement sstmt = 
+            new SimplifiedInsertStatement(insert, grouper.getJoinConditions());
+
+        throw new UnsupportedSQLException("No Insert operators yet");
+    }
+
+    public Result compileDelete(DeleteNode delete) throws StandardException {
+        delete = (DeleteNode)bindAndGroup(delete);
+        SimplifiedDeleteStatement sstmt = 
+            new SimplifiedDeleteStatement(delete, grouper.getJoinConditions());
+
+        throw new UnsupportedSQLException("No Delete operators yet");
     }
 
     // A possible index.
     class IndexUsage implements Comparable<IndexUsage> {
-        private Index index;
+        private TableNode table;
+        private TableIndex index;
         private List<ColumnCondition> equalityConditions;
-        ColumnCondition lowCondition, highCondition;
+        private ColumnCondition lowCondition, highCondition;
+        private boolean sorting, reverse;
         
-        public IndexUsage(Index index) {
+        public IndexUsage(TableNode table, TableIndex index) {
+            this.table = table;
             this.index = index;
         }
 
-        public Index getIndex() {
+        public TableNode getTable() {
+            return table;
+        }
+
+        public TableIndex getIndex() {
             return index;
         }
 
@@ -285,13 +398,25 @@ public class OperatorCompiler
             return result;
         }
 
+        // Does this index accomplish the query's sorting?
+        public boolean isSorting() {
+            return sorting;
+        }
+
+        // Should the index iteration be in reverse?
         public boolean isReverse() {
-            return false;
+            return reverse;
         }
 
         // Is this a better index?
         // TODO: Best we can do without any idea of selectivity.
         public int compareTo(IndexUsage other) {
+            if (sorting) {
+                if (!other.sorting)
+                    return +1;
+            }
+            else if (other.sorting)
+                return -1;
             if (equalityConditions != null) {
                 if (other.equalityConditions == null)
                     return +1;
@@ -299,6 +424,8 @@ public class OperatorCompiler
                     return (equalityConditions.size() > other.equalityConditions.size()) 
                         ? +1 : -1;
             }
+            else if (other.equalityConditions != null)
+                return -1;
             int n = 0, on = 0;
             if (lowCondition != null)
                 n++;
@@ -314,7 +441,7 @@ public class OperatorCompiler
         }
 
         // Can this index be used for part of the given query?
-        public boolean usable(SimplifiedSelectQuery squery) {
+        public boolean usable(SimplifiedQuery squery) {
             List<IndexColumn> indexColumns = index.getColumns();
             int ncols = indexColumns.size();
             int nequals = 0;
@@ -336,13 +463,44 @@ public class OperatorCompiler
                 lowCondition = squery.findColumnConstantCondition(column, Comparison.GT);
                 highCondition = squery.findColumnConstantCondition(column, Comparison.LT);
             }
+            if (squery.getSortColumns() != null) {
+                // Sort columns corresponding to equality constraints
+                // were removed already as pointless. So the remaining
+                // ones just need to be a subset of the remaining
+                // index columns.
+                int nsort = squery.getSortColumns().size();
+                if (nsort <= (ncols - nequals)) {
+                    found: {
+                        for (int i = 0; i < nsort; i++) {
+                            SortColumn sort = squery.getSortColumns().get(i);
+                            IndexColumn index = indexColumns.get(nequals + i);
+                            if (sort.getColumn() != index.getColumn())
+                                break found;
+                            // Iterate in reverse if index goes wrong way.
+                            boolean dirMismatch = (sort.isAscending() != 
+                                                   index.isAscending().booleanValue());
+                            if (i == 0)
+                                reverse = dirMismatch;
+                            else if (reverse != dirMismatch)
+                                break found;
+                        }
+                        // This index will accomplish required sorting.
+                        sorting = true;
+                    }
+                }
+            }
             return ((equalityConditions != null) ||
                     (lowCondition != null) ||
-                    (highCondition != null));
+                    (highCondition != null) ||
+                    sorting);
         }
 
         // Generate key range bounds.
         public IndexKeyRange getIndexKeyRange() {
+            if ((equalityConditions == null) &&
+                (lowCondition == null) && (highCondition == null))
+                return new IndexKeyRange(null, false, null, false);
+
             List<IndexColumn> indexColumns = index.getColumns();
             int nkeys = indexColumns.size();
             Expression[] keys = new Expression[nkeys];
@@ -387,18 +545,21 @@ public class OperatorCompiler
     }
 
     // Pick an index to use.
-    protected IndexUsage pickBestIndex(SimplifiedSelectQuery squery) {
-        if (squery.getConditions().isEmpty())
+    protected IndexUsage pickBestIndex(SimplifiedQuery squery) {
+        if (squery.getConditions().isEmpty() && 
+            (squery.getSortColumns() == null))
             return null;
 
         IndexUsage bestIndex = null;
-        for (UserTable table : squery.getTables()) {
-            for (Index index : table.getIndexes()) { // TODO: getIndexesIncludingInternal()
-                IndexUsage candidate = new IndexUsage(index);
-                if (candidate.usable(squery)) {
-                    if ((bestIndex == null) ||
-                        (candidate.compareTo(bestIndex) > 0))
-                        bestIndex = candidate;
+        for (TableNode table : squery.getTables()) {
+            if (table.isUsed() && !table.isOuter()) {
+                for (TableIndex index : table.getTable().getIndexes()) { // TODO: getIndexesIncludingInternal()
+                    IndexUsage candidate = new IndexUsage(table, index);
+                    if (candidate.usable(squery)) {
+                        if ((bestIndex == null) ||
+                            (candidate.compareTo(bestIndex) > 0))
+                            bestIndex = candidate;
+                    }
                 }
             }
         }
@@ -407,11 +568,11 @@ public class OperatorCompiler
 
     static class FlattenState {
         private RowType resultRowType;
-        private Map<UserTable,Integer> fieldOffsets;
+        private Map<TableNode,Integer> fieldOffsets;
         int nfields;
 
         public FlattenState(RowType resultRowType,
-                            Map<UserTable,Integer> fieldOffsets,
+                            Map<TableNode,Integer> fieldOffsets,
                             int nfields) {
             this.resultRowType = resultRowType;
             this.fieldOffsets = fieldOffsets;
@@ -425,7 +586,7 @@ public class OperatorCompiler
             this.resultRowType = resultRowType;
         }
 
-        public Map<UserTable,Integer> getFieldOffsets() {
+        public Map<TableNode,Integer> getFieldOffsets() {
             return fieldOffsets;
         }
         public int getNfields() {
@@ -434,7 +595,7 @@ public class OperatorCompiler
 
         
         public void mergeFields(FlattenState other) {
-            for (UserTable table : other.fieldOffsets.keySet()) {
+            for (TableNode table : other.fieldOffsets.keySet()) {
                 fieldOffsets.put(table, other.fieldOffsets.get(table) + nfields);
             }
             nfields += other.nfields;
@@ -456,12 +617,12 @@ public class OperatorCompiler
 
         public FlattenState flatten(BaseJoinNode join) {
             if (join.isTable()) {
-                UserTable table = ((TableJoinNode)join).getTable();
-                Map<UserTable,Integer> fieldOffsets = new HashMap<UserTable,Integer>();
+                TableNode table = ((TableJoinNode)join).getTable();
+                Map<TableNode,Integer> fieldOffsets = new HashMap<TableNode,Integer>();
                 fieldOffsets.put(table, 0);
-                return new FlattenState(userTableRowType(table),
+                return new FlattenState(tableRowType(table),
                                         fieldOffsets,
-                                        table.getColumns().size());
+                                        table.getNFields());
             }
             else {
                 JoinJoinNode jjoin = (JoinJoinNode)join;
@@ -469,13 +630,13 @@ public class OperatorCompiler
                 BaseJoinNode right = jjoin.getRight();
                 FlattenState fleft = flatten(left);
                 FlattenState fright = flatten(right);
-                int flags = 0x00;
+                int flags = DEFAULT;
                 switch (jjoin.getJoinType()) {
                 case LEFT:
-                    flags = 0x08;
+                    flags = LEFT_JOIN;
                     break;
                 case RIGHT:
-                    flags = 0x10;
+                    flags = RIGHT_JOIN;
                     break;
                 }
                 resultOperator = flatten_HKeyOrdered(resultOperator,
@@ -489,26 +650,11 @@ public class OperatorCompiler
         }
     }
 
-    protected UserTableRowType userTableRowType(UserTable table) {
-        return schema.userTableRowType(table);
+    protected UserTableRowType tableRowType(TableNode table) {
+        return schema.userTableRowType(table.getTable());
     }
 
-    /** Is t1 an ancestor of t2? */
-    protected static boolean isAncestorTable(UserTable t1, UserTable t2) {
-        while (true) {
-            Join j = t2.getParentJoin();
-            if (j == null)
-                return false;
-            UserTable parent = j.getParent();
-            if (parent == null)
-                return false;
-            if (parent == t1)
-                return true;
-            t2 = parent;
-        }
-    }
-
-    protected IndexBound getIndexBound(Index index, Expression[] keys) {
+    protected IndexBound getIndexBound(TableIndex index, Expression[] keys) {
         if (keys == null) 
             return null;
         return new IndexBound((UserTable)index.getTable(), 
@@ -530,7 +676,7 @@ public class OperatorCompiler
             };
     }
 
-    protected Row getIndexExpressionRow(Index index, Expression[] keys) {
+    protected Row getIndexExpressionRow(TableIndex index, Expression[] keys) {
         return new ExpressionRow(schema.indexRowType(index), keys);
     }
 

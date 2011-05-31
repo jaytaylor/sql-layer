@@ -42,27 +42,23 @@ public interface SchemaManager {
     TableName createTableDefinition(Session session, String defaultSchemaName, String statement) throws Exception;
 
     /**
-     * Alter an existing table by adding index(es) to it. All indexes must refer to the
-     * same table and must otherwise be valid Index. If indexes is empty, this method
-     * does nothing.
+     * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are
+     * supported through this interface. If indexes is empty, this method does nothing.
      * @param session Session to operate under.
-     * @param tableName Table to add indexes to.
      * @param indexes List of index definitions to add.
      * @throws Exception If the request is invalid (e.g. duplicate index name, malformed Index) or there
      * was an internal error.
      */
-    void alterTableAddIndexes(Session session, TableName tableName, Collection<Index> indexes) throws Exception;
+    void createIndexes(Session session, Collection<Index> indexes) throws Exception;
 
     /**
-     * Alter an existing table by removing index(es) from it.
-     * <p><b>Due to implementation requirements, this method does no validation. Callers
-     * must ensure the request is valid.</b></p>
+     * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are
+     * supported through this interface.
      * @param session Session to operate under.
-     * @param tableName Table to remove indexes from.
-     * @param indexNames Names of the indexes to drop.
+     * @param indexes List of indexes to drop.
      * @throws Exception If there was an internal error.
      */
-    void alterTableDropIndexes(Session session, TableName tableName, Collection<String> indexNames) throws Exception;
+    void dropIndexes(Session session, Collection<Index> indexes) throws Exception;
 
     /**
      * Delete the definition of the table with the given name. This method does nothing if

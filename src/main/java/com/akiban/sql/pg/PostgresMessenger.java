@@ -90,6 +90,14 @@ public class PostgresMessenger implements DataInput, DataOutput
         this.dataInput = new DataInputStream(inputStream);
     }
 
+    InputStream getInputStream() {
+        return inputStream;
+    }
+
+    OutputStream getOutputStream() {
+        return outputStream;
+    }
+
     /** The encoding used for strings. */
     public String getEncoding() {
         return encoding;

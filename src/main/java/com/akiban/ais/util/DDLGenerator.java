@@ -26,6 +26,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Join;
@@ -78,7 +79,7 @@ public class DDLGenerator
         String pkeyDecl = null;
         List<String> indexDecls = new ArrayList<String>();
         List<String> fkeyDecls = new ArrayList<String>();
-        for (Index index : table.getIndexes()) {
+        for (TableIndex index : table.getIndexes()) {
             String decl = declaration(index);
             if(index.isPrimaryKey())  {
                 pkeyDecl = decl;
@@ -165,7 +166,7 @@ public class DDLGenerator
         return declaration.toString();
     }
 
-    private String declaration(Index index)
+    private String declaration(TableIndex index)
     {
         List<String> columnDecls = new ArrayList<String>();
         for (IndexColumn indexColumn : index.getColumns()) {

@@ -43,6 +43,16 @@ public class FlattenedRowType extends DerivedRowType
 
     // FlattenedRowType interface
 
+    public RowType parentType()
+    {
+        return parent;
+    }
+
+    public RowType childType()
+    {
+        return child;
+    }
+
     public FlattenedRowType(Schema schema, int typeId, RowType parent, RowType child)
     {
         super(schema, typeId, child.ancestry());

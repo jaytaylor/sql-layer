@@ -19,6 +19,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.CursorId;
@@ -141,12 +142,12 @@ public final class DDLInvalidatesScansIT extends ITBase {
             UserTable customerUtable = ais.getUserTable(SCHEMA, CUSTOMERS);
             GroupTable customerGtable = customerUtable.getGroup().getGroupTable();
             cursor = openFullScan(customerGtable.getTableId(), 1);
-            ddl().dropIndexes(
+            ddl().dropTableIndexes(
                     session(),
                     customerUtable.getName(),
                     Collections.singleton(
-                        customerUtable.getIndexes().iterator().next().getIndexName().getName()
-            ));
+                            customerUtable.getIndexes().iterator().next().getIndexName().getName()
+                    ));
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         }
@@ -175,7 +176,7 @@ public final class DDLInvalidatesScansIT extends ITBase {
         final CursorId cursor;
         try {
             cursor = openFullScan(SCHEMA, ORDERS, "date");
-            ddl().dropIndexes(session(), tableName(SCHEMA, ORDERS), Collections.singleton("date"));
+            ddl().dropTableIndexes(session(), tableName(SCHEMA, ORDERS), Collections.singleton("date"));
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         }
@@ -189,7 +190,7 @@ public final class DDLInvalidatesScansIT extends ITBase {
         try {
             cursor = openFullScan(SCHEMA, CUSTOMERS, "name");
             indexId(SCHEMA, CUSTOMERS, "name");
-            ddl().dropIndexes(session(), tableName(SCHEMA, CUSTOMERS), Collections.singleton("name"));
+            ddl().dropTableIndexes(session(), tableName(SCHEMA, CUSTOMERS), Collections.singleton("name"));
             indexId(SCHEMA, CUSTOMERS, "position");
         } catch (InvalidOperationException e) {
             throw new TestException(e);
@@ -203,7 +204,7 @@ public final class DDLInvalidatesScansIT extends ITBase {
         final CursorId cursor;
         try {
             cursor = openFullScan(SCHEMA, CUSTOMERS, "name");
-            ddl().dropIndexes(session(), tableName(SCHEMA, CUSTOMERS), Collections.singleton("position"));
+            ddl().dropTableIndexes(session(), tableName(SCHEMA, CUSTOMERS), Collections.singleton("position"));
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         }
@@ -237,7 +238,7 @@ public final class DDLInvalidatesScansIT extends ITBase {
 
     private Index createIndex() throws InvalidOperationException {
         UserTable customers = getUserTable(SCHEMA, CUSTOMERS);
-        Index addIndex = new Index(
+        Index addIndex = new TableIndex(
                 customers,
                 "played_for_Bs",
                 2,

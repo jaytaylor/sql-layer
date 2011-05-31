@@ -134,12 +134,12 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         return columns;
     }
 
-    public Collection<Index> getIndexes()
+    public Collection<TableIndex> getIndexes()
     {
         return Collections.unmodifiableCollection(internalGetIndexMap().values());
     }
 
-    public Index getIndex(String indexName)
+    public TableIndex getIndex(String indexName)
     {
         return internalGetIndexMap().get(indexName.toLowerCase());
     }
@@ -177,19 +177,19 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         columnsStale = true;
     }
 
-    protected void addIndex(Index index)
+    protected void addIndex(TableIndex index)
     {
-        Map<String, Index> old;
-        Map<String, Index> withNewIndex;
+        Map<String, TableIndex> old;
+        Map<String, TableIndex> withNewIndex;
         do {
             old = internalGetIndexMap();
-            withNewIndex = new TreeMap<String, Index>(old);
+            withNewIndex = new TreeMap<String, TableIndex>(old);
             withNewIndex.put(index.getIndexName().getName().toLowerCase(), index);
         } while(!internalIndexMapCAS(old, withNewIndex));
     }
 
     void clearIndexes() {
-        while (!internalIndexMapCAS(internalGetIndexMap(), Collections.<String,Index>emptyMap())) {
+        while (!internalIndexMapCAS(internalGetIndexMap(), Collections.<String,TableIndex>emptyMap())) {
             // try again
         }
     }
@@ -213,12 +213,12 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         this.tableName = tableName;
     }
 
-    public void removeIndexes(Collection<Index> indexesToDrop) {
-        Map<String, Index> old;
-        Map<String, Index> remaining;
+    public void removeIndexes(Collection<TableIndex> indexesToDrop) {
+        Map<String, TableIndex> old;
+        Map<String, TableIndex> remaining;
         do {
             old = internalGetIndexMap();
-            remaining = new TreeMap<String, Index>( old );
+            remaining = new TreeMap<String, TableIndex>( old );
             remaining.values().removeAll(indexesToDrop);
         } while (!internalIndexMapCAS(old, remaining));
     }
@@ -303,9 +303,9 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
                 }
             }
         }
-        for (Map.Entry<String, Index> entry : internalGetIndexMap().entrySet()) {
+        for (Map.Entry<String, TableIndex> entry : internalGetIndexMap().entrySet()) {
             String name = entry.getKey();
-            Index index = entry.getValue();
+            TableIndex index = entry.getValue();
             if (name == null) {
                 out.add("null name for index: " + index);
             } else if (index == null) {
@@ -378,11 +378,11 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         return declaredColumns;
     }
 
-    private Map<String, Index> internalGetIndexMap() {
+    private Map<String, TableIndex> internalGetIndexMap() {
         return indexMap;
     }
 
-    private boolean internalIndexMapCAS(Map<String, Index> expected, Map<String, Index> update) {
+    private boolean internalIndexMapCAS(Map<String, TableIndex> expected, Map<String, TableIndex> update) {
         // GWT-friendly CAS
         synchronized (LOCK) {
             if (indexMap != expected) {
@@ -401,7 +401,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     private Integer tableId;
     private boolean columnsStale = true;
     private List<Column> columns = new ArrayList<Column>();
-    private volatile Map<String, Index> indexMap = Collections.emptyMap();
+    private volatile Map<String, TableIndex> indexMap = Collections.emptyMap();
     private Map<String, Column> columnMap = new TreeMap<String, Column>();
     private CharsetAndCollation charsetAndCollation;
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;

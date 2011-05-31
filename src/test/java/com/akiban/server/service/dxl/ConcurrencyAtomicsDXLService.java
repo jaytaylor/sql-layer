@@ -16,7 +16,6 @@
 package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.GenericInvalidOperationException;
@@ -151,13 +150,13 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
     private static class ConcurrencyAtomicsDDLFunctions extends BasicDDLFunctions {
         @Override
-        public void dropIndexes(Session session, TableName tableName, Collection<String> indexNamesToDrop)
+        public void dropTableIndexes(Session session, TableName tableName, Collection<String> indexNamesToDrop)
                 throws NoSuchTableException, IndexAlterException, GenericInvalidOperationException {
             BeforeAndAfter hook = session.remove(DELAY_ON_DROP_INDEX);
             if (hook != null) {
                 hook.doBefore();
             }
-            super.dropIndexes(session, tableName, indexNamesToDrop);
+            super.dropTableIndexes(session, tableName, indexNamesToDrop);
             if (hook != null) {
                 hook.doAfter();
             }

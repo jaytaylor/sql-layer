@@ -21,6 +21,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.IndexDef;
@@ -67,7 +68,7 @@ public class Scanrows implements HapiProcessor {
 
         private final NewRow start;
         private final NewRow end;
-        private final Index index;
+        private final TableIndex index;
 
         private Integer bookendColumnId = null;
         boolean foundInequality = false;
@@ -77,14 +78,17 @@ public class Scanrows implements HapiProcessor {
         RowDataStruct(AkibanInformationSchema ais, Index index, HapiGetRequest request)
                 throws HapiRequestException
         {
-            int tableId = index.getTable().getTableId();
+            if(!index.isTableIndex()) {
+                throw new IllegalArgumentException("Only TableIndex supported");
+            }
+            this.index = (TableIndex)index;
+            int tableId = this.index.getTable().getTableId();
             final RowDef rowDef;
             try {
                 rowDef = (RowDef) getTable(ais, tableId).rowDef();
             } catch (NoSuchTableException e) {
                 throw new HapiRequestException("internal error; tableId" + tableId, INTERNAL_ERROR);
             }
-            this.index = index;
             this.predicateTable = getUserTable(ais, request.getUsingTable());
             this.hRoot = getUserTable(ais, new TableName(request.getSchema(), request.getTable()));
             scanFlags = EnumSet.of(
@@ -289,8 +293,7 @@ public class Scanrows implements HapiProcessor {
         // Row limit
         ScanLimit countLimit = null;
         if (request.getLimit() >= 0) {
-            countLimit = new PredicateLimit(ais.getTable(request.getUsingTable()).getTableId(),
-                                            request.getLimit());
+            countLimit = new PredicateLimit(ais.getTable(request.getUsingTable()).getTableId(), request.getLimit());
         }
         limit =
             messageSizeLimit == null && countLimit == null ? ScanLimit.NONE :
@@ -558,7 +561,8 @@ public class Scanrows implements HapiProcessor {
     }
 
     private static Index getGroupTableIndex(Index index) throws HapiRequestException {
-        Table indexTable = index.getTable();
+        assert index.isTableIndex() : index;
+        Table indexTable = ((TableIndex)index).getTable();
         if (!indexTable.isUserTable()) {
             throw new HapiRequestException("not a user table: " + indexTable, UNKNOWN_IDENTIFIER);
         }
