@@ -27,6 +27,8 @@ import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
@@ -209,11 +211,16 @@ public class OperatorCompiler
             squery.removeConditions(index.getIndexConditions());
             squery.recomputeUsed();
             squery.removeUnusedJoins();            
-            TableIndex iindex = index.getIndex();
+            Index iindex = index.getIndex();
             TableNode indexTable = index.getTable();
             squery.getTables().setLeftBranch(indexTable);
             UserTableRowType tableType = tableRowType(indexTable);
-            IndexRowType indexType = tableType.indexRowType(iindex);
+            IndexRowType indexType;
+            // TODO: See comment on this class.
+            if (iindex.isTableIndex())
+                indexType = tableType.indexRowType(iindex);
+            else
+                indexType = new UnknownIndexRowType(schema, tableType, iindex);
             resultOperator = indexScan_Default(indexType, 
                                                index.isReverse(),
                                                index.getIndexKeyRange());
@@ -353,7 +360,7 @@ public class OperatorCompiler
         if (index != null) {
             assert (targetTable == index.getTable());
             supdate.removeConditions(index.getIndexConditions());
-            TableIndex iindex = index.getIndex();
+            Index iindex = index.getIndex();
             IndexRowType indexType = targetRowType.indexRowType(iindex);
             resultOperator = indexScan_Default(indexType, 
                                                index.isReverse(),
@@ -407,21 +414,23 @@ public class OperatorCompiler
     // A possible index.
     class IndexUsage implements Comparable<IndexUsage> {
         private TableNode table;
-        private TableIndex index;
+        private Index index;
         private List<ColumnCondition> equalityConditions;
         private ColumnCondition lowCondition, highCondition;
         private boolean sorting, reverse;
         
-        public IndexUsage(TableNode table, TableIndex index) {
-            this.table = table;
+        public IndexUsage(Index index, TableNode table) {
             this.index = index;
+            this.table = table; // Can be null: will be computed from columns.
         }
 
         public TableNode getTable() {
+            if (table == null)
+                table = computeDeepestTable();
             return table;
         }
 
-        public TableIndex getIndex() {
+        public Index getIndex() {
             return index;
         }
 
@@ -476,7 +485,7 @@ public class OperatorCompiler
                 on++;
             if (n != on) 
                 return (n > on) ? +1 : -1;
-            return index.getTable().getTableId().compareTo(other.index.getTable().getTableId());
+            return getTable().getTable().getTableId().compareTo(other.getTable().getTable().getTableId());
         }
 
         // Can this index be used for part of the given query?
@@ -581,6 +590,21 @@ public class OperatorCompiler
                 return new IndexKeyRange(lo, lowInc, hi, highInc);
             }
         }
+
+        // A group index has an hkey from the deepest table it indexes.
+        // Take the deepest that we are actually using, for which that
+        // hkey should work, since all indexed columns must be in a
+        // single branch.
+        protected TableNode computeDeepestTable() {
+            TableNode deepest = null;
+            for (ColumnCondition columnCondition : getIndexConditions()) {
+                TableNode table = columnCondition.getTable();
+                if ((deepest == null) || (deepest.getDepth() < table.getDepth()))
+                    deepest = table;
+            }
+            assert (deepest != null);
+            return deepest;
+        }
     }
 
     // Pick an index to use.
@@ -592,15 +616,26 @@ public class OperatorCompiler
         IndexUsage bestIndex = null;
         for (TableNode table : squery.getTables()) {
             if (table.isUsed() && !table.isOuter()) {
-                for (TableIndex index : table.getTable().getIndexes()) { // TODO: getIndexesIncludingInternal()
-                    IndexUsage candidate = new IndexUsage(table, index);
-                    if (candidate.usable(squery)) {
-                        if ((bestIndex == null) ||
-                            (candidate.compareTo(bestIndex) > 0))
-                            bestIndex = candidate;
-                    }
+                for (TableIndex index : table.getTable().getIndexes()) {
+                    IndexUsage candidate = new IndexUsage(index, table);
+                    bestIndex = betterIndex(squery, bestIndex, candidate);
                 }
             }
+        }
+        for (GroupIndex index : squery.getGroup().getGroup().getIndexes()) {
+            IndexUsage candidate = new IndexUsage(index, null);
+            bestIndex = betterIndex(squery, bestIndex, candidate);
+            
+        }
+        return bestIndex;
+    }
+
+    protected IndexUsage betterIndex(SimplifiedQuery squery,
+                                     IndexUsage bestIndex, IndexUsage candidate) {
+        if (candidate.usable(squery)) {
+            if ((bestIndex == null) ||
+                (candidate.compareTo(bestIndex) > 0))
+                return candidate;
         }
         return bestIndex;
     }
@@ -693,10 +728,14 @@ public class OperatorCompiler
         return schema.userTableRowType(table.getTable());
     }
 
-    protected IndexBound getIndexBound(TableIndex index, Expression[] keys) {
+    protected IndexBound getIndexBound(Index index, Expression[] keys) {
         if (keys == null) 
             return null;
-        return new IndexBound((UserTable)index.getTable(), 
+        UserTable userTable = null;
+        if (index.isTableIndex())
+            userTable = (UserTable)((TableIndex)index).getTable();
+        // TODO: group index bound table.
+        return new IndexBound(userTable,
                               getIndexExpressionRow(index, keys),
                               getIndexColumnSelector(index));
     }
@@ -715,8 +754,43 @@ public class OperatorCompiler
             };
     }
 
-    protected Row getIndexExpressionRow(TableIndex index, Expression[] keys) {
-        return new ExpressionRow(schema.indexRowType(index), keys);
+    // TODO: This is just good enough to print properly in plan, not
+    // to actually run.
+    static class UnknownIndexRowType extends IndexRowType {
+
+        @Override
+        public String toString()
+        {
+            return index.toString();
+        }
+
+        // RowType interface
+
+        @Override
+        public int nFields()
+        {
+            return index.getColumns().size();
+        }
+
+        public UnknownIndexRowType(Schema schema, UserTableRowType tableType, Index index)
+        {
+            super(schema, tableType, null);
+            this.index = index;
+        }
+
+        // Object state
+
+        private final Index index;
+    }
+
+    protected Row getIndexExpressionRow(Index index, Expression[] keys) {
+        RowType rowType = null;
+        if (index.isTableIndex())
+            rowType = schema.indexRowType((TableIndex)index);
+        else
+            // TODO: See comment above.
+            rowType = new UnknownIndexRowType(schema, null, index);
+        return new ExpressionRow(rowType, keys);
     }
 
     /** Check whether any list of children has a cross-product join,
