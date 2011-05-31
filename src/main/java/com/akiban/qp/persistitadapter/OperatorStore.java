@@ -50,7 +50,7 @@ import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Transaction;
 
-import static com.akiban.qp.physicaloperator.API.lookup_Default;
+import static com.akiban.qp.physicaloperator.API.branchLookup_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
 
 public final class OperatorStore extends DelegatingStore<PersistitStore> {
@@ -81,7 +81,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         UserTableRowType tableType = schema.userTableRowType(userTable);
         IndexRowType indexType = tableType.indexRowType(index);
         PhysicalOperator indexScan = indexScan_Default(indexType, false, range);
-        scanOp = lookup_Default(indexScan, groupTable, indexType, tableType, false);
+        scanOp = branchLookup_Default(indexScan, groupTable, indexType, tableType, false);
 
         // MVCC will render this useless, but for now, a limit of 1 ensures we won't see the row we just updated,
         // and therefore scan through two rows -- once to update old -> new, then to update new -> copy of new

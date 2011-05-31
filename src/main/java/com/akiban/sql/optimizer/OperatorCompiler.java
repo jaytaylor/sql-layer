@@ -30,7 +30,6 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
@@ -39,7 +38,6 @@ import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import static com.akiban.qp.expression.API.*;
 
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import static com.akiban.qp.physicaloperator.API.*;
@@ -214,8 +212,8 @@ public class OperatorCompiler
             PhysicalOperator indexOperator = indexScan_Default(indexType, 
                                                                index.isReverse(),
                                                                index.getIndexKeyRange());
-            resultOperator = lookup_Default(indexOperator, groupTable,
-                                            indexType, tableType, false);
+            resultOperator = branchLookup_Default(indexOperator, groupTable,
+                    indexType, tableType, false);
             // All selected rows above this need to be output by hkey left
             // segment random access.
             List<RowType> addAncestors = new ArrayList<RowType>();
@@ -301,8 +299,8 @@ public class OperatorCompiler
             PhysicalOperator indexOperator = indexScan_Default(indexType, 
                                                                index.isReverse(),
                                                                index.getIndexKeyRange());
-            resultOperator = lookup_Default(indexOperator, groupTable,
-                                            indexType, targetRowType, false);
+            resultOperator = branchLookup_Default(indexOperator, groupTable,
+                    indexType, targetRowType, false);
         }
         else {
             resultOperator = groupScan_Default(groupTable);
