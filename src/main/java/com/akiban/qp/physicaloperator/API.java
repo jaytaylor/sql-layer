@@ -28,6 +28,13 @@ import java.util.List;
 
 public class API
 {
+    public static PhysicalOperator project_Default(PhysicalOperator inputOperator,
+                                                   RowType rowType,
+                                                   List<Expression> projections)
+    {
+        return new Project_Default(inputOperator, rowType, projections);
+    }
+
     public static PhysicalOperator flatten_HKeyOrdered(PhysicalOperator inputOperator,
                                                        RowType parentType,
                                                        RowType childType)
