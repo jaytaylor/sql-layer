@@ -44,6 +44,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresServerConnection.class);
 
+    private final static Tap processTap = Tap.add(new Tap.PerThread("sql: process", Tap.TimeAndCount.class));
     private final static Tap parserTap = Tap.add(new Tap.PerThread("sql: parse", Tap.TimeAndCount.class));
     private final static Tap optimizerTap = Tap.add(new Tap.PerThread("sql: optimize", Tap.TimeAndCount.class));
     private final static Tap executorTap = Tap.add(new Tap.PerThread("sql: execute", Tap.TimeAndCount.class));
@@ -135,10 +136,9 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     protected void topLevel() throws IOException, StandardException {
         logger.info("Connect from {}" + socket.getRemoteSocketAddress());
-        messenger.readMessage(false);
-        processStartupMessage();
+        boolean startupComplete = false;
         while (running) {
-            int type = messenger.readMessage();
+            int type = messenger.readMessage(startupComplete);
             if (ignoreUntilSync) {
                 if ((type != -1) && (type != PostgresMessenger.SYNC_TYPE))
                     continue;
@@ -146,12 +146,16 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             }
             ErrorMode errorMode = ErrorMode.NONE;
             try {
+                processTap.in();
                 switch (type) {
                 case -1:                                    // EOF
                     stop();
                     break;
                 case PostgresMessenger.SYNC_TYPE:
                     readyForQuery();
+                    break;
+                case PostgresMessenger.STARTUP_MESSAGE_TYPE:
+                    startupComplete = processStartupMessage();
                     break;
                 case PostgresMessenger.PASSWORD_MESSAGE_TYPE:
                     processPasswordMessage();
@@ -204,6 +208,9 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 else
                     readyForQuery();
             }
+            finally {
+                processTap.out();
+            }
         }
         server.removeConnection(pid);
     }
@@ -214,15 +221,15 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         messenger.sendMessage(true);
     }
 
-    protected void processStartupMessage() throws IOException, StandardException {
+    protected boolean processStartupMessage() throws IOException, StandardException {
         int version = messenger.readInt();
         switch (version) {
         case PostgresMessenger.VERSION_CANCEL:
             processCancelRequest();
-            return;
+            return false;
         case PostgresMessenger.VERSION_SSL:
             processSSLMessage();
-            return;
+            return false;
         default:
             this.version = version;
             logger.debug("Version {}.{}", (version >> 16), (version & 0xFFFF));
@@ -254,6 +261,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             messenger.writeInt(PostgresMessenger.AUTHENTICATION_CLEAR_TEXT);
             messenger.sendMessage(true);
         }
+        return true;
     }
 
     protected void processCancelRequest() throws IOException {
@@ -270,9 +278,6 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         OutputStream raw = messenger.getOutputStream();
         raw.write('N');         // No SSL support.
         raw.flush();
-        // Now try to read a regular StartupMessage.
-        messenger.readMessage(false);
-        processStartupMessage();
     }
 
     protected void processPasswordMessage() throws IOException {
@@ -359,6 +364,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             }
         }
         readyForQuery();
+        logger.debug("Query complete");
     }
 
     protected void processParse() throws IOException, StandardException {
@@ -475,6 +481,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         finally {
             executorTap.out();
         }
+        logger.debug("Execute complete");
     }
 
     protected void processClose() throws IOException {
