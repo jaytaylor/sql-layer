@@ -764,7 +764,7 @@ public class SimplifiedQuery
 
     protected ColumnExpression getColumnExpression(Column column)
             throws StandardException {
-        TableNode table = tables.getNode(column.getUserTable());
+        TableNode table = getColumnTable(column);
         return new ColumnExpression(table, column);
     }
 
@@ -849,6 +849,10 @@ public class SimplifiedQuery
         return limit;
     }
     
+    public TableNode getColumnTable(Column column) {
+        return tables.getNode(column.getUserTable());
+    }
+
     public List<Set<Column>> getColumnEquivalences() {
         return columnEquivalences;
     }

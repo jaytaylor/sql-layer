@@ -425,8 +425,6 @@ public class OperatorCompiler
         }
 
         public TableNode getTable() {
-            if (table == null)
-                table = computeDeepestTable();
             return table;
         }
 
@@ -498,6 +496,22 @@ public class OperatorCompiler
         // Can this index be used for part of the given query?
         public boolean usable(SimplifiedQuery squery) {
             List<IndexColumn> indexColumns = index.getColumns();
+            if (index.isGroupIndex()) {
+                // A group index is for the inner join, so all the
+                // tables it indexes must appear in the query as well.
+                // Its hkey is for the deepest table, figure out which
+                // that is, too.
+                TableNode deepest = null;
+                for (IndexColumn indexColumn : indexColumns) {
+                    TableNode table = squery.getColumnTable(indexColumn.getColumn());
+                    if ((table == null) || !table.isUsed() || table.isOuter())
+                        return false;
+                    if ((deepest == null) || (deepest.getDepth() < table.getDepth()))
+                        deepest = table;
+                }
+                if (table == null)
+                    table = deepest;
+            }
             int ncols = indexColumns.size();
             int nequals = 0;
             while (nequals < ncols) {
@@ -596,21 +610,6 @@ public class OperatorCompiler
                 IndexBound hi = getIndexBound(index, highKeys);
                 return new IndexKeyRange(lo, lowInc, hi, highInc);
             }
-        }
-
-        // A group index has an hkey from the deepest table it indexes.
-        // Take the deepest that we are actually using, for which that
-        // hkey should work, since all indexed columns must be in a
-        // single branch.
-        protected TableNode computeDeepestTable() {
-            TableNode deepest = null;
-            for (ColumnCondition columnCondition : getIndexConditions()) {
-                TableNode table = columnCondition.getTable();
-                if ((deepest == null) || (deepest.getDepth() < table.getDepth()))
-                    deepest = table;
-            }
-            assert (deepest != null);
-            return deepest;
         }
     }
 
