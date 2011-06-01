@@ -93,7 +93,7 @@ public class API
     public static PhysicalOperator ancestorLookup_Default(PhysicalOperator inputOperator,
                                                           GroupTable groupTable,
                                                           RowType rowType,
-                                                          List<RowType> ancestorTypes,
+                                                          List<? extends RowType> ancestorTypes,
                                                           boolean keepInput)
     {
         return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, keepInput);
