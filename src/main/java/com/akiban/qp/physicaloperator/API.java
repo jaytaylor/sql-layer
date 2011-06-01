@@ -67,21 +67,21 @@ public class API
         return new GroupScan_Default(groupTable, limit, null);
     }
 
-    public static PhysicalOperator lookup_Default(PhysicalOperator inputOperator,
-                                                  GroupTable groupTable,
-                                                  RowType inputRowType,
-                                                  RowType outputRowType,
-                                                  boolean keepInput)
+    public static PhysicalOperator branchLookup_Default(PhysicalOperator inputOperator,
+                                                        GroupTable groupTable,
+                                                        RowType inputRowType,
+                                                        RowType outputRowType,
+                                                        boolean keepInput)
     {
-        return lookup_Default(inputOperator, groupTable, inputRowType, outputRowType, keepInput, NO_LIMIT);
+        return branchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, keepInput, NO_LIMIT);
     }
 
-    public static PhysicalOperator lookup_Default(PhysicalOperator inputOperator,
-                                                  GroupTable groupTable,
-                                                  RowType inputRowType,
-                                                  RowType outputRowType,
-                                                  boolean keepInput,
-                                                  Limit limit)
+    public static PhysicalOperator branchLookup_Default(PhysicalOperator inputOperator,
+                                                        GroupTable groupTable,
+                                                        RowType inputRowType,
+                                                        RowType outputRowType,
+                                                        boolean keepInput,
+                                                        Limit limit)
     {
         return new BranchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, keepInput, limit);
     }

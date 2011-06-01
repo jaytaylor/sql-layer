@@ -32,7 +32,6 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
@@ -41,7 +40,6 @@ import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import static com.akiban.qp.expression.API.*;
 
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import static com.akiban.qp.physicaloperator.API.*;
@@ -240,8 +238,8 @@ public class OperatorCompiler
             }
             RowType ancestorType = indexType;
             if (descendantUsed) {
-                resultOperator = lookup_Default(resultOperator, groupTable,
-                                                indexType, tableType, false);
+                resultOperator = branchLookup_Default(resultOperator, groupTable,
+                                                      indexType, tableType, false);
                 checkForCrossProducts(indexTable);
                 ancestorType = tableType; // Index no longer in stream.
             }
@@ -286,9 +284,9 @@ public class OperatorCompiler
                                                         (descendantUsed && tableUsed));
             }
             for (TableNode branchTable : addBranches) {
-                resultOperator = lookup_Default(resultOperator, groupTable,
-                                                tableType, tableRowType(branchTable), 
-                                                true);
+                resultOperator = branchLookup_Default(resultOperator, groupTable,
+                                                      tableType, tableRowType(branchTable), 
+                                                      true);
                 checkForCrossProducts(branchTable);
             }
         }
