@@ -39,21 +39,6 @@ public class FieldDef {
 
     private Long typeParameter2;
 
-    public FieldDef(String name, Type type) {
-        this(name, type, (int) (type.maxSizeBytes().longValue()));
-    }
-
-    public FieldDef(String name, Type type, int maxStorageSize) {
-        this(null, name, type, maxStorageSize, 0, null, null);
-    }
-
-    public FieldDef(String name,
-                    Type type,
-                    int maxStorageSize,
-                    int prefixSize) {
-        this(null, name, type, maxStorageSize, prefixSize, null, null);
-    }
-
     public FieldDef(RowDef rowDef, Column column)
     {
         this(column,

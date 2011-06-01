@@ -104,11 +104,6 @@ public class RowDef implements TreeLink {
     private final int[][] fieldCoordinates;
 
     /**
-     * Row type
-     */
-    private RowType rowType;
-
-    /**
      * Array computed by the {@link #preComputeFieldCoordinates(FieldDef[])}
      * method to assist in looking up a field's offset and length.
      */
@@ -202,9 +197,10 @@ public class RowDef implements TreeLink {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(String.format(
-                "RowDef #%d %s (%s.%s) %s ", table.getTableId(),
-                table.getName(), treeName, getPkTreeName(), rowType));
+        StringBuilder sb = new StringBuilder(String.format("RowDef #%d %s (%s.%s)",
+                                                           table.getTableId(),
+                                                           table.getName(),
+                                                           treeName, getPkTreeName()));
         if (userTableRowDefs != null) {
             for (int i = 0; i < userTableRowDefs.length; i++) {
                 sb.append(i == 0 ? "{" : ",");
@@ -388,10 +384,6 @@ public class RowDef implements TreeLink {
         return sb.toString();
     }
 
-    public RowType getRowType() {
-        return rowType;
-    }
-
     public int getFieldCount() {
         return fieldDefs.length;
     }
@@ -485,10 +477,6 @@ public class RowDef implements TreeLink {
 
     public boolean isUserTable() {
         return !isGroupTable();
-    }
-
-    public void setRowType(final RowType rowType) {
-        this.rowType = rowType;
     }
 
     public void setIndexDefs(IndexDef[] indexDefs) {
@@ -592,23 +580,6 @@ public class RowDef implements TreeLink {
                         break;
                     }
                 }
-            }
-        }
-    }
-
-    void computeRowDefType(final RowDefCache rowDefCache)
-            throws RowDefNotFoundException {
-        if (userTableRowDefs != null) {
-            rowType = RowType.GROUP;
-        } else if (getParentRowDefId() == 0) {
-            rowType = RowType.ROOT;
-        } else {
-            RowDef parentRowDef = rowDefCache.getRowDef(getParentRowDefId());
-            assert parentRowDef != null;
-            if (parentRowDef.getParentRowDefId() == 0) {
-                rowType = RowType.CHILD;
-            } else {
-                rowType = RowType.GRANDCHILD;
             }
         }
     }
