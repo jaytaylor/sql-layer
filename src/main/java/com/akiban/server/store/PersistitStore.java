@@ -45,7 +45,6 @@ import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.RowDefCache;
-import com.akiban.server.RowType;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.TableStatus;
 import com.akiban.server.TableStatusCache;
@@ -315,8 +314,9 @@ public class PersistitStore implements Store {
      * @param rowData
      * @param indexDef
      */
-    public static void constructIndexKey(Key iKey, RowData rowData, IndexDef indexDef,
-            Key hKey) throws PersistitException {
+    public static void constructIndexKey(Key iKey, RowData rowData, IndexDef indexDef, Key hKey)
+        throws PersistitException
+    {
         IndexDef.H2I[] fassoc = indexDef.indexKeyFields();
         iKey.clear();
         for (int index = 0; index < fassoc.length; index++) {
@@ -1095,7 +1095,7 @@ public class PersistitStore implements Store {
         final RowDef rowDef = rowDefCache.getRowDef(tableId);
         final TableStatistics ts = new TableStatistics(tableId);
         final TableStatus status = rowDef.getTableStatus();
-        if (rowDef.getRowType() == RowType.GROUP) {
+        if (rowDef.isGroupTable()) {
             ts.setRowCount(2);
             ts.setAutoIncrementValue(-1);
         } else {

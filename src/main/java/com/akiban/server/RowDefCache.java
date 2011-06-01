@@ -409,7 +409,6 @@ public class RowDefCache {
     }
 
     void analyze(final RowDef rowDef) throws RowDefNotFoundException {
-        rowDef.computeRowDefType(this);
         rowDef.computeFieldAssociations(this);
     }
 
