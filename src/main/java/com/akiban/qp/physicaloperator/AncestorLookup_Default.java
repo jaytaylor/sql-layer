@@ -71,7 +71,7 @@ class AncestorLookup_Default extends PhysicalOperator
     public AncestorLookup_Default(PhysicalOperator inputOperator,
                                   GroupTable groupTable,
                                   RowType rowType,
-                                  List<RowType> ancestorTypes,
+                                  List<? extends RowType> ancestorTypes,
                                   boolean keepInput)
     {
         ArgumentValidation.notEmpty("ancestorTypes", ancestorTypes);
