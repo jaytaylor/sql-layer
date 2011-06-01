@@ -15,7 +15,7 @@
 
 package com.akiban.server.service.servicemanager;
 
-public interface LockableServiceBinding extends ServiceBinding {
+interface LockableServiceBinding extends ServiceBinding {
     boolean isLocked();
     void lock();
 }

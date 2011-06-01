@@ -38,7 +38,9 @@ public final class DefaultLockableServiceBinding implements LockableServiceBindi
 
     @Override
     public void setImplementingClass(String className) {
-        requireUnlocked("set new implementing class");
+        if (isLocked()) {
+            throw new ServiceBindingException("can't set new implementing class: " + interfaceName + " is locked");
+        }
         implementingClassName = className;
     }
 
@@ -86,12 +88,6 @@ public final class DefaultLockableServiceBinding implements LockableServiceBindi
     }
 
     // private methods
-
-    private void requireUnlocked(String message) {
-        if (isLocked()) {
-            throw new ServiceBindingException("can't " + ": " + interfaceName + " is locked");
-        }
-    }
 
     // DefaultLockableServiceBinding interface
 
