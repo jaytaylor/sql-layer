@@ -297,7 +297,7 @@ public class IndexDef implements TreeLink {
         // There are two types of I2H entries, "ordinal" entries, and entries that identify index fields.
         // An ordinal entry, identifying a user table, appears in the hkey precedes all the hkey values
         // from that user table. Non-ordinal I2H objects also contain the position of the hkey column
-        // in the table, for ues in index analysis (PersistitStoreIndexManager.analyzeIndex).
+        // in the table, for use in index analysis (PersistitStoreIndexManager.analyzeIndex).
         List<I2H> i2hList = new ArrayList<I2H>();
         for (HKeySegment hKeySegment : hKey.segments()) {
             i2hList.add(new I2H(rowDefCache.rowDef(hKeySegment.table())));
