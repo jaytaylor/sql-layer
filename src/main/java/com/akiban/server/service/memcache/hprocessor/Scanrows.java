@@ -268,7 +268,7 @@ public class Scanrows implements HapiProcessor {
 
             IndexDef indexDef = (IndexDef) range.index().indexDef();
             outputter.output(new DefaultProcessedRequest(request, ais),
-                             indexDef.isHKeyEquivalent(),
+                             indexDef.index().isHKeyEquivalent(),
                              rows,
                              outputStream
             );

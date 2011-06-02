@@ -255,7 +255,7 @@ public abstract class KeyUpdateBase extends ITBase {
 
     private IndexDef indexDef(RowDef rowDef, String indexName) {
         for (IndexDef indexDef : rowDef.getIndexDefs()) {
-            if (indexName.equals(indexDef.getName())) {
+            if (indexName.equals(indexDef.index().getIndexName().getName())) {
                 return indexDef;
             }
         }

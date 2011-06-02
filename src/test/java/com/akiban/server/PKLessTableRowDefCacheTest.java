@@ -45,29 +45,29 @@ public class PKLessTableRowDefCacheTest
         UserTable t = (UserTable) test.table();
         assertEquals(2, test.getHKeyDepth()); // test ordinal, test row counter
         checkHKey(t.hKey(), t, t, Column.AKIBAN_PK_NAME);
-        IndexDef index;
-        IndexDef.IndexRowComposition rowComp;
-        IndexDef.IndexToHKey indexToHKey;
+        Index index;
+        IndexRowComposition rowComp;
+        IndexToHKey indexToHKey;
         // e, d index
         index = index(test, "e", "d");
-        assertTrue(!index.isPkIndex());
+        assertTrue(!index.isPrimaryKey());
         assertTrue(!index.isUnique());
-        rowComp = index.getIndexRowComposition();
+        rowComp = index.indexRowComposition();
         assertEquals(4, rowComp.getFieldPosition(0)); // test.e
         assertEquals(3, rowComp.getFieldPosition(1)); // test.d
         assertEquals(5, rowComp.getFieldPosition(2)); // Akiban PK
-        indexToHKey = index.getIndexToHKey();
+        indexToHKey = index.indexToHKey();
         assertEquals(test.getOrdinal(), indexToHKey.getOrdinal(0)); // test ordinal
         assertEquals(2, indexToHKey.getIndexRowPosition(1)); // test row counter
         // d, b index
         index = index(test, "d", "b");
-        assertTrue(!index.isPkIndex());
+        assertTrue(!index.isPrimaryKey());
         assertTrue(index.isUnique());
-        rowComp = index.getIndexRowComposition();
+        rowComp = index.indexRowComposition();
         assertEquals(3, rowComp.getFieldPosition(0)); // test.d
         assertEquals(1, rowComp.getFieldPosition(1)); // test.b
         assertEquals(5, rowComp.getFieldPosition(2)); // Akiban PK
-        indexToHKey = index.getIndexToHKey();
+        indexToHKey = index.indexToHKey();
         assertEquals(test.getOrdinal(), indexToHKey.getOrdinal(0)); // test ordinal
         assertEquals(2, indexToHKey.getIndexRowPosition(1)); // Akiban PK
     }
@@ -91,9 +91,9 @@ public class PKLessTableRowDefCacheTest
             ");"
         };
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
-        IndexDef index;
-        IndexDef.IndexRowComposition rowComp;
-        IndexDef.IndexToHKey indexToHKey;
+        Index index;
+        IndexRowComposition rowComp;
+        IndexToHKey indexToHKey;
         // ------------------------- parent ----------------------------------------------------------------------------
         RowDef parent = rowDefCache.getRowDef(tableName("parent"));
         UserTable p = (UserTable) parent.table();
@@ -101,12 +101,12 @@ public class PKLessTableRowDefCacheTest
         checkHKey(p.hKey(), p, p, "p1");
         // PK index
         index = index(parent, "p1");
-        assertTrue(index.isPkIndex());
+        assertTrue(index.isPrimaryKey());
         assertTrue(index.isUnique());
         // assertTrue(index.isHKeyEquivalent());
-        rowComp = index.getIndexRowComposition();
+        rowComp = index.indexRowComposition();
         assertEquals(0, rowComp.getFieldPosition(0)); // parent.p1
-        indexToHKey = index.getIndexToHKey();
+        indexToHKey = index.indexToHKey();
         assertEquals(parent.getOrdinal(), indexToHKey.getOrdinal(0)); // parent ordinal
         assertEquals(0, indexToHKey.getIndexRowPosition(1)); // parent p1
         // ------------------------- child -----------------------------------------------------------------------------
@@ -118,20 +118,20 @@ public class PKLessTableRowDefCacheTest
                   c, c, Column.AKIBAN_PK_NAME);
         // c2, c1 index
         index = index(child, "c2", "c1");
-        assertTrue(!index.isPkIndex());
+        assertTrue(!index.isPrimaryKey());
         assertTrue(!index.isUnique());
         // assertTrue(!index.isHKeyEquivalent());
-        rowComp = index.getIndexRowComposition();
+        rowComp = index.indexRowComposition();
         assertEquals(1, rowComp.getFieldPosition(0)); // child.c2
         assertEquals(0, rowComp.getFieldPosition(1)); // child.c1
-        indexToHKey = index.getIndexToHKey();
+        indexToHKey = index.indexToHKey();
         assertEquals(parent.getOrdinal(), indexToHKey.getOrdinal(0)); // parent ordinal
         assertEquals(2, indexToHKey.getFieldPosition(1)); // child p1
         assertEquals(child.getOrdinal(), indexToHKey.getOrdinal(2)); // child ordinal
         assertEquals(2, indexToHKey.getIndexRowPosition(1)); // child row counter
     }
 
-    private IndexDef index(RowDef rowDef, String... indexColumnNames)
+    private Index index(RowDef rowDef, String... indexColumnNames)
     {
         for (IndexDef indexDef : rowDef.getIndexDefs()) {
             int[] indexFields = indexDef.getFields();
@@ -142,7 +142,7 @@ public class PKLessTableRowDefCacheTest
                 }
             }
             if (match) {
-                return indexDef;
+                return indexDef.index();
             }
         }
         return null;
@@ -153,7 +153,7 @@ public class PKLessTableRowDefCacheTest
         return String.format("%s.%s", SCHEMA, name);
     }
 
-    // Copied from AISTest, generalized for pkles tables
+    // Copied from AISTest, generalized for pk less tables
     private void checkHKey(HKey hKey, Object... elements)
     {
         int e = 0;

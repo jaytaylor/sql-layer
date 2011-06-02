@@ -193,6 +193,36 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         return isTableIndex() ? IndexType.TABLE : IndexType.GROUP;
     }
 
+    public IndexRowComposition indexRowComposition()
+    {
+        return indexRowComposition;
+    }
+
+    public void indexRowComposition(IndexRowComposition rowComp)
+    {
+        indexRowComposition = rowComp;
+    }
+
+    public IndexToHKey indexToHKey()
+    {
+        return indexToHKey;
+    }
+
+    public void indexToHKey(IndexToHKey toHKey)
+    {
+        indexToHKey = toHKey;
+    }
+
+    public boolean isHKeyEquivalent()
+    {
+        return isHKeyEquivalent;
+    }
+
+    public void isHKeyEquivalent(boolean isEquivalent)
+    {
+        isHKeyEquivalent = isEquivalent;
+    }
+
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
     public static final String UNIQUE_KEY_CONSTRAINT = "UNIQUE";
     public static final String KEY_CONSTRAINT = "KEY";
@@ -222,7 +252,11 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     private boolean columnsStale = true;
     private List<IndexColumn> columns;
     private boolean columnsFrozen = false;
+
     // It really is an IndexDef, but declaring it that way creates trouble for AIS. We don't want to pull in
     // all the RowDef stuff and have it visible to GWT.
     private transient /* IndexDef */ Object indexDef;
+    private transient IndexRowComposition indexRowComposition;
+    private transient IndexToHKey indexToHKey;
+    private transient boolean isHKeyEquivalent;
 }

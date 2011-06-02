@@ -18,6 +18,7 @@ package com.akiban.server.store;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.akiban.ais.model.IndexToHKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,7 +137,7 @@ public class PersistitStoreIndexManager implements IndexManager {
             try {
                 RowData rowData = new RowData(new byte[ROW_DATA_LENGTH]);
                 rowData.createRow(indexAnalysisRowDef, new Object[] {
-                        indexDef.getRowDef().getRowDefId(), indexDef.getId() });
+                        indexDef.getRowDef().getRowDefId(), indexDef.index().getIndexId() });
                 //
                 // Remove previous analysis
                 //
@@ -182,11 +183,11 @@ public class PersistitStoreIndexManager implements IndexManager {
         final int keyDepth;
         KeyFilter keyFilter = null;
 
-        if (indexDef.isHKeyEquivalent()) {
+        if (indexDef.index().isHKeyEquivalent()) {
             probeEx = store.getExchange(session, indexDef.getRowDef(), null);
             startKey = new Key(store.getDb());
             endKey = new Key(store.getDb());
-            final IndexDef.IndexToHKey indexToHKey = indexDef.getIndexToHKey();
+            final IndexToHKey indexToHKey = indexDef.index().indexToHKey();
             assert indexToHKey.isOrdinal(0) : indexToHKey;
             final KeyFilter.Term[] terms = new KeyFilter.Term[indexToHKey.getLength()];
             startKey.append(indexToHKey.getOrdinal(0));
@@ -230,7 +231,7 @@ public class PersistitStoreIndexManager implements IndexManager {
 
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Analyzed index %s in table %s: %,d keys "
-                    + "at keyDepth/treeLevel %d/%d", indexDef.getName(),
+                    + "at keyDepth/treeLevel %d/%d", indexDef.index().getIndexName().getName(),
                     indexDef.getRowDef().getTableName(),
                     keyHistogram.getKeyCount(), keyDepth,
                     Math.max(0, treeLevel)));
@@ -260,7 +261,7 @@ public class PersistitStoreIndexManager implements IndexManager {
 
                     rowData.createRow(indexAnalysisRowDef,
                             new Object[] { indexDef.getRowDef().getRowDefId(),
-                                    indexDef.getId(), now, 0, "", null, 0 });
+                                    indexDef.index().getIndexId(), now, 0, "", null, 0 });
                     //
                     // Remove previous analysis
                     //
@@ -284,8 +285,8 @@ public class PersistitStoreIndexManager implements IndexManager {
                         key.indexTo(0);
                         int remainingSegments = key.getDepth();
 
-                        if (indexDef.isHKeyEquivalent()) {
-                            IndexDef.IndexToHKey indexToHkey = indexDef.getIndexToHKey();
+                        if (indexDef.index().isHKeyEquivalent()) {
+                            IndexToHKey indexToHkey = indexDef.index().indexToHKey();
                             for (int i = 0; i < indexToHkey.getLength(); ++i) {
                                 final Object keySegmentValue = --remainingSegments >= 0 ? key .decode() : null;
                                 if (!indexToHkey.isOrdinal(i)) {
@@ -316,11 +317,11 @@ public class PersistitStoreIndexManager implements IndexManager {
 
                         rowData.createRow(
                                 indexAnalysisRowDef,
-                                new Object[] {
+                                new Object[]{
                                         indexDef.getRowDef().getRowDefId(),
-                                        indexDef.getId(), now, ++itemNumber,
+                                        indexDef.index().getIndexId(), now, ++itemNumber,
                                         key.toString(), indexRowBytes,
-                                        keyCount.getCount() * multiplier });
+                                        keyCount.getCount() * multiplier});
                         try {
                             store.writeRow(session, rowData);
                         } catch (InvalidOperationException e) {
@@ -341,7 +342,7 @@ public class PersistitStoreIndexManager implements IndexManager {
                     rowData.createRow(
                             indexAnalysisRowDef,
                             new Object[] { indexDef.getRowDef().getRowDefId(),
-                                    indexDef.getId(), now, ++itemNumber,
+                                    indexDef.index().getIndexId(), now, ++itemNumber,
                                     key.toString(), indexRowBytes,
                                     keyHistogram0.getKeyCount() * multiplier });
 
@@ -394,13 +395,13 @@ public class PersistitStoreIndexManager implements IndexManager {
         }
 
         for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-            final Histogram histogram = new Histogram(indexDef.getId());
+            final Histogram histogram = new Histogram(indexDef.index().getIndexId());
             final RowDef indexAnalysisRowDef = store.getRowDefCache()
                     .getRowDef(ANALYSIS_TABLE_NAME);
             final Exchange exchange = store.getExchange(session,
                     indexAnalysisRowDef, null);
             exchange.clear().append(indexAnalysisRowDef.getOrdinal())
-                    .append((long) tableId).append((long) indexDef.getId())
+                    .append((long) tableId).append((long) indexDef.index().getIndexId())
                     .append(Key.BEFORE);
             List<RowData> rows = new ArrayList<RowData>();
             while (exchange.next()) {

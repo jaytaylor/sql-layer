@@ -139,23 +139,10 @@ public abstract class AbstractScanBase extends ITSuiteBase {
         return scanCount;
     }
 
-    protected int findIndexId(final RowDef groupRowDef,
-            final RowDef userRowDef, final int fieldIndex) {
-        final int findField = fieldIndex + userRowDef.getColumnOffset()
-                - groupRowDef.getColumnOffset();
-        for (final IndexDef indexDef : groupRowDef.getIndexDefs()) {
-            if (indexDef.getFields().length == 1
-                    && indexDef.getFields()[0] == findField) {
-                return indexDef.getId();
-            }
-        }
-        return -1;
-    }
-
     protected int findIndexId(final RowDef rowDef, final String name) {
         for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-            if (indexDef.getName().startsWith(name)) {
-                return indexDef.getId();
+            if (indexDef.index().getIndexName().getName().startsWith(name)) {
+                return indexDef.index().getIndexId();
             }
         }
         return -1;

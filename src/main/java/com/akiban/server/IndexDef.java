@@ -27,118 +27,34 @@ import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.IndexRowComposition;
+import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
-import com.akiban.util.ArgumentValidation;
 
-/**
- * Defines an Index within the Chunk Server
- * 
- * 
- * @author peter
- * 
- */
 public class IndexDef implements TreeLink {
     private final TableIndex index;
     private final String treeName;
     // Identifies fields within the row that form the key part of the index entry.
     private final int[] fields;
     private final RowDef rowDef;
-    private boolean hkeyEquivalent;
-    private IndexRowComposition indexRowComposition;
-    private IndexToHKey indexToHKey;
     private AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
 
-    public static class IndexRowComposition
+
+    public IndexDef(String treeName, RowDef rowDef, TableIndex index)
     {
-        public IndexRowComposition(int[] depths, int[] fieldPositions, int[] hkeyPositions) {
-            ArgumentValidation.isEQ("depth", depths.length, "field", fieldPositions.length);
-            ArgumentValidation.isEQ("depth", depths.length, "hkey", hkeyPositions.length);
-            this.depths = depths;
-            this.fieldPositions = fieldPositions;
-            this.hkeyPositions = hkeyPositions;
+        this.index = index;
+        index.indexDef(this);
+        this.treeName = treeName;
+        this.rowDef = rowDef;
+        this.fields = new int[index.getColumns().size()];
+        for (IndexColumn indexColumn : index.getColumns()) {
+            int positionInRow = indexColumn.getColumn().getPosition();
+            int positionInIndex = indexColumn.getPosition();
+            this.fields[positionInIndex] = positionInRow;
         }
-
-        public boolean isInRowData(int indexPos) {
-            return fieldPositions[indexPos] >= 0;
-        }
-
-        public boolean isInHKey(int indexPos) {
-            return hkeyPositions[indexPos] >= 0;
-        }
-
-        public int getDepth(int indexPos) {
-            return depths[indexPos];
-        }
-
-        public int getFieldPosition(int indexPos) {
-            return fieldPositions[indexPos];
-        }
-
-        public int getHKeyPosition(int indexPos) {
-            return hkeyPositions[indexPos];
-        }
-
-        public int getLength() {
-            return fieldPositions.length;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("depths:%s fieldPos:%s hkeyPos:%s", Arrays.toString(depths),
-                                 Arrays.toString(fieldPositions), Arrays.toString(hkeyPositions));
-        }
-
-        /** If set, value >= 0, is the depth of the associated table for index position i **/
-        private final int[] depths;
-        /** If set, value >= 0, is the field position for index position i **/
-        private final int[] fieldPositions;
-        /** If set, value >= 0, is the hkey position for index position i **/
-        private final int[] hkeyPositions;
-    }
-
-    public static class IndexToHKey
-    {
-        public IndexToHKey(int[] ordinals, int[] indexRowPositions, int[] fieldPositions) {
-            ArgumentValidation.isEQ("ordinals", ordinals.length, "indexRowPos", indexRowPositions.length);
-            ArgumentValidation.isEQ("ordinals", ordinals.length, "fieldPos", fieldPositions.length);
-            this.ordinals = ordinals;
-            this.indexRowPositions = indexRowPositions;
-            this.fieldPositions = fieldPositions;
-        }
-
-        public boolean isOrdinal(int index) {
-            return ordinals[index] >= 0;
-        }
-
-        public boolean isInIndexRow(int index) {
-            return indexRowPositions[index] >= 0;
-        }
-
-        public int getOrdinal(int index) {
-            return ordinals[index];
-        }
-
-        public int getIndexRowPosition(int index) {
-            return indexRowPositions[index];
-        }
-
-        public int getFieldPosition(int index) {
-            return fieldPositions[index];
-        }
-
-        public int getLength() {
-            return ordinals.length;
-        }
-
-        /** If set, value >= 0, the ith field of the hkey is this ordinal **/
-        private final int[] ordinals;
-        /** If set, value >= 0, the ith field of the hkey is at this position in the index row **/
-        private final int[] indexRowPositions;
-        /** If set, value >= 0, the ith field of the hkey is at this field in the data row **/
-        private final int[] fieldPositions;
     }
 
     private static class H2I
@@ -183,55 +99,17 @@ public class IndexDef implements TreeLink {
         public final int fieldPos;
     }
 
-    public IndexDef(String treeName, RowDef rowDef, TableIndex index)
-    {
-        this.index = index;
-        index.indexDef(this);
-        this.treeName = treeName;
-        this.rowDef = rowDef;
-        this.fields = new int[index.getColumns().size()];
-        for (IndexColumn indexColumn : index.getColumns()) {
-            int positionInRow = indexColumn.getColumn().getPosition();
-            int positionInIndex = indexColumn.getPosition();
-            this.fields[positionInIndex] = positionInRow;
-        }
-    }
-
     public Index index()
     {
         return index;
-    }
-
-    public String getName() {
-        return index.getIndexName().getName();
     }
 
     public String getTreeName() {
         return treeName;
     }
 
-    public int getId() {
-        return index.getIndexId();
-    }
-
     public int[] getFields() {
         return fields;
-    }
-
-    public boolean isPkIndex() {
-        return rowDef.isGroupTable() ? false : index.isPrimaryKey();
-    }
-
-    /**
-     * True if this index represents fields matching the pkFields of the root
-     * table. If so, then there is no separately stored index tree.
-     */
-    public boolean isHKeyEquivalent() {
-        return hkeyEquivalent;
-    }
-
-    public boolean isUnique() {
-        return index.isUnique();
     }
 
     public RowDef getRowDef() {
@@ -242,19 +120,11 @@ public class IndexDef implements TreeLink {
         return fields.length;
     }
 
-    public IndexRowComposition getIndexRowComposition() {
-        return indexRowComposition;
-    }
-
-    public IndexToHKey getIndexToHKey() {
-        return indexToHKey;
-    }
-
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(rowDef.getTableName());
         sb.append(":");
-        sb.append(getName());
+        sb.append(index.getIndexName().getName());
         sb.append("(");
         for (int i = 0; i < fields.length; i++) {
             sb.append(i == 0 ? "" : ",");
@@ -262,13 +132,13 @@ public class IndexDef implements TreeLink {
         }
         sb.append(")->");
         sb.append(treeName);
-        if (hkeyEquivalent) {
+        if (index().isHKeyEquivalent()) {
             sb.append("=hkey");
         }
         return sb.toString();
     }
 
-    private static IndexRowComposition toIndexRowComposition(List<H2I> h2iLst) {
+    private static IndexRowComposition makeIndexRowComposition(List<H2I> h2iLst) {
         int[] depths = new int[h2iLst.size()];
         int[] fieldPositions = new int[h2iLst.size()];
         int[] hkeyPositions = new int[h2iLst.size()];
@@ -282,7 +152,7 @@ public class IndexDef implements TreeLink {
         return new IndexRowComposition(depths, fieldPositions, hkeyPositions);
     }
 
-    private static IndexToHKey toIndexToHKey(List<I2H> i2hList) {
+    private static IndexToHKey makeIndexToHKey(List<I2H> i2hList) {
         int[] ordinals = new int[i2hList.size()];
         int[] indexRowPositions = new int[i2hList.size()];
         int[] fieldPositions = new int[i2hList.size()];
@@ -334,7 +204,7 @@ public class IndexDef implements TreeLink {
                 }
             }
         }
-        indexRowComposition = toIndexRowComposition(h2iList);
+        index.indexRowComposition(makeIndexRowComposition(h2iList));
 
         // hKeyFields is a list of I2H objects used to construct hkey values from index entries.
         // There are two types of I2H entries, "ordinal" entries, and entries that identify index fields.
@@ -358,14 +228,14 @@ public class IndexDef implements TreeLink {
                 i2hList.add(I2H.fromIndexRow(hKeyColumnIndexPosition, hKeyColumnFieldPosition));
             }
         }
-        indexToHKey = toIndexToHKey(i2hList);
+        index.indexToHKey(makeIndexToHKey(i2hList));
     }
 
     private void computeHKeyEquivalence()
     {
-        hkeyEquivalent = false;
-/*
-        heyEquivalent = true;
+        boolean hkeyEquivalent = false;
+        /*
+        boolean heyEquivalent = true;
         // Collect the HKeyColumns of the index's hkey
         List<HKeyColumn> hKeyColumns = new ArrayList<HKeyColumn>();
         for (HKeySegment hKeySegment : index.hKey().segments()) {
@@ -382,25 +252,23 @@ public class IndexDef implements TreeLink {
         if (hkeyEquivalent && !hKeyColumnScan.hasNext() && indexColumnScan.hasNext()) {
             hkeyEquivalent = false;
         }
-*/
+        */
+        index().isHKeyEquivalent(hkeyEquivalent);
     }
 
     @Override
     public boolean equals(final Object o) {
         final IndexDef def = (IndexDef) o;
-        return
-            getName().equals(def.getName()) &&
+        return index.equals(def.index()) &&
             treeName.equals(def.treeName) &&
-            getId() == def.getId() &&
-            Arrays.equals(fields, def.fields) &&
-            isPkIndex() == def.isPkIndex() &&
-            isUnique() == def.isUnique();
+            Arrays.equals(fields, def.fields);
     }
 
     @Override
     public int hashCode()
     {
-        return getName().hashCode() ^ treeName.hashCode() ^ getId() ^ Arrays.hashCode(fields);
+        return index.getIndexName().getName().hashCode() ^ treeName.hashCode() ^
+               index.getIndexId() ^ Arrays.hashCode(fields);
     }
 
     @Override
@@ -417,5 +285,4 @@ public class IndexDef implements TreeLink {
     public TreeCache getTreeCache() {
         return treeCache.get();
     }
-
 }
