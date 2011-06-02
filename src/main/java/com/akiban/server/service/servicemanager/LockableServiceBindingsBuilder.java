@@ -39,7 +39,7 @@ class LockableServiceBindingsBuilder {
         }
         Collection<ServiceBinding> all = new ArrayList<ServiceBinding>(bindings.values());
         for (ServiceBinding binding : all) {
-            if (binding.isDirectlyRequired() && binding.getImplementingClassName() == null) {
+            if (binding.isDirectlyRequired() && (binding.getImplementingClassName() == null) ) {
                 throw new ServiceBindingException(binding.getInterfaceName() + " is required but not bound");
             }
         }
@@ -77,13 +77,19 @@ class LockableServiceBindingsBuilder {
     }
 
     public void mustBeBound(String interfaceName) {
-        if (!sectionRequirements.containsKey(interfaceName)) {
+        LockableServiceBinding binding = bindings.get(interfaceName);
+        if ( (binding == null || binding.getImplementingClassName() == null)
+                && !sectionRequirements.containsKey(interfaceName) )
+        {
             sectionRequirements.put(interfaceName, false);
         }
     }
 
     public void mustBeLocked(String interfaceName) {
-        sectionRequirements.put(interfaceName, true);
+        LockableServiceBinding binding = bindings.get(interfaceName);
+        if (binding == null || !binding.isLocked()) {
+            sectionRequirements.put(interfaceName, true);
+        }
     }
 
     public void markSectionEnd() {
@@ -92,9 +98,7 @@ class LockableServiceBindingsBuilder {
             boolean lockRequired = entry.getValue();
 
             LockableServiceBinding binding = require(interfaceName);
-            if (binding.getImplementingClassName() == null) {
-                throw new ServiceBindingException(binding.getInterfaceName() + " is not bound");
-            }
+            assert binding.getImplementingClassName() != null; // require makes this check
             if ( lockRequired && (!binding.isLocked()) ) {
                 throw new ServiceBindingException(binding.getImplementingClassName() + " is not locked");
             }
@@ -115,7 +119,7 @@ class LockableServiceBindingsBuilder {
 
     private LockableServiceBinding require(String interfaceName) {
         LockableServiceBinding binding = bindings.get(interfaceName);
-        if (interfaceName == null) {
+        if (binding == null || binding.getImplementingClassName() == null) {
             throw new ServiceBindingException(interfaceName + " is not defined");
         }
         return binding;

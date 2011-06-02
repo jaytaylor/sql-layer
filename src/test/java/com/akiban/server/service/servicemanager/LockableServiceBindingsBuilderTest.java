@@ -24,20 +24,88 @@ import java.util.Comparator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 public final class LockableServiceBindingsBuilderTest {
+
     @Test
     public void bindOne() {
         LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
         builder.bind("one", "two");
         
-        List<LockableServiceBinding> bindings = sorted(builder.getAllBindings());
-        
-        assertEquals("bindings count", 1, bindings.size());
-        checkBinding("binding", bindings.get(0), "one", "two", false, false);
+        checkOnlyBinding(builder, "one", "two", false, false);
     }
-    
+
+    @Test
+    public void mustBeBound_Good() {
+        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        builder.mustBeBound("alpha");
+        builder.bind("alpha", "puppy");
+        builder.markSectionEnd();
+
+        checkOnlyBinding(builder, "alpha", "puppy", false, false);
+    }
+
+    @Test(expected = ServiceBindingException.class)
+    public void mustBeBound_ButIsNot() {
+        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        builder.mustBeBound("alpha");
+        builder.markSectionEnd();
+    }
+
+    @Test
+    public void mustBeLocked_Good() {
+        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        builder.mustBeLocked("alpha");
+        builder.bind("alpha", "puppy");
+        builder.lock("alpha");
+        builder.markSectionEnd();
+
+        checkOnlyBinding(builder, "alpha", "puppy", false, true);
+    }
+
+    @Test
+    public void markRequired_Good() {
+        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        builder.markDirectlyRequired("alpha");
+        builder.bind("alpha", "puppy");
+        builder.markSectionEnd();
+
+        checkOnlyBinding(builder, "alpha", "puppy", true, false);
+    }
+
+    @Test
+    public void lockTwice() {
+        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        builder.bind("alpha", "puppy");
+        builder.lock("alpha");
+        builder.lock("alpha");
+        builder.markSectionEnd();
+
+        checkOnlyBinding(builder, "alpha", "puppy", false, true);
+    }
+
+    @Test
+    public void lockThenRequireBound() {
+        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        builder.bind("alpha", "puppy");
+        builder.lock("alpha");
+        builder.mustBeBound("alpha");
+
+        checkOnlyBinding(builder, "alpha", "puppy", false, true);
+    }
+
+    @Test(expected = ServiceBindingException.class)
+    public void lockUnbound() {
+        new LockableServiceBindingsBuilder().lock("unbound.interface");
+    }
+
+    @Test(expected = ServiceBindingException.class)
+    public void lockUnboundButRequired() {
+        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        builder.markDirectlyRequired("hello");
+        builder.lock("hello");
+    }
+
     private static void checkBinding(String descriptor, LockableServiceBinding binding,
                                      String interfaceName, String implementingClass,
                                      boolean directlyRequired, boolean locked)
@@ -46,6 +114,15 @@ public final class LockableServiceBindingsBuilderTest {
         assertEquals(descriptor + ".class", implementingClass, binding.getImplementingClassName());
         assertEquals(descriptor + ".required", directlyRequired, binding.isDirectlyRequired());
         assertEquals(descriptor + ".locked", locked, binding.isLocked());
+    }
+
+    private static void checkOnlyBinding(LockableServiceBindingsBuilder builder,
+                                         String interfaceName, String implementingClass,
+                                         boolean directlyRequired, boolean locked)
+    {
+        List<LockableServiceBinding> bindings = sorted(builder.getAllBindings());
+        assertEquals("bindings count", 1, bindings.size());
+        checkBinding("binding", bindings.get(0), interfaceName, implementingClass, directlyRequired, locked);
     }
 
     private static List<LockableServiceBinding> sorted(Collection<ServiceBinding> bindings) {
