@@ -62,6 +62,9 @@ public final class YamlConfigurationTest {
         StringListStrategy strategy = new StringListStrategy();
         YamlConfiguration configuration = new YamlConfiguration(strategy);
         InputStream testIS = YamlConfigurationTest.class.getResourceAsStream(yamlFileName);
+        if (testIS == null) {
+            throw new FileNotFoundException(yamlFileName);
+        }
         int segment = 1;
         do {
             Reader testReader = new InputStreamReader(testIS, "UTF-8");
