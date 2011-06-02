@@ -8,7 +8,9 @@ import org.junit.Before;
 
 import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.ddl.SchemaDefToAis;
+import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Index;
 import com.akiban.server.SchemaFactory;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
@@ -39,9 +41,8 @@ public class SchemaDDLIT {
     @Test
     public void createSchemaUsed() throws Exception
     {
-        String ddl = "create table s.t (c1 int primary key)";
         String sql = "CREATE SCHEMA S";
-        AkibanInformationSchema ais = factory(ddl);
+        AkibanInformationSchema ais = factory();
         
         assertNotNull(ais.getTable("s", "t"));
         
@@ -72,9 +73,8 @@ public class SchemaDDLIT {
     @Test
     public void dropSchemaUsed() throws Exception
     {
-        String ddl = "create table s.t (c1 int primary key)";
         String sql = "DROP SCHEMA S RESTRICT";
-        AkibanInformationSchema ais = factory(ddl);
+        AkibanInformationSchema ais = factory();
         
         assertNotNull(ais.getTable("s", "t"));
         
@@ -91,10 +91,14 @@ public class SchemaDDLIT {
     }
     protected SQLParser parser;
 
-    private AkibanInformationSchema factory (String ddl) throws Exception
+    private AkibanInformationSchema factory () throws Exception
     {
-        final SchemaDefToAis toAis = new SchemaDefToAis(
-                SchemaDef.parseSchema(ddl), false);
-        return toAis.getAis();
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("s", "t");
+        builder.column ("s", "t", "c1", 0, "int", null, null, false, false, null, null);
+        builder.index("s", "t", "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn("s", "t", "PRIMARY", "c1", 0, true, 0);
+        builder.basicSchemaIsComplete();
+        return builder.akibanInformationSchema();
     }
 }
