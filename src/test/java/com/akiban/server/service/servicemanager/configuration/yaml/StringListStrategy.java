@@ -16,9 +16,10 @@
 package com.akiban.server.service.servicemanager.configuration.yaml;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-public final class StringListStrategy implements YamlConfigurationStrategy {
+final class StringListStrategy implements YamlConfigurationStrategy {
 
     // YamlConfigurationStrategy interface
 
@@ -57,6 +58,12 @@ public final class StringListStrategy implements YamlConfigurationStrategy {
         say("ERROR: (%s) %s", where, command);
     }
 
+    // StringListStrategy interface
+
+    public List<String> strings() {
+        return unmodifiableStrings;
+    }
+
     // private methods
     private void say(String format, Object... args) {
         strings.add(String.format(format, args));
@@ -64,4 +71,5 @@ public final class StringListStrategy implements YamlConfigurationStrategy {
 
     // object state
     private final List<String> strings = new ArrayList<String>();
+    private final List<String> unmodifiableStrings = Collections.unmodifiableList(strings);
 }

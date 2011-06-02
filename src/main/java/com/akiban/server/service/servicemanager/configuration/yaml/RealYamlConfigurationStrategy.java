@@ -17,7 +17,7 @@ package com.akiban.server.service.servicemanager.configuration.yaml;
 
 import com.akiban.server.service.servicemanager.configuration.LockableServiceBindingsBuilder;
 
-public final class RealYamlConfigurationStrategy implements YamlConfigurationStrategy {
+final class RealYamlConfigurationStrategy implements YamlConfigurationStrategy {
 
     // YamlConfigurationStrategy interface
 
