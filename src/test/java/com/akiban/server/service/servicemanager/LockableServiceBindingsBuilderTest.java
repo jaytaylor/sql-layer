@@ -63,6 +63,38 @@ public final class LockableServiceBindingsBuilderTest {
         checkOnlyBinding(builder, "alpha", "puppy", false, true);
     }
 
+    @Test(expected = ServiceBindingException.class)
+    public void mustBeLocked_Undefined() {
+        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        builder.mustBeLocked("alpha");
+        builder.markSectionEnd();
+    }
+
+    @Test(expected = ServiceBindingException.class)
+    public void mustBeLocked_ButNotLocked() {
+        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        builder.mustBeLocked("alpha");
+        builder.bind("alpha", "beta");
+        builder.markSectionEnd();
+    }
+
+    @Test(expected = ServiceBindingException.class)
+    public void mustBeLocked_RequiredButNotLocked() {
+        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        builder.bind("alpha", "beta");
+        builder.mustBeLocked("alpha");
+        builder.markDirectlyRequired("alpha");
+        builder.markSectionEnd();
+    }
+
+    @Test(expected = ServiceBindingException.class)
+    public void mustBeLocked_RequiredButNotLockedOrBound() {
+        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        builder.mustBeLocked("alpha");
+        builder.markDirectlyRequired("alpha");
+        builder.markSectionEnd();
+    }
+
     @Test
     public void markRequired_Good() {
         LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
@@ -71,6 +103,13 @@ public final class LockableServiceBindingsBuilderTest {
         builder.markSectionEnd();
 
         checkOnlyBinding(builder, "alpha", "puppy", true, false);
+    }
+
+    @Test
+    public void markRequired_ButIsNotBound() {
+        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        builder.markDirectlyRequired("alpha");
+        builder.markSectionEnd();
     }
 
     @Test
@@ -104,6 +143,19 @@ public final class LockableServiceBindingsBuilderTest {
         LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
         builder.markDirectlyRequired("hello");
         builder.lock("hello");
+    }
+
+    @Test
+    public void getRequired() {
+        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        builder.bind("one", "two");
+        builder.bind("two", "three");
+        builder.bind("ONE", "TWO");
+        builder.markDirectlyRequired("ONE");
+
+        List<LockableServiceBinding> bindings = sorted(builder.getDirectlyRequiredBindings());
+        assertEquals("bindings count", 1, bindings.size());
+        checkBinding("ONE", bindings.get(0), "ONE", "TWO", true, false);
     }
 
     private static void checkBinding(String descriptor, LockableServiceBinding binding,

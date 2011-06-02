@@ -34,9 +34,7 @@ class LockableServiceBindingsBuilder {
     }
 
     public Collection<ServiceBinding> getAllBindings() {
-        if (!sectionRequirements.isEmpty()) {
-            throw new ServiceBindingException("internal error: configuration builder has unresolved section");
-        }
+        markSectionEnd();
         Collection<ServiceBinding> all = new ArrayList<ServiceBinding>(bindings.values());
         for (ServiceBinding binding : all) {
             if (binding.isDirectlyRequired() && (binding.getImplementingClassName() == null) ) {
