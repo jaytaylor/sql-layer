@@ -168,7 +168,10 @@ public class OperatorCompiler
                 if (sb.length() > 0) sb.append("\n");
                 sb.append(operator);
             }
-            // TODO: resultColumns.
+            if (resultColumns != null) {
+                sb.append("\n");
+                sb.append(resultColumns);
+            }
             return sb.toString();
         }
 

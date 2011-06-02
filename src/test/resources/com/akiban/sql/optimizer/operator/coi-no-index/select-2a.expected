@@ -2,3 +2,4 @@ Select_HKeyOrdered(flatten(flatten(user.customers, user.orders), user.items), Fi
   Flatten_HKeyOrdered(flatten(user.customers, user.orders) INNER user.items)
     Flatten_HKeyOrdered(user.customers INNER user.orders)
       GroupScan_Default(_akiban_customers NO LIMIT)
+[name:varchar(32)[VARCHAR], order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT]]
