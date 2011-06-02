@@ -30,7 +30,7 @@ public final class YamlConfiguration {
     }
 
     public YamlConfiguration() {
-        this(new RealYamlConfiguraitonStrategy());
+        this(new RealYamlConfigurationStrategy());
     }
 
     YamlConfiguration(YamlConfigurationStrategy strategy) {
