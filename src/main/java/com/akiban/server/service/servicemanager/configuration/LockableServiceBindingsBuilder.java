@@ -44,16 +44,6 @@ public class LockableServiceBindingsBuilder {
         return all;
     }
 
-    public Collection<ServiceBinding> getDirectlyRequiredBindings() {
-        Collection<ServiceBinding> filtered = getAllBindings();
-        for(Iterator<ServiceBinding> iterator = filtered.iterator(); iterator.hasNext(); ) {
-            if (!iterator.next().isDirectlyRequired()) {
-                iterator.remove();
-            }
-        }
-        return filtered;
-    }
-
     public void lock(String interfaceName) {
         require(interfaceName).lock();
     }

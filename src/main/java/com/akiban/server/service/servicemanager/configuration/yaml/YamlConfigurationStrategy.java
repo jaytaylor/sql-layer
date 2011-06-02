@@ -15,6 +15,10 @@
 
 package com.akiban.server.service.servicemanager.configuration.yaml;
 
+import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
+
+import java.util.Collection;
+
 interface YamlConfigurationStrategy {
     void bind(String interfaceName, String implementingClassName);
     void lock(String interfaceName);
@@ -23,4 +27,5 @@ interface YamlConfigurationStrategy {
     void mustBeBound(String interfaceName);
     void sectionEnd();
     void unrecognizedCommand(String where, Object command, String message);
+    Collection<ServiceBinding> serviceBindings();
 }

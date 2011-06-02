@@ -16,6 +16,9 @@
 package com.akiban.server.service.servicemanager.configuration.yaml;
 
 import com.akiban.server.service.servicemanager.configuration.LockableServiceBindingsBuilder;
+import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
+
+import java.util.Collection;
 
 final class RealYamlConfigurationStrategy implements YamlConfigurationStrategy {
 
@@ -55,6 +58,11 @@ final class RealYamlConfigurationStrategy implements YamlConfigurationStrategy {
     public void unrecognizedCommand(String where, Object command, String message) {
         throw new YamlConfigurationException(String.format("unrecognized command at %s: %s (%s)",
                 where, message, command));
+    }
+
+    @Override
+    public Collection<ServiceBinding> serviceBindings() {
+        return builder.getAllBindings();
     }
 
     // object state

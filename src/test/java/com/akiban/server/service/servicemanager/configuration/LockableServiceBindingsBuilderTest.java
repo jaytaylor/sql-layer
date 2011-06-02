@@ -145,19 +145,6 @@ public final class LockableServiceBindingsBuilderTest {
         builder.lock("hello");
     }
 
-    @Test
-    public void getRequired() {
-        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
-        builder.bind("one", "two");
-        builder.bind("two", "three");
-        builder.bind("ONE", "TWO");
-        builder.markDirectlyRequired("ONE");
-
-        List<LockableServiceBinding> bindings = sorted(builder.getDirectlyRequiredBindings());
-        assertEquals("bindings count", 1, bindings.size());
-        checkBinding("ONE", bindings.get(0), "ONE", "TWO", true, false);
-    }
-
     private static void checkBinding(String descriptor, LockableServiceBinding binding,
                                      String interfaceName, String implementingClass,
                                      boolean directlyRequired, boolean locked)
