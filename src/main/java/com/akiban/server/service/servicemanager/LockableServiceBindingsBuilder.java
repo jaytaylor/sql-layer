@@ -58,18 +58,6 @@ class LockableServiceBindingsBuilder {
         require(interfaceName).lock();
     }
 
-    public boolean isDefined(String interfaceName) {
-        return bindings.get(interfaceName) != null;
-    }
-
-    public boolean isLocked(String interfaceName) {
-        return require(interfaceName).isLocked();
-    }
-
-    public boolean isBound(String interfaceName) {
-        return require(interfaceName).getImplementingClassName() != null;
-    }
-
     public void markDirectlyRequired(String interfaceName) {
         defineIfNecessary(interfaceName).markDirectlyRequired();
     }
