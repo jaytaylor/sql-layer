@@ -1,3 +1,4 @@
-AncestorLookup_Default(Index(user.customers.PRIMARY[IndexColumn(cid)]) -> [user.customers]
-  IndexScan_Default(Index(user.customers.PRIMARY[IndexColumn(cid)]) (>=user.customers=ExpressionRow[Literal(1)],<=user.customers=ExpressionRow[Literal(1)]))
+project([Field(1)])
+  AncestorLookup_Default(Index(user.customers.PRIMARY[IndexColumn(cid)]) -> [user.customers]
+    IndexScan_Default(Index(user.customers.PRIMARY[IndexColumn(cid)]) (>=user.customers=ExpressionRow[Literal(1)],<=user.customers=ExpressionRow[Literal(1)]))
 [name:varchar(32)[VARCHAR]]

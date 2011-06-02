@@ -1,2 +1,3 @@
-GroupScan_Default(_akiban_customers NO LIMIT)
+project([Field(0), Field(1)])
+  GroupScan_Default(_akiban_customers NO LIMIT)
 [cid:int[INT], name:varchar(32)[VARCHAR]]
