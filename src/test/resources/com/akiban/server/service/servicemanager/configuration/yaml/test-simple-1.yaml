@@ -1,0 +1,5 @@
+- bind:
+    my_one : alpha
+    my_two : beta
+- bind:
+    my_three : gamma

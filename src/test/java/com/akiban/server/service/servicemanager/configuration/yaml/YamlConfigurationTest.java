@@ -15,23 +15,78 @@
 
 package com.akiban.server.service.servicemanager.configuration.yaml;
 
+import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.Parameterization;
+import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.util.Strings;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+
+@RunWith(NamedParameterizedRunner.class)
 public final class YamlConfigurationTest {
+
+    @NamedParameterizedRunner.TestParameters
+    public static List<Parameterization> parameterizations() throws Exception {
+        List<String> fileNames = Strings.dumpResource(YamlConfigurationTest.class, ".");
+        ParameterizationBuilder builder = new ParameterizationBuilder();
+        for (String fileName : fileNames) {
+            if (fileName.startsWith(TEST_PREFIX)) {
+                if (fileName.endsWith(TEST_SUFFIX)) {
+                    builder.add(fileName, fileName);
+                } else if (fileName.endsWith(DISABLED_SUFFIX)) {
+                    builder.addFailing(fileName, fileName);
+                }
+            }
+        }
+        return builder.asList();
+    }
+
     @Test
-    public void sandbox() throws Exception {
+    public void compare() throws Exception {
+        assert yamlFileName.endsWith(TEST_SUFFIX) : yamlFileName;
+
+        String expectedFileName = yamlFileName.substring(0, yamlFileName.length() - TEST_SUFFIX.length())
+                + EXPECTED_SUFFIX;
+
+        List<String> expecteds = Strings.dumpResource(YamlConfigurationTest.class, expectedFileName);
+
+        InputStream testIS = YamlConfigurationTest.class.getResourceAsStream(yamlFileName);
+        if (testIS == null) {
+            throw new FileNotFoundException(yamlFileName);
+        }
+
         StringListStrategy strategy = new StringListStrategy();
         YamlConfiguration configuration = new YamlConfiguration(strategy);
-
-        Reader reader = new InputStreamReader(YamlConfigurationTest.class.getResourceAsStream("simple-1.yaml"), "UTF-8");
+        Reader testReader = new InputStreamReader(testIS, "UTF-8");
         try {
-            configuration.read(reader);
+            configuration.read(yamlFileName, testReader);
         } finally {
-            reader.close();
+            testReader.close();
         }
+
+        assertEquals("output", Strings.join(expecteds), Strings.join(strategy.strings()));
     }
+
+    public YamlConfigurationTest(String yamlFileName) {
+        this.yamlFileName = yamlFileName;
+    }
+
+    // object state
+
+    private final String yamlFileName;
+
+    // class state
+
+    private final static String TEST_PREFIX = "test-";
+    private final static String TEST_SUFFIX = ".yaml";
+    private final static String DISABLED_SUFFIX = ".disabled";
+    private final static String EXPECTED_SUFFIX = ".expected";
 }
