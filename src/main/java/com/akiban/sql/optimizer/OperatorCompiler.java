@@ -104,7 +104,7 @@ public class OperatorCompiler
     public ResultColumnBase getResultColumn(SimpleSelectColumn selectColumn) 
             throws StandardException {
         String name = selectColumn.getName();
-        if (selectColumn.getExpression().isColumn())
+        if (selectColumn.isNameDefaulted() && selectColumn.getExpression().isColumn())
             // Prefer the case stored in AIS to parser's standardized form.
             name = ((ColumnExpression)
                     selectColumn.getExpression()).getColumn().getName();

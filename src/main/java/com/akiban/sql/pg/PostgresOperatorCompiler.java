@@ -111,7 +111,8 @@ public class PostgresOperatorCompiler extends OperatorCompiler
         if (selectExpr.isColumn()) {
             ColumnExpression columnExpression = (ColumnExpression)selectExpr;
             Column column = columnExpression.getColumn();
-            name = column.getName();
+            if (selectColumn.isNameDefaulted())
+                name = column.getName(); // User-preferred case.
             type = PostgresType.fromAIS(column);
         }
         else

@@ -295,12 +295,15 @@ public class SimplifiedQuery
     // An expression used as select column.
     public static class SimpleSelectColumn {
         private String name;
+        private boolean nameDefaulted;
         private SimpleExpression expression;
         private DataTypeDescriptor type;
 
-        public SimpleSelectColumn(String name, SimpleExpression expression,
+        public SimpleSelectColumn(String name, boolean nameDefaulted,
+                                  SimpleExpression expression,
                                   DataTypeDescriptor type) {
             this.name = name;
+            this.nameDefaulted = nameDefaulted;
             this.expression = expression;
             this.type = type;
         }
@@ -308,9 +311,14 @@ public class SimplifiedQuery
         public String getName() {
             return name;
         }
+        public boolean isNameDefaulted() {
+            return nameDefaulted;
+        }
+
         public SimpleExpression getExpression() {
             return expression;
         }
+
         public DataTypeDescriptor getType() {
             return type;
         }
@@ -613,7 +621,13 @@ public class SimplifiedQuery
             selectColumns = new ArrayList<SimpleSelectColumn>(rcl.size());
             for (ResultColumn result : select.getResultColumns()) {
                 SimpleExpression expr = getSimpleExpression(result.getExpression());
-                SimpleSelectColumn column = new SimpleSelectColumn(result.getName(),
+                String name = result.getName();
+                boolean nameDefaulted = 
+                    // TODO: Maybe mark this in the grammar. Or don't
+                    // worry and accept case imposed by parser.
+                    (result.getExpression() instanceof ColumnReference) &&
+                    (name == ((ColumnReference)result.getExpression()).getColumnName());
+                SimpleSelectColumn column = new SimpleSelectColumn(name, nameDefaulted,
                                                                    expr,
                                                                    result.getType());
                 selectColumns.add(column);
