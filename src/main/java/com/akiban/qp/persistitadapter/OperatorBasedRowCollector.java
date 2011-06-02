@@ -232,8 +232,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     {
         // Plan and query
         Limit limit = new PersistitRowLimit(scanLimit(scanLimit, singleRow));
-        boolean useIndex =
-            predicateIndex != null && !((IndexDef) predicateIndex.indexDef()).index().isHKeyEquivalent();
+        boolean useIndex = predicateIndex != null && !predicateIndex.isHKeyEquivalent();
         GroupTable groupTable = queryRootTable.getGroup().getGroupTable();
         PhysicalOperator rootOperator;
         if (useIndex) {

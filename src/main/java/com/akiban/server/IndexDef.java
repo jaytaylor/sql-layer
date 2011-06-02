@@ -132,7 +132,7 @@ public class IndexDef implements TreeLink {
         }
         sb.append(")->");
         sb.append(treeName);
-        if (index().isHKeyEquivalent()) {
+        if (index.isHKeyEquivalent()) {
             sb.append("=hkey");
         }
         return sb.toString();
@@ -253,13 +253,13 @@ public class IndexDef implements TreeLink {
             hkeyEquivalent = false;
         }
         */
-        index().isHKeyEquivalent(hkeyEquivalent);
+        index.isHKeyEquivalent(hkeyEquivalent);
     }
 
     @Override
     public boolean equals(final Object o) {
         final IndexDef def = (IndexDef) o;
-        return index.equals(def.index()) &&
+        return index.equals(def.index) &&
             treeName.equals(def.treeName) &&
             Arrays.equals(fields, def.fields);
     }
