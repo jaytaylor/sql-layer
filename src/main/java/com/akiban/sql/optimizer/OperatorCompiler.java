@@ -113,33 +113,25 @@ public class OperatorCompiler
 
     public static class Result {
         private Plannable resultOperator;
-        private RowType resultRowType;
         private List<ResultColumnBase> resultColumns;
         private int offset = 0;
         private int limit = -1;
 
         public Result(Plannable resultOperator,
-                      RowType resultRowType,
                       List<ResultColumnBase> resultColumns,
                       int offset,
                       int limit) {
             this.resultOperator = resultOperator;
-            this.resultRowType = resultRowType;
             this.resultColumns = resultColumns;
             this.offset = offset;
             this.limit = limit;
         }
-        public Result(Plannable resultOperator,
-                      RowType resultRowType) {
+        public Result(Plannable resultOperator) {
             this.resultOperator = resultOperator;
-            this.resultRowType = resultRowType;
         }
 
         public Plannable getResultOperator() {
             return resultOperator;
-        }
-        public RowType getResultRowType() {
-            return resultRowType;
         }
         public List<ResultColumnBase> getResultColumns() {
             return resultColumns;
@@ -360,7 +352,7 @@ public class OperatorCompiler
         int offset = squery.getOffset();
         int limit = squery.getLimit();
 
-        return new Result(resultOperator, resultRowType, resultColumns, 
+        return new Result(resultOperator, resultColumns, 
                           offset, limit);
     }
 
@@ -416,7 +408,7 @@ public class OperatorCompiler
 
         Plannable updatePlan = new com.akiban.qp.physicaloperator.Update_Default(resultOperator,
                                             new ExpressionRowUpdateFunction(updateRow));
-        return new Result(updatePlan, targetRowType);
+        return new Result(updatePlan);
     }
 
     public Result compileInsert(InsertNode insert) throws StandardException {

@@ -40,13 +40,11 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
 {
     private StoreAdapter store;
     private PhysicalOperator resultOperator;
-    private RowType resultRowType;
     private int offset = 0;
     private int limit = -1;
         
     public PostgresOperatorStatement(StoreAdapter store,
                                      PhysicalOperator resultOperator,
-                                     RowType resultRowType,
                                      List<String> columnNames,
                                      List<PostgresType> columnTypes,
                                      int offset,
@@ -54,7 +52,6 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         super(columnNames, columnTypes);
         this.store = store;
         this.resultOperator = resultOperator;
-        this.resultRowType = resultRowType;
         this.offset = offset;
         this.limit = limit;
     }
@@ -63,6 +60,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         throws IOException, StandardException {
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
+        RowType resultRowType = resultOperator.rowType();
         Cursor cursor = API.cursor(resultOperator, store);
         int nskip = offset;
         if (limit > 0) {
@@ -127,14 +125,13 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
 
         public BoundStatement(StoreAdapter store,
                               PhysicalOperator resultOperator,
-                              RowType resultRowType,
                               List<String> columnNames,
                               List<PostgresType> columnTypes,
                               int offset, int limit,
                               Bindings bindings,
                               boolean[] columnBinary, boolean defaultColumnBinary) {
             super(store, 
-                  resultOperator, resultRowType, columnNames, columnTypes, 
+                  resultOperator, columnNames, columnTypes, 
                   offset, limit);
             this.bindings = bindings;
             this.columnBinary = columnBinary;
@@ -173,7 +170,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                 ab.set(i, parameters[i]);
             bindings = ab;
         }
-        return new BoundStatement(store, resultOperator, resultRowType, 
+        return new BoundStatement(store, resultOperator,
                                   getColumnNames(), getColumnTypes(), 
                                   offset, limit, bindings, 
                                   columnBinary, defaultColumnBinary);

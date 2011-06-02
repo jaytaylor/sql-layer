@@ -146,7 +146,6 @@ public class PostgresOperatorCompiler extends OperatorCompiler
             }
             return new PostgresOperatorStatement(adapter,
                                                  (PhysicalOperator)result.getResultOperator(),
-                                                 result.getResultRowType(),
                                                  columnNames, columnTypes,
                                                  result.getOffset(),
                                                  result.getLimit());
