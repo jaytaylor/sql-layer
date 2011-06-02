@@ -206,7 +206,7 @@ public class PersistitStore implements Store {
         if (rowDef.getParentRowDefId() != 0) {
             parentRowDef = rowDefCache.getRowDef(rowDef.getParentRowDefId());
         }
-        IndexDef.I2H[] indexToHKey = null;
+        IndexDef.IndexToHKey indexToHKey = null;
         int i2hPosition = 0;
         Exchange parentPKExchange = null;
         boolean parentExists = false;
@@ -232,7 +232,7 @@ public class PersistitStore implements Store {
                         // Initialize parent metadata and state
                         assert parentRowDef != null : rowDef;
                         IndexDef parentPK = parentRowDef.getPKIndexDef();
-                        indexToHKey = parentPK.hkeyFields();
+                        indexToHKey = parentPK.getIndexToHKey();
                         parentPKExchange = getExchange(session, rowDef,
                                 parentPK);
                         constructParentPKIndexKey(parentPKExchange.getKey(),
@@ -245,18 +245,18 @@ public class PersistitStore implements Store {
                         // parent does not necessarily exist. rowData could be
                         // an orphan
                     }
-                    IndexDef.I2H i2h = indexToHKey[i2hPosition++];
-                    if (i2h.isOrdinalType()) {
-                        assert i2h.ordinal() == segmentRowDef.getOrdinal() : hKeyColumn;
-                        i2h = indexToHKey[i2hPosition++];
+                    if(indexToHKey.isOrdinal(i2hPosition)) {
+                        assert indexToHKey.getOrdinal(i2hPosition) == segmentRowDef.getOrdinal() : hKeyColumn;
+                        ++i2hPosition;
                     }
                     if (parentExists) {
                         appendKeyFieldFromKey(parentPKExchange.getKey(), hKey,
-                                i2h.indexKeyLoc());
-                    } else {
-                        // orphan row
-                        hKey.append(null);
+                                              indexToHKey.getIndexRowPosition(i2hPosition));
                     }
+                    else {
+                        hKey.append(null); // orphan row
+                    }
+                    ++i2hPosition;
                 } else {
                     // Hkey column from rowData
                     Column column = hKeyColumn.column();
@@ -319,7 +319,7 @@ public class PersistitStore implements Store {
     {
         IndexDef.IndexRowComposition indexRowComp = indexDef.getIndexRowComposition();
         iKey.clear();
-        for(int indexPos = 0; indexPos < indexRowComp.getFieldCount(); ++indexPos) {
+        for(int indexPos = 0; indexPos < indexRowComp.getLength(); ++indexPos) {
             if(indexRowComp.isInRowData(indexPos)) {
                 int fieldPos = indexRowComp.getFieldPosition(indexPos);
                 RowDef rowDef = indexDef.getRowDef();
@@ -344,66 +344,20 @@ public class PersistitStore implements Store {
      */
     public void constructHKeyFromIndexKey(final Key hKey, final Key indexKey, final IndexDef indexDef)
     {
-        final IndexDef.I2H[] fassoc = indexDef.hkeyFields();
+        final IndexDef.IndexToHKey indexToHKey = indexDef.getIndexToHKey();
         hKey.clear();
-        for (int index = 0; index < fassoc.length; index++) {
-            final IndexDef.I2H fa = fassoc[index];
-            if (fa.isOrdinalType()) {
-                hKey.append(fa.ordinal());
-            } else {
-                final int depth = fassoc[index].indexKeyLoc();
+        for(int i = 0; i < indexToHKey.getLength(); ++i) {
+            if(indexToHKey.isOrdinal(i)) {
+                hKey.append(indexToHKey.getOrdinal(i));
+            }
+            else {
+                final int depth = indexToHKey.getIndexRowPosition(i);
                 if (depth < 0 || depth > indexKey.getDepth()) {
                     throw new IllegalStateException(
                             "IndexKey too shallow - requires depth=" + depth
                                     + ": " + indexKey);
                 }
-                appendKeyFieldFromKey(indexKey, hKey, fa.indexKeyLoc());
-            }
-        }
-    }
-
-/*
-    public void constructRowDataFromIndexKey(Key indexKey, IndexDef indexDef, RowData rowData)
-    {
-        // Make sure that rowData is big enough
-        assert rowData.getBytes().length >= RowData.MINIMUM_RECORD_LENGTH + Key.MAX_KEY_LENGTH;
-        // Set null flags for fields not in index
-        BitSet nullMap = new BitSet();
-        RowDef rowDef = indexDef.getRowDef();
-        for (int i = 0; i < rowDef.getFieldCount(); i++) {
-            nullMap.set(i, true);
-        }
-        for (int fieldPosition : indexDef.getFields()) {
-            nullMap.set(fieldPosition, false);
-        }
-        rowData.setupNullMap(nullMap, 0, 0, rowDef.getFieldCount());
-        // TODO: Set null flags for null values in indexKey
-        // Copy non-null fields from indexKey to rowData
-        for (int fieldPosition : indexDef.getFields()) {
-            indexKey.indexTo(fieldPosition);
-            int indexKeyFrom = indexKey.getIndex();
-            indexKey.indexTo(fieldPosition + 1);
-            int indexKeyTo = indexKey.getIndex();
-            rowData.copyBytesFrom(indexKey.getEncodedBytes(), indexKeyFrom, indexKeyTo, fieldPosition);
-        }
-    }
-*/
-
-    /**
-     * Given an indexDef, construct the corresponding hkey containing nulls.
-     * 
-     * @param hKey
-     * @param indexDef
-     */
-    void constructHKeyFromNullIndexKey(final Key hKey, final IndexDef indexDef) {
-        final IndexDef.I2H[] fassoc = indexDef.hkeyFields();
-        hKey.clear();
-        for (int index = 0; index < fassoc.length; index++) {
-            final IndexDef.I2H fa = fassoc[index];
-            if (fa.isOrdinalType()) {
-                hKey.append(fa.ordinal());
-            } else {
-                hKey.append(null);
+                appendKeyFieldFromKey(indexKey, hKey, depth);
             }
         }
     }

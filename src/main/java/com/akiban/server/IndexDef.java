@@ -18,6 +18,7 @@ package com.akiban.server;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.ais.model.Column;
@@ -26,6 +27,7 @@ import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
@@ -39,25 +41,14 @@ import com.akiban.util.ArgumentValidation;
  * 
  */
 public class IndexDef implements TreeLink {
-
     private final TableIndex index;
-
     private final String treeName;
-
     // Identifies fields within the row that form the key part of the index entry.
     private final int[] fields;
-
     private final RowDef rowDef;
-
     private boolean hkeyEquivalent;
-
     private IndexRowComposition indexRowComposition;
-
-    // Specifies the layout of an hkey, as derived from an index entry. If hKeyFields[i].ordinal is
-    // set (>-1), then the ith field of the hkey is that ordinal. Otherwise, hKeyFields[i].indexLoc
-    // specifies the position within the index entry of the ith hkey field.
-    private I2H[] hKeyFields;
-
+    private IndexToHKey indexToHKey;
     private AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
 
     public static class IndexRowComposition
@@ -90,7 +81,7 @@ public class IndexDef implements TreeLink {
             return hkeyPositions[indexPos];
         }
 
-        public int getFieldCount() {
+        public int getLength() {
             return fieldPositions.length;
         }
 
@@ -106,6 +97,48 @@ public class IndexDef implements TreeLink {
         private final int[] fieldPositions;
         /** If set, value >= 0, is the hkey position for index position i **/
         private final int[] hkeyPositions;
+    }
+
+    public static class IndexToHKey
+    {
+        public IndexToHKey(int[] ordinals, int[] indexRowPositions, int[] fieldPositions) {
+            ArgumentValidation.isEQ("ordinals", ordinals.length, "indexRowPos", indexRowPositions.length);
+            ArgumentValidation.isEQ("ordinals", ordinals.length, "fieldPos", fieldPositions.length);
+            this.ordinals = ordinals;
+            this.indexRowPositions = indexRowPositions;
+            this.fieldPositions = fieldPositions;
+        }
+
+        public boolean isOrdinal(int index) {
+            return ordinals[index] >= 0;
+        }
+
+        public boolean isInIndexRow(int index) {
+            return indexRowPositions[index] >= 0;
+        }
+
+        public int getOrdinal(int index) {
+            return ordinals[index];
+        }
+
+        public int getIndexRowPosition(int index) {
+            return indexRowPositions[index];
+        }
+
+        public int getFieldPosition(int index) {
+            return fieldPositions[index];
+        }
+
+        public int getLength() {
+            return ordinals.length;
+        }
+
+        /** If set, value >= 0, the ith field of the hkey is this ordinal **/
+        private final int[] ordinals;
+        /** If set, value >= 0, the ith field of the hkey is at this position in the index row **/
+        private final int[] indexRowPositions;
+        /** If set, value >= 0, the ith field of the hkey is at this field in the data row **/
+        private final int[] fieldPositions;
     }
 
     private static class H2I
@@ -129,59 +162,25 @@ public class IndexDef implements TreeLink {
         public final int hKeyLoc;
     }
 
-    /*
-     * Structure that binds information about an index key segment to an hkey
-     * field. If rowDef is set, it's used to set an hkey ordinal. Otherwise,
-     * indexKeyLoc is set, and it stores the position within the index of the hkey
-     * field.
-     */
-    public static class I2H
+    private static class I2H
     {
-        public String toString()
-        {
-            return
-                isOrdinalType()
-                ? String.format("I2H<ordinal=%s>", rowDef.getOrdinal())
-                : String.format("I2H<fieldIndex=%s, indexKeyLoc=%s>", fieldIndex, indexKeyLoc);
+        public static I2H fromOrdinal(int ordinal) {
+            return new I2H(ordinal, -1, -1);
         }
 
-        public int fieldIndex()
-        {
-            return fieldIndex;
+        public static I2H fromIndexRow(int indexRowPos, int fieldPos) {
+            return new I2H(-1, indexRowPos, fieldPos);
         }
 
-        public int indexKeyLoc()
-        {
-            return indexKeyLoc;
+        private I2H(int ordinal, int indexRowPos, int fieldPos) {
+            this.ordinal = ordinal;
+            this.indexRowPos = indexRowPos;
+            this.fieldPos = fieldPos;
         }
 
-        public int ordinal()
-        {
-            return rowDef.getOrdinal();
-        }
-
-        public boolean isOrdinalType()
-        {
-            return rowDef != null;
-        }
-
-        I2H(final RowDef rowDef)
-        {
-            this.rowDef = rowDef;
-            this.indexKeyLoc = -1;
-            this.fieldIndex = -1;
-        }
-
-        I2H(int indexKeyLoc, int fieldIndex)
-        {
-            this.rowDef = null;
-            this.indexKeyLoc = indexKeyLoc;
-            this.fieldIndex = fieldIndex;
-        }
-
-        private final RowDef rowDef;
-        private final int fieldIndex;
-        private final int indexKeyLoc;
+        public final int ordinal;
+        public final int indexRowPos;
+        public final int fieldPos;
     }
 
     public IndexDef(String treeName, RowDef rowDef, TableIndex index)
@@ -243,14 +242,12 @@ public class IndexDef implements TreeLink {
         return fields.length;
     }
 
-    public IndexRowComposition getIndexRowComposition()
-    {
+    public IndexRowComposition getIndexRowComposition() {
         return indexRowComposition;
     }
 
-    public I2H[] hkeyFields()
-    {
-        return hKeyFields;
+    public IndexToHKey getIndexToHKey() {
+        return indexToHKey;
     }
 
     public String toString() {
@@ -285,7 +282,21 @@ public class IndexDef implements TreeLink {
         return new IndexRowComposition(depths, fieldPositions, hkeyPositions);
     }
 
-    void computeFieldAssociations(RowDefCache rowDefCache) {
+    private static IndexToHKey toIndexToHKey(List<I2H> i2hList) {
+        int[] ordinals = new int[i2hList.size()];
+        int[] indexRowPositions = new int[i2hList.size()];
+        int[] fieldPositions = new int[i2hList.size()];
+        int i = 0;
+        for(I2H i2h : i2hList) {
+            ordinals[i] = i2h.ordinal;
+            indexRowPositions[i] = i2h.indexRowPos;
+            fieldPositions[i] = i2h.fieldPos;
+            ++i;
+        }
+        return new IndexToHKey(ordinals, indexRowPositions, fieldPositions);
+    }
+
+    void computeFieldAssociations(Map<Table,Integer> ordinalMap) {
         computeHKeyEquivalence();
         // indexKeyFields is a list of H2I objects which map row and hkey fields to the fields of an index.
         // The leading index fields are exactly the fields identified by IndexDef.fields, i.e., the declared
@@ -332,7 +343,9 @@ public class IndexDef implements TreeLink {
         // in the table, for use in index analysis (PersistitStoreIndexManager.analyzeIndex).
         List<I2H> i2hList = new ArrayList<I2H>();
         for (HKeySegment hKeySegment : hKey.segments()) {
-            i2hList.add(new I2H(rowDefCache.rowDef(hKeySegment.table())));
+            Integer ordinal = ordinalMap.get(hKeySegment.table());
+            assert ordinal != null : hKeySegment.table();
+            i2hList.add(I2H.fromOrdinal(ordinal));
             for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
                 Column column = hKeyColumn.column();
                 // hKeyColumn.column() will be null for an hkey segment from a pk-less table.
@@ -342,10 +355,10 @@ public class IndexDef implements TreeLink {
                 // (used to set I2H.fieldPosition) should not be used.
                 int hKeyColumnIndexPosition = indexColumns.indexOf(column);
                 int hKeyColumnFieldPosition = column == null ? -1 : column.getPosition();
-                i2hList.add(new I2H(hKeyColumnIndexPosition, hKeyColumnFieldPosition));
+                i2hList.add(I2H.fromIndexRow(hKeyColumnIndexPosition, hKeyColumnFieldPosition));
             }
         }
-        hKeyFields = i2hList.toArray(new I2H[i2hList.size()]);
+        indexToHKey = toIndexToHKey(i2hList);
     }
 
     private void computeHKeyEquivalence()

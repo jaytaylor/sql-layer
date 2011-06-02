@@ -22,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.IndexDef;
-import com.akiban.server.IndexDef.I2H;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
@@ -187,16 +186,16 @@ public class PersistitStoreIndexManager implements IndexManager {
             probeEx = store.getExchange(session, indexDef.getRowDef(), null);
             startKey = new Key(store.getDb());
             endKey = new Key(store.getDb());
-            final IndexDef.I2H[] i2hFields = indexDef.hkeyFields();
-            assert i2hFields[0].isOrdinalType();
-            final KeyFilter.Term[] terms = new KeyFilter.Term[i2hFields.length];
-            startKey.append(i2hFields[0].ordinal());
-            endKey.append(i2hFields[0].ordinal());
-            terms[0] = KeyFilter.simpleTerm(i2hFields[0].ordinal());
+            final IndexDef.IndexToHKey indexToHKey = indexDef.getIndexToHKey();
+            assert indexToHKey.isOrdinal(0) : indexToHKey;
+            final KeyFilter.Term[] terms = new KeyFilter.Term[indexToHKey.getLength()];
+            startKey.append(indexToHKey.getOrdinal(0));
+            endKey.append(indexToHKey.getOrdinal(0));
+            terms[0] = KeyFilter.simpleTerm(indexToHKey.getOrdinal(0));
             startKey.append(Key.BEFORE);
             endKey.append(Key.AFTER);
-            keyDepth = i2hFields.length;
-            for (int depth = 1; depth < i2hFields.length; depth++) {
+            keyDepth = indexToHKey.getLength();
+            for (int depth = 1; depth < indexToHKey.getLength(); depth++) {
                 terms[depth] = KeyFilter.ALL;
             }
             keyFilter = new KeyFilter(terms, terms.length, Integer.MAX_VALUE);
@@ -286,11 +285,11 @@ public class PersistitStoreIndexManager implements IndexManager {
                         int remainingSegments = key.getDepth();
 
                         if (indexDef.isHKeyEquivalent()) {
-                            for (final I2H i2h : indexDef.hkeyFields()) {
-                                final Object keySegmentValue = --remainingSegments >= 0 ? key
-                                        .decode() : null;
-                                if (!i2h.isOrdinalType()) {
-                                    indexValues[i2h.fieldIndex()] = keySegmentValue;
+                            IndexDef.IndexToHKey indexToHkey = indexDef.getIndexToHKey();
+                            for (int i = 0; i < indexToHkey.getLength(); ++i) {
+                                final Object keySegmentValue = --remainingSegments >= 0 ? key .decode() : null;
+                                if (!indexToHkey.isOrdinal(i)) {
+                                    indexValues[indexToHkey.getFieldPosition(i)] = keySegmentValue;
                                 }
                             }
                         } else {

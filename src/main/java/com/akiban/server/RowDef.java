@@ -18,6 +18,7 @@ package com.akiban.server;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.ais.model.Column;
@@ -584,8 +585,7 @@ public class RowDef implements TreeLink {
         }
     }
 
-    void computeFieldAssociations(RowDefCache rowDefCache)
-            throws RowDefNotFoundException {
+    void computeFieldAssociations(Map<Table,Integer> ordinalMap) {
         // hkeyDepth is hkey position of the last column in the last segment.
         // (Or the position
         // of the last segment if that segment has no columns.)
@@ -598,28 +598,8 @@ public class RowDef implements TreeLink {
                     .positionInHKey());
         }
         for (IndexDef indexDef : indexDefs) {
-            indexDef.computeFieldAssociations(rowDefCache);
+            indexDef.computeFieldAssociations(ordinalMap);
         }
-    }
-
-    private RowDef userRowDef(RowDefCache rowDefCache, IndexDef indexDef) {
-        RowDef userRowDef = null;
-        if (isGroupTable()) {
-            for (IndexColumn indexColumn : indexDef.index().getColumns()) {
-                Column groupColumn = indexColumn.getColumn();
-                Column userColumn = groupColumn.getUserColumn();
-                UserTable userTable = userColumn.getUserTable();
-                if (userRowDef == null) {
-                    userRowDef = rowDefCache.rowDef(userTable);
-                } else {
-                    assert userRowDef == rowDefCache.rowDef(userTable) : indexDef;
-                }
-            }
-        } else {
-            userRowDef = this;
-        }
-        assert userRowDef != null;
-        return userRowDef;
     }
 
     @Override

@@ -18,7 +18,11 @@ package com.akiban.server;
 import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Table;
 import com.akiban.server.store.SchemaManager;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SchemaFactory {
     public RowDefCache rowDefCache(String ddl) throws Exception {
@@ -29,7 +33,6 @@ public class SchemaFactory {
         AkibanInformationSchema ais = ais(ddl);
         RowDefCache rowDefCache = new FakeRowDefCache();
         rowDefCache.setAIS(ais);
-        rowDefCache.fixUpOrdinalsForTest();
         return rowDefCache;
     }
 
@@ -47,22 +50,23 @@ public class SchemaFactory {
         public FakeRowDefCache() {
             super(new TableStatusCache(null, null));
         }
+
         @Override
-        public void fixUpOrdinals() {
+        protected Map<Table,Integer> fixUpOrdinals() {
+            Map<Table,Integer> ordinalMap = new HashMap<Table,Integer>();
             for (RowDef groupRowDef : getRowDefs()) {
                 if (groupRowDef.isGroupTable()) {
                     groupRowDef.setOrdinal(0);
+                    ordinalMap.put(groupRowDef.table(), 0);
                     int userTableOrdinal = 1;
                     for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
-                        userRowDef.setOrdinal(userTableOrdinal++);
+                        int ordinal = userTableOrdinal++;
+                        userRowDef.setOrdinal(ordinal);
+                        ordinalMap.put(userRowDef.table(), ordinal);
                     }
                 }
             }
-        }
-        
-        @Override
-        public void fixUpOrdinalsForTest() {
-            fixUpOrdinals();
+            return ordinalMap;
         }
     }
 }

@@ -47,7 +47,7 @@ public class PKLessTableRowDefCacheTest
         checkHKey(t.hKey(), t, t, Column.AKIBAN_PK_NAME);
         IndexDef index;
         IndexDef.IndexRowComposition rowComp;
-        IndexDef.I2H[] hKeyFields;
+        IndexDef.IndexToHKey indexToHKey;
         // e, d index
         index = index(test, "e", "d");
         assertTrue(!index.isPkIndex());
@@ -56,9 +56,9 @@ public class PKLessTableRowDefCacheTest
         assertEquals(4, rowComp.getFieldPosition(0)); // test.e
         assertEquals(3, rowComp.getFieldPosition(1)); // test.d
         assertEquals(5, rowComp.getFieldPosition(2)); // Akiban PK
-        hKeyFields = index.hkeyFields();
-        assertEquals(test.getOrdinal(), hKeyFields[0].ordinal()); // test ordinal
-        assertEquals(2, hKeyFields[1].indexKeyLoc()); // test row counter
+        indexToHKey = index.getIndexToHKey();
+        assertEquals(test.getOrdinal(), indexToHKey.getOrdinal(0)); // test ordinal
+        assertEquals(2, indexToHKey.getIndexRowPosition(1)); // test row counter
         // d, b index
         index = index(test, "d", "b");
         assertTrue(!index.isPkIndex());
@@ -67,9 +67,9 @@ public class PKLessTableRowDefCacheTest
         assertEquals(3, rowComp.getFieldPosition(0)); // test.d
         assertEquals(1, rowComp.getFieldPosition(1)); // test.b
         assertEquals(5, rowComp.getFieldPosition(2)); // Akiban PK
-        hKeyFields = index.hkeyFields();
-        assertEquals(test.getOrdinal(), hKeyFields[0].ordinal()); // test ordinal
-        assertEquals(2, hKeyFields[1].indexKeyLoc()); // Akiban PK
+        indexToHKey = index.getIndexToHKey();
+        assertEquals(test.getOrdinal(), indexToHKey.getOrdinal(0)); // test ordinal
+        assertEquals(2, indexToHKey.getIndexRowPosition(1)); // Akiban PK
     }
 
     @Test
@@ -93,7 +93,7 @@ public class PKLessTableRowDefCacheTest
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         IndexDef index;
         IndexDef.IndexRowComposition rowComp;
-        IndexDef.I2H[] hKeyFields;
+        IndexDef.IndexToHKey indexToHKey;
         // ------------------------- parent ----------------------------------------------------------------------------
         RowDef parent = rowDefCache.getRowDef(tableName("parent"));
         UserTable p = (UserTable) parent.table();
@@ -106,9 +106,9 @@ public class PKLessTableRowDefCacheTest
         // assertTrue(index.isHKeyEquivalent());
         rowComp = index.getIndexRowComposition();
         assertEquals(0, rowComp.getFieldPosition(0)); // parent.p1
-        hKeyFields = index.hkeyFields();
-        assertEquals(parent.getOrdinal(), hKeyFields[0].ordinal()); // parent ordinal
-        assertEquals(0, hKeyFields[1].indexKeyLoc()); // parent p1
+        indexToHKey = index.getIndexToHKey();
+        assertEquals(parent.getOrdinal(), indexToHKey.getOrdinal(0)); // parent ordinal
+        assertEquals(0, indexToHKey.getIndexRowPosition(1)); // parent p1
         // ------------------------- child -----------------------------------------------------------------------------
         RowDef child = rowDefCache.getRowDef(tableName("child"));
         UserTable c = (UserTable) child.table();
@@ -124,11 +124,11 @@ public class PKLessTableRowDefCacheTest
         rowComp = index.getIndexRowComposition();
         assertEquals(1, rowComp.getFieldPosition(0)); // child.c2
         assertEquals(0, rowComp.getFieldPosition(1)); // child.c1
-        hKeyFields = index.hkeyFields();
-        assertEquals(parent.getOrdinal(), hKeyFields[0].ordinal()); // parent ordinal
-        assertEquals(2, hKeyFields[1].fieldIndex()); // child p1
-        assertEquals(child.getOrdinal(), hKeyFields[2].ordinal()); // child ordinal
-        assertEquals(2, hKeyFields[1].indexKeyLoc()); // child row counter
+        indexToHKey = index.getIndexToHKey();
+        assertEquals(parent.getOrdinal(), indexToHKey.getOrdinal(0)); // parent ordinal
+        assertEquals(2, indexToHKey.getFieldPosition(1)); // child p1
+        assertEquals(child.getOrdinal(), indexToHKey.getOrdinal(2)); // child ordinal
+        assertEquals(2, indexToHKey.getIndexRowPosition(1)); // child row counter
     }
 
     private IndexDef index(RowDef rowDef, String... indexColumnNames)
