@@ -48,11 +48,12 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     public PostgresOperatorStatement(StoreAdapter store,
                                      PhysicalOperator resultOperator,
                                      RowType resultRowType,
-                                     List<Column> resultColumns,
+                                     List<String> columnNames,
+                                     List<PostgresType> columnTypes,
                                      int[] resultColumnOffsets,
                                      int offset,
                                      int limit) {
-        super(resultColumns);
+        super(columnNames, columnTypes);
         this.store = store;
         this.resultOperator = resultOperator;
         this.resultRowType = resultRowType;
@@ -74,9 +75,8 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         int nrows = 0;
         try {
             cursor.open(bindings);
-            List<Column> columns = getColumns();
-            List<PostgresType> types = getTypes();
-            int ncols = columns.size();
+            List<PostgresType> columnTypes = getColumnTypes();
+            int ncols = columnTypes.size();
             while (cursor.next()) {
                 Row row = cursor.currentRow();
                 if (row.rowType() == resultRowType) {
@@ -87,9 +87,8 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                     messenger.beginMessage(PostgresMessenger.DATA_ROW_TYPE);
                     messenger.writeShort(ncols);
                     for (int i = 0; i < ncols; i++) {
-                        Column column = columns.get(i);
                         Object field = row.field(resultColumnOffsets[i], bindings);
-                        PostgresType type = types.get(i);
+                        PostgresType type = columnTypes.get(i);
                         byte[] value = type.encodeValue(field,
                                                         messenger.getEncoding(),
                                                         isColumnBinary(i));
@@ -132,13 +131,15 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         public BoundStatement(StoreAdapter store,
                               PhysicalOperator resultOperator,
                               RowType resultRowType,
-                              List<Column> resultColumns,
+                              List<String> columnNames,
+                              List<PostgresType> columnTypes,
                               int[] resultColumnOffsets,
                               int offset, int limit,
                               Bindings bindings,
                               boolean[] columnBinary, boolean defaultColumnBinary) {
             super(store, 
-                  resultOperator, resultRowType, resultColumns, resultColumnOffsets,
+                  resultOperator, resultRowType, columnNames, columnTypes, 
+                  resultColumnOffsets,
                   offset, limit);
             this.bindings = bindings;
             this.columnBinary = columnBinary;
@@ -164,7 +165,8 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     @Override
     public PostgresStatement getBoundStatement(String[] parameters,
                                                boolean[] columnBinary, 
-                                               boolean defaultColumnBinary) {
+                                               boolean defaultColumnBinary) 
+            throws StandardException {
         if ((parameters == null) && 
             (columnBinary == null) && (defaultColumnBinary == false))
             return this;        // Can be reused.
@@ -177,7 +179,8 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             bindings = ab;
         }
         return new BoundStatement(store, resultOperator, resultRowType, 
-                                  getColumns(), resultColumnOffsets,
+                                  getColumnNames(), getColumnTypes(), 
+                                  resultColumnOffsets,
                                   offset, limit, bindings, 
                                   columnBinary, defaultColumnBinary);
     }

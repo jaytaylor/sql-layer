@@ -90,27 +90,33 @@ public class PostgresOperatorCompiler extends OperatorCompiler
     }
 
     static class PostgresResultColumn extends ResultColumnBase {
-        private Column column;
+        private PostgresType type;
         
-        public PostgresResultColumn(String name, Column column) {
+        public PostgresResultColumn(String name, PostgresType type) {
             super(name);
-            this.column = column;
+            this.type = type;
         }
 
-        public Column getColumn() {
-            return column;
+        public PostgresType getType() {
+            return type;
         }
     }
 
     @Override
     public ResultColumnBase getResultColumn(SimpleSelectColumn selectColumn) 
             throws StandardException {
-        Column column = null;
+        String name = selectColumn.getName();
+        PostgresType type = null;
         SimpleExpression selectExpr = selectColumn.getExpression();
-        if (selectExpr.isColumn())
-            column = ((ColumnExpression)selectExpr).getColumn();
-        return new PostgresResultColumn(selectColumn.getName(),
-                                        column);
+        if (selectExpr.isColumn()) {
+            ColumnExpression columnExpression = (ColumnExpression)selectExpr;
+            Column column = columnExpression.getColumn();
+            name = column.getName();
+            type = PostgresType.fromAIS(column);
+        }
+        else
+            assert false;
+        return new PostgresResultColumn(name, type);
     }
 
     @Override
@@ -130,17 +136,17 @@ public class PostgresOperatorCompiler extends OperatorCompiler
                                                        (UpdatePlannable) result.getResultOperator());
         else {
             int ncols = result.getResultColumns().size();
-            List<String> names = new ArrayList<String>(ncols);
-            List<Column> columns = new ArrayList<Column>(ncols);
+            List<String> columnNames = new ArrayList<String>(ncols);
+            List<PostgresType> columnTypes = new ArrayList<PostgresType>(ncols);
             for (ResultColumnBase rcBase : result.getResultColumns()) {
                 PostgresResultColumn resultColumn = (PostgresResultColumn)rcBase;
-                names.add(resultColumn.getName());
-                columns.add(resultColumn.getColumn());
+                columnNames.add(resultColumn.getName());
+                columnTypes.add(resultColumn.getType());
             }
             return new PostgresOperatorStatement(adapter,
                                                  (PhysicalOperator) result.getResultOperator(),
                                                  result.getResultRowType(),
-                                                 columns,
+                                                 columnNames, columnTypes,
                                                  result.getResultColumnOffsets(),
                                                  result.getOffset(),
                                                  result.getLimit());

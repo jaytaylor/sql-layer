@@ -103,7 +103,12 @@ public class OperatorCompiler
 
     public ResultColumnBase getResultColumn(SimpleSelectColumn selectColumn) 
             throws StandardException {
-        return new ResultColumnBase(selectColumn.getName());
+        String name = selectColumn.getName();
+        if (selectColumn.getExpression().isColumn())
+            // Prefer the case stored in AIS to parser's standardized form.
+            name = ((ColumnExpression)
+                    selectColumn.getExpression()).getColumn().getName();
+        return new ResultColumnBase(name);
     }
 
     public static class Result {
