@@ -3,8 +3,8 @@ BIND my_two -> beta
 BIND my_three -> gamma
 LOCK delta
 REQUIRE epsilon
-REQUIRE theta
-MUST BE LOCKED theta
+REQUIRE zeta
+MUST BE LOCKED zeta
 MUST BE LOCKED eta
-MUST BE BOUND zeta
+MUST BE BOUND theta
 SECTION END

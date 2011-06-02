@@ -5,6 +5,6 @@
     my_three : gamma
 - lock: delta
 - require : epsilon
-- require locked: theta
+- require locked: zeta
 - locked : eta
-- bound : zeta
+- bound : theta
