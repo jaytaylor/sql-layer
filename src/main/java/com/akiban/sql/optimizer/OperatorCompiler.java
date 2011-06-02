@@ -115,20 +115,17 @@ public class OperatorCompiler
         private Plannable resultOperator;
         private RowType resultRowType;
         private List<ResultColumnBase> resultColumns;
-        private int[] resultColumnOffsets;
         private int offset = 0;
         private int limit = -1;
 
         public Result(Plannable resultOperator,
                       RowType resultRowType,
                       List<ResultColumnBase> resultColumns,
-                      int[] resultColumnOffsets,
                       int offset,
                       int limit) {
             this.resultOperator = resultOperator;
             this.resultRowType = resultRowType;
             this.resultColumns = resultColumns;
-            this.resultColumnOffsets = resultColumnOffsets;
             this.offset = offset;
             this.limit = limit;
         }
@@ -146,9 +143,6 @@ public class OperatorCompiler
         }
         public List<ResultColumnBase> getResultColumns() {
             return resultColumns;
-        }
-        public int[] getResultColumnOffsets() {
-            return resultColumnOffsets;
         }
         public int getOffset() {
             return offset;
@@ -340,6 +334,8 @@ public class OperatorCompiler
         RowType resultRowType = fls.getResultRowType();
         Map<TableNode,Integer> fieldOffsets = fls.getFieldOffsets();
 
+        // TODO: Add extract_Default here?
+
         for (ColumnCondition condition : squery.getConditions()) {
             Expression predicate = condition.generateExpression(fieldOffsets);
             resultOperator = select_HKeyOrdered(resultOperator,
@@ -349,26 +345,22 @@ public class OperatorCompiler
 
         int ncols = squery.getSelectColumns().size();
         List<ResultColumnBase> resultColumns = new ArrayList<ResultColumnBase>(ncols);
-        int[] resultColumnOffsets = new int[ncols];
-        int i = 0;
+        List<Expression> resultExpressions = new ArrayList<Expression>(ncols);
         for (SimpleSelectColumn selectColumn : squery.getSelectColumns()) {
             ResultColumnBase resultColumn = getResultColumn(selectColumn);
             resultColumns.add(resultColumn);
-            SimpleExpression selectExpr = selectColumn.getExpression();
-            if (!selectExpr.isColumn())
-                throw new UnsupportedSQLException("Unsupported result column: " + 
-                                                  selectExpr);
-            ColumnExpression columnExpression = (ColumnExpression)selectExpr;
-            TableNode table = columnExpression.getTable();
-            Column column = columnExpression.getColumn();
-            resultColumnOffsets[i++] = fieldOffsets.get(table) + column.getPosition();
+            Expression resultExpression = 
+                selectColumn.getExpression().generateExpression(fieldOffsets);
+            resultExpressions.add(resultExpression);
         }
+        resultOperator = project_Default(resultOperator, resultRowType, 
+                                         resultExpressions);
+        resultRowType = resultOperator.rowType();
 
         int offset = squery.getOffset();
         int limit = squery.getLimit();
 
-        return new Result(resultOperator, resultRowType, 
-                          resultColumns, resultColumnOffsets,
+        return new Result(resultOperator, resultRowType, resultColumns, 
                           offset, limit);
     }
 
