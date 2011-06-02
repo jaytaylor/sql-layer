@@ -1,4 +1,0 @@
-BIND my_one -> alpha
-BIND my_two -> beta
-BIND my_three -> gamma
-SECTION END
