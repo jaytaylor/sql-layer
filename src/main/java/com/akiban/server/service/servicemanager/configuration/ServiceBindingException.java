@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.servicemanager;
+package com.akiban.server.service.servicemanager.configuration;
 
 public final class ServiceBindingException extends RuntimeException {
     public ServiceBindingException(String message) {
