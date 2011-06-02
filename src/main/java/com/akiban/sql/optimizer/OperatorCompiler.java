@@ -83,17 +83,40 @@ public class OperatorCompiler
         binder.addView(view);
     }
 
+    // Probably subclassed by specific client to capture typing information in some way.
+    public static class ResultColumnBase {
+        private String name;
+        
+        public ResultColumnBase(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+
+    public ResultColumnBase getResultColumn(SimpleSelectColumn selectColumn) 
+            throws StandardException {
+        return new ResultColumnBase(selectColumn.getName());
+    }
+
     public static class Result {
         private Plannable resultOperator;
         private RowType resultRowType;
-        private List<Column> resultColumns;
+        private List<ResultColumnBase> resultColumns;
         private int[] resultColumnOffsets;
         private int offset = 0;
         private int limit = -1;
 
         public Result(Plannable resultOperator,
                       RowType resultRowType,
-                      List<Column> resultColumns,
+                      List<ResultColumnBase> resultColumns,
                       int[] resultColumnOffsets,
                       int offset,
                       int limit) {
@@ -116,7 +139,7 @@ public class OperatorCompiler
         public RowType getResultRowType() {
             return resultRowType;
         }
-        public List<Column> getResultColumns() {
+        public List<ResultColumnBase> getResultColumns() {
             return resultColumns;
         }
         public int[] getResultColumnOffsets() {
@@ -140,6 +163,7 @@ public class OperatorCompiler
                 if (sb.length() > 0) sb.append("\n");
                 sb.append(operator);
             }
+            // TODO: resultColumns.
             return sb.toString();
         }
 
@@ -316,17 +340,19 @@ public class OperatorCompiler
         }
 
         int ncols = squery.getSelectColumns().size();
-        List<Column> resultColumns = new ArrayList<Column>(ncols);
+        List<ResultColumnBase> resultColumns = new ArrayList<ResultColumnBase>(ncols);
         int[] resultColumnOffsets = new int[ncols];
         int i = 0;
-        for (SimpleExpression selectExpr : squery.getSelectColumns()) {
+        for (SimpleSelectColumn selectColumn : squery.getSelectColumns()) {
+            ResultColumnBase resultColumn = getResultColumn(selectColumn);
+            resultColumns.add(resultColumn);
+            SimpleExpression selectExpr = selectColumn.getExpression();
             if (!selectExpr.isColumn())
                 throw new UnsupportedSQLException("Unsupported result column: " + 
                                                   selectExpr);
-            ColumnExpression selectColumn = (ColumnExpression)selectExpr;
-            TableNode table = selectColumn.getTable();
-            Column column = selectColumn.getColumn();
-            resultColumns.add(column);
+            ColumnExpression columnExpression = (ColumnExpression)selectExpr;
+            TableNode table = columnExpression.getTable();
+            Column column = columnExpression.getColumn();
             resultColumnOffsets[i++] = fieldOffsets.get(table) + column.getPosition();
         }
 

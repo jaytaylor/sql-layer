@@ -21,6 +21,7 @@ import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.sql.StandardException;
 
 import com.akiban.sql.optimizer.OperatorCompiler;
+import static com.akiban.sql.optimizer.SimplifiedQuery.*;
 import com.akiban.sql.optimizer.ExpressionRow;
 
 import com.akiban.sql.parser.DMLStatementNode;
@@ -30,6 +31,7 @@ import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 
@@ -87,6 +89,30 @@ public class PostgresOperatorCompiler extends OperatorCompiler
         binder.setDefaultSchemaName(server.getDefaultSchemaName());
     }
 
+    static class PostgresResultColumn extends ResultColumnBase {
+        private Column column;
+        
+        public PostgresResultColumn(String name, Column column) {
+            super(name);
+            this.column = column;
+        }
+
+        public Column getColumn() {
+            return column;
+        }
+    }
+
+    @Override
+    public ResultColumnBase getResultColumn(SimpleSelectColumn selectColumn) 
+            throws StandardException {
+        Column column = null;
+        SimpleExpression selectExpr = selectColumn.getExpression();
+        if (selectExpr.isColumn())
+            column = ((ColumnExpression)selectExpr).getColumn();
+        return new PostgresResultColumn(selectColumn.getName(),
+                                        column);
+    }
+
     @Override
     public PostgresStatement generate(PostgresServerSession session,
                                       StatementNode stmt, int[] paramTypes)
@@ -102,14 +128,23 @@ public class PostgresOperatorCompiler extends OperatorCompiler
             return new PostgresModifyOperatorStatement(stmt.statementToString(),
                                                        adapter,
                                                        (UpdatePlannable) result.getResultOperator());
-        else
+        else {
+            int ncols = result.getResultColumns().size();
+            List<String> names = new ArrayList<String>(ncols);
+            List<Column> columns = new ArrayList<Column>(ncols);
+            for (ResultColumnBase rcBase : result.getResultColumns()) {
+                PostgresResultColumn resultColumn = (PostgresResultColumn)rcBase;
+                names.add(resultColumn.getName());
+                columns.add(resultColumn.getColumn());
+            }
             return new PostgresOperatorStatement(adapter,
                                                  (PhysicalOperator) result.getResultOperator(),
                                                  result.getResultRowType(),
-                                                 result.getResultColumns(),
+                                                 columns,
                                                  result.getResultColumnOffsets(),
                                                  result.getOffset(),
                                                  result.getLimit());
+        }
     }
 
     // The current implementation of index cursors expects that the

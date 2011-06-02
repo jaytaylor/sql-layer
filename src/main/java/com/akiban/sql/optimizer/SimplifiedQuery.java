@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.sql.parser.*;
+import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.sql.StandardException;
 
@@ -75,7 +76,7 @@ public class SimplifiedQuery
     public static class TableNode extends TableTreeBase.TableNodeBase<TableNode> {
         private boolean used, outer;
         private List<ColumnCondition> conditions;
-        private List<ColumnExpression> selectColumns;
+        private List<SimpleSelectColumn> selectColumns;
 
         public TableNode(UserTable table) {
             super(table);
@@ -114,13 +115,13 @@ public class SimplifiedQuery
             return ((selectColumns != null) && !selectColumns.isEmpty());
         }
 
-        public List<ColumnExpression> getSelectColumns() {
+        public List<SimpleSelectColumn> getSelectColumns() {
             return selectColumns;
         }
 
-        protected void addSelectColumn(ColumnExpression selectColumn) {
+        protected void addSelectColumn(SimpleSelectColumn selectColumn) {
             if (selectColumns == null)
-                selectColumns = new ArrayList<ColumnExpression>();
+                selectColumns = new ArrayList<SimpleSelectColumn>();
             selectColumns.add(selectColumn);
         }
 
@@ -288,6 +289,30 @@ public class SimplifiedQuery
 
         public String toString() {
             return joinType + "(" + left + "," + right + ")";
+        }
+    }
+
+    // An expression used as select column.
+    public static class SimpleSelectColumn {
+        private String name;
+        private SimpleExpression expression;
+        private DataTypeDescriptor type;
+
+        public SimpleSelectColumn(String name, SimpleExpression expression,
+                                  DataTypeDescriptor type) {
+            this.name = name;
+            this.expression = expression;
+            this.type = type;
+        }
+
+        public String getName() {
+            return name;
+        }
+        public SimpleExpression getExpression() {
+            return expression;
+        }
+        public DataTypeDescriptor getType() {
+            return type;
         }
     }
 
@@ -509,7 +534,7 @@ public class SimplifiedQuery
     private BaseJoinNode joins = null;
     private List<List<SimpleExpression>> values = null;
     private TableTree tables = new TableTree();
-    private List<SimpleExpression> selectColumns = null;
+    private List<SimpleSelectColumn> selectColumns = null;
     private List<ColumnCondition> conditions = new ArrayList<ColumnCondition>();
     private List<SortColumn> sortColumns = null;
     private int offset = 0;
@@ -585,13 +610,16 @@ public class SimplifiedQuery
         
         ResultColumnList rcl = select.getResultColumns();
         if (rcl != null) {
-            selectColumns = new ArrayList<SimpleExpression>(rcl.size());
+            selectColumns = new ArrayList<SimpleSelectColumn>(rcl.size());
             for (ResultColumn result : select.getResultColumns()) {
-                SimpleExpression column = getSimpleExpression(result.getExpression());
+                SimpleExpression expr = getSimpleExpression(result.getExpression());
+                SimpleSelectColumn column = new SimpleSelectColumn(result.getName(),
+                                                                   expr,
+                                                                   result.getType());
                 selectColumns.add(column);
-                if (column instanceof ColumnExpression) {
-                    ColumnExpression selectColumn = (ColumnExpression)column;
-                    selectColumn.getTable().addSelectColumn(selectColumn);
+                if (expr.isColumn()) {
+                    ColumnExpression columnExpression = (ColumnExpression)expr;
+                    columnExpression.getTable().addSelectColumn(column);
                 }
             }
         }
@@ -833,7 +861,7 @@ public class SimplifiedQuery
     public TableTree getTables() {
         return tables;
     }
-    public List<SimpleExpression> getSelectColumns() {
+    public List<SimpleSelectColumn> getSelectColumns() {
         return selectColumns;
     }
     public List<ColumnCondition> getConditions() {
