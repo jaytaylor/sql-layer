@@ -52,8 +52,9 @@ final class RealYamlConfigurationStrategy implements YamlConfigurationStrategy {
     }
 
     @Override
-    public void unrecognizedCommand(String where, Object command) {
-        throw new YamlConfigurationException("unrecognized command at " + where + ": " + command);
+    public void unrecognizedCommand(String where, Object command, String message) {
+        throw new YamlConfigurationException(String.format("unrecognized command at %s: %s (%s)",
+                where, message, command));
     }
 
     // object state

@@ -40,7 +40,7 @@ public final class YamlConfiguration {
             }
             strategy.sectionEnd();
         } catch (BadConfigurationException e) {
-            strategy.unrecognizedCommand(e.getWhere(), e.getObject());
+            strategy.unrecognizedCommand(e.getWhere(), e.getObject(), e.getMessage());
         }
     }
 

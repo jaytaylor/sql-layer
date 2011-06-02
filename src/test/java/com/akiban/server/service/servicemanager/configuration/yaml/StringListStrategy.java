@@ -54,8 +54,8 @@ final class StringListStrategy implements YamlConfigurationStrategy {
     }
 
     @Override
-    public void unrecognizedCommand(String where, Object command) {
-        say("ERROR: (%s) %s", where, command);
+    public void unrecognizedCommand(String where, Object command, String message) {
+        say("ERROR: %s (at %s) %s", message, where, command);
     }
 
     // StringListStrategy interface

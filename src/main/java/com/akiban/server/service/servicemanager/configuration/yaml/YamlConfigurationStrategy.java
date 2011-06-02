@@ -22,5 +22,5 @@ interface YamlConfigurationStrategy {
     void mustBeLocked(String interfaceName);
     void mustBeBound(String interfaceName);
     void sectionEnd();
-    void unrecognizedCommand(String where, Object command);
+    void unrecognizedCommand(String where, Object command, String message);
 }
