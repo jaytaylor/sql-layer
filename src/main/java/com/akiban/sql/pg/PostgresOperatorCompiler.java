@@ -115,8 +115,9 @@ public class PostgresOperatorCompiler extends OperatorCompiler
                 name = column.getName(); // User-preferred case.
             type = PostgresType.fromAIS(column);
         }
-        else
-            assert false;
+        else {
+            type = PostgresType.fromDerby(selectColumn.getType());
+        }
         return new PostgresResultColumn(name, type);
     }
 
