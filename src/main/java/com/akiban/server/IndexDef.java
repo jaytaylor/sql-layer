@@ -17,7 +17,6 @@ package com.akiban.server;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -30,6 +29,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
+import com.akiban.util.ArgumentValidation;
 
 /**
  * Defines an Index within the Chunk Server
@@ -51,10 +51,7 @@ public class IndexDef implements TreeLink {
 
     private boolean hkeyEquivalent;
 
-    // indexKeyFields[i].field is, if set (>-1), is the position within the row of the ith index field.
-    // These values must match the contents of fields. If indexKeyFields[i].field is not set, then
-    // hKeyLoc specifies where within the hkey the ith index field comes from.
-    private H2I[] indexKeyFields;
+    private IndexRowComposition indexRowComposition;
 
     // Specifies the layout of an hkey, as derived from an index entry. If hKeyFields[i].ordinal is
     // set (>-1), then the ith field of the hkey is that ordinal. Otherwise, hKeyFields[i].indexLoc
@@ -62,50 +59,74 @@ public class IndexDef implements TreeLink {
     private I2H[] hKeyFields;
 
     private AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
-    
-    /*
-     * Structure that determines how a field in a table binds to a key segment of an index key. An H2I defines
-     * the field's position in an hkey and/or an h-row. hKeyLoc is used only as a last resort.
-     * (This is important for covering index analysis.)
-     */
-    public static class H2I
+
+    public static class IndexRowComposition
     {
-        public String toString()
-        {
-            return
-                fieldIndex == -1
-                ? String.format("H2I<hKeyLoc=%s>", hKeyLoc)
-                : String.format("H2I<fieldIndex=%s>", fieldIndex);
+        public IndexRowComposition(int[] depths, int[] fieldPositions, int[] hkeyPositions) {
+            ArgumentValidation.isEQ("depth", depths.length, "field", fieldPositions.length);
+            ArgumentValidation.isEQ("depth", depths.length, "hkey", hkeyPositions.length);
+            this.depths = depths;
+            this.fieldPositions = fieldPositions;
+            this.hkeyPositions = hkeyPositions;
         }
 
-        public int fieldIndex()
-        {
-            return fieldIndex;
+        public boolean isInRowData(int indexPos) {
+            return fieldPositions[indexPos] >= 0;
         }
 
-        public int hKeyLoc()
-        {
-            return hKeyLoc;
+        public boolean isInHKey(int indexPos) {
+            return hkeyPositions[indexPos] >= 0;
         }
 
-        static H2I fromField(int fieldIndex)
-        {
-            return new H2I(fieldIndex, -1);
+        public int getDepth(int indexPos) {
+            return depths[indexPos];
         }
 
-        private H2I(int fieldIndex, int hKeyLoc)
-        {
+        public int getFieldPosition(int indexPos) {
+            return fieldPositions[indexPos];
+        }
+
+        public int getHKeyPosition(int indexPos) {
+            return hkeyPositions[indexPos];
+        }
+
+        public int getFieldCount() {
+            return fieldPositions.length;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("depths:%s fieldPos:%s hkeyPos:%s", Arrays.toString(depths),
+                                 Arrays.toString(fieldPositions), Arrays.toString(hkeyPositions));
+        }
+
+        /** If set, value >= 0, is the depth of the associated table for index position i **/
+        private final int[] depths;
+        /** If set, value >= 0, is the field position for index position i **/
+        private final int[] fieldPositions;
+        /** If set, value >= 0, is the hkey position for index position i **/
+        private final int[] hkeyPositions;
+    }
+
+    private static class H2I
+    {
+        public static H2I fromField(int fieldIndex) {
+            return new H2I(0, fieldIndex, -1);
+        }
+
+        public static H2I fromHKeyField(int hKeyLoc) {
+            return new H2I(-1, -1, hKeyLoc);
+        }
+
+        private H2I(int depth, int fieldIndex, int hKeyLoc) {
+            this.depth = depth;
             this.fieldIndex = fieldIndex;
             this.hKeyLoc = hKeyLoc;
         }
 
-        static H2I fromHKeyField(int hKeyLoc)
-        {
-            return new H2I(-1, hKeyLoc);
-        }
-
-        private final int fieldIndex;
-        private final int hKeyLoc;
+        public final int depth;
+        public final int fieldIndex;
+        public final int hKeyLoc;
     }
 
     /*
@@ -222,9 +243,9 @@ public class IndexDef implements TreeLink {
         return fields.length;
     }
 
-    public H2I[] indexKeyFields()
+    public IndexRowComposition getIndexRowComposition()
     {
-        return indexKeyFields;
+        return indexRowComposition;
     }
 
     public I2H[] hkeyFields()
@@ -250,12 +271,21 @@ public class IndexDef implements TreeLink {
         return sb.toString();
     }
 
+    private static IndexRowComposition toIndexRowComposition(List<H2I> h2iLst) {
+        int[] depths = new int[h2iLst.size()];
+        int[] fieldPositions = new int[h2iLst.size()];
+        int[] hkeyPositions = new int[h2iLst.size()];
+        int i = 0;
+        for(H2I h2i : h2iLst) {
+            depths[i] = h2i.depth;
+            fieldPositions[i] = h2i.fieldIndex;
+            hkeyPositions[i] = h2i.hKeyLoc;
+            ++i;
+        }
+        return new IndexRowComposition(depths, fieldPositions, hkeyPositions);
+    }
 
-    // TODO: 1) hkey equivalence needs to account for collation, character sets and other
-    // TODO:    elements that affect ordering.
-    // TODO: 2) This won't work from group table indexes whose columns span multiple user tables.
-    void computeFieldAssociations(RowDefCache rowDefCache, List<RowDef> path)
-    {
+    void computeFieldAssociations(RowDefCache rowDefCache) {
         computeHKeyEquivalence();
         // indexKeyFields is a list of H2I objects which map row and hkey fields to the fields of an index.
         // The leading index fields are exactly the fields identified by IndexDef.fields, i.e., the declared
@@ -274,6 +304,7 @@ public class IndexDef implements TreeLink {
             Column column = rowDef.getFieldDefs()[fieldPosition].column();
             indexColumns.add(column);
         }
+        
         // Add hkey fields not already included
         HKey hKey = index.hKey();
         for (HKeySegment hKeySegment : hKey.segments()) {
@@ -292,7 +323,8 @@ public class IndexDef implements TreeLink {
                 }
             }
         }
-        indexKeyFields = h2iList.toArray(new H2I[h2iList.size()]);
+        indexRowComposition = toIndexRowComposition(h2iList);
+
         // hKeyFields is a list of I2H objects used to construct hkey values from index entries.
         // There are two types of I2H entries, "ordinal" entries, and entries that identify index fields.
         // An ordinal entry, identifying a user table, appears in the hkey precedes all the hkey values
@@ -320,7 +352,7 @@ public class IndexDef implements TreeLink {
     {
         hkeyEquivalent = false;
 /*
-        hkeyEquivalent = true;
+        heyEquivalent = true;
         // Collect the HKeyColumns of the index's hkey
         List<HKeyColumn> hKeyColumns = new ArrayList<HKeyColumn>();
         for (HKeySegment hKeySegment : index.hKey().segments()) {

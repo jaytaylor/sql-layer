@@ -198,7 +198,7 @@ public class RowDefCacheTest
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         IndexDef index;
         int[] fields;
-        IndexDef.H2I[] indexKeyFields;
+        IndexDef.IndexRowComposition rowComp;
         IndexDef.I2H[] hKeyFields;
         // ------------------------- Customer ------------------------------------------
         RowDef customer = rowDefCache.getRowDef(tableName("customer"));
@@ -213,8 +213,8 @@ public class RowDefCacheTest
         // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(0, fields[0]); // c.cid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(0, indexKeyFields[0].fieldIndex()); // c.cid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(0, rowComp.getFieldPosition(0)); // c.cid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(0, hKeyFields[1].indexKeyLoc()); // index cid
@@ -227,9 +227,9 @@ public class RowDefCacheTest
         fields = index.getFields();
         assertEquals(0, fields[0]); // c.cid
         assertEquals(1, fields[1]); // c.cx
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(0, indexKeyFields[0].fieldIndex()); // c.cid
-        assertEquals(1, indexKeyFields[1].fieldIndex()); // c.cx
+        rowComp = index.getIndexRowComposition();
+        assertEquals(0, rowComp.getFieldPosition(0)); // c.cid
+        assertEquals(1, rowComp.getFieldPosition(1)); // c.cx
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(0, hKeyFields[1].indexKeyLoc()); // index cid
@@ -246,9 +246,9 @@ public class RowDefCacheTest
         // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(0, fields[0]); // o.oid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(0, indexKeyFields[0].fieldIndex()); // o.oid
-        assertEquals(1, indexKeyFields[1].fieldIndex()); // o.cid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(0, rowComp.getFieldPosition(0)); // o.oid
+        assertEquals(1, rowComp.getFieldPosition(1)); // o.cid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(1, hKeyFields[1].indexKeyLoc()); // index cid
@@ -263,9 +263,9 @@ public class RowDefCacheTest
         fields = index.getFields();
         assertEquals(1, fields[0]); // o.cid
         assertEquals(0, fields[1]); // o.oid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(1, indexKeyFields[0].fieldIndex()); // o.cid
-        assertEquals(0, indexKeyFields[1].fieldIndex()); // o.oid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(1, rowComp.getFieldPosition(0)); // o.cid
+        assertEquals(0, rowComp.getFieldPosition(1)); // o.oid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(0, hKeyFields[1].indexKeyLoc());
@@ -280,9 +280,9 @@ public class RowDefCacheTest
         fields = index.getFields();
         assertEquals(0, fields[0]); // o.oid
         assertEquals(1, fields[1]); // o.cid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(0, indexKeyFields[0].fieldIndex()); // o.oid
-        assertEquals(1, indexKeyFields[1].fieldIndex()); // o.cid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(0, rowComp.getFieldPosition(0)); // o.oid
+        assertEquals(1, rowComp.getFieldPosition(1)); // o.cid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(1, hKeyFields[1].indexKeyLoc()); // index cid
@@ -299,10 +299,10 @@ public class RowDefCacheTest
         assertEquals(1, fields[0]); // o.cid
         assertEquals(0, fields[1]); // o.oid
         assertEquals(2, fields[2]); // o.ox
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(1, indexKeyFields[0].fieldIndex()); // o.cid
-        assertEquals(0, indexKeyFields[1].fieldIndex()); // o.oid
-        assertEquals(2, indexKeyFields[2].fieldIndex()); // o.ox
+        rowComp = index.getIndexRowComposition();
+        assertEquals(1, rowComp.getFieldPosition(0)); // o.cid
+        assertEquals(0, rowComp.getFieldPosition(1)); // o.oid
+        assertEquals(2, rowComp.getFieldPosition(2)); // o.ox
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(0, hKeyFields[1].indexKeyLoc()); // index cid
@@ -321,10 +321,10 @@ public class RowDefCacheTest
         // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(0, fields[0]); // i.iid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(0, indexKeyFields[0].fieldIndex()); // i.iid
-        assertEquals(1, indexKeyFields[1].hKeyLoc()); // hkey cid
-        assertEquals(1, indexKeyFields[2].fieldIndex()); // i.oid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(0, rowComp.getFieldPosition(0)); // i.iid
+        assertEquals(1, rowComp.getHKeyPosition(1)); // hkey cid
+        assertEquals(1, rowComp.getFieldPosition(2)); // i.oid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(1, hKeyFields[1].indexKeyLoc()); // index cid
@@ -341,10 +341,10 @@ public class RowDefCacheTest
         fields = index.getFields();
         assertEquals(1, fields[0]); // i.oid
         assertEquals(0, fields[1]); // i.iid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(1, indexKeyFields[0].fieldIndex()); // i.oid
-        assertEquals(0, indexKeyFields[1].fieldIndex()); // i.iid
-        assertEquals(1, indexKeyFields[2].hKeyLoc()); // hkey cid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(1, rowComp.getFieldPosition(0)); // i.oid
+        assertEquals(0, rowComp.getFieldPosition(1)); // i.iid
+        assertEquals(1, rowComp.getHKeyPosition(2)); // hkey cid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(2, hKeyFields[1].indexKeyLoc()); // index cid
@@ -361,10 +361,10 @@ public class RowDefCacheTest
         fields = index.getFields();
         assertEquals(0, fields[0]); // i.iid
         assertEquals(1, fields[1]); // i.oid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(0, indexKeyFields[0].fieldIndex()); // i.iid
-        assertEquals(1, indexKeyFields[1].fieldIndex()); // i.oid
-        assertEquals(1, indexKeyFields[2].hKeyLoc()); // hkey cid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(0, rowComp.getFieldPosition(0)); // i.iid
+        assertEquals(1, rowComp.getFieldPosition(1)); // i.oid
+        assertEquals(1, rowComp.getHKeyPosition(2)); // hkey cid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(2, hKeyFields[1].indexKeyLoc()); // index cid
@@ -382,11 +382,11 @@ public class RowDefCacheTest
         assertEquals(1, fields[0]); // i.oid
         assertEquals(0, fields[1]); // i.iid
         assertEquals(2, fields[2]); // i.ix
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(1, indexKeyFields[0].fieldIndex()); // i.oid
-        assertEquals(0, indexKeyFields[1].fieldIndex()); // i.iid
-        assertEquals(2, indexKeyFields[2].fieldIndex()); // i.ix
-        assertEquals(1, indexKeyFields[3].hKeyLoc()); // hkey cid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(1, rowComp.getFieldPosition(0)); // i.oid
+        assertEquals(0, rowComp.getFieldPosition(1)); // i.iid
+        assertEquals(2, rowComp.getFieldPosition(2)); // i.ix
+        assertEquals(1, rowComp.getHKeyPosition(3)); // hkey cid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(3, hKeyFields[1].indexKeyLoc()); // index cid
@@ -409,8 +409,8 @@ public class RowDefCacheTest
         // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(0, fields[0]); // customer$cid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(0, indexKeyFields[0].fieldIndex()); // customer$cid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(0, rowComp.getFieldPosition(0)); // customer$cid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(0, hKeyFields[1].indexKeyLoc()); // index cid
@@ -422,8 +422,8 @@ public class RowDefCacheTest
         // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(2, fields[0]); // orders$oid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(2, indexKeyFields[0].fieldIndex()); // orders$oid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(2, rowComp.getFieldPosition(0)); // orders$oid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(1, hKeyFields[1].indexKeyLoc()); // index cid
@@ -437,8 +437,8 @@ public class RowDefCacheTest
         // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(5, fields[0]); // item$iid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(5, indexKeyFields[0].fieldIndex()); // item$iid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(5, rowComp.getFieldPosition(0)); // item$iid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(1, hKeyFields[1].indexKeyLoc()); // index cid
@@ -454,8 +454,8 @@ public class RowDefCacheTest
         // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(3, fields[0]); // orders$cid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(3, indexKeyFields[0].fieldIndex()); // orders$cid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(3, rowComp.getFieldPosition(0)); // orders$cid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(0, hKeyFields[1].indexKeyLoc()); // index cid
@@ -469,8 +469,8 @@ public class RowDefCacheTest
         // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(6, fields[0]); // item$oid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(6, indexKeyFields[0].fieldIndex()); // item$oid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(6, rowComp.getFieldPosition(0)); // item$oid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(1, hKeyFields[1].indexKeyLoc()); // index cid
@@ -487,9 +487,9 @@ public class RowDefCacheTest
         fields = index.getFields();
         assertEquals(0, fields[0]); // customer$cid
         assertEquals(1, fields[1]); // customer$cx
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(0, indexKeyFields[0].fieldIndex()); // customer$cid
-        assertEquals(1, indexKeyFields[1].fieldIndex()); // customer$cx
+        rowComp = index.getIndexRowComposition();
+        assertEquals(0, rowComp.getFieldPosition(0)); // customer$cid
+        assertEquals(1, rowComp.getFieldPosition(1)); // customer$cx
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(0, hKeyFields[1].indexKeyLoc()); // index cid
@@ -502,9 +502,9 @@ public class RowDefCacheTest
         fields = index.getFields();
         assertEquals(3, fields[0]); // orders$cid
         assertEquals(2, fields[1]); // orders$oid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(3, indexKeyFields[0].fieldIndex()); // orders$cid
-        assertEquals(2, indexKeyFields[1].fieldIndex()); // orders$oid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(3, rowComp.getFieldPosition(0)); // orders$cid
+        assertEquals(2, rowComp.getFieldPosition(1)); // orders$oid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(0, hKeyFields[1].indexKeyLoc()); // index cid
@@ -519,9 +519,9 @@ public class RowDefCacheTest
         fields = index.getFields();
         assertEquals(2, fields[0]); // orders$oid
         assertEquals(3, fields[1]); // orders$cid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(2, indexKeyFields[0].fieldIndex()); // orders$oid
-        assertEquals(3, indexKeyFields[1].fieldIndex()); // orders$cid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(2, rowComp.getFieldPosition(0)); // orders$oid
+        assertEquals(3, rowComp.getFieldPosition(1)); // orders$cid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(1, hKeyFields[1].indexKeyLoc()); // index cid
@@ -537,10 +537,10 @@ public class RowDefCacheTest
         assertEquals(3, fields[0]); // orders$cid
         assertEquals(2, fields[1]); // orders$oid
         assertEquals(4, fields[2]); // orders$ox
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(3, indexKeyFields[0].fieldIndex()); // orders$cid
-        assertEquals(2, indexKeyFields[1].fieldIndex()); // orders$oid
-        assertEquals(4, indexKeyFields[2].fieldIndex()); // orders$ox
+        rowComp = index.getIndexRowComposition();
+        assertEquals(3, rowComp.getFieldPosition(0)); // orders$cid
+        assertEquals(2, rowComp.getFieldPosition(1)); // orders$oid
+        assertEquals(4, rowComp.getFieldPosition(2)); // orders$ox
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(0, hKeyFields[1].indexKeyLoc()); // index cid
@@ -555,9 +555,9 @@ public class RowDefCacheTest
         fields = index.getFields();
         assertEquals(6, fields[0]); // item$oid
         assertEquals(5, fields[1]); // item$iid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(6, indexKeyFields[0].fieldIndex()); // item$oid
-        assertEquals(5, indexKeyFields[1].fieldIndex()); // item$iid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(6, rowComp.getFieldPosition(0)); // item$oid
+        assertEquals(5, rowComp.getFieldPosition(1)); // item$iid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(2, hKeyFields[1].indexKeyLoc()); // index cid
@@ -574,9 +574,9 @@ public class RowDefCacheTest
         fields = index.getFields();
         assertEquals(5, fields[0]); // item$iid
         assertEquals(6, fields[1]); // item$oid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(5, indexKeyFields[0].fieldIndex()); // item$iid
-        assertEquals(6, indexKeyFields[1].fieldIndex()); // item$oid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(5, rowComp.getFieldPosition(0)); // item$iid
+        assertEquals(6, rowComp.getFieldPosition(1)); // item$oid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(2, hKeyFields[1].indexKeyLoc()); // index cid
@@ -594,10 +594,10 @@ public class RowDefCacheTest
         assertEquals(6, fields[0]); // item$oid
         assertEquals(5, fields[1]); // item$iid
         assertEquals(7, fields[2]); // item$ix
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(6, indexKeyFields[0].fieldIndex()); // item$oid
-        assertEquals(5, indexKeyFields[1].fieldIndex()); // item$iid
-        assertEquals(7, indexKeyFields[2].fieldIndex()); // item$ix
+        rowComp = index.getIndexRowComposition();
+        assertEquals(6, rowComp.getFieldPosition(0)); // item$oid
+        assertEquals(5, rowComp.getFieldPosition(1)); // item$iid
+        assertEquals(7, rowComp.getFieldPosition(2)); // item$ix
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(3, hKeyFields[1].indexKeyLoc()); // index cid
@@ -639,7 +639,7 @@ public class RowDefCacheTest
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         IndexDef index;
         int[] fields;
-        IndexDef.H2I[] indexKeyFields;
+        IndexDef.IndexRowComposition rowComp;
         IndexDef.I2H[] hKeyFields;
         // ------------------------- Customer ------------------------------------------
         RowDef customer = rowDefCache.getRowDef(tableName("customer"));
@@ -654,8 +654,8 @@ public class RowDefCacheTest
         // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(0, fields[0]); // c.cid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(0, indexKeyFields[0].fieldIndex()); // c.cid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(0, rowComp.getFieldPosition(0)); // c.cid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(0, hKeyFields[1].indexKeyLoc()); // index cid
@@ -667,9 +667,9 @@ public class RowDefCacheTest
         // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(1, fields[0]); // c.cx
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(1, indexKeyFields[0].fieldIndex()); // c.cx
-        assertEquals(0, indexKeyFields[1].fieldIndex()); // c.cid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(1, rowComp.getFieldPosition(0)); // c.cx
+        assertEquals(0, rowComp.getFieldPosition(1)); // c.cid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(1, hKeyFields[1].indexKeyLoc()); // index cid
@@ -687,9 +687,9 @@ public class RowDefCacheTest
         fields = index.getFields();
         assertEquals(0, fields[0]); // o.cid
         assertEquals(1, fields[1]); // o.oid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(0, indexKeyFields[0].fieldIndex()); // o.cid
-        assertEquals(1, indexKeyFields[1].fieldIndex()); // o.oid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(0, rowComp.getFieldPosition(0)); // o.cid
+        assertEquals(1, rowComp.getFieldPosition(1)); // o.oid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(0, hKeyFields[1].indexKeyLoc()); // index cid
@@ -704,10 +704,10 @@ public class RowDefCacheTest
         fields = index.getFields();
         assertEquals(2, fields[0]); // o.ox
         assertEquals(0, fields[1]); // o.cid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(2, indexKeyFields[0].fieldIndex()); // o.ox
-        assertEquals(0, indexKeyFields[1].fieldIndex()); // o.cid
-        assertEquals(1, indexKeyFields[2].fieldIndex()); // o.oid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(2, rowComp.getFieldPosition(0)); // o.ox
+        assertEquals(0, rowComp.getFieldPosition(1)); // o.cid
+        assertEquals(1, rowComp.getFieldPosition(2)); // o.oid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(1, hKeyFields[1].indexKeyLoc()); // index cid
@@ -728,10 +728,10 @@ public class RowDefCacheTest
         assertEquals(0, fields[0]); // i.cid
         assertEquals(1, fields[1]); // i.oid
         assertEquals(2, fields[2]); // i.iid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(0, indexKeyFields[0].fieldIndex()); // i.cid
-        assertEquals(1, indexKeyFields[1].fieldIndex()); // i.oid
-        assertEquals(2, indexKeyFields[2].fieldIndex()); // i.iid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(0, rowComp.getFieldPosition(0)); // i.cid
+        assertEquals(1, rowComp.getFieldPosition(1)); // i.oid
+        assertEquals(2, rowComp.getFieldPosition(2)); // i.iid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(0, hKeyFields[1].indexKeyLoc()); // index cid
@@ -750,11 +750,11 @@ public class RowDefCacheTest
         assertEquals(2, fields[1]); // i.iid
         assertEquals(1, fields[2]); // i.oid
         assertEquals(0, fields[3]); // i.cid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(3, indexKeyFields[0].fieldIndex()); // i.ix
-        assertEquals(2, indexKeyFields[1].fieldIndex()); // i.iid
-        assertEquals(1, indexKeyFields[2].fieldIndex()); // i.oid
-        assertEquals(0, indexKeyFields[3].fieldIndex()); // i.cid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(3, rowComp.getFieldPosition(0)); // i.ix
+        assertEquals(2, rowComp.getFieldPosition(1)); // i.iid
+        assertEquals(1, rowComp.getFieldPosition(2)); // i.oid
+        assertEquals(0, rowComp.getFieldPosition(3)); // i.cid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(3, hKeyFields[1].indexKeyLoc()); // index cid
@@ -777,8 +777,8 @@ public class RowDefCacheTest
         // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(0, fields[0]); // customer$cid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(0, indexKeyFields[0].fieldIndex()); // customer$cid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(0, rowComp.getFieldPosition(0)); // customer$cid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(0, hKeyFields[1].indexKeyLoc()); // index cid
@@ -791,9 +791,9 @@ public class RowDefCacheTest
         fields = index.getFields();
         assertEquals(2, fields[0]); // orders$cid
         assertEquals(3, fields[1]); // orders$oid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(2, indexKeyFields[0].fieldIndex()); // orders$cid
-        assertEquals(3, indexKeyFields[1].fieldIndex()); // orders$oid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(2, rowComp.getFieldPosition(0)); // orders$cid
+        assertEquals(3, rowComp.getFieldPosition(1)); // orders$oid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(0, hKeyFields[1].indexKeyLoc()); // index cid
@@ -809,10 +809,10 @@ public class RowDefCacheTest
         assertEquals(5, fields[0]); // item$cid
         assertEquals(6, fields[1]); // item$oid
         assertEquals(7, fields[2]); // item$iid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(5, indexKeyFields[0].fieldIndex()); // item$cid
-        assertEquals(6, indexKeyFields[1].fieldIndex()); // item$oid
-        assertEquals(7, indexKeyFields[2].fieldIndex()); // item$oid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(5, rowComp.getFieldPosition(0)); // item$cid
+        assertEquals(6, rowComp.getFieldPosition(1)); // item$oid
+        assertEquals(7, rowComp.getFieldPosition(2)); // item$oid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(0, hKeyFields[1].indexKeyLoc()); // index cid
@@ -828,8 +828,8 @@ public class RowDefCacheTest
         // assertTrue(index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(2, fields[0]); // orders$cid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(2, indexKeyFields[0].fieldIndex()); // orders$cid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(2, rowComp.getFieldPosition(0)); // orders$cid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(0, hKeyFields[1].indexKeyLoc()); // index cid
@@ -845,10 +845,10 @@ public class RowDefCacheTest
         assertEquals(5, fields[0]); // item$cid
         assertEquals(6, fields[1]); // item$oid
         assertEquals(7, fields[2]); // item$iid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(5, indexKeyFields[0].fieldIndex()); // item$cid
-        assertEquals(6, indexKeyFields[1].fieldIndex()); // item$oid
-        assertEquals(7, indexKeyFields[2].fieldIndex()); // item$oid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(5, rowComp.getFieldPosition(0)); // item$cid
+        assertEquals(6, rowComp.getFieldPosition(1)); // item$oid
+        assertEquals(7, rowComp.getFieldPosition(2)); // item$oid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(0, hKeyFields[1].indexKeyLoc()); // index cid
@@ -864,8 +864,8 @@ public class RowDefCacheTest
         // assertTrue(!index.isHKeyEquivalent());
         fields = index.getFields();
         assertEquals(1, fields[0]); // customer$cx
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(1, indexKeyFields[0].fieldIndex()); // customer$cx
+        rowComp = index.getIndexRowComposition();
+        assertEquals(1, rowComp.getFieldPosition(0)); // customer$cx
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(1, hKeyFields[1].indexKeyLoc()); // index cid
@@ -878,9 +878,9 @@ public class RowDefCacheTest
         fields = index.getFields();
         assertEquals(4, fields[0]); // orders$ox
         assertEquals(2, fields[1]); // orders$cid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(4, indexKeyFields[0].fieldIndex()); // orders$ox
-        assertEquals(2, indexKeyFields[1].fieldIndex()); // orders$cid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(4, rowComp.getFieldPosition(0)); // orders$ox
+        assertEquals(2, rowComp.getFieldPosition(1)); // orders$cid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(1, hKeyFields[1].indexKeyLoc()); // index cid
@@ -897,11 +897,11 @@ public class RowDefCacheTest
         assertEquals(7, fields[1]); // item$iid
         assertEquals(6, fields[2]); // item$oid
         assertEquals(5, fields[3]); // item$cid
-        indexKeyFields = index.indexKeyFields();
-        assertEquals(8, indexKeyFields[0].fieldIndex()); // item$ix
-        assertEquals(7, indexKeyFields[1].fieldIndex()); // item$iid
-        assertEquals(6, indexKeyFields[2].fieldIndex()); // item$oid
-        assertEquals(5, indexKeyFields[3].fieldIndex()); // item$cid
+        rowComp = index.getIndexRowComposition();
+        assertEquals(8, rowComp.getFieldPosition(0)); // item$ix
+        assertEquals(7, rowComp.getFieldPosition(1)); // item$iid
+        assertEquals(6, rowComp.getFieldPosition(2)); // item$oid
+        assertEquals(5, rowComp.getFieldPosition(3)); // item$cid
         hKeyFields = index.hkeyFields();
         assertEquals(customer.getOrdinal(), hKeyFields[0].ordinal()); // c ordinal
         assertEquals(3, hKeyFields[1].indexKeyLoc()); // index cid

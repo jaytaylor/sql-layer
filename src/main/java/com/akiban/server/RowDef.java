@@ -598,14 +598,7 @@ public class RowDef implements TreeLink {
                     .positionInHKey());
         }
         for (IndexDef indexDef : indexDefs) {
-            List<RowDef> path = new ArrayList<RowDef>();
-            RowDef userRowDef = userRowDef(rowDefCache, indexDef);
-            while (userRowDef != null) {
-                path.add(0, userRowDef);
-                userRowDef = userRowDef.getParentRowDefId() == 0 ? null
-                        : rowDefCache.getRowDef(userRowDef.getParentRowDefId());
-            }
-            indexDef.computeFieldAssociations(rowDefCache, path);
+            indexDef.computeFieldAssociations(rowDefCache);
         }
     }
 

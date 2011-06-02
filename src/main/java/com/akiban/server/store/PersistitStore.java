@@ -317,18 +317,19 @@ public class PersistitStore implements Store {
     public static void constructIndexKey(Key iKey, RowData rowData, IndexDef indexDef, Key hKey)
         throws PersistitException
     {
-        IndexDef.H2I[] fassoc = indexDef.indexKeyFields();
+        IndexDef.IndexRowComposition indexRowComp = indexDef.getIndexRowComposition();
         iKey.clear();
-        for (int index = 0; index < fassoc.length; index++) {
-            IndexDef.H2I assoc = fassoc[index];
-            if (assoc.fieldIndex() >= 0) {
-                int fieldIndex = assoc.fieldIndex();
+        for(int indexPos = 0; indexPos < indexRowComp.getFieldCount(); ++indexPos) {
+            if(indexRowComp.isInRowData(indexPos)) {
+                int fieldPos = indexRowComp.getFieldPosition(indexPos);
                 RowDef rowDef = indexDef.getRowDef();
-                appendKeyField(iKey, rowDef.getFieldDef(fieldIndex), rowData);
-            } else if (assoc.hKeyLoc() >= 0) {
-                appendKeyFieldFromKey(hKey, iKey, assoc.hKeyLoc());
-            } else {
-                throw new IllegalStateException("Invalid FA");
+                appendKeyField(iKey, rowDef.getFieldDef(fieldPos), rowData);
+            }
+            else if(indexRowComp.isInHKey(indexPos)) {
+                appendKeyFieldFromKey(hKey, iKey, indexRowComp.getHKeyPosition(indexPos));
+            }
+            else {
+                throw new IllegalStateException("Invalid IndexRowComposition: " + indexRowComp);
             }
         }
     }
