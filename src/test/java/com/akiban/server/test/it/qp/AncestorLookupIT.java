@@ -336,12 +336,12 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
     {
         return
             ancestorLookup_Default
-                (lookup_Default
-                     (indexScan_Default(itemIidIndexRowType, false, itemIidEQ(iid)),
-                      coi,
-                      itemIidIndexRowType,
-                      itemRowType,
-                      false),
+                (branchLookup_Default
+                        (indexScan_Default(itemIidIndexRowType, false, itemIidEQ(iid)),
+                                coi,
+                                itemIidIndexRowType,
+                                itemRowType,
+                                false),
                  coi,
                  itemRowType,
                  list(rowTypes),

@@ -27,10 +27,11 @@ import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
@@ -40,7 +41,6 @@ import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import static com.akiban.qp.expression.API.*;
 
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import static com.akiban.qp.physicaloperator.API.*;
@@ -219,31 +219,92 @@ public class OperatorCompiler
         PhysicalOperator resultOperator;
         if (index != null) {
             squery.removeConditions(index.getIndexConditions());
-            TableIndex iindex = index.getIndex();
+            squery.recomputeUsed();
+            squery.removeUnusedJoins();            
+            Index iindex = index.getIndex();
             TableNode indexTable = index.getTable();
+            squery.getTables().setLeftBranch(indexTable);
             UserTableRowType tableType = tableRowType(indexTable);
-            IndexRowType indexType = tableType.indexRowType(iindex);
-            PhysicalOperator indexOperator = indexScan_Default(indexType, 
-                                                               index.isReverse(),
-                                                               index.getIndexKeyRange());
-            resultOperator = lookup_Default(indexOperator, groupTable,
-                                            indexType, tableType, false);
-            // All selected rows above this need to be output by hkey left
-            // segment random access.
+            IndexRowType indexType;
+            // TODO: See comment on this class.
+            if (iindex.isTableIndex())
+                indexType = tableType.indexRowType(iindex);
+            else
+                indexType = new UnknownIndexRowType(schema, tableType, iindex);
+            resultOperator = indexScan_Default(indexType, 
+                                               index.isReverse(),
+                                               index.getIndexKeyRange());
+            // Decide whether to use BranchLookup, which gets all
+            // descendants, or AncestorLookup, which gets just the
+            // given type with the same number of B-tree accesses and
+            // so is more efficient, for the index's target table.
+            boolean tableUsed = false, descendantUsed = false;
+            for (TableNode table : indexTable.subtree()) {
+                if (table == indexTable) {
+                    tableUsed = table.isUsed();
+                }
+                else if (table.isUsed()) {
+                    descendantUsed = true;
+                    break;
+                }
+            }
+            RowType ancestorType = indexType;
+            if (descendantUsed) {
+                resultOperator = branchLookup_Default(resultOperator, groupTable,
+                                                      indexType, tableType, false);
+                checkForCrossProducts(indexTable);
+                ancestorType = tableType; // Index no longer in stream.
+            }
+            // Tables above this that also need to be output.
             List<RowType> addAncestors = new ArrayList<RowType>();
-            for (TableNode table : squery.getTables()) {
-                if (table.isUsed()) {
-                    if ((table != indexTable) && table.isAncestor(indexTable))
-                        addAncestors.add(tableRowType(table));
+            // Any other branches need to be added beside the main one.
+            List<TableNode> addBranches = new ArrayList<TableNode>();
+            for (TableNode left = indexTable; 
+                 left != null; 
+                 left = left.getParent()) {
+                if ((left == indexTable) ?
+                    (!descendantUsed && tableUsed) :
+                    left.isUsed()) {
+                    addAncestors.add(tableRowType(left));
+                }
+                {
+                    TableNode previous = null;
+                    TableNode sibling = left;
+                    while (true) {
+                        sibling = sibling.getNextSibling();
+                        if (sibling == null) break;
+                        if (sibling.subtreeUsed()) {
+                            if (!descendantUsed && !tableUsed) {
+                                // TODO: Better would be to set a flag
+                                // for ancestorLookup below to keep
+                                // the index type in the output and
+                                // use it for the branch lookup.
+                                addAncestors.add(0, tableType);
+                                tableUsed = true;
+                            }
+                            addBranches.add(sibling);
+                            if (previous != null)
+                                needCrossProduct(previous, sibling);
+                            previous = sibling;
+                        }
+                    }
                 }
             }
             if (!addAncestors.isEmpty()) {
                 resultOperator = ancestorLookup_Default(resultOperator, groupTable,
-                                                        tableType, addAncestors, true);
+                                                        ancestorType, addAncestors, 
+                                                        (descendantUsed && tableUsed));
+            }
+            for (TableNode branchTable : addBranches) {
+                resultOperator = branchLookup_Default(resultOperator, groupTable,
+                                                      tableType, tableRowType(branchTable), 
+                                                      true);
+                checkForCrossProducts(branchTable);
             }
         }
         else {
             resultOperator = groupScan_Default(groupTable);
+            checkForCrossProducts(squery.getTables().getRoot());
         }
         
         // TODO: Can apply most Select conditions before flattening.
@@ -315,13 +376,14 @@ public class OperatorCompiler
         if (index != null) {
             assert (targetTable == index.getTable());
             supdate.removeConditions(index.getIndexConditions());
-            TableIndex iindex = index.getIndex();
+            Index iindex = index.getIndex();
             IndexRowType indexType = targetRowType.indexRowType(iindex);
-            PhysicalOperator indexOperator = indexScan_Default(indexType, 
-                                                               index.isReverse(),
-                                                               index.getIndexKeyRange());
-            resultOperator = lookup_Default(indexOperator, groupTable,
-                                            indexType, targetRowType, false);
+            resultOperator = indexScan_Default(indexType, 
+                                               index.isReverse(),
+                                               index.getIndexKeyRange());
+            List<RowType> ancestors = Collections.<RowType>singletonList(targetRowType);
+            resultOperator = ancestorLookup_Default(resultOperator, groupTable,
+                                                    indexType, ancestors, false);
         }
         else {
             resultOperator = groupScan_Default(groupTable);
@@ -368,21 +430,23 @@ public class OperatorCompiler
     // A possible index.
     class IndexUsage implements Comparable<IndexUsage> {
         private TableNode table;
-        private TableIndex index;
+        private Index index;
         private List<ColumnCondition> equalityConditions;
         private ColumnCondition lowCondition, highCondition;
         private boolean sorting, reverse;
         
-        public IndexUsage(TableNode table, TableIndex index) {
-            this.table = table;
+        public IndexUsage(Index index, TableNode table) {
             this.index = index;
+            this.table = table; // Can be null: will be computed from columns.
         }
 
         public TableNode getTable() {
+            if (table == null)
+                table = computeDeepestTable();
             return table;
         }
 
-        public TableIndex getIndex() {
+        public Index getIndex() {
             return index;
         }
 
@@ -437,7 +501,7 @@ public class OperatorCompiler
                 on++;
             if (n != on) 
                 return (n > on) ? +1 : -1;
-            return index.getTable().getTableId().compareTo(other.index.getTable().getTableId());
+            return getTable().getTable().getTableId().compareTo(other.getTable().getTable().getTableId());
         }
 
         // Can this index be used for part of the given query?
@@ -542,6 +606,21 @@ public class OperatorCompiler
                 return new IndexKeyRange(lo, lowInc, hi, highInc);
             }
         }
+
+        // A group index has an hkey from the deepest table it indexes.
+        // Take the deepest that we are actually using, for which that
+        // hkey should work, since all indexed columns must be in a
+        // single branch.
+        protected TableNode computeDeepestTable() {
+            TableNode deepest = null;
+            for (ColumnCondition columnCondition : getIndexConditions()) {
+                TableNode table = columnCondition.getTable();
+                if ((deepest == null) || (deepest.getDepth() < table.getDepth()))
+                    deepest = table;
+            }
+            assert (deepest != null);
+            return deepest;
+        }
     }
 
     // Pick an index to use.
@@ -553,15 +632,26 @@ public class OperatorCompiler
         IndexUsage bestIndex = null;
         for (TableNode table : squery.getTables()) {
             if (table.isUsed() && !table.isOuter()) {
-                for (TableIndex index : table.getTable().getIndexes()) { // TODO: getIndexesIncludingInternal()
-                    IndexUsage candidate = new IndexUsage(table, index);
-                    if (candidate.usable(squery)) {
-                        if ((bestIndex == null) ||
-                            (candidate.compareTo(bestIndex) > 0))
-                            bestIndex = candidate;
-                    }
+                for (TableIndex index : table.getTable().getIndexes()) {
+                    IndexUsage candidate = new IndexUsage(index, table);
+                    bestIndex = betterIndex(squery, bestIndex, candidate);
                 }
             }
+        }
+        for (GroupIndex index : squery.getGroup().getGroup().getIndexes()) {
+            IndexUsage candidate = new IndexUsage(index, null);
+            bestIndex = betterIndex(squery, bestIndex, candidate);
+            
+        }
+        return bestIndex;
+    }
+
+    protected IndexUsage betterIndex(SimplifiedQuery squery,
+                                     IndexUsage bestIndex, IndexUsage candidate) {
+        if (candidate.usable(squery)) {
+            if ((bestIndex == null) ||
+                (candidate.compareTo(bestIndex) > 0))
+                return candidate;
         }
         return bestIndex;
     }
@@ -654,10 +744,14 @@ public class OperatorCompiler
         return schema.userTableRowType(table.getTable());
     }
 
-    protected IndexBound getIndexBound(TableIndex index, Expression[] keys) {
+    protected IndexBound getIndexBound(Index index, Expression[] keys) {
         if (keys == null) 
             return null;
-        return new IndexBound((UserTable)index.getTable(), 
+        UserTable userTable = null;
+        if (index.isTableIndex())
+            userTable = (UserTable)((TableIndex)index).getTable();
+        // TODO: group index bound table.
+        return new IndexBound(userTable,
                               getIndexExpressionRow(index, keys),
                               getIndexColumnSelector(index));
     }
@@ -676,8 +770,70 @@ public class OperatorCompiler
             };
     }
 
-    protected Row getIndexExpressionRow(TableIndex index, Expression[] keys) {
-        return new ExpressionRow(schema.indexRowType(index), keys);
+    // TODO: This is just good enough to print properly in plan, not
+    // to actually run.
+    static class UnknownIndexRowType extends IndexRowType {
+
+        @Override
+        public String toString()
+        {
+            return index.toString();
+        }
+
+        // RowType interface
+
+        @Override
+        public int nFields()
+        {
+            return index.getColumns().size();
+        }
+
+        public UnknownIndexRowType(Schema schema, UserTableRowType tableType, Index index)
+        {
+            super(schema, tableType, null);
+            this.index = index;
+        }
+
+        // Object state
+
+        private final Index index;
+    }
+
+    protected Row getIndexExpressionRow(Index index, Expression[] keys) {
+        RowType rowType = null;
+        if (index.isTableIndex())
+            rowType = schema.indexRowType((TableIndex)index);
+        else
+            // TODO: See comment above.
+            rowType = new UnknownIndexRowType(schema, null, index);
+        return new ExpressionRow(rowType, keys);
+    }
+
+    /** Check whether any list of children has a cross-product join,
+     * since that does not come from the group structure. */
+    protected void checkForCrossProducts(TableNode node) 
+            throws StandardException {
+        for (TableNode parent : node.subtree()) {
+            TableNode previous = null;
+            for (TableNode child = parent.getFirstChild(); 
+                 child != null; 
+                 child = child.getNextSibling()) {
+                if (child.subtreeUsed()) {
+                    if (previous != null)
+                        needCrossProduct(previous, child);
+                    previous = child;
+                }
+            }
+        }
+    }
+
+    // TODO: One slow way to do a cross product might be to filter out
+    // any existing right rows and then lookup to get all of them for
+    // the left's hkey.
+    protected void needCrossProduct(TableNode left, TableNode right) 
+            throws StandardException {
+        throw new UnsupportedSQLException("Need cross product between " + left +
+                                          " and " + right);
     }
 
 }

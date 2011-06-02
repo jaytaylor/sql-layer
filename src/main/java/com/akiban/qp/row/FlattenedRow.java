@@ -1,4 +1,4 @@
-/**
+/** *
  * Copyright (C) 2011 Akiban Technologies Inc.
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
@@ -55,7 +55,7 @@ public class FlattenedRow extends AbstractRow
         return child.get().hKey();
     }
 
-// FlattenedRow interface
+    // FlattenedRow interface
 
     public FlattenedRow(FlattenedRowType rowType, Row parent, Row child)
     {

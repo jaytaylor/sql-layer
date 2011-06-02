@@ -73,9 +73,10 @@ public interface TreeService extends Service<TreeService> {
     void checkpoint();
 
     TableStatusCache getTableStatusCache();
-    
 
     TreeLink treeLink(final String schemaName, final String treeName);
     
     String getDataPath();
+
+    String volumeForTree(final String schemaName, final String treeName);
 }

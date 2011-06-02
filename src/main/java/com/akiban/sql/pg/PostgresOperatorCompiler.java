@@ -121,8 +121,11 @@ public class PostgresOperatorCompiler extends OperatorCompiler
     // The current implementation of index cursors expects that the
     // key bounds' rows are in the shape of the indexed table, not the
     // index itself.
-    protected Row getIndexExpressionRow(TableIndex index, Expression[] keys) {
-        UserTable userTable = (UserTable)index.getTable();
+    @Override
+    protected Row getIndexExpressionRow(Index index, Expression[] keys) {
+        if (!index.isTableIndex())
+            return super.getIndexExpressionRow(index, keys);
+        UserTable userTable = (UserTable)((TableIndex)index).getTable();
         RowType rowType = schema.userTableRowType(userTable);
         Expression[] userKeys = new Expression[rowType.nFields()];
         for (int i = 0; i < keys.length; i++) {

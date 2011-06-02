@@ -40,13 +40,6 @@ public abstract class PhysicalOperator implements Plannable
 
     protected abstract Cursor cursor(StoreAdapter adapter);
 
-    protected static void checkArgument(boolean assertion) throws IllegalArgumentException
-    {
-        if (!assertion) {
-            throw new IllegalArgumentException();
-        }
-    }
-
     @Override
     public String describePlan()
     {

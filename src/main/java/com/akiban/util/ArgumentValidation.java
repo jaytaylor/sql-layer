@@ -15,6 +15,8 @@
 
 package com.akiban.util;
 
+import java.util.Collection;
+
 public final class ArgumentValidation {
     public static void isNull(String argName, Object arg) {
         if (arg != null) {
@@ -34,6 +36,25 @@ public final class ArgumentValidation {
             throw new IllegalArgumentException(
                     String.format("%s.length must be %d, was %d", argName, length, array.length)
             );
+        }
+    }
+
+    public static void notEmpty(String argName, Collection<?> collection) {
+        notNull(argName, collection);
+        if (collection.isEmpty()) {
+            throw new IllegalArgumentException(String.format("%s may not be empty", argName));
+        }
+    }
+
+    public static void isTrue(String predicateDescription, boolean predicate) {
+        if (!predicate) {
+            throw new IllegalArgumentException(String.format("%s does not hold", predicateDescription));
+        }
+    }
+
+    public static void isSame(String oneName, Object one, String twoName, Object two) {
+        if (one != two) {
+            throw new IllegalArgumentException(String.format("%s(%d) != %s(%d)", oneName, one, twoName, two));
         }
     }
 
