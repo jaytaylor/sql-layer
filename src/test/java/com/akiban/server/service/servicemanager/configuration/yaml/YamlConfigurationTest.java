@@ -58,19 +58,21 @@ public final class YamlConfigurationTest {
 
         List<String> expecteds = Strings.dumpResource(YamlConfigurationTest.class, expectedFileName);
 
-        InputStream testIS = YamlConfigurationTest.class.getResourceAsStream(yamlFileName);
-        if (testIS == null) {
-            throw new FileNotFoundException(yamlFileName);
-        }
 
         StringListStrategy strategy = new StringListStrategy();
         YamlConfiguration configuration = new YamlConfiguration(strategy);
-        Reader testReader = new InputStreamReader(testIS, "UTF-8");
-        try {
-            configuration.read(yamlFileName, testReader);
-        } finally {
-            testReader.close();
-        }
+        InputStream testIS = YamlConfigurationTest.class.getResourceAsStream(yamlFileName);
+        int segment = 1;
+        do {
+            Reader testReader = new InputStreamReader(testIS, "UTF-8");
+            try {
+                configuration.read(yamlFileName, testReader);
+            } finally {
+                testReader.close();
+            }
+            String nextFile = yamlFileName + '.' + (segment++);
+            testIS = YamlConfigurationTest.class.getResourceAsStream(nextFile);
+        } while (testIS != null);
 
         assertEquals("output", Strings.join(expecteds), Strings.join(strategy.strings()));
     }

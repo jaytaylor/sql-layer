@@ -1,0 +1,4 @@
+REQUIRE my.required.interface
+SECTION END
+BIND my.required.interface -> my.required.interfaceimpl
+SECTION END
