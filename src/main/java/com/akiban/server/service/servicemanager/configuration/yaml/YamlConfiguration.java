@@ -60,40 +60,40 @@ public final class YamlConfiguration {
             if ( !(elem instanceof Map)) {
                 throw new BadConfigurationException("block " + blockId + " item " + enumerated.count(), elem);
             }
+            String where = "block " + blockId + " command " + enumerated.count();
             Map<?,?> commandMap = (Map<?,?>) elem;
             if (commandMap.size() != 1) {
-                throw new BadConfigurationException("block " + blockId + " command " + enumerated.count(), commandMap,
-                        "command map needs to have size 1");
+                throw new BadConfigurationException(where, commandMap, "command map needs to have size 1");
             }
             Map.Entry<?,?> commandEntry = commandMap.entrySet().iterator().next();
             Object commandKey = commandEntry.getKey();
             if (! (commandKey instanceof String)) {
-                throw new BadConfigurationException("block " + blockId + " command " + enumerated.count(), commandMap,
+                throw new BadConfigurationException(where, commandMap,
                         "command key needs to be a string");
             }
-            Command command = whichCommand((String)commandKey);
+            Command command = whichCommand(where, (String)commandKey);
             Object commandValue = commandEntry.getValue();
             switch (command) {
             case BIND:
-                internalDoBind( stringsMap(commandValue) );
+                internalDoBind( stringsMap(where, commandValue) );
                 break;
             case BIND_AND_LOCK:
-                internalDoBindAndLock( stringsMap(commandValue) );
+                internalDoBindAndLock( stringsMap(where, commandValue) );
                 break;
             case LOCK:
-                internalDoLock( strings(commandValue) );
+                internalDoLock( strings(where, commandValue) );
                 break;
             case REQUIRE:
-                internalDoRequire( strings(commandValue) );
+                internalDoRequire( strings(where, commandValue) );
                 break;
             case REQUIRE_LOCKED:
-                internalDoRequireLocked( strings(commandValue) );
+                internalDoRequireLocked( strings(where, commandValue) );
                 break;
             case LOCKED:
-                internalDoLocked( strings(commandValue) );
+                internalDoLocked( strings(where, commandValue) );
                 break;
             case BOUND:
-                internalDoBound( strings(commandValue) );
+                internalDoBound( strings(where, commandValue) );
                 break;
             default:
                 throw new UnsupportedOperationException(command.name());
@@ -145,16 +145,16 @@ public final class YamlConfiguration {
         }
     }
 
-    private static Command whichCommand(String commandName) {
+    private static Command whichCommand(String where, String commandName) {
         commandName = commandName.toUpperCase().replace(' ', '_');
         try {
             return Command.valueOf(commandName);
         } catch (IllegalArgumentException e) {
-            throw new BadConfigurationException("?", commandName); // TODO the "?" needs fixing
+            throw new BadConfigurationException(where, commandName);
         }
     }
 
-    private static List<String> strings(Object object) {
+    private static List<String> strings(String where, Object object) {
         if (object instanceof String) {
             return Collections.singletonList((String)object);
         }
@@ -162,22 +162,22 @@ public final class YamlConfiguration {
             List<?> wildList = (List<?>) object;
             for (Object elem : wildList) {
                 if (!(elem instanceof String)) {
-                    throw new BadConfigurationException("?", object, "required a String or List<String>"); // TODO the "?" needs fixing
+                    throw new BadConfigurationException(where, object, "required a String or List<String>");
                 }
             }
             return launderStringsList(wildList);
         }
-        throw new BadConfigurationException("?", object, "required a String or List<String>"); // TODO the "?" needs fixing
+        throw new BadConfigurationException(where, object, "required a String or List<String>");
     }
 
-    private static Map<String,String> stringsMap(Object object) {
+    private static Map<String,String> stringsMap(String where, Object object) {
         if (! (object instanceof Map) ) {
-            throw new BadConfigurationException("?", object, "required a Map<String,String>"); // TODO the "?" needs fixing
+            throw new BadConfigurationException(where, object, "required a Map<String,String>");
         }
         Map<?,?> wildMap = (Map<?,?>) object;
         for (Map.Entry<?,?> entry : wildMap.entrySet()) {
             if (! (entry.getKey() instanceof String) || ! (entry.getValue() instanceof String) ) {
-                throw new BadConfigurationException("?", object, "required a Map<String,String>"); // TODO the "?" needs fixing
+                throw new BadConfigurationException(where, object, "required a Map<String,String>");
             }
         }
         return launderStringsMap(wildMap);
