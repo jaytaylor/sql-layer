@@ -15,17 +15,16 @@
 
 package com.akiban.server;
 
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicReference;
-
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
 
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
+
 public class IndexDef implements TreeLink {
-    private final TableIndex index;
+    private final Index index;
     private final String treeName;
     // Identifies fields within the row that form the key part of the index entry.
     private final int[] fields;
@@ -33,7 +32,7 @@ public class IndexDef implements TreeLink {
     private AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
 
 
-    public IndexDef(String treeName, RowDef rowDef, TableIndex index)
+    public IndexDef(String treeName, RowDef rowDef, Index index)
     {
         this.index = index;
         index.indexDef(this);
@@ -45,15 +44,6 @@ public class IndexDef implements TreeLink {
             int positionInIndex = indexColumn.getPosition();
             this.fields[positionInIndex] = positionInRow;
         }
-    }
-
-    public Index index()
-    {
-        return index;
-    }
-
-    public String getTreeName() {
-        return treeName;
     }
 
     public int[] getFields() {
@@ -68,42 +58,40 @@ public class IndexDef implements TreeLink {
         return fields.length;
     }
 
+    @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(rowDef.getTableName());
-        sb.append(":");
-        sb.append(index.getIndexName().getName());
-        sb.append("(");
-        for (int i = 0; i < fields.length; i++) {
-            sb.append(i == 0 ? "" : ",");
-            sb.append(rowDef.getFieldDef(fields[i]).getName());
-        }
-        sb.append(")->");
-        sb.append(treeName);
-        if (index.isHKeyEquivalent()) {
-            sb.append("=hkey");
-        }
-        return sb.toString();
+        return index.toString() + "[" + treeName + "]";
     }
 
     @Override
-    public boolean equals(final Object o) {
-        final IndexDef def = (IndexDef) o;
-        return index.equals(def.index) &&
-            treeName.equals(def.treeName) &&
-            Arrays.equals(fields, def.fields);
+    public boolean equals(Object o) {
+        if(this == o) {
+            return true;
+        }
+        if(!(o instanceof IndexDef)) {
+            return false;
+        }
+        IndexDef rhs = (IndexDef) o;
+        return Arrays.equals(fields, rhs.fields)
+               && index.equals(rhs.index)
+               && treeName.equals(rhs.treeName);
     }
 
     @Override
-    public int hashCode()
-    {
-        return index.getIndexName().getName().hashCode() ^ treeName.hashCode() ^
-               index.getIndexId() ^ Arrays.hashCode(fields);
+    public int hashCode() {
+        return index.hashCode() ^ treeName.hashCode() ^ Arrays.hashCode(fields);
     }
+
+    // TreeLink interface
 
     @Override
     public String getSchemaName() {
-        return rowDef.getSchemaName();
+        return index.getIndexName().getSchemaName();
+    }
+
+    @Override
+    public String getTreeName() {
+        return treeName;
     }
 
     @Override

@@ -226,7 +226,7 @@ public class PersistitStoreIndexManager implements IndexManager {
 
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Analyzed index %s in table %s: %,d keys "
-                    + "at keyDepth/treeLevel %d/%d", indexDef.index().getIndexName().getName(),
+                    + "at keyDepth/treeLevel %d/%d", index.getIndexName().getName(),
                     indexDef.getRowDef().getTableName(),
                     keyHistogram.getKeyCount(), keyDepth,
                     Math.max(0, treeLevel)));
@@ -243,8 +243,7 @@ public class PersistitStoreIndexManager implements IndexManager {
         final Key key = new Key((Persistit) null);
         final RowData rowData = new RowData(new byte[ROW_DATA_LENGTH]);
         final RowData indexRowData = new RowData(new byte[ROW_DATA_LENGTH]);
-        final Object[] indexValues = new Object[indexDef.getRowDef()
-                .getFieldCount()];
+        final Object[] indexValues = new Object[indexDef.getRowDef().getFieldCount()];
 
         try {
 
@@ -255,7 +254,7 @@ public class PersistitStoreIndexManager implements IndexManager {
 
                     rowData.createRow(indexAnalysisRowDef,
                             new Object[] { indexDef.getRowDef().getRowDefId(),
-                                    indexDef.index().getIndexId(), now, 0, "", null, 0 });
+                                           index.getIndexId(), now, 0, "", null, 0 });
                     //
                     // Remove previous analysis
                     //
@@ -279,8 +278,8 @@ public class PersistitStoreIndexManager implements IndexManager {
                         key.indexTo(0);
                         int remainingSegments = key.getDepth();
 
-                        if (indexDef.index().isHKeyEquivalent()) {
-                            IndexToHKey indexToHkey = indexDef.index().indexToHKey();
+                        if (index.isHKeyEquivalent()) {
+                            IndexToHKey indexToHkey = index.indexToHKey();
                             for (int i = 0; i < indexToHkey.getLength(); ++i) {
                                 final Object keySegmentValue = --remainingSegments >= 0 ? key .decode() : null;
                                 if (!indexToHkey.isOrdinal(i)) {
@@ -313,7 +312,7 @@ public class PersistitStoreIndexManager implements IndexManager {
                                 indexAnalysisRowDef,
                                 new Object[]{
                                         indexDef.getRowDef().getRowDefId(),
-                                        indexDef.index().getIndexId(), now, ++itemNumber,
+                                        index.getIndexId(), now, ++itemNumber,
                                         key.toString(), indexRowBytes,
                                         keyCount.getCount() * multiplier});
                         try {
@@ -336,7 +335,7 @@ public class PersistitStoreIndexManager implements IndexManager {
                     rowData.createRow(
                             indexAnalysisRowDef,
                             new Object[] { indexDef.getRowDef().getRowDefId(),
-                                    indexDef.index().getIndexId(), now, ++itemNumber,
+                                    index.getIndexId(), now, ++itemNumber,
                                     key.toString(), indexRowBytes,
                                     keyHistogram0.getKeyCount() * multiplier });
 
