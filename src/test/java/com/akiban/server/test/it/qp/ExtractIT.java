@@ -65,7 +65,6 @@ public class ExtractIT extends PhysicalOperatorITBase
         extract_Default(groupScan_Default(coi), null);
     }
 
-/*
     @Test(expected = IllegalArgumentException.class)
     public void testEmptyKeepTypes()
     {
@@ -145,5 +144,4 @@ public class ExtractIT extends PhysicalOperatorITBase
         };
         compareRows(expected, cursor);
     }
-*/
 }
