@@ -77,23 +77,17 @@ public class PersistitStore implements Store {
     private static final Logger LOG = LoggerFactory
             .getLogger(PersistitStore.class.getName());
 
-    private static final Tap WRITE_ROW_TAP = Tap.add(new Tap.PerThread(
-            "write: write_row"));
+    private static final Tap WRITE_ROW_TAP = Tap.add(new Tap.PerThread("write: write_row"));
 
-    private static final Tap UPDATE_ROW_TAP = Tap.add(new Tap.PerThread(
-            "write: update_row"));
+    private static final Tap UPDATE_ROW_TAP = Tap.add(new Tap.PerThread("write: update_row"));
 
-    private static final Tap DELETE_ROW_TAP = Tap.add(new Tap.PerThread(
-            "write: delete_row"));
+    private static final Tap DELETE_ROW_TAP = Tap.add(new Tap.PerThread("write: delete_row"));
 
-    private static final Tap TX_COMMIT_TAP = Tap.add(new Tap.PerThread(
-            "write: tx_commit"));
+    private static final Tap TX_COMMIT_TAP = Tap.add(new Tap.PerThread("write: tx_commit"));
 
-    private static final Tap TX_RETRY_TAP = Tap.add(new Tap.PerThread(
-            "write: tx_retry", Tap.Count.class));
+    private static final Tap TX_RETRY_TAP = Tap.add(new Tap.PerThread("write: tx_retry", Tap.Count.class));
 
-    private static final Tap NEW_COLLECTOR_TAP = Tap.add(new Tap.PerThread(
-            "read: new_collector"));
+    private static final Tap NEW_COLLECTOR_TAP = Tap.add(new Tap.PerThread("read: new_collector"));
 
     static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 

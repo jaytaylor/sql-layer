@@ -116,18 +116,16 @@ public class API
         return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate);
     }
 
-    public static PhysicalOperator cut_Default(Schema schema,
-                                               PhysicalOperator inputOperator,
+    public static PhysicalOperator cut_Default(PhysicalOperator inputOperator,
                                                Collection<RowType> cutTypes)
     {
-        return new Cut_Default(schema, inputOperator, cutTypes);
+        return new Cut_Default(inputOperator, cutTypes);
     }
 
-    public static PhysicalOperator extract_Default(Schema schema,
-                                                   PhysicalOperator inputOperator,
+    public static PhysicalOperator extract_Default(PhysicalOperator inputOperator,
                                                    Collection<RowType> extractTypes)
     {
-        return new Extract_Default(schema, inputOperator, extractTypes);
+        return new Extract_Default(inputOperator, extractTypes);
     }
 
     private static final Limit NO_LIMIT = new Limit()
