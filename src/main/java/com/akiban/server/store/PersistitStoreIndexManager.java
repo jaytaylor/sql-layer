@@ -389,13 +389,12 @@ public class PersistitStoreIndexManager implements IndexManager {
         }
 
         for (Index index : rowDef.getIndexes()) {
-            final IndexDef indexDef = (IndexDef)index.indexDef();
-            final Histogram histogram = new Histogram(indexDef.index().getIndexId());
+            final Histogram histogram = new Histogram(index.getIndexId());
             final RowDef indexAnalysisRowDef = store.getRowDefCache()
                     .getRowDef(ANALYSIS_TABLE_NAME);
             final Exchange exchange = store.getExchange(session, indexAnalysisRowDef);
             exchange.clear().append(indexAnalysisRowDef.getOrdinal())
-                    .append((long) tableId).append((long) indexDef.index().getIndexId())
+                    .append((long) tableId).append((long) index.getIndexId())
                     .append(Key.BEFORE);
             List<RowData> rows = new ArrayList<RowData>();
             while (exchange.next()) {
