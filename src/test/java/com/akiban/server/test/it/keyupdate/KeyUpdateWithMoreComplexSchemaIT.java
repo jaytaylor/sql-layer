@@ -363,11 +363,11 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
         // Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
         // Order PK index
         indexVisitor = new RecordCollectingIndexRecordVisistor();
-        testStore.traverse(session(), orderRowDef.getPKIndexDef(), indexVisitor);
+        testStore.traverse(session(), orderRowDef.getPKIndex(), indexVisitor);
         assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
         // Item PK index
         indexVisitor = new RecordCollectingIndexRecordVisistor();
-        testStore.traverse(session(), itemRowDef.getPKIndexDef(), indexVisitor);
+        testStore.traverse(session(), itemRowDef.getPKIndex(), indexVisitor);
         assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
     }
 

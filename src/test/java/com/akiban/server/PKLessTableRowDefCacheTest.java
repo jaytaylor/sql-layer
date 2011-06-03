@@ -133,7 +133,8 @@ public class PKLessTableRowDefCacheTest
 
     private Index index(RowDef rowDef, String... indexColumnNames)
     {
-        for (IndexDef indexDef : rowDef.getIndexDefs()) {
+        for (Index index : rowDef.getIndexes()) {
+            IndexDef indexDef = (IndexDef)index.indexDef();
             int[] indexFields = indexDef.getFields();
             boolean match = indexFields.length == indexColumnNames.length;
             for (int i = 0; match && i < indexColumnNames.length; i++) {
@@ -142,7 +143,7 @@ public class PKLessTableRowDefCacheTest
                 }
             }
             if (match) {
-                return indexDef.index();
+                return index;
             }
         }
         return null;

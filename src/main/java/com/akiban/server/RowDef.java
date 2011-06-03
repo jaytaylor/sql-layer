@@ -15,7 +15,6 @@
 
 package com.akiban.server;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -25,13 +24,12 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
-import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
-import com.akiban.server.util.RowDefNotFoundException;
 
 /**
  * Contain the relevant schema information for one version of a table
@@ -93,10 +91,11 @@ public class RowDef implements TreeLink {
      * hkey for rows of this table.
      */
     private int hkeyDepth;
+
     /**
      * Array of index definitions for this row
      */
-    private IndexDef[] indexDefs;
+    private Index[] indexes;
 
     /**
      * Array computed by the {@link #preComputeFieldCoordinates(FieldDef[])}
@@ -193,8 +192,7 @@ public class RowDef implements TreeLink {
     }
 
     /**
-     * An implementation useful while debugging. TODO - replace with something
-     * less verbose.
+     * An implementation useful while debugging.
      */
     @Override
     public String toString() {
@@ -411,24 +409,20 @@ public class RowDef implements TreeLink {
                 .getGroup().getGroupTable().getTableId();
     }
 
-    public IndexDef[] getIndexDefs() {
-        return indexDefs;
+    public Index[] getIndexes() {
+        return indexes;
     }
 
-    public IndexDef getIndexDef(final int indexId) {
-        // TODO: Could use a HashMap instead if this linear search proves to be
-        // a CPU problem..
-        for (int index = 0; index < indexDefs.length; index++) {
-            if (indexDefs[index].index().getIndexId() == indexId) {
-                return indexDefs[index];
+    public Index getIndex(final int indexId) {
+        for(Index index : indexes) {
+            if(index.getIndexId() == indexId) {
+                return index;
             }
         }
         return null;
     }
 
-    /**
-     * deprecated
-     */
+    @Deprecated
     public int[] getParentJoinFields() {
         return parentJoinFields;
     }
@@ -440,8 +434,8 @@ public class RowDef implements TreeLink {
     }
 
     public String getPkTreeName() {
-        final IndexDef pkIndexDef = getPKIndexDef();
-        return pkIndexDef != null ? pkIndexDef.getTreeName() : null;
+        final Index pkIndex = getPKIndex();
+        return pkIndex != null ? ((IndexDef)pkIndex.indexDef()).getTreeName() : null;
     }
 
     public int getRowDefId() {
@@ -480,8 +474,8 @@ public class RowDef implements TreeLink {
         return !isGroupTable();
     }
 
-    public void setIndexDefs(IndexDef[] indexDefs) {
-        this.indexDefs = indexDefs;
+    public void setIndexes(Index[] indexes) {
+        this.indexes = indexes;
     }
 
     public void setParentJoinFields(int[] parentJoinFields) {
@@ -513,9 +507,9 @@ public class RowDef implements TreeLink {
         this.columnOffset = columnOffset;
     }
 
-    public IndexDef getPKIndexDef() {
-        if (!isGroupTable() && indexDefs != null && indexDefs.length > 0) {
-            return indexDefs[0];
+    public Index getPKIndex() {
+        if (!isGroupTable() && indexes != null && indexes.length > 0) {
+            return indexes[0];
         } else {
             return null;
         }
@@ -597,8 +591,8 @@ public class RowDef implements TreeLink {
                     .positionInHKey() : lastColumns.get(lastColumns.size() - 1)
                     .positionInHKey());
         }
-        for (IndexDef indexDef : indexDefs) {
-            indexDef.computeFieldAssociations(ordinalMap);
+        for (Index index : indexes) {
+            ((IndexDef)index.indexDef()).computeFieldAssociations(ordinalMap);
         }
     }
 
@@ -609,7 +603,7 @@ public class RowDef implements TreeLink {
                 && AkServerUtil.equals(table.getName(), def.table.getName())
                 && AkServerUtil.equals(treeName, def.treeName)
                 && Arrays.deepEquals(fieldDefs, def.fieldDefs)
-                && Arrays.deepEquals(indexDefs, def.indexDefs)
+                && Arrays.deepEquals(indexes, def.indexes)
                 && getOrdinal() == def.getOrdinal()
                 && Arrays.equals(parentJoinFields, def.parentJoinFields);
 

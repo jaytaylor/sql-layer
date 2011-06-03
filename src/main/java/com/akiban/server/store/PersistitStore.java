@@ -233,10 +233,9 @@ public class PersistitStore implements Store {
                     if (parentPKExchange == null) {
                         // Initialize parent metadata and state
                         assert parentRowDef != null : rowDef;
-                        IndexDef parentPK = parentRowDef.getPKIndexDef();
-                        indexToHKey = parentPK.index().indexToHKey();
-                        parentPKExchange = getExchange(session, rowDef,
-                                parentPK);
+                        Index parentPK = parentRowDef.getPKIndex();
+                        indexToHKey = parentPK.indexToHKey();
+                        parentPKExchange = getExchange(session, rowDef, (IndexDef)parentPK.indexDef());
                         constructParentPKIndexKey(parentPKExchange.getKey(),
                                 rowDef, rowData);
                         parentExists = parentPKExchange.hasChildren();
@@ -490,13 +489,13 @@ public class PersistitStore implements Store {
                                 .updateUniqueIdValue(rowDefId, uniqueId);
                     }
 
-                    for (final IndexDef indexDef : rowDef.getIndexDefs()) {
+                    for (Index index : rowDef.getIndexes()) {
                         //
                         // Insert the index keys (except for the case of a
                         // root table's PK index.)
                         //
-                        if (!indexDef.index().isHKeyEquivalent())
-                            insertIntoIndex(session, indexDef, rowData,
+                        if (!index.isHKeyEquivalent())
+                            insertIntoIndex(session, (IndexDef)index.indexDef(), rowData,
                                     hEx.getKey(), deferIndexes);
                     }
 
@@ -651,10 +650,9 @@ public class PersistitStore implements Store {
                     tableStatusCache.decrementRowCount(rowDefId);
 
                     // Remove the indexes, including the PK index
-                    for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-                        if (!indexDef.index().isHKeyEquivalent()) {
-                            deleteIndex(session, indexDef, rowDef, rowData,
-                                    hEx.getKey());
+                    for (Index index : rowDef.getIndexes()) {
+                        if (!index.isHKeyEquivalent()) {
+                            deleteIndex(session, (IndexDef)index.indexDef(), rowDef, rowData, hEx.getKey());
                         }
                     }
 
@@ -726,10 +724,10 @@ public class PersistitStore implements Store {
                     // may want to optimize the protocol to send only PK and FK
                     // fields in oldRowData, in which case this test will need
                     // to change.
-                    if (!fieldsEqual(rowDef, oldRowData, mergedRowData, rowDef
-                            .getPKIndexDef().getFields())
+                    if (!fieldsEqual(rowDef, oldRowData, mergedRowData,
+                                     ((IndexDef)rowDef.getPKIndex().indexDef()).getFields())
                             || !fieldsEqual(rowDef, oldRowData, mergedRowData,
-                                    rowDef.getParentJoinFields())) {
+                                            rowDef.getParentJoinFields())) {
                         deleteRow(session, oldRowData);
                         writeRow(session, mergedRowData);
                     } else {
@@ -739,10 +737,10 @@ public class PersistitStore implements Store {
 
                         // Update the indexes
                         //
-                        for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-                            if (!indexDef.index().isHKeyEquivalent()) {
-                                updateIndex(session, indexDef, rowDef,
-                                        currentRow, mergedRowData, hEx.getKey());
+                        for (Index index : rowDef.getIndexes()) {
+                            if (!index.isHKeyEquivalent()) {
+                                updateIndex(session, (IndexDef)index.indexDef(), rowDef,
+                                            currentRow, mergedRowData, hEx.getKey());
                             }
                         }
                     }
@@ -798,9 +796,9 @@ public class PersistitStore implements Store {
             // Delete the current row from the tree
             exchange.remove();
             tableStatusCache.decrementRowCount(descendentRowDefId);
-            for (IndexDef indexDef : descendentRowDef.getIndexDefs()) {
-                if (!indexDef.index().isHKeyEquivalent()) {
-                    deleteIndex(session, indexDef, descendentRowDef,
+            for (Index index : descendentRowDef.getIndexes()) {
+                if (!index.isHKeyEquivalent()) {
+                    deleteIndex(session, (IndexDef)index.indexDef(), descendentRowDef,
                             descendentRowData, exchange.getKey());
                 }
             }
@@ -840,8 +838,9 @@ public class PersistitStore implements Store {
                 // Remove the index trees
                 //
                 for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
-                    for (IndexDef indexDef : userRowDef.getIndexDefs()) {
-                        if (!indexDef.index().isHKeyEquivalent()) {
+                    for (Index index : userRowDef.getIndexes()) {
+                        IndexDef indexDef = (IndexDef)index.indexDef();
+                        if (!index.isHKeyEquivalent()) {
                             Exchange iEx = getExchange(session, userRowDef, indexDef);
                             iEx.removeAll();
                             releaseExchange(session, iEx);
@@ -1271,9 +1270,7 @@ public class PersistitStore implements Store {
         Collection<Index> indexes = new HashSet<Index>();
         for(RowDef rowDef : rowDefCache.getRowDefs()) {
             if(rowDef.isUserTable()) {
-                for(IndexDef indexDef : rowDef.getIndexDefs()) {
-                    indexes.add(indexDef.index());
-                }
+                indexes.addAll(Arrays.asList(rowDef.getIndexes()));
             }
         }
         buildIndexes(session, indexes, deferIndexes);
@@ -1326,7 +1323,8 @@ public class PersistitStore implements Store {
                     final int tableId = rowData.getRowDefId();
                     final RowDef userRowDef = rowDefCache.getRowDef(tableId);
                     if (userRowDefs.contains(userRowDef)) {
-                        for (final IndexDef indexDef : userRowDef.getIndexDefs()) {
+                        for (Index index : userRowDef.getIndexes()) {
+                            IndexDef indexDef = (IndexDef)index.indexDef();
                             if(indexDefs.contains(indexDef)) {
                                 insertIntoIndex(session, indexDef, rowData, hEx.getKey(), defer);
                                 indexKeyCount++;
@@ -1427,14 +1425,14 @@ public class PersistitStore implements Store {
         }
     }
 
-    public void traverse(Session session, IndexDef indexDef,
+    public void traverse(Session session, Index index,
             IndexRecordVisitor visitor) throws PersistitException,
             InvalidOperationException
     {
-        if (indexDef.index().isHKeyEquivalent()) {
-            throw new IllegalArgumentException("HKeyEquivalent not allowed: " + indexDef);
+        if (index.isHKeyEquivalent()) {
+            throw new IllegalArgumentException("HKeyEquivalent not allowed: " + index);
         }
-        Exchange exchange = getExchange(session, null, indexDef).append(Key.BEFORE);
+        Exchange exchange = getExchange(session, null, (IndexDef)index.indexDef()).append(Key.BEFORE);
 
         try {
             visitor.initialize(exchange);

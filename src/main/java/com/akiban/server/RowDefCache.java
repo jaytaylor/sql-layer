@@ -276,23 +276,23 @@ public class RowDefCache {
         assert groupTableTreeName != null : root;
 
         // Secondary indexes
-        List<IndexDef> indexDefList = new ArrayList<IndexDef>();
+        List<Index> indexList = new ArrayList<Index>();
         for (TableIndex index : table.getIndexesIncludingInternal()) {
             List<IndexColumn> indexColumns = index.getColumns();
             if (!indexColumns.isEmpty()) {
                 String treeName = getTreeName(groupTableName, index);
                 IndexDef indexDef = new IndexDef(treeName, rowDef, index);
                 if (index.isPrimaryKey()) {
-                    indexDefList.add(0, indexDef);
+                    indexList.add(0, index);
                 } else {
-                    indexDefList.add(indexDef);
+                    indexList.add(index);
                 }
             } // else: Don't create an index for an artificial IndexDef that has
               // no fields.
         }
         rowDef.setTreeName(groupTableTreeName);
         rowDef.setParentJoinFields(parentJoinFields);
-        rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList.size()]));
+        rowDef.setIndexes(indexList.toArray(new Index[indexList.size()]));
         return rowDef;
 
     }
@@ -317,19 +317,19 @@ public class RowDefCache {
         final String groupTableName = table.getName().getTableName();
         final String groupTableTreeName = getTreeName(table);
         // Secondary indexes
-        final List<IndexDef> indexDefList = new ArrayList<IndexDef>();
+        final List<Index> indexList = new ArrayList<Index>();
         for (TableIndex index : table.getIndexes()) {
             List<IndexColumn> indexColumns = index.getColumns();
             if (!indexColumns.isEmpty()) {
                 String treeName = getTreeName(groupTableName, index);
                 IndexDef indexDef = new IndexDef(treeName, rowDef, index);
-                indexDefList.add(indexDef);
+                indexList.add(index);
             } // else: Don't create a group table index for an artificial
               // IndeDef that has no fields.
         }
         rowDef.setTreeName(groupTableTreeName);
         rowDef.setUserTableRowDefs(userTableRowDefs);
-        rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList.size()]));
+        rowDef.setIndexes(indexList.toArray(new Index[indexList.size()]));
         return rowDef;
     }
     

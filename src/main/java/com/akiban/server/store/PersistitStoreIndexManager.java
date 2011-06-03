@@ -18,6 +18,7 @@ package com.akiban.server.store;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexToHKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,8 +106,8 @@ public class PersistitStoreIndexManager implements IndexManager {
     @Override
     public void analyzeTable(final Session session, final RowDef rowDef,
             final int sampleSize) throws Exception {
-        for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-            analyzeIndex(session, indexDef, sampleSize);
+        for (Index index : rowDef.getIndexes()) {
+            analyzeIndex(session, (IndexDef)index.indexDef(), sampleSize);
         }
     }
 
@@ -394,7 +395,8 @@ public class PersistitStoreIndexManager implements IndexManager {
             return;
         }
 
-        for (final IndexDef indexDef : rowDef.getIndexDefs()) {
+        for (Index index : rowDef.getIndexes()) {
+            final IndexDef indexDef = (IndexDef)index.indexDef();
             final Histogram histogram = new Histogram(indexDef.index().getIndexId());
             final RowDef indexAnalysisRowDef = store.getRowDefCache()
                     .getRowDef(ANALYSIS_TABLE_NAME);
