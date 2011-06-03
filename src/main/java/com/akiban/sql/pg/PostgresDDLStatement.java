@@ -21,8 +21,10 @@ import com.akiban.sql.StandardException;
 
 import com.akiban.sql.parser.CreateIndexNode;
 import com.akiban.sql.parser.CreateTableNode;
+import com.akiban.sql.parser.CreateSchemaNode;
 import com.akiban.sql.parser.CreateViewNode;
 import com.akiban.sql.parser.DropViewNode;
+import com.akiban.sql.parser.DropSchemaNode;
 import com.akiban.sql.parser.DDLStatementNode;
 import com.akiban.sql.parser.NodeTypes;
 
@@ -68,6 +70,12 @@ public class PostgresDDLStatement implements PostgresStatement
         String schema = server.getDefaultSchemaName();
 
         switch (ddl.getNodeType()) {
+        case NodeTypes.CREATE_SCHEMA_NODE:
+            SchemaDDL.createSchema(ais, schema, (CreateSchemaNode)ddl);
+            break;
+        case NodeTypes.DROP_SCHEMA_NODE:
+            SchemaDDL.dropSchema(ais, schema, (DropSchemaNode)ddl);
+            break;
         case NodeTypes.CREATE_TABLE_NODE:
             TableDDL.createTable(ais, schema, (CreateTableNode)ddl);
             break;
