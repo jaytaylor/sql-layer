@@ -596,7 +596,7 @@ public class RowDef implements TreeLink {
                     .positionInHKey());
         }
         for (Index index : indexes) {
-            ((IndexDef)index.indexDef()).computeFieldAssociations(ordinalMap);
+            index.computeFieldAssociations(ordinalMap);
         }
     }
 

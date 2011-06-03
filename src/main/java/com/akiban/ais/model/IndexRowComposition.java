@@ -17,6 +17,12 @@ package com.akiban.ais.model;
 
 import java.util.Arrays;
 
+/**
+ * IndexRowComposition presents an interface for mapping row and hkey fields
+ * to the fields of an index. The leading index fields are exactly the fields
+ * identified in the Index (i.e. the declared index columns). The remaining
+ * fields are whatever is necessary to ensure that all of the hkey is represented.
+ */
 public class IndexRowComposition {
     public IndexRowComposition(int[] depths, int[] fieldPositions, int[] hkeyPositions) {
         if(depths.length != fieldPositions.length || depths.length != hkeyPositions.length) {

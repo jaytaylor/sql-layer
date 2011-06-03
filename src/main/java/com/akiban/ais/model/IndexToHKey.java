@@ -15,6 +15,12 @@
 
 package com.akiban.ais.model;
 
+/**
+ * IndexToHkey is an interface usful in constructing HKey values from an index row.
+ * There are two types of entries, ordinal values and index fields. An ordinal identifies
+ * a user table. Non-ordinal entires are the positions within the index row and the
+ * table where the HKey values can be found.
+ */
 public class IndexToHKey {
     public IndexToHKey(int[] ordinals, int[] indexRowPositions, int[] fieldPositions) {
         if(ordinals.length != indexRowPositions.length || ordinals.length != fieldPositions.length) {
