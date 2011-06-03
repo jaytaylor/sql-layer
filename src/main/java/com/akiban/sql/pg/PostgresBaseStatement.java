@@ -17,63 +17,54 @@ package com.akiban.sql.pg;
 
 import com.akiban.sql.StandardException;
 
-import com.akiban.ais.model.Column;
-
 import java.util.*;
 import java.io.IOException;
 
 /**
- * An SQL statement based on AIS Columns.
+ * An ordinary SQL statement.
  */
 public abstract class PostgresBaseStatement implements PostgresStatement
 {
-    private List<Column> columns;
-    private List<PostgresType> types;
+    private List<String> columnNames;
+    private List<PostgresType> columnTypes;
 
     protected PostgresBaseStatement() {
-        this.columns = null;
     }
 
-    protected PostgresBaseStatement(List<Column> columns) {
-        this.columns = columns;
+    protected PostgresBaseStatement(List<String> columnNames, 
+                                    List<PostgresType> columnTypes) {
+        this.columnNames = columnNames;
+        this.columnTypes = columnTypes;
     }
 
-    public List<Column> getColumns() {
-        return columns;
+    public List<String> getColumnNames() {
+        return columnNames;
+    }
+
+    public List<PostgresType> getColumnTypes() throws StandardException {
+        return columnTypes;
     }
 
     public boolean isColumnBinary(int i) {
         return false;
     }
 
-    public List<PostgresType> getTypes() throws StandardException {
-        if (types == null) {
-            if (columns == null) return null;
-            types = new ArrayList<PostgresType>(columns.size());
-            for (Column column : columns) {
-                types.add(PostgresType.fromAIS(column));
-            }
-        }
-        return types;
-    }
-
     public void sendDescription(PostgresServerSession server, boolean always) 
             throws IOException, StandardException {
         PostgresMessenger messenger = server.getMessenger();
-        List<Column> columns = getColumns();
-        if (columns == null) {
+        List<PostgresType> columnTypes = getColumnTypes();
+        if (columnTypes == null) {
             if (!always) return;
             messenger.beginMessage(PostgresMessenger.NO_DATA_TYPE);
         }
         else {
             messenger.beginMessage(PostgresMessenger.ROW_DESCRIPTION_TYPE);
-            List<PostgresType> types = getTypes();
-            int ncols = columns.size();
+            List<String> columnNames = getColumnNames();
+            int ncols = columnTypes.size();
             messenger.writeShort(ncols);
             for (int i = 0; i < ncols; i++) {
-                Column col = columns.get(i);
-                PostgresType type = types.get(i);
-                messenger.writeString(col.getName()); // attname
+                PostgresType type = columnTypes.get(i);
+                messenger.writeString(columnNames.get(i)); // attname
                 messenger.writeInt(0);    // attrelid
                 messenger.writeShort(0);  // attnum
                 messenger.writeInt(type.getOid()); // atttypid
