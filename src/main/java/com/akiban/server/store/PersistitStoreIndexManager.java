@@ -127,8 +127,7 @@ public class PersistitStoreIndexManager implements IndexManager {
             // true for some unit tests
             return;
         }
-        final Exchange analysisEx = store.getExchange(session,
-                indexAnalysisRowDef, null);
+        final Exchange analysisEx = store.getExchange(session, indexAnalysisRowDef);
         final Transaction transaction = analysisEx.getTransaction();
 
         int retries = PersistitStore.MAX_TRANSACTION_RETRY_COUNT;
@@ -185,7 +184,7 @@ public class PersistitStoreIndexManager implements IndexManager {
         KeyFilter keyFilter = null;
 
         if (indexDef.index().isHKeyEquivalent()) {
-            probeEx = store.getExchange(session, indexDef.getRowDef(), null);
+            probeEx = store.getExchange(session, indexDef.getRowDef());
             startKey = new Key(store.getDb());
             endKey = new Key(store.getDb());
             final IndexToHKey indexToHKey = indexDef.index().indexToHKey();
@@ -203,8 +202,7 @@ public class PersistitStoreIndexManager implements IndexManager {
             keyFilter = new KeyFilter(terms, terms.length, Integer.MAX_VALUE);
 
         } else {
-            probeEx = store
-                    .getExchange(session, indexDef.getRowDef(), indexDef);
+            probeEx = store.getExchange(session, indexDef.index());
             startKey = Key.LEFT_GUARD_KEY;
             endKey = Key.RIGHT_GUARD_KEY;
             keyDepth = indexDef.getFields().length;
@@ -240,8 +238,7 @@ public class PersistitStoreIndexManager implements IndexManager {
 
         final RowDef indexAnalysisRowDef = store.getRowDefCache().getRowDef(
                 ANALYSIS_TABLE_NAME);
-        final Exchange analysisEx = store.getExchange(session,
-                indexAnalysisRowDef, null);
+        final Exchange analysisEx = store.getExchange(session, indexAnalysisRowDef);
         final Transaction transaction = analysisEx.getTransaction();
         final long now = System.currentTimeMillis() / 1000;
         final KeyHistogram keyHistogram0 = keyHistogram;
@@ -400,8 +397,7 @@ public class PersistitStoreIndexManager implements IndexManager {
             final Histogram histogram = new Histogram(indexDef.index().getIndexId());
             final RowDef indexAnalysisRowDef = store.getRowDefCache()
                     .getRowDef(ANALYSIS_TABLE_NAME);
-            final Exchange exchange = store.getExchange(session,
-                    indexAnalysisRowDef, null);
+            final Exchange exchange = store.getExchange(session, indexAnalysisRowDef);
             exchange.clear().append(indexAnalysisRowDef.getOrdinal())
                     .append((long) tableId).append((long) indexDef.index().getIndexId())
                     .append(Key.BEFORE);
