@@ -413,6 +413,10 @@ public class RowDef implements TreeLink {
         return indexes;
     }
 
+    public Index getIndex(final String indexName) {
+        return table.getIndex(indexName);
+    }
+    
     public Index getIndex(final int indexId) {
         for(Index index : indexes) {
             if(index.getIndexId() == indexId) {
