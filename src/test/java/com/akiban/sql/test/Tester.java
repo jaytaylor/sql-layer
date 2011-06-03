@@ -166,7 +166,7 @@ public class Tester
                 break;
             case OPERATORS:
                 {
-                    Object compiled = operatorCompiler.compile(new PostgresSessionTracer(1),
+                    Object compiled = operatorCompiler.compile(new PostgresSessionTracer(1, false),
                                                                (DMLStatementNode)stmt);
                     if (!silent)
                         System.out.println(compiled);

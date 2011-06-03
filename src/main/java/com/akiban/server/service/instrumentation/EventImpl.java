@@ -18,17 +18,6 @@ package com.akiban.server.service.instrumentation;
 import com.akiban.util.Tap;
 
 public class EventImpl implements Event {
-
-    
-    public EventImpl(String name, int sessionId) {
-        this.name = name;
-        this.sessionId = sessionId;
-        this.tapName = this.name + ":" + this.sessionId;
-        this.enabled = false;
-        this.eventTap = Tap.add(new Tap.PerThread(this.tapName, Tap.TimeAndCount.class));
-        this.lastDuration = 0;
-        this.totalTime = 0;
-    }
     
     public EventImpl(String name, int sessionId, boolean enabled) {
         this.name = name;

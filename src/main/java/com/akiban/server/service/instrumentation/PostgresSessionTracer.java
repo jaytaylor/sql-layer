@@ -27,19 +27,6 @@ public class PostgresSessionTracer implements SessionTracer {
     
     // PostgresSessionTracer interface
     
-    public PostgresSessionTracer(int sessionId) {
-        this.sessionId = sessionId;
-        this.currentStatement = null;
-        this.remoteAddress = null;
-        this.startTime = System.currentTimeMillis();
-        this.nrows = 0;
-        this.traceLevel = 0;
-        this.enabled = false;
-        this.events = new HashMap<String, Event>();
-        this.completedEvents = new LinkedList<Event>();
-        this.currentEvents = new Stack<Event>();
-    }
-    
     public PostgresSessionTracer(int sessionId,
                                  boolean enabled) {
         this.sessionId = sessionId;

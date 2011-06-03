@@ -161,7 +161,7 @@ public class OperatorCompilerTest extends TestBase
     @Test
     public void testOperator() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
-        OperatorCompiler.Result result = compiler.compile(new PostgresSessionTracer(1),
+        OperatorCompiler.Result result = compiler.compile(new PostgresSessionTracer(1, false),
                                                           (DMLStatementNode)stmt);
         assertEqualsWithoutHashes(caseName, expected, result.toString());
     }

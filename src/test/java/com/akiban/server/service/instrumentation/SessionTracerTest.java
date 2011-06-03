@@ -25,7 +25,7 @@ public class SessionTracerTest {
     
     @Test
     public void testBasicUse() {
-        SessionTracer tracer = new PostgresSessionTracer(1);
+        SessionTracer tracer = new PostgresSessionTracer(1, false);
         assertEquals(false, tracer.isEnabled());
         tracer.enable();
         assertEquals(true, tracer.isEnabled());

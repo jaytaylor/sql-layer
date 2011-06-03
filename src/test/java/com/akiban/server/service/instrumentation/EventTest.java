@@ -27,7 +27,7 @@ public class EventTest {
     @Test
     public void testSimpleUse() {
         /* construct event that is disabled by default */
-        Event first = new EventImpl("test", 1);
+        Event first = new EventImpl("test", 1, false);
         assertEquals(false, first.isEnabled());
         assertEquals(0, first.getLastDuration());
         first.start();
