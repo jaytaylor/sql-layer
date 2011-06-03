@@ -104,10 +104,9 @@ public class PersistitStoreIndexManager implements IndexManager {
      * .session.Session, com.akiban.server.RowDef, int)
      */
     @Override
-    public void analyzeTable(final Session session, final RowDef rowDef,
-            final int sampleSize) throws Exception {
+    public void analyzeTable(final Session session, final RowDef rowDef, final int sampleSize) throws Exception {
         for (Index index : rowDef.getIndexes()) {
-            analyzeIndex(session, (IndexDef)index.indexDef(), sampleSize);
+            analyzeIndex(session, index, sampleSize);
         }
     }
 
@@ -119,8 +118,7 @@ public class PersistitStoreIndexManager implements IndexManager {
      * .service.session.Session, com.akiban.server.IndexDef)
      */
     @Override
-    public void deleteIndexAnalysis(final Session session,
-            final IndexDef indexDef) throws PersistitException {
+    public void deleteIndexAnalysis(final Session session, final Index index) throws PersistitException {
         final RowDef indexAnalysisRowDef = store.getRowDefCache().getRowDef(
                 ANALYSIS_TABLE_NAME);
         if (indexAnalysisRowDef == null) {
@@ -136,14 +134,14 @@ public class PersistitStoreIndexManager implements IndexManager {
             transaction.begin();
             try {
                 RowData rowData = new RowData(new byte[ROW_DATA_LENGTH]);
+                IndexDef indexDef = (IndexDef)index.indexDef();
                 rowData.createRow(indexAnalysisRowDef, new Object[] {
-                        indexDef.getRowDef().getRowDefId(), indexDef.index().getIndexId() });
+                        indexDef.getRowDef().getRowDefId(), index.getIndexId() });
                 //
                 // Remove previous analysis
                 //
                 try {
-                    store.constructHKey(session, analysisEx,
-                            indexAnalysisRowDef, rowData, false);
+                    store.constructHKey(session, analysisEx, indexAnalysisRowDef, rowData, false);
                     analysisEx.getKey().cut();
                     analysisEx.remove(Key.GT);
                 } catch (PersistitException e) {
@@ -151,8 +149,7 @@ public class PersistitStoreIndexManager implements IndexManager {
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-                treeService.getTableStatusCache().truncate(
-                        indexAnalysisRowDef.getRowDefId());
+                treeService.getTableStatusCache().truncate(indexAnalysisRowDef.getRowDefId());
                 break;
 
             } catch (RollbackException re) {
@@ -173,21 +170,20 @@ public class PersistitStoreIndexManager implements IndexManager {
      * .session.Session, com.akiban.server.IndexDef, int)
      */
     @Override
-    public void analyzeIndex(final Session session, final IndexDef indexDef,
-            final int sampleSize) throws InvalidOperationException,
-            PersistitException {
-
+    public void analyzeIndex(final Session session, final Index index, final int sampleSize)
+            throws InvalidOperationException, PersistitException {
         final Exchange probeEx;
         final Key startKey;
         final Key endKey;
         final int keyDepth;
         KeyFilter keyFilter = null;
 
-        if (indexDef.index().isHKeyEquivalent()) {
+        IndexDef indexDef = (IndexDef)index.indexDef();
+        if (index.isHKeyEquivalent()) {
             probeEx = store.getExchange(session, indexDef.getRowDef());
             startKey = new Key(store.getDb());
             endKey = new Key(store.getDb());
-            final IndexToHKey indexToHKey = indexDef.index().indexToHKey();
+            final IndexToHKey indexToHKey = index.indexToHKey();
             assert indexToHKey.isOrdinal(0) : indexToHKey;
             final KeyFilter.Term[] terms = new KeyFilter.Term[indexToHKey.getLength()];
             startKey.append(indexToHKey.getOrdinal(0));
@@ -202,7 +198,7 @@ public class PersistitStoreIndexManager implements IndexManager {
             keyFilter = new KeyFilter(terms, terms.length, Integer.MAX_VALUE);
 
         } else {
-            probeEx = store.getExchange(session, indexDef.index());
+            probeEx = store.getExchange(session, index);
             startKey = Key.LEFT_GUARD_KEY;
             endKey = Key.RIGHT_GUARD_KEY;
             keyDepth = indexDef.getFields().length;

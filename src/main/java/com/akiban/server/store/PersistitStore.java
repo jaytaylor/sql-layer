@@ -809,13 +809,12 @@ public class PersistitStore implements Store {
                 //
                 for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
                     for (Index index : userRowDef.getIndexes()) {
-                        IndexDef indexDef = (IndexDef)index.indexDef();
                         if (!index.isHKeyEquivalent()) {
                             Exchange iEx = getExchange(session, index);
                             iEx.removeAll();
                             releaseExchange(session, iEx);
                         }
-                        indexManager.deleteIndexAnalysis(session, indexDef);
+                        indexManager.deleteIndexAnalysis(session, index);
                     }
                 }
                 //
