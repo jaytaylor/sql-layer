@@ -15,13 +15,10 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.expression.IndexBound;
-import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
 import org.junit.Test;
@@ -68,6 +65,7 @@ public class ExtractIT extends PhysicalOperatorITBase
         extract_Default(groupScan_Default(coi), null);
     }
 
+/*
     @Test(expected = IllegalArgumentException.class)
     public void testEmptyKeepTypes()
     {
@@ -147,4 +145,5 @@ public class ExtractIT extends PhysicalOperatorITBase
         };
         compareRows(expected, cursor);
     }
+*/
 }

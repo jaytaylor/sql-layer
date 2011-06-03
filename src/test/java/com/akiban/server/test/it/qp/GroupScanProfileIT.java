@@ -19,6 +19,7 @@ import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.akiban.qp.physicaloperator.API.cursor;
@@ -27,9 +28,9 @@ import static com.akiban.qp.physicaloperator.API.groupScan_Default;
 public class GroupScanProfileIT extends QPProfileITBase
 {
     @Test
+    @Ignore
     public void profileGroupScan()
     {
-/* Needs to be an IT, but we only want it run manually (under a profiler). How can this be done?
         final int SCANS = 1000;
         final int CUSTOMERS = 1000;
         final int ORDERS_PER_CUSTOMER = 5;
@@ -49,7 +50,6 @@ public class GroupScanProfileIT extends QPProfileITBase
         double sec = (end - start) / (1000.0 * 1000 * 1000);
         System.out.println(String.format("scans: %s, db: %s/%s/%s, time: %s",
                                          SCANS, CUSTOMERS, ORDERS_PER_CUSTOMER, ITEMS_PER_ORDER, sec));
-*/
     }
 
     private static final Bindings NO_BINDINGS = UndefBindings.only();
