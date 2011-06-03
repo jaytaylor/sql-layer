@@ -35,6 +35,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.service.EventTypes;
 import com.akiban.server.service.instrumentation.SessionTracer;
 
 import com.akiban.qp.expression.Comparison;
@@ -193,7 +194,7 @@ public class OperatorCompiler
     public Result compileSelect(SessionTracer tracer, CursorNode cursor) throws StandardException {
         try {
             // Get into standard form.
-            tracer.beginEvent("sql: optimize: bindandgroup");
+            tracer.beginEvent(EventTypes.BIND_AND_GROUP);
             cursor = (CursorNode)bindAndGroup(cursor);
         } finally {
             tracer.endEvent();
@@ -207,7 +208,7 @@ public class OperatorCompiler
         // Try to use an index.
         IndexUsage index = null;
         try {
-            tracer.beginEvent("sql: optimize: pickbestindex");
+            tracer.beginEvent(EventTypes.PICK_BEST_INDEX);
             index = pickBestIndex(squery);
         } finally {
             tracer.endEvent();
@@ -317,7 +318,7 @@ public class OperatorCompiler
         Flattener fl = new Flattener(resultOperator);
         FlattenState fls = null;
         try {
-            tracer.beginEvent("sql: optimize: flatten");
+            tracer.beginEvent(EventTypes.FLATTEN);
             fls = fl.flatten(squery.getJoins());
         } finally {
             tracer.endEvent();

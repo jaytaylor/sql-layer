@@ -42,6 +42,7 @@ import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 
+import com.akiban.server.service.EventTypes;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 
@@ -96,7 +97,7 @@ public class PostgresOperatorCompiler extends OperatorCompiler
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
         Result result = null;
         try {
-            session.getSessionTracer().beginEvent("sql: optimize: compile");
+            session.getSessionTracer().beginEvent(EventTypes.COMPILE);
             result = compile(session.getSessionTracer(), dmlStmt);
         } finally {
             session.getSessionTracer().endEvent();

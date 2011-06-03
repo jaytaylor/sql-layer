@@ -25,6 +25,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.service.instrumentation.PostgresSessionTracer;
 import com.akiban.server.service.instrumentation.SessionTracer;
+import com.akiban.server.service.EventTypes;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
@@ -145,7 +146,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             }
             ErrorMode errorMode = ErrorMode.NONE;
             try {
-                sessionTracer.beginEvent("sql: process");
+                sessionTracer.beginEvent(EventTypes.PROCESS);
                 switch (type) {
                 case -1:                                    // EOF
                     stop();
@@ -332,7 +333,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         if (pstmt != null) {
             pstmt.sendDescription(this, false);
             try {
-                sessionTracer.beginEvent("sql: execute");
+                sessionTracer.beginEvent(EventTypes.EXECUTE);
                 pstmt.execute(this, -1);
             }
             finally {
@@ -343,7 +344,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             // Parse as a _list_ of statements and process each in turn.
             List<StatementNode> stmts;
             try {
-                sessionTracer.beginEvent("sql: parse");
+                sessionTracer.beginEvent(EventTypes.PARSE);
                 stmts = parser.parseStatements(sql);
             }
             finally {
@@ -355,7 +356,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                     statementCache.put(sql, pstmt);
                 pstmt.sendDescription(this, false);
                 try {
-                    sessionTracer.beginEvent("sql: execute");
+                    sessionTracer.beginEvent(EventTypes.EXECUTE);
                     pstmt.execute(this, -1);
                 }
                 finally {
@@ -384,7 +385,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         if (pstmt == null) {
             StatementNode stmt;
             try {
-                sessionTracer.beginEvent("sql: parse");
+                sessionTracer.beginEvent(EventTypes.PARSE);
                 stmt = parser.parseStatement(sql);
             }
             finally {
@@ -475,7 +476,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         int maxrows = messenger.readInt();
         PostgresStatement pstmt = boundPortals.get(portalName);
         try {
-            sessionTracer.beginEvent("sql: execute");
+            sessionTracer.beginEvent(EventTypes.EXECUTE);
             pstmt.execute(this, maxrows);
         }
         finally {
@@ -556,7 +557,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     protected PostgresStatement generateStatement(StatementNode stmt, int[] paramTypes)
             throws StandardException {
         try {
-            sessionTracer.beginEvent("sql: optimize");
+            sessionTracer.beginEvent(EventTypes.OPTIMIZE);
             for (PostgresStatementGenerator generator : parsedGenerators) {
                 PostgresStatement pstmt = generator.generate(this, stmt, paramTypes);
                 if (pstmt != null) return pstmt;
