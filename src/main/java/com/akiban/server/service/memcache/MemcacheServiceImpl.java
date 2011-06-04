@@ -60,10 +60,8 @@ public class MemcacheServiceImpl implements MemcacheService,
     private static final Logger LOG = LoggerFactory
             .getLogger(MemcacheServiceImpl.class);
 
-    private final static Tap HAPI_CONNECTION_TAP = Tap.add(new Tap.Count(
-            "hapi: connection"));
-    private final static Tap HAPI_EXCEPTION_TAP = Tap.add(new Tap.Count(
-            "hapi: exception"));
+    private final static Tap HAPI_CONNECTION_TAP = Tap.add(new Tap.Count("hapi: connection"));
+    private final static Tap HAPI_EXCEPTION_TAP = Tap.add(new Tap.Count("hapi: exception"));
     private final MemcacheMXBean manageBean;
 
     private final AkibanCommandHandler.CommandCallback callback = new AkibanCommandHandler.CommandCallback() {

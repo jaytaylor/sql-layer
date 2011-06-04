@@ -32,7 +32,6 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
@@ -41,7 +40,6 @@ import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import static com.akiban.qp.expression.API.*;
 
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import static com.akiban.qp.physicaloperator.API.*;
@@ -85,44 +83,58 @@ public class OperatorCompiler
         binder.addView(view);
     }
 
+    // Probably subclassed by specific client to capture typing information in some way.
+    public static class ResultColumnBase {
+        private String name;
+        
+        public ResultColumnBase(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+
+    public ResultColumnBase getResultColumn(SimpleSelectColumn selectColumn) 
+            throws StandardException {
+        String name = selectColumn.getName();
+        if (selectColumn.isNameDefaulted() && selectColumn.getExpression().isColumn())
+            // Prefer the case stored in AIS to parser's standardized form.
+            name = ((ColumnExpression)
+                    selectColumn.getExpression()).getColumn().getName();
+        return new ResultColumnBase(name);
+    }
+
     public static class Result {
         private Plannable resultOperator;
-        private RowType resultRowType;
-        private List<Column> resultColumns;
-        private int[] resultColumnOffsets;
+        private List<ResultColumnBase> resultColumns;
         private int offset = 0;
         private int limit = -1;
 
         public Result(Plannable resultOperator,
-                      RowType resultRowType,
-                      List<Column> resultColumns,
-                      int[] resultColumnOffsets,
+                      List<ResultColumnBase> resultColumns,
                       int offset,
                       int limit) {
             this.resultOperator = resultOperator;
-            this.resultRowType = resultRowType;
             this.resultColumns = resultColumns;
-            this.resultColumnOffsets = resultColumnOffsets;
             this.offset = offset;
             this.limit = limit;
         }
-        public Result(Plannable resultOperator,
-                      RowType resultRowType) {
+        public Result(Plannable resultOperator) {
             this.resultOperator = resultOperator;
-            this.resultRowType = resultRowType;
         }
 
         public Plannable getResultOperator() {
             return resultOperator;
         }
-        public RowType getResultRowType() {
-            return resultRowType;
-        }
-        public List<Column> getResultColumns() {
+        public List<ResultColumnBase> getResultColumns() {
             return resultColumns;
-        }
-        public int[] getResultColumnOffsets() {
-            return resultColumnOffsets;
         }
         public int getOffset() {
             return offset;
@@ -141,6 +153,10 @@ public class OperatorCompiler
             for (String operator : explainPlan()) {
                 if (sb.length() > 0) sb.append("\n");
                 sb.append(operator);
+            }
+            if (resultColumns != null) {
+                sb.append("\n");
+                sb.append(resultColumns);
             }
             return sb.toString();
         }
@@ -240,8 +256,8 @@ public class OperatorCompiler
             }
             RowType ancestorType = indexType;
             if (descendantUsed) {
-                resultOperator = lookup_Default(resultOperator, groupTable,
-                                                indexType, tableType, false);
+                resultOperator = branchLookup_Default(resultOperator, groupTable,
+                                                      indexType, tableType, false);
                 checkForCrossProducts(indexTable);
                 ancestorType = tableType; // Index no longer in stream.
             }
@@ -286,9 +302,9 @@ public class OperatorCompiler
                                                         (descendantUsed && tableUsed));
             }
             for (TableNode branchTable : addBranches) {
-                resultOperator = lookup_Default(resultOperator, groupTable,
-                                                tableType, tableRowType(branchTable), 
-                                                true);
+                resultOperator = branchLookup_Default(resultOperator, groupTable,
+                                                      tableType, tableRowType(branchTable), 
+                                                      true);
                 checkForCrossProducts(branchTable);
             }
         }
@@ -310,6 +326,8 @@ public class OperatorCompiler
         RowType resultRowType = fls.getResultRowType();
         Map<TableNode,Integer> fieldOffsets = fls.getFieldOffsets();
 
+        // TODO: Add extract_Default here?
+
         for (ColumnCondition condition : squery.getConditions()) {
             Expression predicate = condition.generateExpression(fieldOffsets);
             resultOperator = select_HKeyOrdered(resultOperator,
@@ -318,25 +336,23 @@ public class OperatorCompiler
         }
 
         int ncols = squery.getSelectColumns().size();
-        List<Column> resultColumns = new ArrayList<Column>(ncols);
-        int[] resultColumnOffsets = new int[ncols];
-        int i = 0;
-        for (SimpleExpression selectExpr : squery.getSelectColumns()) {
-            if (!selectExpr.isColumn())
-                throw new UnsupportedSQLException("Unsupported result column: " + 
-                                                  selectExpr);
-            ColumnExpression selectColumn = (ColumnExpression)selectExpr;
-            TableNode table = selectColumn.getTable();
-            Column column = selectColumn.getColumn();
-            resultColumns.add(column);
-            resultColumnOffsets[i++] = fieldOffsets.get(table) + column.getPosition();
+        List<ResultColumnBase> resultColumns = new ArrayList<ResultColumnBase>(ncols);
+        List<Expression> resultExpressions = new ArrayList<Expression>(ncols);
+        for (SimpleSelectColumn selectColumn : squery.getSelectColumns()) {
+            ResultColumnBase resultColumn = getResultColumn(selectColumn);
+            resultColumns.add(resultColumn);
+            Expression resultExpression = 
+                selectColumn.getExpression().generateExpression(fieldOffsets);
+            resultExpressions.add(resultExpression);
         }
+        resultOperator = project_Default(resultOperator, resultRowType, 
+                                         resultExpressions);
+        resultRowType = resultOperator.rowType();
 
         int offset = squery.getOffset();
         int limit = squery.getLimit();
 
-        return new Result(resultOperator, resultRowType, 
-                          resultColumns, resultColumnOffsets,
+        return new Result(resultOperator, resultColumns, 
                           offset, limit);
     }
 
@@ -392,7 +408,7 @@ public class OperatorCompiler
 
         Plannable updatePlan = new com.akiban.qp.physicaloperator.Update_Default(resultOperator,
                                             new ExpressionRowUpdateFunction(updateRow));
-        return new Result(updatePlan, targetRowType);
+        return new Result(updatePlan);
     }
 
     public Result compileInsert(InsertNode insert) throws StandardException {

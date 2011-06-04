@@ -23,6 +23,7 @@ import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,13 +71,13 @@ class AncestorLookup_Default extends PhysicalOperator
     public AncestorLookup_Default(PhysicalOperator inputOperator,
                                   GroupTable groupTable,
                                   RowType rowType,
-                                  List<RowType> ancestorTypes,
+                                  List<? extends RowType> ancestorTypes,
                                   boolean keepInput)
     {
-        checkArgument(!ancestorTypes.isEmpty());
+        ArgumentValidation.notEmpty("ancestorTypes", ancestorTypes);
         // Keeping index rows not currently supported
         boolean inputFromIndex = rowType instanceof IndexRowType;
-        checkArgument(!(keepInput && inputFromIndex));
+        ArgumentValidation.isTrue("!(keepInput && inputFromIndex)", !(keepInput && inputFromIndex));
         RowType tableRowType =
             inputFromIndex
             ? ((IndexRowType) rowType).tableType()
@@ -84,9 +85,12 @@ class AncestorLookup_Default extends PhysicalOperator
         // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
         // is from an index. I.e., this operator can be used for an index lookup.
         for (RowType ancestorType1 : ancestorTypes) {
-            checkArgument(inputFromIndex || ancestorType1 != tableRowType);
-            checkArgument(ancestorType1.ancestorOf(tableRowType));
-            checkArgument(ancestorType1.userTable().getGroup() == tableRowType.userTable().getGroup());
+            ArgumentValidation.isTrue("inputFromIndex || ancestorType1 != tableRowType",
+                                      inputFromIndex || ancestorType1 != tableRowType);
+            ArgumentValidation.isTrue("ancestorType1.ancestorOf(tableRowType)",
+                                      ancestorType1.ancestorOf(tableRowType));
+            ArgumentValidation.isTrue("ancestorType1.userTable().getGroup() == tableRowType.userTable().getGroup()",
+                                      ancestorType1.userTable().getGroup() == tableRowType.userTable().getGroup());
         }
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;

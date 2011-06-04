@@ -23,6 +23,7 @@ import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,11 +78,13 @@ public class BranchLookup_Default extends PhysicalOperator
                                 boolean keepInput,
                                 Limit limit)
     {
-        checkArgument(inputRowType != null);
-        checkArgument(outputRowType != null);
-        checkArgument(limit != null);
-        checkArgument(inputRowType instanceof IndexRowType || outputRowType != inputRowType);
-        checkArgument(inputRowType instanceof UserTableRowType || !keepInput);
+        ArgumentValidation.notNull("inputRowType", inputRowType);
+        ArgumentValidation.notNull("outputRowType", outputRowType);
+        ArgumentValidation.notNull("limit", limit);
+        ArgumentValidation.isTrue("inputRowType instanceof IndexRowType || outputRowType != inputRowType",
+                                  inputRowType instanceof IndexRowType || outputRowType != inputRowType);
+        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || !keepInput",
+                                  inputRowType instanceof UserTableRowType || !keepInput);
         UserTableRowType inputTableType = null;
         if (inputRowType instanceof UserTableRowType) {
             inputTableType = (UserTableRowType) inputRowType;
@@ -91,7 +94,10 @@ public class BranchLookup_Default extends PhysicalOperator
         assert inputTableType != null : inputRowType;
         UserTable inputTable = inputTableType.userTable();
         UserTable outputTable = outputRowType.userTable();
-        checkArgument(inputTable.getGroup() == outputTable.getGroup());
+        ArgumentValidation.isSame("inputTable.getGroup()",
+                                  inputTable.getGroup(),
+                                  "outputTable.getGroup()",
+                                  outputTable.getGroup());
         this.keepInput = keepInput;
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
@@ -109,7 +115,7 @@ public class BranchLookup_Default extends PhysicalOperator
                 break;
             default:
                 branchRoot = null;
-                checkArgument(false);
+                ArgumentValidation.isTrue("false", false);
         }
 
     }

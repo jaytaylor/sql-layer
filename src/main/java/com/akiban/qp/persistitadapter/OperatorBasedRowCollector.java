@@ -36,7 +36,6 @@ import com.akiban.server.service.memcache.hprocessor.PredicateLimit;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.RowCollector;
-import com.akiban.util.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -241,12 +240,12 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             PhysicalOperator indexScan = indexScan_Default(predicateType.indexRowType(predicateIndex),
                                                            descending,
                                                            indexKeyRange);
-            rootOperator = lookup_Default(indexScan,
-                                          groupTable,
-                                          predicateType.indexRowType(predicateIndex),
-                                          predicateType,
-                                          false,
-                                          limit);
+            rootOperator = branchLookup_Default(indexScan,
+                    groupTable,
+                    predicateType.indexRowType(predicateIndex),
+                    predicateType,
+                    false,
+                    limit);
         } else {
             // assert !descending;
             rootOperator = groupScan_Default(groupTable, limit, indexKeyRange);
@@ -259,11 +258,11 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             }
         }
         // Get rid of everything above query root table.
-        rootOperator = extract_Default(schema, rootOperator, Arrays.<RowType>asList(queryRootType));
+        rootOperator = extract_Default(rootOperator, Arrays.<RowType>asList(queryRootType));
         // Get rid of selected types below query root table.
         Set<RowType> cutTypes = cutTypes(deep);
         if (!cutTypes.isEmpty()) {
-            rootOperator = cut_Default(schema, rootOperator, cutTypes);
+            rootOperator = cut_Default(rootOperator, cutTypes);
         }
         if (LOG.isInfoEnabled()) {
             LOG.info("Execution plan:\n{}", rootOperator.describePlan());

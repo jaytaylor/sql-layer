@@ -28,6 +28,13 @@ import java.util.List;
 
 public class API
 {
+    public static PhysicalOperator project_Default(PhysicalOperator inputOperator,
+                                                   RowType rowType,
+                                                   List<Expression> projections)
+    {
+        return new Project_Default(inputOperator, rowType, projections);
+    }
+
     public static PhysicalOperator flatten_HKeyOrdered(PhysicalOperator inputOperator,
                                                        RowType parentType,
                                                        RowType childType)
@@ -60,21 +67,21 @@ public class API
         return new GroupScan_Default(groupTable, limit, null);
     }
 
-    public static PhysicalOperator lookup_Default(PhysicalOperator inputOperator,
-                                                  GroupTable groupTable,
-                                                  RowType inputRowType,
-                                                  RowType outputRowType,
-                                                  boolean keepInput)
+    public static PhysicalOperator branchLookup_Default(PhysicalOperator inputOperator,
+                                                        GroupTable groupTable,
+                                                        RowType inputRowType,
+                                                        RowType outputRowType,
+                                                        boolean keepInput)
     {
-        return lookup_Default(inputOperator, groupTable, inputRowType, outputRowType, keepInput, NO_LIMIT);
+        return branchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, keepInput, NO_LIMIT);
     }
 
-    public static PhysicalOperator lookup_Default(PhysicalOperator inputOperator,
-                                                  GroupTable groupTable,
-                                                  RowType inputRowType,
-                                                  RowType outputRowType,
-                                                  boolean keepInput,
-                                                  Limit limit)
+    public static PhysicalOperator branchLookup_Default(PhysicalOperator inputOperator,
+                                                        GroupTable groupTable,
+                                                        RowType inputRowType,
+                                                        RowType outputRowType,
+                                                        boolean keepInput,
+                                                        Limit limit)
     {
         return new BranchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, keepInput, limit);
     }
@@ -86,7 +93,7 @@ public class API
     public static PhysicalOperator ancestorLookup_Default(PhysicalOperator inputOperator,
                                                           GroupTable groupTable,
                                                           RowType rowType,
-                                                          List<RowType> ancestorTypes,
+                                                          List<? extends RowType> ancestorTypes,
                                                           boolean keepInput)
     {
         return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, keepInput);
@@ -109,18 +116,16 @@ public class API
         return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate);
     }
 
-    public static PhysicalOperator cut_Default(Schema schema,
-                                               PhysicalOperator inputOperator,
+    public static PhysicalOperator cut_Default(PhysicalOperator inputOperator,
                                                Collection<RowType> cutTypes)
     {
-        return new Cut_Default(schema, inputOperator, cutTypes);
+        return new Cut_Default(inputOperator, cutTypes);
     }
 
-    public static PhysicalOperator extract_Default(Schema schema,
-                                                   PhysicalOperator inputOperator,
+    public static PhysicalOperator extract_Default(PhysicalOperator inputOperator,
                                                    Collection<RowType> extractTypes)
     {
-        return new Extract_Default(schema, inputOperator, extractTypes);
+        return new Extract_Default(inputOperator, extractTypes);
     }
 
     private static final Limit NO_LIMIT = new Limit()
