@@ -4,7 +4,19 @@
 - bind:
     my_three : gamma
 - lock: delta
+- lock:
+    - delta1
+    - delta2
 - require : epsilon
+- require:
+    - epsilon 1
 - require locked: zeta
+- require locked:
+    - zeta 1
+    - zeta 2
 - locked : eta
+- locked:
+    - eta 1
 - bound : theta
+- bound:
+    - theta 1
