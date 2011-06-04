@@ -257,11 +257,11 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             }
         }
         // Get rid of everything above query root table.
-        rootOperator = extract_Default(schema, rootOperator, Arrays.<RowType>asList(queryRootType));
+        rootOperator = extract_Default(rootOperator, Arrays.<RowType>asList(queryRootType));
         // Get rid of selected types below query root table.
         Set<RowType> cutTypes = cutTypes(deep);
         if (!cutTypes.isEmpty()) {
-            rootOperator = cut_Default(schema, rootOperator, cutTypes);
+            rootOperator = cut_Default(rootOperator, cutTypes);
         }
         if (LOG.isInfoEnabled()) {
             LOG.info("Execution plan:\n{}", rootOperator.describePlan());

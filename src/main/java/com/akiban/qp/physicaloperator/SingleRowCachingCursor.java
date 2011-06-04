@@ -17,6 +17,8 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 abstract class SingleRowCachingCursor implements Cursor
 {
@@ -33,7 +35,9 @@ abstract class SingleRowCachingCursor implements Cursor
     @Override
     public final Row currentRow()
     {
-        return row.get();
+        Row currentRow = row.get();
+        // row.set(null);
+        return currentRow;
     }
 
     // SingleRowCachingCursor interface
@@ -45,11 +49,7 @@ abstract class SingleRowCachingCursor implements Cursor
 
     protected void outputRow(Row newRow)
     {
-        row.set(newRow == null ? null : newRow);
-    }
-
-    protected boolean hasCachedRow() {
-        return row.isNotNull();
+        row.set(newRow);
     }
 
     // Object state

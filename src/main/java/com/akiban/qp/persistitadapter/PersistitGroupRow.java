@@ -90,8 +90,9 @@ public class PersistitGroupRow extends AbstractRow
                 adapter.persistit.expandRowData(exchange, rowData);
                 row.setRowDef(rowData.getRowDefId());
                 row.setRowData(rowData);
-                persistitHKey().copyFrom(exchange.getKey());
-                rowData.hKey(persistitHKey().key());
+                PersistitHKey persistitHKey = persistitHKey();
+                persistitHKey.copyFrom(exchange.getKey());
+                rowData.hKey(persistitHKey.key());
             } catch (ArrayIndexOutOfBoundsException e) {
                 exception = e;
             } catch (EncodingException e) {
@@ -117,10 +118,11 @@ public class PersistitGroupRow extends AbstractRow
     private PersistitHKey persistitHKey()
     {
         RowDef rowDef = row.getRowDef();
-        currentHKey = typedHKeys[rowDef.getOrdinal()];
+        int ordinal = rowDef.getOrdinal();
+        currentHKey = typedHKeys[ordinal];
         if (currentHKey == null) {
             currentHKey = new PersistitHKey(adapter, rowDef.userTable().hKey());
-            typedHKeys[rowDef.getOrdinal()] = currentHKey;
+            typedHKeys[ordinal] = currentHKey;
         }
         return currentHKey;
     }
