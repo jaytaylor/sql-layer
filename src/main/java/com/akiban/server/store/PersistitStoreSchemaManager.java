@@ -665,7 +665,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             rowDefCache.clear();
             serviceManager.getTreeService().getTableStatusCache().detachAIS();
             rowDefCache.setAIS(newAis);
-            rowDefCache.fixUpOrdinals();
             updateTimestamp.set(timestamp);
             this.ais = newAis;
         }

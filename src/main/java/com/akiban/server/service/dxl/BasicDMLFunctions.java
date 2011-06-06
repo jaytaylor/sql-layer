@@ -780,7 +780,8 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             else {
                 IndexDef indexDef = rc.getIndexDef();
                 if (indexDef == null) {
-                    indexDef = ddlFunctions.getRowDef(rc.getTableId()).getPKIndexDef();
+                    Index index = ddlFunctions.getRowDef(rc.getTableId()).getPKIndex();
+                    indexDef = index != null ? (IndexDef)index.indexDef() : null;
                 }
                 if (indexDef != null) {
                     for (int field : indexDef.getFields()) {

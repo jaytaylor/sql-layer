@@ -15,9 +15,9 @@
 
 package com.akiban.server.test.it.keyupdate;
 
+import com.akiban.ais.model.Index;
 import com.akiban.message.ErrorCode;
 import com.akiban.server.FieldDef;
-import com.akiban.server.IndexDef;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -228,23 +228,23 @@ public abstract class KeyUpdateBase extends ITBase {
             // Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
             // Order PK index
             indexVisitor = new RecordCollectingIndexRecordVisistor();
-            testStore.traverse(session(), orderRowDef.getPKIndexDef(), indexVisitor);
+            testStore.traverse(session(), orderRowDef.getPKIndex(), indexVisitor);
             assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
             assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
             // Item PK index
             indexVisitor = new RecordCollectingIndexRecordVisistor();
-            testStore.traverse(session(), itemRowDef.getPKIndexDef(), indexVisitor);
+            testStore.traverse(session(), itemRowDef.getPKIndex(), indexVisitor);
             assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
             assertEquals("order PKs", countRows(itemRowDef), indexVisitor.records().size());
         }
         // Order priority index
         indexVisitor = new RecordCollectingIndexRecordVisistor();
-        testStore.traverse(session(), indexDef(orderRowDef, "priority"), indexVisitor);
+        testStore.traverse(session(), index(orderRowDef, "priority"), indexVisitor);
         assertEquals(orderPriorityIndex(testVisitor.records()), indexVisitor.records());
         assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
         // Order timestamp index
         indexVisitor = new RecordCollectingIndexRecordVisistor();
-        testStore.traverse(session(), indexDef(orderRowDef, "when"), indexVisitor);
+        testStore.traverse(session(), index(orderRowDef, "when"), indexVisitor);
         assertEquals(orderWhenIndex(testVisitor.records()), indexVisitor.records());
         assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
     }
@@ -253,10 +253,10 @@ public abstract class KeyUpdateBase extends ITBase {
         return rowDefsToCounts.get(rowDef.getRowDefId());
     }
 
-    private IndexDef indexDef(RowDef rowDef, String indexName) {
-        for (IndexDef indexDef : rowDef.getIndexDefs()) {
-            if (indexName.equals(indexDef.getName())) {
-                return indexDef;
+    private Index index(RowDef rowDef, String indexName) {
+        for (Index index : rowDef.getIndexes()) {
+            if (indexName.equals(index.getIndexName().getName())) {
+                return index;
             }
         }
         throw new NoSuchElementException(indexName);
