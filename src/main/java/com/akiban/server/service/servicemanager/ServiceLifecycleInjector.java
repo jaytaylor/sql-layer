@@ -15,7 +15,6 @@
 
 package com.akiban.server.service.servicemanager;
 
-import com.akiban.server.service.Service;
 import com.akiban.util.Exceptions;
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -25,7 +24,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
-final class ServiceLifecycleInjector extends DelegatingInjector {
+public final class ServiceLifecycleInjector<S> extends DelegatingInjector {
+
+    // Injector interface
 
     @Override
     public <T> T getInstance(Key<T> key) {
@@ -37,6 +38,8 @@ final class ServiceLifecycleInjector extends DelegatingInjector {
         return startService(super.getInstance(type));
     }
 
+    // ServiceLifecycleInjector interface
+
     public void stopAllServices() {
         try {
             stopServices(null);
@@ -45,11 +48,19 @@ final class ServiceLifecycleInjector extends DelegatingInjector {
         }
     }
 
+    public ServiceLifecycleInjector(Injector delegate, ServiceLifecycleActions<S> actions) {
+        super(delegate);
+        this.servicesList = new ArrayList<S>();
+        this.actions = actions;
+    }
+
+    // private methods
+
     private <T> T startService(T instance) {
-        if (instance instanceof Service) {
+        if (actions.getActionableClass().isInstance(instance)) {
             try {
-                Service<?> service = (Service<?>)instance;
-                service.start();
+                S service = actions.getActionableClass().cast(instance);
+                actions.onShutdown(service);
                 servicesList.add(service);
             } catch (Exception e) {
                 try {
@@ -77,11 +88,11 @@ final class ServiceLifecycleInjector extends DelegatingInjector {
     }
 
     private List<Throwable> tryStopServices(Exception initialCause) {
-        List<Service> stopServices = new ArrayList<Service>(servicesList.size());
-        for (Service service : servicesList) {
+        List<S> stopServices = new ArrayList<S>(servicesList.size());
+        for (S service : servicesList) {
             stopServices.add(service);
         }
-        ListIterator<Service> reverseIter = stopServices
+        ListIterator<S> reverseIter = stopServices
                 .listIterator(stopServices.size());
         List<Throwable> exceptions = new ArrayList<Throwable>();
         if (initialCause != null) {
@@ -89,8 +100,8 @@ final class ServiceLifecycleInjector extends DelegatingInjector {
         }
         while (reverseIter.hasPrevious()) {
             try {
-                Service service = reverseIter.previous();
-                service.stop();
+                S service = reverseIter.previous();
+                actions.onShutdown(service);
             } catch (Throwable t) {
                 exceptions.add(t);
             }
@@ -98,10 +109,6 @@ final class ServiceLifecycleInjector extends DelegatingInjector {
         return exceptions;
     }
 
-    public ServiceLifecycleInjector(Injector delegate) {
-        super(delegate);
-        this.servicesList = new ArrayList<Service<?>>();
-    }
-
-    private final List<Service<?>> servicesList;
+    private final List<S> servicesList;
+    private final ServiceLifecycleActions<S> actions;
 }
