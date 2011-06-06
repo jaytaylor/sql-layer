@@ -678,6 +678,10 @@ public class SimplifiedQuery
         case NodeTypes.IN_LIST_OPERATOR_NODE:
             addInCondition((InListOperatorNode)condition);
             break;
+        case NodeTypes.BOOLEAN_CONSTANT_NODE:
+            if (condition.isBooleanTrue())
+                break;
+            /* else falls through */
         default:
             throw new UnsupportedSQLException("Unsupported WHERE predicate", 
                                               condition);
