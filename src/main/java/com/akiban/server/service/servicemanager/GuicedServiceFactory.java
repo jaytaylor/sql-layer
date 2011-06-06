@@ -125,7 +125,7 @@ public final class GuicedServiceFactory implements ServiceFactory {
             try {
                 defaultServicesReader.close();
             } catch (IOException e) {
-                throw new RuntimeException("while closing reader", e);
+                throw new RuntimeException("while closing reader", e); // TODO this will override YamlConfiguration exceptions
             }
         }
         try {
