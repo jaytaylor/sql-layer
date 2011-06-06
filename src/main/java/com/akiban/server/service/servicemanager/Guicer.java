@@ -53,7 +53,7 @@ public final class Guicer {
 
     // private methods
 
-    <T> Guicer(Collection<ServiceBinding> serviceBindings, ServiceLifecycleActions<T> serviceLifecycleActions)
+    <S> Guicer(Collection<ServiceBinding> serviceBindings, ServiceLifecycleActions<S> serviceLifecycleActions)
     throws ClassNotFoundException
     {
         directlyRequiredClasses = new ArrayList<Class<?>>();
@@ -68,7 +68,7 @@ public final class Guicer {
         }
 
         AbstractModule module = new ServiceBindingsModule(resolvedServiceBindings);
-        injector = new ServiceLifecycleInjector<T>(Guice.createInjector(module), serviceLifecycleActions);
+        injector = new ServiceLifecycleInjector<S>(Guice.createInjector(module), serviceLifecycleActions);
     }
 
     // object state
