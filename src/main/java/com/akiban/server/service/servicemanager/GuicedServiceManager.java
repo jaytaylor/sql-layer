@@ -16,20 +16,21 @@
 package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.AkServer;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceFactory;
+import com.akiban.server.service.ServiceManager;
+import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.memcache.MemcacheService;
-import com.akiban.server.service.network.NetworkService;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 import com.akiban.server.service.servicemanager.configuration.yaml.YamlConfiguration;
 import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.stats.StatisticsService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.sql.pg.PostgresService;
+import com.google.inject.Guice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,71 +38,97 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
-public final class GuicedServiceFactory implements ServiceFactory {
-
-    // ServiceFactory interface
+public final class GuicedServiceManager implements ServiceManager {
+    // ServiceManager interface
 
     @Override
-    public Service<JmxRegistryService> jmxRegistryService() {
-        return service(JmxRegistryService.class);
+    public void startServices() throws ServiceStartupException {
+        List<Class<?>> directlyRequiredClasses = new ArrayList<Class<?>>();
+        for (ServiceBinding binding : directlyRequired) {
+            Class<?> classReference = Class.forName(binding.getInterfaceName());
+            guicer.get(classReference);
+        }
+        throw new UnsupportedOperationException(); // TODO
     }
 
     @Override
-    public Service<ConfigurationService> configurationService() {
-        return service(ConfigurationService.class);
+    public void stopServices() throws Exception {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     @Override
-    public Service<NetworkService> networkService() {
-        return service(NetworkService.class);
+    public void crashServices() throws Exception {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     @Override
-    public Service<AkServer> chunkserverService() {
-        return service(AkServer.class);
+    public ConfigurationService getConfigurationService() {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     @Override
-    public Service<TreeService> treeService() {
-        return service(TreeService.class);
+    public AkServer getAkSserver() {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     @Override
-    public Service<SchemaManager> schemaManager() {
-        return service(SchemaManager.class);
+    public Store getStore() {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     @Override
-    public Service<Store> storeService() {
-        return service(Store.class);
+    public TreeService getTreeService() {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     @Override
-    public Service<MemcacheService> memcacheService() {
-        return service(MemcacheService.class);
+    public MemcacheService getMemcacheService() {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     @Override
-    public Service<PostgresService> postgresService() {
-        return service(PostgresService.class);
+    public PostgresService getPostgresService() {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     @Override
-    public Service<DXLService> dxlService() {
-        return service(DXLService.class);
+    public SchemaManager getSchemaManager() {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     @Override
-    public Service<SessionService> sessionService() {
-        return service(SessionService.class);
+    public JmxRegistryService getJmxRegistryService() {
+        throw new UnsupportedOperationException(); // TODO
     }
 
-    // GuicedServiceFactory interface
+    @Override
+    public StatisticsService getStatisticsService() {
+        throw new UnsupportedOperationException(); // TODO
+    }
 
-    public GuicedServiceFactory() {
-        InputStream defaultServicesStream = GuicedServiceFactory.class.getResourceAsStream("default-services.yaml");
+    @Override
+    public SessionService getSessionService() {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    public <T> T getServiceByClass(Class<T> serviceClass) {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    public DXLService getDXL() {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    // GuicedServiceManager interface
+
+    public GuicedServiceManager() {
+    InputStream defaultServicesStream = GuicedServiceFactory.class.getResourceAsStream("default-services.yaml");
         if (defaultServicesStream == null) {
             throw new RuntimeException("no resource default-services.yaml");
         }
@@ -133,26 +160,20 @@ public final class GuicedServiceFactory implements ServiceFactory {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    // private methods
-
-    private <T> Service<T> service(Class<?> forClass) {
-        Object serviceAsObject = guicer.get(forClass);
-        if (! (serviceAsObject instanceof Service)) {
-            throw new RuntimeException(serviceAsObject.getClass() + " is not of type Service");
+        directlyRequired = new ArrayList<ServiceBinding>();
+        for (ServiceBinding serviceBinding : bindings) {
+            if (serviceBinding.isDirectlyRequired()) {
+                directlyRequired.add(serviceBinding);
+            }
         }
-        @SuppressWarnings("unchecked")
-        final Service<T> casted = (Service<T>) serviceAsObject;
-        if (!casted.castClass().equals(forClass)) {
-            throw new RuntimeException(serviceAsObject.getClass() + " is not of type " + forClass);
-        }
-        return casted;
     }
 
     // object state
+
     private final Guicer guicer;
+    private final Collection<ServiceBinding> directlyRequired;
 
     // class state
-    private static final Logger LOG = LoggerFactory.getLogger(GuicedServiceFactory.class);
+
+    private static final Logger LOG = LoggerFactory.getLogger(GuicedServiceManager.class);
 }
