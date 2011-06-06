@@ -65,21 +65,12 @@ public class IndexDef implements TreeLink {
 
     @Override
     public boolean equals(Object o) {
-        if(this == o) {
-            return true;
-        }
-        if(!(o instanceof IndexDef)) {
-            return false;
-        }
-        IndexDef rhs = (IndexDef) o;
-        return Arrays.equals(fields, rhs.fields)
-               && index.equals(rhs.index)
-               && treeName.equals(rhs.treeName);
+        throw new UnsupportedOperationException("IndexDef deprecated, use Index");
     }
 
     @Override
     public int hashCode() {
-        return index.hashCode() ^ treeName.hashCode() ^ Arrays.hashCode(fields);
+        throw new UnsupportedOperationException("IndexDef deprecated, use Index");
     }
 
     // TreeLink interface
