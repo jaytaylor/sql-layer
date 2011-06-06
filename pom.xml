@@ -363,6 +363,10 @@
                     <exclude>**/*.json</exclude>
                     <exclude>**/*.sql</exclude>
                     <exclude>**/*.expected</exclude>
+                    <exclude>**/*.dat</exclude>
+                    <exclude>**/*.fail</exclude>
+                    <exclude>**/*.params</exclude>
+                    <exclude>**/group.idx</exclude>
                     <exclude>src/test/bin/*.sh</exclude>
                     <exclude>.idea/**</exclude>
                     <exclude>.bzrignore</exclude>
