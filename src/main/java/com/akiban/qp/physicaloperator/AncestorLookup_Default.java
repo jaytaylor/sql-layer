@@ -84,13 +84,13 @@ class AncestorLookup_Default extends PhysicalOperator
             : rowType;
         // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
         // is from an index. I.e., this operator can be used for an index lookup.
-        for (RowType ancestorType1 : ancestorTypes) {
+        for (RowType ancestorType : ancestorTypes) {
             ArgumentValidation.isTrue("inputFromIndex || ancestorType1 != tableRowType",
-                                      inputFromIndex || ancestorType1 != tableRowType);
-            ArgumentValidation.isTrue("ancestorType1.ancestorOf(tableRowType)",
-                                      ancestorType1.ancestorOf(tableRowType));
-            ArgumentValidation.isTrue("ancestorType1.userTable().getGroup() == tableRowType.userTable().getGroup()",
-                                      ancestorType1.userTable().getGroup() == tableRowType.userTable().getGroup());
+                                      inputFromIndex || ancestorType != tableRowType);
+            ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
+                                      ancestorType.ancestorOf(tableRowType));
+            ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
+                                      ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup());
         }
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;

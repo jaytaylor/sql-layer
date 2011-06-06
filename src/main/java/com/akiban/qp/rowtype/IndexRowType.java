@@ -37,12 +37,6 @@ public class IndexRowType extends RowType
         return index.getColumns().size();
     }
 
-    @Override
-    public boolean ancestorOf(RowType type)
-    {
-        throw new UnsupportedOperationException();
-    }
-
     // IndexRowType interface
 
     public UserTableRowType tableType()
@@ -62,7 +56,7 @@ public class IndexRowType extends RowType
 
     public IndexRowType(Schema schema, UserTableRowType tableType, TableIndex index)
     {
-        super(schema, schema.nextTypeId(), null);
+        super(schema, schema.nextTypeId());
         this.tableType = tableType;
         this.index = index;
         this.keyType = new IndexKeyType(schema, index);

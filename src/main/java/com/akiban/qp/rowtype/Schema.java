@@ -74,6 +74,11 @@ public class Schema
         return new ProjectedRowType(this, typeIdCounter++, columns);
     }
 
+    public synchronized Collection<RowType> rowTypes()
+    {
+        return rowTypes.values();
+    }
+
     public int maxTypeId()
     {
         return rowTypes.size() - 1;

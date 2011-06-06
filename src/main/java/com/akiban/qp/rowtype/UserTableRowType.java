@@ -42,19 +42,6 @@ public class UserTableRowType extends RowType
         return table.getColumnsIncludingInternal().size();
     }
 
-    @Override
-    public boolean ancestorOf(RowType type)
-    {
-        assert type instanceof UserTableRowType : type;
-        // TODO: Something faster
-        UserTable ancestor = ((UserTableRowType) type).table;
-        while (ancestor != table && ancestor != null) {
-            Join join = ancestor.getParentJoin();
-            ancestor = join == null ? null : join.getParent();
-        }
-        return ancestor != null;
-    }
-
     // UserTableRowType interface
 
     public UserTable userTable()
@@ -93,8 +80,9 @@ public class UserTableRowType extends RowType
 
     public UserTableRowType(Schema schema, UserTable table)
     {
-        super(schema, table.getTableId(), Ancestry.of(table));
+        super(schema, table.getTableId());
         this.table = table;
+        typeComposition(new TypeComposition(this, table));
     }
 
     // Object state

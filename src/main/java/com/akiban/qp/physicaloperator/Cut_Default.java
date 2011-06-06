@@ -21,6 +21,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.util.ArgumentValidation;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -33,7 +34,7 @@ class Cut_Default extends PhysicalOperator
     @Override
     public String toString()
     {
-        return String.format("%s(%s)", getClass().getSimpleName(), cutTypes);
+        return String.format("%s(%s)", getClass().getSimpleName(), rejectTypes);
     }
 
     // PhysicalOperator interface
@@ -52,19 +53,37 @@ class Cut_Default extends PhysicalOperator
 
     // GroupScan_Default interface
 
-    public Cut_Default(Schema schema, PhysicalOperator inputOperator, Collection<RowType> cutTypes)
+    public Cut_Default(PhysicalOperator inputOperator, Collection<RowType> cutTypes)
     {
+        ArgumentValidation.notEmpty("keepTypes", cutTypes);
         this.inputOperator = inputOperator;
-        for (RowType cutType : cutTypes) {
-            if (cutType instanceof UserTableRowType) {
-                addDescendentTypes(schema, ((UserTableRowType) cutType).userTable(), this.cutTypes);
+        Schema schema = null;
+        for (RowType type : cutTypes) {
+            if (schema == null) {
+                schema = type.schema();
             } else {
-                cutTypes.add(cutType);
+                ArgumentValidation.isSame("schema", schema, "type.schema()", type.schema());
+            }
+            addDescendentTypes(schema, type);
+
+            if (type instanceof UserTableRowType) {
+                addDescendentTypes(schema, type.userTable(), this.rejectTypes);
+            } else {
+                this.rejectTypes.add(type);
             }
         }
     }
 
     // For use by this class
+
+    private void addDescendentTypes(Schema schema, RowType rowType)
+    {
+        for (RowType schemaRowType : schema.rowTypes()) {
+            if (rowType.ancestorOf(schemaRowType)) {
+                rejectTypes.add(schemaRowType);
+            }
+        }
+    }
 
     private static void addDescendentTypes(Schema schema, UserTable table, Set<RowType> rowTypes)
     {
@@ -77,7 +96,7 @@ class Cut_Default extends PhysicalOperator
     // Object state
 
     private final PhysicalOperator inputOperator;
-    private final Set<RowType> cutTypes = new HashSet<RowType>();
+    private final Set<RowType> rejectTypes = new HashSet<RowType>();
 
     // Inner classes
 
@@ -89,7 +108,7 @@ class Cut_Default extends PhysicalOperator
         public void open(Bindings bindings)
         {
             input.open(bindings);
-            next = input.next();
+            next = true;
         }
 
         @Override
@@ -97,16 +116,17 @@ class Cut_Default extends PhysicalOperator
         {
             Row row = null;
             while (next && row == null) {
-                row = input.currentRow();
-                if (cutTypes.contains(row.rowType())) {
-                    row = null;
-                }
                 next = input.next();
+                if (next) {
+                    row = input.currentRow();
+                    if (rejectTypes.contains(row.rowType())) {
+                        row = null;
+                    }
+                } else {
+                    close();
+                }
             }
             outputRow(row);
-            if (row == null) {
-                close();
-            }
             return row != null;
         }
 
