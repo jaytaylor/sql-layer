@@ -18,5 +18,11 @@ package com.akiban.server.service.servicemanager;
 public interface ServiceLifecycleActions<T> {
     void onStart(T service) throws Exception;
     void onShutdown(T service) throws Exception;
-    Class<T> getActionableClass();
+
+    /**
+     * Cast the given object to the actionable type if possible, or return {@code null} otherwise.
+     * @param object the object which may or may not be actionable
+     * @return the object reference, correctly casted; or null
+     */
+    T castIfActionable(Object object);
 }

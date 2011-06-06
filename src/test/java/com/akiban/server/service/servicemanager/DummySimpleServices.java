@@ -22,24 +22,45 @@ import com.google.inject.Inject;
  */
 public final class DummySimpleServices {
 
-    public static class CircAlpha implements DummyInterfaces.Alpha {
-        @Inject
-        public CircAlpha(DummyInterfaces.Beta unused) {
-            // nothing
+    public static class SimpleAlpha implements DummyInterfaces.Alpha {
+        @Override
+        public void start() {
+            if (this == GuicerTest.onlyGuicer().get(DummyInterfaces.Beta.class)) {
+                throw new Error("how can this instance be equal to an instance of another class?!");
+            }
         }
+
+        @Override
+        public void stop() {}
     }
 
-    public static class CircBeta implements DummyInterfaces.Beta {
-        @Inject
-        public CircBeta(DummyInterfaces.Gamma unused) {
-            // nothing
+    public static class SimpleBeta implements DummyInterfaces.Beta {
+        @Override
+        public void start() {
+            if (this == GuicerTest.onlyGuicer().get(DummyInterfaces.Gamma.class)) {
+                throw new Error("how can this instance be equal to an instance of another class?!");
+            }
         }
+
+        @Override
+        public void stop() {}
     }
 
-    public static class CircGamma implements DummyInterfaces.Gamma {
-        @Inject
-        public CircGamma() {
-            // nothing
-        }
+    public static class SimpleGamma implements DummyInterfaces.Gamma {
+        @Override
+        public void start() {}
+
+        @Override
+        public void stop() {}
+    }
+
+    // private methods
+
+    private static void sayStarting(Object instance) {
+        DummyInterfaces.addMessage(instance.getClass().getSimpleName() + " starting");
+    }
+
+    private static void sayStopping(Object instance) {
+        DummyInterfaces.addMessage(instance.getClass().getSimpleName() + " stopping");
     }
 }

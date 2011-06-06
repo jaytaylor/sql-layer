@@ -15,6 +15,7 @@
 
 package com.akiban.server.service.servicemanager;
 
+import com.akiban.server.service.Service;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -24,23 +25,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public final class Guicer {
+public final class Guicer<T> {
 
     // Guicer interface
-
-    public Guicer(Collection<ServiceBinding> serviceBindings) throws ClassNotFoundException {
-        directlyRequiredClasses = new ArrayList<Class<?>>();
-        List<ResolvedServiceBinding> resolvedServiceBindings = new ArrayList<ResolvedServiceBinding>();
-
-        for (ServiceBinding serviceBinding : serviceBindings) {
-            ResolvedServiceBinding resolvedServiceBinding = new ResolvedServiceBinding(serviceBinding);
-            resolvedServiceBindings.add(resolvedServiceBinding);
-            if (serviceBinding.isDirectlyRequired()) {
-                directlyRequiredClasses.add(resolvedServiceBinding.serviceInterfaceClass());
-            }
-        }
-        injector = createInjector(resolvedServiceBindings);
-    }
 
     public void startAllServices() {
         for (Class<?> directlyRequiredClass : directlyRequiredClasses) {
@@ -56,17 +43,58 @@ public final class Guicer {
         return injector.getInstance(serviceClass);
     }
 
+    // public class methods
+
+    public static Guicer<Service<?>> forServices(Collection<ServiceBinding> serviceBindings)
+    throws ClassNotFoundException
+    {
+        return new Guicer<Service<?>>(serviceBindings, SERVICE_ACTIONS);
+    }
+
     // private methods
 
-    private static ServiceLifecycleInjector createInjector(Collection<ResolvedServiceBinding> resolvedServiceBindings) {
+    Guicer(Collection<ServiceBinding> serviceBindings, ServiceLifecycleActions<T> serviceLifecycleActions)
+    throws ClassNotFoundException
+    {
+        directlyRequiredClasses = new ArrayList<Class<?>>();
+        List<ResolvedServiceBinding> resolvedServiceBindings = new ArrayList<ResolvedServiceBinding>();
+
+        for (ServiceBinding serviceBinding : serviceBindings) {
+            ResolvedServiceBinding resolvedServiceBinding = new ResolvedServiceBinding(serviceBinding);
+            resolvedServiceBindings.add(resolvedServiceBinding);
+            if (serviceBinding.isDirectlyRequired()) {
+                directlyRequiredClasses.add(resolvedServiceBinding.serviceInterfaceClass());
+            }
+        }
+
         AbstractModule module = new ServiceBindingsModule(resolvedServiceBindings);
-        return new ServiceLifecycleInjector(Guice.createInjector(module));
+        injector = new ServiceLifecycleInjector<T>(Guice.createInjector(module), serviceLifecycleActions);
     }
 
     // object state
 
-    private final ServiceLifecycleInjector injector;
+    private final ServiceLifecycleInjector<T> injector;
     private final List<Class<?>> directlyRequiredClasses;
+
+    // class state
+    private static final ServiceLifecycleActions<Service<?>> SERVICE_ACTIONS
+            = new ServiceLifecycleActions<Service<?>>()
+    {
+        @Override
+        public void onStart(Service<?> service) throws Exception {
+            service.start();
+        }
+
+        @Override
+        public void onShutdown(Service<?> service) throws Exception {
+            service.stop();
+        }
+
+        @Override
+        public Service<?> castIfActionable(Object object) {
+            return (object instanceof Service) ? (Service<?>)object : null;
+        }
+    };
 
     // nested classes
 
@@ -85,6 +113,10 @@ public final class Guicer {
         public ResolvedServiceBinding(ServiceBinding serviceBinding) throws ClassNotFoundException {
             this.serviceInterfaceClass = Class.forName(serviceBinding.getInterfaceName());
             this.serviceImplementationClass = Class.forName(serviceBinding.getImplementingClassName());
+            if (!this.serviceInterfaceClass.isAssignableFrom(this.serviceImplementationClass)) {
+                throw new IllegalArgumentException(this.serviceInterfaceClass + " is not assignable from "
+                        + this.serviceImplementationClass);
+            }
         }
 
         // object state
@@ -94,9 +126,12 @@ public final class Guicer {
 
     private static final class ServiceBindingsModule extends AbstractModule {
         @Override
+        // we use unchecked, raw Class, relying on the invariant established by ResolvedServiceBinding's ctor
+        @SuppressWarnings("unchecked")
         protected void configure() {
-            for (ResolvedServiceBinding biding : bindings) {
-                bind(biding.serviceInterfaceClass()).to(biding.serviceImplementationClass()).in(Singleton.class);
+            for (ResolvedServiceBinding binding : bindings) {
+                Class unchecked = binding.serviceInterfaceClass();
+                bind(unchecked).to(binding.serviceImplementationClass()).in(Singleton.class);
             }
         }
 

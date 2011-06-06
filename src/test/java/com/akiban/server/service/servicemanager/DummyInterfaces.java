@@ -15,18 +15,39 @@
 
 package com.akiban.server.service.servicemanager;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public abstract class DummyInterfaces {
 
-    public abstract List<String> yaml();
+    // for use within this package
 
-    protected static List<String> lines(String... lines) {
-        return Arrays.asList(lines);
+    static void addMessage(String message) {
+        messages.add(message);
     }
 
-    public static interface Alpha{}
-    public static interface Beta{}
-    public static interface Gamma{}
+    static List<String> messages() {
+        return Collections.unmodifiableList(messages);
+    }
+
+    static void clearMessages() {
+        messages.clear();
+    }
+
+    // class state
+
+    private static final List<String> messages = new ArrayList<String>();
+
+    // nested classes
+
+    static interface DummyService {
+        void start();
+        void stop();
+    }
+
+    public static interface Alpha extends DummyService {}
+    public static interface Beta extends DummyService {}
+    public static interface Gamma extends DummyService {}
 }

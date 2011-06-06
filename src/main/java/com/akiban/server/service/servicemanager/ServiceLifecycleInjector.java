@@ -57,10 +57,10 @@ public final class ServiceLifecycleInjector<S> extends DelegatingInjector {
     // private methods
 
     private <T> T startService(T instance) {
-        if (actions.getActionableClass().isInstance(instance)) {
+        S service = actions.castIfActionable(instance);
+        if (service != null) {
             try {
-                S service = actions.getActionableClass().cast(instance);
-                actions.onShutdown(service);
+                actions.onStart(service);
                 servicesList.add(service);
             } catch (Exception e) {
                 try {
