@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public final class Guicer<T> {
+public final class Guicer {
 
     // Guicer interface
 
@@ -45,15 +45,15 @@ public final class Guicer<T> {
 
     // public class methods
 
-    public static Guicer<Service<?>> forServices(Collection<ServiceBinding> serviceBindings)
+    public static Guicer forServices(Collection<ServiceBinding> serviceBindings)
     throws ClassNotFoundException
     {
-        return new Guicer<Service<?>>(serviceBindings, SERVICE_ACTIONS);
+        return new Guicer(serviceBindings, SERVICE_ACTIONS);
     }
 
     // private methods
 
-    Guicer(Collection<ServiceBinding> serviceBindings, ServiceLifecycleActions<T> serviceLifecycleActions)
+    <T> Guicer(Collection<ServiceBinding> serviceBindings, ServiceLifecycleActions<T> serviceLifecycleActions)
     throws ClassNotFoundException
     {
         directlyRequiredClasses = new ArrayList<Class<?>>();
@@ -73,7 +73,7 @@ public final class Guicer<T> {
 
     // object state
 
-    private final ServiceLifecycleInjector<T> injector;
+    private final ServiceLifecycleInjector<?> injector;
     private final List<Class<?>> directlyRequiredClasses;
 
     // class state
