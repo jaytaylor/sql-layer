@@ -26,8 +26,10 @@ import java.util.Arrays;
 public class IndexRowComposition {
     public IndexRowComposition(int[] depths, int[] fieldPositions, int[] hkeyPositions) {
         if(depths.length != fieldPositions.length || depths.length != hkeyPositions.length) {
-            throw new IllegalArgumentException(String.format("All indexes must be of equal length: %d,%d,%d",
-                                               depths.length, fieldPositions.length, hkeyPositions.length));
+            throw new IllegalArgumentException("All indexes must be of equal length: " +
+                                               depths.length + ", " +
+                                               fieldPositions.length + ", " +
+                                               hkeyPositions.length);
         }
         this.depths = depths;
         this.fieldPositions = fieldPositions;
@@ -60,8 +62,9 @@ public class IndexRowComposition {
 
     @Override
     public String toString() {
-        return String.format("depths:%s fieldPos:%s hkeyPos:%s", Arrays.toString(depths),
-                             Arrays.toString(fieldPositions), Arrays.toString(hkeyPositions));
+        return "depths: " + Arrays.toString(depths) +
+               " fieldPos: " + Arrays.toString(fieldPositions) +
+               " hkeyPos: " + Arrays.toString(hkeyPositions);
     }
 
     /** If set, value >= 0, is the depth of the associated table for index position i **/
