@@ -18,12 +18,14 @@ package com.akiban.server.service.servicemanager;
 import com.akiban.server.service.servicemanager.configuration.DefaultLockableServiceBinding;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 import com.akiban.util.Strings;
+import com.google.inject.ProvisionException;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public final class GuicerTest {
 
@@ -42,9 +44,54 @@ public final class GuicerTest {
         guicer.startAllServices();
         assertEquals(
                 "messages",
-                joined("starting SimpleGamma", "starting SimpleBeta", "starting SimpleAlpha"),
+                joined(
+                        "starting SimpleAlpha",
+                        "starting SimpleBeta",
+                        "starting SimpleGamma",
+                        "started SimpleGamma",
+                        "started SimpleBeta",
+                        "started SimpleAlpha"
+                ),
                 Strings.join(DummyInterfaces.messages())
         );
+    }
+
+    @Test
+    public void errorOnStartup() throws Exception {
+        Guicer<DummyInterfaces.DummyService> guicer = messageGuicer(
+                bind(DummyInterfaces.Alpha.class, DummyErroringServices.ErroringAlpha.class, true),
+                bind(DummyInterfaces.Beta.class, DummyErroringServices.ErroringBeta.class, false),
+                bind(DummyInterfaces.Gamma.class, DummyErroringServices.ErroringGamma.class, false)
+        );
+        try{
+            guicer.startAllServices();
+            fail("should have caught ErroringException");
+        } catch (ProvisionException e) {
+            assertEventualCause(e, DummyErroringServices.ErroringException.class);
+            assertEquals(
+                    "messages",
+                    joined(
+                            "starting ErroringAlpha",
+                            "starting ErroringBeta",
+                            "starting ErroringGamma",
+                            "started ErroringGamma",
+                            "stopping ErroringGamma",
+                            "stopped ErroringGamma"
+                    ),
+                    Strings.join(DummyInterfaces.messages())
+            );
+        }
+    }
+
+    private void assertEventualCause(Throwable e, Class<? extends Throwable> exceptionClassToFind) {
+        Throwable cause = e;
+        while (cause != null) {
+            if (cause.getClass().equals(exceptionClassToFind)) {
+                return;
+            }
+            cause = cause.getCause();
+        }
+        fail(exceptionClassToFind + " was not in the causes of " + e);
     }
 
     private static Guicer<DummyInterfaces.DummyService> messageGuicer(ServiceBinding... bindings) throws ClassNotFoundException {
@@ -90,14 +137,16 @@ public final class GuicerTest {
     {
         @Override
         public void onStart(DummyInterfaces.DummyService service) throws Exception {
-            service.start();
             DummyInterfaces.addMessage("starting " + service.getClass().getSimpleName());
+            service.start();
+            DummyInterfaces.addMessage("started " + service.getClass().getSimpleName());
         }
 
         @Override
         public void onShutdown(DummyInterfaces.DummyService service) throws Exception {
             DummyInterfaces.addMessage("stopping " + service.getClass().getSimpleName());
             service.stop();
+            DummyInterfaces.addMessage("stopped " + service.getClass().getSimpleName());
         }
 
         @Override
