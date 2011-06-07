@@ -29,7 +29,7 @@ public final class Guicer {
 
     // Guicer interface
 
-    public void startAllServices(ServiceLifecycleActions<?> withActions) {
+    public void startRequiredServices(ServiceLifecycleActions<?> withActions) {
         for (Class<?> directlyRequiredClass : directlyRequiredClasses) {
             injector.getInstance(directlyRequiredClass, withActions);
         }

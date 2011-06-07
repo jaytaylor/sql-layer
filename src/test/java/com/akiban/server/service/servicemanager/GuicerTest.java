@@ -41,7 +41,7 @@ public final class GuicerTest {
                 bind(DummyInterfaces.Beta.class, DummySimpleServices.SimpleBeta.class, false),
                 bind(DummyInterfaces.Gamma.class, DummySimpleServices.SimpleGamma.class, false)
         );
-        guicer.startAllServices(MESSAGING_ACTIONS);
+        guicer.startRequiredServices(MESSAGING_ACTIONS);
         assertEquals(
                 "messages",
                 joined(
@@ -64,7 +64,7 @@ public final class GuicerTest {
                 bind(DummyInterfaces.Gamma.class, DummyErroringServices.ErroringGamma.class, false)
         );
         try{
-            guicer.startAllServices(MESSAGING_ACTIONS);
+            guicer.startRequiredServices(MESSAGING_ACTIONS);
             fail("should have caught ErroringException");
         } catch (ProvisionException e) {
             assertEventualCause(e, DummyErroringServices.ErroringException.class);
