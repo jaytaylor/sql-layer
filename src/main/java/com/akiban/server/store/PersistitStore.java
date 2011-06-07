@@ -27,6 +27,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexRowComposition;
+import com.akiban.ais.model.IndexToHKey;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.ScanLimit;
@@ -158,15 +160,14 @@ public class PersistitStore implements Store {
         return treeService.getDb();
     }
 
-    public Exchange getExchange(final Session session, final RowDef rowDef,
-            final IndexDef indexDef) throws PersistitException {
-        if (indexDef == null) {
-            final RowDef groupRowDef = rowDef.isGroupTable() ? rowDef
-                    : rowDefCache.getRowDef(rowDef.getGroupRowDefId());
-            return treeService.getExchange(session, groupRowDef);
-        } else {
-            return treeService.getExchange(session, indexDef);
-        }
+    public Exchange getExchange(final Session session, final RowDef rowDef) throws PersistitException {
+        final RowDef groupRowDef = rowDef.isGroupTable() ? rowDef
+                                   : rowDefCache.getRowDef(rowDef.getGroupRowDefId());
+        return treeService.getExchange(session, groupRowDef);
+    }
+
+    public Exchange getExchange(final Session session, final Index index) throws PersistitException {
+        return treeService.getExchange(session, (IndexDef)index.indexDef());
     }
 
     public Key getKey(Session session) throws PersistitException
@@ -200,7 +201,7 @@ public class PersistitStore implements Store {
         if (rowDef.getParentRowDefId() != 0) {
             parentRowDef = rowDefCache.getRowDef(rowDef.getParentRowDefId());
         }
-        IndexDef.I2H[] indexToHKey = null;
+        IndexToHKey indexToHKey = null;
         int i2hPosition = 0;
         Exchange parentPKExchange = null;
         boolean parentExists = false;
@@ -225,10 +226,9 @@ public class PersistitStore implements Store {
                     if (parentPKExchange == null) {
                         // Initialize parent metadata and state
                         assert parentRowDef != null : rowDef;
-                        IndexDef parentPK = parentRowDef.getPKIndexDef();
-                        indexToHKey = parentPK.hkeyFields();
-                        parentPKExchange = getExchange(session, rowDef,
-                                parentPK);
+                        Index parentPK = parentRowDef.getPKIndex();
+                        indexToHKey = parentPK.indexToHKey();
+                        parentPKExchange = getExchange(session, parentPK);
                         constructParentPKIndexKey(parentPKExchange.getKey(),
                                 rowDef, rowData);
                         parentExists = parentPKExchange.hasChildren();
@@ -239,18 +239,18 @@ public class PersistitStore implements Store {
                         // parent does not necessarily exist. rowData could be
                         // an orphan
                     }
-                    IndexDef.I2H i2h = indexToHKey[i2hPosition++];
-                    if (i2h.isOrdinalType()) {
-                        assert i2h.ordinal() == segmentRowDef.getOrdinal() : hKeyColumn;
-                        i2h = indexToHKey[i2hPosition++];
+                    if(indexToHKey.isOrdinal(i2hPosition)) {
+                        assert indexToHKey.getOrdinal(i2hPosition) == segmentRowDef.getOrdinal() : hKeyColumn;
+                        ++i2hPosition;
                     }
                     if (parentExists) {
                         appendKeyFieldFromKey(parentPKExchange.getKey(), hKey,
-                                i2h.indexKeyLoc());
-                    } else {
-                        // orphan row
-                        hKey.append(null);
+                                              indexToHKey.getIndexRowPosition(i2hPosition));
                     }
+                    else {
+                        hKey.append(null); // orphan row
+                    }
+                    ++i2hPosition;
                 } else {
                     // Hkey column from rowData
                     Column column = hKeyColumn.column();
@@ -301,114 +301,46 @@ public class PersistitStore implements Store {
         }
     }
 
-    /**
-     * Given a RowData, the hkey where it will be stored, and an IndexDef for a
-     * table, construct the index key.
-     * 
-     * @param rowData
-     * @param indexDef
-     */
-    public static void constructIndexKey(Key iKey, RowData rowData, IndexDef indexDef, Key hKey)
-        throws PersistitException
+    public static void constructIndexKey(Key iKey, RowData rowData, Index index, Key hKey) throws PersistitException
     {
-        IndexDef.H2I[] fassoc = indexDef.indexKeyFields();
+        IndexRowComposition indexRowComp = index.indexRowComposition();
         iKey.clear();
-        for (int index = 0; index < fassoc.length; index++) {
-            IndexDef.H2I assoc = fassoc[index];
-            if (assoc.fieldIndex() >= 0) {
-                int fieldIndex = assoc.fieldIndex();
-                RowDef rowDef = indexDef.getRowDef();
-                appendKeyField(iKey, rowDef.getFieldDef(fieldIndex), rowData);
-            } else if (assoc.hKeyLoc() >= 0) {
-                appendKeyFieldFromKey(hKey, iKey, assoc.hKeyLoc());
-            } else {
-                throw new IllegalStateException("Invalid FA");
+        for(int indexPos = 0; indexPos < indexRowComp.getLength(); ++indexPos) {
+            if(indexRowComp.isInRowData(indexPos)) {
+                int fieldPos = indexRowComp.getFieldPosition(indexPos);
+                RowDef rowDef = ((IndexDef)index.indexDef()).getRowDef();
+                appendKeyField(iKey, rowDef.getFieldDef(fieldPos), rowData);
+            }
+            else if(indexRowComp.isInHKey(indexPos)) {
+                appendKeyFieldFromKey(hKey, iKey, indexRowComp.getHKeyPosition(indexPos));
+            }
+            else {
+                throw new IllegalStateException("Invalid IndexRowComposition: " + indexRowComp);
             }
         }
     }
 
-    /**
-     * Given an index key and an indexDef, construct the corresponding hkey for
-     * the row identified by the index key.
-     * 
-     * @param hKey
-     * @param indexKey
-     * @param indexDef
-     */
-    public void constructHKeyFromIndexKey(final Key hKey, final Key indexKey, final IndexDef indexDef)
+    public void constructHKeyFromIndexKey(final Key hKey, final Key indexKey, final Index index)
     {
-        final IndexDef.I2H[] fassoc = indexDef.hkeyFields();
+        final IndexToHKey indexToHKey = index.indexToHKey();
         hKey.clear();
-        for (int index = 0; index < fassoc.length; index++) {
-            final IndexDef.I2H fa = fassoc[index];
-            if (fa.isOrdinalType()) {
-                hKey.append(fa.ordinal());
-            } else {
-                final int depth = fassoc[index].indexKeyLoc();
+        for(int i = 0; i < indexToHKey.getLength(); ++i) {
+            if(indexToHKey.isOrdinal(i)) {
+                hKey.append(indexToHKey.getOrdinal(i));
+            }
+            else {
+                final int depth = indexToHKey.getIndexRowPosition(i);
                 if (depth < 0 || depth > indexKey.getDepth()) {
                     throw new IllegalStateException(
                             "IndexKey too shallow - requires depth=" + depth
                                     + ": " + indexKey);
                 }
-                appendKeyFieldFromKey(indexKey, hKey, fa.indexKeyLoc());
+                appendKeyFieldFromKey(indexKey, hKey, depth);
             }
         }
     }
 
-/*
-    public void constructRowDataFromIndexKey(Key indexKey, IndexDef indexDef, RowData rowData)
-    {
-        // Make sure that rowData is big enough
-        assert rowData.getBytes().length >= RowData.MINIMUM_RECORD_LENGTH + Key.MAX_KEY_LENGTH;
-        // Set null flags for fields not in index
-        BitSet nullMap = new BitSet();
-        RowDef rowDef = indexDef.getRowDef();
-        for (int i = 0; i < rowDef.getFieldCount(); i++) {
-            nullMap.set(i, true);
-        }
-        for (int fieldPosition : indexDef.getFields()) {
-            nullMap.set(fieldPosition, false);
-        }
-        rowData.setupNullMap(nullMap, 0, 0, rowDef.getFieldCount());
-        // TODO: Set null flags for null values in indexKey
-        // Copy non-null fields from indexKey to rowData
-        for (int fieldPosition : indexDef.getFields()) {
-            indexKey.indexTo(fieldPosition);
-            int indexKeyFrom = indexKey.getIndex();
-            indexKey.indexTo(fieldPosition + 1);
-            int indexKeyTo = indexKey.getIndex();
-            rowData.copyBytesFrom(indexKey.getEncodedBytes(), indexKeyFrom, indexKeyTo, fieldPosition);
-        }
-    }
-*/
-
-    /**
-     * Given an indexDef, construct the corresponding hkey containing nulls.
-     * 
-     * @param hKey
-     * @param indexDef
-     */
-    void constructHKeyFromNullIndexKey(final Key hKey, final IndexDef indexDef) {
-        final IndexDef.I2H[] fassoc = indexDef.hkeyFields();
-        hKey.clear();
-        for (int index = 0; index < fassoc.length; index++) {
-            final IndexDef.I2H fa = fassoc[index];
-            if (fa.isOrdinalType()) {
-                hKey.append(fa.ordinal());
-            } else {
-                hKey.append(null);
-            }
-        }
-    }
-
-    /**
-     * Given a RowData for a table, construct an Exchange set up with a Key that
-     * is the prefix of the parent's primary key index key.
-     * 
-     * @param rowData
-     */
-    void constructParentPKIndexKey(final Key iKey, final RowDef rowDef,
-            final RowData rowData) {
+    void constructParentPKIndexKey(final Key iKey, final RowDef rowDef, final RowData rowData) {
         iKey.clear();
         appendKeyFields(iKey, rowDef, rowData, rowDef.getParentJoinFields());
     }
@@ -421,8 +353,7 @@ public class PersistitStore implements Store {
         }
     }
 
-    static void appendKeyField(final Key key, final FieldDef fieldDef,
-            final RowData rowData) {
+    static void appendKeyField(final Key key, final FieldDef fieldDef, final RowData rowData) {
         fieldDef.getEncoding().toKey(fieldDef, rowData, key);
     }
 
@@ -459,10 +390,6 @@ public class PersistitStore implements Store {
         return object;
     }
 
-    public IndexManager getIndexManager() {
-        return errorIfNull("index manager", indexManager);
-    }
-
     /**
      * WRites a row
      * 
@@ -491,7 +418,7 @@ public class PersistitStore implements Store {
         Exchange hEx = null;
         try {
             long uniqueId = -1;
-            hEx = getExchange(session, rowDef, null);
+            hEx = getExchange(session, rowDef);
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
                 transaction.begin();
@@ -527,14 +454,14 @@ public class PersistitStore implements Store {
                                 .updateUniqueIdValue(rowDefId, uniqueId);
                     }
 
-                    for (final IndexDef indexDef : rowDef.getIndexDefs()) {
+                    for (Index index : rowDef.getIndexes()) {
                         //
                         // Insert the index keys (except for the case of a
                         // root table's PK index.)
                         //
-                        if (!indexDef.isHKeyEquivalent())
-                            insertIntoIndex(session, indexDef, rowData,
-                                    hEx.getKey(), deferIndexes);
+                        if (!index.isHKeyEquivalent()) {
+                            insertIntoIndex(session, index, rowData, hEx.getKey(), deferIndexes);
+                        }
                     }
 
                     // The row being inserted might be the parent of orphan rows
@@ -647,7 +574,7 @@ public class PersistitStore implements Store {
         final Transaction transaction = treeService.getTransaction(session);
 
         try {
-            hEx = getExchange(session, rowDef, null);
+            hEx = getExchange(session, rowDef);
 
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
@@ -688,10 +615,9 @@ public class PersistitStore implements Store {
                     tableStatusCache.decrementRowCount(rowDefId);
 
                     // Remove the indexes, including the PK index
-                    for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-                        if (!indexDef.isHKeyEquivalent()) {
-                            deleteIndex(session, indexDef, rowDef, rowData,
-                                    hEx.getKey());
+                    for (Index index : rowDef.getIndexes()) {
+                        if (!index.isHKeyEquivalent()) {
+                            deleteIndex(session, index, rowData, hEx.getKey());
                         }
                     }
 
@@ -734,7 +660,7 @@ public class PersistitStore implements Store {
         final Transaction transaction = treeService.getTransaction(session);
 
         try {
-            hEx = getExchange(session, rowDef, null);
+            hEx = getExchange(session, rowDef);
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
                 transaction.begin();
@@ -763,10 +689,10 @@ public class PersistitStore implements Store {
                     // may want to optimize the protocol to send only PK and FK
                     // fields in oldRowData, in which case this test will need
                     // to change.
-                    if (!fieldsEqual(rowDef, oldRowData, mergedRowData, rowDef
-                            .getPKIndexDef().getFields())
+                    if (!fieldsEqual(rowDef, oldRowData, mergedRowData,
+                                     ((IndexDef)rowDef.getPKIndex().indexDef()).getFields())
                             || !fieldsEqual(rowDef, oldRowData, mergedRowData,
-                                    rowDef.getParentJoinFields())) {
+                                            rowDef.getParentJoinFields())) {
                         deleteRow(session, oldRowData);
                         writeRow(session, mergedRowData);
                     } else {
@@ -776,10 +702,10 @@ public class PersistitStore implements Store {
 
                         // Update the indexes
                         //
-                        for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-                            if (!indexDef.isHKeyEquivalent()) {
-                                updateIndex(session, indexDef, rowDef,
-                                        currentRow, mergedRowData, hEx.getKey());
+                        for (Index index : rowDef.getIndexes()) {
+                            if (!index.isHKeyEquivalent()) {
+                                updateIndex(session, index, rowDef,
+                                            currentRow, mergedRowData, hEx.getKey());
                             }
                         }
                     }
@@ -835,10 +761,9 @@ public class PersistitStore implements Store {
             // Delete the current row from the tree
             exchange.remove();
             tableStatusCache.decrementRowCount(descendentRowDefId);
-            for (IndexDef indexDef : descendentRowDef.getIndexDefs()) {
-                if (!indexDef.isHKeyEquivalent()) {
-                    deleteIndex(session, indexDef, descendentRowDef,
-                            descendentRowData, exchange.getKey());
+            for (Index index : descendentRowDef.getIndexes()) {
+                if (!index.isHKeyEquivalent()) {
+                    deleteIndex(session, index, descendentRowData, exchange.getKey());
                 }
             }
             // Reinsert it, recomputing the hkey
@@ -877,19 +802,19 @@ public class PersistitStore implements Store {
                 // Remove the index trees
                 //
                 for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
-                    for (IndexDef indexDef : userRowDef.getIndexDefs()) {
-                        if (!indexDef.isHKeyEquivalent()) {
-                            Exchange iEx = getExchange(session, userRowDef, indexDef);
+                    for (Index index : userRowDef.getIndexes()) {
+                        if (!index.isHKeyEquivalent()) {
+                            Exchange iEx = getExchange(session, index);
                             iEx.removeAll();
                             releaseExchange(session, iEx);
                         }
-                        indexManager.deleteIndexAnalysis(session, indexDef);
+                        indexManager.deleteIndexAnalysis(session, index);
                     }
                 }
                 //
                 // remove the htable tree
                 //
-                final Exchange hEx = getExchange(session, groupRowDef, null);
+                final Exchange hEx = getExchange(session, groupRowDef);
                 hEx.removeAll();
                 releaseExchange(session, hEx);
                 for (int i = 0; i < groupRowDef.getUserTableRowDefs().length; i++) {
@@ -1119,7 +1044,8 @@ public class PersistitStore implements Store {
         indexManager.analyzeTable(session, rowDef, sampleSize);
     }
 
-    boolean hasNullIndexSegments(final RowData rowData, final IndexDef indexDef) {
+    boolean hasNullIndexSegments(final RowData rowData, final Index index) {
+        IndexDef indexDef = (IndexDef)index.indexDef();
         assert indexDef.getRowDef().getRowDefId() == rowData.getRowDefId();
         for (int i : indexDef.getFields()) {
             if (rowData.isNull(i)) {
@@ -1129,21 +1055,19 @@ public class PersistitStore implements Store {
         return false;
     }
 
-    void insertIntoIndex(final Session session, final IndexDef indexDef,
-            final RowData rowData, final Key hkey, final boolean deferIndexes)
+    void insertIntoIndex(final Session session, final Index index, final RowData rowData,
+                         final Key hkey, final boolean deferIndexes)
             throws InvalidOperationException, PersistitException {
-        final Exchange iEx = getExchange(session, indexDef.getRowDef(),
-                indexDef);
-        constructIndexKey(iEx.getKey(), rowData, indexDef, hkey);
+        final Exchange iEx = getExchange(session, index);
+        constructIndexKey(iEx.getKey(), rowData, index, hkey);
 
-        checkUniqueness(indexDef, rowData, iEx);
+        checkUniqueness(index, rowData, iEx);
 
         iEx.getValue().clear();
         if (deferIndexes) {
             // TODO: bug767737, deferred indexing does not handle uniqueness
             synchronized (deferredIndexKeys) {
-                SortedSet<KeyState> keySet = deferredIndexKeys.get(iEx
-                        .getTree());
+                SortedSet<KeyState> keySet = deferredIndexKeys.get(iEx.getTree());
                 if (keySet == null) {
                     keySet = new TreeSet<KeyState>();
                     deferredIndexKeys.put(iEx.getTree(), keySet);
@@ -1158,15 +1082,15 @@ public class PersistitStore implements Store {
         releaseExchange(session, iEx);
     }
 
-    private void checkUniqueness(IndexDef indexDef, RowData rowData, Exchange iEx)
+    private void checkUniqueness(Index index, RowData rowData, Exchange iEx)
             throws PersistitException, DuplicateKeyException
     {
-        if (indexDef.isUnique() && !hasNullIndexSegments(rowData, indexDef)) {
+        if (index.isUnique() && !hasNullIndexSegments(rowData, index)) {
             final Key key = iEx.getKey();
             KeyState ks = new KeyState(key);
-            key.setDepth(indexDef.getIndexKeySegmentCount());
+            key.setDepth(((IndexDef) index.indexDef()).getIndexKeySegmentCount());
             if (iEx.hasChildren()) {
-                complainAboutDuplicateKey(indexDef.getName(), key);
+                complainAboutDuplicateKey(index.getIndexName().getName(), key);
             }
             ks.copyTo(key);
         }
@@ -1186,17 +1110,19 @@ public class PersistitStore implements Store {
         }
     }
 
-    public void updateIndex(final Session session, final IndexDef indexDef,
-            final RowDef rowDef, final RowData oldRowData,
-            final RowData newRowData, final Key hkey) throws PersistitException, DuplicateKeyException {
-
+    public void updateIndex(final Session session, final Index index,
+                            final RowDef rowDef, final RowData oldRowData,
+                            final RowData newRowData, final Key hkey)
+            throws PersistitException, DuplicateKeyException
+    {
+        IndexDef indexDef = (IndexDef)index.indexDef();
         if (!fieldsEqual(rowDef, oldRowData, newRowData, indexDef.getFields())) {
-            final Exchange oldExchange = getExchange(session, rowDef, indexDef);
-            constructIndexKey(oldExchange.getKey(), oldRowData, indexDef, hkey);
-            final Exchange newExchange = getExchange(session, rowDef, indexDef);
-            constructIndexKey(newExchange.getKey(), newRowData, indexDef, hkey);
+            final Exchange oldExchange = getExchange(session, index);
+            constructIndexKey(oldExchange.getKey(), oldRowData, index, hkey);
+            final Exchange newExchange = getExchange(session, index);
+            constructIndexKey(newExchange.getKey(), newRowData, index, hkey);
 
-            checkUniqueness(indexDef, newRowData, newExchange);
+            checkUniqueness(index, newRowData, newExchange);
 
             oldExchange.getValue().clear();
             newExchange.getValue().clear();
@@ -1209,11 +1135,10 @@ public class PersistitStore implements Store {
         }
     }
 
-    void deleteIndex(final Session session, final IndexDef indexDef,
-            final RowDef rowDef, final RowData rowData, final Key hkey)
+    void deleteIndex(final Session session, final Index index, final RowData rowData, final Key hkey)
             throws PersistitException {
-        final Exchange iEx = getExchange(session, rowDef, indexDef);
-        constructIndexKey(iEx.getKey(), rowData, indexDef, hkey);
+        final Exchange iEx = getExchange(session, index);
+        constructIndexKey(iEx.getKey(), rowData, index, hkey);
         boolean removed = iEx.remove();
         releaseExchange(session, iEx);
     }
@@ -1308,9 +1233,7 @@ public class PersistitStore implements Store {
         Collection<Index> indexes = new HashSet<Index>();
         for(RowDef rowDef : rowDefCache.getRowDefs()) {
             if(rowDef.isUserTable()) {
-                for(IndexDef indexDef : rowDef.getIndexDefs()) {
-                    indexes.add(indexDef.index());
-                }
+                indexes.addAll(Arrays.asList(rowDef.getIndexes()));
             }
         }
         buildIndexes(session, indexes, deferIndexes);
@@ -1321,15 +1244,15 @@ public class PersistitStore implements Store {
 
         final Set<RowDef> userRowDefs = new HashSet<RowDef>();
         final Set<RowDef> groupRowDefs = new HashSet<RowDef>();
-        final Set<IndexDef> indexDefs = new HashSet<IndexDef>();
+        final Set<Index> indexesToBuild = new HashSet<Index>();
 
         for(Index index : indexes) {
-            final IndexDef indexDef = (IndexDef) index.indexDef();
+            IndexDef indexDef = (IndexDef)index.indexDef();
             if(indexDef == null) {
                 throw new IllegalArgumentException("indexDef was null for index: " + index);
             }
-            if(!indexDef.isHKeyEquivalent()) {
-                indexDefs.add(indexDef);
+            if(!index.isHKeyEquivalent()) {
+                indexesToBuild.add(index);
                 final RowDef rowDef = indexDef.getRowDef();
                 userRowDefs.add(rowDef);
                 final RowDef groupDef = rowDefCache.getRowDef(rowDef.getGroupRowDefId());
@@ -1355,7 +1278,7 @@ public class PersistitStore implements Store {
             }
             int indexKeyCount = 0;
             try {
-                Exchange hEx = getExchange(session, rowDef, null);
+                Exchange hEx = getExchange(session, rowDef);
                 hEx.getKey().clear();
                 // while (hEx.traverse(Key.GT, hFilter, Integer.MAX_VALUE)) {
                 while (hEx.next(true)) {
@@ -1363,9 +1286,9 @@ public class PersistitStore implements Store {
                     final int tableId = rowData.getRowDefId();
                     final RowDef userRowDef = rowDefCache.getRowDef(tableId);
                     if (userRowDefs.contains(userRowDef)) {
-                        for (final IndexDef indexDef : userRowDef.getIndexDefs()) {
-                            if(indexDefs.contains(indexDef)) {
-                                insertIntoIndex(session, indexDef, rowData, hEx.getKey(), defer);
+                        for (Index index : userRowDef.getIndexes()) {
+                            if(indexesToBuild.contains(index)) {
+                                insertIntoIndex(session, index, rowData, hEx.getKey(), defer);
                                 indexKeyCount++;
                             }
                         }
@@ -1399,7 +1322,7 @@ public class PersistitStore implements Store {
                 throw new IllegalArgumentException("indexDef is null for index: " + index);
             }
             try {
-                Exchange iEx = getExchange(session, indexDef.getRowDef(), indexDef);
+                Exchange iEx = getExchange(session, index);
                 iEx.removeAll();
             } catch (Exception e) {
                 LOG.debug("Exception while trying to remove index tree: " + indexDef.getTreeName(), e);
@@ -1448,11 +1371,10 @@ public class PersistitStore implements Store {
         deferIndexes = defer;
     }
 
-    public void traverse(Session session, RowDef rowDef,
-            TreeRecordVisitor visitor) throws PersistitException,
-            InvalidOperationException {
+    public void traverse(Session session, RowDef rowDef, TreeRecordVisitor visitor)
+            throws PersistitException, InvalidOperationException {
         assert rowDef.isGroupTable() : rowDef;
-        Exchange exchange = getExchange(session, rowDef, null).append(
+        Exchange exchange = getExchange(session, rowDef).append(
                 Key.BEFORE);
         try {
             visitor.initialize(this, exchange);
@@ -1464,14 +1386,12 @@ public class PersistitStore implements Store {
         }
     }
 
-    public void traverse(Session session, IndexDef indexDef,
-            IndexRecordVisitor visitor) throws PersistitException,
-            InvalidOperationException
-    {
-        if (indexDef.isHKeyEquivalent()) {
-            throw new IllegalArgumentException("HKeyEquivalent not allowed: " + indexDef);
+    public void traverse(Session session, Index index, IndexRecordVisitor visitor)
+            throws PersistitException, InvalidOperationException {
+        if (index.isHKeyEquivalent()) {
+            throw new IllegalArgumentException("HKeyEquivalent not allowed: " + index);
         }
-        Exchange exchange = getExchange(session, null, indexDef).append(Key.BEFORE);
+        Exchange exchange = getExchange(session, index).append(Key.BEFORE);
 
         try {
             visitor.initialize(exchange);

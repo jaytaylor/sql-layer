@@ -15,6 +15,7 @@
 
 package com.akiban.server.test.it.keyupdate;
 
+import com.akiban.ais.model.Index;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -69,10 +70,10 @@ public class TestStore
         }
     }
 
-    public void traverse(Session session, IndexDef indexDef, IndexRecordVisitor visitor)
+    public void traverse(Session session, Index index, IndexRecordVisitor visitor)
         throws Exception
     {
-        persistitStore.traverse(session, indexDef, visitor);
+        persistitStore.traverse(session, index, visitor);
     }
 
     // TestStore interface

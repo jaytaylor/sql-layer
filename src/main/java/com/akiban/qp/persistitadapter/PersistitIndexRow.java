@@ -15,6 +15,7 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.HKey;
@@ -84,7 +85,7 @@ public class PersistitIndexRow extends AbstractRow
     {
         // Extract the hKey from the exchange, using indexRow as a convenient Key to bridge Exchange
         // and PersistitHKey.
-        adapter.persistit.constructHKeyFromIndexKey(indexRow, exchange.getKey(), indexDef());
+        adapter.persistit.constructHKeyFromIndexKey(indexRow, exchange.getKey(), index());
         hKey.copyFrom(indexRow);
         // Now copy the entire index record into indexRow.
         exchange.getKey().copyTo(indexRow);
@@ -92,9 +93,9 @@ public class PersistitIndexRow extends AbstractRow
 
     // For use by this class
 
-    private IndexDef indexDef()
+    private Index index()
     {
-        return (IndexDef) indexRowType.index().indexDef();
+        return indexRowType.index();
     }
 
     // Object state
