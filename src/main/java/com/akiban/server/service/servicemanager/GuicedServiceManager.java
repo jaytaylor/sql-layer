@@ -65,7 +65,11 @@ public final class GuicedServiceManager implements ServiceManager {
 
     @Override
     public void crashServices() throws Exception {
-        guicer.stopAllServices(CRASH_SERVICES);
+        try {
+            guicer.stopAllServices(CRASH_SERVICES);
+        } finally {
+            ServiceManagerImpl.setServiceManager(null);
+        }
     }
 
     @Override
