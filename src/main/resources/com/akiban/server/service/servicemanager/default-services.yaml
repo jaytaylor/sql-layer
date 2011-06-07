@@ -12,6 +12,3 @@
     com.akiban.server.store.SchemaManager : com.akiban.server.store.PersistitStoreSchemaManager
     com.akiban.server.store.Store : com.akiban.qp.persistitadapter.OperatorStore
     com.akiban.sql.pg.PostgresService : com.akiban.sql.pg.PostgresServerManager
-
-# as a crutch, we require the SchemaManager so that the afterStart loop finds it
-- require : com.akiban.server.store.SchemaManager

@@ -16,7 +16,6 @@
 package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.AkServer;
-import com.akiban.server.service.AfterStart;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
@@ -53,22 +52,6 @@ public final class GuicedServiceManager implements ServiceManager {
     public void startServices() throws ServiceStartupException {
         ServiceManagerImpl.setServiceManager(this);
         guicer.startRequiredServices(STANDARD_SERVICE_ACTIONS);
-        // TODO holdover from ServiceManagerImpl. This is due to circular deps, yuck.
-
-        for (final Object service : guicer.startedServices()) {
-            if (service instanceof AfterStart) {
-                try {
-                    ((AfterStart) service).afterStart();
-                } catch (Exception e) {
-                    try {
-                        guicer.stopAllServices(STANDARD_SERVICE_ACTIONS);
-                    } catch (Exception e1) {
-                        LOG.error("while stopping services due to ecxeption " + e, e1);
-                    }
-                    throw new ServiceStartupException(e);
-                }
-            }
-        }
     }
 
     @Override

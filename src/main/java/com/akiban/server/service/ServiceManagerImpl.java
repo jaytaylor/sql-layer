@@ -224,7 +224,6 @@ public class ServiceManagerImpl implements ServiceManager
         startAndPut(factory.memcacheService(), jmxRegistry);
         startAndPut(factory.networkService(), jmxRegistry);
         startAndPut(factory.postgresService(), jmxRegistry);
-        afterStart();
     }
 
     private void loadCustomServices(JmxRegistryService jmxRegistry) throws Exception {
@@ -320,22 +319,6 @@ public class ServiceManagerImpl implements ServiceManager
         if (!throwables.isEmpty()) {
             throw new Exception("Failure(s) while crashing services: "
                     + throwables, throwables.get(0));
-        }
-    }
-
-    // TODO - Review this.
-    // Need this to construct an AIS instance. Both SchemaService
-    // and StoreService need to be started and registered in the
-    // services map before calling getAis(). There is no logical
-    // successor service to call this from, so I put the
-    // AfterStart interface back any. Any alternative solution
-    // would also be fine.
-    //
-    private void afterStart() throws Exception {
-        for (final Service<?> service : services.values()) {
-            if (service instanceof AfterStart) {
-                ((AfterStart) service).afterStart();
-            }
         }
     }
 
