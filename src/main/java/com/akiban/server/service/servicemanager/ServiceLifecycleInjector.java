@@ -24,47 +24,55 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
-public final class ServiceLifecycleInjector<S> extends DelegatingInjector {
+public final class ServiceLifecycleInjector extends DelegatingInjector {
 
     // Injector interface
 
     @Override
     public <T> T getInstance(Key<T> key) {
-        return startService(super.getInstance(key));
+        return startService(super.getInstance(key), defaultActions);
     }
 
     @Override
     public <T> T getInstance(Class<T> type) {
-        return startService(super.getInstance(type));
+        return startService(super.getInstance(type), defaultActions);
     }
 
     // ServiceLifecycleInjector interface
 
-    public void stopAllServices() {
+    public <T> T getInstance(Class<T> type, ServiceLifecycleActions<?> withActions) {
+        return startService(super.getInstance(type), withActions);
+    }
+
+    public void stopAllServices(ServiceLifecycleActions<?> withActions) {
         try {
-            stopServices(null);
+            stopServices(withActions, null);
         } catch (Exception e) {
             throw new RuntimeException(e); // TODO need better exception
         }
     }
 
-    public ServiceLifecycleInjector(Injector delegate, ServiceLifecycleActions<S> actions) {
+    public void stopAllServices() {
+        stopAllServices(defaultActions);
+    }
+
+    public <S> ServiceLifecycleInjector(Injector delegate, ServiceLifecycleActions<?> actions) {
         super(delegate);
-        this.servicesList = new ArrayList<S>();
-        this.actions = actions;
+        this.servicesList = new ArrayList<Object>();
+        this.defaultActions = actions;
     }
 
     // private methods
 
-    private <T> T startService(T instance) {
-        S service = actions.castIfActionable(instance);
+    private <T,S> T startService(T instance, ServiceLifecycleActions<S> withActions) {
+        S service = withActions.castIfActionable(instance);
         if (service != null) {
             try {
-                actions.onStart(service);
+                withActions.onStart(service);
                 servicesList.add(service);
             } catch (Exception e) {
                 try {
-                    stopServices(e);
+                    stopServices(withActions, e);
                 } catch (Exception e1) {
                     e = e1;
                 }
@@ -74,8 +82,8 @@ public final class ServiceLifecycleInjector<S> extends DelegatingInjector {
         return instance;
     }
 
-    private void stopServices(Exception initialCause) throws Exception {
-        List<Throwable> exceptions = tryStopServices(initialCause);
+    private void stopServices(ServiceLifecycleActions<?> withActions, Exception initialCause) throws Exception {
+        List<Throwable> exceptions = tryStopServices(withActions, initialCause);
         if (!exceptions.isEmpty()) {
             if (exceptions.size() == 1) {
                 throw Exceptions.throwAlways(exceptions.get(0));
@@ -87,17 +95,20 @@ public final class ServiceLifecycleInjector<S> extends DelegatingInjector {
         }
     }
 
-    private List<Throwable> tryStopServices(Exception initialCause) {
-        ListIterator<S> reverseIter = servicesList.listIterator(servicesList.size());
+    private <S> List<Throwable> tryStopServices(ServiceLifecycleActions<S> withActions, Exception initialCause) {
+        ListIterator<?> reverseIter = servicesList.listIterator(servicesList.size());
         List<Throwable> exceptions = new ArrayList<Throwable>();
         if (initialCause != null) {
             exceptions.add(initialCause);
         }
         while (reverseIter.hasPrevious()) {
             try {
-                S service = reverseIter.previous();
+                Object serviceObject = reverseIter.previous();
                 reverseIter.remove();
-                actions.onShutdown(service);
+                S service = withActions.castIfActionable(serviceObject);
+                if (service != null) {
+                    withActions.onShutdown(service);
+                }
             } catch (Throwable t) {
                 exceptions.add(t);
             }
@@ -105,6 +116,6 @@ public final class ServiceLifecycleInjector<S> extends DelegatingInjector {
         return exceptions;
     }
 
-    private final List<S> servicesList;
-    private final ServiceLifecycleActions<S> actions;
+    private final List<Object> servicesList;
+    private final ServiceLifecycleActions<?> defaultActions;
 }

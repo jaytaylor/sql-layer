@@ -36,7 +36,7 @@ public final class GuicerTest {
 
     @Test
     public void simple() throws Exception {
-        Guicer<DummyInterfaces.DummyService> guicer = messageGuicer(
+        Guicer guicer = messageGuicer(
                 bind(DummyInterfaces.Alpha.class, DummySimpleServices.SimpleAlpha.class, true),
                 bind(DummyInterfaces.Beta.class, DummySimpleServices.SimpleBeta.class, false),
                 bind(DummyInterfaces.Gamma.class, DummySimpleServices.SimpleGamma.class, false)
@@ -58,7 +58,7 @@ public final class GuicerTest {
 
     @Test
     public void errorOnStartup() throws Exception {
-        Guicer<DummyInterfaces.DummyService> guicer = messageGuicer(
+        Guicer guicer = messageGuicer(
                 bind(DummyInterfaces.Alpha.class, DummyErroringServices.ErroringAlpha.class, true),
                 bind(DummyInterfaces.Beta.class, DummyErroringServices.ErroringBeta.class, false),
                 bind(DummyInterfaces.Gamma.class, DummyErroringServices.ErroringGamma.class, false)
@@ -94,8 +94,8 @@ public final class GuicerTest {
         fail(exceptionClassToFind + " was not in the causes of " + e);
     }
 
-    private static Guicer<DummyInterfaces.DummyService> messageGuicer(ServiceBinding... bindings) throws ClassNotFoundException {
-        Guicer<DummyInterfaces.DummyService> guicer = new Guicer<DummyInterfaces.DummyService>(
+    private static Guicer messageGuicer(ServiceBinding... bindings) throws ClassNotFoundException {
+        Guicer guicer = new Guicer(
                 Arrays.asList(bindings),
                 MESSAGING_ACTIONS
         );
@@ -123,7 +123,7 @@ public final class GuicerTest {
 
     // For use within package
 
-    static Guicer<DummyInterfaces.DummyService> onlyGuicer() {
+    static Guicer onlyGuicer() {
         if (onlyGuicer == null) {
             throw new IllegalStateException("no guicer set");
         }
@@ -155,5 +155,5 @@ public final class GuicerTest {
         }
     };
 
-    private static Guicer<DummyInterfaces.DummyService> onlyGuicer;
+    private static Guicer onlyGuicer;
 }

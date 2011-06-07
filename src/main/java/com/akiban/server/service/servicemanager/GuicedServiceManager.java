@@ -16,6 +16,7 @@
 package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.AkServer;
+import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
@@ -30,7 +31,6 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.sql.pg.PostgresService;
-import com.google.inject.Guice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,89 +40,83 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 public final class GuicedServiceManager implements ServiceManager {
     // ServiceManager interface
 
     @Override
     public void startServices() throws ServiceStartupException {
-        List<Class<?>> directlyRequiredClasses = new ArrayList<Class<?>>();
-        for (ServiceBinding binding : directlyRequired) {
-            Class<?> classReference = Class.forName(binding.getInterfaceName());
-            guicer.get(classReference);
-        }
-        throw new UnsupportedOperationException(); // TODO
+        guicer.startAllServices();
     }
 
     @Override
     public void stopServices() throws Exception {
-        throw new UnsupportedOperationException(); // TODO
+        guicer.stopAllServices();
     }
 
     @Override
     public void crashServices() throws Exception {
-        throw new UnsupportedOperationException(); // TODO
+        guicer.stopAllServices(CRASH_SERVICES);
     }
 
     @Override
     public ConfigurationService getConfigurationService() {
-        throw new UnsupportedOperationException(); // TODO
+        return getServiceByClass(ConfigurationService.class);
     }
 
     @Override
     public AkServer getAkSserver() {
-        throw new UnsupportedOperationException(); // TODO
+        return getServiceByClass(AkServer.class);
     }
 
     @Override
     public Store getStore() {
-        throw new UnsupportedOperationException(); // TODO
+        return getServiceByClass(Store.class);
     }
 
     @Override
     public TreeService getTreeService() {
-        throw new UnsupportedOperationException(); // TODO
+        return getServiceByClass(TreeService.class);
     }
 
     @Override
     public MemcacheService getMemcacheService() {
-        throw new UnsupportedOperationException(); // TODO
+        return getServiceByClass(MemcacheService.class);
     }
 
     @Override
     public PostgresService getPostgresService() {
-        throw new UnsupportedOperationException(); // TODO
+        return getServiceByClass(PostgresService.class);
     }
 
     @Override
     public SchemaManager getSchemaManager() {
-        throw new UnsupportedOperationException(); // TODO
+        return getServiceByClass(SchemaManager.class);
     }
 
     @Override
     public JmxRegistryService getJmxRegistryService() {
-        throw new UnsupportedOperationException(); // TODO
+        return getServiceByClass(JmxRegistryService.class);
     }
 
     @Override
     public StatisticsService getStatisticsService() {
-        throw new UnsupportedOperationException(); // TODO
+        return getServiceByClass(StatisticsService.class);
     }
 
     @Override
     public SessionService getSessionService() {
-        throw new UnsupportedOperationException(); // TODO
+        return getServiceByClass(SessionService.class);
     }
 
     @Override
     public <T> T getServiceByClass(Class<T> serviceClass) {
-        throw new UnsupportedOperationException(); // TODO
+        return guicer.get(serviceClass);
     }
 
     @Override
     public DXLService getDXL() {
-        throw new UnsupportedOperationException(); // TODO
+        return getServiceByClass(DXLService.class);
     }
 
     // GuicedServiceManager interface
@@ -176,4 +170,22 @@ public final class GuicedServiceManager implements ServiceManager {
     // class state
 
     private static final Logger LOG = LoggerFactory.getLogger(GuicedServiceManager.class);
+
+    private static final ServiceLifecycleActions<Service<?>> CRASH_SERVICES
+            = new ServiceLifecycleActions<Service<?>>() {
+        @Override
+        public void onStart(Service<?> service) throws Exception {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void onShutdown(Service<?> service) throws Exception {
+            service.crash();
+        }
+
+        @Override
+        public Service<?> castIfActionable(Object object) {
+            return (object instanceof Service) ? (Service<?>) object : null;
+        }
+    };
 }
