@@ -39,8 +39,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
 public final class GuicedServiceManager implements ServiceManager {
     // ServiceManager interface
@@ -126,31 +129,29 @@ public final class GuicedServiceManager implements ServiceManager {
     }
 
     // GuicedServiceManager interface
-
     public GuicedServiceManager() {
-        Class<?> resourceClass = GuicedServiceManager.class;
-        String resourceName = "default-services.yaml";
+        this(standardUrls());
+    }
+
+    public GuicedServiceManager(UrlProvider urlProvider) {
         YamlConfiguration configuration = new YamlConfiguration();
-        loadConfigurationFromResource(resourceClass, resourceName, configuration);
+        for (URL url : urlProvider) {
+            loadConfiguration(url, configuration);
+        }
         final Collection<ServiceBinding> bindings = configuration.serviceBindings();
         try {
             guicer = Guicer.forServices(bindings);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
-        directlyRequired = new ArrayList<ServiceBinding>();
-        for (ServiceBinding serviceBinding : bindings) {
-            if (serviceBinding.isDirectlyRequired()) {
-                directlyRequired.add(serviceBinding);
-            }
-        }
     }
 
-    private void loadConfigurationFromResource(Class<?> resourceClass, String resourceName,
-                                                                     YamlConfiguration configuration) {
-        InputStream defaultServicesStream = resourceClass.getResourceAsStream(resourceName);
-        if (defaultServicesStream == null) {
-            throw new RuntimeException("no resource " + resourceName);
+    private void loadConfiguration(URL url, YamlConfiguration configuration) {
+        final InputStream defaultServicesStream;
+        try {
+            defaultServicesStream = url.openStream();
+        } catch(IOException e) {
+            throw new RuntimeException("no resource " + url, e);
         }
         final Reader defaultServicesReader;
         try {
@@ -163,9 +164,8 @@ public final class GuicedServiceManager implements ServiceManager {
             }
             throw new RuntimeException("while opening default services reader", e);
         }
-        final Collection<ServiceBinding> bindings;
         try {
-            configuration.read(resourceName, defaultServicesReader);
+            configuration.read(url.toString(), defaultServicesReader);
         } finally {
             try {
                 defaultServicesReader.close();
@@ -175,10 +175,18 @@ public final class GuicedServiceManager implements ServiceManager {
         }
     }
 
+    // static methods
+
+    public static UrlProvider standardUrls() {
+        UrlProvider provider = new UrlProvider();
+        provider.define(GuicedServiceManager.class.getResource("default-services.yaml"));
+        provider.overrideRequires(GuicedServiceManager.class.getResource("default-services-requires.yaml"));
+        return provider;
+    }
+
     // object state
 
     private final Guicer guicer;
-    private final Collection<ServiceBinding> directlyRequired;
 
     // class state
 
@@ -220,4 +228,49 @@ public final class GuicedServiceManager implements ServiceManager {
             return (object instanceof Service) ? (Service<?>)object : null;
         }
     };
+
+    // nested classes
+
+    /**
+     * Definition of URLs to use for defining service bindings. There are two sections of URls: the defines
+     * and requires. You can have as many defines as you want, but only one requires. When parsing the resources,
+     * the defines will be processed (in order) before the requires resource.
+     */
+    public static final class UrlProvider implements Iterable<URL> {
+
+        // Iterable<URL> interface
+
+        @Override
+        public Iterator<URL> iterator() {
+            List<URL> urls = new ArrayList<URL>(defines);
+            if (requires != null) {
+                urls.add(requires);
+            }
+            return urls.iterator();
+        }
+        /**
+         * Adds a URL to the the internal list.
+         * @param url the url to add
+         * @return this instance; useful for chaining
+         */
+        public UrlProvider define(URL url) {
+            defines.add(url);
+            return this;
+        }
+
+        /**
+         * Overrides the "requires" section of the URL definitions. This replaces the old requires URL.
+         * @param url the new requires URL
+         * @return this instance; useful for chaining
+         */
+        public UrlProvider overrideRequires(URL url) {
+            requires = url;
+            return this;
+        }
+
+        // object state
+
+        private final List<URL> defines = new ArrayList<URL>();
+        private URL requires = null;
+    }
 }
