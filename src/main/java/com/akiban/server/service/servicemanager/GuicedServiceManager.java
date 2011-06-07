@@ -18,6 +18,7 @@ package com.akiban.server.service.servicemanager;
 import com.akiban.server.AkServer;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
@@ -46,12 +47,17 @@ public final class GuicedServiceManager implements ServiceManager {
 
     @Override
     public void startServices() throws ServiceStartupException {
+        ServiceManagerImpl.setServiceManager(this);
         guicer.startRequiredServices(STANDARD_SERVICE_ACTIONS);
     }
 
     @Override
     public void stopServices() throws Exception {
-        guicer.stopAllServices(STANDARD_SERVICE_ACTIONS);
+        try {
+            guicer.stopAllServices(STANDARD_SERVICE_ACTIONS);
+        } finally {
+            ServiceManagerImpl.setServiceManager(null);
+        }
     }
 
     @Override
