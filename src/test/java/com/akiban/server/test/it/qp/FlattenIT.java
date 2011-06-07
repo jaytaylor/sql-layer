@@ -35,11 +35,13 @@ public class FlattenIT extends PhysicalOperatorITBase
             createNewRow(customer, 1L, "northbridge"),
             createNewRow(customer, 2L, "foundation"),
             createNewRow(customer, 4L, "highland"),
+            createNewRow(customer, 5L, "matrix"), // customer 5 is for testing bug 792102
             createNewRow(order, 11L, 1L, "ori"),
             createNewRow(order, 12L, 1L, "david"),
             createNewRow(order, 21L, 2L, "tom"),
             createNewRow(order, 22L, 2L, "jack"),
             createNewRow(order, 31L, 3L, "peter"),
+            createNewRow(order, 51L, 5L, "yuval"),
             createNewRow(item, 111L, 11L),
             createNewRow(item, 112L, 11L),
             createNewRow(item, 121L, 12L),
@@ -124,7 +126,8 @@ public class FlattenIT extends PhysicalOperatorITBase
             row(itemRowType, 221L, 22L),
             row(itemRowType, 222L, 22L),
             row(itemRowType, 311L, 31L),
-            row(itemRowType, 312L, 31L)
+            row(itemRowType, 312L, 31L),
+            row(coRowType, 5L, "matrix", 51L, 5L, "yuval"),
         };
         compareRows(expected, cursor);
     }
@@ -151,7 +154,8 @@ public class FlattenIT extends PhysicalOperatorITBase
             row(oiRowType, 22L, 2L, "jack", 222L, 22L),
             row(oiRowType, 31L, 3L, "peter", 311L, 31L),
             row(oiRowType, 31L, 3L, "peter", 312L, 31L),
-            row(customerRowType, 4L, "highland")
+            row(customerRowType, 4L, "highland"),
+            row(customerRowType, 5L, "matrix")
         };
         compareRows(expected, cursor);
     }
@@ -180,7 +184,8 @@ public class FlattenIT extends PhysicalOperatorITBase
             row(itemRowType, 222L, 22L),
             row(itemRowType, 311L, 31L),
             row(itemRowType, 312L, 31L),
-            row(coRowType, 4L, "highland", null, null, null)
+            row(coRowType, 4L, "highland", null, null, null),
+            row(coRowType, 5L, "matrix", 51L, 5L, "yuval")
         };
         compareRows(expected, cursor);
     }
@@ -207,7 +212,9 @@ public class FlattenIT extends PhysicalOperatorITBase
             row(oiRowType, 22L, 2L, "jack", 222L, 22L),
             row(oiRowType, 31L, 3L, "peter", 311L, 31L),
             row(oiRowType, 31L, 3L, "peter", 312L, 31L),
-            row(customerRowType, 4L, "highland")
+            row(customerRowType, 4L, "highland"),
+            row(customerRowType, 5L, "matrix"),
+            row(oiRowType, 51L, 5L, "yuval", null, null)
         };
         compareRows(expected, cursor);
     }
@@ -236,7 +243,8 @@ public class FlattenIT extends PhysicalOperatorITBase
             row(itemRowType, 222L, 22L),
             row(coRowType, null, null, 31L, 3L, "peter"),
             row(itemRowType, 311L, 31L),
-            row(itemRowType, 312L, 31L)
+            row(itemRowType, 312L, 31L),
+            row(coRowType, 5L, "matrix", 51L, 5L, "yuval")
         };
         compareRows(expected, cursor);
     }
@@ -263,7 +271,8 @@ public class FlattenIT extends PhysicalOperatorITBase
             row(oiRowType, 22L, 2L, "jack", 222L, 22L),
             row(oiRowType, 31L, 3L, "peter", 311L, 31L),
             row(oiRowType, 31L, 3L, "peter", 312L, 31L),
-            row(customerRowType, 4L, "highland")
+            row(customerRowType, 4L, "highland"),
+            row(customerRowType, 5L, "matrix")
         };
         compareRows(expected, cursor);
     }
@@ -293,7 +302,8 @@ public class FlattenIT extends PhysicalOperatorITBase
             row(coRowType, null, null, 31L, 3L, "peter"),
             row(itemRowType, 311L, 31L),
             row(itemRowType, 312L, 31L),
-            row(coRowType, 4L, "highland", null, null, null)
+            row(coRowType, 4L, "highland", null, null, null),
+            row(coRowType, 5L, "matrix", 51L, 5L, "yuval")
         };
         compareRows(expected, cursor);
     }
@@ -320,7 +330,9 @@ public class FlattenIT extends PhysicalOperatorITBase
             row(oiRowType, 22L, 2L, "jack", 222L, 22L),
             row(oiRowType, 31L, 3L, "peter", 311L, 31L),
             row(oiRowType, 31L, 3L, "peter", 312L, 31L),
-            row(customerRowType, 4L, "highland")
+            row(customerRowType, 4L, "highland"),
+            row(customerRowType, 5L, "matrix"),
+            row(oiRowType, 51L, 5L, "yuval", null, null)
         };
         compareRows(expected, cursor);
     }
@@ -362,7 +374,10 @@ public class FlattenIT extends PhysicalOperatorITBase
             row(itemRowType, 311L, 31L),
             row(itemRowType, 312L, 31L),
             row(customerRowType, 4L, "highland"),
-            row(coRowType, 4L, "highland", null, null, null)
+            row(coRowType, 4L, "highland", null, null, null),
+            row(customerRowType, 5L, "matrix"),
+            row(orderRowType, 51L, 5L, "yuval"),
+            row(coRowType, 5L, "matrix", 51L, 5L, "yuval")
         };
         compareRows(expected, cursor);
     }
@@ -404,7 +419,10 @@ public class FlattenIT extends PhysicalOperatorITBase
             row(oiRowType, 31L, 3L, "peter", 311L, 31L),
             row(itemRowType, 312L, 31L),
             row(oiRowType, 31L, 3L, "peter", 312L, 31L),
-            row(customerRowType, 4L, "highland")
+            row(customerRowType, 4L, "highland"),
+            row(customerRowType, 5L, "matrix"),
+            row(orderRowType, 51L, 5L, "yuval"),
+            row(oiRowType, 51L, 5L, "yuval", null, null),
         };
         compareRows(expected, cursor);
     }
