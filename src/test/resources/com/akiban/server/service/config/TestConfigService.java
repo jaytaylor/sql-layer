@@ -16,7 +16,6 @@
 package com.akiban.server.service.config;
 
 import com.akiban.server.AkServerUtil;
-import com.akiban.server.service.UnitTestServiceFactory;
 
 import java.io.File;
 import java.io.IOException;
