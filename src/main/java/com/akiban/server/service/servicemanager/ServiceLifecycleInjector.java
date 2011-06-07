@@ -108,6 +108,7 @@ public final class ServiceLifecycleInjector extends DelegatingInjector { // TODO
 
     private <S> List<Throwable> tryStopServices(ServiceLifecycleActions<S> withActions, Exception initialCause) {
         ListIterator<?> reverseIter = new ArrayList<Object>(servicesList).listIterator(servicesList.size());
+        servicesList.clear();
         List<Throwable> exceptions = new ArrayList<Throwable>();
         if (initialCause != null) {
             exceptions.add(initialCause);
@@ -115,7 +116,6 @@ public final class ServiceLifecycleInjector extends DelegatingInjector { // TODO
         while (reverseIter.hasPrevious()) {
             try {
                 Object serviceObject = reverseIter.previous();
-                reverseIter.remove();
                 if (withActions != null) {
                     S service = withActions.castIfActionable(serviceObject);
                     if (service != null) {
