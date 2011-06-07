@@ -28,18 +28,19 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 
-public final class ServiceLifecycleInjector extends DelegatingInjector { // TODO use composition instead
+public final class ServiceLifecycleInjector extends DelegatingInjector {
+// TODO use composition instead?
 
     // Injector interface
 
     @Override
     public <T> T getInstance(Key<T> key) {
-        return startService(super.getInstance(key), null);
+        return startService(super.getInstance(key), GuicedServiceManager.STANDARD_SERVICE_ACTIONS);
     }
 
     @Override
     public <T> T getInstance(Class<T> type) {
-        return startService(super.getInstance(type), null);
+        return startService(super.getInstance(type), GuicedServiceManager.STANDARD_SERVICE_ACTIONS);
     }
 
     // ServiceLifecycleInjector interface

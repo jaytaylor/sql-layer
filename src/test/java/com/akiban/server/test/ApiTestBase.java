@@ -145,10 +145,7 @@ public class ApiTestBase {
     }
 
     protected GuicedServiceManager.UrlProvider urlProvider() {
-        return GuicedServiceManager.standardUrls()
-                .define(ApiTestBase.class.getResource("apitestbase-services.yaml"))
-                .overrideRequires(ApiTestBase.class.getResource("apitestbase-services-requires.yaml"))
-        ;
+        return GuicedServiceManager.testUrls();
     }
 
     @After

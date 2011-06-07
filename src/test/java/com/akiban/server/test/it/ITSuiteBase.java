@@ -50,11 +50,7 @@ public abstract class ITSuiteBase {
 
     @BeforeClass
     public static void setUpSuite() throws Exception {
-        serviceManager = new GuicedServiceManager(
-                GuicedServiceManager.standardUrls()
-                .define(ApiTestBase.class.getResource("apitestbase-services.yaml"))
-                .overrideRequires(ApiTestBase.class.getResource("apitestbase-services-requires.yaml"))
-        );
+        serviceManager = new GuicedServiceManager(GuicedServiceManager.testUrls());
         serviceManager.startServices();
         store = serviceManager.getStore();
         schemaManager = serviceManager.getSchemaManager();

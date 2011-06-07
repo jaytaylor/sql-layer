@@ -129,9 +129,6 @@ public final class GuicedServiceManager implements ServiceManager {
     }
 
     // GuicedServiceManager interface
-    public GuicedServiceManager() {
-        this(standardUrls());
-    }
 
     public GuicedServiceManager(UrlProvider urlProvider) {
         YamlConfiguration configuration = new YamlConfiguration();
@@ -181,6 +178,13 @@ public final class GuicedServiceManager implements ServiceManager {
         UrlProvider provider = new UrlProvider();
         provider.define(GuicedServiceManager.class.getResource("default-services.yaml"));
         provider.overrideRequires(GuicedServiceManager.class.getResource("default-services-requires.yaml"));
+        return provider;
+    }
+
+    public static UrlProvider testUrls() {
+        UrlProvider provider = standardUrls();
+        provider.define(GuicedServiceManager.class.getResource("test-services.yaml"));
+        provider.overrideRequires(GuicedServiceManager.class.getResource("test-services-requires.yaml"));
         return provider;
     }
 
