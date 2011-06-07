@@ -128,9 +128,29 @@ public final class GuicedServiceManager implements ServiceManager {
     // GuicedServiceManager interface
 
     public GuicedServiceManager() {
-    InputStream defaultServicesStream = GuicedServiceManager.class.getResourceAsStream("default-services.yaml");
+        Class<?> resourceClass = GuicedServiceManager.class;
+        String resourceName = "default-services.yaml";
+        YamlConfiguration configuration = new YamlConfiguration();
+        loadConfigurationFromResource(resourceClass, resourceName, configuration);
+        final Collection<ServiceBinding> bindings = configuration.serviceBindings();
+        try {
+            guicer = Guicer.forServices(bindings);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        directlyRequired = new ArrayList<ServiceBinding>();
+        for (ServiceBinding serviceBinding : bindings) {
+            if (serviceBinding.isDirectlyRequired()) {
+                directlyRequired.add(serviceBinding);
+            }
+        }
+    }
+
+    private void loadConfigurationFromResource(Class<?> resourceClass, String resourceName,
+                                                                     YamlConfiguration configuration) {
+        InputStream defaultServicesStream = resourceClass.getResourceAsStream(resourceName);
         if (defaultServicesStream == null) {
-            throw new RuntimeException("no resource default-services.yaml");
+            throw new RuntimeException("no resource " + resourceName);
         }
         final Reader defaultServicesReader;
         try {
@@ -145,25 +165,12 @@ public final class GuicedServiceManager implements ServiceManager {
         }
         final Collection<ServiceBinding> bindings;
         try {
-            YamlConfiguration configuration = new YamlConfiguration();
-            configuration.read("default-services.yaml", defaultServicesReader);
-            bindings = configuration.serviceBindings();
+            configuration.read(resourceName, defaultServicesReader);
         } finally {
             try {
                 defaultServicesReader.close();
             } catch (IOException e) {
                 throw new RuntimeException("while closing reader", e); // TODO this will override YamlConfiguration exceptions
-            }
-        }
-        try {
-            guicer = Guicer.forServices(bindings);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-        directlyRequired = new ArrayList<ServiceBinding>();
-        for (ServiceBinding serviceBinding : bindings) {
-            if (serviceBinding.isDirectlyRequired()) {
-                directlyRequired.add(serviceBinding);
             }
         }
     }
