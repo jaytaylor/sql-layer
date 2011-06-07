@@ -102,6 +102,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             try {
                 // Wait a bit, but don't hang up shutdown if thread is wedged.
                 thread.join(500);
+                if (thread.isAlive())
+                    logger.warn("Connection " + pid + " still running.");
             }
             catch (InterruptedException ex) {
             }
