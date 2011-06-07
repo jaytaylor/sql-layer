@@ -15,6 +15,7 @@
 
 package com.akiban.server;
 
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.util.OsUtils;
 import com.akiban.util.Strings;
 import org.slf4j.Logger;
@@ -22,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import com.akiban.server.manage.ManageMXBean;
 import com.akiban.server.manage.ManageMXBeanImpl;
-import com.akiban.server.service.DefaultServiceFactory;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
@@ -141,7 +141,8 @@ public class AkServer implements Service<AkServerEmptyInterface>, JmxManageable,
         }, "ShutdownHook"));
 
         // Bring system up
-        final ServiceManager serviceManager = new ServiceManagerImpl(new DefaultServiceFactory());
+        GuicedServiceManager.UrlProvider urlProvider = GuicedServiceManager.standardUrls();
+        final ServiceManager serviceManager = new GuicedServiceManager(urlProvider);
         serviceManager.startServices();
         
         // JMX shutdown method

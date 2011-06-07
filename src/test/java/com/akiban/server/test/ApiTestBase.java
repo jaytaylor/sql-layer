@@ -20,9 +20,6 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -81,11 +78,8 @@ import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanRequest;
-import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
-import com.akiban.server.service.UnitTestServiceFactory;
-import com.akiban.server.service.network.NetworkService;
 import com.akiban.server.service.session.Session;
 
 /**
@@ -121,56 +115,6 @@ public class ApiTestBase {
         @Override
         public void rewind() {
             ListUtils.truncate(rows, mark);
-        }
-    }
-
-    protected static class TestServiceServiceFactory extends UnitTestServiceFactory {
-
-        protected TestServiceServiceFactory(Collection<Property> startupConfigProperties) {
-            super(false, startupConfigProperties);
-        }
-
-        @Override
-        public Service<NetworkService> networkService() {
-            return new Service<NetworkService>() {
-                @Override
-                public NetworkService cast() {
-                    return (NetworkService) Proxy.newProxyInstance(NetworkService.class.getClassLoader(),
-                            new Class<?>[]{NetworkService.class},
-                            new InvocationHandler() {
-                                @Override
-                                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                                    return null;
-                                }
-                            }
-                    );
-                }
-
-                @Override
-                public Class<NetworkService> castClass() {
-                    return NetworkService.class;
-                }
-
-                @Override
-                public void start() throws Exception {
-                }
-
-                @Override
-                public void stop() throws Exception {
-                }
-                
-                @Override
-                public void crash() throws Exception {
-                }
-                
-            };
-        }
-    }
-
-    protected static class TestServiceManager extends ServiceManagerImpl {
-
-        protected TestServiceManager(TestServiceServiceFactory serviceFactory) {
-            super(serviceFactory);
         }
     }
 

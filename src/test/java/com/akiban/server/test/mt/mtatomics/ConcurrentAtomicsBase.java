@@ -80,15 +80,15 @@ class ConcurrentAtomicsBase extends MTBase {
 //    protected TestServiceServiceFactory createServiceFactory(Collection<Property> startupConfigProperties) {
 //        return new ScanhooksServiceFactory(startupConfigProperties);
 //    }
-
-    private static class ScanhooksServiceFactory extends TestServiceServiceFactory {
-        private ScanhooksServiceFactory(Collection<Property> startupConfigProperties) {
-            super(startupConfigProperties);
-        }
-
-        @Override
-        public Service<DXLService> dxlService() {
-            return new ConcurrencyAtomicsDXLService();
-        }
-    }
+//
+//    private static class ScanhooksServiceFactory extends TestServiceServiceFactory {
+//        private ScanhooksServiceFactory(Collection<Property> startupConfigProperties) {
+//            super(startupConfigProperties);
+//        }
+//
+//        @Override
+//        public Service<DXLService> dxlService() {
+//            return new ConcurrencyAtomicsDXLService();
+//        }
+//    }
 }
