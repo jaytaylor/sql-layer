@@ -23,7 +23,7 @@ public final class DummyErroringServices {
     public static class ErroringAlpha implements DummyInterfaces.Alpha {
         @Override
         public void start() {
-            if (this == GuicerTest.onlyGuicer().get(DummyInterfaces.Beta.class)) {
+            if (this == GuicerTest.onlyGuicer().get(DummyInterfaces.Beta.class, GuicerTest.MESSAGING_ACTIONS)) {
                 throw new Error("how can this instance be equal to an instance of another class?!");
             }
         }
@@ -35,7 +35,7 @@ public final class DummyErroringServices {
     public static class ErroringBeta implements DummyInterfaces.Beta {
         @Override
         public void start() {
-            if (this == GuicerTest.onlyGuicer().get(DummyInterfaces.Gamma.class)) {
+            if (this == GuicerTest.onlyGuicer().get(DummyInterfaces.Gamma.class, GuicerTest.MESSAGING_ACTIONS)) {
                 throw new Error("how can this instance be equal to an instance of another class?!");
             }
             throw new ErroringException();

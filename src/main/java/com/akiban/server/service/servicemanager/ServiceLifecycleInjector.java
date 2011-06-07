@@ -30,12 +30,12 @@ public final class ServiceLifecycleInjector extends DelegatingInjector {
 
     @Override
     public <T> T getInstance(Key<T> key) {
-        return startService(super.getInstance(key), defaultActions);
+        return startService(super.getInstance(key), null);
     }
 
     @Override
     public <T> T getInstance(Class<T> type) {
-        return startService(super.getInstance(type), defaultActions);
+        return startService(super.getInstance(type), null);
     }
 
     // ServiceLifecycleInjector interface
@@ -52,19 +52,18 @@ public final class ServiceLifecycleInjector extends DelegatingInjector {
         }
     }
 
-    public void stopAllServices() {
-        stopAllServices(defaultActions);
-    }
-
-    public <S> ServiceLifecycleInjector(Injector delegate, ServiceLifecycleActions<?> actions) {
+    public <S> ServiceLifecycleInjector(Injector delegate) {
         super(delegate);
         this.servicesList = new ArrayList<Object>();
-        this.defaultActions = actions;
     }
 
     // private methods
 
     private <T,S> T startService(T instance, ServiceLifecycleActions<S> withActions) {
+        if (withActions == null) {
+            return instance;
+        }
+
         S service = withActions.castIfActionable(instance);
         if (service != null) {
             try {
@@ -105,9 +104,11 @@ public final class ServiceLifecycleInjector extends DelegatingInjector {
             try {
                 Object serviceObject = reverseIter.previous();
                 reverseIter.remove();
-                S service = withActions.castIfActionable(serviceObject);
-                if (service != null) {
-                    withActions.onShutdown(service);
+                if (withActions != null) {
+                    S service = withActions.castIfActionable(serviceObject);
+                    if (service != null) {
+                        withActions.onShutdown(service);
+                    }
                 }
             } catch (Throwable t) {
                 exceptions.add(t);
@@ -117,5 +118,4 @@ public final class ServiceLifecycleInjector extends DelegatingInjector {
     }
 
     private final List<Object> servicesList;
-    private final ServiceLifecycleActions<?> defaultActions;
 }

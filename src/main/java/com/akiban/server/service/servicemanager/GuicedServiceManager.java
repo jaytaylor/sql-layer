@@ -46,12 +46,12 @@ public final class GuicedServiceManager implements ServiceManager {
 
     @Override
     public void startServices() throws ServiceStartupException {
-        guicer.startAllServices();
+        guicer.startAllServices(STANDARD_SERVICE_ACTIONS);
     }
 
     @Override
     public void stopServices() throws Exception {
-        guicer.stopAllServices();
+        guicer.stopAllServices(STANDARD_SERVICE_ACTIONS);
     }
 
     @Override
@@ -111,7 +111,7 @@ public final class GuicedServiceManager implements ServiceManager {
 
     @Override
     public <T> T getServiceByClass(Class<T> serviceClass) {
-        return guicer.get(serviceClass);
+        return guicer.get(serviceClass, STANDARD_SERVICE_ACTIONS);
     }
 
     @Override
@@ -122,7 +122,7 @@ public final class GuicedServiceManager implements ServiceManager {
     // GuicedServiceManager interface
 
     public GuicedServiceManager() {
-    InputStream defaultServicesStream = GuicedServiceFactory.class.getResourceAsStream("default-services.yaml");
+    InputStream defaultServicesStream = GuicedServiceManager.class.getResourceAsStream("default-services.yaml");
         if (defaultServicesStream == null) {
             throw new RuntimeException("no resource default-services.yaml");
         }
@@ -186,6 +186,25 @@ public final class GuicedServiceManager implements ServiceManager {
         @Override
         public Service<?> castIfActionable(Object object) {
             return (object instanceof Service) ? (Service<?>) object : null;
+        }
+    };
+
+    static final ServiceLifecycleActions<Service<?>> STANDARD_SERVICE_ACTIONS
+            = new ServiceLifecycleActions<Service<?>>()
+    {
+        @Override
+        public void onStart(Service<?> service) throws Exception {
+            service.start();
+        }
+
+        @Override
+        public void onShutdown(Service<?> service) throws Exception {
+            service.stop();
+        }
+
+        @Override
+        public Service<?> castIfActionable(Object object) {
+            return (object instanceof Service) ? (Service<?>)object : null;
         }
     };
 }

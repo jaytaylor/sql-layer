@@ -41,7 +41,7 @@ public final class GuicerTest {
                 bind(DummyInterfaces.Beta.class, DummySimpleServices.SimpleBeta.class, false),
                 bind(DummyInterfaces.Gamma.class, DummySimpleServices.SimpleGamma.class, false)
         );
-        guicer.startAllServices();
+        guicer.startAllServices(MESSAGING_ACTIONS);
         assertEquals(
                 "messages",
                 joined(
@@ -64,7 +64,7 @@ public final class GuicerTest {
                 bind(DummyInterfaces.Gamma.class, DummyErroringServices.ErroringGamma.class, false)
         );
         try{
-            guicer.startAllServices();
+            guicer.startAllServices(MESSAGING_ACTIONS);
             fail("should have caught ErroringException");
         } catch (ProvisionException e) {
             assertEventualCause(e, DummyErroringServices.ErroringException.class);
@@ -95,11 +95,7 @@ public final class GuicerTest {
     }
 
     private static Guicer messageGuicer(ServiceBinding... bindings) throws ClassNotFoundException {
-        Guicer guicer = new Guicer(
-                Arrays.asList(bindings),
-                MESSAGING_ACTIONS
-        );
-        return onlyGuicer = guicer;
+        return onlyGuicer = new Guicer(Arrays.asList(bindings));
     }
 
     private static <T> ServiceBinding bind(Class<T> theInterface, Class<? extends T> theClass, boolean required) {
@@ -132,7 +128,7 @@ public final class GuicerTest {
 
     // class state
 
-    private static final ServiceLifecycleActions<DummyInterfaces.DummyService> MESSAGING_ACTIONS
+    static final ServiceLifecycleActions<DummyInterfaces.DummyService> MESSAGING_ACTIONS
             = new ServiceLifecycleActions<DummyInterfaces.DummyService>()
     {
         @Override

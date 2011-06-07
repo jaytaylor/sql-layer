@@ -29,22 +29,18 @@ public final class Guicer {
 
     // Guicer interface
 
-    public void startAllServices() {
+    public void startAllServices(ServiceLifecycleActions<?> withActions) {
         for (Class<?> directlyRequiredClass : directlyRequiredClasses) {
-            injector.getInstance(directlyRequiredClass);
+            injector.getInstance(directlyRequiredClass, withActions);
         }
-    }
-
-    public void stopAllServices() {
-        injector.stopAllServices();
     }
 
     public void stopAllServices(ServiceLifecycleActions<?> withActions) {
         injector.stopAllServices(withActions);
     }
 
-    public <T> T get(Class<T> serviceClass) {
-        return injector.getInstance(serviceClass);
+    public <T> T get(Class<T> serviceClass, ServiceLifecycleActions<?> withActions) {
+        return injector.getInstance(serviceClass, withActions);
     }
 
     // public class methods
@@ -52,12 +48,12 @@ public final class Guicer {
     public static Guicer forServices(Collection<ServiceBinding> serviceBindings)
     throws ClassNotFoundException
     {
-        return new Guicer(serviceBindings, SERVICE_ACTIONS);
+        return new Guicer(serviceBindings);
     }
 
     // private methods
 
-    Guicer(Collection<ServiceBinding> serviceBindings, ServiceLifecycleActions<?> serviceLifecycleActions)
+    Guicer(Collection<ServiceBinding> serviceBindings)
     throws ClassNotFoundException
     {
         directlyRequiredClasses = new ArrayList<Class<?>>();
@@ -72,7 +68,7 @@ public final class Guicer {
         }
 
         AbstractModule module = new ServiceBindingsModule(resolvedServiceBindings);
-        injector = new ServiceLifecycleInjector(Guice.createInjector(module), serviceLifecycleActions);
+        injector = new ServiceLifecycleInjector(Guice.createInjector(module));
     }
 
     // object state
@@ -80,25 +76,6 @@ public final class Guicer {
     private final ServiceLifecycleInjector injector;
     private final List<Class<?>> directlyRequiredClasses;
 
-    // class state
-    private static final ServiceLifecycleActions<Service<?>> SERVICE_ACTIONS
-            = new ServiceLifecycleActions<Service<?>>()
-    {
-        @Override
-        public void onStart(Service<?> service) throws Exception {
-            service.start();
-        }
-
-        @Override
-        public void onShutdown(Service<?> service) throws Exception {
-            service.stop();
-        }
-
-        @Override
-        public Service<?> castIfActionable(Object object) {
-            return (object instanceof Service) ? (Service<?>)object : null;
-        }
-    };
 
     // nested classes
 
