@@ -32,7 +32,8 @@ public class TestConfigService extends ConfigurationServiceImpl {
     File tmpDir;
 
     public TestConfigService() {
-        this.extraProperties = null; // TODO need to update this to be meaningful
+        this.extraProperties = TestConfigService.startupConfigProperties;
+        TestConfigService.startupConfigProperties = null;
     }
 
     @Override
@@ -92,4 +93,13 @@ public class TestConfigService extends ConfigurationServiceImpl {
         tmpFile.deleteOnExit();
         return tmpFile;
     }
+
+    public static void setOverrides(Collection<Property> startupConfigProperties) {
+        if (TestConfigService.startupConfigProperties != null) {
+            throw new IllegalStateException("already set"); // sanity check; feel free to remove if it gets in your way
+        }
+        TestConfigService.startupConfigProperties = startupConfigProperties;
+    }
+
+    private static Collection<Property> startupConfigProperties;
 }

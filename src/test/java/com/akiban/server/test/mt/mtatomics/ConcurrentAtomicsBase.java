@@ -75,10 +75,11 @@ class ConcurrentAtomicsBase extends MTBase {
         return id;
     }
 
-    @Override
-    protected TestServiceServiceFactory createServiceFactory(Collection<Property> startupConfigProperties) {
-        return new ScanhooksServiceFactory(startupConfigProperties);
-    }
+//    // TODO replace with manual binding
+//    @Override
+//    protected TestServiceServiceFactory createServiceFactory(Collection<Property> startupConfigProperties) {
+//        return new ScanhooksServiceFactory(startupConfigProperties);
+//    }
 
     private static class ScanhooksServiceFactory extends TestServiceServiceFactory {
         private ScanhooksServiceFactory(Collection<Property> startupConfigProperties) {

@@ -42,6 +42,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.api.dml.scan.ColumnSet;
 import com.akiban.server.api.dml.scan.ScanFlag;
+import com.akiban.server.service.config.TestConfigService;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
@@ -189,18 +190,14 @@ public class ApiTestBase {
 
     @Before
     public final void startTestServices() throws Exception {
-        //sm = createServiceManager( createServiceFactory(startupConfigProperties()) ); TODO remove
-        sm = new GuicedServiceManager(urlProvider());
+        sm = createServiceManager( startupConfigProperties() );
         sm.startServices();
         session = ServiceManagerImpl.newSession();
     }
 
-    protected TestServiceManager createServiceManager(TestServiceServiceFactory serviceFactory) {
-        return new TestServiceManager(serviceFactory);
-    }
-
-    protected TestServiceServiceFactory createServiceFactory(Collection<Property> startupConfigProperties) {
-        return new TestServiceServiceFactory(startupConfigProperties);
+    protected ServiceManager createServiceManager(Collection<Property> startupConfigProperties) {
+        TestConfigService.setOverrides(startupConfigProperties);
+        return new GuicedServiceManager(urlProvider());
     }
 
     protected GuicedServiceManager.UrlProvider urlProvider() {
@@ -235,7 +232,7 @@ public class ApiTestBase {
     }
     
     public final void restartTestServices(Collection<Property> properties) throws Exception {
-        sm = createServiceManager( createServiceFactory(properties) );
+        sm = createServiceManager( properties );
         sm.startServices();
         session = ServiceManagerImpl.newSession();
     }
@@ -302,7 +299,7 @@ public class ApiTestBase {
     }
 
     protected Collection<Property> startupConfigProperties() {
-        return null;
+        return Collections.emptyList();
     }
 
     protected final int createTable(String schema, String table, String definition) throws InvalidOperationException {
