@@ -83,6 +83,23 @@ public final class GuicerTest {
         }
     }
 
+    @Test
+    public void singletonNess() throws Exception {
+        Guicer guicer = messageGuicer(
+                bind(DummyInterfaces.Gamma.class, DummySimpleServices.SimpleGamma.class, false)
+        );
+        guicer.get(DummyInterfaces.Gamma.class, MESSAGING_ACTIONS);
+        guicer.get(DummyInterfaces.Gamma.class, MESSAGING_ACTIONS);
+        assertEquals(
+                "messages",
+                joined(
+                        "starting SimpleGamma",
+                        "started SimpleGamma"
+                ),
+                Strings.join(DummyInterfaces.messages())
+        );
+    }
+
     private void assertEventualCause(Throwable e, Class<? extends Throwable> exceptionClassToFind) {
         Throwable cause = e;
         while (cause != null) {

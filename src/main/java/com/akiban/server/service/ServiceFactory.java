@@ -16,6 +16,7 @@
 package com.akiban.server.service;
 
 import com.akiban.server.AkServer;
+import com.akiban.server.AkServerEmptyInterface;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.jmx.JmxRegistryService;
@@ -35,7 +36,7 @@ public interface ServiceFactory
 
     Service<NetworkService> networkService();
 
-    Service<AkServer> chunkserverService();
+    Service<AkServerEmptyInterface> chunkserverService();
     
     Service<TreeService> treeService();
     

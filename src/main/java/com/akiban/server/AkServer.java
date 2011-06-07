@@ -39,7 +39,7 @@ import java.lang.management.ManagementFactory;
 /**
  * @author peter
  */
-public class AkServer implements Service<AkServer>, JmxManageable {
+public class AkServer implements Service<AkServerEmptyInterface>, JmxManageable, AkServerEmptyInterface {
     private static final String VERSION_STRING_FILE = "version/akserver_version";
     public static final String VERSION_STRING = getVersionString();
 
@@ -88,8 +88,8 @@ public class AkServer implements Service<AkServer>, JmxManageable {
     }
 
     @Override
-    public Class<AkServer> castClass() {
-        return AkServer.class;
+    public Class<AkServerEmptyInterface> castClass() {
+        return AkServerEmptyInterface.class;
     }
 
     private static String getVersionString()

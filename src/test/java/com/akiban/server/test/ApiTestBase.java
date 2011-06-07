@@ -44,6 +44,7 @@ import com.akiban.server.api.dml.scan.ColumnSet;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.util.GroupIndexCreator;
 import com.akiban.util.Undef;
 import junit.framework.Assert;
@@ -188,7 +189,8 @@ public class ApiTestBase {
 
     @Before
     public final void startTestServices() throws Exception {
-        sm = createServiceManager( createServiceFactory(startupConfigProperties()) );
+        //sm = createServiceManager( createServiceFactory(startupConfigProperties()) ); TODO remove
+        sm = new GuicedServiceManager(urlProvider());
         sm.startServices();
         session = ServiceManagerImpl.newSession();
     }
@@ -199,6 +201,13 @@ public class ApiTestBase {
 
     protected TestServiceServiceFactory createServiceFactory(Collection<Property> startupConfigProperties) {
         return new TestServiceServiceFactory(startupConfigProperties);
+    }
+
+    protected GuicedServiceManager.UrlProvider urlProvider() {
+        return GuicedServiceManager.standardUrls()
+                .define(ApiTestBase.class.getResource("apitestbase-services.yaml"))
+                .overrideRequires(ApiTestBase.class.getResource("apitestbase-services-requires.yaml"))
+        ;
     }
 
     @After

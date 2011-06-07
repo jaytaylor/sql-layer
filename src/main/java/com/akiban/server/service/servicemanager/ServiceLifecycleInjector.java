@@ -21,10 +21,14 @@ import com.google.inject.Key;
 import com.google.inject.ProvisionException;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Set;
 
-public final class ServiceLifecycleInjector extends DelegatingInjector {
+public final class ServiceLifecycleInjector extends DelegatingInjector { // TODO use composition instead
 
     // Injector interface
 
@@ -54,13 +58,21 @@ public final class ServiceLifecycleInjector extends DelegatingInjector {
 
     public <S> ServiceLifecycleInjector(Injector delegate) {
         super(delegate);
-        this.servicesList = new ArrayList<Object>();
+        this.servicesList = Collections.synchronizedSet(new LinkedHashSet<Object>());
+    }
+
+    public Collection<?> startedServices() {
+        return Collections.unmodifiableCollection(servicesList);
     }
 
     // private methods
 
     private <T,S> T startService(T instance, ServiceLifecycleActions<S> withActions) {
+        if (servicesList.contains(instance)) {
+            return instance;
+        }
         if (withActions == null) {
+            servicesList.add(instance);
             return instance;
         }
 
@@ -95,7 +107,7 @@ public final class ServiceLifecycleInjector extends DelegatingInjector {
     }
 
     private <S> List<Throwable> tryStopServices(ServiceLifecycleActions<S> withActions, Exception initialCause) {
-        ListIterator<?> reverseIter = servicesList.listIterator(servicesList.size());
+        ListIterator<?> reverseIter = new ArrayList<Object>(servicesList).listIterator(servicesList.size());
         List<Throwable> exceptions = new ArrayList<Throwable>();
         if (initialCause != null) {
             exceptions.add(initialCause);
@@ -117,5 +129,5 @@ public final class ServiceLifecycleInjector extends DelegatingInjector {
         return exceptions;
     }
 
-    private final List<Object> servicesList;
+    private final Set<Object> servicesList;
 }

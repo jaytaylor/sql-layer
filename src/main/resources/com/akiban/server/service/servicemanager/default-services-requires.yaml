@@ -1,5 +1,3 @@
 - require:
     - com.akiban.server.service.memcache.MemcacheService
     - com.akiban.server.service.network.NetworkService
-    - com.akiban.server.service.stats.StatisticsService
-    - com.akiban.sql.pg.PostgresService

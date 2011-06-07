@@ -15,7 +15,6 @@
 
 package com.akiban.server.service.servicemanager;
 
-import com.akiban.server.service.Service;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -41,6 +40,10 @@ public final class Guicer {
 
     public <T> T get(Class<T> serviceClass, ServiceLifecycleActions<?> withActions) {
         return injector.getInstance(serviceClass, withActions);
+    }
+
+    public Collection<?> startedServices() {
+        return injector.startedServices();
     }
 
     // public class methods
@@ -75,7 +78,6 @@ public final class Guicer {
 
     private final ServiceLifecycleInjector injector;
     private final List<Class<?>> directlyRequiredClasses;
-
 
     // nested classes
 
