@@ -21,8 +21,6 @@ import com.google.inject.Key;
 import com.google.inject.ProvisionException;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -59,36 +57,38 @@ public final class ServiceLifecycleInjector extends DelegatingInjector {
 
     public <S> ServiceLifecycleInjector(Injector delegate) {
         super(delegate);
-        this.servicesList = Collections.synchronizedSet(new LinkedHashSet<Object>());
-    }
-
-    public Collection<?> startedServices() {
-        return Collections.unmodifiableCollection(servicesList);
+        this.lock = new Object();
+        // sync isn't technically required since services is final, but makes it clear that it's protected by the lock
+        synchronized (lock) {
+            this.services = new LinkedHashSet<Object>();
+        }
     }
 
     // private methods
 
     private <T,S> T startService(T instance, ServiceLifecycleActions<S> withActions) {
-        if (servicesList.contains(instance)) {
-            return instance;
-        }
-        if (withActions == null) {
-            servicesList.add(instance);
-            return instance;
-        }
+        synchronized (lock) {
+            if (services.contains(instance)) {
+                return instance;
+            }
+            if (withActions == null) {
+                services.add(instance);
+                return instance;
+            }
 
-        S service = withActions.castIfActionable(instance);
-        if (service != null) {
-            try {
-                withActions.onStart(service);
-                servicesList.add(service);
-            } catch (Exception e) {
+            S service = withActions.castIfActionable(instance);
+            if (service != null) {
                 try {
-                    stopServices(withActions, e);
-                } catch (Exception e1) {
-                    e = e1;
+                    withActions.onStart(service);
+                    services.add(service);
+                } catch (Exception e) {
+                    try {
+                        stopServices(withActions, e);
+                    } catch (Exception e1) {
+                        e = e1;
+                    }
+                    throw new ProvisionException("While starting service " + instance.getClass(), e);
                 }
-                throw new ProvisionException("While starting service " + instance.getClass(), e);
             }
         }
         return instance;
@@ -108,8 +108,11 @@ public final class ServiceLifecycleInjector extends DelegatingInjector {
     }
 
     private <S> List<Throwable> tryStopServices(ServiceLifecycleActions<S> withActions, Exception initialCause) {
-        ListIterator<?> reverseIter = new ArrayList<Object>(servicesList).listIterator(servicesList.size());
-        servicesList.clear();
+        ListIterator<?> reverseIter;
+        synchronized (lock) {
+            reverseIter = new ArrayList<Object>(services).listIterator(services.size());
+            services.clear();
+        }
         List<Throwable> exceptions = new ArrayList<Throwable>();
         if (initialCause != null) {
             exceptions.add(initialCause);
@@ -130,5 +133,6 @@ public final class ServiceLifecycleInjector extends DelegatingInjector {
         return exceptions;
     }
 
-    private final Set<Object> servicesList;
+    private final Object lock;
+    private final Set<Object> services;
 }

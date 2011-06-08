@@ -42,10 +42,6 @@ public final class Guicer {
         return injector.getInstance(serviceClass, withActions);
     }
 
-    public Collection<?> startedServices() {
-        return injector.startedServices();
-    }
-
     // public class methods
 
     public static Guicer forServices(Collection<ServiceBinding> serviceBindings)
