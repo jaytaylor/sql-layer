@@ -43,7 +43,7 @@ public final class ServiceLifecycleInjector {
         try {
             stopServices(withActions, null);
         } catch (Exception e) {
-            throw new RuntimeException(e); // TODO need better exception
+            throw new RuntimeException("while stopping services", e);
         }
     }
 
