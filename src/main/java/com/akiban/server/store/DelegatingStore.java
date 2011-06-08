@@ -117,7 +117,8 @@ public class DelegatingStore<S extends Store> implements Store {
     }
 
     public RowCollector newRowCollector(Session session, int scanFlags, int rowDefId, int indexId, byte[] columnBitMap, RowData start, ColumnSelector startColumns, RowData end, ColumnSelector endColumns, ScanLimit scanLimit) throws Exception {
-        return delegate.newRowCollector(session, scanFlags, rowDefId, indexId, columnBitMap, start, startColumns, end, endColumns, scanLimit);
+        return delegate.newRowCollector(session, scanFlags, rowDefId, indexId, columnBitMap, start, startColumns, end,
+                                        endColumns, scanLimit);
     }
 
     public long getRowCount(final Session session, final boolean exact, final RowData start, final RowData end, final byte[] columnBitMap) throws Exception {
@@ -140,7 +141,7 @@ public class DelegatingStore<S extends Store> implements Store {
         delegate.flushIndexes(session);
     }
 
-    public void buildIndexes(Session session, Collection<Index> indexes, boolean defer) throws Exception {
+    public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) throws Exception {
         delegate.buildIndexes(session, indexes, defer);
     }
 
@@ -149,7 +150,7 @@ public class DelegatingStore<S extends Store> implements Store {
         delegate.removeTrees(session, table);
     }
 
-    public void deleteIndexes(Session session, boolean removeTrees, Collection<Index> indexes) throws Exception {
+    public void deleteIndexes(Session session, boolean removeTrees, Collection<? extends Index> indexes) throws Exception {
         delegate.deleteIndexes(session, removeTrees, indexes);
     }
 

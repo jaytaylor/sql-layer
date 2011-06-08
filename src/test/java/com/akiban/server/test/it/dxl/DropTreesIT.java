@@ -39,6 +39,7 @@ public final class DropTreesIT extends ITBase {
     }
 
     private TreeLink treeLink(Object o) {
+        if(o == null) throw new IllegalArgumentException("TreeLink holder is null");
         if(o instanceof Table) return (TreeLink) ((Table)o).rowDef();
         if(o instanceof Index) return (TreeLink) ((Index)o).indexDef();
         throw new IllegalArgumentException("Unknown TreeLink holder: " + o);
@@ -200,5 +201,101 @@ public final class DropTreesIT extends ITBase {
         expectTree(t);
         ddl().dropTable(session(), t.getName());
         expectNoTree(t);
+    }
+
+    @Test
+    public void childSecondaryIndexNoData() throws Exception {
+        int pid = createTable("s", "p", "id int key");
+        int cid = createTable("s", "c", "id int key, i int, pid int, key i(i), constraint __akiban foreign key(pid) references p(id))");
+        Table p = getUserTable(pid);
+        Table c = getUserTable(cid);
+        Index i = c.getIndex("i");
+        ddl().dropTable(session(), c.getName());
+        expectNoTree(i);
+        ddl().dropTable(session(), p.getName());
+        expectNoTree(p);
+    }
+
+    @Test
+    public void childSecondaryIndexWithData() throws Exception {
+        int pid = createTable("s", "p", "id int key");
+        int cid = createTable("s", "c", "id int key, i int, pid int, key i(i), constraint __akiban foreign key(pid) references p(id))");
+        writeRows(createNewRow(pid, 1L),
+                  createNewRow(pid, 2L));
+        Table p = getUserTable(pid);
+        expectTree(p);
+        writeRows(createNewRow(cid, 10L, 100L, 1L),
+                  createNewRow(cid, 20L, 100L, 2L));
+        Table c = getUserTable(cid);
+        expectTree(c);
+        Index i = c.getIndex("i");
+        expectTree(i);
+        ddl().dropTable(session(), c.getName());
+        expectNoTree(i);
+        ddl().dropTable(session(), p.getName());
+        expectNoTree(p);
+    }
+
+    @Test
+    public void pkLessRootNoData() throws Exception {
+        int tid = createTable("s", "t", "i int, key i(i)");
+        UserTable t = getUserTable(tid);
+        Index pk = t.getIndexIncludingInternal(Index.PRIMARY_KEY_CONSTRAINT);
+        ddl().dropTable(session(), t.getName());
+        expectNoTree(pk);
+        expectNoTree(t);
+    }
+
+    @Test
+    public void pkLessRootWithData() throws Exception {
+        int tid = createTable("s", "t", "i int, key i(i)");
+        writeRows(createNewRow(tid, 10L, 0L),
+                  createNewRow(tid, 20L, 0L));
+        UserTable t = getUserTable(tid);
+        expectTree(t);
+        Index pk = t.getIndexIncludingInternal(Index.PRIMARY_KEY_CONSTRAINT);
+        if(!pk.isHKeyEquivalent()) {
+            expectTree(pk);
+        }
+        ddl().dropTable(session(), t.getName());
+        expectNoTree(t);
+        expectNoTree(pk);
+    }
+
+    @Test
+    public void pkLessChildNoData() throws Exception {
+        int pid = createTable("s", "p", "id int key");
+        int cid = createTable("s", "c", "i int, pid int, key i(i), constraint __akiban foreign key(pid) references p(id))");
+        Table p = getUserTable(pid);
+        UserTable c = getUserTable(cid);
+        Index pk = c.getIndexIncludingInternal(Index.PRIMARY_KEY_CONSTRAINT);
+        ddl().dropTable(session(), c.getName());
+        expectNoTree(pk);
+        ddl().dropTable(session(), p.getName());
+        expectNoTree(c);
+        expectNoTree(p);
+    }
+
+    @Test
+    public void pkLessChildTableWithData() throws Exception {
+        int pid = createTable("s", "p", "id int key");
+        int cid = createTable("s", "c", "i int, pid int, key i(i), constraint __akiban foreign key(pid) references p(id))");
+        writeRows(createNewRow(pid, 1L),
+                  createNewRow(pid, 2L));
+        Table p = getUserTable(pid);
+        expectTree(p);
+        writeRows(createNewRow(cid, 10L, 1L, 0L),
+                  createNewRow(cid, 20L, 2L, 0L));
+        UserTable c = getUserTable(cid);
+        expectTree(c);
+        Index pk = c.getIndexIncludingInternal(Index.PRIMARY_KEY_CONSTRAINT);
+        if(!pk.isHKeyEquivalent()) {
+            expectTree(pk);
+        }
+        ddl().dropTable(session(), c.getName());
+        expectNoTree(pk);
+        ddl().dropTable(session(), p.getName());
+        expectNoTree(c);
+        expectNoTree(p);
     }
 }

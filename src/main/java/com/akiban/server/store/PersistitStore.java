@@ -1242,7 +1242,7 @@ public class PersistitStore implements Store {
         buildIndexes(session, indexes, deferIndexes);
     }
 
-    public void buildIndexes(final Session session, final Collection<Index> indexes, final boolean defer) throws Exception {
+    public void buildIndexes(final Session session, final Collection<? extends Index> indexes, final boolean defer) throws Exception {
         flushIndexes(session);
 
         final Set<RowDef> userRowDefs = new HashSet<RowDef>();
@@ -1313,6 +1313,8 @@ public class PersistitStore implements Store {
     public void removeTrees(Session session, Table table) throws PersistitException {
         Exchange hEx = null;
         Exchange iEx = null;
+        Collection<? extends Index> indexes = table.isUserTable() ?
+                                              ((UserTable)table).getIndexesIncludingInternal() : table.getIndexes();
 
         try {
             final Transaction transaction = treeService.getTransaction(session);
@@ -1322,13 +1324,12 @@ public class PersistitStore implements Store {
             for(;;) {
                 transaction.begin();
                 try {
-                    for(Index index : table.getIndexes()) {
+                    for(Index index : indexes) {
                         if(!index.isHKeyEquivalent()) {
                             iEx = getExchange(session, index);
                             iEx.removeTree();
                         }
                     }
-
                     hEx.removeTree();
                     transaction.commit(forceToDisk);
                     break; // success
@@ -1355,7 +1356,7 @@ public class PersistitStore implements Store {
         }
     }
 
-    public void deleteIndexes(final Session session, boolean removeTrees, final Collection<Index> indexes)
+    public void deleteIndexes(final Session session, boolean removeTrees, final Collection<? extends Index> indexes)
             throws Exception {
         for(Index index : indexes) {
             final IndexDef indexDef = (IndexDef) index.indexDef();
