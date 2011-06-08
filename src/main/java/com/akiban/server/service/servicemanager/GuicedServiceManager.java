@@ -155,10 +155,10 @@ public final class GuicedServiceManager implements ServiceManager {
         // as we start each service.
         configuration.bind(JmxRegistryService.class.getName(), NoOpJmxRegistry.class.getName());
 
+        // Next, load each element in the provider, followed by (as a special-case element) the System.getProperties
         for (BindingsConfigurationElement element : bindingsConfigurationProvider) {
             element.loadInto(configuration);
         }
-
         new PropertyBindings(System.getProperties()).loadInto(configuration);
 
         final Collection<ServiceBinding> bindings = configuration.serviceBindings();
