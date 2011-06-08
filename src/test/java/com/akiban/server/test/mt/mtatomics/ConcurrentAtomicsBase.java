@@ -17,6 +17,7 @@ package com.akiban.server.test.mt.mtatomics;
 
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.mt.MTBase;
 import com.akiban.server.test.mt.mtutil.TimePointsComparison;
 import com.akiban.server.test.mt.mtutil.TimedCallable;
@@ -75,20 +76,8 @@ class ConcurrentAtomicsBase extends MTBase {
         return id;
     }
 
-//    // TODO replace with manual binding
-//    @Override
-//    protected TestServiceServiceFactory createServiceFactory(Collection<Property> startupConfigProperties) {
-//        return new ScanhooksServiceFactory(startupConfigProperties);
-//    }
-//
-//    private static class ScanhooksServiceFactory extends TestServiceServiceFactory {
-//        private ScanhooksServiceFactory(Collection<Property> startupConfigProperties) {
-//            super(startupConfigProperties);
-//        }
-//
-//        @Override
-//        public Service<DXLService> dxlService() {
-//            return new ConcurrencyAtomicsDXLService();
-//        }
-//    }
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider urlProvider() {
+        return super.urlProvider().bind(DXLService.class, ConcurrencyAtomicsDXLService.class);
+    }
 }

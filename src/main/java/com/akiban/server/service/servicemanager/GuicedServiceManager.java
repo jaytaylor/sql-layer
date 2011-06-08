@@ -232,6 +232,7 @@ public final class GuicedServiceManager implements ServiceManager {
             }
             return urls.iterator();
         }
+
         /**
          * Adds a URL to the the internal list.
          * @param url the url to add
@@ -239,6 +240,20 @@ public final class GuicedServiceManager implements ServiceManager {
          */
         public BindingsConfigurationProvider define(URL url) {
             elements.add(new YamlBindingsUrl(url));
+            return this;
+        }
+
+        /**
+         * Adds a service binding to the internal list. This is equivalent to a yaml segment of
+         * {@code bind: {theInteface : theImplementation}}. For instance, it does not affect locking, and if the
+         * interface is locked, this will fail at run time.
+         * @param anInterface the interface to bind to
+         * @param anImplementation the implementing class
+         * @param <T> the interface's type
+         * @return this instance; useful for chaining
+         */
+        public <T> BindingsConfigurationProvider bind(Class<T> anInterface, Class<? extends T> anImplementation) {
+            elements.add(new ManualServiceBinding(anInterface.getName(), anImplementation.getName()));
             return this;
         }
 
@@ -298,5 +313,28 @@ public final class GuicedServiceManager implements ServiceManager {
         }
 
         private final URL url;
+    }
+
+    private static class ManualServiceBinding implements BindingsConfigurationElement {
+
+        // BindingsConfigurationElement interface
+
+        @Override
+        public void loadInto(YamlConfiguration configuration) {
+            configuration.bind(interfaceName, implementationName);
+        }
+
+
+        // ManualServiceBinding interface
+
+        private ManualServiceBinding(String interfaceName, String implementationName) {
+            this.interfaceName = interfaceName;
+            this.implementationName = implementationName;
+        }
+
+        // object state
+
+        private final String interfaceName;
+        private final String implementationName;
     }
 }
