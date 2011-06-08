@@ -141,43 +141,14 @@ public final class GuicedServiceManager implements ServiceManager {
 
     public GuicedServiceManager(BindingsConfigurationProvider bindingsConfigurationProvider) {
         YamlConfiguration configuration = new YamlConfiguration();
-        for (URL url : bindingsConfigurationProvider) {
-            loadConfiguration(url, configuration);
+        for (BindingsConfigurationElement element : bindingsConfigurationProvider) {
+            element.loadInto(configuration);
         }
         final Collection<ServiceBinding> bindings = configuration.serviceBindings();
         try {
             guicer = Guicer.forServices(bindings);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private void loadConfiguration(URL url, YamlConfiguration configuration) {
-        final InputStream defaultServicesStream;
-        try {
-            defaultServicesStream = url.openStream();
-        } catch(IOException e) {
-            throw new RuntimeException("no resource " + url, e);
-        }
-        final Reader defaultServicesReader;
-        try {
-            defaultServicesReader = new InputStreamReader(defaultServicesStream, "UTF-8");
-        } catch (Exception e) {
-            try {
-                defaultServicesStream.close();
-            } catch (IOException ioe) {
-                LOG.error("while closing stream error", ioe);
-            }
-            throw new RuntimeException("while opening default services reader", e);
-        }
-        try {
-            configuration.read(url.toString(), defaultServicesReader);
-        } finally {
-            try {
-                defaultServicesReader.close();
-            } catch (IOException e) {
-                throw new RuntimeException("while closing reader", e); // TODO this will override YamlConfiguration exceptions
-            }
         }
     }
 
@@ -249,15 +220,15 @@ public final class GuicedServiceManager implements ServiceManager {
      * and requires. You can have as many defines as you want, but only one requires. When parsing the resources,
      * the defines will be processed (in order) before the requires resource.
      */
-    public static final class BindingsConfigurationProvider implements Iterable<URL> {
+    public static final class BindingsConfigurationProvider implements Iterable<BindingsConfigurationElement> {
 
         // Iterable<URL> interface
 
         @Override
-        public Iterator<URL> iterator() {
-            List<URL> urls = new ArrayList<URL>(defines);
+        public Iterator<BindingsConfigurationElement> iterator() {
+            List<BindingsConfigurationElement> urls = new ArrayList<BindingsConfigurationElement>(elements);
             if (requires != null) {
-                urls.add(requires);
+                urls.add(new YamlBindingsUrl(requires));
             }
             return urls.iterator();
         }
@@ -267,7 +238,7 @@ public final class GuicedServiceManager implements ServiceManager {
          * @return this instance; useful for chaining
          */
         public BindingsConfigurationProvider define(URL url) {
-            defines.add(url);
+            elements.add(new YamlBindingsUrl(url));
             return this;
         }
 
@@ -283,7 +254,49 @@ public final class GuicedServiceManager implements ServiceManager {
 
         // object state
 
-        private final List<URL> defines = new ArrayList<URL>();
+        private final List<BindingsConfigurationElement> elements = new ArrayList<BindingsConfigurationElement>();
         private URL requires = null;
+    }
+
+    private static interface BindingsConfigurationElement {
+        void loadInto(YamlConfiguration configuration);
+    }
+
+    private static class YamlBindingsUrl implements BindingsConfigurationElement {
+        @Override
+        public void loadInto(YamlConfiguration configuration) {
+            final InputStream defaultServicesStream;
+            try {
+                defaultServicesStream = url.openStream();
+            } catch(IOException e) {
+                throw new RuntimeException("no resource " + url, e);
+            }
+            final Reader defaultServicesReader;
+            try {
+                defaultServicesReader = new InputStreamReader(defaultServicesStream, "UTF-8");
+            } catch (Exception e) {
+                try {
+                    defaultServicesStream.close();
+                } catch (IOException ioe) {
+                    LOG.error("while closing stream error", ioe);
+                }
+                throw new RuntimeException("while opening default services reader", e);
+            }
+            try {
+                configuration.read(url.toString(), defaultServicesReader);
+            } finally {
+                try {
+                    defaultServicesReader.close();
+                } catch (IOException e) {
+                    throw new RuntimeException("while closing reader", e); // TODO this will override YamlConfiguration exceptions
+                }
+            }
+        }
+
+        private YamlBindingsUrl(URL url) {
+            this.url = url;
+        }
+
+        private final URL url;
     }
 }
