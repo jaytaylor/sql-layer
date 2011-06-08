@@ -15,6 +15,7 @@
 
 package com.akiban.server.service.servicemanager.configuration.yaml;
 
+import com.akiban.server.service.servicemanager.configuration.BindingConfiguration;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 import com.akiban.util.Enumerated;
 import com.akiban.util.EnumeratingIterator;
@@ -27,7 +28,24 @@ import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("unused")
-public final class YamlConfiguration {
+public final class YamlConfiguration implements BindingConfiguration {
+
+    // BindingConfigurable interface
+
+    @Override
+    public void bind(String interfaceName, String implementingClassName) {
+        strategy.bind(interfaceName, implementingClassName);
+    }
+
+    @Override
+    public void require(String interfaceName) {
+        strategy.require(interfaceName);
+    }
+
+    @Override
+    public Collection<ServiceBinding> serviceBindings() {
+        return strategy.serviceBindings();
+    }
 
     // YamlConfiguration interface
 
@@ -44,10 +62,6 @@ public final class YamlConfiguration {
         } catch (BadConfigurationException e) {
             strategy.unrecognizedCommand(e.getWhere(), e.getObject(), e.getMessage());
         }
-    }
-    
-    public Collection<ServiceBinding> serviceBindings() {
-        return strategy.serviceBindings();
     }
 
     public YamlConfiguration() {
