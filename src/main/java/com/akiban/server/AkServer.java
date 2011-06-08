@@ -141,8 +141,8 @@ public class AkServer implements Service<AkServerEmptyInterface>, JmxManageable,
         }, "ShutdownHook"));
 
         // Bring system up
-        GuicedServiceManager.UrlProvider urlProvider = GuicedServiceManager.standardUrls();
-        final ServiceManager serviceManager = new GuicedServiceManager(urlProvider);
+        GuicedServiceManager.BindingsConfigurationProvider bindingsConfigurationProvider = GuicedServiceManager.standardUrls();
+        final ServiceManager serviceManager = new GuicedServiceManager(bindingsConfigurationProvider);
         serviceManager.startServices();
         
         // JMX shutdown method

@@ -139,9 +139,9 @@ public final class GuicedServiceManager implements ServiceManager {
 
     // GuicedServiceManager interface
 
-    public GuicedServiceManager(UrlProvider urlProvider) {
+    public GuicedServiceManager(BindingsConfigurationProvider bindingsConfigurationProvider) {
         YamlConfiguration configuration = new YamlConfiguration();
-        for (URL url : urlProvider) {
+        for (URL url : bindingsConfigurationProvider) {
             loadConfiguration(url, configuration);
         }
         final Collection<ServiceBinding> bindings = configuration.serviceBindings();
@@ -183,15 +183,15 @@ public final class GuicedServiceManager implements ServiceManager {
 
     // static methods
 
-    public static UrlProvider standardUrls() {
-        UrlProvider provider = new UrlProvider();
+    public static BindingsConfigurationProvider standardUrls() {
+        BindingsConfigurationProvider provider = new BindingsConfigurationProvider();
         provider.define(GuicedServiceManager.class.getResource("default-services.yaml"));
         provider.overrideRequires(GuicedServiceManager.class.getResource("default-services-requires.yaml"));
         return provider;
     }
 
-    public static UrlProvider testUrls() {
-        UrlProvider provider = standardUrls();
+    public static BindingsConfigurationProvider testUrls() {
+        BindingsConfigurationProvider provider = standardUrls();
         provider.define(GuicedServiceManager.class.getResource("test-services.yaml"));
         provider.overrideRequires(GuicedServiceManager.class.getResource("test-services-requires.yaml"));
         return provider;
@@ -249,7 +249,7 @@ public final class GuicedServiceManager implements ServiceManager {
      * and requires. You can have as many defines as you want, but only one requires. When parsing the resources,
      * the defines will be processed (in order) before the requires resource.
      */
-    public static final class UrlProvider implements Iterable<URL> {
+    public static final class BindingsConfigurationProvider implements Iterable<URL> {
 
         // Iterable<URL> interface
 
@@ -266,7 +266,7 @@ public final class GuicedServiceManager implements ServiceManager {
          * @param url the url to add
          * @return this instance; useful for chaining
          */
-        public UrlProvider define(URL url) {
+        public BindingsConfigurationProvider define(URL url) {
             defines.add(url);
             return this;
         }
@@ -276,7 +276,7 @@ public final class GuicedServiceManager implements ServiceManager {
          * @param url the new requires URL
          * @return this instance; useful for chaining
          */
-        public UrlProvider overrideRequires(URL url) {
+        public BindingsConfigurationProvider overrideRequires(URL url) {
             requires = url;
             return this;
         }

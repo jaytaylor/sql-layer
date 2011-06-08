@@ -34,10 +34,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.OperatorStore;
-import com.akiban.server.api.dml.scan.ColumnSet;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.service.config.TestConfigService;
 import com.akiban.server.service.dxl.DXLService;
@@ -145,7 +143,7 @@ public class ApiTestBase {
         return new GuicedServiceManager(urlProvider());
     }
 
-    protected GuicedServiceManager.UrlProvider urlProvider() {
+    protected GuicedServiceManager.BindingsConfigurationProvider urlProvider() {
         return GuicedServiceManager.testUrls();
     }
 
