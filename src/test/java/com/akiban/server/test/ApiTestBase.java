@@ -140,10 +140,10 @@ public class ApiTestBase {
 
     protected ServiceManager createServiceManager(Collection<Property> startupConfigProperties) {
         TestConfigService.setOverrides(startupConfigProperties);
-        return new GuicedServiceManager(urlProvider());
+        return new GuicedServiceManager(serviceBindingsProvider());
     }
 
-    protected GuicedServiceManager.BindingsConfigurationProvider urlProvider() {
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return GuicedServiceManager.testUrls();
     }
 

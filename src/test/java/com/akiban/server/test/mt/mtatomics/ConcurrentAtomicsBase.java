@@ -22,12 +22,9 @@ import com.akiban.server.test.mt.MTBase;
 import com.akiban.server.test.mt.mtutil.TimePointsComparison;
 import com.akiban.server.test.mt.mtutil.TimedCallable;
 import com.akiban.server.test.mt.mtutil.TimedResult;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.config.Property;
 import com.akiban.server.service.dxl.ConcurrencyAtomicsDXLService;
 import com.akiban.server.service.dxl.DXLService;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -77,7 +74,7 @@ class ConcurrentAtomicsBase extends MTBase {
     }
 
     @Override
-    protected GuicedServiceManager.BindingsConfigurationProvider urlProvider() {
-        return super.urlProvider().bind(DXLService.class, ConcurrencyAtomicsDXLService.class);
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider().bind(DXLService.class, ConcurrencyAtomicsDXLService.class);
     }
 }
