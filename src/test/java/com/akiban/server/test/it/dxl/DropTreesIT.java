@@ -31,6 +31,7 @@ import java.util.Collections;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 public final class DropTreesIT extends ITBase {
@@ -74,6 +75,21 @@ public final class DropTreesIT extends ITBase {
         Table t = getUserTable(tid);
         ddl().dropTable(session(), t.getName());
         expectNoTree(t);
+    }
+
+    @Test
+    public void singleTableNoDataRepeatedly() throws Exception {
+        final TableName name = new TableName("s", "t");
+        for(int i = 1; i <= 5; ++i) {
+            try {
+                int tid = createTable(name.getSchemaName(), name.getTableName(), "id int key");
+                Table t = getUserTable(tid);
+                ddl().dropTable(session(), name);
+                expectNoTree(t);
+            } catch(Exception e) {
+                throw new Exception("Failed on iteration: " + i, e);
+            }
+        }
     }
 
     @Test
