@@ -134,8 +134,7 @@ public final class GuicedServiceManager implements ServiceManager {
 
     @Override
     public boolean serviceIsStarted(Class<?> serviceClass) {
-        getServiceByClass(serviceClass);
-        return true;
+        return guicer.serviceIsStarted(serviceClass);
     }
 
     // GuicedServiceManager interface

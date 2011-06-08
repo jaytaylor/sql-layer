@@ -179,6 +179,7 @@ public class ApiTestBase {
         sm = createServiceManager( properties );
         sm.startServices();
         session = ServiceManagerImpl.newSession();
+        ddl(); // loads up the schema manager et al
     }
 
     public final void safeRestartTestServices() throws Exception {

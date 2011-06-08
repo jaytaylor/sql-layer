@@ -18,7 +18,7 @@ package com.akiban.server.service.servicemanager;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
-import com.google.inject.Singleton;
+import com.google.inject.Scopes;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,6 +40,10 @@ public final class Guicer {
 
     public <T> T get(Class<T> serviceClass, ServiceLifecycleActions<?> withActions) {
         return injector.getInstance(serviceClass, withActions);
+    }
+
+    public boolean serviceIsStarted(Class<?> serviceClass) {
+        return injector.serviceIsStarted(serviceClass);
     }
 
     // public class methods
@@ -110,7 +114,7 @@ public final class Guicer {
         protected void configure() {
             for (ResolvedServiceBinding binding : bindings) {
                 Class unchecked = binding.serviceInterfaceClass();
-                bind(unchecked).to(binding.serviceImplementationClass()).in(Singleton.class);
+                bind(unchecked).to(binding.serviceImplementationClass()).in(Scopes.SINGLETON);
             }
         }
 

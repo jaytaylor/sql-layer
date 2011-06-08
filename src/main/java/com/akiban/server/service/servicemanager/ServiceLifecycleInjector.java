@@ -17,7 +17,6 @@ package com.akiban.server.service.servicemanager;
 
 import com.akiban.util.Exceptions;
 import com.google.inject.Injector;
-import com.google.inject.Key;
 import com.google.inject.ProvisionException;
 
 import java.util.ArrayList;
@@ -26,25 +25,18 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 
-public final class ServiceLifecycleInjector extends DelegatingInjector {
-// TODO use composition instead?
-
-    // Injector interface
-
-    @Override
-    public <T> T getInstance(Key<T> key) {
-        return startService(super.getInstance(key), GuicedServiceManager.STANDARD_SERVICE_ACTIONS);
-    }
-
-    @Override
-    public <T> T getInstance(Class<T> type) {
-        return startService(super.getInstance(type), GuicedServiceManager.STANDARD_SERVICE_ACTIONS);
-    }
+public final class ServiceLifecycleInjector {
 
     // ServiceLifecycleInjector interface
 
     public <T> T getInstance(Class<T> type, ServiceLifecycleActions<?> withActions) {
-        return startService(super.getInstance(type), withActions);
+        return startService(injector.getInstance(type), withActions);
+    }
+
+    public boolean serviceIsStarted(Class<?> serviceClass) {
+        synchronized (lock) {
+            return services.contains(serviceClass);
+        }
     }
 
     public void stopAllServices(ServiceLifecycleActions<?> withActions) {
@@ -55,9 +47,9 @@ public final class ServiceLifecycleInjector extends DelegatingInjector {
         }
     }
 
-    public <S> ServiceLifecycleInjector(Injector delegate) {
-        super(delegate);
+    public <S> ServiceLifecycleInjector(Injector injector) {
         this.lock = new Object();
+        this.injector = injector;
         // sync isn't technically required since services is final, but makes it clear that it's protected by the lock
         synchronized (lock) {
             this.services = new LinkedHashSet<Object>();
@@ -135,4 +127,5 @@ public final class ServiceLifecycleInjector extends DelegatingInjector {
 
     private final Object lock;
     private final Set<Object> services;
+    private final Injector injector;
 }
