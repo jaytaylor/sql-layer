@@ -36,6 +36,15 @@ class ConcurrentAtomicsBase extends MTBase {
     protected static final String SCHEMA = "cold";
     protected static final String TABLE = "frosty";
 
+    // ApiTestBase interface
+
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider().bind(DXLService.class, ConcurrencyAtomicsDXLService.class);
+    }
+
+    // ConcurrentAtomicsBase interface
+
     protected void scanUpdateConfirm(int tableId,
                                      TimedCallable<List<NewRow>> scanCallable,
                                      TimedCallable<Void> updateCallable,
@@ -71,10 +80,5 @@ class ConcurrentAtomicsBase extends MTBase {
             createNewRow(id, 2L, "mr melty")
         );
         return id;
-    }
-
-    @Override
-    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return super.serviceBindingsProvider().bind(DXLService.class, ConcurrencyAtomicsDXLService.class);
     }
 }
