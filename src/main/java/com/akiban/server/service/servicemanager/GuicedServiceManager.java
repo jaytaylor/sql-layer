@@ -207,7 +207,8 @@ public final class GuicedServiceManager implements ServiceManager {
                 JmxManageable manageable = (JmxManageable)service;
                 ObjectName objectName = registry.register(manageable);
                 ObjectName old = jmxNames.put(manageable.getClass(), objectName);
-                assert old == null : objectName + " has displaced " + old;
+                // TODO see comment in ServiceLifecycleInjector.tryStopServices
+//                assert old == null : objectName + " has displaced " + old;
             }
         }
 

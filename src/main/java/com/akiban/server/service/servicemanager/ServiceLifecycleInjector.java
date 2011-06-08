@@ -47,7 +47,7 @@ public final class ServiceLifecycleInjector {
         }
     }
 
-    public <S> ServiceLifecycleInjector(Injector injector) {
+    public ServiceLifecycleInjector(Injector injector) {
         this.lock = new Object();
         this.injector = injector;
         // sync isn't technically required since services is final, but makes it clear that it's protected by the lock
@@ -103,7 +103,6 @@ public final class ServiceLifecycleInjector {
         ListIterator<?> reverseIter;
         synchronized (lock) {
             reverseIter = new ArrayList<Object>(services).listIterator(services.size());
-            services.clear();
         }
         List<Throwable> exceptions = new ArrayList<Throwable>();
         if (initialCause != null) {
@@ -112,6 +111,9 @@ public final class ServiceLifecycleInjector {
         while (reverseIter.hasPrevious()) {
             try {
                 Object serviceObject = reverseIter.previous();
+                synchronized (lock) {
+                    services.remove(serviceObject);
+                }
                 if (withActions != null) {
                     S service = withActions.castIfActionable(serviceObject);
                     if (service != null) {
@@ -122,6 +124,14 @@ public final class ServiceLifecycleInjector {
                 exceptions.add(t);
             }
         }
+        // TODO because our dependency graph is created via Service.start() invocations, if service A uses service B
+        // in stop() but not start(), and service B has already been shut down, service B will be resurrected. Yuck.
+        // I don't know of a good way around this, other than by formalizing our dependency graph via constructor
+        // params (and thus removing ServiceManagerImpl.get() ). Until this is resolved, simplest is to just shrug
+        // our shoulders and not check
+//        synchronized (lock) {
+//            assert services.isEmpty() : services;
+//        }
         return exceptions;
     }
 
