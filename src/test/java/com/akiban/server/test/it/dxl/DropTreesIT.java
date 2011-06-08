@@ -149,6 +149,7 @@ public final class DropTreesIT extends ITBase {
         int tid = createTable("s", "t", "id int key, other int");
         Table t = getUserTable(tid);
         ddl().createIndexes(session(), Collections.singleton(createSimpleIndex(t, "other")));
+        t = getUserTable(tid);
         Index other = t.getIndex("other");
         ddl().dropTable(session(), t.getName());
         expectNoTree(t);

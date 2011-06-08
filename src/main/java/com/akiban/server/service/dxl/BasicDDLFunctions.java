@@ -125,6 +125,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         try {
             DMLFunctions dml = new BasicDMLFunctions(middleman(), this);
             dml.truncateTable(session, table.getTableId());
+            if(userTable.getParentJoin() == null) {
+                store().removeTrees(session, table);
+            }
             schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
             checkCursorsForDDLModification(session, table);
         } catch (Exception e) {
@@ -337,7 +340,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         } catch(Exception e) {
             // Try and roll back all changes
             try {
-                store().deleteIndexes(session, newIndexes);
+                store().deleteIndexes(session, REMOVE_INDEX_TREES_ON_DROP, newIndexes);
                 schemaManager().dropIndexes(session, indexesToAdd);
             } catch(Exception e2) {
                 logger.error("Exception while rolling back failed createIndex: " + indexesToAdd, e2);
@@ -372,7 +375,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         
         try {
             // Drop them from the Store before while IndexDefs still exist
-            store().deleteIndexes(session, indexes);
+            store().deleteIndexes(session, REMOVE_INDEX_TREES_ON_DROP, indexes);
             schemaManager().dropIndexes(session, indexes);
             checkCursorsForDDLModification(session, table);
         } catch(Exception e) {
@@ -404,7 +407,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         try {
             // TODO: Delete group index data when store supports it
-            //store().deleteIndexes(session, indexes);
+            //store().deleteIndexes(session, REMOVE_INDEX_TREES_ON_DROP, indexes);
             schemaManager().dropIndexes(session, indexes);
             // TODO: checkCursorsForDDLModification ?
         } catch(Exception e) {
@@ -446,4 +449,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     BasicDDLFunctions(BasicDXLMiddleman middleman) {
         super(middleman);
     }
+
+    private static final boolean REMOVE_INDEX_TREES_ON_DROP = true;
 }

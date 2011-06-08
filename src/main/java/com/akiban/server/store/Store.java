@@ -16,6 +16,7 @@
 package com.akiban.server.store;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Table;
 import com.akiban.server.FieldDef;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
@@ -151,7 +152,15 @@ public interface Store extends Service<Store> {
     boolean isDeferIndexes();
     void setDeferIndexes(final boolean b);
     void flushIndexes(Session session) throws Exception;
-    void deleteIndexes(Session session, Collection<Index> indexes) throws Exception;
+    void deleteIndexes(Session session, boolean removeTrees, Collection<Index> indexes) throws Exception;
     void buildAllIndexes(Session session, boolean deferIndexes) throws Exception;
     void buildIndexes(Session session, Collection<Index> indexes, boolean deferIndexes) throws Exception;
+
+    /**
+     * Remove all trees, and their contents, associated with the given table.
+     * @param session Session
+     * @param table Table
+     * @throws Exception For any error.
+     */
+    void removeTrees(Session session, Table table) throws Exception;
 }

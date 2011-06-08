@@ -29,6 +29,7 @@ import java.util.TreeSet;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.IndexToHKey;
+import com.akiban.ais.model.Table;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.ScanLimit;
@@ -176,7 +177,9 @@ public class PersistitStore implements Store {
     }
 
     public void releaseExchange(final Session session, final Exchange exchange) {
-        treeService.releaseExchange(session, exchange);
+        if(exchange != null) {
+            treeService.releaseExchange(session, exchange);
+        }
     }
 
     // Given a RowData for a table, construct an hkey for a row in the table.
@@ -1306,6 +1309,43 @@ public class PersistitStore implements Store {
         }
     }
 
+    @Override
+    public void removeTrees(Session session, Table table) throws PersistitException {
+        Exchange hEx = null;
+        Exchange iEx = null;
+
+        try {
+            final Transaction transaction = treeService.getTransaction(session);
+            hEx = getExchange(session, (RowDef)table.rowDef());
+
+            int retries = MAX_TRANSACTION_RETRY_COUNT;
+            for(;;) {
+                transaction.begin();
+                try {
+                    for(Index index : table.getIndexes()) {
+                        if(!index.isHKeyEquivalent()) {
+                            iEx = getExchange(session, index);
+                            iEx.removeTree();
+                        }
+                    }
+
+                    hEx.removeTree();
+                    transaction.commit(forceToDisk);
+                    break; // success
+                } catch (RollbackException re) {
+                    if (--retries < 0) {
+                        throw new TransactionFailedException();
+                    }
+                } finally {
+                    transaction.end();
+                }
+            }
+        } finally {
+            releaseExchange(session, hEx);
+            releaseExchange(session, iEx);
+        }
+    }
+
     public void flushIndexes(final Session session) throws Exception {
         try {
             putAllDeferredIndexKeys(session);
@@ -1315,7 +1355,8 @@ public class PersistitStore implements Store {
         }
     }
 
-    public void deleteIndexes(final Session session, final Collection<Index> indexes) throws Exception {
+    public void deleteIndexes(final Session session, boolean removeTrees, final Collection<Index> indexes)
+            throws Exception {
         for(Index index : indexes) {
             final IndexDef indexDef = (IndexDef) index.indexDef();
             if(indexDef == null) {
@@ -1323,9 +1364,14 @@ public class PersistitStore implements Store {
             }
             try {
                 Exchange iEx = getExchange(session, index);
-                iEx.removeAll();
+                if(removeTrees) {
+                    iEx.removeTree();
+                }
+                else {
+                    iEx.removeAll();
+                }
             } catch (Exception e) {
-                LOG.debug("Exception while trying to remove index tree: " + indexDef.getTreeName(), e);
+                LOG.debug("Exception while deleting index: " + index, e);
                 throw e;
             }
         }
