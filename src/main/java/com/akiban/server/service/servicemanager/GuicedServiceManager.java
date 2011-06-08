@@ -297,14 +297,25 @@ public final class GuicedServiceManager implements ServiceManager {
                 }
                 throw new RuntimeException("while opening default services reader", e);
             }
+            RuntimeException exception = null;
             try {
                 configuration.read(url.toString(), defaultServicesReader);
+            } catch (RuntimeException e) {
+                exception = e;
             } finally {
                 try {
                     defaultServicesReader.close();
                 } catch (IOException e) {
-                    throw new RuntimeException("while closing reader", e); // TODO this will override YamlConfiguration exceptions
+                    if (exception == null) {
+                        exception = new RuntimeException("while closing " + url, e);
+                    }
+                    else {
+                        LOG.error("while closing url after exception " + exception, e);
+                    }
                 }
+            }
+            if (exception != null) {
+                throw exception;
             }
         }
 
