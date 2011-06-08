@@ -50,6 +50,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class GuicedServiceManager implements ServiceManager {
@@ -156,6 +157,9 @@ public final class GuicedServiceManager implements ServiceManager {
         for (BindingsConfigurationElement element : bindingsConfigurationProvider) {
             element.loadInto(configuration);
         }
+
+        new PropertyBindings(System.getProperties()).loadInto(configuration);
+
         final Collection<ServiceBinding> bindings = configuration.serviceBindings();
         try {
             guicer = Guicer.forServices(bindings);
@@ -390,6 +394,46 @@ public final class GuicedServiceManager implements ServiceManager {
 
         private final String interfaceName;
         private final String implementationName;
+    }
+
+    private static class PropertyBindings implements BindingsConfigurationElement {
+        // BindingsConfigurationElement interface
+
+        @Override
+        public void loadInto(YamlConfiguration configuration) {
+            for (String property : properties.stringPropertyNames()) {
+                if (property.startsWith(BIND)) {
+                    String theInterface = property.substring(BIND.length());
+                    String theImpl = properties.getProperty(property);
+                    configuration.bind(theInterface, theImpl);
+                } else if (property.startsWith(REQUIRE)) {
+                    String theInterface = property.substring(REQUIRE.length());
+                    String value = properties.getProperty(property);
+                    if (value != null && value.length() != 0) {
+                        throw new IllegalArgumentException(
+                                String.format("-Drequire tags may not have values: %s = %s", theInterface, value)
+                        );
+                    }
+                    configuration.require(theInterface);
+                }
+            }
+        }
+
+        // PropertyBindings interface
+
+        private PropertyBindings(Properties properties) {
+            this.properties = properties;
+        }
+
+
+        // object state
+
+        private final Properties properties;
+
+        // consts
+
+        private static final String BIND = "bind:";
+        private static final String REQUIRE = "require:";
     }
 
     public static class NoOpJmxRegistry implements JmxRegistryService {
