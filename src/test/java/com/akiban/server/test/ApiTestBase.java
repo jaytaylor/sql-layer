@@ -40,6 +40,7 @@ import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.api.dml.scan.ColumnSet;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.service.config.TestConfigService;
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
@@ -151,10 +152,12 @@ public class ApiTestBase {
     @After
     public final void stopTestServices() throws Exception {
         String openCursorsMessage = null;
-        DXLTestHooks dxlTestHooks = DXLTestHookRegistry.get();
-        // Check for any residual open cursors
-        if (dxlTestHooks.openCursorsExist()) {
-            openCursorsMessage = "open cursors remaining:" + dxlTestHooks.describeOpenCursors();
+        if (sm.serviceIsStarted(DXLService.class)) {
+            DXLTestHooks dxlTestHooks = DXLTestHookRegistry.get();
+            // Check for any residual open cursors
+            if (dxlTestHooks.openCursorsExist()) {
+                openCursorsMessage = "open cursors remaining:" + dxlTestHooks.describeOpenCursors();
+            }
         }
 
         session.close();

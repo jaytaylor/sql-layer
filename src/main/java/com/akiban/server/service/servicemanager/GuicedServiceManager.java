@@ -132,6 +132,12 @@ public final class GuicedServiceManager implements ServiceManager {
         return getServiceByClass(DXLService.class);
     }
 
+    @Override
+    public boolean serviceIsStarted(Class<?> serviceClass) {
+        getServiceByClass(serviceClass);
+        return true;
+    }
+
     // GuicedServiceManager interface
 
     public GuicedServiceManager(UrlProvider urlProvider) {

@@ -58,4 +58,6 @@ public interface ServiceManager {
     <T> T getServiceByClass(Class<T> serviceClass);
 
     DXLService getDXL();
+
+    boolean serviceIsStarted(Class<?> serviceClass);
 }
