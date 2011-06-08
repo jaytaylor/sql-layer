@@ -492,6 +492,13 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         return null;
     }
 
+    @Override
+    public boolean treeExists(final String schemaName, final String treeName) throws PersistitException {
+        final Volume volume = mappedVolume(schemaName, treeName);
+        final Tree tree = volume.getTree(treeName, false);
+        return tree != null;
+    }
+
     public TreeLink treeLink(final String schemaName, final String treeName) {
         final Map<String, TreeLink> map = treeName == STATUS_TREE_NAME ? statusLinkMap
                 : schemaLinkMap;
