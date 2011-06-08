@@ -39,10 +39,12 @@ import org.slf4j.LoggerFactory;
 
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -155,10 +157,28 @@ public final class GuicedServiceManager implements ServiceManager {
         // as we start each service.
         configuration.bind(JmxRegistryService.class.getName(), NoOpJmxRegistry.class.getName());
 
-        // Next, load each element in the provider, followed by (as a special-case element) the System.getProperties
+        // Next, load each element in the provider...
         for (BindingsConfigurationElement element : bindingsConfigurationProvider) {
             element.loadInto(configuration);
         }
+
+        // ... followed by whatever is in the file specified by -Dservices.config=blah, if that's defined...
+        String configFileName = System.getProperty("services.config");
+        if (configFileName != null) {
+            File configFile = new File(configFileName);
+            if (!configFile.isFile()) {
+                throw new RuntimeException("file not found or isn't a normal file: " + configFileName);
+            }
+            final URL configFileUrl;
+            try {
+                configFileUrl = configFile.toURI().toURL();
+            } catch (MalformedURLException e) {
+                throw new RuntimeException("couldn't convert config file to URL", e);
+            }
+            new YamlBindingsUrl(configFileUrl).loadInto(configuration);
+        }
+
+        // ... followed by any command-line overrides.
         new PropertyBindings(System.getProperties()).loadInto(configuration);
 
         final Collection<ServiceBinding> bindings = configuration.serviceBindings();
