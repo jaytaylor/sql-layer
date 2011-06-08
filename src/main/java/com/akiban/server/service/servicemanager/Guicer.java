@@ -46,6 +46,11 @@ public final class Guicer {
         return injector.serviceIsStarted(serviceClass);
     }
 
+    public boolean isRequired(Class<?> interfaceClass) {
+        return directlyRequiredClasses.contains(interfaceClass);
+    }
+
+
     // public class methods
 
     public static Guicer forServices(Collection<ServiceBinding> serviceBindings)
@@ -78,7 +83,6 @@ public final class Guicer {
 
     private final ServiceLifecycleInjector injector;
     private final List<Class<?>> directlyRequiredClasses;
-
     // nested classes
 
     private static final class ResolvedServiceBinding {

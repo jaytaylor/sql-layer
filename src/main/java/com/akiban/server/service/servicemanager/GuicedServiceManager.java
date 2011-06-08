@@ -22,6 +22,7 @@ import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
@@ -35,6 +36,8 @@ import com.akiban.sql.pg.PostgresService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -42,8 +45,12 @@ import java.io.Reader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class GuicedServiceManager implements ServiceManager {
     // ServiceManager interface
@@ -141,6 +148,11 @@ public final class GuicedServiceManager implements ServiceManager {
 
     public GuicedServiceManager(BindingsConfigurationProvider bindingsConfigurationProvider) {
         YamlConfiguration configuration = new YamlConfiguration();
+
+        // Install the default, no-op JMX registry; this is a special case, since we want to use it
+        // as we start each service.
+        configuration.bind(JmxRegistryService.class.getName(), NoOpJmxRegistry.class.getName());
+
         for (BindingsConfigurationElement element : bindingsConfigurationProvider) {
             element.loadInto(configuration);
         }
@@ -150,6 +162,12 @@ public final class GuicedServiceManager implements ServiceManager {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    // private methods
+
+    boolean isRequired(Class<?> theClass) {
+        return guicer.isRequired(theClass);
     }
 
     // static methods
@@ -172,9 +190,48 @@ public final class GuicedServiceManager implements ServiceManager {
 
     private final Guicer guicer;
 
-    // class state
+    final ServiceLifecycleActions<Service<?>> STANDARD_SERVICE_ACTIONS
+            = new ServiceLifecycleActions<Service<?>>()
+    {
+        private Map<Class<? extends JmxManageable>,ObjectName> jmxNames
+                = Collections.synchronizedMap(new HashMap<Class<? extends JmxManageable>, ObjectName>());
 
-    private static final Logger LOG = LoggerFactory.getLogger(GuicedServiceManager.class);
+        @Override
+        public void onStart(Service<?> service) throws Exception {
+            service.start();
+
+            if (service instanceof JmxManageable && isRequired(JmxRegistryService.class)) {
+                JmxRegistryService registry = (service instanceof JmxRegistryService)
+                        ? (JmxRegistryService) service
+                        : getJmxRegistryService();
+                JmxManageable manageable = (JmxManageable)service;
+                ObjectName objectName = registry.register(manageable);
+                ObjectName old = jmxNames.put(manageable.getClass(), objectName);
+                assert old == null : objectName + " has displaced " + old;
+            }
+        }
+
+        @Override
+        public void onShutdown(Service<?> service) throws Exception {
+            if (service instanceof JmxManageable && isRequired(JmxRegistryService.class)) {
+                JmxRegistryService registry = (service instanceof JmxRegistryService)
+                        ? (JmxRegistryService) service
+                        : getJmxRegistryService();
+                JmxManageable manageable = (JmxManageable) service;
+                ObjectName objectName = jmxNames.get(manageable.getClass());
+                if (objectName == null) {
+                    throw new NullPointerException("service not registered: " + manageable.getClass());
+                }
+                registry.unregister(objectName);
+            }
+            service.stop();
+        }
+
+        @Override
+        public Service<?> castIfActionable(Object object) {
+            return (object instanceof Service) ? (Service<?>)object : null;
+        }
+    };
 
     private static final ServiceLifecycleActions<Service<?>> CRASH_SERVICES
             = new ServiceLifecycleActions<Service<?>>() {
@@ -194,24 +251,9 @@ public final class GuicedServiceManager implements ServiceManager {
         }
     };
 
-    static final ServiceLifecycleActions<Service<?>> STANDARD_SERVICE_ACTIONS
-            = new ServiceLifecycleActions<Service<?>>()
-    {
-        @Override
-        public void onStart(Service<?> service) throws Exception {
-            service.start();
-        }
+    // class state
 
-        @Override
-        public void onShutdown(Service<?> service) throws Exception {
-            service.stop();
-        }
-
-        @Override
-        public Service<?> castIfActionable(Object object) {
-            return (object instanceof Service) ? (Service<?>)object : null;
-        }
-    };
+    private static final Logger LOG = LoggerFactory.getLogger(GuicedServiceManager.class);
 
     // nested classes
 
@@ -347,5 +389,27 @@ public final class GuicedServiceManager implements ServiceManager {
 
         private final String interfaceName;
         private final String implementationName;
+    }
+
+    public static class NoOpJmxRegistry implements JmxRegistryService {
+        @Override
+        public ObjectName register(JmxManageable service) {
+            try {
+                return new ObjectName("com.akiban:type=DummyPlaceholder" + counter.incrementAndGet());
+            } catch (MalformedObjectNameException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public void unregister(ObjectName registeredObject) {
+        }
+
+        @Override
+        public void unregister(String serviceName) {
+        }
+
+        // object state
+        private final AtomicInteger counter = new AtomicInteger();
     }
 }
