@@ -1,0 +1,1 @@
+SELECT customers.name, 1, 'foo' FROM customers

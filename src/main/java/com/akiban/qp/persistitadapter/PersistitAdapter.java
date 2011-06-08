@@ -121,12 +121,12 @@ public class PersistitAdapter extends StoreAdapter
 
     public Exchange takeExchange(GroupTable table) throws PersistitException
     {
-        return transact(persistit.getExchange(session, (RowDef) table.rowDef(), null));
+        return transact(persistit.getExchange(session, (RowDef) table.rowDef()));
     }
 
     public Exchange takeExchange(Index index) throws PersistitException
     {
-        return transact(persistit.getExchange(session, null, (IndexDef) index.indexDef()));
+        return transact(persistit.getExchange(session, index));
     }
 
     @Override

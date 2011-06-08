@@ -150,18 +150,20 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                     // a row of type other than parent or child, or end of stream. If we get
                     // here, then input is exhausted, and the only possibly remaining row would
                     // be due to a childless parent waiting to be processed.
-                    generateLeftJoinRow(parent.get());
+                    if (childlessParent) {
+                        generateLeftJoinRow(parent.get());
+                    }
                     parent.set(null);
                 } else {
                     Row inputRow = input.currentRow();
                     RowType inputRowType = inputRow.rowType();
                     if (inputRowType == parentType) {
-                        if (keepParent) {
-                            addToPending();
-                        }
                         if (parent.isNotNull() && childlessParent) {
                             // current parent row is childless, so it is left-join fodder.
                             generateLeftJoinRow(parent.get());
+                        }
+                        if (keepParent) {
+                            addToPending();
                         }
                         parent.set(inputRow);
                         childlessParent = true;
@@ -182,6 +184,9 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                         addToPending();
                         if (parent.isNotNull() && !parent.get().ancestorOf(inputRow)) {
                             // We're past all descendents of the current parent
+                            if (childlessParent) {
+                                generateLeftJoinRow(parent.get());
+                            }
                             parent.set(null);
                         }
                     }

@@ -72,7 +72,7 @@ public class PersistitAdapter
         columnPositions = task.columnPositions();
         dbRow = new Object[leafTable.getColumns().size()];
         rowData = new RowData(new byte[ROW_DATA_BUFFER_SIZE]);
-        exchange = store.getExchange(session, leafRowDef, null);
+        exchange = store.getExchange(session, leafRowDef);
         logState();
     }
 

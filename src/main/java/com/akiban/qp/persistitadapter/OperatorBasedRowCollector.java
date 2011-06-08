@@ -233,8 +233,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     {
         // Plan and query
         Limit limit = new PersistitRowLimit(scanLimit(scanLimit, singleRow));
-        boolean useIndex =
-            predicateIndex != null && !((IndexDef) predicateIndex.indexDef()).isHKeyEquivalent();
+        boolean useIndex = predicateIndex != null && !predicateIndex.isHKeyEquivalent();
         GroupTable groupTable = queryRootTable.getGroup().getGroupTable();
         PhysicalOperator rootOperator;
         if (useIndex) {
@@ -355,7 +354,8 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     protected UserTableRowType queryRootType;
     protected TableIndex predicateIndex;
     protected UserTableRowType predicateType;
-    // If we're querying a user table, then requiredUserTables contains just queryRootTable
+    // If we're querying a user table, then requiredUse
+    // rTables contains just queryRootTable
     // If we're querying a group table, it contains those user tables containing columns in the
     // columnBitMap.
     private PhysicalOperator operator;
