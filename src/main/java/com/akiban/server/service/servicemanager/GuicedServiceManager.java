@@ -25,6 +25,7 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.memcache.MemcacheService;
+import com.akiban.server.service.servicemanager.configuration.BindingConfiguration;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 import com.akiban.server.service.servicemanager.configuration.yaml.YamlConfiguration;
 import com.akiban.server.service.session.SessionService;
@@ -396,20 +397,38 @@ public final class GuicedServiceManager implements ServiceManager {
         private final String implementationName;
     }
 
-    private static class PropertyBindings implements BindingsConfigurationElement {
+    static class PropertyBindings implements BindingsConfigurationElement {
         // BindingsConfigurationElement interface
 
         @Override
         public void loadInto(YamlConfiguration configuration) {
+            loadInto((BindingConfiguration)configuration);
+        }
+
+        // PropertyBindings interface
+
+        PropertyBindings(Properties properties) {
+            this.properties = properties;
+        }
+
+        // for use in unit tests
+
+        void loadInto(BindingConfiguration configuration) {
             for (String property : properties.stringPropertyNames()) {
                 if (property.startsWith(BIND)) {
                     String theInterface = property.substring(BIND.length());
                     String theImpl = properties.getProperty(property);
+                    if (theInterface.length() == 0) {
+                        throw new IllegalArgumentException("empty -Dbind: property found");
+                    }
+                    if (theImpl.length() == 0) {
+                        throw new IllegalArgumentException("-D" + property + " doesn't have a valid value");
+                    }
                     configuration.bind(theInterface, theImpl);
                 } else if (property.startsWith(REQUIRE)) {
                     String theInterface = property.substring(REQUIRE.length());
                     String value = properties.getProperty(property);
-                    if (value != null && value.length() != 0) {
+                    if (value.length() != 0) {
                         throw new IllegalArgumentException(
                                 String.format("-Drequire tags may not have values: %s = %s", theInterface, value)
                         );
@@ -418,13 +437,6 @@ public final class GuicedServiceManager implements ServiceManager {
                 }
             }
         }
-
-        // PropertyBindings interface
-
-        private PropertyBindings(Properties properties) {
-            this.properties = properties;
-        }
-
 
         // object state
 
