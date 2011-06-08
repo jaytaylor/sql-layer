@@ -163,7 +163,7 @@ public final class GuicedServiceManager implements ServiceManager {
         }
 
         // ... followed by whatever is in the file specified by -Dservices.config=blah, if that's defined...
-        String configFileName = System.getProperty("services.config");
+        String configFileName = System.getProperty(SERVICES_CONFIG_PROPERTY);
         if (configFileName != null) {
             File configFile = new File(configFileName);
             if (!configFile.isFile()) {
@@ -259,6 +259,10 @@ public final class GuicedServiceManager implements ServiceManager {
         }
     };
 
+    // consts
+
+    private static final String SERVICES_CONFIG_PROPERTY = "services.config";
+
     private static final ServiceLifecycleActions<Service<?>> CRASH_SERVICES
             = new ServiceLifecycleActions<Service<?>>() {
         @Override
@@ -276,8 +280,6 @@ public final class GuicedServiceManager implements ServiceManager {
             return (object instanceof Service) ? (Service<?>) object : null;
         }
     };
-
-    // class state
 
     private static final Logger LOG = LoggerFactory.getLogger(GuicedServiceManager.class);
 
