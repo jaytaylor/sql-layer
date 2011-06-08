@@ -78,7 +78,7 @@ public class UserTableRowType extends RowType
         };
     }
 
-    public UserTableRowType(Schema schema, UserTable table)
+    public UserTableRowType(SchemaAISBased schema, UserTable table)
     {
         super(schema, table.getTableId());
         this.table = table;

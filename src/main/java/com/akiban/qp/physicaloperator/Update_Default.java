@@ -42,7 +42,7 @@ public final class Update_Default implements UpdatePlannable {
         this.updateFunction = updateFunction;
     }
 
-    // CudResult interface
+    // UpdatePlannable interface
 
     @Override
     public UpdateResult run(Bindings bindings, StoreAdapter adapter) {

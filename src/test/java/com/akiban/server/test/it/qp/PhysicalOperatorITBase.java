@@ -28,6 +28,7 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.SchemaAISBased;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -74,7 +75,7 @@ public class PhysicalOperatorITBase extends ITBase
             "address varchar(100)",
             "constraint __akiban_ac foreign key __akiban_ac(cid) references customer(cid)",
             "index(address)");
-        schema = new Schema(rowDefCache().ais());
+        schema = new SchemaAISBased(rowDefCache().ais());
         customerRowType = schema.userTableRowType(userTable(customer));
         orderRowType = schema.userTableRowType(userTable(order));
         itemRowType = schema.userTableRowType(userTable(item));

@@ -41,7 +41,7 @@ class AncestorLookup_Default extends PhysicalOperator
     @Override
     public String toString()
     {
-        return String.format("%s(%s -> %s", getClass().getSimpleName(), rowType, ancestorTypes);
+        return String.format("%s(%s -> %s)", getClass().getSimpleName(), rowType, ancestorTypes);
     }
 
     // PhysicalOperator interface

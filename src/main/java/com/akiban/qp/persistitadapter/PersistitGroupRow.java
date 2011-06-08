@@ -122,6 +122,11 @@ public class PersistitGroupRow extends AbstractRow
         currentHKey = typedHKeys[ordinal];
         if (currentHKey == null) {
             currentHKey = new PersistitHKey(adapter, rowDef.userTable().hKey());
+            if (ordinal >= typedHKeys.length) {
+                PersistitHKey[] newTypedHKeys = new PersistitHKey[ordinal * 2];
+                System.arraycopy(typedHKeys, 0, newTypedHKeys, 0, typedHKeys.length);
+                typedHKeys = newTypedHKeys;
+            }
             typedHKeys[ordinal] = currentHKey;
         }
         return currentHKey;
@@ -136,12 +141,13 @@ public class PersistitGroupRow extends AbstractRow
     {
         this.adapter = adapter;
         this.rowData = rowData;
-        this.typedHKeys = new PersistitHKey[adapter.schema().maxTypeId() + 1];
+        this.typedHKeys = new PersistitHKey[INITIAL_HKEY_ARRAY_SIZE];
     }
 
     // Class state
 
     private static final int INITIAL_ROW_SIZE = 500;
+    private static final int INITIAL_HKEY_ARRAY_SIZE = 10;
 
     // Object state
 
@@ -149,5 +155,5 @@ public class PersistitGroupRow extends AbstractRow
     private RowData rowData;
     private LegacyRowWrapper row;
     private PersistitHKey currentHKey;
-    private final PersistitHKey[] typedHKeys;
+    private PersistitHKey[] typedHKeys;
 }

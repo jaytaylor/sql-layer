@@ -43,7 +43,7 @@ public class IndexKeyType extends RowType
         return index;
     }
 
-    public IndexKeyType(Schema schema, Index index)
+    public IndexKeyType(SchemaAISBased schema, Index index)
     {
         super(schema, schema.nextTypeId());
         this.index = index;
