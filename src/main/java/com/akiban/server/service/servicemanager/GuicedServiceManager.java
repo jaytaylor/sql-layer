@@ -25,8 +25,9 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.memcache.MemcacheService;
-import com.akiban.server.service.servicemanager.configuration.BindingConfiguration;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
+import com.akiban.server.service.servicemanager.configuration.yaml.DefaultSectionalConfigurationStrategy;
+import com.akiban.server.service.servicemanager.configuration.yaml.SectionalConfigurationStrategy;
 import com.akiban.server.service.servicemanager.configuration.yaml.YamlConfiguration;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.stats.StatisticsService;
@@ -151,15 +152,15 @@ public final class GuicedServiceManager implements ServiceManager {
     // GuicedServiceManager interface
 
     public GuicedServiceManager(BindingsConfigurationProvider bindingsConfigurationProvider) {
-        YamlConfiguration configuration = new YamlConfiguration();
+        SectionalConfigurationStrategy strategy = new DefaultSectionalConfigurationStrategy();
 
         // Install the default, no-op JMX registry; this is a special case, since we want to use it
         // as we start each service.
-        configuration.bind(JmxRegistryService.class.getName(), NoOpJmxRegistry.class.getName());
+        strategy.bind(JmxRegistryService.class.getName(), NoOpJmxRegistry.class.getName());
 
         // Next, load each element in the provider...
         for (BindingsConfigurationElement element : bindingsConfigurationProvider) {
-            element.loadInto(configuration);
+            element.loadInto(strategy);
         }
 
         // ... followed by whatever is in the file specified by -Dservices.config=blah, if that's defined...
@@ -175,13 +176,13 @@ public final class GuicedServiceManager implements ServiceManager {
             } catch (MalformedURLException e) {
                 throw new RuntimeException("couldn't convert config file to URL", e);
             }
-            new YamlBindingsUrl(configFileUrl).loadInto(configuration);
+            new YamlBindingsUrl(configFileUrl).loadInto(strategy);
         }
 
         // ... followed by any command-line overrides.
-        new PropertyBindings(System.getProperties()).loadInto(configuration);
+        new PropertyBindings(System.getProperties()).loadInto(strategy);
 
-        final Collection<ServiceBinding> bindings = configuration.serviceBindings();
+        final Collection<ServiceBinding> bindings = strategy.serviceBindings();
         try {
             guicer = Guicer.forServices(bindings);
         } catch (ClassNotFoundException e) {
@@ -344,12 +345,12 @@ public final class GuicedServiceManager implements ServiceManager {
     }
 
     private static interface BindingsConfigurationElement {
-        void loadInto(YamlConfiguration configuration);
+        void loadInto(SectionalConfigurationStrategy strategy);
     }
 
     private static class YamlBindingsUrl implements BindingsConfigurationElement {
         @Override
-        public void loadInto(YamlConfiguration configuration) {
+        public void loadInto(SectionalConfigurationStrategy strategy) {
             final InputStream defaultServicesStream;
             try {
                 defaultServicesStream = url.openStream();
@@ -369,7 +370,7 @@ public final class GuicedServiceManager implements ServiceManager {
             }
             RuntimeException exception = null;
             try {
-                configuration.read(url.toString(), defaultServicesReader);
+                new YamlConfiguration(strategy).read(url.toString(), defaultServicesReader);
             } catch (RuntimeException e) {
                 exception = e;
             } finally {
@@ -401,8 +402,8 @@ public final class GuicedServiceManager implements ServiceManager {
         // BindingsConfigurationElement interface
 
         @Override
-        public void loadInto(YamlConfiguration configuration) {
-            configuration.bind(interfaceName, implementationName);
+        public void loadInto(SectionalConfigurationStrategy strategy) {
+            strategy.bind(interfaceName, implementationName);
         }
 
 
@@ -423,19 +424,7 @@ public final class GuicedServiceManager implements ServiceManager {
         // BindingsConfigurationElement interface
 
         @Override
-        public void loadInto(YamlConfiguration configuration) {
-            loadInto((BindingConfiguration)configuration);
-        }
-
-        // PropertyBindings interface
-
-        PropertyBindings(Properties properties) {
-            this.properties = properties;
-        }
-
-        // for use in unit tests
-
-        void loadInto(BindingConfiguration configuration) {
+        public void loadInto(SectionalConfigurationStrategy strategy) {
             for (String property : properties.stringPropertyNames()) {
                 if (property.startsWith(BIND)) {
                     String theInterface = property.substring(BIND.length());
@@ -446,7 +435,7 @@ public final class GuicedServiceManager implements ServiceManager {
                     if (theImpl.length() == 0) {
                         throw new IllegalArgumentException("-D" + property + " doesn't have a valid value");
                     }
-                    configuration.bind(theInterface, theImpl);
+                    strategy.bind(theInterface, theImpl);
                 } else if (property.startsWith(REQUIRE)) {
                     String theInterface = property.substring(REQUIRE.length());
                     String value = properties.getProperty(property);
@@ -455,10 +444,18 @@ public final class GuicedServiceManager implements ServiceManager {
                                 String.format("-Drequire tags may not have values: %s = %s", theInterface, value)
                         );
                     }
-                    configuration.require(theInterface);
+                    strategy.require(theInterface);
                 }
             }
         }
+
+        // PropertyBindings interface
+
+        PropertyBindings(Properties properties) {
+            this.properties = properties;
+        }
+
+        // for use in unit tests
 
         // object state
 

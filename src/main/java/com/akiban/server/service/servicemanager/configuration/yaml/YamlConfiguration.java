@@ -15,37 +15,17 @@
 
 package com.akiban.server.service.servicemanager.configuration.yaml;
 
-import com.akiban.server.service.servicemanager.configuration.BindingConfiguration;
-import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 import com.akiban.util.Enumerated;
 import com.akiban.util.EnumeratingIterator;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.Reader;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("unused")
-public final class YamlConfiguration implements BindingConfiguration {
-
-    // BindingConfigurable interface
-
-    @Override
-    public void bind(String interfaceName, String implementingClassName) {
-        strategy.bind(interfaceName, implementingClassName);
-    }
-
-    @Override
-    public void require(String interfaceName) {
-        strategy.require(interfaceName);
-    }
-
-    @Override
-    public Collection<ServiceBinding> serviceBindings() {
-        return strategy.serviceBindings();
-    }
+public final class YamlConfiguration {
 
     // YamlConfiguration interface
 
@@ -64,11 +44,7 @@ public final class YamlConfiguration implements BindingConfiguration {
         }
     }
 
-    public YamlConfiguration() {
-        this(new DefaultSectionalConfigurationStrategy());
-    }
-
-    YamlConfiguration(SectionalConfigurationStrategy strategy) {
+    public YamlConfiguration(SectionalConfigurationStrategy strategy) {
         this.strategy = strategy;
     }
 
