@@ -153,15 +153,15 @@ public final class GuicedServiceManager implements ServiceManager {
     // GuicedServiceManager interface
 
     public GuicedServiceManager(BindingsConfigurationProvider bindingsConfigurationProvider) {
-        ServiceBindingConfiguration strategy = new DefaultServiceBindingConfiguration();
+        ServiceBindingConfiguration configuration = new DefaultServiceBindingConfiguration();
 
         // Install the default, no-op JMX registry; this is a special case, since we want to use it
         // as we start each service.
-        strategy.bind(JmxRegistryService.class.getName(), NoOpJmxRegistry.class.getName());
+        configuration.bind(JmxRegistryService.class.getName(), NoOpJmxRegistry.class.getName());
 
         // Next, load each element in the provider...
-        for (BindingsConfigurationLoader element : bindingsConfigurationProvider) {
-            element.loadInto(strategy);
+        for (BindingsConfigurationLoader loader : bindingsConfigurationProvider.loaders()) {
+            loader.loadInto(configuration);
         }
 
         // ... followed by whatever is in the file specified by -Dservices.config=blah, if that's defined...
@@ -177,13 +177,13 @@ public final class GuicedServiceManager implements ServiceManager {
             } catch (MalformedURLException e) {
                 throw new RuntimeException("couldn't convert config file to URL", e);
             }
-            new YamlBindingsUrl(configFileUrl).loadInto(strategy);
+            new YamlBindingsUrl(configFileUrl).loadInto(configuration);
         }
 
         // ... followed by any command-line overrides.
-        new PropertyBindings(System.getProperties()).loadInto(strategy);
+        new PropertyBindings(System.getProperties()).loadInto(configuration);
 
-        final Collection<ServiceBinding> bindings = strategy.serviceBindings();
+        final Collection<ServiceBinding> bindings = configuration.serviceBindings();
         try {
             guicer = Guicer.forServices(bindings);
         } catch (ClassNotFoundException e) {
@@ -292,18 +292,9 @@ public final class GuicedServiceManager implements ServiceManager {
      * and requires. You can have as many defines as you want, but only one requires. When parsing the resources,
      * the defines will be processed (in order) before the requires resource.
      */
-    public static final class BindingsConfigurationProvider implements Iterable<BindingsConfigurationLoader> {
+    public static final class BindingsConfigurationProvider {
 
-        // Iterable<URL> interface
-
-        @Override
-        public Iterator<BindingsConfigurationLoader> iterator() {
-            List<BindingsConfigurationLoader> urls = new ArrayList<BindingsConfigurationLoader>(elements);
-            if (requires != null) {
-                urls.add(new YamlBindingsUrl(requires));
-            }
-            return urls.iterator();
-        }
+        // BindingsConfigurationProvider interface
 
         /**
          * Adds a URL to the the internal list.
@@ -338,6 +329,17 @@ public final class GuicedServiceManager implements ServiceManager {
             requires = url;
             return this;
         }
+
+        // for use in this package
+
+        public Collection<BindingsConfigurationLoader> loaders() {
+            List<BindingsConfigurationLoader> urls = new ArrayList<BindingsConfigurationLoader>(elements);
+            if (requires != null) {
+                urls.add(new YamlBindingsUrl(requires));
+            }
+            return urls;
+        }
+
 
         // object state
 
