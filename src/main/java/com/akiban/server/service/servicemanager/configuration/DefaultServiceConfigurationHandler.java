@@ -53,8 +53,13 @@ public final class DefaultServiceConfigurationHandler implements ServiceConfigur
 
     @Override
     public void unrecognizedCommand(String where, Object command, String message) {
-        throw new ServiceConfigurationException(String.format("unrecognized command at %s: %s (%s)",
-                where, message, command));
+        throw new ServiceConfigurationException(
+                String.format("unrecognized command at %s: %s (%s)",
+                        where,
+                        message,
+                        command
+                )
+        );
     }
 
     @Override

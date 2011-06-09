@@ -45,7 +45,7 @@ public final class ServiceBindingsBuilderTest {
         checkOnlyBinding(builder, "alpha", "puppy", false, false);
     }
 
-    @Test(expected = ServiceBindingException.class)
+    @Test(expected = ServiceConfigurationException.class)
     public void mustBeBound_ButIsNot() {
         ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.mustBeBound("alpha");
@@ -63,14 +63,14 @@ public final class ServiceBindingsBuilderTest {
         checkOnlyBinding(builder, "alpha", "puppy", false, true);
     }
 
-    @Test(expected = ServiceBindingException.class)
+    @Test(expected = ServiceConfigurationException.class)
     public void mustBeLocked_Undefined() {
         ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.mustBeLocked("alpha");
         builder.markSectionEnd();
     }
 
-    @Test(expected = ServiceBindingException.class)
+    @Test(expected = ServiceConfigurationException.class)
     public void mustBeLocked_ButNotLocked() {
         ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.mustBeLocked("alpha");
@@ -78,7 +78,7 @@ public final class ServiceBindingsBuilderTest {
         builder.markSectionEnd();
     }
 
-    @Test(expected = ServiceBindingException.class)
+    @Test(expected = ServiceConfigurationException.class)
     public void mustBeLocked_RequiredButNotLocked() {
         ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.bind("alpha", "beta");
@@ -87,7 +87,7 @@ public final class ServiceBindingsBuilderTest {
         builder.markSectionEnd();
     }
 
-    @Test(expected = ServiceBindingException.class)
+    @Test(expected = ServiceConfigurationException.class)
     public void mustBeLocked_RequiredButNotLockedOrBound() {
         ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.mustBeLocked("alpha");
@@ -133,12 +133,12 @@ public final class ServiceBindingsBuilderTest {
         checkOnlyBinding(builder, "alpha", "puppy", false, true);
     }
 
-    @Test(expected = ServiceBindingException.class)
+    @Test(expected = ServiceConfigurationException.class)
     public void lockUnbound() {
         new ServiceBindingsBuilder().lock("unbound.interface");
     }
 
-    @Test(expected = ServiceBindingException.class)
+    @Test(expected = ServiceConfigurationException.class)
     public void lockUnboundButRequired() {
         ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.markDirectlyRequired("hello");

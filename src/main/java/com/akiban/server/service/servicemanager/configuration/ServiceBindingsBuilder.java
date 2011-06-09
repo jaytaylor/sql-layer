@@ -20,14 +20,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ServiceBindingsBuilder {
+class ServiceBindingsBuilder {
 
     // ServiceBindingsBuilder public interface
 
     public void bind(String interfaceName, String className) {
         ServiceBinding binding = defineIfNecessary(interfaceName);
         if (binding.isLocked()) {
-            throw new ServiceBindingException(interfaceName + " is locked");
+            throw new ServiceConfigurationException(interfaceName + " is locked");
         }
         binding.setImplementingClass(className);
     }
@@ -37,7 +37,7 @@ public class ServiceBindingsBuilder {
         Collection<ServiceBinding> all = new ArrayList<ServiceBinding>(bindings.values());
         for (ServiceBinding binding : all) {
             if (binding.isDirectlyRequired() && (binding.getImplementingClassName() == null) ) {
-                throw new ServiceBindingException(binding.getInterfaceName() + " is required but not bound");
+                throw new ServiceConfigurationException(binding.getInterfaceName() + " is required but not bound");
             }
         }
         return all;
@@ -75,7 +75,7 @@ public class ServiceBindingsBuilder {
             ServiceBinding binding = require(interfaceName);
             assert binding.getImplementingClassName() != null; // require makes this check
             if ( lockRequired && (!binding.isLocked()) ) {
-                throw new ServiceBindingException(binding.getImplementingClassName() + " is not locked");
+                throw new ServiceConfigurationException(binding.getImplementingClassName() + " is not locked");
             }
         }
         sectionRequirements.clear();
@@ -95,7 +95,7 @@ public class ServiceBindingsBuilder {
     private ServiceBinding require(String interfaceName) {
         ServiceBinding binding = bindings.get(interfaceName);
         if (binding == null || binding.getImplementingClassName() == null) {
-            throw new ServiceBindingException(interfaceName + " is not defined");
+            throw new ServiceConfigurationException(interfaceName + " is not defined");
         }
         return binding;
     }

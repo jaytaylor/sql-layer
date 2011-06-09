@@ -35,7 +35,7 @@ public final class ServiceBinding {
 
     public void setImplementingClass(String className) {
         if (isLocked()) {
-            throw new ServiceBindingException("can't set new implementing class: " + interfaceName + " is locked");
+            throw new ServiceConfigurationException("can't set new implementing class: " + interfaceName + " is locked");
         }
         implementingClassName = className;
     }
