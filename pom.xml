@@ -24,12 +24,6 @@
         </repository>
     </distributionManagement>
     <repositories>
-        <!-- yaml -->
-        <repository>
-            <id>Sonatype-public</id>
-            <name>SnakeYAML repository</name>
-            <url>http://oss.sonatype.org/content/groups/public/</url>
-        </repository>
         <!-- jmemcached-core -->
         <repository>
             <id>thimbleware.repo</id>
@@ -76,7 +70,7 @@
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.9-SNAPSHOT</version>
+            <version>1.8</version>
         </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
