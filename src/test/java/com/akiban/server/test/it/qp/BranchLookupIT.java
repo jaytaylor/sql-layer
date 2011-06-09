@@ -260,6 +260,16 @@ public class BranchLookupIT extends PhysicalOperatorITBase
         compareRows(expected, cursor);
     }
 
+    @Test
+    public void testAddressToMissingOrder()
+    {
+        PhysicalOperator plan = addressToOrderPlan("444 2222 st");
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+        };
+        compareRows(expected, cursor);
+    }
+
     // For use by this class
 
     private PhysicalOperator customerNameToCustomerPlan(String customerName)
