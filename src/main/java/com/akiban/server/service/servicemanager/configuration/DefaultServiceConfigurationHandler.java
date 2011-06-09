@@ -15,8 +15,6 @@
 
 package com.akiban.server.service.servicemanager.configuration;
 
-import com.akiban.server.service.servicemanager.configuration.yaml.YamlConfigurationException;
-
 import java.util.Collection;
 
 public final class DefaultServiceConfigurationHandler implements ServiceConfigurationHandler {
@@ -55,7 +53,7 @@ public final class DefaultServiceConfigurationHandler implements ServiceConfigur
 
     @Override
     public void unrecognizedCommand(String where, Object command, String message) {
-        throw new YamlConfigurationException(String.format("unrecognized command at %s: %s (%s)",
+        throw new ServiceConfigurationException(String.format("unrecognized command at %s: %s (%s)",
                 where, message, command));
     }
 

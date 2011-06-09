@@ -13,10 +13,10 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.servicemanager.configuration.yaml;
+package com.akiban.server.service.servicemanager.configuration;
 
-public final class YamlConfigurationException extends RuntimeException {
-    public YamlConfigurationException(String message) {
+public final class ServiceConfigurationException extends RuntimeException {
+    public ServiceConfigurationException(String message) {
         super(message);
     }
 }
