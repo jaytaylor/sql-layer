@@ -19,7 +19,7 @@ import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 
 import java.util.Collection;
 
-public interface SectionalConfigurationStrategy {
+public interface ServiceBindingConfiguration {
     void bind(String interfaceName, String implementingClassName);
     void require(String interfaceName);
     Collection<ServiceBinding> serviceBindings();

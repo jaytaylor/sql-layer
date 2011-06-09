@@ -16,12 +16,12 @@
 package com.akiban.server.service.servicemanager.configuration.yaml;
 
 import com.akiban.server.service.servicemanager.configuration.LockableServiceBindingsBuilder;
-import com.akiban.server.service.servicemanager.configuration.SectionalConfigurationStrategy;
+import com.akiban.server.service.servicemanager.configuration.ServiceBindingConfiguration;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 
 import java.util.Collection;
 
-public final class DefaultSectionalConfigurationStrategy implements SectionalConfigurationStrategy {
+public final class DefaultServiceBindingConfiguration implements ServiceBindingConfiguration {
 
     // YamlConfigurationStrategy interface
 

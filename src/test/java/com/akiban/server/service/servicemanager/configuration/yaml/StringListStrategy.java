@@ -15,7 +15,7 @@
 
 package com.akiban.server.service.servicemanager.configuration.yaml;
 
-import com.akiban.server.service.servicemanager.configuration.SectionalConfigurationStrategy;
+import com.akiban.server.service.servicemanager.configuration.ServiceBindingConfiguration;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-final class StringListStrategy implements SectionalConfigurationStrategy {
+final class StringListStrategy implements ServiceBindingConfiguration {
 
     // YamlConfigurationStrategy interface
 

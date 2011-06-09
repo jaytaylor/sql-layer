@@ -15,7 +15,7 @@
 
 package com.akiban.server.service.servicemanager.configuration.yaml;
 
-import com.akiban.server.service.servicemanager.configuration.SectionalConfigurationStrategy;
+import com.akiban.server.service.servicemanager.configuration.ServiceBindingConfiguration;
 import com.akiban.util.Enumerated;
 import com.akiban.util.EnumeratingIterator;
 import org.yaml.snakeyaml.Yaml;
@@ -45,7 +45,7 @@ public final class YamlConfiguration {
         }
     }
 
-    public YamlConfiguration(SectionalConfigurationStrategy strategy) {
+    public YamlConfiguration(ServiceBindingConfiguration strategy) {
         this.strategy = strategy;
     }
 
@@ -202,7 +202,7 @@ public final class YamlConfiguration {
 
     // internal state
 
-    private final SectionalConfigurationStrategy strategy;
+    private final ServiceBindingConfiguration strategy;
     private final Yaml parser = new Yaml();
 
     // nested classes

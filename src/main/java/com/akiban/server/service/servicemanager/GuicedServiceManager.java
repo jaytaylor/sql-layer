@@ -25,9 +25,9 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.memcache.MemcacheService;
-import com.akiban.server.service.servicemanager.configuration.SectionalConfigurationStrategy;
+import com.akiban.server.service.servicemanager.configuration.ServiceBindingConfiguration;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
-import com.akiban.server.service.servicemanager.configuration.yaml.DefaultSectionalConfigurationStrategy;
+import com.akiban.server.service.servicemanager.configuration.yaml.DefaultServiceBindingConfiguration;
 import com.akiban.server.service.servicemanager.configuration.yaml.YamlConfiguration;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.stats.StatisticsService;
@@ -152,7 +152,7 @@ public final class GuicedServiceManager implements ServiceManager {
     // GuicedServiceManager interface
 
     public GuicedServiceManager(BindingsConfigurationProvider bindingsConfigurationProvider) {
-        SectionalConfigurationStrategy strategy = new DefaultSectionalConfigurationStrategy();
+        ServiceBindingConfiguration strategy = new DefaultServiceBindingConfiguration();
 
         // Install the default, no-op JMX registry; this is a special case, since we want to use it
         // as we start each service.
@@ -345,12 +345,12 @@ public final class GuicedServiceManager implements ServiceManager {
     }
 
     private static interface BindingsConfigurationElement {
-        void loadInto(SectionalConfigurationStrategy strategy);
+        void loadInto(ServiceBindingConfiguration strategy);
     }
 
     private static class YamlBindingsUrl implements BindingsConfigurationElement {
         @Override
-        public void loadInto(SectionalConfigurationStrategy strategy) {
+        public void loadInto(ServiceBindingConfiguration strategy) {
             final InputStream defaultServicesStream;
             try {
                 defaultServicesStream = url.openStream();
@@ -402,7 +402,7 @@ public final class GuicedServiceManager implements ServiceManager {
         // BindingsConfigurationElement interface
 
         @Override
-        public void loadInto(SectionalConfigurationStrategy strategy) {
+        public void loadInto(ServiceBindingConfiguration strategy) {
             strategy.bind(interfaceName, implementationName);
         }
 
@@ -424,7 +424,7 @@ public final class GuicedServiceManager implements ServiceManager {
         // BindingsConfigurationElement interface
 
         @Override
-        public void loadInto(SectionalConfigurationStrategy strategy) {
+        public void loadInto(ServiceBindingConfiguration strategy) {
             for (String property : properties.stringPropertyNames()) {
                 if (property.startsWith(BIND)) {
                     String theInterface = property.substring(BIND.length());
