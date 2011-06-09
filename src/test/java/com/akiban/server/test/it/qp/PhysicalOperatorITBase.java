@@ -193,7 +193,6 @@ public class PhysicalOperatorITBase extends ITBase
             cursor.open(bindings);
             while (cursor.next()) {
                 RowBase actualRow = cursor.currentRow();
-/*
                 int count = actualRows.size();
                 assertTrue(count < expected.length);
                 if(!equal(expected[count], actualRow)) {
@@ -201,7 +200,6 @@ public class PhysicalOperatorITBase extends ITBase
                     String actualString = actualRow == null ? "null" : actualRow.toString();
                     assertEquals(expectedString, actualString);
                 }
-*/
                 actualRows.add(actualRow);
             }
         } finally {
