@@ -24,6 +24,9 @@ public interface ServiceBinding {
     boolean isDirectlyRequired();
     void markDirectlyRequired();
 
+    boolean isLocked();
+    void lock();
+
     /**
      * <p>Returns whether the given object is a ServiceBinding whose interface name matches this instance's.</p>
      * <p>Equality <em>must</em> be based solely on interface name.</p>

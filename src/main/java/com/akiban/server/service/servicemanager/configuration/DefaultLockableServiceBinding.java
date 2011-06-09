@@ -17,7 +17,7 @@ package com.akiban.server.service.servicemanager.configuration;
 
 import com.akiban.util.ArgumentValidation;
 
-public final class DefaultLockableServiceBinding implements LockableServiceBinding {
+public final class DefaultLockableServiceBinding implements ServiceBinding {
 
     // LockableServiceBinding interface
 

@@ -18,15 +18,14 @@ package com.akiban.server.service.servicemanager.configuration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 public class LockableServiceBindingsBuilder {
 
-    // LockableServiceBindingsBuilder public interface
+    // ServiceBindingsBuilder public interface
 
     public void bind(String interfaceName, String className) {
-        LockableServiceBinding binding = defineIfNecessary(interfaceName);
+        ServiceBinding binding = defineIfNecessary(interfaceName);
         if (binding.isLocked()) {
             throw new ServiceBindingException(interfaceName + " is locked");
         }
@@ -53,7 +52,7 @@ public class LockableServiceBindingsBuilder {
     }
 
     public void mustBeBound(String interfaceName) {
-        LockableServiceBinding binding = bindings.get(interfaceName);
+        ServiceBinding binding = bindings.get(interfaceName);
         if ( (binding == null || binding.getImplementingClassName() == null)
                 && !sectionRequirements.containsKey(interfaceName) )
         {
@@ -62,7 +61,7 @@ public class LockableServiceBindingsBuilder {
     }
 
     public void mustBeLocked(String interfaceName) {
-        LockableServiceBinding binding = bindings.get(interfaceName);
+        ServiceBinding binding = bindings.get(interfaceName);
         if (binding == null || !binding.isLocked()) {
             sectionRequirements.put(interfaceName, true);
         }
@@ -73,7 +72,7 @@ public class LockableServiceBindingsBuilder {
             String interfaceName = entry.getKey();
             boolean lockRequired = entry.getValue();
 
-            LockableServiceBinding binding = require(interfaceName);
+            ServiceBinding binding = require(interfaceName);
             assert binding.getImplementingClassName() != null; // require makes this check
             if ( lockRequired && (!binding.isLocked()) ) {
                 throw new ServiceBindingException(binding.getImplementingClassName() + " is not locked");
@@ -84,8 +83,8 @@ public class LockableServiceBindingsBuilder {
 
     // private methods
 
-    private LockableServiceBinding defineIfNecessary(String interfaceName) {
-        LockableServiceBinding binding = bindings.get(interfaceName);
+    private ServiceBinding defineIfNecessary(String interfaceName) {
+        ServiceBinding binding = bindings.get(interfaceName);
         if (binding == null) {
             binding = new DefaultLockableServiceBinding(interfaceName);
             bindings.put(interfaceName, binding);
@@ -93,8 +92,8 @@ public class LockableServiceBindingsBuilder {
         return binding;
     }
 
-    private LockableServiceBinding require(String interfaceName) {
-        LockableServiceBinding binding = bindings.get(interfaceName);
+    private ServiceBinding require(String interfaceName) {
+        ServiceBinding binding = bindings.get(interfaceName);
         if (binding == null || binding.getImplementingClassName() == null) {
             throw new ServiceBindingException(interfaceName + " is not defined");
         }
@@ -103,7 +102,7 @@ public class LockableServiceBindingsBuilder {
 
     // object state
     // invariant: key = bindings[key].getInterfaceName()
-    private final Map<String, LockableServiceBinding> bindings = new HashMap<String, LockableServiceBinding>();
+    private final Map<String, ServiceBinding> bindings = new HashMap<String, ServiceBinding>();
 
     /**
      * This defines section requirements as a map of interface_name -> boolean. All interface names in this map

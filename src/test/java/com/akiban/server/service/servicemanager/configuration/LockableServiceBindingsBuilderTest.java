@@ -145,7 +145,7 @@ public final class LockableServiceBindingsBuilderTest {
         builder.lock("hello");
     }
 
-    private static void checkBinding(String descriptor, LockableServiceBinding binding,
+    private static void checkBinding(String descriptor, ServiceBinding binding,
                                      String interfaceName, String implementingClass,
                                      boolean directlyRequired, boolean locked)
     {
@@ -159,15 +159,15 @@ public final class LockableServiceBindingsBuilderTest {
                                          String interfaceName, String implementingClass,
                                          boolean directlyRequired, boolean locked)
     {
-        List<LockableServiceBinding> bindings = sorted(builder.getAllBindings());
+        List<ServiceBinding> bindings = sorted(builder.getAllBindings());
         assertEquals("bindings count", 1, bindings.size());
         checkBinding("binding", bindings.get(0), interfaceName, implementingClass, directlyRequired, locked);
     }
 
-    private static List<LockableServiceBinding> sorted(Collection<ServiceBinding> bindings) {
-        List<LockableServiceBinding> sortedList = new ArrayList<LockableServiceBinding>();
+    private static List<ServiceBinding> sorted(Collection<ServiceBinding> bindings) {
+        List<ServiceBinding> sortedList = new ArrayList<ServiceBinding>();
         for (ServiceBinding binding : bindings) {
-            sortedList.add( (LockableServiceBinding) binding );
+            sortedList.add(binding );
         }
         Collections.sort(sortedList, new Comparator<ServiceBinding>() {
             @Override
