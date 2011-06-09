@@ -55,7 +55,7 @@ public final class ServiceBinding {
     // Object interface
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof ServiceBinding)) return false;
 
@@ -66,13 +66,13 @@ public final class ServiceBinding {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         return interfaceName != null ? interfaceName.hashCode() : 0;
     }
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder("Binding(");
+        StringBuilder builder = new StringBuilder("ServiceBinding(");
         builder.append(getInterfaceName()).append(" -> ").append(getImplementingClassName());
         builder.append(
                 isLocked() ? ", locked)" : ", unlocked)"
