@@ -367,7 +367,7 @@ public final class GuicedServiceManager implements ServiceManager {
             }
             RuntimeException exception = null;
             try {
-                new YamlConfiguration(config).read(url.toString(), defaultServicesReader);
+                new YamlConfiguration(url.toString(), defaultServicesReader).loadInto(config);
             } catch (RuntimeException e) {
                 exception = e;
             } finally {

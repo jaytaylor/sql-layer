@@ -15,6 +15,7 @@
 
 package com.akiban.server.service.servicemanager.configuration.yaml;
 
+import com.akiban.server.service.servicemanager.configuration.BindingsConfigurationLoader;
 import com.akiban.server.service.servicemanager.configuration.ServiceBindingConfiguration;
 import com.akiban.util.Enumerated;
 import com.akiban.util.EnumeratingIterator;
@@ -26,32 +27,35 @@ import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("unused")
-public final class YamlConfiguration {
+public final class YamlConfiguration implements BindingsConfigurationLoader {
 
-    // YamlConfiguration interface
+    // BindingsConfigurationLoader interface
 
-    public void read(String sourceName, Reader source) {
+    @Override
+    public void loadInto(ServiceBindingConfiguration config) {
         try {
+            Yaml parser = new Yaml();
             for (Enumerated<Object> enumerated : EnumeratingIterator.of(parser.loadAll(source))) {
                 Object item = enumerated.get();
                 if ( ! (item instanceof List) ) {
                     throw new BadConfigurationException("block " + enumerated.count() + " of " + sourceName, item);
                 }
-                readBlock(enumerated.count(), (List<?>)item);
+                readBlock(config, enumerated.count(), (List<?>)item);
             }
-            strategy.sectionEnd();
+            config.sectionEnd();
         } catch (BadConfigurationException e) {
-            strategy.unrecognizedCommand(e.getWhere(), e.getObject(), e.getMessage());
+            config.unrecognizedCommand(e.getWhere(), e.getObject(), e.getMessage());
         }
     }
 
-    public YamlConfiguration(ServiceBindingConfiguration strategy) {
-        this.strategy = strategy;
+    public YamlConfiguration(String sourceName, Reader source) {
+        this.sourceName = sourceName;
+        this.source = source;
     }
 
     // private methods
 
-    private void readBlock(int blockId, List<?> commands) {
+    private void readBlock(ServiceBindingConfiguration config, int blockId, List<?> commands) {
         for (Enumerated<?> enumerated : EnumeratingIterator.of(commands)) {
             Object elem = enumerated.get();
             if ( !(elem instanceof Map)) {
@@ -72,25 +76,25 @@ public final class YamlConfiguration {
             Object commandValue = commandEntry.getValue();
             switch (command) {
             case BIND:
-                internalDoBind( stringsMap(where, commandValue) );
+                internalDoBind( config, stringsMap(where, commandValue) );
                 break;
             case BIND_AND_LOCK:
-                internalDoBindAndLock( stringsMap(where, commandValue) );
+                internalDoBindAndLock( config, stringsMap(where, commandValue) );
                 break;
             case LOCK:
-                internalDoLock( strings(where, commandValue) );
+                internalDoLock( config, strings(where, commandValue) );
                 break;
             case REQUIRE:
-                internalDoRequire( strings(where, commandValue) );
+                internalDoRequire( config, strings(where, commandValue) );
                 break;
             case REQUIRE_LOCKED:
-                internalDoRequireLocked( strings(where, commandValue) );
+                internalDoRequireLocked( config, strings(where, commandValue) );
                 break;
             case LOCKED:
-                internalDoLocked( strings(where, commandValue) );
+                internalDoLocked( config, strings(where, commandValue) );
                 break;
             case BOUND:
-                internalDoBound( strings(where, commandValue) );
+                internalDoBound( config, strings(where, commandValue) );
                 break;
             default:
                 throw new UnsupportedOperationException(command.name());
@@ -98,47 +102,47 @@ public final class YamlConfiguration {
         }
     }
 
-    private void internalDoBind(Map<String,String> bindings) {
+    private void internalDoBind(ServiceBindingConfiguration config, Map<String,String> bindings) {
         for(Map.Entry<String,String> binding : bindings.entrySet()) {
-            strategy.bind(binding.getKey(), binding.getValue());
+            config.bind(binding.getKey(), binding.getValue());
         }
     }
 
-    private void internalDoBindAndLock(Map<String,String> bindings) {
+    private void internalDoBindAndLock(ServiceBindingConfiguration config, Map<String,String> bindings) {
         for(Map.Entry<String,String> binding : bindings.entrySet()) {
-            strategy.bind(binding.getKey(), binding.getValue());
-            strategy.lock(binding.getKey());
+            config.bind(binding.getKey(), binding.getValue());
+            config.lock(binding.getKey());
         }
     }
 
-    private void internalDoLock(List<String> interfaceNames) {
+    private void internalDoLock(ServiceBindingConfiguration config, List<String> interfaceNames) {
         for (String interfaceName : interfaceNames) {
-            strategy.lock(interfaceName);
+            config.lock(interfaceName);
         }
     }
 
-    private void internalDoRequire(List<String> interfaceNames) {
+    private void internalDoRequire(ServiceBindingConfiguration config, List<String> interfaceNames) {
         for (String interfaceName : interfaceNames) {
-            strategy.require(interfaceName);
+            config.require(interfaceName);
         }
     }
 
-    private void internalDoRequireLocked(List<String> interfaceNames) {
+    private void internalDoRequireLocked(ServiceBindingConfiguration config, List<String> interfaceNames) {
         for (String interfaceName : interfaceNames) {
-            strategy.require(interfaceName);
-            strategy.mustBeLocked(interfaceName);
+            config.require(interfaceName);
+            config.mustBeLocked(interfaceName);
         }
     }
 
-    private void internalDoLocked(List<String> interfaceNames) {
+    private void internalDoLocked(ServiceBindingConfiguration config, List<String> interfaceNames) {
         for (String interfaceName : interfaceNames) {
-            strategy.mustBeLocked(interfaceName);
+            config.mustBeLocked(interfaceName);
         }
     }
 
-    private void internalDoBound(List<String> interfaceNames) {
+    private void internalDoBound(ServiceBindingConfiguration config, List<String> interfaceNames) {
         for (String interfaceName : interfaceNames) {
-            strategy.mustBeBound(interfaceName);
+            config.mustBeBound(interfaceName);
         }
     }
 
@@ -202,8 +206,8 @@ public final class YamlConfiguration {
 
     // internal state
 
-    private final ServiceBindingConfiguration strategy;
-    private final Yaml parser = new Yaml();
+    final String sourceName;
+    final Reader source;
 
     // nested classes
 
