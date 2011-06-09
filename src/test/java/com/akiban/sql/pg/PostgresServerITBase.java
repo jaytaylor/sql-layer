@@ -29,6 +29,7 @@ import com.akiban.server.test.it.ITBase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
+import static junit.framework.Assert.*;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -184,6 +185,19 @@ public class PostgresServerITBase extends ITBase
 
     @Before
     public void openTheConnection() throws Exception {
+        for (int i = 0; i < 6; i++) {
+            if (server().isListening())
+                break;
+            if (i == 0)
+                System.err.println("Postgres server not listening. Waiting...");
+            else if (i == 5)
+                fail("Postgres server still not listening. Giving up.");
+            try {
+                Thread.sleep(200);
+            }
+            catch (InterruptedException ex) {
+            }
+        }
         connection = openConnection();
     }
 
