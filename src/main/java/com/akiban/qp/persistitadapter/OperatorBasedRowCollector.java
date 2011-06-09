@@ -65,7 +65,10 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     {
         boolean wroteToPayload = false;
         if (!closed) {
-            currentRow.set(cursor.currentRow());
+            if (currentRow.isNull()) {
+                currentRow.set(cursor.currentRow());
+            }
+            // else: Couldn't write row to payload last time. currentRow wasn't cleared and still has what we need.
             PersistitGroupRow row = (PersistitGroupRow) currentRow.get();
             if (row == null) {
                 close();
@@ -73,6 +76,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                 RowData rowData = row.rowData();
                 try {
                     payload.put(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
+                    currentRow.set(null);
                     wroteToPayload = true;
                     rowCount++;
                     if (!cursor.next()) {
