@@ -65,10 +65,10 @@ public final class YamlConfiguration implements BindingConfiguration {
     }
 
     public YamlConfiguration() {
-        this(new RealYamlConfigurationStrategy());
+        this(new DefaultSectionalConfigurationStrategy());
     }
 
-    YamlConfiguration(YamlConfigurationStrategy strategy) {
+    YamlConfiguration(SectionalConfigurationStrategy strategy) {
         this.strategy = strategy;
     }
 
@@ -225,7 +225,7 @@ public final class YamlConfiguration implements BindingConfiguration {
 
     // internal state
 
-    private final YamlConfigurationStrategy strategy;
+    private final SectionalConfigurationStrategy strategy;
     private final Yaml parser = new Yaml();
 
     // nested classes

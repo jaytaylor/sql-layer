@@ -17,7 +17,7 @@ package com.akiban.server.service.servicemanager.configuration.yaml;
 
 import com.akiban.server.service.servicemanager.configuration.BindingConfiguration;
 
-interface YamlConfigurationStrategy extends BindingConfiguration {
+public interface SectionalConfigurationStrategy extends BindingConfiguration {
     // There is not currently a need for an intermediate LockableBindingConfiguration. If we start needing that,
     // we can add it and pull lock there.
     void lock(String interfaceName);

@@ -22,7 +22,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-final class StringListStrategy implements YamlConfigurationStrategy {
+final class StringListStrategy implements SectionalConfigurationStrategy {
 
     // YamlConfigurationStrategy interface
 

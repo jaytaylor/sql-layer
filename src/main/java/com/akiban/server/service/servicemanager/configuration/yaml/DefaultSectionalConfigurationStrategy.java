@@ -20,7 +20,7 @@ import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 
 import java.util.Collection;
 
-final class RealYamlConfigurationStrategy implements YamlConfigurationStrategy {
+public final class DefaultSectionalConfigurationStrategy implements SectionalConfigurationStrategy {
 
     // YamlConfigurationStrategy interface
 
