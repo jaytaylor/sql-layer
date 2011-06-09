@@ -16,7 +16,6 @@
 package com.akiban.server.service.servicemanager.configuration.yaml;
 
 import com.akiban.server.service.servicemanager.configuration.ServiceConfigurationHandler;
-import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -60,11 +59,6 @@ final class StringListConfigurationHandler implements ServiceConfigurationHandle
     @Override
     public void unrecognizedCommand(String where, Object command, String message) {
         say("ERROR: %s (at %s) %s", message, where, command);
-    }
-
-    @Override
-    public Collection<ServiceBinding> serviceBindings() {
-        throw new UnsupportedOperationException(); // we don't actually build this collection up!
     }
 
     // StringListStrategy interface

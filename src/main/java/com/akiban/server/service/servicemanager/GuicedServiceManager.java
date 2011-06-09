@@ -152,7 +152,7 @@ public final class GuicedServiceManager implements ServiceManager {
     // GuicedServiceManager interface
 
     public GuicedServiceManager(BindingsConfigurationProvider bindingsConfigurationProvider) {
-        ServiceConfigurationHandler configurationHandler = new DefaultServiceConfigurationHandler();
+        DefaultServiceConfigurationHandler configurationHandler = new DefaultServiceConfigurationHandler();
 
         // Install the default, no-op JMX registry; this is a special case, since we want to use it
         // as we start each service.

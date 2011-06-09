@@ -62,7 +62,8 @@ public final class DefaultServiceConfigurationHandler implements ServiceConfigur
         );
     }
 
-    @Override
+    // DefaultServiceConfigurationHandler interface
+
     public Collection<ServiceBinding> serviceBindings() {
         return builder.getAllBindings();
     }

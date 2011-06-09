@@ -16,13 +16,11 @@
 package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.service.servicemanager.configuration.ServiceConfigurationHandler;
-import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 import com.akiban.server.service.servicemanager.GuicedServiceManager.PropertyBindings;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 
@@ -104,11 +102,6 @@ public final class PropertyBindingsTest {
         @Override
         public void require(String interfaceName) {
             messages.add("require " + interfaceName);
-        }
-
-        @Override
-        public Collection<ServiceBinding> serviceBindings() {
-            throw new UnsupportedOperationException();
         }
 
         @Override
