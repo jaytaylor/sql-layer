@@ -24,7 +24,9 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 class Extract_Default extends PhysicalOperator
@@ -38,6 +40,12 @@ class Extract_Default extends PhysicalOperator
     }
 
     // PhysicalOperator interface
+
+    @Override
+    public List<PhysicalOperator> getInputOperators()
+    {
+        return Collections.singletonList(inputOperator);
+    }
 
     @Override
     protected Cursor cursor(StoreAdapter adapter)

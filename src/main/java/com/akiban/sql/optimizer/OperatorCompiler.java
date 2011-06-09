@@ -220,6 +220,7 @@ public class OperatorCompiler
             throw new UnsupportedSQLException("Unsupported ORDER BY");
         
         PhysicalOperator resultOperator;
+        boolean needExtract = false;
         if (index != null) {
             squery.removeConditions(index.getIndexConditions());
             squery.recomputeUsed();
@@ -257,6 +258,7 @@ public class OperatorCompiler
                                                       indexType, tableType, false);
                 checkForCrossProducts(indexTable);
                 ancestorType = tableType; // Index no longer in stream.
+                needExtract = true; // Might be other descendants, too.
             }
             // Tables above this that also need to be output.
             List<RowType> addAncestors = new ArrayList<RowType>();
@@ -303,11 +305,13 @@ public class OperatorCompiler
                                                       tableType, tableRowType(branchTable), 
                                                       true);
                 checkForCrossProducts(branchTable);
+                needExtract = true; // Might bring in things not joined.
             }
         }
         else {
             resultOperator = groupScan_Default(groupTable);
             checkForCrossProducts(squery.getTables().getRoot());
+            needExtract = true; // Brings in the whole tree.
         }
         
         // TODO: Can apply most Select conditions before flattening.
@@ -323,7 +327,22 @@ public class OperatorCompiler
         RowType resultRowType = fls.getResultRowType();
         Map<TableNode,Integer> fieldOffsets = fls.getFieldOffsets();
 
-        // TODO: Add extract_Default here?
+        if (needExtract) {
+            // Now that we are done flattening, there is only one row type
+            // that we need.  Extract it.
+            resultOperator = extract_Default(resultOperator,
+                                             Collections.singleton(resultRowType));
+            // When selecting from a single table, we'll have that user
+            // table type and not a flattened type.  If doing a group
+            // scan, there may be descendants that survived the
+            // extract. Cut them.
+            if (resultRowType instanceof UserTableRowType) {
+                UserTable table = ((UserTableRowType)resultRowType).userTable();
+                if (!table.getChildJoins().isEmpty()) {
+                    resultOperator = cut_Default(resultOperator, resultRowType);
+                }
+            }
+        }
 
         for (ColumnCondition condition : squery.getConditions()) {
             Expression predicate = condition.generateExpression(fieldOffsets);

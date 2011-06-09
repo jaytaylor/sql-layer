@@ -74,34 +74,33 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             int ncols = columnTypes.size();
             while (cursor.next()) {
                 Row row = cursor.currentRow();
-                if (row.rowType() == resultRowType) {
-                    if (nskip > 0) {
-                        nskip--;
-                        continue;
-                    }
-                    messenger.beginMessage(PostgresMessenger.DATA_ROW_TYPE);
-                    messenger.writeShort(ncols);
-                    for (int i = 0; i < ncols; i++) {
-                        Object field = row.field(i, bindings);
-                        PostgresType type = columnTypes.get(i);
-                        byte[] value = type.encodeValue(field,
-                                                        messenger.getEncoding(),
-                                                        isColumnBinary(i));
-                        if (value == null) {
-                            messenger.writeInt(-1);
-                        }
-                        else {
-                            messenger.writeInt(value.length);
-                            messenger.write(value);
-                        }
-                    }
-                    messenger.sendMessage();
-                    nrows++;
-                    if ((maxrows > 0) && (nrows >= maxrows))
-                        break;
+                assert (row.rowType() == resultRowType) : row;
+                if (nskip > 0) {
+                    nskip--;
+                    continue;
                 }
+                messenger.beginMessage(PostgresMessenger.DATA_ROW_TYPE);
+                messenger.writeShort(ncols);
+                for (int i = 0; i < ncols; i++) {
+                    Object field = row.field(i, bindings);
+                    PostgresType type = columnTypes.get(i);
+                    byte[] value = type.encodeValue(field,
+                                                    messenger.getEncoding(),
+                                                    isColumnBinary(i));
+                    if (value == null) {
+                        messenger.writeInt(-1);
+                    }
+                    else {
+                        messenger.writeInt(value.length);
+                        messenger.write(value);
+                    }
+                }
+                messenger.sendMessage();
+                nrows++;
+                if ((maxrows > 0) && (nrows >= maxrows))
+                    break;
             }
-        } 
+        }
         finally {
             cursor.close();
         }
