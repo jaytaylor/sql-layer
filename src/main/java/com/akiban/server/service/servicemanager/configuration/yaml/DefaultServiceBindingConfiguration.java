@@ -15,7 +15,7 @@
 
 package com.akiban.server.service.servicemanager.configuration.yaml;
 
-import com.akiban.server.service.servicemanager.configuration.LockableServiceBindingsBuilder;
+import com.akiban.server.service.servicemanager.configuration.ServiceBindingsBuilder;
 import com.akiban.server.service.servicemanager.configuration.ServiceBindingConfiguration;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 
@@ -67,5 +67,5 @@ public final class DefaultServiceBindingConfiguration implements ServiceBindingC
     }
 
     // object state
-    private final LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+    private final ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
 }

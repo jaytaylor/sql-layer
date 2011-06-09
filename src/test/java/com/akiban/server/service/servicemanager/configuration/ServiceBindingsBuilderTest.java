@@ -25,11 +25,11 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-public final class LockableServiceBindingsBuilderTest {
+public final class ServiceBindingsBuilderTest {
 
     @Test
     public void bindOne() {
-        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.bind("one", "two");
         
         checkOnlyBinding(builder, "one", "two", false, false);
@@ -37,7 +37,7 @@ public final class LockableServiceBindingsBuilderTest {
 
     @Test
     public void mustBeBound_Good() {
-        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.mustBeBound("alpha");
         builder.bind("alpha", "puppy");
         builder.markSectionEnd();
@@ -47,14 +47,14 @@ public final class LockableServiceBindingsBuilderTest {
 
     @Test(expected = ServiceBindingException.class)
     public void mustBeBound_ButIsNot() {
-        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.mustBeBound("alpha");
         builder.markSectionEnd();
     }
 
     @Test
     public void mustBeLocked_Good() {
-        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.mustBeLocked("alpha");
         builder.bind("alpha", "puppy");
         builder.lock("alpha");
@@ -65,14 +65,14 @@ public final class LockableServiceBindingsBuilderTest {
 
     @Test(expected = ServiceBindingException.class)
     public void mustBeLocked_Undefined() {
-        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.mustBeLocked("alpha");
         builder.markSectionEnd();
     }
 
     @Test(expected = ServiceBindingException.class)
     public void mustBeLocked_ButNotLocked() {
-        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.mustBeLocked("alpha");
         builder.bind("alpha", "beta");
         builder.markSectionEnd();
@@ -80,7 +80,7 @@ public final class LockableServiceBindingsBuilderTest {
 
     @Test(expected = ServiceBindingException.class)
     public void mustBeLocked_RequiredButNotLocked() {
-        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.bind("alpha", "beta");
         builder.mustBeLocked("alpha");
         builder.markDirectlyRequired("alpha");
@@ -89,7 +89,7 @@ public final class LockableServiceBindingsBuilderTest {
 
     @Test(expected = ServiceBindingException.class)
     public void mustBeLocked_RequiredButNotLockedOrBound() {
-        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.mustBeLocked("alpha");
         builder.markDirectlyRequired("alpha");
         builder.markSectionEnd();
@@ -97,7 +97,7 @@ public final class LockableServiceBindingsBuilderTest {
 
     @Test
     public void markRequired_Good() {
-        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.markDirectlyRequired("alpha");
         builder.bind("alpha", "puppy");
         builder.markSectionEnd();
@@ -107,14 +107,14 @@ public final class LockableServiceBindingsBuilderTest {
 
     @Test
     public void markRequired_ButIsNotBound() {
-        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.markDirectlyRequired("alpha");
         builder.markSectionEnd();
     }
 
     @Test
     public void lockTwice() {
-        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.bind("alpha", "puppy");
         builder.lock("alpha");
         builder.lock("alpha");
@@ -125,7 +125,7 @@ public final class LockableServiceBindingsBuilderTest {
 
     @Test
     public void lockThenRequireBound() {
-        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.bind("alpha", "puppy");
         builder.lock("alpha");
         builder.mustBeBound("alpha");
@@ -135,12 +135,12 @@ public final class LockableServiceBindingsBuilderTest {
 
     @Test(expected = ServiceBindingException.class)
     public void lockUnbound() {
-        new LockableServiceBindingsBuilder().lock("unbound.interface");
+        new ServiceBindingsBuilder().lock("unbound.interface");
     }
 
     @Test(expected = ServiceBindingException.class)
     public void lockUnboundButRequired() {
-        LockableServiceBindingsBuilder builder = new LockableServiceBindingsBuilder();
+        ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
         builder.markDirectlyRequired("hello");
         builder.lock("hello");
     }
@@ -155,7 +155,7 @@ public final class LockableServiceBindingsBuilderTest {
         assertEquals(descriptor + ".locked", locked, binding.isLocked());
     }
 
-    private static void checkOnlyBinding(LockableServiceBindingsBuilder builder,
+    private static void checkOnlyBinding(ServiceBindingsBuilder builder,
                                          String interfaceName, String implementingClass,
                                          boolean directlyRequired, boolean locked)
     {
