@@ -598,12 +598,13 @@ public class OperatorCompiler
             }
 
             if ((lowCondition == null) && (highCondition == null)) {
-                IndexBound eq = getIndexBound(index, keys);
+                IndexBound eq = getIndexBound(index, keys, kidx);
                 return new IndexKeyRange(eq, true, eq, true);
             }
             else {
                 Expression[] lowKeys = null, highKeys = null;
                 boolean lowInc = false, highInc = false;
+                int lidx = kidx, hidx = kidx;
                 if (lowCondition != null) {
                     lowKeys = keys;
                     if (highCondition != null) {
@@ -615,15 +616,15 @@ public class OperatorCompiler
                     highKeys = keys;
                 }
                 if (lowCondition != null) {
-                    lowKeys[kidx] = lowCondition.getRight().generateExpression(null);
+                    lowKeys[lidx++] = lowCondition.getRight().generateExpression(null);
                     lowInc = (lowCondition.getOperation() == Comparison.GE);
                 }
                 if (highCondition != null) {
-                    highKeys[kidx] = highCondition.getRight().generateExpression(null);
+                    highKeys[hidx++] = highCondition.getRight().generateExpression(null);
                     highInc = (highCondition.getOperation() == Comparison.LE);
                 }
-                IndexBound lo = getIndexBound(index, lowKeys);
-                IndexBound hi = getIndexBound(index, highKeys);
+                IndexBound lo = getIndexBound(index, lowKeys, lidx);
+                IndexBound hi = getIndexBound(index, highKeys, hidx);
                 return new IndexKeyRange(lo, lowInc, hi, highInc);
             }
         }
@@ -750,7 +751,12 @@ public class OperatorCompiler
         return schema.userTableRowType(table.getTable());
     }
 
-    protected IndexBound getIndexBound(Index index, Expression[] keys) {
+    /** Return an index bound for the given index and expressions.
+     * @param index the index in use
+     * @param keys {@link Expression}s for index lookup key
+     * @param nkeys number of keys actually in use
+     */
+    protected IndexBound getIndexBound(Index index, Expression[] keys, int nkeys) {
         if (keys == null) 
             return null;
         UserTable userTable = null;
@@ -759,13 +765,18 @@ public class OperatorCompiler
         // TODO: group index bound table.
         return new IndexBound(userTable,
                               getIndexExpressionRow(index, keys),
-                              getIndexColumnSelector(index));
+                              getIndexColumnSelector(index, nkeys));
     }
 
-    protected ColumnSelector getIndexColumnSelector(final Index index) {
+    /** Return a column selector that enables the first <code>nkeys</code> fields
+     * of a row of the index's user table. */
+    // TODO: group index fail: the column's position won't be its
+    // field index in the index key row.
+    protected ColumnSelector getIndexColumnSelector(final Index index, final int nkeys) {
         return new ColumnSelector() {
                 public boolean includesColumn(int columnPosition) {
-                    for (IndexColumn indexColumn : index.getColumns()) {
+                    for (int i = 0; i < nkeys; i++) {
+                        IndexColumn indexColumn = index.getColumns().get(i);
                         Column column = indexColumn.getColumn();
                         if (column.getPosition() == columnPosition) {
                             return true;
@@ -805,6 +816,13 @@ public class OperatorCompiler
         private final Index index;
     }
 
+    /** Return a {@link Row} for the given index containing the given
+     * {@link Expression} values.  
+     *
+     * When testing, this just returns a row with those expressions.
+     * In use with actual index lookup, needs to be overridden to
+     * return a row shaped like the user table.
+     */
     protected Row getIndexExpressionRow(Index index, Expression[] keys) {
         RowType rowType = null;
         if (index.isTableIndex())
