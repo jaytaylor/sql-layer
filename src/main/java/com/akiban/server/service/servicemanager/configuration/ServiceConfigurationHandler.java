@@ -20,10 +20,10 @@ import java.util.Collection;
 public interface ServiceConfigurationHandler {
     void bind(String interfaceName, String implementingClassName);
     void require(String interfaceName);
-    Collection<ServiceBinding> serviceBindings();
     void lock(String interfaceName);
     void mustBeLocked(String interfaceName);
     void mustBeBound(String interfaceName);
     void sectionEnd();
     void unrecognizedCommand(String where, Object command, String message);
+    Collection<ServiceBinding> serviceBindings();
 }
