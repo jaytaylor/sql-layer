@@ -345,12 +345,12 @@ public final class GuicedServiceManager implements ServiceManager {
     }
 
     private static interface BindingsConfigurationElement {
-        void loadInto(ServiceBindingConfiguration strategy);
+        void loadInto(ServiceBindingConfiguration config);
     }
 
     private static class YamlBindingsUrl implements BindingsConfigurationElement {
         @Override
-        public void loadInto(ServiceBindingConfiguration strategy) {
+        public void loadInto(ServiceBindingConfiguration config) {
             final InputStream defaultServicesStream;
             try {
                 defaultServicesStream = url.openStream();
@@ -370,7 +370,7 @@ public final class GuicedServiceManager implements ServiceManager {
             }
             RuntimeException exception = null;
             try {
-                new YamlConfiguration(strategy).read(url.toString(), defaultServicesReader);
+                new YamlConfiguration(config).read(url.toString(), defaultServicesReader);
             } catch (RuntimeException e) {
                 exception = e;
             } finally {
@@ -402,8 +402,8 @@ public final class GuicedServiceManager implements ServiceManager {
         // BindingsConfigurationElement interface
 
         @Override
-        public void loadInto(ServiceBindingConfiguration strategy) {
-            strategy.bind(interfaceName, implementationName);
+        public void loadInto(ServiceBindingConfiguration config) {
+            config.bind(interfaceName, implementationName);
         }
 
 
@@ -424,7 +424,7 @@ public final class GuicedServiceManager implements ServiceManager {
         // BindingsConfigurationElement interface
 
         @Override
-        public void loadInto(ServiceBindingConfiguration strategy) {
+        public void loadInto(ServiceBindingConfiguration config) {
             for (String property : properties.stringPropertyNames()) {
                 if (property.startsWith(BIND)) {
                     String theInterface = property.substring(BIND.length());
@@ -435,7 +435,7 @@ public final class GuicedServiceManager implements ServiceManager {
                     if (theImpl.length() == 0) {
                         throw new IllegalArgumentException("-D" + property + " doesn't have a valid value");
                     }
-                    strategy.bind(theInterface, theImpl);
+                    config.bind(theInterface, theImpl);
                 } else if (property.startsWith(REQUIRE)) {
                     String theInterface = property.substring(REQUIRE.length());
                     String value = properties.getProperty(property);
@@ -444,7 +444,7 @@ public final class GuicedServiceManager implements ServiceManager {
                                 String.format("-Drequire tags may not have values: %s = %s", theInterface, value)
                         );
                     }
-                    strategy.require(theInterface);
+                    config.require(theInterface);
                 }
             }
         }
