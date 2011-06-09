@@ -13,11 +13,12 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.servicemanager.configuration.yaml;
+package com.akiban.server.service.servicemanager.configuration;
 
 import com.akiban.server.service.servicemanager.configuration.ServiceBindingsBuilder;
 import com.akiban.server.service.servicemanager.configuration.ServiceBindingConfiguration;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
+import com.akiban.server.service.servicemanager.configuration.yaml.YamlConfigurationException;
 
 import java.util.Collection;
 
