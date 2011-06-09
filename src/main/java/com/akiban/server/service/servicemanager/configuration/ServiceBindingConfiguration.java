@@ -15,8 +15,6 @@
 
 package com.akiban.server.service.servicemanager.configuration;
 
-import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
-
 import java.util.Collection;
 
 public interface ServiceBindingConfiguration {
