@@ -15,15 +15,15 @@
 
 package com.akiban.server.service.servicemanager.configuration.yaml;
 
-import com.akiban.server.service.servicemanager.configuration.BindingConfiguration;
+import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 
-public interface SectionalConfigurationStrategy extends BindingConfiguration {
-    // There is not currently a need for an intermediate LockableBindingConfiguration. If we start needing that,
-    // we can add it and pull lock there.
+import java.util.Collection;
+
+public interface SectionalConfigurationStrategy {
+    void bind(String interfaceName, String implementingClassName);
+    void require(String interfaceName);
+    Collection<ServiceBinding> serviceBindings();
     void lock(String interfaceName);
-
-    // The following are essentially checks, which rely on the concept of a configuration section. BindingConfiguration
-    // doesn't have that concept, which is why these aren't there (even though mustBeBound could, in theory)
     void mustBeLocked(String interfaceName);
     void mustBeBound(String interfaceName);
     void sectionEnd();
