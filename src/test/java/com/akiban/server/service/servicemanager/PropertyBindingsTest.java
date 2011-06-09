@@ -15,9 +15,9 @@
 
 package com.akiban.server.service.servicemanager;
 
-import com.akiban.server.service.servicemanager.configuration.BindingConfiguration;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 import com.akiban.server.service.servicemanager.GuicedServiceManager.PropertyBindings;
+import com.akiban.server.service.servicemanager.configuration.yaml.SectionalConfigurationStrategy;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -95,7 +95,7 @@ public final class PropertyBindingsTest {
         private final Properties properties = new Properties();
     }
 
-    private static class StringsConfig implements BindingConfiguration {
+    private static class StringsConfig implements SectionalConfigurationStrategy {
         @Override
         public void bind(String interfaceName, String implementingClassName) {
             messages.add("bind " + interfaceName + " to " + implementingClassName);
@@ -109,6 +109,31 @@ public final class PropertyBindingsTest {
         @Override
         public Collection<ServiceBinding> serviceBindings() {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void lock(String interfaceName) {
+            messages.add("lock: " + interfaceName);
+        }
+
+        @Override
+        public void mustBeLocked(String interfaceName) {
+            messages.add("must be locked: " + interfaceName);
+        }
+
+        @Override
+        public void mustBeBound(String interfaceName) {
+            messages.add("must be bound: " + interfaceName);
+        }
+
+        @Override
+        public void sectionEnd() {
+            messages.add("section end");
+        }
+
+        @Override
+        public void unrecognizedCommand(String where, Object command, String message) {
+            messages.add("unrecognized command");
         }
 
         public List<String> messages() {
