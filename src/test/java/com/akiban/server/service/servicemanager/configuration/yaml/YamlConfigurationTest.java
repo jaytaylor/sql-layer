@@ -59,8 +59,8 @@ public final class YamlConfigurationTest {
         List<String> expecteds = Strings.dumpResource(YamlConfigurationTest.class, expectedFileName);
 
 
-        StringListStrategy strategy = new StringListStrategy();
-        YamlConfiguration configuration = new YamlConfiguration(strategy);
+        StringListConfiguration stringsConfig = new StringListConfiguration();
+        YamlConfiguration yamlConfig = new YamlConfiguration(stringsConfig);
         InputStream testIS = YamlConfigurationTest.class.getResourceAsStream(yamlFileName);
         if (testIS == null) {
             throw new FileNotFoundException(yamlFileName);
@@ -69,7 +69,7 @@ public final class YamlConfigurationTest {
         do {
             Reader testReader = new InputStreamReader(testIS, "UTF-8");
             try {
-                configuration.read(yamlFileName, testReader);
+                yamlConfig.read(yamlFileName, testReader);
             } finally {
                 testReader.close();
             }
@@ -77,7 +77,7 @@ public final class YamlConfigurationTest {
             testIS = YamlConfigurationTest.class.getResourceAsStream(nextFile);
         } while (testIS != null);
 
-        assertEquals("output", Strings.join(expecteds), Strings.join(strategy.strings()));
+        assertEquals("output", Strings.join(expecteds), Strings.join(stringsConfig.strings()));
     }
 
     public YamlConfigurationTest(String yamlFileName) {
