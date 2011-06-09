@@ -16,6 +16,7 @@
 package com.akiban.server.service.servicemanager.configuration.yaml;
 
 import com.akiban.server.service.servicemanager.configuration.LockableServiceBindingsBuilder;
+import com.akiban.server.service.servicemanager.configuration.SectionalConfigurationStrategy;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 
 import java.util.Collection;

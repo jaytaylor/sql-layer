@@ -15,9 +15,9 @@
 
 package com.akiban.server.service.servicemanager;
 
+import com.akiban.server.service.servicemanager.configuration.SectionalConfigurationStrategy;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 import com.akiban.server.service.servicemanager.GuicedServiceManager.PropertyBindings;
-import com.akiban.server.service.servicemanager.configuration.yaml.SectionalConfigurationStrategy;
 import org.junit.Test;
 
 import java.util.ArrayList;
