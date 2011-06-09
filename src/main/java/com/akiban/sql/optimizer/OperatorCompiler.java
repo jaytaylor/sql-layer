@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer;
 
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.exec.Plannable;
+import com.akiban.qp.rowtype.*;
 import com.akiban.sql.optimizer.SimplifiedQuery.*;
 
 import com.akiban.sql.parser.*;
@@ -45,10 +46,6 @@ import com.akiban.qp.physicaloperator.PhysicalOperator;
 import static com.akiban.qp.physicaloperator.API.*;
 
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
 
 import java.util.*;
 
@@ -64,7 +61,7 @@ public class OperatorCompiler
     protected BooleanNormalizer booleanNormalizer;
     protected SubqueryFlattener subqueryFlattener;
     protected Grouper grouper;
-    protected Schema schema;
+    protected SchemaAISBased schema;
 
     public OperatorCompiler(SQLParser parser, 
                             AkibanInformationSchema ais, String defaultSchemaName) {
@@ -76,7 +73,7 @@ public class OperatorCompiler
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
         grouper = new Grouper(parser);
-        schema = new Schema(ais);
+        schema = new SchemaAISBased(ais);
     }
 
     public void addView(ViewDefinition view) throws StandardException {
@@ -788,7 +785,7 @@ public class OperatorCompiler
             return index.getColumns().size();
         }
 
-        public UnknownIndexRowType(Schema schema, UserTableRowType tableType, Index index)
+        public UnknownIndexRowType(SchemaAISBased schema, UserTableRowType tableType, Index index)
         {
             super(schema, tableType, null);
             this.index = index;

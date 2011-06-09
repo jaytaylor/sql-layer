@@ -38,17 +38,11 @@ public class ProjectedRowType extends DerivedRowType
         return projections.size();
     }
 
-    @Override
-    public boolean ancestorOf(RowType type)
-    {
-        return false;
-    }
-
     // ProjectedRowType interface
 
     public ProjectedRowType(Schema schema, int typeId, List<Expression> projections)
     {
-        super(schema, typeId, null);
+        super(schema, typeId);
         this.projections = projections;
     }
 

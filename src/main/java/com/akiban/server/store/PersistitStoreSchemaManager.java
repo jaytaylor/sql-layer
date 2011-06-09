@@ -108,8 +108,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private final static String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
 
-    private final static String AKIBAN_INFORMATION_SCHEMA = "akiban_information_schema";
-
     private final static boolean forceToDisk = true;
 
     /**
@@ -359,7 +357,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public void deleteTableDefinition(final Session session, final String schemaName,
                                       final String tableName) throws Exception {
-        if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
+        if (TableName.AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
             return;
         }
 
@@ -704,7 +702,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             throws Exception {
         final String schemaName = tableDef.getCName().getSchema();
         final String tableName = tableDef.getCName().getName();
-        if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
+        if (TableName.AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
             throw new InvalidOperationException(ErrorCode.PROTECTED_TABLE,
                     "Cannot create table `%s` in protected schema `%s`",
                     tableName, schemaName);
@@ -776,7 +774,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         final String parentSchema = parentJoin.getSchemaName() != null ? parentJoin
                 .getSchemaName() : schemaName;
 
-        if (AKIBAN_INFORMATION_SCHEMA.equals(parentSchema)) {
+        if (TableName.AKIBAN_INFORMATION_SCHEMA.equals(parentSchema)) {
             throw new InvalidOperationException(
                     ErrorCode.JOIN_TO_PROTECTED_TABLE,
                     "Table `%s`.`%s` joins to protected table `%s`.`%s`",
@@ -911,7 +909,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     @Override
                     public boolean shouldSaveTable(Table table) {
                         final String schemaName = table.getName().getSchemaName();
-                        return !schemaName.equals(AKIBAN_INFORMATION_SCHEMA) &&
+                        return !schemaName.equals(TableName.AKIBAN_INFORMATION_SCHEMA) &&
                                getVolumeForSchemaTree(schemaName).equals(volumeName);
                     }
                 }.save(newAIS);

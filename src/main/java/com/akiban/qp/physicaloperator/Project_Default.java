@@ -62,7 +62,7 @@ class Project_Default extends PhysicalOperator
         return describePlan(inputOperator);
     }
 
-    // Flatten_HKeyOrdered interface
+    // Project_Default interface
 
     public Project_Default(PhysicalOperator inputOperator, RowType rowType, List<Expression> projections)
     {

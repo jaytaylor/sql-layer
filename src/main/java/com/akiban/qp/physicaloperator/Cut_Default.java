@@ -15,16 +15,12 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 
-import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 class Cut_Default extends PhysicalOperator
@@ -51,34 +47,17 @@ class Cut_Default extends PhysicalOperator
         return describePlan(inputOperator);
     }
 
-    // GroupScan_Default interface
+    // CutScan_Default interface
 
-    public Cut_Default(PhysicalOperator inputOperator, Collection<RowType> cutTypes)
+    public Cut_Default(PhysicalOperator inputOperator, RowType cutType)
     {
-        ArgumentValidation.notEmpty("keepTypes", cutTypes);
+        ArgumentValidation.notNull("cutType", cutType);
         this.inputOperator = inputOperator;
-        Schema schema = null;
-        for (RowType type : cutTypes) {
-            if (schema == null) {
-                schema = type.schema();
-            } else {
-                ArgumentValidation.isSame("schema", schema, "type.schema()", type.schema());
-            }
-            if (type instanceof UserTableRowType) {
-                addDescendentTypes(schema, type.userTable(), this.rejectTypes);
-            } else {
+        for (Iterator<RowType> rowTypes = cutType.schema().rowTypes(); rowTypes.hasNext();) {
+            RowType type = rowTypes.next();
+            if (cutType != type && cutType.ancestorOf(type)) {
                 this.rejectTypes.add(type);
             }
-        }
-    }
-
-    // For use by this class
-
-    private static void addDescendentTypes(Schema schema, UserTable table, Set<RowType> rowTypes)
-    {
-        rowTypes.add(schema.userTableRowType(table));
-        for (Join join : table.getChildJoins()) {
-            addDescendentTypes(schema, join.getChild(), rowTypes);
         }
     }
 

@@ -25,6 +25,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.SchemaPerSession;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.IndexDef;
@@ -223,7 +224,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     
     protected OperatorBasedRowCollector(PersistitStore store, Session session)
     {
-        this.schema = SchemaCache.globalSchema(store.getRowDefCache().ais());
+        this.schema = new SchemaPerSession(SchemaCache.globalSchema(store.getRowDefCache().ais()));
         this.adapter = new PersistitAdapter(schema, store, session);
         this.rowCollectorId = idCounter.getAndIncrement();
     }
@@ -257,11 +258,13 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             }
         }
         // Get rid of everything above query root table.
-        rootOperator = extract_Default(rootOperator, Arrays.<RowType>asList(queryRootType));
+        if (queryRootTable.parentTable() != null) {
+            rootOperator = extract_Default(rootOperator, Arrays.<RowType>asList(queryRootType));
+        }
         // Get rid of selected types below query root table.
         Set<RowType> cutTypes = cutTypes(deep);
-        if (!cutTypes.isEmpty()) {
-            rootOperator = cut_Default(rootOperator, cutTypes);
+        for (RowType cutType : cutTypes) {
+            rootOperator = cut_Default(rootOperator, cutType);
         }
         if (LOG.isInfoEnabled()) {
             LOG.info("Execution plan:\n{}", rootOperator.describePlan());
@@ -300,9 +303,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             }
             // Cut below each leafmost required table
             for (UserTable leafmostRequiredUserTable : leafmostRequiredUserTables) {
-                for (Join join : leafmostRequiredUserTable.getChildJoins()) {
-                    cutTypes.add(schema.userTableRowType(join.getChild()));
-                }
+                cutTypes.add(schema.userTableRowType(leafmostRequiredUserTable));
             }
         }
         if (predicateType != null) {
