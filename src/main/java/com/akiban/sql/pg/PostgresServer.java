@@ -32,6 +32,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private PostgresStatementCache statementCache;
     private ServerSocket socket = null;
     private boolean running = false;
+    private boolean listening = false;
     private Map<Integer,PostgresServerConnection> connections =
         new HashMap<Integer,PostgresServerConnection>();
     private Thread thread;
@@ -57,7 +58,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         ServerSocket socket;
         synchronized(this) {
             // Service might shutdown before we've even got server socket created.
-            running = false;
+            running = listening = false;
             socket = this.socket;
         }
         if (socket != null) {
@@ -82,6 +83,8 @@ public class PostgresServer implements Runnable, PostgresMXBean {
             try {
                 // Wait a bit, but don't hang up shutdown if thread is wedged.
                 thread.join(500);
+                if (thread.isAlive())
+                    logger.warn("Server still running.");
             }
             catch (InterruptedException ex) {
             }
@@ -97,6 +100,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
             synchronized(this) {
                 if (!running) return;
                 socket = new ServerSocket(port);
+                listening = true;
             }
             while (running) {
                 Socket sock = socket.accept();
@@ -122,6 +126,10 @@ public class PostgresServer implements Runnable, PostgresMXBean {
             }
             running = false;
         }
+    }
+
+    public synchronized boolean isListening() {
+        return listening;
     }
 
     public synchronized PostgresServerConnection getConnection(int pid) {

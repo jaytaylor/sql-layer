@@ -116,10 +116,9 @@ public class API
         return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate);
     }
 
-    public static PhysicalOperator cut_Default(PhysicalOperator inputOperator,
-                                               Collection<RowType> cutTypes)
+    public static PhysicalOperator cut_Default(PhysicalOperator inputOperator, RowType cutType)
     {
-        return new Cut_Default(inputOperator, cutTypes);
+        return new Cut_Default(inputOperator, cutType);
     }
 
     public static PhysicalOperator extract_Default(PhysicalOperator inputOperator,

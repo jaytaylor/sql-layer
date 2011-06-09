@@ -15,6 +15,11 @@
 
 package com.akiban.qp.rowtype;
 
+import com.akiban.ais.model.UserTable;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class FlattenedRowType extends DerivedRowType
 {
     // Object interface
@@ -34,13 +39,6 @@ public class FlattenedRowType extends DerivedRowType
         return parent.nFields() + child.nFields();
     }
 
-    @Override
-    public boolean ancestorOf(RowType type)
-    {
-        assert false : "Not implemented yet";
-        return false;
-    }
-
     // FlattenedRowType interface
 
     public RowType parentType()
@@ -55,11 +53,14 @@ public class FlattenedRowType extends DerivedRowType
 
     public FlattenedRowType(Schema schema, int typeId, RowType parent, RowType child)
     {
-        super(schema, typeId, child.ancestry());
+        super(schema, typeId);
         assert parent.schema() == schema : parent;
         assert child.schema() == schema : child;
         this.parent = parent;
         this.child = child;
+        List<UserTable> parentAndChildTables = new ArrayList<UserTable>(parent.typeComposition().tables());
+        parentAndChildTables.addAll(child.typeComposition().tables());
+        typeComposition(new TypeComposition(this, parentAndChildTables));
     }
 
     // Object state

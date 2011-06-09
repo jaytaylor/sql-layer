@@ -469,8 +469,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         return list;
     }
 
-    String volumeForTree(final String schemaName, final String treeName)
-            throws InvalidVolumeSpecificationException {
+    @Override
+    public String volumeForTree(final String schemaName, final String treeName) {
         SchemaNode defaultSchemaNode = null;
         final String concatenatedName = schemaName + "/" + treeName;
         final Persistit db = getDb();

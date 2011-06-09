@@ -17,6 +17,9 @@ package com.akiban.sql.pg;
 
 import com.akiban.sql.StandardException;
 
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
+
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 
@@ -231,6 +234,94 @@ public class PostgresType
             result.encoder = (LongEncoderBase)encoder;
 
         return result;
+    }
+
+    public static PostgresType fromDerby(DataTypeDescriptor type) 
+            throws StandardException {
+        int oid;
+        short length = -1;
+        int modifier = -1;
+
+        TypeId typeId = type.getTypeId();
+
+        switch (typeId.getTypeFormatId()) {
+        case TypeId.FormatIds.BIT_TYPE_ID:
+            oid = BIT_TYPE_OID;
+            break;
+        case TypeId.FormatIds.BOOLEAN_TYPE_ID:
+            oid = BOOL_TYPE_OID;
+            break;
+        case TypeId.FormatIds.CHAR_TYPE_ID:
+            oid = CHAR_TYPE_OID;
+            break;
+        case TypeId.FormatIds.DATE_TYPE_ID:
+            oid = DATE_TYPE_OID;
+            break;
+        case TypeId.FormatIds.DECIMAL_TYPE_ID:
+        case TypeId.FormatIds.NUMERIC_TYPE_ID:
+            oid = MONEY_TYPE_OID;
+            break;
+        case TypeId.FormatIds.DOUBLE_TYPE_ID:
+            oid = FLOAT8_TYPE_OID;
+            break;
+        case TypeId.FormatIds.INT_TYPE_ID:
+            oid = INT4_TYPE_OID;
+            break;
+        case TypeId.FormatIds.LONGINT_TYPE_ID:
+            oid = INT8_TYPE_OID;
+            break;
+        case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
+            oid = TEXT_TYPE_OID;
+            break;
+        case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
+            oid = TEXT_TYPE_OID;
+            break;
+        case TypeId.FormatIds.REAL_TYPE_ID:
+            oid = FLOAT4_TYPE_OID;
+            break;
+        case TypeId.FormatIds.SMALLINT_TYPE_ID:
+            oid = INT2_TYPE_OID;
+            break;
+        case TypeId.FormatIds.TIME_TYPE_ID:
+            oid = TIME_TYPE_OID;
+            break;
+        case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
+            oid = TIMESTAMP_TYPE_OID;
+            break;
+        case TypeId.FormatIds.TINYINT_TYPE_ID:
+            oid = BYTEA_TYPE_OID;
+            break;
+        case TypeId.FormatIds.VARBIT_TYPE_ID:
+            oid = VARBIT_TYPE_OID;
+            break;
+        case TypeId.FormatIds.BLOB_TYPE_ID:
+            oid = TEXT_TYPE_OID;
+            break;
+        case TypeId.FormatIds.VARCHAR_TYPE_ID:
+            oid = VARCHAR_TYPE_OID;
+            break;
+        case TypeId.FormatIds.CLOB_TYPE_ID:
+            oid = TEXT_TYPE_OID;
+            break;
+        case TypeId.FormatIds.XML_TYPE_ID:
+            oid = XML_TYPE_OID;
+            break;
+        default:
+            throw new StandardException("Don't know type for " + type);
+        }
+
+        if (typeId.isDecimalTypeId() || typeId.isNumericTypeId()) {
+            length = (short)type.getPrecision();
+            modifier = type.getScale();
+        }
+        else if (typeId.variableLength()) {
+            modifier = type.getMaximumWidth();
+        }
+        else {
+            length = (short)typeId.getMaximumMaximumWidth();
+        }
+        
+        return new PostgresType(oid, length, modifier);
     }
 
     public static final DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");

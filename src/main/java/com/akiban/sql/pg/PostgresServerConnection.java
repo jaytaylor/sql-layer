@@ -102,6 +102,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             try {
                 // Wait a bit, but don't hang up shutdown if thread is wedged.
                 thread.join(500);
+                if (thread.isAlive())
+                    logger.warn("Connection " + pid + " still running.");
             }
             catch (InterruptedException ex) {
             }
@@ -523,11 +525,6 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
         defaultSchemaName = getProperty("database");
         // Temporary until completely removed.
-        boolean hapi = false;
-        if (defaultSchemaName.startsWith("hapi.")) {
-            defaultSchemaName = defaultSchemaName.substring(5);
-            hapi = true;
-        }
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
         statementCache = server.getStatementCache(aisGeneration);
@@ -536,7 +533,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         };
         parsedGenerators = new PostgresStatementGenerator[] {
             // Can be ordered by frequency so long as there is no overlap.
-            (hapi) ? new PostgresHapiCompiler(this) : new PostgresOperatorCompiler(this),
+            new PostgresOperatorCompiler(this),
             new PostgresDDLStatementGenerator(this),
             new PostgresSessionStatementGenerator(this),
             new PostgresExplainStatementGenerator(this)

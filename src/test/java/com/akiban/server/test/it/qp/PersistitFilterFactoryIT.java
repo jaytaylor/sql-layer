@@ -26,6 +26,7 @@ import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.SchemaAISBased;
 import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.test.it.ITBase;
 import com.persistit.KeyFilter;
@@ -61,7 +62,7 @@ public final class PersistitFilterFactoryIT extends ITBase {
                 "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o(cid) REFERENCES customers(cid)");
         int iTable = createTable("schema", "items", "iid int key, oid int",
                 "CONSTRAINT __akiban_i FOREIGN KEY __akiban_i(oid) REFERENCES orders(oid)");
-        Schema schema = new Schema(rowDefCache().ais());
+        Schema schema = new SchemaAISBased(rowDefCache().ais());
         RowType itemRowType = schema.userTableRowType(getUserTable(iTable));
         writeRows(
                 createNewRow(cTable, 1L),

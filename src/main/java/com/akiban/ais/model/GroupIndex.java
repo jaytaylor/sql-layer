@@ -15,6 +15,8 @@
 
 package com.akiban.ais.model;
 
+import java.util.Map;
+
 public class GroupIndex extends Index
 {
     public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
@@ -35,6 +37,13 @@ public class GroupIndex extends Index
     public boolean isTableIndex()
     {
         return false;
+    }
+
+    @Override
+    public void computeFieldAssociations(Map<Table, Integer> ordinalMap) {
+        throw new UnsupportedOperationException("Implement");
+        // Probably something like:
+        //internalComputeFieldAssociations(ordinalMap, leftMostTable);
     }
 
     public Group getGroup()

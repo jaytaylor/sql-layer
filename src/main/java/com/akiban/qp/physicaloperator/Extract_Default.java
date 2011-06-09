@@ -51,7 +51,7 @@ class Extract_Default extends PhysicalOperator
         return describePlan(inputOperator);
     }
 
-    // GroupScan_Default interface
+    // ExtractScan_Default interface
 
     public Extract_Default(PhysicalOperator inputOperator, Collection<RowType> extractTypes)
     {

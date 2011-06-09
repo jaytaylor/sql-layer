@@ -384,7 +384,7 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void manyTablesAndRestart() throws Exception {
-        final int TABLE_COUNT = 25;
+        final int TABLE_COUNT = 50;
         final int UT_COUNT = schemaManager.getAis(session()).getUserTables().size();
         final int GT_COUNT = schemaManager.getAis(session()).getGroupTables().size();
 
@@ -409,6 +409,36 @@ public final class SchemaManagerIT extends ITBase {
         assertTablesInSchema(SCHEMA, tableNames);
     }
 
+    @Test
+    public void multipleSchemasAndRestart() throws Exception {
+        final int TABLE_COUNT = 3;
+        AkibanInformationSchema ais = schemaManager.getAis(session());
+        final int UT_COUNT = ais.getUserTables().size();
+        final int GT_COUNT = ais.getGroupTables().size();
+
+        createTable(SCHEMA+"1", "t1", "id int key");
+        createTable(SCHEMA+"2", "t2", "id int key");
+        createTable(SCHEMA+"3", "t3", "id int key");
+
+        ais = schemaManager.getAis(session());
+        assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
+        assertEquals("group tables count", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
+        assertTablesInSchema(SCHEMA+"1", "t1");
+        assertTablesInSchema(SCHEMA+"2", "t2");
+        assertTablesInSchema(SCHEMA+"3", "t3");
+
+        safeRestartTestServices();
+
+        schemaManager = serviceManager().getSchemaManager();
+        ais = schemaManager.getAis(session());
+        assertNotNull("ais exists", ais);
+        assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
+        assertEquals("group tables count", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
+        assertTablesInSchema(SCHEMA+"1", "t1");
+        assertTablesInSchema(SCHEMA+"2", "t2");
+        assertTablesInSchema(SCHEMA+"3", "t3");
+    }
+    
     /**
      * Assert that the given tables in the given schema has the, and only the, given tables. Also
      * confirm each table exists in the AIS and has a definition.
