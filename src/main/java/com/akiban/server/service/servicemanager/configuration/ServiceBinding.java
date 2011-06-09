@@ -15,31 +15,84 @@
 
 package com.akiban.server.service.servicemanager.configuration;
 
-public interface ServiceBinding {
-    String getInterfaceName();
+import com.akiban.util.ArgumentValidation;
 
-    void setImplementingClass(String className);
-    String getImplementingClassName();
+public final class ServiceBinding {
 
-    boolean isDirectlyRequired();
-    void markDirectlyRequired();
+    // DefaultServiceBinding interface
 
-    boolean isLocked();
-    void lock();
+    public boolean isLocked() {
+        return locked;
+    }
 
-    /**
-     * <p>Returns whether the given object is a ServiceBinding whose interface name matches this instance's.</p>
-     * <p>Equality <em>must</em> be based solely on interface name.</p>
-     * @param obj the other instance
-     * @return whether the other instance is a ServiceBinding with equivalent interface name
-     */
+    public void lock() {
+        locked = true;
+    }
+
+    public String getInterfaceName() {
+        return interfaceName;
+    }
+
+    public void setImplementingClass(String className) {
+        if (isLocked()) {
+            throw new ServiceBindingException("can't set new implementing class: " + interfaceName + " is locked");
+        }
+        implementingClassName = className;
+    }
+
+    public String getImplementingClassName() {
+        return implementingClassName;
+    }
+
+    public boolean isDirectlyRequired() {
+        return directlyRequired;
+    }
+
+    public void markDirectlyRequired() {
+        directlyRequired = true;
+    }
+
+    // Object interface
+
     @Override
-    public boolean equals(Object obj);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ServiceBinding)) return false;
 
-    /**
-     * Returns this instance's hash code, which must be compatible with {@link ServiceBinding#equals(Object)}
-     * @return a hash compatible with {@link ServiceBinding#equals(Object)}
-     */
+        ServiceBinding that = (ServiceBinding) o;
+
+        return !(interfaceName != null ? !interfaceName.equals(that.interfaceName) : that.interfaceName != null);
+
+    }
+
     @Override
-    public int hashCode();
+    public int hashCode() {
+        return interfaceName != null ? interfaceName.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder("Binding(");
+        builder.append(getInterfaceName()).append(" -> ").append(getImplementingClassName());
+        builder.append(
+                isLocked() ? ", locked)" : ", unlocked)"
+        );
+        return builder.toString();
+    }
+
+    // private methods
+
+    // DefaultLockableServiceBinding interface
+
+    public ServiceBinding(String interfaceName) {
+        ArgumentValidation.notNull("interface name", interfaceName);
+        this.interfaceName = interfaceName;
+    }
+
+    // object state
+
+    private final String interfaceName;
+    private String implementingClassName;
+    private boolean locked;
+    private boolean directlyRequired;
 }

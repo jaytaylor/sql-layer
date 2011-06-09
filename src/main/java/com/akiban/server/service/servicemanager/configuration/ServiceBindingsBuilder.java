@@ -86,7 +86,7 @@ public class ServiceBindingsBuilder {
     private ServiceBinding defineIfNecessary(String interfaceName) {
         ServiceBinding binding = bindings.get(interfaceName);
         if (binding == null) {
-            binding = new DefaultServiceBinding(interfaceName);
+            binding = new ServiceBinding(interfaceName);
             bindings.put(interfaceName, binding);
         }
         return binding;
