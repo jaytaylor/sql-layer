@@ -36,7 +36,7 @@ abstract class SingleRowCachingCursor implements Cursor
     public final Row currentRow()
     {
         Row currentRow = row.get();
-        // row.set(null);
+        row.set(null);
         return currentRow;
     }
 

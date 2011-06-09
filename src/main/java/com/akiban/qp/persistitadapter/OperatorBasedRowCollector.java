@@ -64,10 +64,13 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     @Override
     public boolean collectNextRow(ByteBuffer payload) throws Exception
     {
+         // The handling of currentRow is slightly tricky: If writing to the payload results in BufferOverflowException,
+         // then there is likely to be another call of this method, expecting to get the same row and write it into
+         // another payload with room, (resulting from a ScanRowsMoreRequest). currentRow is used only to hold onto
+         // the current row across these two invocations.
         boolean wroteToPayload = false;
         if (!closed) {
-            currentRow.set(cursor.currentRow());
-            PersistitGroupRow row = (PersistitGroupRow) currentRow.get();
+            PersistitGroupRow row = (PersistitGroupRow) (currentRow.isNull() ? cursor.currentRow() : currentRow.get());
             if (row == null) {
                 close();
             } else {
@@ -81,6 +84,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                     }
                 } catch (BufferOverflowException e) {
                     assert !wroteToPayload;
+                    currentRow.set(row);
                 }
             }
         }
