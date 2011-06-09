@@ -51,14 +51,4 @@ final class DummySimpleServices {
         @Override
         public void stop() {}
     }
-
-    // private methods
-
-    private static void sayStarting(Object instance) {
-        DummyInterfaces.addMessage(instance.getClass().getSimpleName() + " starting");
-    }
-
-    private static void sayStopping(Object instance) {
-        DummyInterfaces.addMessage(instance.getClass().getSimpleName() + " stopping");
-    }
 }
