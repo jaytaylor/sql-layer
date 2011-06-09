@@ -144,8 +144,8 @@ public final class GuicerTest {
 
     // class state
 
-    static final ServiceLifecycleActions<DummyInterfaces.DummyService> MESSAGING_ACTIONS
-            = new ServiceLifecycleActions<DummyInterfaces.DummyService>()
+    static final Guicer.ServiceLifecycleActions<DummyInterfaces.DummyService> MESSAGING_ACTIONS
+            = new Guicer.ServiceLifecycleActions<DummyInterfaces.DummyService>()
     {
         @Override
         public void onStart(DummyInterfaces.DummyService service) throws Exception {

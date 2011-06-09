@@ -216,8 +216,8 @@ public final class GuicedServiceManager implements ServiceManager {
 
     private final Guicer guicer;
 
-    final ServiceLifecycleActions<Service<?>> STANDARD_SERVICE_ACTIONS
-            = new ServiceLifecycleActions<Service<?>>()
+    final Guicer.ServiceLifecycleActions<Service<?>> STANDARD_SERVICE_ACTIONS
+            = new Guicer.ServiceLifecycleActions<Service<?>>()
     {
         private Map<Class<? extends JmxManageable>,ObjectName> jmxNames
                 = Collections.synchronizedMap(new HashMap<Class<? extends JmxManageable>, ObjectName>());
@@ -264,8 +264,8 @@ public final class GuicedServiceManager implements ServiceManager {
 
     private static final String SERVICES_CONFIG_PROPERTY = "services.config";
 
-    private static final ServiceLifecycleActions<Service<?>> CRASH_SERVICES
-            = new ServiceLifecycleActions<Service<?>>() {
+    private static final Guicer.ServiceLifecycleActions<Service<?>> CRASH_SERVICES
+            = new Guicer.ServiceLifecycleActions<Service<?>>() {
         @Override
         public void onStart(Service<?> service) throws Exception {
             throw new UnsupportedOperationException();
