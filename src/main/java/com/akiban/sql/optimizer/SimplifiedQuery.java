@@ -678,6 +678,10 @@ public class SimplifiedQuery
         case NodeTypes.IN_LIST_OPERATOR_NODE:
             addInCondition((InListOperatorNode)condition);
             break;
+        case NodeTypes.BOOLEAN_CONSTANT_NODE:
+            if (condition.isBooleanTrue())
+                break;
+            /* else falls through */
         default:
             throw new UnsupportedSQLException("Unsupported WHERE predicate", 
                                               condition);
@@ -806,7 +810,7 @@ public class SimplifiedQuery
 
     protected ColumnExpression getColumnExpression(Column column)
             throws StandardException {
-        TableNode table = tables.getNode(column.getUserTable());
+        TableNode table = getColumnTable(column);
         return new ColumnExpression(table, column);
     }
 
@@ -891,6 +895,10 @@ public class SimplifiedQuery
         return limit;
     }
     
+    public TableNode getColumnTable(Column column) {
+        return tables.getNode(column.getUserTable());
+    }
+
     public List<Set<Column>> getColumnEquivalences() {
         return columnEquivalences;
     }
