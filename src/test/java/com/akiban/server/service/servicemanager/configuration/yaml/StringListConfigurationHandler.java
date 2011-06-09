@@ -13,60 +13,72 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.servicemanager.configuration;
+package com.akiban.server.service.servicemanager.configuration.yaml;
 
-import com.akiban.server.service.servicemanager.configuration.ServiceBindingsBuilder;
-import com.akiban.server.service.servicemanager.configuration.ServiceBindingConfiguration;
+import com.akiban.server.service.servicemanager.configuration.ServiceConfigurationHandler;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
-import com.akiban.server.service.servicemanager.configuration.yaml.YamlConfigurationException;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
-public final class DefaultServiceBindingConfiguration implements ServiceBindingConfiguration {
+final class StringListConfigurationHandler implements ServiceConfigurationHandler {
 
     // YamlConfigurationStrategy interface
 
     @Override
     public void bind(String interfaceName, String implementingClassName) {
-        builder.bind(interfaceName, implementingClassName);
+        say("BIND %s -> %s", interfaceName, implementingClassName);
     }
 
     @Override
     public void lock(String interfaceName) {
-        builder.lock(interfaceName);
+        say("LOCK %s", interfaceName);
     }
 
     @Override
     public void require(String interfaceName) {
-        builder.markDirectlyRequired(interfaceName);
+        say("REQUIRE %s", interfaceName);
     }
 
     @Override
     public void mustBeLocked(String interfaceName) {
-        builder.mustBeLocked(interfaceName);
+        say("MUST BE LOCKED %s", interfaceName);
     }
 
     @Override
     public void mustBeBound(String interfaceName) {
-        builder.mustBeBound(interfaceName);
+        say("MUST BE BOUND %s", interfaceName);
     }
 
     @Override
     public void sectionEnd() {
-        builder.markSectionEnd();
+        say("SECTION END");
     }
 
     @Override
     public void unrecognizedCommand(String where, Object command, String message) {
-        throw new YamlConfigurationException(String.format("unrecognized command at %s: %s (%s)",
-                where, message, command));
+        say("ERROR: %s (at %s) %s", message, where, command);
     }
 
     @Override
     public Collection<ServiceBinding> serviceBindings() {
-        return builder.getAllBindings();
+        throw new UnsupportedOperationException(); // we don't actually build this collection up!
+    }
+
+    // StringListStrategy interface
+
+    public List<String> strings() {
+        return unmodifiableStrings;
+    }
+
+    // private methods
+    private void say(String format, Object... args) {
+        strings.add(String.format(format, args));
     }
 
     // object state
-    private final ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
+    private final List<String> strings = new ArrayList<String>();
+    private final List<String> unmodifiableStrings = Collections.unmodifiableList(strings);
 }

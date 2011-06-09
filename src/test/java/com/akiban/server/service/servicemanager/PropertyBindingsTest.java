@@ -15,7 +15,7 @@
 
 package com.akiban.server.service.servicemanager;
 
-import com.akiban.server.service.servicemanager.configuration.ServiceBindingConfiguration;
+import com.akiban.server.service.servicemanager.configuration.ServiceConfigurationHandler;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 import com.akiban.server.service.servicemanager.GuicedServiceManager.PropertyBindings;
 import org.junit.Test;
@@ -95,7 +95,7 @@ public final class PropertyBindingsTest {
         private final Properties properties = new Properties();
     }
 
-    private static class StringsConfig implements ServiceBindingConfiguration {
+    private static class StringsConfig implements ServiceConfigurationHandler {
         @Override
         public void bind(String interfaceName, String implementingClassName) {
             messages.add("bind " + interfaceName + " to " + implementingClassName);

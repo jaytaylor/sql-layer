@@ -17,7 +17,7 @@ package com.akiban.server.service.servicemanager.configuration;
 
 import java.util.Collection;
 
-public interface ServiceBindingConfiguration {
+public interface ServiceConfigurationHandler {
     void bind(String interfaceName, String implementingClassName);
     void require(String interfaceName);
     Collection<ServiceBinding> serviceBindings();

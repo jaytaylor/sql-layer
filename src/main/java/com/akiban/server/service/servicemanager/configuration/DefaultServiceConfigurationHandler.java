@@ -13,72 +13,57 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.servicemanager.configuration.yaml;
+package com.akiban.server.service.servicemanager.configuration;
 
-import com.akiban.server.service.servicemanager.configuration.ServiceBindingConfiguration;
-import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
+import com.akiban.server.service.servicemanager.configuration.yaml.YamlConfigurationException;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
-final class StringListConfiguration implements ServiceBindingConfiguration {
+public final class DefaultServiceConfigurationHandler implements ServiceConfigurationHandler {
 
     // YamlConfigurationStrategy interface
 
     @Override
     public void bind(String interfaceName, String implementingClassName) {
-        say("BIND %s -> %s", interfaceName, implementingClassName);
+        builder.bind(interfaceName, implementingClassName);
     }
 
     @Override
     public void lock(String interfaceName) {
-        say("LOCK %s", interfaceName);
+        builder.lock(interfaceName);
     }
 
     @Override
     public void require(String interfaceName) {
-        say("REQUIRE %s", interfaceName);
+        builder.markDirectlyRequired(interfaceName);
     }
 
     @Override
     public void mustBeLocked(String interfaceName) {
-        say("MUST BE LOCKED %s", interfaceName);
+        builder.mustBeLocked(interfaceName);
     }
 
     @Override
     public void mustBeBound(String interfaceName) {
-        say("MUST BE BOUND %s", interfaceName);
+        builder.mustBeBound(interfaceName);
     }
 
     @Override
     public void sectionEnd() {
-        say("SECTION END");
+        builder.markSectionEnd();
     }
 
     @Override
     public void unrecognizedCommand(String where, Object command, String message) {
-        say("ERROR: %s (at %s) %s", message, where, command);
+        throw new YamlConfigurationException(String.format("unrecognized command at %s: %s (%s)",
+                where, message, command));
     }
 
     @Override
     public Collection<ServiceBinding> serviceBindings() {
-        throw new UnsupportedOperationException(); // we don't actually build this collection up!
-    }
-
-    // StringListStrategy interface
-
-    public List<String> strings() {
-        return unmodifiableStrings;
-    }
-
-    // private methods
-    private void say(String format, Object... args) {
-        strings.add(String.format(format, args));
+        return builder.getAllBindings();
     }
 
     // object state
-    private final List<String> strings = new ArrayList<String>();
-    private final List<String> unmodifiableStrings = Collections.unmodifiableList(strings);
+    private final ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
 }

@@ -16,7 +16,7 @@
 package com.akiban.server.service.servicemanager.configuration.yaml;
 
 import com.akiban.server.service.servicemanager.configuration.BindingsConfigurationLoader;
-import com.akiban.server.service.servicemanager.configuration.ServiceBindingConfiguration;
+import com.akiban.server.service.servicemanager.configuration.ServiceConfigurationHandler;
 import com.akiban.util.Enumerated;
 import com.akiban.util.EnumeratingIterator;
 import org.yaml.snakeyaml.Yaml;
@@ -32,7 +32,7 @@ public final class YamlConfiguration implements BindingsConfigurationLoader {
     // BindingsConfigurationLoader interface
 
     @Override
-    public void loadInto(ServiceBindingConfiguration config) {
+    public void loadInto(ServiceConfigurationHandler config) {
         try {
             Yaml parser = new Yaml();
             for (Enumerated<Object> enumerated : EnumeratingIterator.of(parser.loadAll(source))) {
@@ -55,7 +55,7 @@ public final class YamlConfiguration implements BindingsConfigurationLoader {
 
     // private methods
 
-    private void readBlock(ServiceBindingConfiguration config, int blockId, List<?> commands) {
+    private void readBlock(ServiceConfigurationHandler config, int blockId, List<?> commands) {
         for (Enumerated<?> enumerated : EnumeratingIterator.of(commands)) {
             Object elem = enumerated.get();
             if ( !(elem instanceof Map)) {
@@ -102,45 +102,45 @@ public final class YamlConfiguration implements BindingsConfigurationLoader {
         }
     }
 
-    private void internalDoBind(ServiceBindingConfiguration config, Map<String,String> bindings) {
+    private void internalDoBind(ServiceConfigurationHandler config, Map<String,String> bindings) {
         for(Map.Entry<String,String> binding : bindings.entrySet()) {
             config.bind(binding.getKey(), binding.getValue());
         }
     }
 
-    private void internalDoBindAndLock(ServiceBindingConfiguration config, Map<String,String> bindings) {
+    private void internalDoBindAndLock(ServiceConfigurationHandler config, Map<String,String> bindings) {
         for(Map.Entry<String,String> binding : bindings.entrySet()) {
             config.bind(binding.getKey(), binding.getValue());
             config.lock(binding.getKey());
         }
     }
 
-    private void internalDoLock(ServiceBindingConfiguration config, List<String> interfaceNames) {
+    private void internalDoLock(ServiceConfigurationHandler config, List<String> interfaceNames) {
         for (String interfaceName : interfaceNames) {
             config.lock(interfaceName);
         }
     }
 
-    private void internalDoRequire(ServiceBindingConfiguration config, List<String> interfaceNames) {
+    private void internalDoRequire(ServiceConfigurationHandler config, List<String> interfaceNames) {
         for (String interfaceName : interfaceNames) {
             config.require(interfaceName);
         }
     }
 
-    private void internalDoRequireLocked(ServiceBindingConfiguration config, List<String> interfaceNames) {
+    private void internalDoRequireLocked(ServiceConfigurationHandler config, List<String> interfaceNames) {
         for (String interfaceName : interfaceNames) {
             config.require(interfaceName);
             config.mustBeLocked(interfaceName);
         }
     }
 
-    private void internalDoLocked(ServiceBindingConfiguration config, List<String> interfaceNames) {
+    private void internalDoLocked(ServiceConfigurationHandler config, List<String> interfaceNames) {
         for (String interfaceName : interfaceNames) {
             config.mustBeLocked(interfaceName);
         }
     }
 
-    private void internalDoBound(ServiceBindingConfiguration config, List<String> interfaceNames) {
+    private void internalDoBound(ServiceConfigurationHandler config, List<String> interfaceNames) {
         for (String interfaceName : interfaceNames) {
             config.mustBeBound(interfaceName);
         }

@@ -59,7 +59,7 @@ public final class YamlConfigurationTest {
         List<String> expecteds = Strings.dumpResource(YamlConfigurationTest.class, expectedFileName);
 
 
-        StringListConfiguration stringsConfig = new StringListConfiguration();
+        StringListConfigurationHandler stringsConfig = new StringListConfigurationHandler();
         InputStream testIS = YamlConfigurationTest.class.getResourceAsStream(yamlFileName);
         if (testIS == null) {
             throw new FileNotFoundException(yamlFileName);

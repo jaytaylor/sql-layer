@@ -26,8 +26,8 @@ import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.servicemanager.configuration.BindingsConfigurationLoader;
-import com.akiban.server.service.servicemanager.configuration.DefaultServiceBindingConfiguration;
-import com.akiban.server.service.servicemanager.configuration.ServiceBindingConfiguration;
+import com.akiban.server.service.servicemanager.configuration.DefaultServiceConfigurationHandler;
+import com.akiban.server.service.servicemanager.configuration.ServiceConfigurationHandler;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 import com.akiban.server.service.servicemanager.configuration.yaml.YamlConfiguration;
 import com.akiban.server.service.session.SessionService;
@@ -52,7 +52,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -153,15 +152,15 @@ public final class GuicedServiceManager implements ServiceManager {
     // GuicedServiceManager interface
 
     public GuicedServiceManager(BindingsConfigurationProvider bindingsConfigurationProvider) {
-        ServiceBindingConfiguration configuration = new DefaultServiceBindingConfiguration();
+        ServiceConfigurationHandler configurationHandler = new DefaultServiceConfigurationHandler();
 
         // Install the default, no-op JMX registry; this is a special case, since we want to use it
         // as we start each service.
-        configuration.bind(JmxRegistryService.class.getName(), NoOpJmxRegistry.class.getName());
+        configurationHandler.bind(JmxRegistryService.class.getName(), NoOpJmxRegistry.class.getName());
 
         // Next, load each element in the provider...
         for (BindingsConfigurationLoader loader : bindingsConfigurationProvider.loaders()) {
-            loader.loadInto(configuration);
+            loader.loadInto(configurationHandler);
         }
 
         // ... followed by whatever is in the file specified by -Dservices.config=blah, if that's defined...
@@ -177,13 +176,13 @@ public final class GuicedServiceManager implements ServiceManager {
             } catch (MalformedURLException e) {
                 throw new RuntimeException("couldn't convert config file to URL", e);
             }
-            new YamlBindingsUrl(configFileUrl).loadInto(configuration);
+            new YamlBindingsUrl(configFileUrl).loadInto(configurationHandler);
         }
 
         // ... followed by any command-line overrides.
-        new PropertyBindings(System.getProperties()).loadInto(configuration);
+        new PropertyBindings(System.getProperties()).loadInto(configurationHandler);
 
-        final Collection<ServiceBinding> bindings = configuration.serviceBindings();
+        final Collection<ServiceBinding> bindings = configurationHandler.serviceBindings();
         try {
             guicer = Guicer.forServices(bindings);
         } catch (ClassNotFoundException e) {
@@ -349,7 +348,7 @@ public final class GuicedServiceManager implements ServiceManager {
 
     private static class YamlBindingsUrl implements BindingsConfigurationLoader {
         @Override
-        public void loadInto(ServiceBindingConfiguration config) {
+        public void loadInto(ServiceConfigurationHandler config) {
             final InputStream defaultServicesStream;
             try {
                 defaultServicesStream = url.openStream();
@@ -401,7 +400,7 @@ public final class GuicedServiceManager implements ServiceManager {
         // BindingsConfigurationElement interface
 
         @Override
-        public void loadInto(ServiceBindingConfiguration config) {
+        public void loadInto(ServiceConfigurationHandler config) {
             config.bind(interfaceName, implementationName);
         }
 
@@ -423,7 +422,7 @@ public final class GuicedServiceManager implements ServiceManager {
         // BindingsConfigurationElement interface
 
         @Override
-        public void loadInto(ServiceBindingConfiguration config) {
+        public void loadInto(ServiceConfigurationHandler config) {
             for (String property : properties.stringPropertyNames()) {
                 if (property.startsWith(BIND)) {
                     String theInterface = property.substring(BIND.length());
