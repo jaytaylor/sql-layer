@@ -17,7 +17,7 @@ package com.akiban.server.service.servicemanager.configuration;
 
 import com.akiban.util.ArgumentValidation;
 
-public final class DefaultLockableServiceBinding implements ServiceBinding {
+public final class DefaultServiceBinding implements ServiceBinding {
 
     // LockableServiceBinding interface
 
@@ -64,9 +64,9 @@ public final class DefaultLockableServiceBinding implements ServiceBinding {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof DefaultLockableServiceBinding)) return false;
+        if (!(o instanceof DefaultServiceBinding)) return false;
 
-        DefaultLockableServiceBinding that = (DefaultLockableServiceBinding) o;
+        DefaultServiceBinding that = (DefaultServiceBinding) o;
 
         return !(interfaceName != null ? !interfaceName.equals(that.interfaceName) : that.interfaceName != null);
 
@@ -93,7 +93,7 @@ public final class DefaultLockableServiceBinding implements ServiceBinding {
 
     // DefaultLockableServiceBinding interface
 
-    public DefaultLockableServiceBinding(String interfaceName) {
+    public DefaultServiceBinding(String interfaceName) {
         ArgumentValidation.notNull("interface name", interfaceName);
         this.interfaceName = interfaceName;
     }

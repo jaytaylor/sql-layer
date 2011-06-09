@@ -15,7 +15,7 @@
 
 package com.akiban.server.service.servicemanager;
 
-import com.akiban.server.service.servicemanager.configuration.DefaultLockableServiceBinding;
+import com.akiban.server.service.servicemanager.configuration.DefaultServiceBinding;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 import com.akiban.util.Strings;
 import com.google.inject.ProvisionException;
@@ -122,7 +122,7 @@ public final class GuicerTest {
         if (theClass.isInterface()) {
             throw new IllegalArgumentException("theClass must not be an interface class: " + theClass);
         }
-        ServiceBinding binding = new DefaultLockableServiceBinding(theInterface.getName());
+        ServiceBinding binding = new DefaultServiceBinding(theInterface.getName());
         binding.setImplementingClass(theClass.getName());
         if (required) {
             binding.markDirectlyRequired();
