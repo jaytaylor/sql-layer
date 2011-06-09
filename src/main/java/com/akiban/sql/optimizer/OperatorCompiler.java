@@ -438,8 +438,6 @@ public class OperatorCompiler
         }
 
         public TableNode getTable() {
-            if (table == null)
-                table = computeDeepestTable();
             return table;
         }
 
@@ -474,6 +472,7 @@ public class OperatorCompiler
         public int compareTo(IndexUsage other) {
             if (sorting) {
                 if (!other.sorting)
+                    // Sorted better than unsorted.
                     return +1;
             }
             else if (other.sorting)
@@ -483,6 +482,7 @@ public class OperatorCompiler
                     return +1;
                 else if (equalityConditions.size() != other.equalityConditions.size())
                     return (equalityConditions.size() > other.equalityConditions.size()) 
+                        // More conditions tested better than fewer.
                         ? +1 : -1;
             }
             else if (other.equalityConditions != null)
@@ -498,12 +498,33 @@ public class OperatorCompiler
                 on++;
             if (n != on) 
                 return (n > on) ? +1 : -1;
+            if (index.getColumns().size() != other.index.getColumns().size())
+                    return (index.getColumns().size() < other.index.getColumns().size()) 
+                        // Fewer columns indexed better than more.
+                        ? +1 : -1;
+            // Deeper better than shallower.
             return getTable().getTable().getTableId().compareTo(other.getTable().getTable().getTableId());
         }
 
         // Can this index be used for part of the given query?
         public boolean usable(SimplifiedQuery squery) {
             List<IndexColumn> indexColumns = index.getColumns();
+            if (index.isGroupIndex()) {
+                // A group index is for the inner join, so all the
+                // tables it indexes must appear in the query as well.
+                // Its hkey is for the deepest table, figure out which
+                // that is, too.
+                TableNode deepest = null;
+                for (IndexColumn indexColumn : indexColumns) {
+                    TableNode table = squery.getColumnTable(indexColumn.getColumn());
+                    if ((table == null) || !table.isUsed() || table.isOuter())
+                        return false;
+                    if ((deepest == null) || (deepest.getDepth() < table.getDepth()))
+                        deepest = table;
+                }
+                if (table == null)
+                    table = deepest;
+            }
             int ncols = indexColumns.size();
             int nequals = 0;
             while (nequals < ncols) {
@@ -574,12 +595,13 @@ public class OperatorCompiler
             }
 
             if ((lowCondition == null) && (highCondition == null)) {
-                IndexBound eq = getIndexBound(index, keys);
+                IndexBound eq = getIndexBound(index, keys, kidx);
                 return new IndexKeyRange(eq, true, eq, true);
             }
             else {
                 Expression[] lowKeys = null, highKeys = null;
                 boolean lowInc = false, highInc = false;
+                int lidx = kidx, hidx = kidx;
                 if (lowCondition != null) {
                     lowKeys = keys;
                     if (highCondition != null) {
@@ -591,32 +613,17 @@ public class OperatorCompiler
                     highKeys = keys;
                 }
                 if (lowCondition != null) {
-                    lowKeys[kidx] = lowCondition.getRight().generateExpression(null);
+                    lowKeys[lidx++] = lowCondition.getRight().generateExpression(null);
                     lowInc = (lowCondition.getOperation() == Comparison.GE);
                 }
                 if (highCondition != null) {
-                    highKeys[kidx] = highCondition.getRight().generateExpression(null);
+                    highKeys[hidx++] = highCondition.getRight().generateExpression(null);
                     highInc = (highCondition.getOperation() == Comparison.LE);
                 }
-                IndexBound lo = getIndexBound(index, lowKeys);
-                IndexBound hi = getIndexBound(index, highKeys);
+                IndexBound lo = getIndexBound(index, lowKeys, lidx);
+                IndexBound hi = getIndexBound(index, highKeys, hidx);
                 return new IndexKeyRange(lo, lowInc, hi, highInc);
             }
-        }
-
-        // A group index has an hkey from the deepest table it indexes.
-        // Take the deepest that we are actually using, for which that
-        // hkey should work, since all indexed columns must be in a
-        // single branch.
-        protected TableNode computeDeepestTable() {
-            TableNode deepest = null;
-            for (ColumnCondition columnCondition : getIndexConditions()) {
-                TableNode table = columnCondition.getTable();
-                if ((deepest == null) || (deepest.getDepth() < table.getDepth()))
-                    deepest = table;
-            }
-            assert (deepest != null);
-            return deepest;
         }
     }
 
@@ -741,7 +748,12 @@ public class OperatorCompiler
         return schema.userTableRowType(table.getTable());
     }
 
-    protected IndexBound getIndexBound(Index index, Expression[] keys) {
+    /** Return an index bound for the given index and expressions.
+     * @param index the index in use
+     * @param keys {@link Expression}s for index lookup key
+     * @param nkeys number of keys actually in use
+     */
+    protected IndexBound getIndexBound(Index index, Expression[] keys, int nkeys) {
         if (keys == null) 
             return null;
         UserTable userTable = null;
@@ -750,13 +762,18 @@ public class OperatorCompiler
         // TODO: group index bound table.
         return new IndexBound(userTable,
                               getIndexExpressionRow(index, keys),
-                              getIndexColumnSelector(index));
+                              getIndexColumnSelector(index, nkeys));
     }
 
-    protected ColumnSelector getIndexColumnSelector(final Index index) {
+    /** Return a column selector that enables the first <code>nkeys</code> fields
+     * of a row of the index's user table. */
+    // TODO: group index fail: the column's position won't be its
+    // field index in the index key row.
+    protected ColumnSelector getIndexColumnSelector(final Index index, final int nkeys) {
         return new ColumnSelector() {
                 public boolean includesColumn(int columnPosition) {
-                    for (IndexColumn indexColumn : index.getColumns()) {
+                    for (int i = 0; i < nkeys; i++) {
+                        IndexColumn indexColumn = index.getColumns().get(i);
                         Column column = indexColumn.getColumn();
                         if (column.getPosition() == columnPosition) {
                             return true;
@@ -796,6 +813,13 @@ public class OperatorCompiler
         private final Index index;
     }
 
+    /** Return a {@link Row} for the given index containing the given
+     * {@link Expression} values.  
+     *
+     * When testing, this just returns a row with those expressions.
+     * In use with actual index lookup, needs to be overridden to
+     * return a row shaped like the user table.
+     */
     protected Row getIndexExpressionRow(Index index, Expression[] keys) {
         RowType rowType = null;
         if (index.isTableIndex())
