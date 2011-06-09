@@ -18,7 +18,7 @@ package com.akiban.server.service.servicemanager;
 /**
  * Alpha <- Beta <- Gamma <- nothing
  */
-public final class DummyErroringServices {
+final class DummyErroringServices {
 
     public static class ErroringAlpha implements DummyInterfaces.Alpha {
         @Override

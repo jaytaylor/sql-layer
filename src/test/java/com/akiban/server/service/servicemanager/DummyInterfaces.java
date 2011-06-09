@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public abstract class DummyInterfaces {
+abstract class DummyInterfaces {
 
     // for use within this package
 
