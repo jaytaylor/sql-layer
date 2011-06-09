@@ -16,13 +16,19 @@
 package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
+import com.akiban.util.Exceptions;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.ProvisionException;
 import com.google.inject.Scopes;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Set;
 
 public final class Guicer {
 
@@ -30,20 +36,26 @@ public final class Guicer {
 
     public void startRequiredServices(ServiceLifecycleActions<?> withActions) {
         for (Class<?> directlyRequiredClass : directlyRequiredClasses) {
-            injector.getInstance(directlyRequiredClass, withActions);
+            get(directlyRequiredClass, withActions);
         }
     }
 
     public void stopAllServices(ServiceLifecycleActions<?> withActions) {
-        injector.stopAllServices(withActions);
+        try {
+            stopServices(withActions, null);
+        } catch (Exception e) {
+            throw new RuntimeException("while stopping services", e);
+        }
     }
 
     public <T> T get(Class<T> serviceClass, ServiceLifecycleActions<?> withActions) {
-        return injector.getInstance(serviceClass, withActions);
+        return startService(_injector.getInstance(serviceClass), withActions);
     }
 
     public boolean serviceIsStarted(Class<?> serviceClass) {
-        return injector.serviceIsStarted(serviceClass);
+        synchronized (lock) {
+            return services.contains(serviceClass);
+        }
     }
 
     public boolean isRequired(Class<?> interfaceClass) {
@@ -61,7 +73,7 @@ public final class Guicer {
 
     // private methods
 
-    Guicer(Collection<ServiceBinding> serviceBindings)
+    private Guicer(Collection<ServiceBinding> serviceBindings)
     throws ClassNotFoundException
     {
         directlyRequiredClasses = new ArrayList<Class<?>>();
@@ -76,13 +88,99 @@ public final class Guicer {
         }
 
         AbstractModule module = new ServiceBindingsModule(resolvedServiceBindings);
-        injector = new ServiceLifecycleInjector(Guice.createInjector(module));
+        _injector = Guice.createInjector(module);
+
+        // sync isn't technically required since services is final, but makes it clear that it's protected by the lock
+        lock = new Object();
+        synchronized (lock) {
+            this.services = new LinkedHashSet<Object>();
+        }
+    }
+
+    private <T,S> T startService(T instance, ServiceLifecycleActions<S> withActions) {
+        synchronized (lock) {
+            if (services.contains(instance)) {
+                return instance;
+            }
+            if (withActions == null) {
+                services.add(instance);
+                return instance;
+            }
+
+            S service = withActions.castIfActionable(instance);
+            if (service != null) {
+                try {
+                    withActions.onStart(service);
+                    services.add(service);
+                } catch (Exception e) {
+                    try {
+                        stopServices(withActions, e);
+                    } catch (Exception e1) {
+                        e = e1;
+                    }
+                    throw new ProvisionException("While starting service " + instance.getClass(), e);
+                }
+            }
+        }
+        return instance;
+    }
+
+    private void stopServices(ServiceLifecycleActions<?> withActions, Exception initialCause) throws Exception {
+        List<Throwable> exceptions = tryStopServices(withActions, initialCause);
+        if (!exceptions.isEmpty()) {
+            if (exceptions.size() == 1) {
+                throw Exceptions.throwAlways(exceptions.get(0));
+            }
+            for (Throwable t : exceptions) {
+                t.printStackTrace();
+            }
+            throw new Exception("Failure(s) while shutting down services: " + exceptions, exceptions.get(0));
+        }
+    }
+
+    private <S> List<Throwable> tryStopServices(ServiceLifecycleActions<S> withActions, Exception initialCause) {
+        ListIterator<?> reverseIter;
+        synchronized (lock) {
+            reverseIter = new ArrayList<Object>(services).listIterator(services.size());
+        }
+        List<Throwable> exceptions = new ArrayList<Throwable>();
+        if (initialCause != null) {
+            exceptions.add(initialCause);
+        }
+        while (reverseIter.hasPrevious()) {
+            try {
+                Object serviceObject = reverseIter.previous();
+                synchronized (lock) {
+                    services.remove(serviceObject);
+                }
+                if (withActions != null) {
+                    S service = withActions.castIfActionable(serviceObject);
+                    if (service != null) {
+                        withActions.onShutdown(service);
+                    }
+                }
+            } catch (Throwable t) {
+                exceptions.add(t);
+            }
+        }
+        // TODO because our dependency graph is created via Service.start() invocations, if service A uses service B
+        // in stop() but not start(), and service B has already been shut down, service B will be resurrected. Yuck.
+        // I don't know of a good way around this, other than by formalizing our dependency graph via constructor
+        // params (and thus removing ServiceManagerImpl.get() ). Until this is resolved, simplest is to just shrug
+        // our shoulders and not check
+//        synchronized (lock) {
+//            assert services.isEmpty() : services;
+//        }
+        return exceptions;
     }
 
     // object state
 
-    private final ServiceLifecycleInjector injector;
     private final List<Class<?>> directlyRequiredClasses;
+    private final Object lock;
+    private final Set<Object> services;
+    private final Injector _injector;
+
     // nested classes
 
     private static final class ResolvedServiceBinding {

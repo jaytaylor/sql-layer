@@ -111,7 +111,7 @@ public final class GuicerTest {
     }
 
     private static Guicer messageGuicer(ServiceBinding... bindings) throws ClassNotFoundException {
-        return onlyGuicer = new Guicer(Arrays.asList(bindings));
+        return onlyGuicer = Guicer.forServices(Arrays.asList(bindings));
     }
 
     private static <T> ServiceBinding bind(Class<T> theInterface, Class<? extends T> theClass, boolean required) {
