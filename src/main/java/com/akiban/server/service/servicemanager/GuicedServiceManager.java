@@ -25,6 +25,7 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.memcache.MemcacheService;
+import com.akiban.server.service.servicemanager.configuration.BindingsConfigurationLoader;
 import com.akiban.server.service.servicemanager.configuration.DefaultServiceBindingConfiguration;
 import com.akiban.server.service.servicemanager.configuration.ServiceBindingConfiguration;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
@@ -159,7 +160,7 @@ public final class GuicedServiceManager implements ServiceManager {
         strategy.bind(JmxRegistryService.class.getName(), NoOpJmxRegistry.class.getName());
 
         // Next, load each element in the provider...
-        for (BindingsConfigurationElement element : bindingsConfigurationProvider) {
+        for (BindingsConfigurationLoader element : bindingsConfigurationProvider) {
             element.loadInto(strategy);
         }
 
@@ -291,13 +292,13 @@ public final class GuicedServiceManager implements ServiceManager {
      * and requires. You can have as many defines as you want, but only one requires. When parsing the resources,
      * the defines will be processed (in order) before the requires resource.
      */
-    public static final class BindingsConfigurationProvider implements Iterable<BindingsConfigurationElement> {
+    public static final class BindingsConfigurationProvider implements Iterable<BindingsConfigurationLoader> {
 
         // Iterable<URL> interface
 
         @Override
-        public Iterator<BindingsConfigurationElement> iterator() {
-            List<BindingsConfigurationElement> urls = new ArrayList<BindingsConfigurationElement>(elements);
+        public Iterator<BindingsConfigurationLoader> iterator() {
+            List<BindingsConfigurationLoader> urls = new ArrayList<BindingsConfigurationLoader>(elements);
             if (requires != null) {
                 urls.add(new YamlBindingsUrl(requires));
             }
@@ -340,15 +341,11 @@ public final class GuicedServiceManager implements ServiceManager {
 
         // object state
 
-        private final List<BindingsConfigurationElement> elements = new ArrayList<BindingsConfigurationElement>();
+        private final List<BindingsConfigurationLoader> elements = new ArrayList<BindingsConfigurationLoader>();
         private URL requires = null;
     }
 
-    private static interface BindingsConfigurationElement {
-        void loadInto(ServiceBindingConfiguration config);
-    }
-
-    private static class YamlBindingsUrl implements BindingsConfigurationElement {
+    private static class YamlBindingsUrl implements BindingsConfigurationLoader {
         @Override
         public void loadInto(ServiceBindingConfiguration config) {
             final InputStream defaultServicesStream;
@@ -397,7 +394,7 @@ public final class GuicedServiceManager implements ServiceManager {
         private final URL url;
     }
 
-    private static class ManualServiceBinding implements BindingsConfigurationElement {
+    private static class ManualServiceBinding implements BindingsConfigurationLoader {
 
         // BindingsConfigurationElement interface
 
@@ -420,7 +417,7 @@ public final class GuicedServiceManager implements ServiceManager {
         private final String implementationName;
     }
 
-    static class PropertyBindings implements BindingsConfigurationElement {
+    static class PropertyBindings implements BindingsConfigurationLoader {
         // BindingsConfigurationElement interface
 
         @Override
