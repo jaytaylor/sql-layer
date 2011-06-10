@@ -16,6 +16,7 @@
 package com.akiban.server.store;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Table;
 import com.akiban.server.FieldDef;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
@@ -139,12 +140,16 @@ public class DelegatingStore<S extends Store> implements Store {
         delegate.flushIndexes(session);
     }
 
-    public void buildIndexes(Session session, Collection<Index> indexes, boolean defer) throws Exception {
+    public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) throws Exception {
         delegate.buildIndexes(session, indexes, defer);
     }
 
-    public void deleteIndexes(Session session, Collection<Index> indexes) throws Exception {
+    public void deleteIndexes(Session session, Collection<? extends Index> indexes) throws Exception {
         delegate.deleteIndexes(session, indexes);
+    }
+
+    public void removeTrees(Session session, Table table) throws Exception {
+        delegate.removeTrees(session, table);
     }
 
     @Override

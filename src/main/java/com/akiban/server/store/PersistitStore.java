@@ -29,6 +29,7 @@ import java.util.TreeSet;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.IndexToHKey;
+import com.akiban.ais.model.Table;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.ScanLimit;
@@ -1239,7 +1240,7 @@ public class PersistitStore implements Store {
         buildIndexes(session, indexes, deferIndexes);
     }
 
-    public void buildIndexes(final Session session, final Collection<Index> indexes, final boolean defer) throws Exception {
+    public void buildIndexes(final Session session, final Collection<? extends Index> indexes, final boolean defer) throws Exception {
         flushIndexes(session);
 
         final Set<RowDef> userRowDefs = new HashSet<RowDef>();
@@ -1306,6 +1307,50 @@ public class PersistitStore implements Store {
         }
     }
 
+    @Override
+    public void removeTrees(Session session, Table table) throws PersistitException {
+        Exchange hEx = null;
+        Exchange iEx = null;
+        Collection<? extends Index> indexes = table.isUserTable() ?
+                                              ((UserTable)table).getIndexesIncludingInternal() : table.getIndexes();
+
+        try {
+            final Transaction transaction = treeService.getTransaction(session);
+            hEx = getExchange(session, (RowDef)table.rowDef());
+
+            int retries = MAX_TRANSACTION_RETRY_COUNT;
+            for(;;) {
+                transaction.begin();
+                try {
+                    for(Index index : indexes) {
+                        if(!index.isHKeyEquivalent()) {
+                            iEx = getExchange(session, index);
+                            iEx.removeTree();
+                            releaseExchange(session, iEx);
+                            iEx = null;
+                        }
+                    }
+                    hEx.removeTree();
+                    transaction.commit(forceToDisk);
+                    break; // success
+                } catch (RollbackException re) {
+                    if (--retries < 0) {
+                        throw new TransactionFailedException();
+                    }
+                } finally {
+                    transaction.end();
+                }
+            }
+        } finally {
+            if(hEx != null) {
+                releaseExchange(session, hEx);
+            }
+            if(iEx != null) {
+                releaseExchange(session, iEx);
+            }
+        }
+    }
+
     public void flushIndexes(final Session session) throws Exception {
         try {
             putAllDeferredIndexKeys(session);
@@ -1315,7 +1360,7 @@ public class PersistitStore implements Store {
         }
     }
 
-    public void deleteIndexes(final Session session, final Collection<Index> indexes) throws Exception {
+    public void deleteIndexes(final Session session, final Collection<? extends Index> indexes) throws Exception {
         for(Index index : indexes) {
             final IndexDef indexDef = (IndexDef) index.indexDef();
             if(indexDef == null) {
@@ -1323,9 +1368,9 @@ public class PersistitStore implements Store {
             }
             try {
                 Exchange iEx = getExchange(session, index);
-                iEx.removeAll();
+                iEx.removeTree();
             } catch (Exception e) {
-                LOG.debug("Exception while trying to remove index tree: " + indexDef.getTreeName(), e);
+                LOG.debug("Exception while removing index tree: " + indexDef, e);
                 throw e;
             }
         }

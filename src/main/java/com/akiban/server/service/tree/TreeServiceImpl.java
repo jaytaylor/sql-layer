@@ -28,8 +28,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import com.akiban.server.service.jmx.JmxManageable;
-import com.persistit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,13 +38,21 @@ import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
+import com.persistit.Exchange;
+import com.persistit.Key;
+import com.persistit.Persistit;
+import com.persistit.Transaction;
+import com.persistit.Tree;
+import com.persistit.Volume;
+import com.persistit.VolumeSpecification;
 import com.persistit.exception.InvalidVolumeSpecificationException;
 import com.persistit.exception.PersistitException;
 
 public class TreeServiceImpl implements TreeService, Service<TreeService>,
         JmxManageable {
 
-    private final static Session.Key<Map<Tree, List<Exchange>>> EXCHANGE_MAP = Session.Key.named("exchangemap");
+    private final static Session.Key<Map<Tree, List<Exchange>>> EXCHANGE_MAP = Session.Key
+            .named("exchangemap");
 
     private final static int MEGA = 1024 * 1024;
 
@@ -204,11 +210,11 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         buildSchemaMap();
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("PersistitStore datapath={} {} k_buffers={}", new Object[] {
-                    db.getProperty("datapath"),
-                    bufferSize / 1024,
-                    db.getProperty("buffer.count." + bufferSize)
-            });
+            LOG.debug(
+                    "PersistitStore datapath={} {} k_buffers={}",
+                    new Object[] { db.getProperty("datapath"),
+                            bufferSize / 1024,
+                            db.getProperty("buffer.count." + bufferSize) });
         }
     }
 
@@ -260,7 +266,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
             db.close();
             dbRef.set(null);
         }
-        synchronized(this) {
+        synchronized (this) {
             schemaLinkMap.clear();
             statusLinkMap.clear();
             // TODO - remove this when sure we don't need it
@@ -305,8 +311,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     @Override
-    public Key getKey(Session session) throws PersistitException
-    {
+    public Key getKey(Session session) throws PersistitException {
         return new Key(getDb());
     }
 
@@ -406,7 +411,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     private TreeCache populateTreeCache(final TreeLink link)
             throws PersistitException {
         TreeCache cache = (TreeCache) link.getTreeCache();
-        if (cache == null) {
+        if (cache == null || !cache.getTree().isValid()) {
             Volume volume = mappedVolume(link.getSchemaName(),
                     link.getTreeName());
             final Tree tree = volume.getTree(link.getTreeName(), true);
@@ -442,7 +447,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
             if (volume.getAppCache() == null) {
                 volume.setAppCache(Integer.valueOf(volumeOffsetCounter));
                 volumeOffsetCounter += MAX_TABLES_PER_VOLUME;
-                final Exchange exchange = new Exchange(getDb(), volume, STATUS_TREE_NAME, true);
+                final Exchange exchange = new Exchange(getDb(), volume,
+                        STATUS_TREE_NAME, true);
                 tableStatusCache.loadOneVolume(exchange);
             }
             return volume;
@@ -451,6 +457,13 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         }
     }
 
+    /**
+     * Provide a list of Exchange instances already created for a particular
+     * Tree.
+     * @param session
+     * @param tree
+     * @return
+     */
     private List<Exchange> exchangeList(final Session session, final Tree tree) {
         Map<Tree, List<Exchange>> map = session.get(EXCHANGE_MAP);
         List<Exchange> list;
@@ -464,6 +477,18 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
             if (list == null) {
                 list = new ArrayList<Exchange>();
                 map.put(tree, list);
+            } else {
+                if (!list.isEmpty()
+                        && !list.get(list.size() - 1).getTree().isValid()) {
+                    //
+                    // The Tree on which this list of cached Exchanges is
+                    // based was deleted.  Need to clear the list.  Further,
+                    // remove the obsolete Tree object from the Map and replace
+                    // it with the new valid Tree.
+                    list.clear();
+                    map.remove(tree);
+                    map.put(tree, list);
+                }
             }
         }
         return list;
@@ -490,6 +515,13 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
             return substitute(vs, schemaName, null);
         }
         return null;
+    }
+
+    @Override
+    public boolean treeExists(final String schemaName, final String treeName) throws PersistitException {
+        final Volume volume = mappedVolume(schemaName, treeName);
+        final Tree tree = volume.getTree(treeName, false);
+        return tree != null;
     }
 
     public TreeLink treeLink(final String schemaName, final String treeName) {

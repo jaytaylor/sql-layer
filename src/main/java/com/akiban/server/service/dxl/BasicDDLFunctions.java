@@ -124,7 +124,14 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         try {
             DMLFunctions dml = new BasicDMLFunctions(middleman(), this);
-            dml.truncateTable(session, table.getTableId());
+            if(userTable.getParentJoin() == null) {
+                // Root table and no child tables, can delete all associated trees
+                store().removeTrees(session, table);
+            }
+            else {
+                dml.truncateTable(session, table.getTableId());
+                store().deleteIndexes(session, userTable.getIndexesIncludingInternal());
+            }
             schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
             checkCursorsForDDLModification(session, table);
         } catch (Exception e) {
