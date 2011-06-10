@@ -17,22 +17,23 @@ package com.akiban.qp.util;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.SchemaAISBased;
 
 public final class SchemaCache {
 
     // static SchemaCache interface
 
-    public static Schema globalSchema(AkibanInformationSchema ais) {
+    public static SchemaAISBased globalSchema(AkibanInformationSchema ais) {
         return GLOBAL.schema(ais);
     }
 
     // SchemaCache interface
 
-    private Schema schema(AkibanInformationSchema ais) {
+    private SchemaAISBased schema(AkibanInformationSchema ais) {
         synchronized(LOCK) {
             if (this.ais != ais) {
                 this.ais = ais;
-                this.schema = new Schema(ais);
+                this.schema = new SchemaAISBased(ais);
             }
             return schema;
         }
@@ -42,7 +43,7 @@ public final class SchemaCache {
 
     private final Object LOCK = new Object();
     private AkibanInformationSchema ais = null;
-    private Schema schema = null;
+    private SchemaAISBased schema = null;
 
     // class state
 

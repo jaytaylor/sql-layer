@@ -19,6 +19,8 @@ import java.io.Serializable;
 
 public class TableName implements Serializable, Comparable<TableName>
 {
+    public final static String AKIBAN_INFORMATION_SCHEMA = "akiban_information_schema";
+
     private volatile String schemaName;
     private volatile String tableName;
 

@@ -163,13 +163,13 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                             generateLeftJoinRow(parent.get());
                         }
                         if (keepParent) {
-                            addToPending();
+                            addToPending(inputRow);
                         }
                         parent.set(inputRow);
                         childlessParent = true;
                     } else if (inputRowType == childType) {
                         if (keepChild) {
-                            addToPending();
+                            addToPending(inputRow);
                         }
                         if (parent.isNotNull() && parent.get().ancestorOf(inputRow)) {
                             // child is not an orphan
@@ -181,7 +181,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                             generateRightJoinRow(inputRow);
                         }
                     } else {
-                        addToPending();
+                        addToPending(inputRow);
                         if (parent.isNotNull() && !parent.get().ancestorOf(inputRow)) {
                             // We're past all descendents of the current parent
                             if (childlessParent) {
@@ -236,9 +236,9 @@ class Flatten_HKeyOrdered extends PhysicalOperator
             }
         }
 
-        private void addToPending()
+        private void addToPending(Row row)
         {
-            pending.add(input.currentRow());
+            pending.add(row);
         }
 
         // Object state

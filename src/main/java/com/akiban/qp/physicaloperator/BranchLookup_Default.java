@@ -103,7 +103,6 @@ public class BranchLookup_Default extends PhysicalOperator
         this.groupTable = groupTable;
         this.inputRowType = inputRowType;
         this.outputRowType = outputRowType;
-        this.commonSegments = inputTableType.ancestry().commonSegments(outputRowType.ancestry());
         this.limit = limit;
         UserTable commonAncestor = commonAncestor(inputTable, outputTable);
         switch (outputTable.getDepth() - commonAncestor.getDepth()) {
@@ -117,7 +116,7 @@ public class BranchLookup_Default extends PhysicalOperator
                 branchRoot = null;
                 ArgumentValidation.isTrue("false", false);
         }
-
+        this.commonSegments = commonAncestor.getDepth() + 1;
     }
 
     // For use by this class
