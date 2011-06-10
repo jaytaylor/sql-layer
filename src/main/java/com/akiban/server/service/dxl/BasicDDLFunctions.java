@@ -125,12 +125,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         try {
             DMLFunctions dml = new BasicDMLFunctions(middleman(), this);
             if(userTable.getParentJoin() == null) {
-                // Root table and no child tables, can delete just its trees
+                // Root table and no child tables, can delete all associated trees
                 store().removeTrees(session, table);
             }
             else {
                 dml.truncateTable(session, table.getTableId());
-                store().deleteIndexes(session, REMOVE_INDEX_TREES_ON_DROP, userTable.getIndexesIncludingInternal());
+                store().deleteIndexes(session, userTable.getIndexesIncludingInternal());
             }
             schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
             checkCursorsForDDLModification(session, table);
@@ -344,7 +344,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         } catch(Exception e) {
             // Try and roll back all changes
             try {
-                store().deleteIndexes(session, REMOVE_INDEX_TREES_ON_DROP, newIndexes);
+                store().deleteIndexes(session, newIndexes);
                 schemaManager().dropIndexes(session, indexesToAdd);
             } catch(Exception e2) {
                 logger.error("Exception while rolling back failed createIndex: " + indexesToAdd, e2);
@@ -379,7 +379,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         
         try {
             // Drop them from the Store before while IndexDefs still exist
-            store().deleteIndexes(session, REMOVE_INDEX_TREES_ON_DROP, indexes);
+            store().deleteIndexes(session, indexes);
             schemaManager().dropIndexes(session, indexes);
             checkCursorsForDDLModification(session, table);
         } catch(Exception e) {
@@ -411,7 +411,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         try {
             // TODO: Delete group index data when store supports it
-            //store().deleteIndexes(session, REMOVE_INDEX_TREES_ON_DROP, indexes);
+            //store().deleteIndexes(session, indexes);
             schemaManager().dropIndexes(session, indexes);
             // TODO: checkCursorsForDDLModification ?
         } catch(Exception e) {
@@ -453,6 +453,4 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     BasicDDLFunctions(BasicDXLMiddleman middleman) {
         super(middleman);
     }
-
-    private static final boolean REMOVE_INDEX_TREES_ON_DROP = true;
 }

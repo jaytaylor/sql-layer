@@ -152,7 +152,7 @@ public interface Store extends Service<Store> {
     boolean isDeferIndexes();
     void setDeferIndexes(final boolean b);
     void flushIndexes(Session session) throws Exception;
-    void deleteIndexes(Session session, boolean removeTrees, Collection<? extends Index> indexes) throws Exception;
+    void deleteIndexes(Session session, Collection<? extends Index> indexes) throws Exception;
     void buildAllIndexes(Session session, boolean deferIndexes) throws Exception;
     void buildIndexes(Session session, Collection<? extends Index> indexes, boolean deferIndexes) throws Exception;
 

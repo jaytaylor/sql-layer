@@ -1356,8 +1356,7 @@ public class PersistitStore implements Store {
         }
     }
 
-    public void deleteIndexes(final Session session, boolean removeTrees, final Collection<? extends Index> indexes)
-            throws Exception {
+    public void deleteIndexes(final Session session, final Collection<? extends Index> indexes) throws Exception {
         for(Index index : indexes) {
             final IndexDef indexDef = (IndexDef) index.indexDef();
             if(indexDef == null) {
@@ -1365,14 +1364,9 @@ public class PersistitStore implements Store {
             }
             try {
                 Exchange iEx = getExchange(session, index);
-                if(removeTrees) {
-                    iEx.removeTree();
-                }
-                else {
-                    iEx.removeAll();
-                }
+                iEx.removeTree();
             } catch (Exception e) {
-                LOG.debug("Exception while deleting index: " + index, e);
+                LOG.debug("Exception while removing index tree: " + indexDef, e);
                 throw e;
             }
         }
