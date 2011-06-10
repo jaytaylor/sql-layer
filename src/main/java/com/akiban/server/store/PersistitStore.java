@@ -177,9 +177,7 @@ public class PersistitStore implements Store {
     }
 
     public void releaseExchange(final Session session, final Exchange exchange) {
-        if(exchange != null) {
-            treeService.releaseExchange(session, exchange);
-        }
+        treeService.releaseExchange(session, exchange);
     }
 
     // Given a RowData for a table, construct an hkey for a row in the table.
@@ -1328,6 +1326,8 @@ public class PersistitStore implements Store {
                         if(!index.isHKeyEquivalent()) {
                             iEx = getExchange(session, index);
                             iEx.removeTree();
+                            releaseExchange(session, iEx);
+                            iEx = null;
                         }
                     }
                     hEx.removeTree();
@@ -1342,8 +1342,12 @@ public class PersistitStore implements Store {
                 }
             }
         } finally {
-            releaseExchange(session, hEx);
-            releaseExchange(session, iEx);
+            if(hEx != null) {
+                releaseExchange(session, hEx);
+            }
+            if(iEx != null) {
+                releaseExchange(session, iEx);
+            }
         }
     }
 
