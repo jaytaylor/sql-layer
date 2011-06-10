@@ -23,6 +23,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
@@ -313,5 +314,36 @@ public final class DropTreesIT extends ITBase {
         ddl().dropTable(session(), p.getName());
         expectNoTree(c);
         expectNoTree(p);
+    }
+
+    @Test
+    public void groupedTablesWithDataTryDropParent() throws Exception {
+        int pid = createTable("s", "p", "id int key, o int, key o(o)");
+        int cid = createTable("s", "c", "id int key, pid int, constraint __akiban foreign key(pid) references p(id))");
+        writeRows(createNewRow(pid, 1L, 100L),
+                  createNewRow(pid, 2L, 200L),
+                  createNewRow(pid, 3L, 300L));
+        writeRows(createNewRow(cid, 10L, 1L),
+                  createNewRow(cid, 20L, 1L),
+                  createNewRow(cid, 30L, 2L));
+        Table p = getUserTable(pid);
+        expectTree(p);
+        Index o = p.getIndex("o");
+        expectTree(o);
+        Table c = getUserTable(cid);
+        expectTree(c);
+        try {
+            ddl().dropTable(session(), p.getName());
+            fail("Expected UnsupportedDropException!");
+        } catch(UnsupportedDropException e) {
+            expectTree(p);
+            expectTree(o);
+            expectTree(c);
+        }
+        ddl().dropTable(session(), c.getName());
+        ddl().dropTable(session(), p.getName());
+        expectNoTree(p);
+        expectNoTree(o);
+        expectNoTree(c);
     }
 }
