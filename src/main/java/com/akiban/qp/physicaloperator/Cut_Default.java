@@ -19,8 +19,10 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 class Cut_Default extends PhysicalOperator
@@ -34,6 +36,12 @@ class Cut_Default extends PhysicalOperator
     }
 
     // PhysicalOperator interface
+
+    @Override
+    public List<PhysicalOperator> getInputOperators()
+    {
+        return Collections.singletonList(inputOperator);
+    }
 
     @Override
     protected Cursor cursor(StoreAdapter adapter)
