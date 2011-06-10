@@ -25,6 +25,7 @@ import com.google.inject.Scopes;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -34,10 +35,8 @@ public final class Guicer {
 
     // Guicer interface
 
-    public void startRequiredServices(ServiceLifecycleActions<?> withActions) {
-        for (Class<?> directlyRequiredClass : directlyRequiredClasses) {
-            get(directlyRequiredClass, withActions);
-        }
+    public Collection<Class<?>> directlyRequiredClasses() {
+        return directlyRequiredClasses;
     }
 
     public void stopAllServices(ServiceLifecycleActions<?> withActions) {
@@ -76,16 +75,17 @@ public final class Guicer {
     private Guicer(Collection<ServiceBinding> serviceBindings)
     throws ClassNotFoundException
     {
-        directlyRequiredClasses = new ArrayList<Class<?>>();
+        Collection<Class<?>> localDirectlyRequiredClasses = new ArrayList<Class<?>>();
         List<ResolvedServiceBinding> resolvedServiceBindings = new ArrayList<ResolvedServiceBinding>();
 
         for (ServiceBinding serviceBinding : serviceBindings) {
             ResolvedServiceBinding resolvedServiceBinding = new ResolvedServiceBinding(serviceBinding);
             resolvedServiceBindings.add(resolvedServiceBinding);
             if (serviceBinding.isDirectlyRequired()) {
-                directlyRequiredClasses.add(resolvedServiceBinding.serviceInterfaceClass());
+                localDirectlyRequiredClasses.add(resolvedServiceBinding.serviceInterfaceClass());
             }
         }
+        directlyRequiredClasses = Collections.unmodifiableCollection(localDirectlyRequiredClasses);
 
         AbstractModule module = new ServiceBindingsModule(resolvedServiceBindings);
         _injector = Guice.createInjector(module);
@@ -176,7 +176,7 @@ public final class Guicer {
 
     // object state
 
-    private final List<Class<?>> directlyRequiredClasses;
+    private final Collection<Class<?>> directlyRequiredClasses;
     private final Object lock;
     private final Set<Object> services;
     private final Injector _injector;

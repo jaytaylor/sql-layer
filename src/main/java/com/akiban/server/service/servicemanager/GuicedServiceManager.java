@@ -63,7 +63,10 @@ public final class GuicedServiceManager implements ServiceManager {
     @Override
     public void startServices() throws ServiceStartupException {
         ServiceManagerImpl.setServiceManager(this);
-        guicer.startRequiredServices(STANDARD_SERVICE_ACTIONS);
+
+        for (Class<?> directlyRequiredClass : guicer.directlyRequiredClasses()) {
+            guicer.get(directlyRequiredClass, STANDARD_SERVICE_ACTIONS);
+        }
     }
 
     @Override
