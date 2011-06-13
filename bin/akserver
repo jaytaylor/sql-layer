@@ -86,6 +86,7 @@ launch_service()
     if [ "x$usegui" != "x" ]; then
         akiban_parms="$akiban_parms -Dcom.persistit.showgui=true"
     fi
+    akiban_params="$akiban_params -Dservices.config=$AKIBAN_CONF/config/services-config.yaml"
 
     if [ "x$foreground" != "x" ]; then
         echo $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props

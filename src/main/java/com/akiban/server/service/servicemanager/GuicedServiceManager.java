@@ -204,7 +204,6 @@ public final class GuicedServiceManager implements ServiceManager {
     public static BindingsConfigurationProvider standardUrls() {
         BindingsConfigurationProvider provider = new BindingsConfigurationProvider();
         provider.define(GuicedServiceManager.class.getResource("default-services.yaml"));
-        provider.overrideRequires(GuicedServiceManager.class.getResource("default-services-requires.yaml"));
         return provider;
     }
 

@@ -1,3 +1,0 @@
-- require:
-    - com.akiban.server.service.memcache.MemcacheService
-    - com.akiban.server.service.network.NetworkService
