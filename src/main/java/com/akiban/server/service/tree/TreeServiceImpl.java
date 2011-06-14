@@ -65,22 +65,22 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
     private static final String BUFFER_SIZE_PROP_NAME = "buffersize";
 
-    private static final String BUFFER_COUNT_PROP_NAME = "buffer.count.";
+    private static final String BUFFER_MEMORY_PROP_NAME = "buffer.memory.";
 
     private static final String DEFAULT_DATAPATH = "/tmp/akiban_server";
 
+    private static final String FIXED_ALLOCATION_PROPERTY_NAME = "akserver.fixed";
+
     // Must be one of 1024, 2048, 4096, 8192, 16384:
-    private static final int DEFAULT_BUFFER_SIZE = 8192;
+    static final int DEFAULT_BUFFER_SIZE = 16384;
 
     // Generally this is used only for unit tests and is
     // overridden by memory allocation calculation.
-    private static final int DEFAULT_BUFFER_COUNT = 1024;
+    static final int DEFAULT_BUFFER_MEMORY = (int) (1024 * DEFAULT_BUFFER_SIZE * 1.25);
 
-    private final static long MEMORY_RESERVATION = 64 * MEGA;
+    final static long DEFAULT_MEMORY_RESERVATION = 256 * MEGA;
 
-    private final static float PERSISTIT_ALLOCATION_FRACTION = 0.5f;
-
-    private static final String FIXED_ALLOCATION_PROPERTY_NAME = "akserver.fixed";
+    final static float DEFAULT_PERSISTIT_ALLOCATION_FRACTION = 0.75f;
 
     static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
@@ -140,24 +140,65 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
     public synchronized void start() throws Exception {
         configService = ServiceManagerImpl.get().getConfigurationService();
+
         assert getDb() == null;
         // TODO - remove this when sure we don't need it
         ++instanceCount;
         assert instanceCount == 1 : instanceCount;
+
+        final Properties properties = setupPersistitProperties(configService);
+        final int bufferSize = Integer.parseInt(properties
+                .getProperty(BUFFER_SIZE_PROP_NAME));
+
+        Persistit db = new Persistit();
+        dbRef.set(db);
+
+        tableStatusCache = new TableStatusCache(db, this);
+        tableStatusCache.register();
+
+        db.setPersistitLogger(new PersistitSlf4jAdapter(LOG));
+        db.initialize(properties);
+        buildSchemaMap();
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(
+                    "PersistitStore datapath={} {} k_buffers={}",
+                    new Object[] { db.getProperty("datapath"),
+                            bufferSize / 1024,
+                            db.getProperty("buffer.count." + bufferSize) });
+        }
+    }
+
+    final Properties setupPersistitProperties(
+            final ConfigurationService configService)
+            throws FileNotFoundException {
+        //
+        // Copies all the Persistit properties to a local Properties object.
+        // Note that this strips the prefix "persistit." from each key, for
+        // example, if the configuration file specifies
+        //
+        // persistit.appendonly=true
+        //
+        // then the corresponding key created by getModuleConfiguration will be
+        // just "appendonly".
+        //
         final Properties properties = configService.getModuleConfiguration(
                 PERSISTIT_MODULE_NAME).getProperties();
         //
         // This section modifies the properties gotten from the
-        // default configuration plus chunkserver.properties. It
+        // default configuration plus akserver properties. It
         //
         // (a) copies akserver.datapath to datapath
-        // (b) sets the buffersize property if null
-        // (c) sets the buffercount property if null.
+        // (b) sets the buffersize property to default value if null.
+        // (c) computes a buffer memory value, or uses default if
+        // the akiserver.fixed flag is set. (Used by unit tests.)
         //
         // Copies the akserver.datapath property to the Persistit properties
-        // set.
-        // This allows Persistit to perform substitution of ${datapath} with
-        // the server-specified home directory.
+        // set. This allows Persistit to perform substitution of ${datapath}
+        // with the server-specified home directory.
+        //
+        // Sets the property named "buffersize" so that the volume
+        // specifications can use the substitution syntax ${buffersize}.
         //
         final String datapath = configService.getProperty("akserver."
                 + DATAPATH_PROP_NAME, DEFAULT_DATAPATH);
@@ -188,34 +229,20 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         //
         final int bufferSize = Integer.parseInt(properties
                 .getProperty(BUFFER_SIZE_PROP_NAME));
-        final String bufferCountPropString = BUFFER_COUNT_PROP_NAME
+        final String bufferMemoryPropString = BUFFER_MEMORY_PROP_NAME
                 + bufferSize;
-        if (!properties.containsKey(bufferCountPropString)) {
-            properties.setProperty(bufferCountPropString,
-                    String.valueOf(bufferCount(bufferSize, isFixedAllocation)));
+        if (!properties.containsKey(bufferMemoryPropString)) {
+            properties.setProperty(bufferMemoryPropString,
+                    String.valueOf(bufferMemory(isFixedAllocation)));
         }
-        //
-        // Now we're ready to create the Persistit instance.
-        // Note that the Volume specifications will substitute
-        // ${buffersize}, so that property must be valid.
-        //
-        Persistit db = new Persistit();
-        dbRef.set(db);
+        return properties;
+    }
 
-        tableStatusCache = new TableStatusCache(db, this);
-        tableStatusCache.register();
-
-        db.setPersistitLogger(new PersistitSlf4jAdapter(LOG));
-        db.initialize(properties);
-        buildSchemaMap();
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug(
-                    "PersistitStore datapath={} {} k_buffers={}",
-                    new Object[] { db.getProperty("datapath"),
-                            bufferSize / 1024,
-                            db.getProperty("buffer.count." + bufferSize) });
+    long bufferMemory(final boolean isFixedAllocation) {
+        if (isFixedAllocation) {
+            return DEFAULT_BUFFER_MEMORY;
         }
+        return (long) ((AkServerUtil.availableMemory() - DEFAULT_MEMORY_RESERVATION) * DEFAULT_PERSISTIT_ALLOCATION_FRACTION);
     }
 
     /**
@@ -247,16 +274,6 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
                 ensureDirectoryExists(path, true);
             }
         }
-    }
-
-    private int bufferCount(final int bufferSize,
-            final boolean isFixedAllocation) {
-        if (isFixedAllocation) {
-            return DEFAULT_BUFFER_COUNT;
-        }
-        final long allocation = (long) ((AkServerUtil.availableMemory() - MEMORY_RESERVATION) * PERSISTIT_ALLOCATION_FRACTION);
-        final int allocationPerBuffer = (int) (bufferSize * 1.5);
-        return Math.max(512, (int) (allocation / allocationPerBuffer));
     }
 
     public void stop() throws Exception {
@@ -460,6 +477,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     /**
      * Provide a list of Exchange instances already created for a particular
      * Tree.
+     * 
      * @param session
      * @param tree
      * @return
@@ -482,7 +500,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
                         && !list.get(list.size() - 1).getTree().isValid()) {
                     //
                     // The Tree on which this list of cached Exchanges is
-                    // based was deleted.  Need to clear the list.  Further,
+                    // based was deleted. Need to clear the list. Further,
                     // remove the obsolete Tree object from the Map and replace
                     // it with the new valid Tree.
                     list.clear();
@@ -518,7 +536,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     @Override
-    public boolean treeExists(final String schemaName, final String treeName) throws PersistitException {
+    public boolean treeExists(final String schemaName, final String treeName)
+            throws PersistitException {
         final Volume volume = mappedVolume(schemaName, treeName);
         final Tree tree = volume.getTree(treeName, false);
         return tree != null;

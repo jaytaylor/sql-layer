@@ -47,12 +47,10 @@ import javax.management.ObjectName;
 public class UnitTestServiceFactory extends DefaultServiceFactory {
     private final static File TESTDIR = new File("/tmp/akserver-junit");
     private final MockJmxRegistryService jmxRegistryService = new MockJmxRegistryService();
-    private final TestConfigService configService = new TestConfigService();
-    private final MockNetworkService networkService = new MockNetworkService(
-            configService);
+    private final TestConfigService configService;
+    private final MockNetworkService networkService;
 
     private final boolean withNetwork;
-    private final Collection<Property> extraProperties;
 
     public static ServiceManager createServiceManager() {
         ServiceManagerImpl.setServiceManager(null);
@@ -163,16 +161,21 @@ public class UnitTestServiceFactory extends DefaultServiceFactory {
         public void stop() throws Exception {
             // do nothing
         }
-        
+
         @Override
         public void crash() throws Exception {
             // do nothing
         }
-        
+
     }
 
-    private class TestConfigService extends ConfigurationServiceImpl {
+    public static class TestConfigService extends ConfigurationServiceImpl {
         File tmpDir;
+        private final Collection<Property> extraProperties;
+
+        protected TestConfigService(final Collection<Property> extraProperties) {
+            this.extraProperties = extraProperties;
+        }
 
         @Override
         protected boolean shouldLoadAdminProperties() {
@@ -221,7 +224,8 @@ public class UnitTestServiceFactory extends DefaultServiceFactory {
                 TESTDIR.deleteOnExit();
             }
 
-            File tmpFile = File.createTempFile("akserver-unitdata", "", TESTDIR);
+            File tmpFile = File
+                    .createTempFile("akserver-unitdata", "", TESTDIR);
             if (!tmpFile.delete()) {
                 throw new IOException("Couldn't delete file: " + tmpFile);
             }
@@ -236,7 +240,9 @@ public class UnitTestServiceFactory extends DefaultServiceFactory {
     protected UnitTestServiceFactory(final boolean withNetwork,
             final Collection<Property> extraProperties) {
         this.withNetwork = withNetwork;
-        this.extraProperties = extraProperties;
+        configService = new TestConfigService(extraProperties);
+        networkService = new MockNetworkService(configService);
+
     }
 
     @Override
