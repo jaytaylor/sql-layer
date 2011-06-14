@@ -54,8 +54,6 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     private final static Session.Key<Map<Tree, List<Exchange>>> EXCHANGE_MAP = Session.Key
             .named("exchangemap");
 
-    private final static int MEGA = 1024 * 1024;
-
     private static final Logger LOG = LoggerFactory
             .getLogger(TreeServiceImpl.class.getName());
 
@@ -67,9 +65,15 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
     private static final String BUFFER_MEMORY_PROP_NAME = "buffer.memory.";
 
+    private static final String RESERVED_MEMORY_PROP_NAME = "reserved";
+
+    private static final String ALLOCATION_FRACTION = "allocation";
+
     private static final String DEFAULT_DATAPATH = "/tmp/akiban_server";
 
     private static final String FIXED_ALLOCATION_PROPERTY_NAME = "akserver.fixed";
+
+    private final static long MEGA = 1024 * 1024;
 
     // Must be one of 1024, 2048, 4096, 8192, 16384:
     static final int DEFAULT_BUFFER_SIZE = 16384;
@@ -78,9 +82,17 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     // overridden by memory allocation calculation.
     static final int DEFAULT_BUFFER_MEMORY = (int) (1024 * DEFAULT_BUFFER_SIZE * 1.25);
 
-    final static long DEFAULT_MEMORY_RESERVATION = 256 * MEGA;
+    final static String DEFAULT_MEMORY_RESERVATION = "256M";
 
-    final static float DEFAULT_PERSISTIT_ALLOCATION_FRACTION = 0.75f;
+    final static long RESERVATION_MIN = 64 * MEGA;
+
+    final static long RESERVATION_MAX = 4 * 1024 * MEGA;
+
+    final static String DEFAULT_PERSISTIT_ALLOCATION_FRACTION = "0.75f";
+
+    final static float ALLOCATION_MIN = 0.10f;
+
+    final static float ALLOCATION_MAX = 0.90f;
 
     static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
@@ -231,18 +243,30 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
                 .getProperty(BUFFER_SIZE_PROP_NAME));
         final String bufferMemoryPropString = BUFFER_MEMORY_PROP_NAME
                 + bufferSize;
+        final long reservedMemory = Persistit.parseLongProperty(
+                RESERVED_MEMORY_PROP_NAME, properties.getProperty(
+                        RESERVED_MEMORY_PROP_NAME, DEFAULT_MEMORY_RESERVATION),
+                RESERVATION_MIN, RESERVATION_MAX);
+        final float allocationFraction = Persistit.parseFloatProperty(
+                ALLOCATION_FRACTION, properties.getProperty(
+                        ALLOCATION_FRACTION,
+                        DEFAULT_PERSISTIT_ALLOCATION_FRACTION), ALLOCATION_MIN,
+                ALLOCATION_MAX);
+
         if (!properties.containsKey(bufferMemoryPropString)) {
-            properties.setProperty(bufferMemoryPropString,
-                    String.valueOf(bufferMemory(isFixedAllocation)));
+            properties.setProperty(bufferMemoryPropString, String
+                    .valueOf(bufferMemory(isFixedAllocation, reservedMemory,
+                            allocationFraction)));
         }
         return properties;
     }
 
-    long bufferMemory(final boolean isFixedAllocation) {
+    long bufferMemory(final boolean isFixedAllocation, final long reserved,
+            final float fraction) {
         if (isFixedAllocation) {
             return DEFAULT_BUFFER_MEMORY;
         }
-        return (long) ((AkServerUtil.availableMemory() - DEFAULT_MEMORY_RESERVATION) * DEFAULT_PERSISTIT_ALLOCATION_FRACTION);
+        return (long) ((AkServerUtil.availableMemory() - reserved) * fraction);
     }
 
     /**

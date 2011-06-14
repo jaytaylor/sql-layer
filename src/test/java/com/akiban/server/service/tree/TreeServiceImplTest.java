@@ -29,32 +29,35 @@ import com.akiban.server.service.config.ConfigurationService;
 
 public class TreeServiceImplTest {
 
+    private final static int MEGA = 1024 * 1024;
+
     private static class MyConfigService extends TestConfigService {
         private MyConfigService() {
             super(null);
         }
     }
-    
+
     private ConfigurationService asConfigService;
     private Service<ConfigurationService> asService;
-    
+
     @SuppressWarnings("unchecked")
     private void createConfiguration() {
         final ConfigurationService configService = new MyConfigService();
         asConfigService = configService;
         asService = (Service<ConfigurationService>) configService;
     }
-    
+
     @Test
     public void bufferMemoryTest() throws Exception {
         final TreeServiceImpl treeService = new TreeServiceImpl();
         final long available = AkServerUtil.availableMemory();
-        final long allocation = treeService.bufferMemory(false);
-        assertTrue(allocation > (available - TreeServiceImpl.DEFAULT_MEMORY_RESERVATION) / 2);
-        assertTrue(allocation < available - TreeServiceImpl.DEFAULT_MEMORY_RESERVATION);
+        final long allocation = treeService.bufferMemory(false, 256 * MEGA,
+                0.75f);
+        assertTrue(allocation > (available - 256 * MEGA) / 2);
+        assertTrue(allocation < available - 256 * MEGA);
 
         assertEquals(TreeServiceImpl.DEFAULT_BUFFER_MEMORY,
-                treeService.bufferMemory(true));
+                treeService.bufferMemory(true, 256 * MEGA, 0.75f));
     }
 
     @Test
