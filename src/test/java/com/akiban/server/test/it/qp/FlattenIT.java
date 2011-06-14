@@ -161,6 +161,14 @@ public class FlattenIT extends PhysicalOperatorITBase
         compareRows(expected, cursor);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void shorteningWithoutLeftJoin() {
+        flatten_HKeyOrdered(groupScan_Default(coi),
+                orderRowType,
+                itemRowType,
+                INNER_JOIN | OUTER_JOIN_SHORTENS_HKEY);
+    }
+
     @Test @Ignore("bug 797433")
     public void testLeftJoinCO()
     {
@@ -197,7 +205,7 @@ public class FlattenIT extends PhysicalOperatorITBase
         PhysicalOperator plan = flatten_HKeyOrdered(groupScan_Default(coi),
                 customerRowType,
                 orderRowType,
-                LEFT_JOIN | OUTER_JOIN_EXTENDS_HKEY);
+                LEFT_JOIN | OUTER_JOIN_SHORTENS_HKEY);
         RowType coRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
