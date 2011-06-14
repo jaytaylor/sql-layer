@@ -1,1 +1,1 @@
-No output.
+Need Product of [flatten(user.customers, user.addresses), flatten(user.customers, user.orders)]
