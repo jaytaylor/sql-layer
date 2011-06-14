@@ -164,9 +164,14 @@ public class PhysicalOperatorITBase extends ITBase
         };
     }
 
-    protected RowBase row(RowType rowType, Object... fields)
+    protected TestRow row(RowType rowType, Object... fields)
     {
         return new TestRow(rowType, fields);
+    }
+
+    protected TestRow row(String hKeyString, RowType rowType, Object... fields)
+    {
+        return new TestRow(rowType, fields, hKeyString);
     }
 
     protected RowBase row(int tableId, Object... values /* alternating field position and value */)
@@ -199,6 +204,13 @@ public class PhysicalOperatorITBase extends ITBase
                     String expectedString = expected[count] == null ? "null" : expected[count].toString();
                     String actualString = actualRow == null ? "null" : actualRow.toString();
                     assertEquals(expectedString, actualString);
+                }
+                if (expected[count] instanceof TestRow) {
+                    TestRow expectedTestRow = (TestRow) expected[count];
+                    if (expectedTestRow.persistityString() != null) {
+                        String actualHKeyString = actualRow == null ? "null" : actualRow.hKey().toString();
+                        assertEquals("hkey", expectedTestRow.persistityString(), actualHKeyString);
+                    }
                 }
                 actualRows.add(actualRow);
             }

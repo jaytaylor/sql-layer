@@ -157,4 +157,5 @@ public class API
     public static final int INNER_JOIN = Flatten_HKeyOrdered.INNER_JOIN;
     public static final int LEFT_JOIN = Flatten_HKeyOrdered.LEFT_JOIN;
     public static final int RIGHT_JOIN = Flatten_HKeyOrdered.RIGHT_JOIN;
+    public static final int OUTER_JOIN_EXTENDS_HKEY = Flatten_HKeyOrdered.OUTER_JOIN_EXTENDS_HKEY;
 }

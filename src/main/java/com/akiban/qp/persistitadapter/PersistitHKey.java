@@ -33,7 +33,14 @@ class PersistitHKey implements HKey
     @Override
     public boolean equals(Object o)
     {
-        return this.hKey.equals(((PersistitHKey) o).hKey);
+        return o == this
+                || !(o == null || !PersistitHKey.class.equals(o.getClass()))
+                && this.hKey.equals(((PersistitHKey) o).hKey);
+    }
+
+    @Override
+    public int hashCode() {
+        return hKey.hashCode();
     }
 
     // HKey interface

@@ -21,6 +21,7 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.akiban.qp.physicaloperator.API.*;
@@ -160,7 +161,7 @@ public class FlattenIT extends PhysicalOperatorITBase
         compareRows(expected, cursor);
     }
 
-    @Test
+    @Test @Ignore("bug 797433")
     public void testLeftJoinCO()
     {
         PhysicalOperator plan = flatten_HKeyOrdered(groupScan_Default(coi),
@@ -170,9 +171,9 @@ public class FlattenIT extends PhysicalOperatorITBase
         RowType coRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
-            row(coRowType, 1L, "northbridge", 11L, 1L, "ori"),
-            row(itemRowType, 111L, 11L),
-            row(itemRowType, 112L, 11L),
+            row(oKey(1L, 11L), coRowType, 1L, "northbridge", 11L, 1L, "ori"),
+            row(iKey(1L, 11L, 111L), itemRowType, 111L, 11L),
+            row(iKey(1L, 11L, 112L), itemRowType, 112L, 11L),
             row(coRowType, 1L, "northbridge", 12L, 1L, "david"),
             row(itemRowType, 121L, 12L),
             row(itemRowType, 122L, 12L),
@@ -184,8 +185,38 @@ public class FlattenIT extends PhysicalOperatorITBase
             row(itemRowType, 222L, 22L),
             row(itemRowType, 311L, 31L),
             row(itemRowType, 312L, 31L),
-            row(coRowType, 4L, "highland", null, null, null),
+            row(oKey(4L, null), coRowType, 4L, "highland", null, null, null),
             row(coRowType, 5L, "matrix", 51L, 5L, "yuval")
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testLeftJoinCO_WithLeftShortenedHKey()
+    {
+        PhysicalOperator plan = flatten_HKeyOrdered(groupScan_Default(coi),
+                customerRowType,
+                orderRowType,
+                LEFT_JOIN | OUTER_JOIN_EXTENDS_HKEY);
+        RowType coRowType = plan.rowType();
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+                row(oKey(1L, 11L), coRowType, 1L, "northbridge", 11L, 1L, "ori"),
+                row(iKey(1L, 11L, 111L), itemRowType, 111L, 11L),
+                row(iKey(1L, 11L, 112L), itemRowType, 112L, 11L),
+                row(coRowType, 1L, "northbridge", 12L, 1L, "david"),
+                row(itemRowType, 121L, 12L),
+                row(itemRowType, 122L, 12L),
+                row(coRowType, 2L, "foundation", 21L, 2L, "tom"),
+                row(itemRowType, 211L, 21L),
+                row(itemRowType, 212L, 21L),
+                row(coRowType, 2L, "foundation", 22L, 2L, "jack"),
+                row(itemRowType, 221L, 22L),
+                row(itemRowType, 222L, 22L),
+                row(itemRowType, 311L, 31L),
+                row(itemRowType, 312L, 31L),
+                row(cKey(4L), coRowType, 4L, "highland", null, null, null),
+                row(coRowType, 5L, "matrix", 51L, 5L, "yuval")
         };
         compareRows(expected, cursor);
     }
@@ -199,7 +230,7 @@ public class FlattenIT extends PhysicalOperatorITBase
                                                     LEFT_JOIN);
         RowType oiRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
-        RowBase[] expected = new RowBase[]{
+        TestRow[] expected = new TestRow[]{
             row(customerRowType, 1L, "northbridge"),
             row(oiRowType, 11L, 1L, "ori", 111L, 11L),
             row(oiRowType, 11L, 1L, "ori", 112L, 11L),
@@ -425,5 +456,17 @@ public class FlattenIT extends PhysicalOperatorITBase
             row(oiRowType, 51L, 5L, "yuval", null, null),
         };
         compareRows(expected, cursor);
+    }
+
+    private String cKey(Long cid) {
+        return String.format("{%d,(long)%s}",customer, cid);
+    }
+
+    private String oKey(Long cid, Long oid) {
+        return String.format("{%d,(long)%s,%d,(long)%s}",customer, cid, order, oid);
+    }
+
+    private String iKey(Long cid, Long oid, Long iid) {
+        return String.format("{%d,(long)%s,%d,(long)%s,%d,(long)%s}",customer, cid, order, oid, item, iid);
     }
 }
