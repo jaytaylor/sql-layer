@@ -24,4 +24,6 @@ public interface RowBase
     Object field(int i, Bindings bindings);
     HKey hKey();
     boolean ancestorOf(RowBase that);
+    int runId();
+    void runId(int runId);
 }

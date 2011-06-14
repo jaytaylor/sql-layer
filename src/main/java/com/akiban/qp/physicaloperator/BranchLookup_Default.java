@@ -221,17 +221,18 @@ public class BranchLookup_Default extends PhysicalOperator
         private void advanceLookup()
         {
             if (lookupCursor.next()) {
-                Row currentRow = lookupCursor.currentRow();
-                if (currentRow == null) {
+                Row currentLookupRow = lookupCursor.currentRow();
+                if (currentLookupRow == null) {
                     lookupState = LookupState.AFTER;
                     lookupRow.set(null);
                 } else {
-                    if (limit.limitReached(currentRow)) {
+                    if (limit.limitReached(currentLookupRow)) {
                         lookupState = LookupState.AFTER;
                         lookupRow.set(null);
                         close();
                     } else {
-                        lookupRow.set(currentRow);
+                        currentLookupRow.runId(inputRow.get().runId());
+                        lookupRow.set(currentLookupRow);
                     }
                 }
             } else {
