@@ -165,10 +165,10 @@ public class SimplifiedQuery
         }
 
         public Integer getMinOrdinal() {
-            return table.getTable().getTableId();
+            return table.getOrdinal();
         }
         public Integer getMaxOrdinal() {
-            return table.getTable().getTableId();
+            return table.getOrdinal();
         }
 
         public boolean isTable() {
