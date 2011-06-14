@@ -22,10 +22,16 @@ import com.akiban.sql.parser.StatementNode;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.persistitadapter.OperatorStore;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.persistitadapter.PersistitGroupRow;
+import com.akiban.qp.physicaloperator.StoreAdapter;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.store.PersistitStore;
+import com.akiban.server.store.Store;
 import com.akiban.util.Tap;
 
 import org.slf4j.Logger;
@@ -66,6 +72,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     private ServiceManager serviceManager;
     private int aisGeneration = -1;
     private AkibanInformationSchema ais;
+    private StoreAdapter adapter;
     private String defaultSchemaName;
     private SQLParser parser;
     private PostgresStatementCache statementCache;
@@ -527,13 +534,26 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         // Temporary until completely removed.
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
+        PostgresOperatorCompiler compiler = new PostgresOperatorCompiler(this);
+        {
+            Store store = serviceManager.getStore();
+            PersistitStore persistitStore;
+            if (store instanceof OperatorStore)
+                persistitStore = ((OperatorStore)store).getPersistitStore();
+            else
+                persistitStore = (PersistitStore)store;
+            adapter = new PersistitAdapter(compiler.getSchema(),
+                                           persistitStore, 
+                                           session);
+        }
+
         statementCache = server.getStatementCache(aisGeneration);
         unparsedGenerators = new PostgresStatementParser[] {
             new PostgresEmulatedMetaDataStatementParser(this)
         };
         parsedGenerators = new PostgresStatementGenerator[] {
             // Can be ordered by frequency so long as there is no overlap.
-            new PostgresOperatorCompiler(this),
+            compiler,
             new PostgresDDLStatementGenerator(this),
             new PostgresSessionStatementGenerator(this),
             new PostgresExplainStatementGenerator(this)
@@ -639,6 +659,11 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         return parser;
     }
     
+    @Override
+    public StoreAdapter getStore() {
+        return adapter;
+    }
+
     public boolean isInstrumentationEnabled() {
         return instrumentationEnabled;
     }
