@@ -16,6 +16,7 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.row.FlattenedRow;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.FlattenedRowType;
@@ -102,8 +103,8 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         rightJoin = (flags & RIGHT_JOIN) != 0;
         keepParent = (flags & KEEP_PARENT) != 0;
         keepChild = (flags & KEEP_CHILD) != 0;
-        outerJoinShortensHKey = (flags & LEFT_JOIN_SHORTENS_HKEY) != 0;
-        if (outerJoinShortensHKey) {
+        leftJoinShortensHKey = (flags & LEFT_JOIN_SHORTENS_HKEY) != 0;
+        if (leftJoinShortensHKey) {
             ArgumentValidation.isTrue("flags contains OUTER_JOIN_EXTENDS_HKEY but not LEFT_JOIN", leftJoin);
         }
     }
@@ -129,7 +130,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
     private final boolean rightJoin;
     private final boolean keepParent;
     private final boolean keepChild;
-    private final boolean outerJoinShortensHKey;
+    private final boolean leftJoinShortensHKey;
 
     // Inner classes
 
@@ -223,14 +224,15 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         {
             assert parent != null;
             assert child != null;
-            pending.add(new FlattenedRow(flattenType, parent, child, true));
+            pending.add(new FlattenedRow(flattenType, parent, child, child.hKey()));
         }
 
         private void generateLeftJoinRow(Row parent)
         {
             assert parent != null;
             if (leftJoin) {
-                pending.add(new FlattenedRow(flattenType, parent, null, !outerJoinShortensHKey));
+                HKey hKey = leftJoinShortensHKey ? parent.hKey() : null;
+                pending.add(new FlattenedRow(flattenType, parent, null, hKey));
             }
         }
 
@@ -238,7 +240,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         {
             assert child != null;
             if (rightJoin) {
-                pending.add(new FlattenedRow(flattenType, null, child, true));
+                pending.add(new FlattenedRow(flattenType, null, child, child.hKey()));
             }
         }
 
