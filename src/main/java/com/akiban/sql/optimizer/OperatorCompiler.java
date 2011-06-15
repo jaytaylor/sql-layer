@@ -224,7 +224,6 @@ public class OperatorCompiler
         if (index != null) {
             squery.removeConditions(index.getIndexConditions());
             squery.recomputeUsed();
-            squery.removeUnusedJoins();            
             Index iindex = index.getIndex();
             TableNode indexTable = index.getTable();
             squery.getTables().setLeftBranch(indexTable);
@@ -256,7 +255,6 @@ public class OperatorCompiler
             if (descendantUsed) {
                 resultOperator = branchLookup_Default(resultOperator, groupTable,
                                                       indexType, tableType, false);
-                checkForCrossProducts(indexTable);
                 ancestorType = tableType; // Index no longer in stream.
                 needExtract = true; // Might be other descendants, too.
             }
@@ -273,7 +271,6 @@ public class OperatorCompiler
                     addAncestors.add(tableRowType(left));
                 }
                 {
-                    TableNode previous = null;
                     TableNode sibling = left;
                     while (true) {
                         sibling = sibling.getNextSibling();
@@ -288,9 +285,6 @@ public class OperatorCompiler
                                 tableUsed = true;
                             }
                             addBranches.add(sibling);
-                            if (previous != null)
-                                needCrossProduct(previous, sibling);
-                            previous = sibling;
                         }
                     }
                 }
@@ -304,13 +298,11 @@ public class OperatorCompiler
                 resultOperator = branchLookup_Default(resultOperator, groupTable,
                                                       tableType, tableRowType(branchTable), 
                                                       true);
-                checkForCrossProducts(branchTable);
                 needExtract = true; // Might bring in things not joined.
             }
         }
         else {
             resultOperator = groupScan_Default(groupTable);
-            checkForCrossProducts(squery.getTables().getRoot());
             needExtract = true; // Brings in the whole tree.
         }
         
@@ -321,11 +313,19 @@ public class OperatorCompiler
         // whole (as opposed to the outer join with a subquery
         // containing the condition).
 
+        int nbranches = squery.getTables().colorBranches();
+        FlattenState[] fls = new FlattenState[nbranches];
+
         Flattener fl = new Flattener(resultOperator);
-        FlattenState fls = fl.flatten(squery.getJoins());
+        for (int i = 0; i < nbranches; i++)
+            fls[i] = fl.flatten(squery.getJoins(), i);
         resultOperator = fl.getResultOperator();
-        RowType resultRowType = fls.getResultRowType();
-        Map<TableNode,Integer> fieldOffsets = fls.getFieldOffsets();
+        // TODO: Actual Product operators.
+        if (nbranches > 1) {
+            throw new UnsupportedSQLException("Need Product of " + Arrays.asList(fls));
+        }
+        RowType resultRowType = fls[0].getResultRowType();
+        Map<TableNode,Integer> fieldOffsets = fls[0].getFieldOffsets();
 
         if (needExtract) {
             // Now that we are done flattening, there is only one row type
@@ -713,6 +713,11 @@ public class OperatorCompiler
             }
             nfields += other.nfields;
         }
+
+        @Override
+        public String toString() {
+            return resultRowType.toString();
+        }
     }
 
     // Holds a partial operator tree while flattening, since need the
@@ -728,9 +733,11 @@ public class OperatorCompiler
             return resultOperator;
         }
 
-        public FlattenState flatten(BaseJoinNode join) {
+        public FlattenState flatten(BaseJoinNode join, int branch) {
             if (join.isTable()) {
                 TableNode table = ((TableJoinNode)join).getTable();
+                if (!table.isUsedOnBranch(branch))
+                    return null;
                 Map<TableNode,Integer> fieldOffsets = new HashMap<TableNode,Integer>();
                 fieldOffsets.put(table, 0);
                 return new FlattenState(tableRowType(table),
@@ -741,8 +748,14 @@ public class OperatorCompiler
                 JoinJoinNode jjoin = (JoinJoinNode)join;
                 BaseJoinNode left = jjoin.getLeft();
                 BaseJoinNode right = jjoin.getRight();
-                FlattenState fleft = flatten(left);
-                FlattenState fright = flatten(right);
+                FlattenState fleft = flatten(left, branch);
+                FlattenState fright = flatten(right, branch);
+                if (fleft == null) {
+                    return fright;
+                }
+                else if (fright == null) {
+                    return fleft;
+                }
                 resultOperator = flatten_HKeyOrdered(resultOperator,
                                                      fleft.getResultRowType(),
                                                      fright.getResultRowType(),
@@ -838,33 +851,6 @@ public class OperatorCompiler
             // TODO: See comment above.
             rowType = new UnknownIndexRowType(schema, null, index);
         return new ExpressionRow(rowType, keys);
-    }
-
-    /** Check whether any list of children has a cross-product join,
-     * since that does not come from the group structure. */
-    protected void checkForCrossProducts(TableNode node) 
-            throws StandardException {
-        for (TableNode parent : node.subtree()) {
-            TableNode previous = null;
-            for (TableNode child = parent.getFirstChild(); 
-                 child != null; 
-                 child = child.getNextSibling()) {
-                if (child.subtreeUsed()) {
-                    if (previous != null)
-                        needCrossProduct(previous, child);
-                    previous = child;
-                }
-            }
-        }
-    }
-
-    // TODO: One slow way to do a cross product might be to filter out
-    // any existing right rows and then lookup to get all of them for
-    // the left's hkey.
-    protected void needCrossProduct(TableNode left, TableNode right) 
-            throws StandardException {
-        throw new UnsupportedSQLException("Need cross product between " + left +
-                                          " and " + right);
     }
 
 }

@@ -631,6 +631,7 @@ public class PersistitStore implements Store {
 
                     return;
                 } catch (RollbackException re) {
+                    TX_RETRY_TAP.out();
                     if (--retries < 0) {
                         throw new TransactionFailedException();
                     }
@@ -715,6 +716,7 @@ public class PersistitStore implements Store {
 
                     return;
                 } catch (RollbackException re) {
+                    TX_RETRY_TAP.out();
                     if (--retries < 0) {
                         throw new TransactionFailedException();
                     }
@@ -826,6 +828,7 @@ public class PersistitStore implements Store {
                 transaction.commit(forceToDisk);
                 return;
             } catch (RollbackException re) {
+                TX_RETRY_TAP.out();
                 if (--retries < 0) {
                     throw new TransactionFailedException();
                 }
@@ -1334,6 +1337,7 @@ public class PersistitStore implements Store {
                     transaction.commit(forceToDisk);
                     break; // success
                 } catch (RollbackException re) {
+                    TX_RETRY_TAP.out();
                     if (--retries < 0) {
                         throw new TransactionFailedException();
                     }

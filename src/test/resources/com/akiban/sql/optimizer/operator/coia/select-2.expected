@@ -1,4 +1,5 @@
 project([Field(1), Field(8), Field(5)])
+** NEED Product **
   Extract_Default([flatten(flatten(user.customers, user.addresses), user.orders)])
     Flatten_HKeyOrdered(flatten(user.customers, user.addresses) INNER user.orders)
       Flatten_HKeyOrdered(user.customers INNER user.addresses)
