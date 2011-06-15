@@ -743,19 +743,10 @@ public class OperatorCompiler
                 BaseJoinNode right = jjoin.getRight();
                 FlattenState fleft = flatten(left);
                 FlattenState fright = flatten(right);
-                int flags = DEFAULT;
-                switch (jjoin.getJoinType()) {
-                case LEFT:
-                    flags = LEFT_JOIN;
-                    break;
-                case RIGHT:
-                    flags = RIGHT_JOIN;
-                    break;
-                }
                 resultOperator = flatten_HKeyOrdered(resultOperator,
                                                      fleft.getResultRowType(),
                                                      fright.getResultRowType(),
-                                                     flags);
+                                                     jjoin.getJoinType());
                 fleft.setResultRowType(resultOperator.rowType());
                 fleft.mergeFields(fright);
                 return fleft;

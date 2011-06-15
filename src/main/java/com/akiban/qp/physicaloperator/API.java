@@ -23,6 +23,7 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 
 public class API
@@ -36,17 +37,38 @@ public class API
 
     public static PhysicalOperator flatten_HKeyOrdered(PhysicalOperator inputOperator,
                                                        RowType parentType,
-                                                       RowType childType)
+                                                       RowType childType,
+                                                       JoinType joinType)
     {
-        return flatten_HKeyOrdered(inputOperator, parentType, childType, Flatten_HKeyOrdered.DEFAULT);
+        return flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, EnumSet.noneOf(FlattenOption.class));
     }
 
     public static PhysicalOperator flatten_HKeyOrdered(PhysicalOperator inputOperator,
                                                        RowType parentType,
                                                        RowType childType,
-                                                       int flags)
+                                                       JoinType joinType,
+                                                       FlattenOption flag0)
     {
-        return new Flatten_HKeyOrdered(inputOperator, parentType, childType, flags);
+        return new Flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, EnumSet.of(flag0));
+    }
+
+    public static PhysicalOperator flatten_HKeyOrdered(PhysicalOperator inputOperator,
+                                                       RowType parentType,
+                                                       RowType childType,
+                                                       JoinType joinType,
+                                                       FlattenOption flag0,
+                                                       FlattenOption flag1)
+    {
+        return new Flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, EnumSet.of(flag0, flag1));
+    }
+
+    public static PhysicalOperator flatten_HKeyOrdered(PhysicalOperator inputOperator,
+                                                       RowType parentType,
+                                                       RowType childType,
+                                                       JoinType joinType,
+                                                       EnumSet<FlattenOption> flags)
+    {
+        return new Flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, flags);
     }
 
     public static PhysicalOperator groupScan_Default(GroupTable groupTable)
@@ -151,10 +173,16 @@ public class API
     // For all flags
     public static final int DEFAULT = 0x00;
     // Flattening flags
-    public static final int KEEP_PARENT = Flatten_HKeyOrdered.KEEP_PARENT;
-    public static final int KEEP_CHILD = Flatten_HKeyOrdered.KEEP_CHILD;
-    public static final int INNER_JOIN = Flatten_HKeyOrdered.INNER_JOIN;
-    public static final int LEFT_JOIN = Flatten_HKeyOrdered.LEFT_JOIN;
-    public static final int RIGHT_JOIN = Flatten_HKeyOrdered.RIGHT_JOIN;
-    public static final int LEFT_JOIN_SHORTENS_HKEY = Flatten_HKeyOrdered.LEFT_JOIN_SHORTENS_HKEY;
+    public enum JoinType {
+        INNER_JOIN,
+        LEFT_JOIN,
+        RIGHT_JOIN,
+        FULL_JOIN
+    }
+
+    public enum FlattenOption {
+        KEEP_PARENT,
+        KEEP_CHILD,
+        LEFT_JOIN_SHORTENS_HKEY
+    }
 }

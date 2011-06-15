@@ -29,6 +29,7 @@ import java.util.Collections;
 
 import static com.akiban.qp.expression.API.field;
 import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.physicaloperator.API.JoinType.*;
 
 public class ProjectIT extends PhysicalOperatorITBase
 {
@@ -150,12 +151,12 @@ public class ProjectIT extends PhysicalOperatorITBase
         PhysicalOperator flattenCO = flatten_HKeyOrdered(groupScan_Default(coi),
                                                          customerRowType,
                                                          orderRowType,
-                                                         LEFT_JOIN | RIGHT_JOIN);
+                                                         FULL_JOIN);
         RowType coType = flattenCO.rowType();
         PhysicalOperator flattenCOI = flatten_HKeyOrdered(flattenCO,
                                                           coType,
                                                           itemRowType,
-                                                          LEFT_JOIN | RIGHT_JOIN);
+                                                          FULL_JOIN);
         RowType coiType = flattenCOI.rowType();
         PhysicalOperator plan =
             project_Default(flattenCOI,
