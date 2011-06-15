@@ -102,6 +102,38 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new GenericInvalidOperationException(ioe);
         }
     }
+    
+    @Override
+    public void createTable(Session session, AkibanInformationSchema table)
+    throws ParseException, UnsupportedCharsetException,
+    ProtectedTableDDLException, DuplicateTableNameException,
+    GroupWithProtectedTableException, JoinToUnknownTableException,
+    JoinToWrongColumnsException, JoinToMultipleParentsException,
+    NoPrimaryKeyException, DuplicateColumnNameException,
+    UnsupportedDataTypeException, UnsupportedIndexDataTypeException,
+    UnsupportedIndexSizeException, GenericInvalidOperationException
+    {
+        try {
+            TableName tableName = schemaManager().createTableDefinition(session, table);
+            checkCursorsForDDLModification(session, getAIS(session).getTable(tableName));
+        } catch (Exception e) {
+            InvalidOperationException ioe = launder(e);
+            throwIfInstanceOf(ioe,
+                    ParseException.class,
+                    ProtectedTableDDLException.class,
+                    UnsupportedCharsetException.class,
+                    UnsupportedDataTypeException.class,
+                    JoinToUnknownTableException.class,
+                    JoinToWrongColumnsException.class,
+                    JoinToMultipleParentsException.class,
+                    DuplicateTableNameException.class,
+                    UnsupportedIndexDataTypeException.class,
+                    UnsupportedIndexSizeException.class
+            );
+            throw new GenericInvalidOperationException(ioe);
+        }
+    }
+    
 
     @Override
     public void dropTable(Session session, TableName tableName)

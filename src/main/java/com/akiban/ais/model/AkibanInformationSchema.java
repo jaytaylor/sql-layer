@@ -16,14 +16,20 @@
 package com.akiban.ais.model;
 
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+
+import com.akiban.ais.ddl.SchemaDef;
+import com.akiban.message.ErrorCode;
+import com.akiban.server.InvalidOperationException;
 
 public class AkibanInformationSchema implements Serializable, Traversable
 {

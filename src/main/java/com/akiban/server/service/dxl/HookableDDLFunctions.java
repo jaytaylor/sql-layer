@@ -62,6 +62,44 @@ public final class HookableDDLFunctions implements DDLFunctions {
         this.delegate = delegate;
         this.hook = hooks.size() == 1 ? hooks.get(0) : new CompositeHook(hooks);
     }
+    
+    @Override
+    public void createTable(Session session, AkibanInformationSchema table)
+            throws UnsupportedCharsetException, ProtectedTableDDLException,
+            DuplicateTableNameException, GroupWithProtectedTableException,
+            JoinToUnknownTableException, JoinToWrongColumnsException,
+            NoPrimaryKeyException, DuplicateColumnNameException,
+            UnsupportedDataTypeException, JoinToMultipleParentsException,
+            UnsupportedIndexDataTypeException, UnsupportedIndexSizeException,
+            GenericInvalidOperationException {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.CREATE_TABLE);
+            delegate.createTable(session, table);
+        }catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.CREATE_TABLE, t);
+            throwIfInstanceOf(t,
+                    ParseException.class,
+                    UnsupportedCharsetException.class,
+                    ProtectedTableDDLException.class,
+                    DuplicateTableNameException.class,
+                    GroupWithProtectedTableException.class,
+                    JoinToUnknownTableException.class,
+                    JoinToWrongColumnsException.class,
+                    JoinToMultipleParentsException.class,
+                    NoPrimaryKeyException.class,
+                    DuplicateColumnNameException.class,
+                    UnsupportedDataTypeException.class,
+                    UnsupportedIndexDataTypeException.class,
+                    UnsupportedIndexSizeException.class,
+                    GenericInvalidOperationException.class
+            );
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.CREATE_TABLE, thrown);
+        }
+    }
 
     @Override
     public void createTable(Session session, String schema, String ddlText) throws ParseException, UnsupportedCharsetException, ProtectedTableDDLException, DuplicateTableNameException, GroupWithProtectedTableException, JoinToUnknownTableException, JoinToWrongColumnsException, JoinToMultipleParentsException, NoPrimaryKeyException, DuplicateColumnNameException, UnsupportedDataTypeException, UnsupportedIndexDataTypeException, UnsupportedIndexSizeException, GenericInvalidOperationException {
@@ -383,4 +421,5 @@ public final class HookableDDLFunctions implements DDLFunctions {
             hook.hookFunctionFinally(session, DXLFunction.DROP_INDEXES, thrown);
         }
     }
+
 }

@@ -40,6 +40,8 @@ public interface SchemaManager {
      * @return The name of the table that was created.
      */
     TableName createTableDefinition(Session session, String defaultSchemaName, String statement) throws Exception;
+    
+    TableName createTableDefinition(Session session, AkibanInformationSchema table) throws Exception;
 
     /**
      * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are
@@ -129,4 +131,5 @@ public interface SchemaManager {
      * @return The current schema generation value.
      */
     int getSchemaGeneration();
+
 }
