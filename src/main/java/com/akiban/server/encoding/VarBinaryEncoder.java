@@ -30,6 +30,11 @@ public final class VarBinaryEncoder extends EncodingBase<ByteBuffer>{
     VarBinaryEncoder() {
     }
 
+    @Override
+    protected Class<ByteBuffer> getToObjectClass() {
+        return ByteBuffer.class;
+    }
+
     private static ByteBuffer toByteBuffer(Object value) {
         final ByteBuffer buffer;
         if(value == null) {
@@ -78,7 +83,19 @@ public final class VarBinaryEncoder extends EncodingBase<ByteBuffer>{
         final long location = getCheckedOffsetAndWidth(fieldDef, rowData);
         int offset = (int) location + fieldDef.getPrefixSize();
         int size = (int) (location >>> 32) - fieldDef.getPrefixSize();
-        return ByteBuffer.wrap(rowData.getBytes(), offset, size);
+        byte[] copy = new byte[size];
+        System.arraycopy(rowData.getBytes(), offset, copy, 0, size);
+        return ByteBuffer.wrap(copy);
+    }
+
+    @Override
+    public ByteBuffer toObject(Key key) {
+        Object o = key.decode();
+        if(o != null) {
+            byte[] bytes = (byte[])o;
+            return ByteBuffer.wrap(bytes, 0, bytes.length);
+        }
+        return null;
     }
 
     @Override
