@@ -20,6 +20,7 @@ import com.akiban.sql.StandardException;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
+import com.akiban.server.RowDef;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -54,6 +55,10 @@ public class TableSubTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
 
         public int getDepth() {
             return table.getDepth();
+        }
+
+        public int getOrdinal() {
+            return ((RowDef)table.rowDef()).getOrdinal();
         }
 
         /** Is <code>this</code> an ancestor of <code>other</code>? */

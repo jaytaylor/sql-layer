@@ -71,12 +71,46 @@ public class SimplifiedQuery
                 node = parent;
             }
         }
+
+        /** Determine branch occurrence.
+         * @return the number of branches. */
+        public int colorBranches() {
+            return colorBranches(root, 0);
+        }
+
+        private int colorBranches(TableNode node, int nbranches) {
+            int branches = 0;
+            for (TableNode child = node.getFirstChild(); 
+                 child != null; 
+                 child = child.getNextSibling()) {
+                nbranches = colorBranches(child, nbranches);
+                if (child.isUsed()) {
+                    // A parent is on the same branch as any child.
+                    branches |= child.getBranches();
+                }
+            }
+            if (branches == 0) {
+                if (node.isUsed()) {
+                    // The leaf of a new branch.
+                    branches = (1 << nbranches++);
+                }
+            }
+            else if (Integer.bitCount(branches) > 1) {
+                // A parent of children on different branches must be
+                // included to get the necessary cross-product join
+                // fields.
+                node.setUsed(true);
+            }
+            node.setBranches(branches);
+            return nbranches;
+        }
     }
 
     public static class TableNode extends TableTreeBase.TableNodeBase<TableNode> {
         private boolean used, outer;
         private List<ColumnCondition> conditions;
         private List<SimpleSelectColumn> selectColumns;
+        private int branches;
 
         public TableNode(UserTable table) {
             super(table);
@@ -125,6 +159,17 @@ public class SimplifiedQuery
             selectColumns.add(selectColumn);
         }
 
+        public int getBranches() {
+            return branches;
+        }
+        public void setBranches(int branches) {
+            this.branches = branches;
+        }
+
+        public boolean isUsedOnBranch(int branch) {
+            return used && ((branches & (1 << branch)) != 0);
+        }
+
         /** Is this table or any beneath it included in the query? */
         public boolean subtreeUsed() {
             for (TableNode descendant : subtree())
@@ -165,10 +210,10 @@ public class SimplifiedQuery
         }
 
         public Integer getMinOrdinal() {
-            return table.getTable().getTableId();
+            return table.getOrdinal();
         }
         public Integer getMaxOrdinal() {
-            return table.getTable().getTableId();
+            return table.getOrdinal();
         }
 
         public boolean isTable() {
@@ -1054,6 +1099,9 @@ public class SimplifiedQuery
         }
     }
 
+    /** Coalesce out joins involving tables that aren't used any more.
+     * (Not called currently, since usage can be per-branch.)
+     */
     public void removeUnusedJoins() {
         joins = removeUnusedJoins(joins);
     }

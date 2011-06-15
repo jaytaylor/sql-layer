@@ -37,15 +37,9 @@ import com.akiban.ais.model.UserTable;
 
 import com.akiban.qp.expression.Expression;
 
-import com.akiban.qp.persistitadapter.OperatorStore;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.PersistitGroupRow;
-
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.Store;
+import com.akiban.qp.rowtype.Schema;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,17 +54,8 @@ public class PostgresOperatorCompiler extends OperatorCompiler
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorCompiler.class);
 
-    private PersistitAdapter adapter;
-
     public PostgresOperatorCompiler(PostgresServerSession server) {
         super(server.getParser(), server.getAIS(), server.getDefaultSchemaName());
-        Store store = server.getServiceManager().getStore();
-        PersistitStore persistitStore;
-        if (store instanceof OperatorStore)
-            persistitStore = ((OperatorStore)store).getPersistitStore();
-        else
-            persistitStore = (PersistitStore)store;
-        adapter = new PersistitAdapter(schema, persistitStore, server.getSession());
 
         server.setAttribute("aisBinder", binder);
         server.setAttribute("compiler", this);
@@ -134,7 +119,6 @@ public class PostgresOperatorCompiler extends OperatorCompiler
 
         if (result.isModify())
             return new PostgresModifyOperatorStatement(stmt.statementToString(),
-                                                       adapter,
                                                        (UpdatePlannable) result.getResultOperator());
         else {
             int ncols = result.getResultColumns().size();
@@ -145,8 +129,7 @@ public class PostgresOperatorCompiler extends OperatorCompiler
                 columnNames.add(resultColumn.getName());
                 columnTypes.add(resultColumn.getType());
             }
-            return new PostgresOperatorStatement(adapter,
-                                                 (PhysicalOperator)result.getResultOperator(),
+            return new PostgresOperatorStatement((PhysicalOperator)result.getResultOperator(),
                                                  columnNames, columnTypes,
                                                  result.getOffset(),
                                                  result.getLimit());
@@ -167,6 +150,10 @@ public class PostgresOperatorCompiler extends OperatorCompiler
             userKeys[index.getColumns().get(i).getColumn().getPosition()] = keys[i];
         }
         return new ExpressionRow(rowType, userKeys);
+    }
+
+    protected Schema getSchema() {
+        return schema;
     }
 
 }
