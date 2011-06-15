@@ -106,6 +106,8 @@ public class PersistitStore implements Store {
 
     private final static String COLLECTORS_SESSION_KEY = "collectors";
 
+    private boolean updateGroupIndexes;
+
     private boolean deferIndexes = false;
 
     RowDefCache rowDefCache;
@@ -123,6 +125,10 @@ public class PersistitStore implements Store {
     private final Map<Tree, SortedSet<KeyState>> deferredIndexKeys = new HashMap<Tree, SortedSet<KeyState>>();
 
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
+
+    public PersistitStore(boolean updateGroupIndexes) {
+        this.updateGroupIndexes = updateGroupIndexes;
+    }
 
     public synchronized void start() throws Exception {
         treeService = ServiceManagerImpl.get().getTreeService();
@@ -658,6 +664,9 @@ public class PersistitStore implements Store {
         }
         UPDATE_ROW_TAP.in();
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+        if (updateGroupIndexes) {
+            checkNoGroupIndexes(rowDef.table());
+        }
         Exchange hEx = null;
         final Transaction transaction = treeService.getTransaction(session);
 
@@ -728,6 +737,10 @@ public class PersistitStore implements Store {
             releaseExchange(session, hEx);
             UPDATE_ROW_TAP.out();
         }
+    }
+
+    private void checkNoGroupIndexes(Table table) {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     private void propagateDownGroup(Session session, Exchange exchange)
