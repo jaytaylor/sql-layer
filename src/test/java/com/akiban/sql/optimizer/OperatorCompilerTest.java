@@ -129,9 +129,11 @@ public class OperatorCompilerTest extends TestBase
                                               String defaultSchemaName) {
             // This just needs to be enough to keep from UserTableRowType
             // constructor from getting NPE.
-            int tableId = 0;
             for (UserTable userTable : ais.getUserTables().values()) {
-                new RowDef(userTable, new TableStatus(++tableId));
+                int tableId = userTable.getTableId();
+                TableStatus ts = new TableStatus(tableId);
+                ts.setOrdinal(tableId);
+                new RowDef(userTable, ts);
             }
             return new TestOperatorCompiler(parser, ais, "user");
         }
