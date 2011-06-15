@@ -24,7 +24,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 
 import static com.akiban.qp.expression.API.field;
 import static com.akiban.qp.physicaloperator.API.*;
@@ -259,7 +258,7 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
         cursor.open(NO_BINDINGS);
         int expectedRunId = 0;
         while (cursor.next()) {
-            // There should be 1 projected rows per run
+            // There should be 1 projected row per run
             for (int p = 0; p < 1; p++) {
                 if (p > 0) {
                     assertTrue(cursor.next());

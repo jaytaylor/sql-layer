@@ -127,6 +127,13 @@ public class API
         return new Extract_Default(inputOperator, extractTypes);
     }
 
+    public static PhysicalOperator product_ByRun(PhysicalOperator input,
+                                                 RowType leftType,
+                                                 RowType rightType)
+    {
+        return new Product_ByRun(input, leftType, rightType);
+    }
+
     private static final Limit NO_LIMIT = new Limit()
     {
 

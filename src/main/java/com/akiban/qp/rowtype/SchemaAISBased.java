@@ -33,27 +33,38 @@ public class SchemaAISBased implements Schema
 {
     // Schema interface
 
+    @Override
     public synchronized UserTableRowType userTableRowType(UserTable table)
     {
         return (UserTableRowType) rowTypes.get(table.getTableId());
     }
 
+    @Override
     public synchronized IndexRowType indexRowType(TableIndex index)
     {
         assert index.getTable().isUserTable() : index;
         return userTableRowType((UserTable) index.getTable()).indexRowType(index);
     }
 
+    @Override
     public synchronized FlattenedRowType newFlattenType(RowType parent, RowType child)
     {
-        return new FlattenedRowType(this, typeIdCounter++, parent, child);
+        return new FlattenedRowType(this, nextTypeId(), parent, child);
     }
 
+    @Override
     public synchronized ProjectedRowType newProjectType(List<Expression> columns)
     {
-        return new ProjectedRowType(this, typeIdCounter++, columns);
+        return new ProjectedRowType(this, nextTypeId(), columns);
     }
 
+    @Override
+    public ProductRowType newProductType(RowType left, RowType right)
+    {
+        return new ProductRowType(this, nextTypeId(), left, right);
+    }
+
+    @Override
     public synchronized Iterator<RowType> rowTypes()
     {
         return rowTypes.values().iterator();

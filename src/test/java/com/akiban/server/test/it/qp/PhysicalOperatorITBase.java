@@ -193,6 +193,7 @@ public class PhysicalOperatorITBase extends ITBase
             cursor.open(bindings);
             while (cursor.next()) {
                 RowBase actualRow = cursor.currentRow();
+/*
                 int count = actualRows.size();
                 assertTrue(count < expected.length);
                 if(!equal(expected[count], actualRow)) {
@@ -200,6 +201,7 @@ public class PhysicalOperatorITBase extends ITBase
                     String actualString = actualRow == null ? "null" : actualRow.toString();
                     assertEquals(expectedString, actualString);
                 }
+*/
                 actualRows.add(actualRow);
             }
         } finally {
@@ -238,6 +240,12 @@ public class PhysicalOperatorITBase extends ITBase
                 expectedField != null && actualField != null && expectedField.equals(actualField);
         }
         return equal;
+    }
+
+    protected int ordinal(RowType rowType)
+    {
+        RowDef rowDef = (RowDef) rowType.userTable().rowDef();
+        return rowDef.getOrdinal();
     }
 
     protected static final Bindings NO_BINDINGS = UndefBindings.only();
