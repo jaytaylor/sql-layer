@@ -74,12 +74,12 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     // Must be one of 1024, 2048, 4096, 8192, 16384:
     static final int DEFAULT_BUFFER_SIZE = 16384;
 
-    // Generally this is used only for unit tests and is
-    // overridden by memory allocation calculation.
-    static final String DEFAULT_BUFFER_MEMORY = String
-            .valueOf((int) (1024 * DEFAULT_BUFFER_SIZE * 1.25));
-
-    final static String DEFAULT_MEMORY_RESERVATION = "256M";
+    // Generally this setting is used only for unit tests and is
+    // overridden by memory allocation calculation. This
+    // is the value used when the property akserver.fixed=true
+    // is set.
+    //
+    static final String UNIT_TEST_MEMORY_PROPERTY_VALUE = "20M";
 
     static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
@@ -233,7 +233,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
         if (isFixedAllocation) {
             properties.setProperty(bufferMemoryPropString,
-                    DEFAULT_BUFFER_MEMORY);
+                    UNIT_TEST_MEMORY_PROPERTY_VALUE);
         } else if (!properties.containsKey(bufferMemoryPropString)) {
             properties.setProperty(bufferMemoryPropString,
                     BUFFER_MEMORY_PROP_VALUE);
