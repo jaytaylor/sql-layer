@@ -166,7 +166,7 @@ public class FlattenIT extends PhysicalOperatorITBase
         flatten_HKeyOrdered(groupScan_Default(coi),
                 orderRowType,
                 itemRowType,
-                INNER_JOIN | OUTER_JOIN_SHORTENS_HKEY);
+                INNER_JOIN | LEFT_JOIN_SHORTENS_HKEY);
     }
 
     @Test @Ignore("bug 797433")
@@ -205,7 +205,7 @@ public class FlattenIT extends PhysicalOperatorITBase
         PhysicalOperator plan = flatten_HKeyOrdered(groupScan_Default(coi),
                 customerRowType,
                 orderRowType,
-                LEFT_JOIN | OUTER_JOIN_SHORTENS_HKEY);
+                LEFT_JOIN | LEFT_JOIN_SHORTENS_HKEY);
         RowType coRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -236,13 +236,13 @@ public class FlattenIT extends PhysicalOperatorITBase
                 groupScan_Default(coi),
                 customerRowType,
                 orderRowType,
-                LEFT_JOIN | OUTER_JOIN_SHORTENS_HKEY
+                LEFT_JOIN | LEFT_JOIN_SHORTENS_HKEY
         );
         RowType coRowType = coPlan.rowType();
         PhysicalOperator plan = flatten_HKeyOrdered(coPlan,
                 coRowType,
                 itemRowType,
-                LEFT_JOIN | OUTER_JOIN_SHORTENS_HKEY
+                LEFT_JOIN | LEFT_JOIN_SHORTENS_HKEY
         );
         RowType coiRowType = plan.rowType();
 
@@ -272,7 +272,7 @@ public class FlattenIT extends PhysicalOperatorITBase
                 groupScan_Default(coi),
                 customerRowType,
                 orderRowType,
-                LEFT_JOIN | OUTER_JOIN_SHORTENS_HKEY
+                LEFT_JOIN | LEFT_JOIN_SHORTENS_HKEY
         );
         RowType coRowType = coPlan.rowType();
         PhysicalOperator plan = flatten_HKeyOrdered(coPlan,
@@ -308,7 +308,7 @@ public class FlattenIT extends PhysicalOperatorITBase
                 groupScan_Default(coi),
                 customerRowType,
                 orderRowType,
-                LEFT_JOIN | OUTER_JOIN_SHORTENS_HKEY
+                LEFT_JOIN | LEFT_JOIN_SHORTENS_HKEY
         );
         RowType coRowType = coPlan.rowType();
         PhysicalOperator plan = flatten_HKeyOrdered(coPlan,

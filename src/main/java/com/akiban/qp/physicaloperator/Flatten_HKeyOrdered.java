@@ -102,7 +102,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         rightJoin = (flags & RIGHT_JOIN) != 0;
         keepParent = (flags & KEEP_PARENT) != 0;
         keepChild = (flags & KEEP_CHILD) != 0;
-        outerJoinShortensHKey = (flags & OUTER_JOIN_SHORTENS_HKEY) != 0;
+        outerJoinShortensHKey = (flags & LEFT_JOIN_SHORTENS_HKEY) != 0;
         if (outerJoinShortensHKey) {
             ArgumentValidation.isTrue("flags contains OUTER_JOIN_EXTENDS_HKEY but not LEFT_JOIN", leftJoin);
         }
@@ -116,7 +116,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
     public static final int INNER_JOIN = 0x04;
     public static final int LEFT_JOIN = 0x08;
     public static final int RIGHT_JOIN = 0x10;
-    public static final int OUTER_JOIN_SHORTENS_HKEY = 0x20;
+    public static final int LEFT_JOIN_SHORTENS_HKEY = 0x20;
     private static final int MAX_PENDING = 2;
 
     // Object state
