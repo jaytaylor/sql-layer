@@ -71,14 +71,13 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
     private static final String FIXED_ALLOCATION_PROPERTY_NAME = "akserver.fixed";
 
-    private final static long MEGA = 1024 * 1024;
-
     // Must be one of 1024, 2048, 4096, 8192, 16384:
     static final int DEFAULT_BUFFER_SIZE = 16384;
 
     // Generally this is used only for unit tests and is
     // overridden by memory allocation calculation.
-    static final int DEFAULT_BUFFER_MEMORY = (int) (1024 * DEFAULT_BUFFER_SIZE * 1.25);
+    static final String DEFAULT_BUFFER_MEMORY = String
+            .valueOf((int) (1024 * DEFAULT_BUFFER_SIZE * 1.25));
 
     final static String DEFAULT_MEMORY_RESERVATION = "256M";
 
@@ -232,19 +231,14 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         final String bufferMemoryPropString = BUFFER_MEMORY_PROP_NAME
                 + bufferSize;
 
-        if (!properties.containsKey(bufferMemoryPropString)) {
+        if (isFixedAllocation) {
+            properties.setProperty(bufferMemoryPropString,
+                    DEFAULT_BUFFER_MEMORY);
+        } else if (!properties.containsKey(bufferMemoryPropString)) {
             properties.setProperty(bufferMemoryPropString,
                     BUFFER_MEMORY_PROP_VALUE);
         }
         return properties;
-    }
-
-    long bufferMemory(final boolean isFixedAllocation, final long reserved,
-            final float fraction) {
-        if (isFixedAllocation) {
-            return DEFAULT_BUFFER_MEMORY;
-        }
-        return (long) ((AkServerUtil.availableMemory() - reserved) * fraction);
     }
 
     /**

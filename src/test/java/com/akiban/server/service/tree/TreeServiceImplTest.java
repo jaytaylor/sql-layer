@@ -48,19 +48,6 @@ public class TreeServiceImplTest {
     }
 
     @Test
-    public void bufferMemoryTest() throws Exception {
-        final TreeServiceImpl treeService = new TreeServiceImpl();
-        final long available = AkServerUtil.availableMemory();
-        final long allocation = treeService.bufferMemory(false, 256 * MEGA,
-                0.75f);
-        assertTrue(allocation > (available - 256 * MEGA) / 2);
-        assertTrue(allocation < available - 256 * MEGA);
-
-        assertEquals(TreeServiceImpl.DEFAULT_BUFFER_MEMORY,
-                treeService.bufferMemory(true, 256 * MEGA, 0.75f));
-    }
-
-    @Test
     public void startupPropertiesTest() throws Exception {
         createConfiguration();
         asService.start();
