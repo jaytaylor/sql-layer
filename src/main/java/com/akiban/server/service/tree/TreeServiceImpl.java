@@ -65,9 +65,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
     private static final String BUFFER_MEMORY_PROP_NAME = "buffer.memory.";
 
-    private static final String RESERVED_MEMORY_PROP_NAME = "reserved";
-
-    private static final String ALLOCATION_FRACTION = "allocation";
+    private static final String BUFFER_MEMORY_PROP_VALUE = "256M,256G,64M,0.75";
 
     private static final String DEFAULT_DATAPATH = "/tmp/akiban_server";
 
@@ -83,16 +81,6 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     static final int DEFAULT_BUFFER_MEMORY = (int) (1024 * DEFAULT_BUFFER_SIZE * 1.25);
 
     final static String DEFAULT_MEMORY_RESERVATION = "256M";
-
-    final static long RESERVATION_MIN = 64 * MEGA;
-
-    final static long RESERVATION_MAX = 4 * 1024 * MEGA;
-
-    final static String DEFAULT_PERSISTIT_ALLOCATION_FRACTION = "0.75f";
-
-    final static float ALLOCATION_MIN = 0.10f;
-
-    final static float ALLOCATION_MAX = 0.90f;
 
     static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
@@ -243,20 +231,10 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
                 .getProperty(BUFFER_SIZE_PROP_NAME));
         final String bufferMemoryPropString = BUFFER_MEMORY_PROP_NAME
                 + bufferSize;
-        final long reservedMemory = Persistit.parseLongProperty(
-                RESERVED_MEMORY_PROP_NAME, properties.getProperty(
-                        RESERVED_MEMORY_PROP_NAME, DEFAULT_MEMORY_RESERVATION),
-                RESERVATION_MIN, RESERVATION_MAX);
-        final float allocationFraction = Persistit.parseFloatProperty(
-                ALLOCATION_FRACTION, properties.getProperty(
-                        ALLOCATION_FRACTION,
-                        DEFAULT_PERSISTIT_ALLOCATION_FRACTION), ALLOCATION_MIN,
-                ALLOCATION_MAX);
 
         if (!properties.containsKey(bufferMemoryPropString)) {
-            properties.setProperty(bufferMemoryPropString, String
-                    .valueOf(bufferMemory(isFixedAllocation, reservedMemory,
-                            allocationFraction)));
+            properties.setProperty(bufferMemoryPropString,
+                    BUFFER_MEMORY_PROP_VALUE);
         }
         return properties;
     }
