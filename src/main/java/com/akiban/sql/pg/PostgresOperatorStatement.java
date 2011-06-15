@@ -23,7 +23,6 @@ import com.akiban.qp.physicaloperator.ArrayBindings;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.StoreAdapter;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -38,19 +37,16 @@ import java.io.IOException;
  */
 public class PostgresOperatorStatement extends PostgresBaseStatement
 {
-    private StoreAdapter store;
     private PhysicalOperator resultOperator;
     private int offset = 0;
     private int limit = -1;
         
-    public PostgresOperatorStatement(StoreAdapter store,
-                                     PhysicalOperator resultOperator,
+    public PostgresOperatorStatement(PhysicalOperator resultOperator,
                                      List<String> columnNames,
                                      List<PostgresType> columnTypes,
                                      int offset,
                                      int limit) {
         super(columnNames, columnTypes);
-        this.store = store;
         this.resultOperator = resultOperator;
         this.offset = offset;
         this.limit = limit;
@@ -61,7 +57,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
         RowType resultRowType = resultOperator.rowType();
-        Cursor cursor = API.cursor(resultOperator, store);
+        Cursor cursor = API.cursor(resultOperator, server.getStore());
         int nskip = offset;
         if (limit > 0) {
             if ((maxrows <= 0) || (maxrows > limit))
@@ -122,15 +118,13 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         private boolean[] columnBinary; // Is this column binary format?
         private boolean defaultColumnBinary;
 
-        public BoundStatement(StoreAdapter store,
-                              PhysicalOperator resultOperator,
+        public BoundStatement(PhysicalOperator resultOperator,
                               List<String> columnNames,
                               List<PostgresType> columnTypes,
                               int offset, int limit,
                               Bindings bindings,
                               boolean[] columnBinary, boolean defaultColumnBinary) {
-            super(store, 
-                  resultOperator, columnNames, columnTypes, 
+            super(resultOperator, columnNames, columnTypes, 
                   offset, limit);
             this.bindings = bindings;
             this.columnBinary = columnBinary;
@@ -169,7 +163,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                 ab.set(i, parameters[i]);
             bindings = ab;
         }
-        return new BoundStatement(store, resultOperator,
+        return new BoundStatement(resultOperator,
                                   getColumnNames(), getColumnTypes(), 
                                   offset, limit, bindings, 
                                   columnBinary, defaultColumnBinary);

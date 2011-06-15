@@ -21,7 +21,6 @@ import com.akiban.sql.StandardException;
 
 import com.akiban.qp.physicaloperator.ArrayBindings;
 import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.StoreAdapter;
 import com.akiban.qp.physicaloperator.UndefBindings;
 
 import java.util.*;
@@ -34,14 +33,11 @@ import java.io.IOException;
 public class PostgresModifyOperatorStatement extends PostgresBaseStatement
 {
     private String statementType;
-    private StoreAdapter store;
     private UpdatePlannable resultOperator;
         
     public PostgresModifyOperatorStatement(String statementType,
-                                           StoreAdapter store,
                                            UpdatePlannable resultOperator) {
         this.statementType = statementType;
-        this.store = store;
         this.resultOperator = resultOperator;
     }
     
@@ -49,7 +45,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         throws IOException, StandardException {
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
-        UpdateResult updateResult = resultOperator.run(bindings, store);
+        UpdateResult updateResult = resultOperator.run(bindings, server.getStore());
         {        
             messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
             messenger.writeString(statementType + " " + updateResult.rowsModified());
@@ -66,10 +62,9 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         private Bindings bindings;
 
         public BoundStatement(String statementType,
-                              StoreAdapter store,
                               UpdatePlannable resultOperator,
                               Bindings bindings) {
-            super(statementType, store, resultOperator);
+            super(statementType, resultOperator);
             this.bindings = bindings;
         }
 
@@ -90,7 +85,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         ArrayBindings bindings = new ArrayBindings(parameters.length);
         for (int i = 0; i < parameters.length; i++)
             bindings.set(i, parameters[i]);
-        return new BoundStatement(statementType, store, resultOperator, bindings);
+        return new BoundStatement(statementType, resultOperator, bindings);
     }
 
 }
