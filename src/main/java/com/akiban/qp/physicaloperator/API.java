@@ -170,8 +170,6 @@ public class API
         return new TopLevelWrappingCursor(root.cursor(adapter));
     }
 
-    // For all flags
-    public static final int DEFAULT = 0x00;
     // Flattening flags
     public enum JoinType {
         INNER_JOIN,
