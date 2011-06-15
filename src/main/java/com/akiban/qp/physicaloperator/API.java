@@ -171,14 +171,14 @@ public class API
     }
 
     // Flattening flags
-    public enum JoinType {
+    public static enum JoinType {
         INNER_JOIN,
         LEFT_JOIN,
         RIGHT_JOIN,
         FULL_JOIN
     }
 
-    public enum FlattenOption {
+    public static enum FlattenOption {
         KEEP_PARENT,
         KEEP_CHILD,
         LEFT_JOIN_SHORTENS_HKEY
