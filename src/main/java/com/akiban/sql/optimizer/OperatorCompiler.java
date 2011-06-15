@@ -756,19 +756,10 @@ public class OperatorCompiler
                 else if (fright == null) {
                     return fleft;
                 }
-                int flags = DEFAULT;
-                switch (jjoin.getJoinType()) {
-                case LEFT:
-                    flags = LEFT_JOIN;
-                    break;
-                case RIGHT:
-                    flags = RIGHT_JOIN;
-                    break;
-                }
                 resultOperator = flatten_HKeyOrdered(resultOperator,
                                                      fleft.getResultRowType(),
                                                      fright.getResultRowType(),
-                                                     flags);
+                                                     jjoin.getJoinType());
                 fleft.setResultRowType(resultOperator.rowType());
                 fleft.mergeFields(fright);
                 return fleft;
