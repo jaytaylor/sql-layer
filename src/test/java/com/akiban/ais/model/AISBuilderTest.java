@@ -1022,5 +1022,16 @@ public class AISBuilderTest
         final Index index = group.getIndex("name_date");
         Assert.assertNotNull(index);
         Assert.assertEquals(2, index.getColumns().size());
+
+        GroupIndex groupIndex = (GroupIndex) index;
+        Assert.assertEquals("group indexes for c", 1, ais.getUserTable("test", "c").getGroupIndexes().size());
+        Assert.assertTrue("GI for c missing its group index",
+                ais.getUserTable("test", "c").getGroupIndexes().contains(groupIndex)
+        );
+
+        Assert.assertEquals("group indexes for o", 1, ais.getUserTable("test", "o").getGroupIndexes().size());
+        Assert.assertTrue("GI for o missing its group index",
+                ais.getUserTable("test", "o").getGroupIndexes().contains(groupIndex)
+        );
     }
 }

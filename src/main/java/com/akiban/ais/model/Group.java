@@ -129,17 +129,16 @@ public class Group implements Serializable, ModelNames
     public void addIndex(GroupIndex index)
     {
         indexMap.put(index.getIndexName().getName().toLowerCase(), index);
-
         groupTable.addGroupIndex(index);
-
-        actOnGroupIndexTables(index, ADD);
+        GroupIndexHelper.actOnGroupIndexTables(index, GroupIndexHelper.ADD);
     }
 
     public void removeIndexes(Collection<GroupIndex> indexesToDrop)
     {
         indexMap.values().removeAll(indexesToDrop);
         for (GroupIndex groupIndex : indexesToDrop) {
-            actOnGroupIndexTables(groupIndex, REMOVE);
+            groupTable.removeGroupIndex(groupIndex);
+            GroupIndexHelper.actOnGroupIndexTables(groupIndex, GroupIndexHelper.REMOVE);
         }
     }
 
@@ -147,40 +146,9 @@ public class Group implements Serializable, ModelNames
         return indexMap;
     }
 
-    private void actOnGroupIndexTables(GroupIndex index, IndexAction action) {
-        Set<Table> addedToTables = new HashSet<Table>();
-        for (IndexColumn indexColumn : index.getColumns()) {
-            Table userTable = indexColumn.getColumn().getTable();
-            assert userTable.isUserTable() : "not a user table: " + userTable;
-            if (addedToTables.add(userTable)) {
-                action.act(index, userTable);
-            }
-        }
-    }
     // State
 
     private String name;
     private GroupTable groupTable;
     private final Map<String, GroupIndex> indexMap;
-
-    // nested classes
-    private static interface IndexAction {
-        void act(GroupIndex groupIndex, Table onTable);
-    }
-
-    // class state
-
-    private final static IndexAction REMOVE = new IndexAction() {
-        @Override
-        public void act(GroupIndex groupIndex, Table onTable) {
-            onTable.removeGroupIndex(groupIndex);
-        }
-    };
-
-    private final static IndexAction ADD = new IndexAction() {
-        @Override
-        public void act(GroupIndex groupIndex, Table onTable) {
-            onTable.addGroupIndex(groupIndex);
-        }
-    };
 }
