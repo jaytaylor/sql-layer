@@ -105,14 +105,12 @@ public class TwoTableRowCollector extends OperatorBasedRowCollector
             IndexBound lo =
                 userTableStart == null
                 ? null
-                : new IndexBound(predicateTable,
-                                 PersistitGroupRow.newPersistitGroupRow(adapter, userTableStart.toRowData()),
+                : new IndexBound(PersistitGroupRow.newPersistitGroupRow(adapter, userTableStart.toRowData()),
                                  userColumnSelector(predicateTable, startColumns));
             IndexBound hi =
                 userTableEnd == null
                 ? null
-                : new IndexBound(predicateTable,
-                                 PersistitGroupRow.newPersistitGroupRow(adapter, userTableEnd.toRowData()),
+                : new IndexBound(PersistitGroupRow.newPersistitGroupRow(adapter, userTableEnd.toRowData()),
                                  userColumnSelector(predicateTable, endColumns));
             indexKeyRange = new IndexKeyRange
                 (lo,

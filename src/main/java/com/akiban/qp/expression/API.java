@@ -31,9 +31,9 @@ public class API
         return new Field(position);
     }
 
-    public static IndexBound indexBound(UserTable table, RowBase row, ColumnSelector columnSelector)
+    public static IndexBound indexBound(RowBase row, ColumnSelector columnSelector)
     {
-        return new IndexBound(table, row, columnSelector);
+        return new IndexBound(row, columnSelector);
     }
 
     public static IndexKeyRange indexKeyRange(IndexBound lo, boolean loInclusive, IndexBound hi, boolean hiInclusive)

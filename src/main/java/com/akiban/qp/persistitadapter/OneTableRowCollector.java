@@ -56,11 +56,11 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
         IndexBound lo =
             start == null
             ? null
-            : new IndexBound(queryRootTable, PersistitGroupRow.newPersistitGroupRow(adapter, start), startColumns);
+            : new IndexBound(PersistitGroupRow.newPersistitGroupRow(adapter, start), startColumns);
         IndexBound hi =
             end == null
             ? null
-            : new IndexBound(queryRootTable, PersistitGroupRow.newPersistitGroupRow(adapter, end), endColumns);
+            : new IndexBound(PersistitGroupRow.newPersistitGroupRow(adapter, end), endColumns);
         indexKeyRange = new IndexKeyRange
             (lo,
              lo != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0,

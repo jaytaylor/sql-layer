@@ -779,8 +779,7 @@ public class OperatorCompiler
         if (index.isTableIndex())
             userTable = (UserTable)((TableIndex)index).getTable();
         // TODO: group index bound table.
-        return new IndexBound(userTable,
-                              getIndexExpressionRow(index, keys),
+        return new IndexBound(getIndexExpressionRow(index, keys),
                               getIndexColumnSelector(index, nkeys));
     }
 

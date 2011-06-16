@@ -156,12 +156,12 @@ public class GroupScanIT extends PhysicalOperatorITBase
 
     private IndexBound orderSalesmanIndexBound(String salesman)
     {
-        return new IndexBound(userTable(order), row(orderRowType, null, null, salesman), new SetColumnSelector(2));
+        return new IndexBound(row(orderRowType, null, null, salesman), new SetColumnSelector(2));
     }
 
     private IndexBound customerCidIndexBound(int cid)
     {
-        return new IndexBound(userTable(customer), row(customerRowType, cid, null), new SetColumnSelector(0));
+        return new IndexBound(row(customerRowType, cid, null), new SetColumnSelector(0));
     }
 
     private static final RowBase[] EMPTY_EXPECTED = new RowBase[]{};

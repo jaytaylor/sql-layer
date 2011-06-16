@@ -395,7 +395,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
 
     private IndexBound bound(int iid)
     {
-        return new IndexBound(userTable(item), row(itemRowType, iid, null), new SetColumnSelector(0));
+        return new IndexBound(row(itemRowType, iid, null), new SetColumnSelector(0));
     }
 
     private String hkey(int cid, int oid, int iid)
