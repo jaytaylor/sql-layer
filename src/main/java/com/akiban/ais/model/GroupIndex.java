@@ -34,6 +34,12 @@ public class GroupIndex extends Index
     }
 
     @Override
+    public void addColumn(IndexColumn indexColumn) {
+        super.addColumn(indexColumn);
+        GroupIndexHelper.actOnGroupIndexTables(this, indexColumn, GroupIndexHelper.ADD);
+    }
+
+    @Override
     public boolean isTableIndex()
     {
         return false;
