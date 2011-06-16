@@ -17,16 +17,17 @@ package com.akiban.qp.row;
 
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.rowtype.FlattenedRowType;
+import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
 
-public class FlattenedRow extends AbstractRow
+public class ProductRow extends AbstractRow
 {
     // Object interface
 
     @Override
     public String toString()
     {
-        return String.format("%s, %s", parent, child);
+        return String.format("%s, %s", left, right);
     }
 
     // Row interface
@@ -41,10 +42,10 @@ public class FlattenedRow extends AbstractRow
     public Object field(int i, Bindings bindings)
     {
         Object field;
-        if (i < nParentFields) {
-            field = parent.isNull() ? null : parent.get().field(i, bindings);
+        if (i < nLeftFields) {
+            field = left.isNull() ? null : left.get().field(i, bindings);
         } else {
-            field = child.isNull() ? null : child.get().field(i - nParentFields, bindings);
+            field = right.isNull() ? null : right.get().field(i - nLeftFields, bindings);
         }
         return field;
     }
@@ -52,29 +53,27 @@ public class FlattenedRow extends AbstractRow
     @Override
     public HKey hKey()
     {
-        return hKey;
+        return right.get().hKey();
     }
 
-    // FlattenedRow interface
+    // ProductRow interface
 
-    public FlattenedRow(FlattenedRowType rowType, Row parent, Row child, HKey hKey)
+    public ProductRow(ProductRowType rowType, Row left, Row right)
     {
         this.rowType = rowType;
-        this.parent.set(parent);
-        this.child.set(child);
-        this.nParentFields = rowType.parentType().nFields();
-        this.hKey = hKey;
-        if (parent != null && child != null) {
-            assert parent.runId() == child.runId();
+        this.left.set(left);
+        this.right.set(right);
+        this.nLeftFields = rowType.leftType().nFields();
+        if (left != null && right != null) {
+            assert left.runId() == right.runId();
         }
-        super.runId(parent == null ? child.runId() : parent.runId());
+        super.runId(left == null ? right.runId() : left.runId());
     }
 
     // Object state
 
-    private final FlattenedRowType rowType;
-    private final RowHolder<Row> parent = new RowHolder<Row>();
-    private final RowHolder<Row> child = new RowHolder<Row>();
-    private final int nParentFields;
-    private final HKey hKey;
+    private final ProductRowType rowType;
+    private final RowHolder<Row> left = new RowHolder<Row>();
+    private final RowHolder<Row> right = new RowHolder<Row>();
+    private final int nLeftFields;
 }

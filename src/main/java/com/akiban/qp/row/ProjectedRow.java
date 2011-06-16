@@ -60,6 +60,7 @@ public class ProjectedRow extends AbstractRow
         this.rowType = rowType;
         this.row.set(row);
         this.projections = projections;
+        super.runId(row.runId());
     }
 
     // Object state
