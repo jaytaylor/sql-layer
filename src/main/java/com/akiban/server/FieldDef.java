@@ -163,5 +163,6 @@ public class FieldDef {
         this.prefixSize = prefixSize;
         this.typeParameter1 = typeParameter1;
         this.typeParameter2 = typeParameter2;
+        this.column.setFieldDef(this);
     }
 }

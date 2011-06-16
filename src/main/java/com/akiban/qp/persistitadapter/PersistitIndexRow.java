@@ -16,14 +16,18 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.FieldDef;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
+
+import java.util.Iterator;
 
 public class PersistitIndexRow extends AbstractRow
 {
@@ -46,24 +50,27 @@ public class PersistitIndexRow extends AbstractRow
     @Override
     public Object field(int i, Bindings bindings)
     {
-/*
-        IndexDef indexDef = indexDef();
+        IndexColumn indexColumn = index().getColumns().get(i);
+        FieldDef def = (FieldDef) indexColumn.getColumn().getFieldDef();
         indexRow.indexTo(i);
-        int from = indexRow.getIndex();
-        indexRow.indexTo(i + 1);
-        int to = indexRow.getIndex();
-        indexRow.getEncodedBytes();
-        FieldDef fieldDef = indexDef.getRowDef().getFieldDef(indexDef.getFields()[i]);
-        Encoding encoding = fieldDef.getEncoding();
-*/
-        assert false : "Not implemented yet";
-        return null;
+        return def.getEncoding().toObject(indexRow);
     }
 
     @Override
     public HKey hKey()
     {
         return hKey;
+    }
+
+    // For use by PhysicalOperatorIT
+    public PersistitIndexRow(PersistitAdapter adapter, IndexRowType indexRowType, Object... values) throws PersistitException
+    {
+        this(adapter, indexRowType);
+        Iterator<IndexColumn> columnIt = index().getColumns().iterator();
+        for(Object o : values) {
+            FieldDef def = (FieldDef) columnIt.next().getColumn().getFieldDef();
+            def.getEncoding().toKey(def, o, indexRow);
+        }
     }
 
     // PersistitIndexRow interface
