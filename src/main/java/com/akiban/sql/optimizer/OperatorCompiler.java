@@ -316,9 +316,11 @@ public class OperatorCompiler
         int nbranches = squery.getTables().colorBranches();
         FlattenState[] fls = new FlattenState[nbranches];
 
-        Flattener fl = new Flattener(resultOperator);
+        Flattener fl = new Flattener(resultOperator, (nbranches > 1));
         for (int i = 0; i < nbranches; i++)
             fls[i] = fl.flatten(squery.getJoins(), i);
+        if (nbranches > 1)
+            Arrays.sort(fls, fl);
         resultOperator = fl.getResultOperator();
 
         FlattenState fll = fls[0];
@@ -329,7 +331,7 @@ public class OperatorCompiler
                                            resultRowType,
                                            flr.getResultRowType());
             resultRowType = resultOperator.rowType();
-            fll.mergeFields(flr);
+            fll.mergeTables(flr);
         }
         Map<TableNode,Integer> fieldOffsets = fll.getFieldOffsets();
 
@@ -687,13 +689,16 @@ public class OperatorCompiler
 
     static class FlattenState {
         private RowType resultRowType;
+        private List<TableNode> tables;
         private Map<TableNode,Integer> fieldOffsets;
         int nfields;
 
         public FlattenState(RowType resultRowType,
+                            List<TableNode> tables,
                             Map<TableNode,Integer> fieldOffsets,
                             int nfields) {
             this.resultRowType = resultRowType;
+            this.tables = tables;
             this.fieldOffsets = fieldOffsets;
             this.nfields = nfields;
         }
@@ -705,6 +710,10 @@ public class OperatorCompiler
             this.resultRowType = resultRowType;
         }
 
+        public List<TableNode> getTables() {
+            return tables;
+        }
+
         public Map<TableNode,Integer> getFieldOffsets() {
             return fieldOffsets;
         }
@@ -713,7 +722,9 @@ public class OperatorCompiler
         }
 
         
-        public void mergeFields(FlattenState other) {
+        public void mergeTables(FlattenState other) {
+            if (tables != null)
+                tables.addAll(other.tables);
             for (TableNode table : other.fieldOffsets.keySet()) {
                 fieldOffsets.put(table, other.fieldOffsets.get(table) + nfields);
             }
@@ -728,11 +739,13 @@ public class OperatorCompiler
 
     // Holds a partial operator tree while flattening, since need the
     // single return value for above per-branch result.
-    class Flattener {
+    class Flattener implements Comparator<FlattenState> {
         private PhysicalOperator resultOperator;
+        private boolean needTables;
 
-        public Flattener(PhysicalOperator resultOperator) {
+        public Flattener(PhysicalOperator resultOperator, boolean needTables) {
             this.resultOperator = resultOperator;
+            this.needTables = needTables;
         }
         
         public PhysicalOperator getResultOperator() {
@@ -746,9 +759,13 @@ public class OperatorCompiler
                     return null;
                 Map<TableNode,Integer> fieldOffsets = new HashMap<TableNode,Integer>();
                 fieldOffsets.put(table, 0);
+                List<TableNode> tables = null;
+                if (needTables) {
+                    tables = new ArrayList<TableNode>();
+                    tables.add(table);
+                }
                 return new FlattenState(tableRowType(table),
-                                        fieldOffsets,
-                                        table.getNFields());
+                                        tables, fieldOffsets, table.getNFields());
             }
             else {
                 JoinJoinNode jjoin = (JoinJoinNode)join;
@@ -767,8 +784,25 @@ public class OperatorCompiler
                                                      fright.getResultRowType(),
                                                      jjoin.getJoinType());
                 fleft.setResultRowType(resultOperator.rowType());
-                fleft.mergeFields(fright);
+                fleft.mergeTables(fright);
                 return fleft;
+            }
+        }
+
+        // Dictionary order on flattened table ordinals.
+        public int compare(FlattenState fl1, FlattenState fl2) {
+            List<TableNode> ts1 = fl1.getTables();
+            List<TableNode> ts2 = fl2.getTables();
+            int i = 0;
+            assert ts1.get(i) == ts2.get(i) : "No common root";
+            while (true) {
+                i++;
+                assert (i < ts1.size()) && (i < ts2.size()) : "Branch is subset";
+                TableNode t1 = ts1.get(i);
+                TableNode t2 = ts2.get(i);
+                if (t1 != t2) {
+                    return t2.getOrdinal() - t1.getOrdinal();
+                }
             }
         }
     }
