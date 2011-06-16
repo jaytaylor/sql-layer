@@ -136,12 +136,12 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 
     public Collection<TableIndex> getIndexes()
     {
-        return Collections.unmodifiableCollection(internalGetIndexMap().values());
+        return unmodifiableIndexMap.values();
     }
 
     public TableIndex getIndex(String indexName)
     {
-        return internalGetIndexMap().get(indexName.toLowerCase());
+        return unmodifiableIndexMap.get(indexName.toLowerCase());
     }
 
     public final Collection<GroupIndex> getGroupIndexes() {
@@ -183,19 +183,11 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 
     protected void addIndex(TableIndex index)
     {
-        Map<String, TableIndex> old;
-        Map<String, TableIndex> withNewIndex;
-        do {
-            old = internalGetIndexMap();
-            withNewIndex = new TreeMap<String, TableIndex>(old);
-            withNewIndex.put(index.getIndexName().getName().toLowerCase(), index);
-        } while(!internalIndexMapCAS(old, withNewIndex));
+        indexMap.put(index.getIndexName().getName().toLowerCase(), index);
     }
 
     void clearIndexes() {
-        while (!internalIndexMapCAS(internalGetIndexMap(), Collections.<String,TableIndex>emptyMap())) {
-            // try again
-        }
+        indexMap.clear();
     }
 
     final void addGroupIndex(GroupIndex groupIndex) {
@@ -215,9 +207,10 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     protected Table()
     {
         // XXX: GWT requires empty constructor
-        this.LOCK = new Object();
         this.groupIndexes = new HashSet<GroupIndex>();
         this.unmodifiableGroupIndexes = Collections.unmodifiableCollection(groupIndexes);
+        this.indexMap = new HashMap<String, TableIndex>();
+        this.unmodifiableIndexMap = Collections.unmodifiableMap(indexMap);
     }
 
     // For use by this package
@@ -228,13 +221,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     }
 
     public void removeIndexes(Collection<TableIndex> indexesToDrop) {
-        Map<String, TableIndex> old;
-        Map<String, TableIndex> remaining;
-        do {
-            old = internalGetIndexMap();
-            remaining = new TreeMap<String, TableIndex>( old );
-            remaining.values().removeAll(indexesToDrop);
-        } while (!internalIndexMapCAS(old, remaining));
+        indexMap.values().removeAll(indexesToDrop);
     }
 
     /**
@@ -317,7 +304,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
                 }
             }
         }
-        for (Map.Entry<String, TableIndex> entry : internalGetIndexMap().entrySet()) {
+        for (Map.Entry<String, TableIndex> entry : indexMap.entrySet()) {
             String name = entry.getKey();
             TableIndex index = entry.getValue();
             if (name == null) {
@@ -392,21 +379,6 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         return declaredColumns;
     }
 
-    private Map<String, TableIndex> internalGetIndexMap() {
-        return indexMap;
-    }
-
-    private boolean internalIndexMapCAS(Map<String, TableIndex> expected, Map<String, TableIndex> update) {
-        // GWT-friendly CAS
-        synchronized (LOCK) {
-            if (indexMap != expected) {
-                return false;
-            }
-            indexMap = update;
-            return true;
-        }
-    }
-
     // State
 
     protected AkibanInformationSchema ais;
@@ -415,7 +387,8 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     private Integer tableId;
     private boolean columnsStale = true;
     private List<Column> columns = new ArrayList<Column>();
-    private volatile Map<String, TableIndex> indexMap = Collections.emptyMap();
+    private final Map<String, TableIndex> indexMap;
+    private final Map<String, TableIndex> unmodifiableIndexMap;
     private Map<String, Column> columnMap = new TreeMap<String, Column>();
     private CharsetAndCollation charsetAndCollation;
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
@@ -424,7 +397,6 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     private final Collection<GroupIndex> groupIndexes;
     private final Collection<GroupIndex> unmodifiableGroupIndexes;
 
-    private transient final Object LOCK;
     // It really is a RowDef, but declaring it that way creates trouble for AIS. We don't want to pull in
     // all the RowDef stuff and have it visible to GWT.
     private transient /*RowDef*/ Object rowDef;
