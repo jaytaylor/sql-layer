@@ -23,7 +23,6 @@ import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.RowDef;
 import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,29 +105,30 @@ public class BranchLookup_Default extends PhysicalOperator
         this.outputRowType = outputRowType;
         this.limit = limit;
         UserTable commonAncestor = commonAncestor(inputTable, outputTable);
+        this.commonSegments = commonAncestor.getDepth() + 1;
         switch (outputTable.getDepth() - commonAncestor.getDepth()) {
             case 0:
-                this.branchRoot = null;
+                branchRootOrdinal = -1;
                 break;
             case 1:
-                this.branchRoot = outputTable;
+                branchRootOrdinal = ordinal(outputTable);
                 break;
             default:
-                this.branchRoot = null;
+                branchRootOrdinal = -1;
                 ArgumentValidation.isTrue("false", false);
+                break;
         }
-        this.commonSegments = commonAncestor.getDepth() + 1;
-        // branchRoot is null means that outputTable is an ancestor of inputTable. In this case, inputPrecedesBranch
+        // branchRootOrdinal = -1 means that outputTable is an ancestor of inputTable. In this case, inputPrecedesBranch
         // is false. Otherwise, branchRoot's parent is the common ancestor. Find inputTable's ancestor that is also
         // a child of the common ancestor. Then compare these ordinals to determine whether input precedes branch.
-        if (this.branchRoot == null) {
+        if (this.branchRootOrdinal == -1) {
             this.inputPrecedesBranch = false;
         } else {
             UserTable ancestorOfInputAndChildOfCommon = inputTable;
             while (ancestorOfInputAndChildOfCommon.parentTable() != commonAncestor) {
                 ancestorOfInputAndChildOfCommon = ancestorOfInputAndChildOfCommon.parentTable();
             }
-            this.inputPrecedesBranch = ordinal(ancestorOfInputAndChildOfCommon) < ordinal(branchRoot);
+            this.inputPrecedesBranch = ordinal(ancestorOfInputAndChildOfCommon) < branchRootOrdinal;
         }
     }
 
@@ -152,11 +152,6 @@ public class BranchLookup_Default extends PhysicalOperator
         return outputAncestor;
     }
 
-    private int ordinal(UserTable table)
-    {
-        return ((RowDef) table.rowDef()).getOrdinal();
-    }
-
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(BranchLookup_Default.class);
@@ -171,7 +166,7 @@ public class BranchLookup_Default extends PhysicalOperator
     // If keepInput is true, inputPrecedesBranch controls whether input row appears before the retrieved branch.
     private final boolean inputPrecedesBranch;
     private final int commonSegments;
-    private final UserTable branchRoot;
+    private final int branchRootOrdinal;
     private final Limit limit;
 
     private class Execution extends SingleRowCachingCursor
@@ -285,8 +280,8 @@ public class BranchLookup_Default extends PhysicalOperator
         {
             inputRowHKey.copyTo(lookupRowHKey);
             lookupRowHKey.useSegments(commonSegments);
-            if (branchRoot != null) {
-                lookupRowHKey.extend(branchRoot);
+            if (branchRootOrdinal != -1) {
+                lookupRowHKey.extendWithOrdinal(branchRootOrdinal);
             }
         }
 

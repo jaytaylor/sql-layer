@@ -102,29 +102,38 @@ class Product_ByRun extends PhysicalOperator
                 if (runState == RunState.RIGHT) {
                     row = nextProductRow();
                 }
-                if (row == null && input.next()) {
-                    row = input.currentRow();
-                    if (row.runId() != currentRunId) {
-                        startNewRun(row);
-                    }
-                    setRunState(row);
-                    switch (runState) {
-                        case BEFORE_LEFT:
-                            // Emit the input row
-                            break;
-                        case LEFT:
-                            rememberLeftRow(row);
-                            break;
-                        case BETWEEN:
-                            // Emit the input row
-                            break;
-                        case RIGHT:
-                            rememberRightRow(row);
-                            break;
-                        case AFTER_RIGHT:
-                            terminateRunProduct();
-                            // Emit the input row
-                            break;
+                if (row == null) {
+                    if (input.next()) {
+                        Row inputRow = input.currentRow();
+                        if (inputRow.runId() == RowBase.UNDEFINED_RUN_ID) {
+                            throw new IncompatibleRowException
+                                ("Product_ByRun cannot take input from a GroupScan_Default");
+                        }
+                        if (inputRow.runId() != currentRunId) {
+                            startNewRun(inputRow);
+                        }
+                        setRunState(inputRow);
+                        switch (runState) {
+                            case BEFORE_LEFT:
+                                row = inputRow;
+                                break;
+                            case LEFT:
+                                rememberLeftRow(inputRow);
+                                break;
+                            case BETWEEN:
+                                row = inputRow;
+                                break;
+                            case RIGHT:
+                                rememberRightRow(inputRow);
+                                break;
+                            case AFTER_RIGHT:
+                                row = inputRow;
+                                terminateRunProduct();
+                                break;
+                        }
+                    } else {
+                        runState = RunState.AFTER_RIGHT;
+
                     }
                 }
             }

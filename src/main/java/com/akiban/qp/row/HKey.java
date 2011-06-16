@@ -23,5 +23,6 @@ public interface HKey
     int segments();
     void useSegments(int segments);
     void copyTo(HKey target);
-    void extend(UserTable userTable);
+    void extendWithOrdinal(int ordinal);
+    void extendWithNull();
 }

@@ -91,7 +91,6 @@ class RowList
 
         void reset()
         {
-            assert position >= capacity;
             position = 0;
         }
 

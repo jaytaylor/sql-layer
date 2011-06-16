@@ -21,7 +21,6 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
 
 import java.util.Collection;
 import java.util.List;
@@ -164,4 +163,5 @@ public class API
     public static final int INNER_JOIN = Flatten_HKeyOrdered.INNER_JOIN;
     public static final int LEFT_JOIN = Flatten_HKeyOrdered.LEFT_JOIN;
     public static final int RIGHT_JOIN = Flatten_HKeyOrdered.RIGHT_JOIN;
+    public static final int LEFT_JOIN_SHORTENS_HKEY = Flatten_HKeyOrdered.LEFT_JOIN_SHORTENS_HKEY;
 }

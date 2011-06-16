@@ -15,11 +15,14 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.ais.model.HKeySegment;
 import com.akiban.qp.row.FlattenedRow;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.RowDef;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.ArrayList;
@@ -97,11 +100,21 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         this.inputOperator = inputOperator;
         this.parentType = parentType;
         this.childType = childType;
-        flattenType = parentType.schema().newFlattenType(parentType, childType);
-        leftJoin = (flags & LEFT_JOIN) != 0;
-        rightJoin = (flags & RIGHT_JOIN) != 0;
-        keepParent = (flags & KEEP_PARENT) != 0;
-        keepChild = (flags & KEEP_CHILD) != 0;
+        this.flattenType = parentType.schema().newFlattenType(parentType, childType);
+        this.leftJoin = (flags & LEFT_JOIN) != 0;
+        this.rightJoin = (flags & RIGHT_JOIN) != 0;
+        this.keepParent = (flags & KEEP_PARENT) != 0;
+        this.keepChild = (flags & KEEP_CHILD) != 0;
+        this.leftJoinShortensHKey = (flags & LEFT_JOIN_SHORTENS_HKEY) != 0;
+        if (this.leftJoinShortensHKey) {
+            ArgumentValidation.isTrue("flags contains LEFT_JOIN_SHORTENS_HKEY but not LEFT_JOIN", leftJoin);
+        }
+        List<HKeySegment> childHKeySegments = childType.hKey().segments();
+        HKeySegment lastChildHKeySegment = childHKeySegments.get(childHKeySegments.size() - 1);
+        RowDef childRowDef = (RowDef) lastChildHKeySegment.table().rowDef();
+        this.childOrdinal = childRowDef.getOrdinal();
+        this.nChildHKeySegmentFields = lastChildHKeySegment.columns().size();
+        this.parentHKeySegments = parentType.hKey().segments().size();
     }
 
     // Class state
@@ -112,6 +125,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
     public static final int INNER_JOIN = 0x04;
     public static final int LEFT_JOIN = 0x08;
     public static final int RIGHT_JOIN = 0x10;
+    public static final int LEFT_JOIN_SHORTENS_HKEY = 0x20;
     private static final int MAX_PENDING = 2;
 
     // Object state
@@ -124,6 +138,11 @@ class Flatten_HKeyOrdered extends PhysicalOperator
     private final boolean rightJoin;
     private final boolean keepParent;
     private final boolean keepChild;
+    private final boolean leftJoinShortensHKey;
+    // For constructing a left-join hkey
+    private final int childOrdinal;
+    private final int nChildHKeySegmentFields;
+    private final int parentHKeySegments;
 
     // Inner classes
 
@@ -183,7 +202,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                     } else {
                         addToPending(inputRow);
                         if (parent.isNotNull() && !parent.get().ancestorOf(inputRow)) {
-                            // We're past all descendents of the current parent
+                            // We're past all descendants of the current parent
                             if (childlessParent) {
                                 generateLeftJoinRow(parent.get());
                             }
@@ -208,6 +227,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
+            this.adapter = adapter;
             this.input = input;
         }
 
@@ -217,14 +237,15 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         {
             assert parent != null;
             assert child != null;
-            pending.add(new FlattenedRow(flattenType, parent, child));
+            pending.add(new FlattenedRow(flattenType, parent, child, child.hKey()));
         }
 
         private void generateLeftJoinRow(Row parent)
         {
             assert parent != null;
             if (leftJoin) {
-                pending.add(new FlattenedRow(flattenType, parent, null));
+                HKey hKey = leftJoinShortensHKey ? parent.hKey() : leftJoinHKey(parent.hKey());
+                pending.add(new FlattenedRow(flattenType, parent, null, hKey));
             }
         }
 
@@ -232,7 +253,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         {
             assert child != null;
             if (rightJoin) {
-                pending.add(new FlattenedRow(flattenType, null, child));
+                pending.add(new FlattenedRow(flattenType, null, child, child.hKey()));
             }
         }
 
@@ -241,8 +262,26 @@ class Flatten_HKeyOrdered extends PhysicalOperator
             pending.add(row);
         }
 
+        private HKey leftJoinHKey(HKey parentHKey)
+        {
+            if (parentHKey.segments() < parentHKeySegments) {
+                throw new IncompatibleRowException(
+                    String.format("%s: parent hkey %s has been shortened by an earlier Flatten, " +
+                                  "so this Flatten should specify LEFT_JOIN_SHORTENS_HKEY also",
+                                  this, parentHKey));
+            }
+            HKey childHKey = adapter.newHKey(childType);
+            parentHKey.copyTo(childHKey);
+            childHKey.extendWithOrdinal(childOrdinal);
+            for (int i = 0; i < nChildHKeySegmentFields; i++) {
+                childHKey.extendWithNull();
+            }
+            return childHKey;
+        }
+
         // Object state
 
+        private final StoreAdapter adapter;
         private final Cursor input;
         private final RowHolder<Row> parent = new RowHolder<Row>();
         private final PendingRows pending = new PendingRows(MAX_PENDING);
