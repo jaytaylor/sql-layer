@@ -31,6 +31,8 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.physicaloperator.API.JoinType.*;
+import static com.akiban.qp.physicaloperator.API.FlattenOption.*;
 import static org.junit.Assert.assertTrue;
 
 public class ProductIT extends PhysicalOperatorITBase
@@ -96,7 +98,8 @@ public class ProductIT extends PhysicalOperatorITBase
                 groupScan_Default(coi),
                 customerRowType,
                 orderRowType,
-                INNER_JOIN | KEEP_PARENT);
+                INNER_JOIN,
+                KEEP_PARENT);
         PhysicalOperator flattenCA =
             flatten_HKeyOrdered(flattenCO,
                                 customerRowType,
@@ -120,7 +123,8 @@ public class ProductIT extends PhysicalOperatorITBase
                     false),
                 customerRowType,
                 orderRowType,
-                INNER_JOIN | KEEP_PARENT);
+                INNER_JOIN,
+                KEEP_PARENT);
         PhysicalOperator flattenCA =
             flatten_HKeyOrdered(flattenCO,
                                 customerRowType,
@@ -155,7 +159,8 @@ public class ProductIT extends PhysicalOperatorITBase
                     false),
                 customerRowType,
                 orderRowType,
-                INNER_JOIN | KEEP_PARENT);
+                INNER_JOIN,
+                KEEP_PARENT);
         PhysicalOperator flattenCA =
             flatten_HKeyOrdered(flattenCO,
                                 customerRowType,

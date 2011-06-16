@@ -26,7 +26,10 @@ import com.akiban.server.RowDef;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+
+import static com.akiban.qp.physicaloperator.API.FlattenOption.*;
 
 class Flatten_HKeyOrdered extends PhysicalOperator
 {
@@ -87,25 +90,24 @@ class Flatten_HKeyOrdered extends PhysicalOperator
 
     // Flatten_HKeyOrdered interface
 
-    public Flatten_HKeyOrdered(PhysicalOperator inputOperator, RowType parentType, RowType childType, int flags)
+    public Flatten_HKeyOrdered(PhysicalOperator inputOperator, RowType parentType, RowType childType,
+                               API.JoinType joinType, EnumSet<API.FlattenOption> options)
     {
         ArgumentValidation.notNull("parentType", parentType);
         ArgumentValidation.notNull("childType", childType);
-        ArgumentValidation.isTrue("(flags & (INNER_JOIN | LEFT_JOIN)) != (INNER_JOIN | LEFT_JOIN)",
-                                  (flags & (INNER_JOIN | LEFT_JOIN)) != (INNER_JOIN | LEFT_JOIN));
-        ArgumentValidation.isTrue("(flags & (INNER_JOIN | RIGHT_JOIN)) != (INNER_JOIN | RIGHT_JOIN)",
-                                  (flags & (INNER_JOIN | RIGHT_JOIN)) != (INNER_JOIN | RIGHT_JOIN));
+        ArgumentValidation.notNull("flattenType", joinType);
         assert parentType != null;
         assert childType != null;
         this.inputOperator = inputOperator;
         this.parentType = parentType;
         this.childType = childType;
         this.flattenType = parentType.schema().newFlattenType(parentType, childType);
-        this.leftJoin = (flags & LEFT_JOIN) != 0;
-        this.rightJoin = (flags & RIGHT_JOIN) != 0;
-        this.keepParent = (flags & KEEP_PARENT) != 0;
-        this.keepChild = (flags & KEEP_CHILD) != 0;
-        this.leftJoinShortensHKey = (flags & LEFT_JOIN_SHORTENS_HKEY) != 0;
+        boolean fullJoin = joinType.equals(API.JoinType.FULL_JOIN);
+        this.leftJoin = fullJoin || joinType.equals(API.JoinType.LEFT_JOIN) ;
+        this.rightJoin = fullJoin || joinType.equals(API.JoinType.RIGHT_JOIN);
+        this.keepParent = options.contains(KEEP_PARENT);
+        this.keepChild = options.contains(KEEP_CHILD);
+        this.leftJoinShortensHKey = options.contains(LEFT_JOIN_SHORTENS_HKEY);
         if (this.leftJoinShortensHKey) {
             ArgumentValidation.isTrue("flags contains LEFT_JOIN_SHORTENS_HKEY but not LEFT_JOIN", leftJoin);
         }
@@ -119,13 +121,6 @@ class Flatten_HKeyOrdered extends PhysicalOperator
 
     // Class state
 
-    public static final int DEFAULT = 0x00;
-    public static final int KEEP_PARENT = 0x01;
-    public static final int KEEP_CHILD = 0x02;
-    public static final int INNER_JOIN = 0x04;
-    public static final int LEFT_JOIN = 0x08;
-    public static final int RIGHT_JOIN = 0x10;
-    public static final int LEFT_JOIN_SHORTENS_HKEY = 0x20;
     private static final int MAX_PENDING = 2;
 
     // Object state

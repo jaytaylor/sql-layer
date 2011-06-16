@@ -37,6 +37,7 @@ import java.util.Arrays;
 
 import static com.akiban.qp.expression.API.*;
 import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.physicaloperator.API.JoinType.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -136,7 +137,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     public void testFlatten()
     {
         PhysicalOperator groupScan = groupScan_Default(coi);
-        PhysicalOperator flatten = flatten_HKeyOrdered(groupScan, customerRowType, orderRowType);
+        PhysicalOperator flatten = flatten_HKeyOrdered(groupScan, customerRowType, orderRowType, INNER_JOIN);
         RowType flattenType = flatten.rowType();
         RowBase[] expected = new RowBase[]{row(flattenType, 1L, "xyz", 11L, 1L, "ori"),
                                            row(itemRowType, 111L, 11L),
@@ -157,8 +158,8 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     public void testTwoFlattens()
     {
         PhysicalOperator groupScan = groupScan_Default(coi);
-        PhysicalOperator flattenCO = flatten_HKeyOrdered(groupScan, customerRowType, orderRowType);
-        PhysicalOperator flattenCOI = flatten_HKeyOrdered(flattenCO, flattenCO.rowType(), itemRowType);
+        PhysicalOperator flattenCO = flatten_HKeyOrdered(groupScan, customerRowType, orderRowType, INNER_JOIN);
+        PhysicalOperator flattenCOI = flatten_HKeyOrdered(flattenCO, flattenCO.rowType(), itemRowType, INNER_JOIN);
         RowType flattenCOIType = flattenCOI.rowType();
         RowBase[] expected = new RowBase[]{row(flattenCOIType, 1L, "xyz", 11L, 1L, "ori", 111L, 11L),
                                            row(flattenCOIType, 1L, "xyz", 11L, 1L, "ori", 112L, 11L),

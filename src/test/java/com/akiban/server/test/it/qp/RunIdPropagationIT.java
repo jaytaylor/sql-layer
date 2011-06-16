@@ -217,7 +217,7 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
                     orderRowType),
                 customerRowType,
                 orderRowType,
-                DEFAULT);
+                JoinType.LEFT_JOIN);
         RowType coRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);
