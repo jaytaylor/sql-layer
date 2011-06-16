@@ -64,7 +64,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 
     protected Table(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
-        this.LOCK = new Object();
+        this();
         this.ais = ais;
         this.tableName = new TableName(schemaName, tableName);
         this.tableId = tableId;
@@ -144,6 +144,10 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         return internalGetIndexMap().get(indexName.toLowerCase());
     }
 
+    public final Collection<GroupIndex> getGroupIndexes() {
+        return unmodifiableGroupIndexes;
+    }
+
     public CharsetAndCollation getCharsetAndCollation()
     {
         return
@@ -194,6 +198,14 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         }
     }
 
+    final void addGroupIndex(GroupIndex groupIndex) {
+        groupIndexes.add(groupIndex);
+    }
+
+    final void removeGroupIndex(GroupIndex groupIndex) {
+        groupIndexes.remove(groupIndex);
+    }
+
     protected void dropColumns()
     {
         columnMap.clear();
@@ -204,6 +216,8 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     {
         // XXX: GWT requires empty constructor
         this.LOCK = new Object();
+        this.groupIndexes = new ArrayList<GroupIndex>();
+        this.unmodifiableGroupIndexes = Collections.unmodifiableCollection(groupIndexes);
     }
 
     // For use by this package
@@ -406,6 +420,9 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     private CharsetAndCollation charsetAndCollation;
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
     protected String engine;
+
+    private final Collection<GroupIndex> groupIndexes;
+    private final Collection<GroupIndex> unmodifiableGroupIndexes;
 
     private transient final Object LOCK;
     // It really is a RowDef, but declaring it that way creates trouble for AIS. We don't want to pull in

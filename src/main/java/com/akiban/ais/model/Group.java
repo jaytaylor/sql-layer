@@ -19,9 +19,10 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.Set;
 
 public class Group implements Serializable, ModelNames
 {
@@ -48,13 +49,13 @@ public class Group implements Serializable, ModelNames
     private Group()
     {
         // GWT requires empty constructor
-        this.LOCK = new Object();
+        this.indexMap = new HashMap<String, GroupIndex>();
     }
 
     public Group(final String name)
     {
         this.name = name;
-        this.LOCK = new Object();
+        this.indexMap = new HashMap<String, GroupIndex>();
     }
 
     @Override
@@ -127,46 +128,59 @@ public class Group implements Serializable, ModelNames
 
     public void addIndex(GroupIndex index)
     {
-        Map<String, GroupIndex> old;
-        Map<String, GroupIndex> withNewIndex;
-        do {
-            old = internalGetIndexMap();
-            withNewIndex = new TreeMap<String, GroupIndex>(old);
-            withNewIndex.put(index.getIndexName().getName().toLowerCase(), index);
-        } while(!internalIndexMapCAS(old, withNewIndex));
+        indexMap.put(index.getIndexName().getName().toLowerCase(), index);
+
+        groupTable.addGroupIndex(index);
+
+        actOnGroupIndexTables(index, ADD);
     }
 
     public void removeIndexes(Collection<GroupIndex> indexesToDrop)
     {
-        Map<String, GroupIndex> old;
-        Map<String, GroupIndex> remaining;
-        do {
-            old = internalGetIndexMap();
-            remaining = new TreeMap<String, GroupIndex>(old);
-            remaining.values().removeAll(indexesToDrop);
-        } while (!internalIndexMapCAS(old, remaining));
+        indexMap.values().removeAll(indexesToDrop);
+        for (GroupIndex groupIndex : indexesToDrop) {
+            actOnGroupIndexTables(groupIndex, REMOVE);
+        }
     }
 
     private Map<String, GroupIndex> internalGetIndexMap() {
         return indexMap;
     }
 
-    private boolean internalIndexMapCAS(Map<String, GroupIndex> expected, Map<String, GroupIndex> update)
-    {
-        // GWT-friendly CAS
-        synchronized (LOCK) {
-            if (indexMap != expected) {
-                return false;
+    private void actOnGroupIndexTables(GroupIndex index, IndexAction action) {
+        Set<Table> addedToTables = new HashSet<Table>();
+        for (IndexColumn indexColumn : index.getColumns()) {
+            Table userTable = indexColumn.getColumn().getTable();
+            assert userTable.isUserTable() : "not a user table: " + userTable;
+            if (addedToTables.add(userTable)) {
+                action.act(index, userTable);
             }
-            indexMap = update;
-            return true;
         }
     }
-
     // State
 
     private String name;
     private GroupTable groupTable;
-    private transient final Object LOCK;
-    private volatile Map<String, GroupIndex> indexMap = Collections.emptyMap();
+    private final Map<String, GroupIndex> indexMap;
+
+    // nested classes
+    private static interface IndexAction {
+        void act(GroupIndex groupIndex, Table onTable);
+    }
+
+    // class state
+
+    private final static IndexAction REMOVE = new IndexAction() {
+        @Override
+        public void act(GroupIndex groupIndex, Table onTable) {
+            onTable.removeGroupIndex(groupIndex);
+        }
+    };
+
+    private final static IndexAction ADD = new IndexAction() {
+        @Override
+        public void act(GroupIndex groupIndex, Table onTable) {
+            onTable.addGroupIndex(groupIndex);
+        }
+    };
 }
