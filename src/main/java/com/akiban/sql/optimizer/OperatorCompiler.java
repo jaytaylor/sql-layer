@@ -320,12 +320,18 @@ public class OperatorCompiler
         for (int i = 0; i < nbranches; i++)
             fls[i] = fl.flatten(squery.getJoins(), i);
         resultOperator = fl.getResultOperator();
-        // TODO: Actual Product operators.
-        if (nbranches > 1) {
-            throw new UnsupportedSQLException("Need Product of " + Arrays.asList(fls));
+
+        FlattenState fll = fls[0];
+        RowType resultRowType = fll.getResultRowType();
+        for (int i = 1; i < nbranches; i++) {
+            FlattenState flr = fls[i];
+            resultOperator = product_ByRun(resultOperator,
+                                           resultRowType,
+                                           flr.getResultRowType());
+            resultRowType = resultOperator.rowType();
+            fll.mergeFields(flr);
         }
-        RowType resultRowType = fls[0].getResultRowType();
-        Map<TableNode,Integer> fieldOffsets = fls[0].getFieldOffsets();
+        Map<TableNode,Integer> fieldOffsets = fll.getFieldOffsets();
 
         if (needExtract) {
             // Now that we are done flattening, there is only one row type
