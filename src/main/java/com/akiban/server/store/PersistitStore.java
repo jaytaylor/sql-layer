@@ -740,7 +740,9 @@ public class PersistitStore implements Store {
     }
 
     private void checkNoGroupIndexes(Table table) {
-        throw new UnsupportedOperationException(); // TODO
+        if (!table.getGroupIndexes().isEmpty()) {
+            throw new UnsupportedOperationException("PersistitStore can't update group indexes; found on " + table);
+        }
     }
 
     private void propagateDownGroup(Session session, Exchange exchange)
