@@ -19,13 +19,18 @@ import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.sql.StandardException;
 
+import com.persistit.Transaction;
+import com.persistit.exception.PersistitException;
+import com.persistit.exception.RollbackException;
+
 import java.io.IOException;
 
 /** SQL statements that affect session / environment state. */
 public class PostgresSessionStatement implements PostgresStatement
 {
     enum Operation {
-        USE
+        USE,
+        BEGIN_TRANSACTION, COMMIT_TRANSACTION, ROLLBACK_TRANSACTION
     };
 
     private Operation operation;
@@ -59,6 +64,16 @@ public class PostgresSessionStatement implements PostgresStatement
     @Override
     public void execute(PostgresServerSession server, int maxrows)
             throws IOException, StandardException {
+        doOperation(server);
+        {        
+            PostgresMessenger messenger = server.getMessenger();
+            messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+            messenger.writeString(statement.statementToString());
+            messenger.sendMessage();
+        }
+    }
+
+    protected void doOperation(PostgresServerSession server) throws StandardException {
         switch (operation) {
         case USE:
             // TODO: From the appropriate kind of statement, which
@@ -66,13 +81,71 @@ public class PostgresSessionStatement implements PostgresStatement
             // known to be a reserved word.
             server.setDefaultSchemaName("...");
             break;
+        case BEGIN_TRANSACTION:
+            beginTransaction(server);
+            break;
+        case COMMIT_TRANSACTION:
+            commitTransaction(server);
+            break;
+        case ROLLBACK_TRANSACTION:
+            rollbackTransaction(server);
+            break;
         }
-        {        
-            PostgresMessenger messenger = server.getMessenger();
-            messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
-            messenger.writeString(statement.statementToString());
-            messenger.sendMessage();
+    }
+
+    protected void beginTransaction(PostgresServerSession server) 
+            throws StandardException {
+        Transaction transaction = (Transaction)
+            server.getAttribute("transaction");
+        if (transaction != null)
+            throw new StandardException("A transaction is already in progress.");
+        transaction = server.getServiceManager()
+            .getTreeService().getTransaction(server.getSession());
+        try {
+            transaction.begin();
         }
+        catch (PersistitException ex) {
+            throw new StandardException(ex);
+        }
+        server.setAttribute("transaction", transaction);
+    }
+
+    protected void commitTransaction(PostgresServerSession server) 
+            throws StandardException {
+        Transaction transaction = (Transaction)
+            server.getAttribute("transaction");
+        if (transaction == null)
+            throw new StandardException("No transaction is in progress.");
+        try {
+            transaction.commit();
+        }
+        catch (PersistitException ex) {
+            throw new StandardException(ex);
+        }
+        finally {
+            transaction.end();
+        }
+        server.setAttribute("transaction", null);
+    }
+
+    protected void rollbackTransaction(PostgresServerSession server) 
+            throws StandardException {
+        Transaction transaction = (Transaction)
+            server.getAttribute("transaction");
+        if (transaction == null)
+            throw new StandardException("No transaction is in progress.");
+        try {
+            transaction.rollback();
+        }
+        catch (PersistitException ex) {
+            throw new StandardException(ex);
+        }
+        catch (RollbackException ex) {
+        }
+        finally {
+            transaction.end();
+        }
+        server.setAttribute("transaction", null);
     }
 
 }
