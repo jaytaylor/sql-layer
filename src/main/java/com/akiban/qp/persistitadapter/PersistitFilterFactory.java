@@ -21,14 +21,12 @@ import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.row.RowBase;
 import com.akiban.server.FieldDef;
-import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
-import com.akiban.server.encoding.Encoding;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 
@@ -47,7 +45,8 @@ class PersistitFilterFactory
         List<IndexColumn> indexColumns = index.getColumns();
         KeyFilter.Term[] terms = new KeyFilter.Term[indexColumns.size()];
         for(int i = 0; i < indexColumns.size(); ++i) {
-            terms[i] = computeKeyFilterTerm(key, indexColumns.get(i).getColumn(), keyRange, bindings);
+            Column column = indexColumns.get(i).getColumn();
+            terms[i] = computeKeyFilterTerm(key, column, column.getPosition(), keyRange, bindings);
         }
         key.clear();
         KeyFilter keyFilter = new KeyFilter(terms, terms.length, Integer.MAX_VALUE);
@@ -83,8 +82,9 @@ class PersistitFilterFactory
                 List<Column> matchingColumns = segmentColumn.equivalentColumns();
                 for (int m = 0; filterTerm == KeyFilter.ALL && m < matchingColumns.size(); m++) {
                     Column column = matchingColumns.get(m);
-                    if(column.getPosition() < leafRowDef.getFieldCount()) {
-                        filterTerm = computeKeyFilterTerm(key, column, keyRange, bindings);
+                    int columnPos = column.getPosition();
+                    if(columnPos < leafRowDef.getFieldCount()) {
+                        filterTerm = computeKeyFilterTerm(key, column, columnPos, keyRange, bindings);
                     }
                 }
                 terms[t++] = filterTerm;
@@ -107,26 +107,24 @@ class PersistitFilterFactory
     // For use by this class
 
     // Returns a KeyFilter term if the specified field of either the start or
-    private KeyFilter.Term computeKeyFilterTerm(Key key, Column column, IndexKeyRange keyRange, Bindings bindings)
+    private KeyFilter.Term computeKeyFilterTerm(Key key, Column column, int position, IndexKeyRange keyRange,
+                                                Bindings bindings)
     {
-        int columnPos = column.getPosition();
-        boolean hasStart = (keyRange.lo() != null) && keyRange.lo().columnSelector().includesColumn(columnPos);
-        boolean hasEnd = (keyRange.hi() != null) && keyRange.hi().columnSelector().includesColumn(columnPos);
+        boolean hasStart = (keyRange.lo() != null) && keyRange.lo().columnSelector().includesColumn(position);
+        boolean hasEnd = (keyRange.hi() != null) && keyRange.hi().columnSelector().includesColumn(position);
         if (!hasStart && !hasEnd) {
             return KeyFilter.ALL;
         }
         key.clear();
         key.reset();
         if (hasStart) {
-            RowData start = rowData(keyRange.lo(), bindings);
-            appendKeyField(key, column, start);
+            appendKeyField(key, column, position, keyRange.lo().row(), bindings);
         } else {
             key.append(Key.BEFORE);
             key.setEncodedSize(key.getEncodedSize() + 1);
         }
         if (hasEnd) {
-            RowData end = rowData(keyRange.hi(), bindings);
-            appendKeyField(key, column, end);
+            appendKeyField(key, column, position, keyRange.hi().row(), bindings);
         } else {
             key.append(Key.AFTER);
         }
@@ -137,20 +135,19 @@ class PersistitFilterFactory
         return KeyFilter.termFromKeySegments(key, key, keyRange.loInclusive(), keyRange.hiInclusive());
     }
 
-    private void appendKeyField(Key key, Column column, RowData rowData)
+    private void appendKeyField(Key key, Column column, int position, RowBase row, Bindings bindings)
     {
-        FieldDef def = (FieldDef) column.getFieldDef();
-        def.getEncoding().toKey(def, rowData, key);
+        FieldDef fieldDef = (FieldDef) column.getFieldDef();
+        if(row instanceof PersistitGroupRow) {
+            RowData rowData = ((PersistitGroupRow)row).rowData();
+            fieldDef.getEncoding().toKey(fieldDef, rowData, key);
+        }
+        else {
+            Object value = row.field(position, bindings);
+            fieldDef.getEncoding().toKey(fieldDef, value, key);
+        }
     }
 
-    private RowData rowData(IndexBound bound, Bindings bindings)
-    {
-        if (bound.row() instanceof PersistitGroupRow) {
-            return ((PersistitGroupRow)bound.row()).rowData();
-        }
-        RowDef rowDef = (RowDef) bound.table().rowDef();
-        return adapter.rowData(rowDef, bound.row(), bindings);
-    }
 
     // Object state
 
