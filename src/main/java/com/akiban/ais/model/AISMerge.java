@@ -14,7 +14,6 @@
  */
 package com.akiban.ais.model;
 
-import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -27,6 +26,7 @@ public class AISMerge {
     /* state */
     private AkibanInformationSchema sourceAIS;
     private AkibanInformationSchema targetAIS;
+    private UserTable sourceTable;
     private List<AISMergeValidation> checkers;
     
     public AISMerge (AkibanInformationSchema primaryAIS, AkibanInformationSchema secondaryAIS) throws Exception {
@@ -35,7 +35,16 @@ public class AISMerge {
         
         sourceAIS = new AkibanInformationSchema();
         new Writer(new AISTarget(sourceAIS)).save(secondaryAIS);
+        sourceTable = null;
+        checkers = new LinkedList<AISMergeValidation>();
+    }
+    
+    public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) throws Exception {
+        targetAIS = new AkibanInformationSchema();
+        new Writer(new AISTarget(targetAIS)).save(primaryAIS);
         
+        sourceAIS = null;
+        sourceTable = newTable;
         checkers = new LinkedList<AISMergeValidation>();
     }
     
@@ -44,12 +53,12 @@ public class AISMerge {
     }
     
     public void addValidation(AISMergeValidation validator) {
-        targetAIS.checkIntegrity();
-        sourceAIS.checkIntegrity();
         checkers.add(validator);
     }
 
     public AISMerge validate () throws InvalidOperationException {
+        targetAIS.checkIntegrity();
+        if (sourceAIS != null) { sourceAIS.checkIntegrity(); }
         for (AISMergeValidation validator : checkers) {
             validator.validate(targetAIS, sourceAIS);
         }
@@ -61,46 +70,12 @@ public class AISMerge {
         
         // loop through user tables and add to AIS
         // user table
-        for (UserTable sourceTable : sourceAIS.getUserTables().values()) {
-            final String schemaName = sourceTable.getName().getSchemaName();
-            final String tableName = sourceTable.getName().getTableName();
- 
-            builder.userTable(schemaName, tableName);
-            UserTable targetTable = targetAIS.getUserTable(schemaName, tableName); 
-            targetTable.setEngine(sourceTable.getEngine());
-            targetTable.setCharsetAndCollation(sourceTable.getCharsetAndCollation());
-            
-            // columns
-            for (Column column : sourceTable.getColumns()) {
-                builder.column(schemaName, tableName, 
-                        column.getName(), column.getPosition(), 
-                        column.getType().name(), 
-                        column.getTypeParameter1(), column.getTypeParameter2(), 
-                        column.getNullable(), 
-                        column.getInitialAutoIncrementValue() != null, 
-                        column.getCharsetAndCollation().charset(), 
-                        column.getCharsetAndCollation().collation());
-                // if an auto-increment column, set the starting value. 
-                if (column.getInitialAutoIncrementValue() != null) {
-                    targetTable.getColumn(column.getPosition()).setInitialAutoIncrementValue(column.getInitialAutoIncrementValue());
-                }
+        if (sourceAIS != null) {
+            for (UserTable sourceTable : sourceAIS.getUserTables().values()) {
+                addTable(builder, sourceTable);
             }
-            
-            // indexes/constraints
-            for (TableIndex index : sourceTable.getIndexes()) {
-                builder.index(schemaName, tableName, 
-                        index.getIndexName().getName(), 
-                        index.isUnique(), 
-                        index.getConstraint());
-                
-                for (IndexColumn col : index.getColumns()) {
-                    builder.indexColumn(schemaName, tableName, index.getIndexName().getName(), 
-                            col.getColumn().getName(), 
-                            col.getPosition(), 
-                            col.isAscending(), 
-                            col.getIndexedLength());
-                }
-            }
+        } else if (sourceTable != null) {
+            addTable (builder, sourceTable); 
         }
         builder.basicSchemaIsComplete();
         
@@ -109,6 +84,49 @@ public class AISMerge {
         return this;
     }
 
+    private void addTable(AISBuilder builder, UserTable table) {
+        final String schemaName = table.getName().getSchemaName();
+        final String tableName = table.getName().getTableName();
+
+        builder.userTable(schemaName, tableName);
+        UserTable targetTable = targetAIS.getUserTable(schemaName, tableName); 
+        targetTable.setEngine(table.getEngine());
+        targetTable.setCharsetAndCollation(table.getCharsetAndCollation());
+        
+        // columns
+        for (Column column : table.getColumns()) {
+            builder.column(schemaName, tableName, 
+                    column.getName(), column.getPosition(), 
+                    column.getType().name(), 
+                    column.getTypeParameter1(), column.getTypeParameter2(), 
+                    column.getNullable(), 
+                    column.getInitialAutoIncrementValue() != null, 
+                    column.getCharsetAndCollation().charset(), 
+                    column.getCharsetAndCollation().collation());
+            // if an auto-increment column, set the starting value. 
+            if (column.getInitialAutoIncrementValue() != null) {
+                targetTable.getColumn(column.getPosition()).setInitialAutoIncrementValue(column.getInitialAutoIncrementValue());
+            }
+        }
+        
+        // indexes/constraints
+        for (TableIndex index : table.getIndexes()) {
+            builder.index(schemaName, tableName, 
+                    index.getIndexName().getName(), 
+                    index.isUnique(), 
+                    index.getConstraint());
+            
+            for (IndexColumn col : index.getColumns()) {
+                builder.indexColumn(schemaName, tableName, index.getIndexName().getName(), 
+                        col.getColumn().getName(), 
+                        col.getPosition(), 
+                        col.isAscending(), 
+                        col.getIndexedLength());
+            }
+        }
+        
+    }
+    
     public static class NoDuplicateNames implements AISMergeValidation {
         public void validate (AkibanInformationSchema targetSchema, AkibanInformationSchema validateSchema) 
         throws InvalidOperationException {
@@ -133,7 +151,7 @@ public class AISMerge {
  
     }
     
-    public class NoAkibanSchemaTables implements AISMergeValidation {
+    public static class NoAkibanSchemaTables implements AISMergeValidation {
         public void validate (AkibanInformationSchema targetSchema, AkibanInformationSchema validateSchema)
         throws InvalidOperationException {
             for (UserTable table : validateSchema.getUserTables().values()) {
@@ -148,7 +166,7 @@ public class AISMerge {
         }
     }
     
-    public class TableColumnSupportedDatatypes implements AISMergeValidation {
+    public static class TableColumnSupportedDatatypes implements AISMergeValidation {
         public void validate (AkibanInformationSchema targetSchema, AkibanInformationSchema validateSchema)
         throws InvalidOperationException {
             for (UserTable table : validateSchema.getUserTables().values()) {
@@ -167,7 +185,7 @@ public class AISMerge {
         }
     }
     
-    public class IndexColumnsSupportedDatatypes implements AISMergeValidation {
+    public static class IndexColumnsSupportedDatatypes implements AISMergeValidation {
         public void validate (AkibanInformationSchema targetSchema, AkibanInformationSchema validateSchema)
         throws InvalidOperationException {
             for (UserTable table : validateSchema.getUserTables().values()) { 

@@ -104,7 +104,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
     
     @Override
-    public void createTable(Session session, AkibanInformationSchema table)
+    public void createTable(Session session, UserTable table)
     throws ParseException, UnsupportedCharsetException,
     ProtectedTableDDLException, DuplicateTableNameException,
     GroupWithProtectedTableException, JoinToUnknownTableException,

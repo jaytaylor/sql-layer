@@ -88,7 +88,7 @@ public interface DDLFunctions {
             UnsupportedIndexSizeException,
             GenericInvalidOperationException;
 
-    void createTable (Session session, AkibanInformationSchema table)
+    void createTable (Session session, UserTable table)
             throws UnsupportedCharsetException,
             ProtectedTableDDLException,
             DuplicateTableNameException,

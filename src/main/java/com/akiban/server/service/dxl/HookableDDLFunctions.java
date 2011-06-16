@@ -64,7 +64,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
     
     @Override
-    public void createTable(Session session, AkibanInformationSchema table)
+    public void createTable(Session session, UserTable table)
             throws UnsupportedCharsetException, ProtectedTableDDLException,
             DuplicateTableNameException, GroupWithProtectedTableException,
             JoinToUnknownTableException, JoinToWrongColumnsException,

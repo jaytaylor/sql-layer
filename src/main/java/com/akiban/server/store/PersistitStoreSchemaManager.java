@@ -140,13 +140,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private ByteBuffer aisByteBuffer;
     
     @Override
-    public TableName createTableDefinition(Session session, AkibanInformationSchema newAIS) throws Exception
+    public TableName createTableDefinition(Session session, final UserTable newTable) throws Exception
     {
         // We assume/assert the newAIS contains exactly one new user table. 
-        assert newAIS.getUserTables().values().size() == 1;
-        final UserTable newTable = newAIS.getUserTables().values().iterator().next();
+        //assert newAIS.getUserTables().values().size() == 1;
+        //final UserTable newTable = newAIS.getUserTables().values().iterator().next();
         
-        AISMerge merge = new AISMerge (ais, newAIS);
+        AISMerge merge = new AISMerge (ais, newTable);
         merge.validate().merge();
         
         final String schemaName = newTable.getName().getSchemaName();
