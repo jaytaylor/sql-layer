@@ -209,7 +209,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         // XXX: GWT requires empty constructor
         this.groupIndexes = new HashSet<GroupIndex>();
         this.unmodifiableGroupIndexes = Collections.unmodifiableCollection(groupIndexes);
-        this.indexMap = new HashMap<String, TableIndex>();
+        this.indexMap = new TreeMap<String, TableIndex>();
         this.unmodifiableIndexMap = Collections.unmodifiableMap(indexMap);
     }
 
