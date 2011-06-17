@@ -45,8 +45,7 @@ class PersistitFilterFactory
         List<IndexColumn> indexColumns = index.getColumns();
         KeyFilter.Term[] terms = new KeyFilter.Term[indexColumns.size()];
         for(int i = 0; i < indexColumns.size(); ++i) {
-            Column column = indexColumns.get(i).getColumn();
-            terms[i] = computeKeyFilterTerm(key, column, column.getPosition(), keyRange, bindings);
+            terms[i] = computeKeyFilterTerm(key, indexColumns.get(i).getColumn(), i, keyRange, bindings);
         }
         key.clear();
         KeyFilter keyFilter = new KeyFilter(terms, terms.length, Integer.MAX_VALUE);

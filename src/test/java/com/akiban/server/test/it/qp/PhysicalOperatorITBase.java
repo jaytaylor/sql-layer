@@ -19,6 +19,7 @@ import com.akiban.ais.model.*;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
+import com.akiban.qp.persistitadapter.PersistitIndexRow;
 import com.akiban.qp.persistitadapter.PersistitRowLimit;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
@@ -32,12 +33,14 @@ import com.akiban.qp.rowtype.SchemaAISBased;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
+import com.persistit.exception.PersistitException;
 import org.junit.Before;
 
 import java.util.ArrayList;
@@ -148,18 +151,11 @@ public class PhysicalOperatorITBase extends ITBase
 
     protected ColumnSelector columnSelector(final Index index)
     {
-        return new ColumnSelector()
-        {
+        final int columnCount = index.getColumns().size();
+        return new ColumnSelector() {
             @Override
-            public boolean includesColumn(int columnPosition)
-            {
-                for (IndexColumn indexColumn : index.getColumns()) {
-                    Column column = indexColumn.getColumn();
-                    if (column.getPosition() == columnPosition) {
-                        return true;
-                    }
-                }
-                return false;
+            public boolean includesColumn(int columnPosition) {
+                return columnPosition < columnCount;
             }
         };
     }
@@ -179,6 +175,14 @@ public class PhysicalOperatorITBase extends ITBase
             niceRow.put(position, value);
         }
         return PersistitGroupRow.newPersistitGroupRow(adapter, niceRow.toRowData());
+    }
+
+    protected RowBase row(IndexRowType indexRowType, Object... values) {
+        try {
+            return new PersistitIndexRow(adapter, indexRowType, values);
+        } catch(PersistitException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected void compareRows(RowBase[] expected, Cursor cursor)

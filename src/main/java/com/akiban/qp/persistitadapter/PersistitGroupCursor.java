@@ -24,7 +24,9 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.row.RowHolder;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.persistit.Exchange;
@@ -303,7 +305,9 @@ class PersistitGroupCursor implements GroupCursor
         HKeyRangeAndDescendentsScan(IndexKeyRange hKeyRange, Bindings bindings) throws PersistitException
         {
             RowBase rowBase = (hKeyRange.lo() == null ? hKeyRange.hi().row() : hKeyRange.lo().row());
-            RowDef rowDef = (RowDef) rowBase.rowType().userTable().rowDef();
+            RowType rowType = rowBase.rowType();
+            assert (rowType instanceof UserTableRowType) : "Bound must be UserTableRow: " + rowBase +" "+ rowType;
+            RowDef rowDef = (RowDef) rowType.userTable().rowDef();
             hKeyRangeFilter = adapter.filterFactory.computeHKeyFilter(exchange.getKey(), rowDef, hKeyRange, bindings);
         }
 

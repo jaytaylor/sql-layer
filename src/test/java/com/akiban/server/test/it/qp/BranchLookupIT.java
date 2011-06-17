@@ -335,11 +335,11 @@ public class BranchLookupIT extends PhysicalOperatorITBase
 
     private IndexBound customerNameIndexBound(String name)
     {
-        return new IndexBound(row(customerRowType, null, name), new SetColumnSelector(1));
+        return new IndexBound(row(customerNameIndexRowType, name), new SetColumnSelector(0));
     }
 
     private IndexBound addressAddressIndexBound(String addr)
     {
-        return new IndexBound(row(addressRowType, null, null, addr), new SetColumnSelector(2));
+        return new IndexBound(row(addressAddressIndexRowType, addr), new SetColumnSelector(0));
     }
 }

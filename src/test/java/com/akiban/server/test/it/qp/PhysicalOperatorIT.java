@@ -283,8 +283,8 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     public void testRestrictedIndexScan()
     {
         Index idxOrderSalesman = orderSalesmanIndexRowType.index();
-        IndexBound lo = indexBound(row(order, 2, "jack"), columnSelector(idxOrderSalesman));
-        IndexBound hi = indexBound(row(order, 2, "tom"), columnSelector(idxOrderSalesman));
+        IndexBound lo = indexBound(row(orderSalesmanIndexRowType, "jack"), columnSelector(idxOrderSalesman));
+        IndexBound hi = indexBound(row(orderSalesmanIndexRowType, "tom"), columnSelector(idxOrderSalesman));
         IndexKeyRange range = indexKeyRange(lo, true, hi, false);
         PhysicalOperator indexScan = indexScan_Default(orderSalesmanIndexRowType, false, range);
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
@@ -297,7 +297,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     public void testRestrictedIndexLookup()
     {
         Index idxOrderSalesman = orderSalesmanIndexRowType.index();
-        IndexBound tom = indexBound(row(order, 2, "tom"), columnSelector(idxOrderSalesman));
+        IndexBound tom = indexBound(row(orderSalesmanIndexRowType, "tom"), columnSelector(idxOrderSalesman));
         IndexKeyRange matchTom = indexKeyRange(tom, true, tom, true);
         PhysicalOperator indexScan = indexScan_Default(orderSalesmanIndexRowType, false, matchTom);
         PhysicalOperator lookup = branchLookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, false);
@@ -313,7 +313,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     {
         // Find customers associated with salesman tom
         Index idxOrderSalesman = orderSalesmanIndexRowType.index();
-        IndexBound tom = indexBound(row(order, 2, "tom"), columnSelector(idxOrderSalesman));
+        IndexBound tom = indexBound(row(orderSalesmanIndexRowType, "tom"), columnSelector(idxOrderSalesman));
         IndexKeyRange matchTom = indexKeyRange(tom, true, tom, true);
         PhysicalOperator indexScan = indexScan_Default(orderSalesmanIndexRowType, false, matchTom);
         PhysicalOperator ancestorLookup = ancestorLookup_Default(indexScan,
