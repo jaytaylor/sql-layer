@@ -21,9 +21,14 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.EnumSet;
+
 import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.physicaloperator.API.FlattenOption.*;
+import static com.akiban.qp.physicaloperator.API.JoinType.*;
 
 public class FlattenIT extends PhysicalOperatorITBase
 {
@@ -64,7 +69,8 @@ public class FlattenIT extends PhysicalOperatorITBase
         flatten_HKeyOrdered(groupScan_Default(coi),
                             null,
                             orderRowType,
-                            DEFAULT);
+                            INNER_JOIN,
+                            EnumSet.noneOf(FlattenOption.class));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -73,7 +79,8 @@ public class FlattenIT extends PhysicalOperatorITBase
         flatten_HKeyOrdered(groupScan_Default(coi),
                             customerRowType,
                             null,
-                            DEFAULT);
+                            INNER_JOIN,
+                            EnumSet.noneOf(FlattenOption.class));
     }
 
     // TODO: Test parent/child relationship between parentType, childType:
@@ -84,21 +91,13 @@ public class FlattenIT extends PhysicalOperatorITBase
     // TODO: - child is parent of parent
 
     @Test(expected = IllegalArgumentException.class)
-    public void testInnerVsLeft()
+    public void nullJoinType()
     {
         flatten_HKeyOrdered(groupScan_Default(coi),
                             customerRowType,
                             orderRowType,
-                            INNER_JOIN | LEFT_JOIN);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testInnerVsRight()
-    {
-        flatten_HKeyOrdered(groupScan_Default(coi),
-                            customerRowType,
-                            orderRowType,
-                            INNER_JOIN | RIGHT_JOIN);
+                            null,
+                            EnumSet.noneOf(FlattenOption.class));
     }
 
     // Tests of join behavior
@@ -160,7 +159,15 @@ public class FlattenIT extends PhysicalOperatorITBase
         compareRows(expected, cursor);
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
+    public void shorteningWithoutLeftJoin() {
+        flatten_HKeyOrdered(groupScan_Default(coi),
+                orderRowType,
+                itemRowType,
+                INNER_JOIN, LEFT_JOIN_SHORTENS_HKEY);
+    }
+
+    @Test @Ignore("bug 797433")
     public void testLeftJoinCO()
     {
         PhysicalOperator plan = flatten_HKeyOrdered(groupScan_Default(coi),
@@ -170,9 +177,9 @@ public class FlattenIT extends PhysicalOperatorITBase
         RowType coRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
-            row(coRowType, 1L, "northbridge", 11L, 1L, "ori"),
-            row(itemRowType, 111L, 11L),
-            row(itemRowType, 112L, 11L),
+            row(oKey(1L, 11L), coRowType, 1L, "northbridge", 11L, 1L, "ori"),
+            row(iKey(1L, 11L, 111L), itemRowType, 111L, 11L),
+            row(iKey(1L, 11L, 112L), itemRowType, 112L, 11L),
             row(coRowType, 1L, "northbridge", 12L, 1L, "david"),
             row(itemRowType, 121L, 12L),
             row(itemRowType, 122L, 12L),
@@ -184,8 +191,146 @@ public class FlattenIT extends PhysicalOperatorITBase
             row(itemRowType, 222L, 22L),
             row(itemRowType, 311L, 31L),
             row(itemRowType, 312L, 31L),
-            row(coRowType, 4L, "highland", null, null, null),
+            row(oKey(4L, null), coRowType, 4L, "highland", null, null, null),
             row(coRowType, 5L, "matrix", 51L, 5L, "yuval")
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testLeftJoinCO_WithLeftShortenedHKey()
+    {
+        PhysicalOperator plan = flatten_HKeyOrdered(groupScan_Default(coi),
+                customerRowType,
+                orderRowType,
+                LEFT_JOIN, LEFT_JOIN_SHORTENS_HKEY);
+        RowType coRowType = plan.rowType();
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+                row(oKey(1L, 11L), coRowType, 1L, "northbridge", 11L, 1L, "ori"),
+                row(iKey(1L, 11L, 111L), itemRowType, 111L, 11L),
+                row(iKey(1L, 11L, 112L), itemRowType, 112L, 11L),
+                row(coRowType, 1L, "northbridge", 12L, 1L, "david"),
+                row(itemRowType, 121L, 12L),
+                row(itemRowType, 122L, 12L),
+                row(coRowType, 2L, "foundation", 21L, 2L, "tom"),
+                row(itemRowType, 211L, 21L),
+                row(itemRowType, 212L, 21L),
+                row(coRowType, 2L, "foundation", 22L, 2L, "jack"),
+                row(itemRowType, 221L, 22L),
+                row(itemRowType, 222L, 22L),
+                row(itemRowType, 311L, 31L),
+                row(itemRowType, 312L, 31L),
+                row(cKey(4L), coRowType, 4L, "highland", null, null, null),
+                row(coRowType, 5L, "matrix", 51L, 5L, "yuval")
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testLeftJoinCOI_WithLeftShortenedHKey()
+    {
+        PhysicalOperator coPlan = flatten_HKeyOrdered(
+                groupScan_Default(coi),
+                customerRowType,
+                orderRowType,
+                LEFT_JOIN, LEFT_JOIN_SHORTENS_HKEY
+        );
+        RowType coRowType = coPlan.rowType();
+        PhysicalOperator plan = flatten_HKeyOrdered(coPlan,
+                coRowType,
+                itemRowType,
+                LEFT_JOIN, LEFT_JOIN_SHORTENS_HKEY
+        );
+        RowType coiRowType = plan.rowType();
+
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+                row(iKey(1L, 11L, 111L), coiRowType, 1L, "northbridge", 11L, 1L, "ori", 111L, 11L),
+                row(iKey(1L, 11L, 112L), coiRowType, 1L, "northbridge", 11L, 1L, "ori", 112L, 11L),
+                row(iKey(1L, 12L, 121L), coiRowType, 1L, "northbridge", 12L, 1L, "david", 121L, 12L),
+                row(iKey(1L, 12L, 122L), coiRowType, 1L, "northbridge", 12L, 1L, "david", 122L, 12L),
+
+                row(iKey(2L, 21L, 211L), coiRowType, 2L, "foundation", 21L, 2L, "tom", 211L, 21L),
+                row(iKey(2L, 21L, 212L), coiRowType, 2L, "foundation", 21L, 2L, "tom", 212L, 21L),
+                row(iKey(2L, 22L, 221L), coiRowType, 2L, "foundation", 22L, 2L, "jack", 221L, 22L),
+                row(iKey(2L, 22L, 222L), coiRowType, 2L, "foundation", 22L, 2L, "jack", 222L, 22L),
+
+                row(cKey(4L), coiRowType, 4L, "highland", null, null, null, null, null),
+
+                row(oKey(5L, 51L), coiRowType, 5L, "matrix", 51L, 5L, "yuval", null, null),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test @Ignore("bug 797433")
+    public void testLeftJoinCOI_WithPartiallyLeftShortenedHKey()
+    {
+        PhysicalOperator coPlan = flatten_HKeyOrdered(
+                groupScan_Default(coi),
+                customerRowType,
+                orderRowType,
+                LEFT_JOIN, LEFT_JOIN_SHORTENS_HKEY
+        );
+        RowType coRowType = coPlan.rowType();
+        PhysicalOperator plan = flatten_HKeyOrdered(coPlan,
+                coRowType,
+                itemRowType,
+                LEFT_JOIN
+        );
+        RowType coiRowType = plan.rowType();
+
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+                row(iKey(1L, 11L, 111L), coiRowType, 1L, "northbridge", 11L, 1L, "ori", 111L, 11L),
+                row(iKey(1L, 11L, 112L), coiRowType, 1L, "northbridge", 11L, 1L, "ori", 112L, 11L),
+                row(iKey(1L, 12L, 121L), coiRowType, 1L, "northbridge", 12L, 1L, "david", 121L, 12L),
+                row(iKey(1L, 12L, 122L), coiRowType, 1L, "northbridge", 12L, 1L, "david", 122L, 12L),
+
+                row(iKey(2L, 21L, 211L), coiRowType, 2L, "foundation", 21L, 2L, "tom", 211L, 21L),
+                row(iKey(2L, 21L, 212L), coiRowType, 2L, "foundation", 21L, 2L, "tom", 212L, 21L),
+                row(iKey(2L, 22L, 221L), coiRowType, 2L, "foundation", 22L, 2L, "jack", 221L, 22L),
+                row(iKey(2L, 22L, 222L), coiRowType, 2L, "foundation", 22L, 2L, "jack", 222L, 22L),
+
+                row(oKey(4L, null), coiRowType, 4L, "highland", null, null, null, null, null),
+
+                row(oKey(5L, 51L), coiRowType, 5L, "matrix", 51L, 5L, "yuval", null, null),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test @Ignore("bug 797433")
+    public void testLeftJoinCOI_WithFullKey()
+    {
+        PhysicalOperator coPlan = flatten_HKeyOrdered(
+                groupScan_Default(coi),
+                customerRowType,
+                orderRowType,
+                LEFT_JOIN, LEFT_JOIN_SHORTENS_HKEY
+        );
+        RowType coRowType = coPlan.rowType();
+        PhysicalOperator plan = flatten_HKeyOrdered(coPlan,
+                coRowType,
+                itemRowType,
+                LEFT_JOIN
+        );
+        RowType coiRowType = plan.rowType();
+
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+                row(iKey(1L, 11L, 111L), coiRowType, 1L, "northbridge", 11L, 1L, "ori", 111L, 11L),
+                row(iKey(1L, 11L, 112L), coiRowType, 1L, "northbridge", 11L, 1L, "ori", 112L, 11L),
+                row(iKey(1L, 12L, 121L), coiRowType, 1L, "northbridge", 12L, 1L, "david", 121L, 12L),
+                row(iKey(1L, 12L, 122L), coiRowType, 1L, "northbridge", 12L, 1L, "david", 122L, 12L),
+
+                row(iKey(2L, 21L, 211L), coiRowType, 2L, "foundation", 21L, 2L, "tom", 211L, 21L),
+                row(iKey(2L, 21L, 212L), coiRowType, 2L, "foundation", 21L, 2L, "tom", 212L, 21L),
+                row(iKey(2L, 22L, 221L), coiRowType, 2L, "foundation", 22L, 2L, "jack", 221L, 22L),
+                row(iKey(2L, 22L, 222L), coiRowType, 2L, "foundation", 22L, 2L, "jack", 222L, 22L),
+
+                row(iKey(4L, null, null), coiRowType, 4L, "highland", null, null, null, null, null),
+
+                row(iKey(5L, 51L, null), coiRowType, 5L, "matrix", 51L, 5L, "yuval", null, null),
         };
         compareRows(expected, cursor);
     }
@@ -199,7 +344,7 @@ public class FlattenIT extends PhysicalOperatorITBase
                                                     LEFT_JOIN);
         RowType oiRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
-        RowBase[] expected = new RowBase[]{
+        TestRow[] expected = new TestRow[]{
             row(customerRowType, 1L, "northbridge"),
             row(oiRowType, 11L, 1L, "ori", 111L, 11L),
             row(oiRowType, 11L, 1L, "ori", 112L, 11L),
@@ -283,7 +428,7 @@ public class FlattenIT extends PhysicalOperatorITBase
         PhysicalOperator plan = flatten_HKeyOrdered(groupScan_Default(coi),
                                                     customerRowType,
                                                     orderRowType,
-                                                    LEFT_JOIN | RIGHT_JOIN);
+                                                    FULL_JOIN);
         RowType coRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -314,7 +459,7 @@ public class FlattenIT extends PhysicalOperatorITBase
         PhysicalOperator plan = flatten_HKeyOrdered(groupScan_Default(coi),
                                                     orderRowType,
                                                     itemRowType,
-                                                    LEFT_JOIN | RIGHT_JOIN);
+                                                    FULL_JOIN);
         RowType oiRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -347,7 +492,7 @@ public class FlattenIT extends PhysicalOperatorITBase
         PhysicalOperator plan = flatten_HKeyOrdered(groupScan_Default(coi),
                                                     customerRowType,
                                                     orderRowType,
-                                                    LEFT_JOIN | RIGHT_JOIN | KEEP_PARENT | KEEP_CHILD);
+                                                    FULL_JOIN, KEEP_PARENT, KEEP_CHILD);
         RowType coRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -388,7 +533,7 @@ public class FlattenIT extends PhysicalOperatorITBase
         PhysicalOperator plan = flatten_HKeyOrdered(groupScan_Default(coi),
                                                     orderRowType,
                                                     itemRowType,
-                                                    LEFT_JOIN | RIGHT_JOIN | KEEP_PARENT | KEEP_CHILD);
+                                                    FULL_JOIN, KEEP_PARENT, KEEP_CHILD);
         RowType oiRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -425,5 +570,17 @@ public class FlattenIT extends PhysicalOperatorITBase
             row(oiRowType, 51L, 5L, "yuval", null, null),
         };
         compareRows(expected, cursor);
+    }
+
+    private String cKey(Long cid) {
+        return String.format("{%d,(long)%s}",customer, cid);
+    }
+
+    private String oKey(Long cid, Long oid) {
+        return String.format("{%d,(long)%s,%d,(long)%s}",customer, cid, order, oid);
+    }
+
+    private String iKey(Long cid, Long oid, Long iid) {
+        return String.format("{%d,(long)%s,%d,(long)%s,%d,(long)%s}",customer, cid, order, oid, item, iid);
     }
 }

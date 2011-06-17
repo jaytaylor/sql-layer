@@ -33,7 +33,6 @@ import com.akiban.qp.rowtype.SchemaAISBased;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanLimit;
@@ -41,6 +40,7 @@ import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
 import com.persistit.exception.PersistitException;
+import com.akiban.util.Strings;
 import org.junit.Before;
 
 import java.util.ArrayList;
@@ -160,9 +160,14 @@ public class PhysicalOperatorITBase extends ITBase
         };
     }
 
-    protected RowBase row(RowType rowType, Object... fields)
+    protected TestRow row(RowType rowType, Object... fields)
     {
         return new TestRow(rowType, fields);
+    }
+
+    protected TestRow row(String hKeyString, RowType rowType, Object... fields)
+    {
+        return new TestRow(rowType, fields, hKeyString);
     }
 
     protected RowBase row(int tableId, Object... values /* alternating field position and value */)
@@ -198,11 +203,18 @@ public class PhysicalOperatorITBase extends ITBase
             while (cursor.next()) {
                 RowBase actualRow = cursor.currentRow();
                 int count = actualRows.size();
-                assertTrue(count < expected.length);
+                assertTrue(String.format("failed test %d < %d", count, expected.length), count < expected.length);
                 if(!equal(expected[count], actualRow)) {
                     String expectedString = expected[count] == null ? "null" : expected[count].toString();
                     String actualString = actualRow == null ? "null" : actualRow.toString();
-                    assertEquals(expectedString, actualString);
+                    assertEquals("row " + count, expectedString, actualString);
+                }
+                if (expected[count] instanceof TestRow) {
+                    TestRow expectedTestRow = (TestRow) expected[count];
+                    if (expectedTestRow.persistityString() != null) {
+                        String actualHKeyString = actualRow == null ? "null" : actualRow.hKey().toString();
+                        assertEquals(count + ": hkey", expectedTestRow.persistityString(), actualHKeyString);
+                    }
                 }
                 actualRows.add(actualRow);
             }
@@ -210,6 +222,23 @@ public class PhysicalOperatorITBase extends ITBase
             cursor.close();
         }
         assertEquals(expected.length, actualRows.size());
+    }
+
+    @SuppressWarnings("unused") // useful for debugging
+    protected void dumpToAssertion(Cursor cursor) {
+        List<String> strings = new ArrayList<String>();
+        try {
+            cursor.open(NO_BINDINGS);
+            while (cursor.next()) {
+                strings.add(String.valueOf(cursor.currentRow()));
+            }
+        } catch (Throwable t) {
+            strings.add("ERROR: " + t);
+        }finally {
+            cursor.close();
+        }
+        strings.add(0, strings.size() == 1 ? "1 string:" : strings.size() + " strings:");
+        throw new AssertionError(Strings.join(strings));
     }
 
     protected void compareRenderedHKeys(String[] expected, Cursor cursor)

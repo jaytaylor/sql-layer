@@ -106,6 +106,8 @@ public class PersistitStore implements Store {
 
     private final static String COLLECTORS_SESSION_KEY = "collectors";
 
+    private boolean updateGroupIndexes;
+
     private boolean deferIndexes = false;
 
     RowDefCache rowDefCache;
@@ -123,6 +125,10 @@ public class PersistitStore implements Store {
     private final Map<Tree, SortedSet<KeyState>> deferredIndexKeys = new HashMap<Tree, SortedSet<KeyState>>();
 
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
+
+    public PersistitStore(boolean updateGroupIndexes) {
+        this.updateGroupIndexes = updateGroupIndexes;
+    }
 
     public synchronized void start() throws Exception {
         treeService = ServiceManagerImpl.get().getTreeService();
@@ -415,6 +421,7 @@ public class PersistitStore implements Store {
 
         WRITE_ROW_TAP.in();
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+        checkNoGroupIndexes(rowDef.table());
         final Transaction transaction = treeService.getTransaction(session);
         Exchange hEx = null;
         try {
@@ -571,6 +578,7 @@ public class PersistitStore implements Store {
         final int rowDefId = rowData.getRowDefId();
 
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+        checkNoGroupIndexes(rowDef.table());
         Exchange hEx = null;
         final Transaction transaction = treeService.getTransaction(session);
 
@@ -631,6 +639,7 @@ public class PersistitStore implements Store {
 
                     return;
                 } catch (RollbackException re) {
+                    TX_RETRY_TAP.out();
                     if (--retries < 0) {
                         throw new TransactionFailedException();
                     }
@@ -657,6 +666,7 @@ public class PersistitStore implements Store {
         }
         UPDATE_ROW_TAP.in();
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+        checkNoGroupIndexes(rowDef.table());
         Exchange hEx = null;
         final Transaction transaction = treeService.getTransaction(session);
 
@@ -715,6 +725,7 @@ public class PersistitStore implements Store {
 
                     return;
                 } catch (RollbackException re) {
+                    TX_RETRY_TAP.out();
                     if (--retries < 0) {
                         throw new TransactionFailedException();
                     }
@@ -725,6 +736,12 @@ public class PersistitStore implements Store {
         } finally {
             releaseExchange(session, hEx);
             UPDATE_ROW_TAP.out();
+        }
+    }
+
+    private void checkNoGroupIndexes(Table table) {
+        if (updateGroupIndexes && !table.getGroupIndexes().isEmpty()) {
+            throw new UnsupportedOperationException("PersistitStore can't update group indexes; found on " + table);
         }
     }
 
@@ -826,6 +843,7 @@ public class PersistitStore implements Store {
                 transaction.commit(forceToDisk);
                 return;
             } catch (RollbackException re) {
+                TX_RETRY_TAP.out();
                 if (--retries < 0) {
                     throw new TransactionFailedException();
                 }
@@ -1056,9 +1074,16 @@ public class PersistitStore implements Store {
         return false;
     }
 
+    private void checkNotGroupIndex(Index index) {
+        if (index.isGroupIndex()) {
+            throw new UnsupportedOperationException("can't update group indexes from PersistitStore: " + index);
+        }
+    }
+
     void insertIntoIndex(final Session session, final Index index, final RowData rowData,
                          final Key hkey, final boolean deferIndexes)
             throws InvalidOperationException, PersistitException {
+        checkNotGroupIndex(index);
         final Exchange iEx = getExchange(session, index);
         constructIndexKey(iEx.getKey(), rowData, index, hkey);
 
@@ -1116,6 +1141,7 @@ public class PersistitStore implements Store {
                             final RowData newRowData, final Key hkey)
             throws PersistitException, DuplicateKeyException
     {
+        checkNotGroupIndex(index);
         IndexDef indexDef = (IndexDef)index.indexDef();
         if (!fieldsEqual(rowDef, oldRowData, newRowData, indexDef.getFields())) {
             final Exchange oldExchange = getExchange(session, index);
@@ -1138,6 +1164,7 @@ public class PersistitStore implements Store {
 
     void deleteIndex(final Session session, final Index index, final RowData rowData, final Key hkey)
             throws PersistitException {
+        checkNotGroupIndex(index);
         final Exchange iEx = getExchange(session, index);
         constructIndexKey(iEx.getKey(), rowData, index, hkey);
         boolean removed = iEx.remove();
@@ -1334,6 +1361,7 @@ public class PersistitStore implements Store {
                     transaction.commit(forceToDisk);
                     break; // success
                 } catch (RollbackException re) {
+                    TX_RETRY_TAP.out();
                     if (--retries < 0) {
                         throw new TransactionFailedException();
                     }

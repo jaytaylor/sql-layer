@@ -143,7 +143,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
     // OperatorStore interface
 
     public OperatorStore() {
-        super(new PersistitStore());
+        super(new PersistitStore(false));
     }
 
     public PersistitStore getPersistitStore() {
