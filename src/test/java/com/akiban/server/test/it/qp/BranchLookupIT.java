@@ -441,11 +441,11 @@ public class BranchLookupIT extends PhysicalOperatorITBase
 
     private IndexBound orderSalesmanIndexBound(String salesman)
     {
-        return new IndexBound(userTable(order), row(orderRowType, null, null, salesman), new SetColumnSelector(2));
+        return new IndexBound(row(orderSalesmanIndexRowType, salesman), new SetColumnSelector(0));
     }
 
     private IndexBound itemIidIndexBound(long iid)
     {
-        return new IndexBound(userTable(item), row(itemRowType, iid, null), new SetColumnSelector(0));
+        return new IndexBound(row(itemIidIndexRowType, iid), new SetColumnSelector(0));
     }
 }
