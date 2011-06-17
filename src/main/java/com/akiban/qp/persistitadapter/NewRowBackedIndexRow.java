@@ -15,16 +15,12 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.FieldDef;
-import com.akiban.server.RowData;
-import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 
 public class NewRowBackedIndexRow implements RowBase
@@ -42,12 +38,12 @@ public class NewRowBackedIndexRow implements RowBase
 
     @Override
     public Object field(int i, Bindings bindings) {
-        Column column = index.getColumns().get(i).getColumn();
-        FieldDef fieldDef = (FieldDef) column.getFieldDef();
-        if(row.isColumnNull(fieldDef.getFieldIndex())) {
+        FieldDef fieldDef = (FieldDef) index.getColumns().get(i).getColumn().getFieldDef();
+        int fieldPos = fieldDef.getFieldIndex();
+        if(row.isColumnNull(fieldPos)) {
             return null;
         }
-        return row.get(i);
+        return row.get(fieldPos);
     }
 
     @Override
