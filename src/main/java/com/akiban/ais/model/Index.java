@@ -28,7 +28,8 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     public abstract HKey hKey();
     public abstract boolean isTableIndex();
     public abstract void computeFieldAssociations(Map<Table,Integer> ordinalMap);
-
+    public abstract Table leafMostTable();
+    public abstract Table rootMostTable();
     
     public static Index create(AkibanInformationSchema ais, Map<String, Object> map)
     {
@@ -109,9 +110,6 @@ public abstract class Index implements Serializable, ModelNames, Traversable
             columnsFrozen = true;
         }
     }
-
-    public abstract Table leafMostTable();
-    public abstract Table rootMostTable();
 
     public boolean isUnique()
     {
