@@ -16,6 +16,7 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
@@ -24,7 +25,9 @@ import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
@@ -101,6 +104,27 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
 
+    @Override
+    public void writeRow(Session session, RowData rowData) throws Exception {
+        super.writeRow(session, rowData);
+        AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
+        PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
+        UserTable userTable = ais.getUserTable(rowData.getRowDefId());
+        for (GroupIndex groupIndex : userTable.getGroupIndexes()) {
+            PhysicalOperator plan = groupIndexCreationPlan(groupIndex);
+            Cursor cursor = API.cursor(plan, adapter);
+            cursor.open(groupIndexCreationBindings(groupIndex, rowData));
+            try {
+                while (cursor.next()) {
+                    Row row = cursor.currentRow();
+                    insertIndex(groupIndex, row);
+                }
+            } finally {
+                cursor.close();
+            }
+        }
+    }
+
     // OperatorStore interface
 
     public OperatorStore() {
@@ -109,6 +133,21 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
     public PersistitStore getPersistitStore() {
         return super.getDelegate();
+    }
+
+    // private methods
+
+    private PhysicalOperator groupIndexCreationPlan(GroupIndex groupIndex) {
+        // TODO there is caching to be done!
+        throw new UnsupportedOperationException();
+    }
+
+    private Bindings groupIndexCreationBindings(GroupIndex groupIndex, RowData rowData) {
+        throw new UnsupportedOperationException();
+    }
+
+    private void insertIndex(GroupIndex groupIndex, Row flattenedRow) {
+        throw new UnsupportedOperationException();
     }
 
     // private static methods
