@@ -147,7 +147,7 @@ public class GroupScanIT extends PhysicalOperatorITBase
     public void testHKeyIndexRange_EmptyDB()
     {
         use(emptyDB);
-        IndexBound c1 = customerCidIndexBound(1);
+        IndexBound c1 = customerCidBound(1);
         IndexKeyRange indexKeyRange = new IndexKeyRange(c1, true, c1, true);
         PhysicalOperator groupScan = groupScan_Default(coi, NO_LIMIT, indexKeyRange);
         Cursor cursor = cursor(groupScan, adapter);
