@@ -137,14 +137,8 @@ class PersistitFilterFactory
     private void appendKeyField(Key key, Column column, int position, RowBase row, Bindings bindings)
     {
         FieldDef fieldDef = (FieldDef) column.getFieldDef();
-        if(row instanceof PersistitGroupRow) {
-            RowData rowData = ((PersistitGroupRow)row).rowData();
-            fieldDef.getEncoding().toKey(fieldDef, rowData, key);
-        }
-        else {
-            Object value = row.field(position, bindings);
-            fieldDef.getEncoding().toKey(fieldDef, value, key);
-        }
+        Object value = row.field(position, bindings);
+        fieldDef.getEncoding().toKey(fieldDef, value, key);
     }
 
 
