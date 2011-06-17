@@ -320,6 +320,8 @@ public class ApiTestBase {
             index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnPairs);
         } catch(GroupIndexCreator.GroupIndexCreatorException e) {
             throw new InvalidOperationException(e);
+        } catch (GroupIndex.GroupIndexCreationException e) {
+            throw new InvalidOperationException(e);
         }
         ddl().createIndexes(session(), Collections.singleton(index));
     }

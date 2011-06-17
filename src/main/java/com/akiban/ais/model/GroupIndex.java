@@ -53,7 +53,7 @@ public class GroupIndex extends Index
     public void addColumn(IndexColumn indexColumn) {
         Table indexGenericTable = indexColumn.getColumn().getTable();
         if (!(indexGenericTable instanceof UserTable)) {
-            throw new IllegalArgumentException("index column must be of user table: " + indexColumn);
+            throw new GroupIndexCreationException("index column must be of user table: " + indexColumn);
         }
         UserTable indexTable = (UserTable) indexGenericTable;
 
@@ -64,7 +64,7 @@ public class GroupIndex extends Index
         if (participatingTables.add(indexTable)) {
             Integer indexTableDepth = indexTable.getDepth();
             if (indexTableDepth == null) {
-                throw new IllegalArgumentException("index table not in group: " + indexTable);
+                throw new GroupIndexCreationException("index table not in group: " + indexTable);
             }
             Map.Entry<Integer,UserTable> rootwardEntry = tablesByDepth.floorEntry(indexTableDepth);
             Map.Entry<Integer,UserTable> leafwardEntry = tablesByDepth.ceilingEntry(indexTableDepth);
@@ -81,7 +81,7 @@ public class GroupIndex extends Index
             return;
         }
         if (entry.getKey().intValue() == indexTableDepth) {
-            throw new IllegalArgumentException(
+            throw new GroupIndexCreationException(
                     indexTable + " and " + entry.getValue() + " must be multibranch; both have depth " + entry.getKey()
             );
         }
@@ -101,7 +101,7 @@ public class GroupIndex extends Index
 
         if (!leafward.isDescendantOf(rootward))
         {
-            throw new IllegalArgumentException(indexColumn + " is not within this group index's branch");
+            throw new GroupIndexCreationException(indexColumn + " is not within this group index's branch");
         }
     }
 
@@ -138,4 +138,11 @@ public class GroupIndex extends Index
     private Group group;
     private final Set<UserTable> participatingTables = new HashSet<UserTable>();
     private final NavigableMap<Integer,UserTable> tablesByDepth = new TreeMap<Integer, UserTable>();
+
+    // nested classes
+    public static class GroupIndexCreationException extends RuntimeException {
+        public GroupIndexCreationException(String message) {
+            super(message);
+        }
+    }
 }

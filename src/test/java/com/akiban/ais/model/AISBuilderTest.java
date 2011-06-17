@@ -1207,7 +1207,7 @@ public class AISBuilderTest
         builder.groupIndexColumn("coi2", "name_date", "test", "o",  "date", 1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = GroupIndex.GroupIndexCreationException.class)
     public void groupIndexMultiBranch()
     {
         final AISBuilder builder = new AISBuilder();
