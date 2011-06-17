@@ -15,8 +15,6 @@
 
 package com.akiban.ais.model.aisb2;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-
 public interface NewAISBuilder extends NewAISProvider {
     /**
      * Sets the default schema

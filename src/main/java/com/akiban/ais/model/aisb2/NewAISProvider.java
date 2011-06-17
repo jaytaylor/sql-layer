@@ -23,4 +23,16 @@ public interface NewAISProvider {
      * @return the AIS
      */
     AkibanInformationSchema ais();
+
+    /**
+     * <p>Defines (but does not yet start building) a group index. The first call on the returned
+     * NewAISGroupIndexBuilder must be to {@link NewAISGroupIndexBuilder#on(String, String, String)}.</p>
+     *
+     * <p>Note that this puts you into the realm of a cousin interface branch;
+     * you can't alter the main schema anymore. This is by design, as implementations may need to differentiate
+     * between structural building and building that depends on a stable structure (such as group index creation).</p>
+     * @param indexName the new index's name
+     * @return the group index builder
+     */
+    NewAISGroupIndexBuilder groupIndex(String indexName);
 }
