@@ -1033,5 +1033,212 @@ public class AISBuilderTest
         Assert.assertTrue("GI for o missing its group index",
                 ais.getUserTable("test", "o").getGroupIndexes().contains(groupIndex)
         );
+
+        Assert.assertEquals("group index rootmost", ais.getUserTable("test", "c"), groupIndex.rootMostTable());
+        Assert.assertEquals("group index leafmost", ais.getUserTable("test", "o"), groupIndex.leafMostTable());
+    }
+
+    @Test
+    public void testLeapfroggingGroupIndex()
+    {
+        final AISBuilder builder = new AISBuilder();
+        builder.userTable("test", "c");
+        builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
+
+        builder.userTable("test", "o");
+        builder.column("test", "o", "oid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "o", "cid", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "o", "date", 2, "int", 0L, 0L, false, false, null, null);
+        builder.joinTables("c/id/o/cid", "test", "c", "test", "o");
+        builder.joinColumns("c/id/o/cid", "test", "c", "id", "test", "o", "cid");
+
+        builder.userTable("test", "i");
+        builder.column("test", "i", "iid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "i", "oid", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "i", "sku", 2, "int", 0L, 0L, false, false, null, null);
+        builder.joinTables("o/oid/i/iid", "test", "o", "test", "i");
+        builder.joinColumns("o/oid/i/iid", "test", "o", "oid", "test", "i", "iid");
+
+        builder.basicSchemaIsComplete();
+        builder.createGroup("coi", "test", "_akiban_c");
+        builder.addJoinToGroup("coi", "c/id/o/cid", 0);
+        builder.addJoinToGroup("coi", "o/oid/i/iid", 0);
+        builder.groupIndex("coi", "name_sku", false);
+        builder.groupIndexColumn("coi", "name_sku", "test", "c",  "name", 0);
+        builder.groupIndexColumn("coi", "name_sku", "test", "i",  "sku", 1);
+        builder.groupingIsComplete();
+
+        final AkibanInformationSchema ais = builder.akibanInformationSchema();
+        ais.checkIntegrity();
+        Assert.assertEquals(3, ais.getUserTables().size());
+        Assert.assertEquals(1, ais.getGroupTables().size());
+        Assert.assertEquals(1, ais.getGroups().size());
+
+        final Group group = ais.getGroup("coi");
+        Assert.assertEquals(1, group.getIndexes().size());
+        final Index index = group.getIndex("name_sku");
+        Assert.assertNotNull(index);
+        Assert.assertEquals(2, index.getColumns().size());
+
+        GroupIndex groupIndex = (GroupIndex) index;
+        Assert.assertEquals("group indexes for c", 1, ais.getUserTable("test", "c").getGroupIndexes().size());
+        Assert.assertTrue("GI for c missing its group index",
+                ais.getUserTable("test", "c").getGroupIndexes().contains(groupIndex)
+        );
+
+        Assert.assertEquals("group indexes for o", 0, ais.getUserTable("test", "o").getGroupIndexes().size());
+        Assert.assertFalse("GI for o has its group index",
+                ais.getUserTable("test", "o").getGroupIndexes().contains(groupIndex)
+        );
+
+        Assert.assertEquals("group indexes for i", 1, ais.getUserTable("test", "i").getGroupIndexes().size());
+        Assert.assertTrue("GI for i missing its group index",
+                ais.getUserTable("test", "i").getGroupIndexes().contains(groupIndex)
+        );
+
+        Assert.assertEquals("group index rootmost", ais.getUserTable("test", "c"), groupIndex.rootMostTable());
+        Assert.assertEquals("group index leafmost", ais.getUserTable("test", "i"), groupIndex.leafMostTable());
+    }
+
+    @Test
+    public void testGroupIndexBuiltOutOfOrder()
+    {
+        final AISBuilder builder = new AISBuilder();
+        builder.userTable("test", "c");
+        builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
+
+        builder.userTable("test", "o");
+        builder.column("test", "o", "oid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "o", "cid", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "o", "date", 2, "int", 0L, 0L, false, false, null, null);
+        builder.joinTables("c/id/o/cid", "test", "c", "test", "o");
+        builder.joinColumns("c/id/o/cid", "test", "c", "id", "test", "o", "cid");
+
+        builder.userTable("test", "i");
+        builder.column("test", "i", "iid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "i", "oid", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "i", "sku", 2, "int", 0L, 0L, false, false, null, null);
+        builder.joinTables("o/oid/i/iid", "test", "o", "test", "i");
+        builder.joinColumns("o/oid/i/iid", "test", "o", "oid", "test", "i", "iid");
+
+        builder.basicSchemaIsComplete();
+        builder.createGroup("coi", "test", "_akiban_c");
+        builder.addJoinToGroup("coi", "c/id/o/cid", 0);
+        builder.addJoinToGroup("coi", "o/oid/i/iid", 0);
+        builder.groupIndex("coi", "name_date_sku", false);
+        builder.groupIndexColumn("coi", "name_date_sku", "test", "c",  "name", 0);
+        builder.groupIndexColumn("coi", "name_date_sku", "test", "i",  "sku", 1);
+        builder.groupIndexColumn("coi", "name_date_sku", "test", "o",  "date", 1);
+        builder.groupingIsComplete();
+
+        final AkibanInformationSchema ais = builder.akibanInformationSchema();
+        ais.checkIntegrity();
+        Assert.assertEquals(3, ais.getUserTables().size());
+        Assert.assertEquals(1, ais.getGroupTables().size());
+        Assert.assertEquals(1, ais.getGroups().size());
+
+        final Group group = ais.getGroup("coi");
+        Assert.assertEquals(1, group.getIndexes().size());
+        final Index index = group.getIndex("name_date_sku");
+        Assert.assertNotNull(index);
+        Assert.assertEquals(3, index.getColumns().size());
+
+        GroupIndex groupIndex = (GroupIndex) index;
+        Assert.assertEquals("group indexes for c", 1, ais.getUserTable("test", "c").getGroupIndexes().size());
+        Assert.assertTrue("GI for c missing its group index",
+                ais.getUserTable("test", "c").getGroupIndexes().contains(groupIndex)
+        );
+
+        Assert.assertEquals("group indexes for o", 1, ais.getUserTable("test", "o").getGroupIndexes().size());
+        Assert.assertTrue("GI for o missing its group index",
+                ais.getUserTable("test", "o").getGroupIndexes().contains(groupIndex)
+        );
+
+        Assert.assertEquals("group indexes for i", 1, ais.getUserTable("test", "i").getGroupIndexes().size());
+        Assert.assertTrue("GI for i missing its group index",
+                ais.getUserTable("test", "i").getGroupIndexes().contains(groupIndex)
+        );
+
+        Assert.assertEquals("group index rootmost", ais.getUserTable("test", "c"), groupIndex.rootMostTable());
+        Assert.assertEquals("group index leafmost", ais.getUserTable("test", "i"), groupIndex.leafMostTable());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void groupIndexOnUngroupedTable()
+    {
+        final AISBuilder builder = new AISBuilder();
+        try {
+            builder.userTable("test", "c");
+            builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
+            builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
+            builder.basicSchemaIsComplete();
+            builder.createGroup("coi", "test", "_akiban_c");
+            builder.groupIndex("coi", "name_date", false);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        builder.groupIndexColumn("coi", "name_date", "test", "c",  "name", 0);
+    }
+
+    @Test(expected = AISBuilder.NoSuchObjectException.class)
+    public void groupIndexMultiGroup()
+    {
+        final AISBuilder builder = new AISBuilder();
+        try {
+            builder.userTable("test", "c");
+            builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
+            builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
+            builder.userTable("test", "o");
+            builder.column("test", "o", "oid", 0, "int", 0L, 0L, false, false, null, null);
+            builder.column("test", "o", "cid", 1, "int", 0L, 0L, false, false, null, null);
+            builder.column("test", "o", "date", 2, "int", 0L, 0L, false, false, null, null);
+            builder.basicSchemaIsComplete();
+            builder.createGroup("coi1", "test", "_akiban_c");
+            builder.createGroup("coi2", "test", "_akiban_c");
+            builder.addTableToGroup("coi1", "test", "c");
+            builder.addTableToGroup("coi2", "test", "o");
+            builder.groupIndex("coi1", "name_date", false);
+            builder.groupIndexColumn("coi1", "name_date", "test", "c",  "name", 0);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        builder.groupIndexColumn("coi2", "name_date", "test", "o",  "date", 1);
+    }
+
+    @Test(expected = GroupIndex.GroupIndexCreationException.class)
+    public void groupIndexMultiBranch()
+    {
+        final AISBuilder builder = new AISBuilder();
+        try {
+            builder.userTable("test", "c");
+            builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
+            builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
+
+            builder.userTable("test", "o");
+            builder.column("test", "o", "oid", 0, "int", 0L, 0L, false, false, null, null);
+            builder.column("test", "o", "cid", 1, "int", 0L, 0L, false, false, null, null);
+            builder.column("test", "o", "date", 2, "int", 0L, 0L, false, false, null, null);
+            builder.joinTables("c/id/o/cid", "test", "c", "test", "o");
+            builder.joinColumns("c/id/o/cid", "test", "c", "id", "test", "o", "cid");
+
+            builder.userTable("test", "a");
+            builder.column("test", "a", "oid", 0, "int", 0L, 0L, false, false, null, null);
+            builder.column("test", "a", "cid", 1, "int", 0L, 0L, false, false, null, null);
+            builder.column("test", "a", "address", 2, "int", 0L, 0L, false, false, null, null);
+            builder.joinTables("c/id/a/cid", "test", "c", "test", "a");
+            builder.joinColumns("c/id/a/cid", "test", "c", "id", "test", "a", "cid");
+
+            builder.basicSchemaIsComplete();
+            builder.createGroup("coi", "test", "_akiban_c");
+            builder.addJoinToGroup("coi", "c/id/o/cid", 0);
+            builder.addJoinToGroup("coi", "c/id/a/cid", 0);
+            builder.groupIndex("coi", "name_date", false);
+            builder.groupIndexColumn("coi", "name_date", "test", "o",  "date", 0);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        builder.groupIndexColumn("coi", "name_date", "test", "a",  "address", 1);
     }
 }

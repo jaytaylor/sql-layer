@@ -84,7 +84,7 @@ public class GroupIndexIT extends ITBase {
         createGroupIndex(groupName, "name_d", "c.name, foo.d");
     }
 
-    @Test(expected=InvalidOperationException.class)
+    @Test(expected=GroupIndex.GroupIndexCreationException.class)
     public void branchingNotAllowed() throws InvalidOperationException {
         createTables();
         createTable("test", "a", "id int key, cid int, addr int, constraint __akiban foreign key(cid) references c(id)");
