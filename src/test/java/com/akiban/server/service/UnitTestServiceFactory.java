@@ -46,6 +46,7 @@ import javax.management.ObjectName;
  */
 public class UnitTestServiceFactory extends DefaultServiceFactory {
     private final static File TESTDIR = new File("/tmp/akserver-junit");
+    private final static String UNIT_TEST_PERSISTIT_MEMORY = "20M";
     private final MockJmxRegistryService jmxRegistryService = new MockJmxRegistryService();
     private final TestConfigService configService;
     private final MockNetworkService networkService;
@@ -191,8 +192,12 @@ public class UnitTestServiceFactory extends DefaultServiceFactory {
             Property.Key datapathKey = Property.parseKey("akserver.datapath");
             ret.put(datapathKey,
                     new Property(datapathKey, tmpDir.getAbsolutePath()));
-            Property.Key fixedKey = Property.parseKey("akserver.fixed");
-            ret.put(fixedKey, new Property(fixedKey, "true"));
+            final int bufferSize = Integer.parseInt(ret.get(
+                    Property.parseKey("persistit.buffersize")).getValue());
+            Property.Key memoryKey = Property.parseKey("persistit.buffer.memory."
+                    + bufferSize);
+            ret.put(memoryKey, new Property(memoryKey,
+                    UNIT_TEST_PERSISTIT_MEMORY));
             if (extraProperties != null) {
                 for (final Property property : extraProperties) {
                     ret.put(property.getKey(), property);

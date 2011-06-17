@@ -31,7 +31,6 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.server.AkServerUtil;
 import com.akiban.server.TableStatusCache;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManagerImpl;
@@ -63,23 +62,10 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
     private static final String BUFFER_SIZE_PROP_NAME = "buffersize";
 
-    private static final String BUFFER_MEMORY_PROP_NAME = "buffer.memory.";
-
-    private static final String BUFFER_MEMORY_PROP_VALUE = "256M,256G,64M,0.75";
-
     private static final String DEFAULT_DATAPATH = "/tmp/akiban_server";
-
-    private static final String FIXED_ALLOCATION_PROPERTY_NAME = "akserver.fixed";
 
     // Must be one of 1024, 2048, 4096, 8192, 16384:
     static final int DEFAULT_BUFFER_SIZE = 16384;
-
-    // Generally this setting is used only for unit tests and is
-    // overridden by memory allocation calculation. This
-    // is the value used when the property akserver.fixed=true
-    // is set.
-    //
-    static final String UNIT_TEST_MEMORY_PROPERTY_VALUE = "20M";
 
     static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
@@ -204,13 +190,6 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         properties.setProperty(DATAPATH_PROP_NAME, datapath);
         ensureDirectoryExists(datapath, false);
 
-        // Note - this is an akserver property, not a persistit property.
-        // Is used by unit tests to limit the size of buffer pool -
-        // for startup/shutdown speed.
-        //
-        final boolean isFixedAllocation = "true".equals(configService
-                .getProperty(FIXED_ALLOCATION_PROPERTY_NAME, "false"));
-
         // Get the configured buffer size:
         // Default is 16K. Can be overridden with
         //
@@ -221,23 +200,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
             properties.setProperty(BUFFER_SIZE_PROP_NAME,
                     String.valueOf(DEFAULT_BUFFER_SIZE));
         }
-        //
-        // Now compute the actual allocation of buffers
-        // of that size. The bufferCount method computes
-        // an allocation based on heap size.
-        //
-        final int bufferSize = Integer.parseInt(properties
-                .getProperty(BUFFER_SIZE_PROP_NAME));
-        final String bufferMemoryPropString = BUFFER_MEMORY_PROP_NAME
-                + bufferSize;
 
-        if (isFixedAllocation) {
-            properties.setProperty(bufferMemoryPropString,
-                    UNIT_TEST_MEMORY_PROPERTY_VALUE);
-        } else if (!properties.containsKey(bufferMemoryPropString)) {
-            properties.setProperty(bufferMemoryPropString,
-                    BUFFER_MEMORY_PROP_VALUE);
-        }
         return properties;
     }
 
