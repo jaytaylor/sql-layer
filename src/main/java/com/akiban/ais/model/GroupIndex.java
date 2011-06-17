@@ -40,13 +40,13 @@ public class GroupIndex extends Index
     @Override
     public UserTable leafMostTable() {
         assert ! tablesByDepth.isEmpty() : "no tables participate in this group index";
-        return tablesByDepth.firstEntry().getValue();
+        return tablesByDepth.lastEntry().getValue();
     }
 
     @Override
     public UserTable rootMostTable() {
         assert ! tablesByDepth.isEmpty() : "no tables participate in this group index";
-        return tablesByDepth.lastEntry().getValue();
+        return tablesByDepth.firstEntry().getValue();
     }
 
     @Override
@@ -62,11 +62,15 @@ public class GroupIndex extends Index
 
         // Add the table into our navigable map if needed. Confirm it's within the branch
         if (participatingTables.add(indexTable)) {
-            int indexTableDepth = indexTable.getDepth();
+            Integer indexTableDepth = indexTable.getDepth();
+            if (indexTableDepth == null) {
+                throw new IllegalArgumentException("index table not in group: " + indexTable);
+            }
             Map.Entry<Integer,UserTable> rootwardEntry = tablesByDepth.floorEntry(indexTableDepth);
             Map.Entry<Integer,UserTable> leafwardEntry = tablesByDepth.ceilingEntry(indexTableDepth);
             checkIndexTableInBranch(indexColumn, indexTable, indexTableDepth, rootwardEntry, true);
             checkIndexTableInBranch(indexColumn, indexTable, indexTableDepth, leafwardEntry, false);
+            tablesByDepth.put(indexTableDepth, indexTable);
         }
     }
 

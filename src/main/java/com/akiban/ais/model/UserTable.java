@@ -150,11 +150,12 @@ public class UserTable extends Table
         if (getGroup() == null || !getGroup().equals(other.getGroup())) {
             return false;
         }
-        while (other != null) {
-            if (this.equals(other)) {
+        UserTable possibleDescendant = this;
+        while (possibleDescendant != null) {
+            if (possibleDescendant.equals(other)) {
                 return true;
             }
-            other = other.parentTable();
+            possibleDescendant = possibleDescendant.parentTable();
         }
         return false;
     }
