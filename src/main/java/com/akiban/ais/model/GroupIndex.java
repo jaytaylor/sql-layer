@@ -38,13 +38,13 @@ public class GroupIndex extends Index
     }
 
     @Override
-    public Table leafMostTable() {
+    public UserTable leafMostTable() {
         assert ! tablesByDepth.isEmpty() : "no tables participate in this group index";
         return tablesByDepth.firstEntry().getValue();
     }
 
     @Override
-    public Table rootMostTable() {
+    public UserTable rootMostTable() {
         assert ! tablesByDepth.isEmpty() : "no tables participate in this group index";
         return tablesByDepth.lastEntry().getValue();
     }
@@ -117,7 +117,7 @@ public class GroupIndex extends Index
     @Override
     public HKey hKey()
     {
-        throw new UnsupportedOperationException("Define hkey() on GroupIndex");
+        return leafMostTable().hKey();
     }
     
     @SuppressWarnings("unused")
