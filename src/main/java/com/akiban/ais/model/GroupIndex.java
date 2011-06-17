@@ -80,6 +80,11 @@ public class GroupIndex extends Index
         if (entry == null) {
             return;
         }
+        if (entry.getKey().intValue() == indexTableDepth) {
+            throw new IllegalArgumentException(
+                    indexTable + " and " + entry.getValue() + " must be multibranch; both have depth " + entry.getKey()
+            );
+        }
         UserTable entryTable = entry.getValue();
 
         final UserTable rootward;
@@ -94,8 +99,7 @@ public class GroupIndex extends Index
             leafward = entryTable;
         }
 
-        if (    (entry.getKey().intValue() == indexTableDepth)
-                || !leafward.isDescendantOf(rootward))
+        if (!leafward.isDescendantOf(rootward))
         {
             throw new IllegalArgumentException(indexColumn + " is not within this group index's branch");
         }
