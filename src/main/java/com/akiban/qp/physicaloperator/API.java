@@ -18,6 +18,7 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -80,12 +81,20 @@ public class API
                                                      Limit limit,
                                                      IndexKeyRange indexKeyRange)
     {
-        return new GroupScan_Default(groupTable, limit, indexKeyRange);
+        return new GroupScan_Default(new GroupScan_Default.RangedGroupCursorCreator(groupTable, indexKeyRange), limit);
     }
 
     public static PhysicalOperator groupScan_Default(GroupTable groupTable, Limit limit)
     {
-        return new GroupScan_Default(groupTable, limit, null);
+        return new GroupScan_Default(new GroupScan_Default.FullGroupCursorCreator(groupTable), limit);
+    }
+
+    public static PhysicalOperator groupScan_Default(GroupTable groupTable,
+                                                     Limit limit,
+                                                     HKey hkey,
+                                                     boolean deep)
+    {
+        return new GroupScan_Default(new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hkey, deep), limit);
     }
 
     public static PhysicalOperator branchLookup_Default(PhysicalOperator inputOperator,
