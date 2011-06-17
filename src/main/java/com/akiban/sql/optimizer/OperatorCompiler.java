@@ -314,13 +314,8 @@ public class OperatorCompiler
         // containing the condition).
 
         int nbranches = squery.getTables().colorBranches();
-        FlattenState[] fls = new FlattenState[nbranches];
-
-        Flattener fl = new Flattener(resultOperator, (nbranches > 1));
-        for (int i = 0; i < nbranches; i++)
-            fls[i] = fl.flatten(squery.getJoins(), i);
-        if (nbranches > 1)
-            Arrays.sort(fls, fl);
+        Flattener fl = new Flattener(resultOperator, nbranches);
+        FlattenState[] fls = fl.flatten(squery.getJoins());
         resultOperator = fl.getResultOperator();
 
         FlattenState fll = fls[0];
@@ -741,15 +736,24 @@ public class OperatorCompiler
     // single return value for above per-branch result.
     class Flattener implements Comparator<FlattenState> {
         private PhysicalOperator resultOperator;
-        private boolean needTables;
+        private int nbranches;
 
-        public Flattener(PhysicalOperator resultOperator, boolean needTables) {
+        public Flattener(PhysicalOperator resultOperator, int nbranches) {
             this.resultOperator = resultOperator;
-            this.needTables = needTables;
+            this.nbranches = nbranches;
         }
         
         public PhysicalOperator getResultOperator() {
             return resultOperator;
+        }
+
+        public FlattenState[] flatten(BaseJoinNode join) {
+            FlattenState[] result = new FlattenState[nbranches];
+            for (int i = 0; i < nbranches; i++)
+                result[i] = flatten(join, i);
+            if (nbranches > 1)
+                Arrays.sort(result, this);
+            return result;
         }
 
         public FlattenState flatten(BaseJoinNode join, int branch) {
@@ -760,7 +764,7 @@ public class OperatorCompiler
                 Map<TableNode,Integer> fieldOffsets = new HashMap<TableNode,Integer>();
                 fieldOffsets.put(table, 0);
                 List<TableNode> tables = null;
-                if (needTables) {
+                if (nbranches > 1) {
                     tables = new ArrayList<TableNode>();
                     tables.add(table);
                 }
@@ -779,10 +783,18 @@ public class OperatorCompiler
                 else if (fright == null) {
                     return fleft;
                 }
+                // Keep the parent side in multi-branch until the last one.
+                // TODO: May keep a few too many when the branch has
+                // multiple steps, (they do get extracted out).
+                EnumSet<FlattenOption> keep = 
+                    ((nbranches > 1) && (branch < nbranches - 1)) ?
+                    EnumSet.of(FlattenOption.KEEP_PARENT) :
+                    EnumSet.noneOf(FlattenOption.class);
                 resultOperator = flatten_HKeyOrdered(resultOperator,
                                                      fleft.getResultRowType(),
                                                      fright.getResultRowType(),
-                                                     jjoin.getJoinType());
+                                                     jjoin.getJoinType(),
+                                                     keep);
                 fleft.setResultRowType(resultOperator.rowType());
                 fleft.mergeTables(fright);
                 return fleft;
