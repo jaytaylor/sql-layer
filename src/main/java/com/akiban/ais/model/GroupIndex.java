@@ -61,7 +61,7 @@ public class GroupIndex extends Index
         GroupIndexHelper.actOnGroupIndexTables(this, indexColumn, GroupIndexHelper.ADD);
 
         // Add the table into our navigable map if needed. Confirm it's within the branch
-        if (participatingTables.add(indexTable)) {
+        if (!tablesByDepth.values().contains(indexTable)) {
             Integer indexTableDepth = indexTable.getDepth();
             if (indexTableDepth == null) {
                 throw new GroupIndexCreationException("index table not in group: " + indexTable);
@@ -136,7 +136,6 @@ public class GroupIndex extends Index
     }
 
     private Group group;
-    private final Set<UserTable> participatingTables = new HashSet<UserTable>();
     private final NavigableMap<Integer,UserTable> tablesByDepth = new TreeMap<Integer, UserTable>();
 
     // nested classes
