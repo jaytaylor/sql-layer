@@ -15,22 +15,23 @@
 
 package com.akiban.sql.aisddl;
 
+import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.ColumnDefinitionNode;
 import com.akiban.sql.parser.ConstraintDefinitionNode;
 import com.akiban.sql.parser.CreateTableNode;
+import com.akiban.sql.parser.DropTableNode;
 import com.akiban.sql.parser.TableElementNode;
-import com.akiban.sql.parser.TableName;
 
 import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
 import com.akiban.sql.types.TypeId.FormatIds;
 
 import com.akiban.sql.StandardException;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Type;
+import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.TableName;
 
 /** DDL operations on Tables */
 public class TableDDL
@@ -38,29 +39,43 @@ public class TableDDL
     private TableDDL() {
     }
 
-    public static void createTable(AkibanInformationSchema ais,
+    public static void dropTable (DDLFunctions ddlFunctions,
+                                  Session session, 
+                                  String defaultSchemaName,
+                                  DropTableNode dropTable)
+            throws StandardException {
+        com.akiban.sql.parser.TableName parserName = dropTable.getObjectName();
+        
+        String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
+        TableName tableName = TableName.create(schemaName, parserName.getTableName());
+        
+        try {
+            ddlFunctions.dropTable(session, tableName);
+        } catch (InvalidOperationException ex) {
+            throw new StandardException (ex.getMessage());
+        }
+    }
+
+    public static void createTable(DDLFunctions ddlFunctions,
+                                   Session session,
                                    String defaultSchemaName,
                                    CreateTableNode createTable) 
             throws StandardException {
         if (createTable.getQueryExpression() != null)
             throw new StandardException("Cannot CREATE TABLE from SELECT yet.");
 
-        TableName tableName = createTable.getObjectName();
-        String schemaName = tableName.getSchemaName();
-        if (schemaName == null)
-            schemaName = defaultSchemaName;
-        UserTable table = UserTable.create(ais, schemaName, 
-                                           // TODO: Akiban DB is case sensitive.
-                                           tableName.getTableName().toLowerCase(),
-                                           // TODO: tableIdGenerator++ from where?
-                                           -1);
+        com.akiban.sql.parser.TableName parserName = createTable.getObjectName();
+        String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
+        String tableName = parserName.getTableName();
+        
+        AISBuilder builder = new AISBuilder();
+        
+        builder.userTable(schemaName, tableName);
         int colpos = 0;
         for (TableElementNode tableElement : createTable.getTableElementList()) {
             if (tableElement instanceof ColumnDefinitionNode) {
                 ColumnDefinitionNode cdn = (ColumnDefinitionNode)tableElement;
-                // TODO: Some abstraction needed here.
                 DataTypeDescriptor type = cdn.getType();
-                Type aisType = ais.getType(type.getTypeName());
                 Long typeParameter1 = null, typeParameter2 = null;
                 switch (type.getTypeId().getTypeFormatId()) {
                 case FormatIds.CHAR_TYPE_ID:
@@ -74,19 +89,31 @@ public class TableDDL
                     typeParameter2 = (long)type.getScale();
                     break;
                 }
-                Column column = Column.create(table, cdn.getColumnName(), 
-                                              colpos++, aisType);
-                column.setTypeParameter1(typeParameter1);
-                column.setTypeParameter2(typeParameter2);
-                column.setNullable(type.isNullable());
-                column.setAutoIncrement(cdn.isAutoincrementColumn());
+                
+                builder.column(schemaName, tableName, 
+                        cdn.getColumnName(), 
+                        Integer.valueOf(colpos++), 
+                        type.getTypeName(), 
+                        typeParameter1, typeParameter2, 
+                        type.isNullable(), 
+                        cdn.isAutoincrementColumn(),
+                        null, null);
+                if (cdn.isAutoincrementColumn()) {
+                    builder.userTableInitialAutoIncrement(schemaName, tableName, 
+                            cdn.getAutoincrementStart());
+                }
             }
             else if (tableElement instanceof ConstraintDefinitionNode) {
                 ConstraintDefinitionNode cdn = (ConstraintDefinitionNode)tableElement;
             }
         }
-
+        builder.basicSchemaIsComplete();
+        UserTable table = builder.akibanInformationSchema().getUserTable(schemaName, tableName);
         
+        try {
+            ddlFunctions.createTable(session, table);
+        } catch (InvalidOperationException ex) {
+            throw new StandardException (ex.getMessage());
+        }
     }
-
 }

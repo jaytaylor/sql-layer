@@ -84,7 +84,7 @@ public class SchemaDDLIT {
         
     }
 
-    @Test
+    @Test(expected=com.akiban.sql.StandardException.class)
     public void dropSchemaUsed() throws Exception
     {
         String sql = "DROP SCHEMA S RESTRICT";
@@ -95,14 +95,9 @@ public class SchemaDDLIT {
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof DropSchemaNode);
         
-        try {
-            SchemaDDL.dropSchema(ais, null, (DropSchemaNode)stmt);
-            fail();
-        } catch (StandardException ex) {
-            ; // do nothing, exception expected. 
-        }
-        
+        SchemaDDL.dropSchema(ais, null, (DropSchemaNode)stmt);
     }
+
     protected SQLParser parser;
 
     private AkibanInformationSchema factory () throws Exception

@@ -15,6 +15,8 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.service.session.Session;
 import com.akiban.sql.aisddl.*;
 
 import com.akiban.sql.StandardException;
@@ -22,10 +24,10 @@ import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.CreateIndexNode;
 import com.akiban.sql.parser.CreateTableNode;
 import com.akiban.sql.parser.CreateSchemaNode;
-import com.akiban.sql.parser.CreateViewNode;
-import com.akiban.sql.parser.DropViewNode;
+import com.akiban.sql.parser.DropTableNode;
 import com.akiban.sql.parser.DropSchemaNode;
 import com.akiban.sql.parser.DDLStatementNode;
+import com.akiban.sql.parser.DropViewNode;
 import com.akiban.sql.parser.NodeTypes;
 
 import com.akiban.sql.optimizer.AISBinder;
@@ -68,6 +70,8 @@ public class PostgresDDLStatement implements PostgresStatement
             throws IOException, StandardException {
         AkibanInformationSchema ais = server.getAIS();
         String schema = server.getDefaultSchemaName();
+        DDLFunctions ddlFunctions = server.getServiceManager().getDXL().ddlFunctions();
+        Session session = server.getSession();
 
         switch (ddl.getNodeType()) {
         case NodeTypes.CREATE_SCHEMA_NODE:
@@ -77,7 +81,10 @@ public class PostgresDDLStatement implements PostgresStatement
             SchemaDDL.dropSchema(ais, schema, (DropSchemaNode)ddl);
             break;
         case NodeTypes.CREATE_TABLE_NODE:
-            TableDDL.createTable(ais, schema, (CreateTableNode)ddl);
+            TableDDL.createTable(ddlFunctions, session, schema, (CreateTableNode)ddl);
+            break;
+        case NodeTypes.DROP_TABLE_NODE:
+            TableDDL.dropTable(ddlFunctions, session, schema, (DropTableNode)ddl);
             break;
         case NodeTypes.CREATE_VIEW_NODE:
             // TODO: Need to store persistently in AIS (or its extension).
