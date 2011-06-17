@@ -110,6 +110,9 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         }
     }
 
+    public abstract Table leafMostTable();
+    public abstract Table rootMostTable();
+
     public boolean isUnique()
     {
         return isUnique;

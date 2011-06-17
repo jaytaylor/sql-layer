@@ -146,6 +146,19 @@ public class UserTable extends Table
         return index;
     }
 
+    public boolean isDescendantOf(UserTable other) {
+        if (getGroup() == null || !getGroup().equals(other.getGroup())) {
+            return false;
+        }
+        while (other != null) {
+            if (this.equals(other)) {
+                return true;
+            }
+            other = other.parentTable();
+        }
+        return false;
+    }
+
     public Index getIndexIncludingInternal(String indexName)
     {
         return super.getIndex(indexName);

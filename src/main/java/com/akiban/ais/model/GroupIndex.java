@@ -15,7 +15,11 @@
 
 package com.akiban.ais.model;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Set;
+import java.util.TreeMap;
 
 public class GroupIndex extends Index
 {
@@ -34,9 +38,62 @@ public class GroupIndex extends Index
     }
 
     @Override
+    public Table leafMostTable() {
+        assert ! tablesByDepth.isEmpty() : "no tables participate in this group index";
+        return tablesByDepth.firstEntry().getValue();
+    }
+
+    @Override
+    public Table rootMostTable() {
+        assert ! tablesByDepth.isEmpty() : "no tables participate in this group index";
+        return tablesByDepth.lastEntry().getValue();
+    }
+
+    @Override
     public void addColumn(IndexColumn indexColumn) {
+        Table indexGenericTable = indexColumn.getColumn().getTable();
+        if (!(indexGenericTable instanceof UserTable)) {
+            throw new IllegalArgumentException("index column must be of user table: " + indexColumn);
+        }
+        UserTable indexTable = (UserTable) indexGenericTable;
+
         super.addColumn(indexColumn);
         GroupIndexHelper.actOnGroupIndexTables(this, indexColumn, GroupIndexHelper.ADD);
+
+        // Add the table into our navigable map if needed. Confirm it's within the branch
+        if (participatingTables.add(indexTable)) {
+            int indexTableDepth = indexTable.getDepth();
+            Map.Entry<Integer,UserTable> rootwardEntry = tablesByDepth.floorEntry(indexTableDepth);
+            Map.Entry<Integer,UserTable> leafwardEntry = tablesByDepth.ceilingEntry(indexTableDepth);
+            checkIndexTableInBranch(indexColumn, indexTable, indexTableDepth, rootwardEntry, true);
+            checkIndexTableInBranch(indexColumn, indexTable, indexTableDepth, leafwardEntry, false);
+        }
+    }
+
+    private void checkIndexTableInBranch(IndexColumn indexColumn, UserTable indexTable, int indexTableDepth,
+            Map.Entry<Integer, UserTable> entry, boolean entryIsRootward)
+    {
+        if (entry == null) {
+            return;
+        }
+        assert entry.getKey() < indexTableDepth : String.format("failed %d < %d", entry.getKey(), indexTableDepth);
+        UserTable entryTable = entry.getValue();
+
+        final UserTable rootward;
+        final UserTable leafward;
+        if (entryIsRootward) {
+            rootward = entryTable;
+            leafward = indexTable;
+        } else {
+            rootward = indexTable;
+            leafward = entryTable;
+        }
+
+        if (    (entry.getKey().intValue() == indexTableDepth)
+                || !leafward.isDescendantOf(rootward))
+        {
+            throw new IllegalArgumentException(indexColumn + " is not within this group index's branch");
+        }
     }
 
     @Override
@@ -66,8 +123,10 @@ public class GroupIndex extends Index
     @SuppressWarnings("unused")
     private GroupIndex()
     {
-        // GWT
+
     }
 
     private Group group;
+    private final Set<UserTable> participatingTables = new HashSet<UserTable>();
+    private final NavigableMap<Integer,UserTable> tablesByDepth = new TreeMap<Integer, UserTable>();
 }
