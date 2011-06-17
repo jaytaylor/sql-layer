@@ -15,10 +15,8 @@
 
 package com.akiban.ais.model;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.NavigableMap;
-import java.util.Set;
 import java.util.TreeMap;
 
 public class GroupIndex extends Index
