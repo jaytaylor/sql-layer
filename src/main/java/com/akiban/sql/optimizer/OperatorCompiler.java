@@ -813,7 +813,7 @@ public class OperatorCompiler
                 TableNode t1 = ts1.get(i);
                 TableNode t2 = ts2.get(i);
                 if (t1 != t2) {
-                    return t2.getOrdinal() - t1.getOrdinal();
+                    return t1.getOrdinal() - t2.getOrdinal();
                 }
             }
         }
