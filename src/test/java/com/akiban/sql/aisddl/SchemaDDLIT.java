@@ -20,12 +20,9 @@ import static junit.framework.Assert.fail;
 import org.junit.Test;
 import org.junit.Before;
 
-import com.akiban.ais.ddl.SchemaDef;
-import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
-import com.akiban.server.SchemaFactory;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.CreateSchemaNode;
