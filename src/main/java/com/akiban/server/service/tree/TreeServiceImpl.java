@@ -170,14 +170,6 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         final Properties properties = configService.getModuleConfiguration(
                 PERSISTIT_MODULE_NAME).getProperties();
         //
-        // This section modifies the properties gotten from the
-        // default configuration plus akserver properties. It
-        //
-        // (a) copies akserver.datapath to datapath
-        // (b) sets the buffersize property to default value if null.
-        // (c) computes a buffer memory value, or uses default if
-        // the akiserver.fixed flag is set. (Used by unit tests.)
-        //
         // Copies the akserver.datapath property to the Persistit properties
         // set. This allows Persistit to perform substitution of ${datapath}
         // with the server-specified home directory.
