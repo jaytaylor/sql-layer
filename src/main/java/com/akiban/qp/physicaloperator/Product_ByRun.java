@@ -33,7 +33,7 @@ class Product_ByRun extends PhysicalOperator
     @Override
     public String toString()
     {
-        return productType.toString();
+        return String.format("%s(%s x %s)", getClass().getSimpleName(), leftType, rightType);
     }
 
     // PhysicalOperator interface
@@ -188,17 +188,30 @@ class Product_ByRun extends PhysicalOperator
                     }
                     break;
                 case LEFT:
-                case BETWEEN:
                     if (rowType == rightType) {
+                        runState = RunState.RIGHT;
+                    } else if (rowType != leftType) {
+                        runState = RunState.BETWEEN;
+                    }
+                    break;
+                case BETWEEN:
+                    if (rowType == leftType) {
+                        throw new IncompatibleRowException(String.format("Unexpected appearance of %s", row));
+                    } else if (rowType == rightType) {
                         runState = RunState.RIGHT;
                     }
                     break;
                 case RIGHT:
-                    if (rowType != rightType) {
+                    if (rowType == leftType) {
+                        throw new IncompatibleRowException(String.format("Unexpected appearance of %s", row));
+                    } else if (rowType != rightType) {
                         runState = RunState.AFTER_RIGHT;
                     }
                     break;
                 case AFTER_RIGHT:
+                    if (rowType == leftType || rowType == rightType) {
+                        throw new IncompatibleRowException(String.format("Unexpected appearance of %s", row));
+                    }
                     break;
             }
         }
