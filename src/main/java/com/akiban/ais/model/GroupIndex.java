@@ -80,15 +80,16 @@ public class GroupIndex extends Index
         if (entry == null) {
             return;
         }
-        assert entry.getKey() < indexTableDepth : String.format("failed %d < %d", entry.getKey(), indexTableDepth);
         UserTable entryTable = entry.getValue();
 
         final UserTable rootward;
         final UserTable leafward;
         if (entryIsRootward) {
+            assert entry.getKey() < indexTableDepth : String.format("failed %d < %d", entry.getKey(), indexTableDepth);
             rootward = entryTable;
             leafward = indexTable;
         } else {
+            assert entry.getKey() > indexTableDepth : String.format("failed %d < %d", entry.getKey(), indexTableDepth);
             rootward = indexTable;
             leafward = entryTable;
         }
