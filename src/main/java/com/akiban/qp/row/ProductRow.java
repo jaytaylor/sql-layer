@@ -53,7 +53,7 @@ public class ProductRow extends AbstractRow
     @Override
     public HKey hKey()
     {
-        return right.get().hKey();
+        return null;
     }
 
     // ProductRow interface
