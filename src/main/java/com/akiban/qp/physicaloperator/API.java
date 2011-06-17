@@ -91,10 +91,13 @@ public class API
 
     public static PhysicalOperator groupScan_Default(GroupTable groupTable,
                                                      Limit limit,
-                                                     HKey hkey,
+                                                     Expression hkeyExpression,
                                                      boolean deep)
     {
-        return new GroupScan_Default(new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hkey, deep), limit);
+        return new GroupScan_Default(
+                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hkeyExpression, deep),
+                limit
+        );
     }
 
     public static PhysicalOperator branchLookup_Default(PhysicalOperator inputOperator,
@@ -123,7 +126,7 @@ public class API
     public static PhysicalOperator ancestorLookup_Default(PhysicalOperator inputOperator,
                                                           GroupTable groupTable,
                                                           RowType rowType,
-                                                          List<? extends RowType> ancestorTypes,
+                                                          Collection<? extends RowType> ancestorTypes,
                                                           boolean keepInput)
     {
         return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, keepInput);

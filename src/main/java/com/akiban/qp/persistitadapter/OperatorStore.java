@@ -26,15 +26,18 @@ import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.API;
+import com.akiban.qp.physicaloperator.ArrayBindings;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.CursorUpdateException;
+import com.akiban.qp.physicaloperator.NoLimit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.physicaloperator.UpdateFunction;
 import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
@@ -51,14 +54,18 @@ import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
+import com.persistit.Exchange;
 import com.persistit.Transaction;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import static com.akiban.qp.physicaloperator.API.ancestorLookup_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
 
 public final class OperatorStore extends DelegatingStore<PersistitStore> {
+    private static final int HKEY_BINDING_POSITION = 0;
 
     // Store interface
 
@@ -109,19 +116,37 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         super.writeRow(session, rowData);
         AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
+
         UserTable userTable = ais.getUserTable(rowData.getRowDefId());
-        for (GroupIndex groupIndex : userTable.getGroupIndexes()) {
-            PhysicalOperator plan = groupIndexCreationPlan(groupIndex);
-            Cursor cursor = API.cursor(plan, adapter);
-            cursor.open(groupIndexCreationBindings(groupIndex, rowData));
-            try {
-                while (cursor.next()) {
-                    Row row = cursor.currentRow();
-                    insertIndex(groupIndex, row);
+
+        Exchange hEx = adapter.takeExchange(userTable.getGroup().getGroupTable());
+        try {
+            getPersistitStore().constructHKey(session, hEx, (RowDef) userTable.rowDef(), rowData, true);
+            PersistitHKey persistitHKey = new PersistitHKey(adapter, userTable.hKey());
+            persistitHKey.copyFrom(hEx.getKey());
+
+            ArrayBindings bindings = new ArrayBindings(1);
+            bindings.set(HKEY_BINDING_POSITION, persistitHKey);
+
+            for (GroupIndex groupIndex : userTable.getGroupIndexes()) {
+                PhysicalOperator plan = groupIndexCreationPlan(
+                        adapter.schema(),
+                        groupIndex,
+                        adapter.schema().userTableRowType(userTable)
+                );
+                Cursor cursor = API.cursor(plan, adapter);
+                cursor.open(bindings);
+                try {
+                    while (cursor.next()) {
+                        Row row = cursor.currentRow();
+                        insertIndex(groupIndex, row);
+                    }
+                } finally {
+                    cursor.close();
                 }
-            } finally {
-                cursor.close();
             }
+        } finally {
+            adapter.returnExchange(hEx);
         }
     }
 
@@ -137,20 +162,43 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // private methods
 
-    private PhysicalOperator groupIndexCreationPlan(GroupIndex groupIndex) {
-        // TODO there is caching to be done!
-        throw new UnsupportedOperationException();
-    }
-
-    private Bindings groupIndexCreationBindings(GroupIndex groupIndex, RowData rowData) {
-        throw new UnsupportedOperationException();
-    }
-
     private void insertIndex(GroupIndex groupIndex, Row flattenedRow) {
         throw new UnsupportedOperationException();
     }
 
     // private static methods
+
+    static PhysicalOperator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex, RowType rowType) {
+        List<UserTableRowType> branchTables = branchTablesRootToLeaf(schema, groupIndex);
+        PhysicalOperator plan = API.groupScan_Default(
+                groupIndex.getGroup().getGroupTable(),
+                NoLimit.instance(),
+                com.akiban.qp.expression.API.variable(HKEY_BINDING_POSITION),
+                true
+        );
+        plan = API.ancestorLookup_Default(
+                plan,
+                groupIndex.getGroup().getGroupTable(),
+                rowType,
+                branchTables,
+                true
+        );
+        for (RowType branchRowType : branchTables) {
+            plan = API.flatten_HKeyOrdered(plan, plan.rowType(), branchRowType, API.JoinType.INNER_JOIN);
+        }
+        return plan;
+    }
+
+    private static List<UserTableRowType> branchTablesRootToLeaf(Schema schema, GroupIndex groupIndex) {
+        List<UserTableRowType> tables = new ArrayList<UserTableRowType>();
+        UserTable rootmost = groupIndex.rootMostTable();
+        for (UserTable table = groupIndex.leafMostTable(); !table.equals(rootmost); table = table.parentTable()) {
+            tables.add(schema.userTableRowType(table));
+        }
+        tables.add(schema.userTableRowType(rootmost));
+        Collections.reverse(tables);
+        return tables;
+    }
 
     private static void runCursor(RowData oldRowData, RowDef rowDef, UpdatePlannable plannable, PersistitAdapter adapter)
             throws DuplicateKeyException, NoSuchRowException

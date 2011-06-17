@@ -16,6 +16,7 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
@@ -106,7 +107,7 @@ class GroupScan_Default extends PhysicalOperator
     }
 
     static interface GroupCursorCreator {
-        GroupCursor cursor(StoreAdapter adapter);
+        Cursor cursor(StoreAdapter adapter);
         GroupTable groupTable();
     }
 
@@ -143,7 +144,7 @@ class GroupScan_Default extends PhysicalOperator
         // GroupCursorCreator interface
 
         @Override
-        public GroupCursor cursor(StoreAdapter adapter) {
+        public Cursor cursor(StoreAdapter adapter) {
             return adapter.newGroupCursor(groupTable());
         }
 
@@ -166,7 +167,7 @@ class GroupScan_Default extends PhysicalOperator
         // GroupCursorCreator interface
 
         @Override
-        public GroupCursor cursor(StoreAdapter adapter) {
+        public Cursor cursor(StoreAdapter adapter) {
             return adapter.newGroupCursor(groupTable(), indexKeyRange);
         }
 
@@ -196,17 +197,15 @@ class GroupScan_Default extends PhysicalOperator
         // GroupCursorCreator interface
 
         @Override
-        public GroupCursor cursor(StoreAdapter adapter) {
-            GroupCursor cursor = adapter.newGroupCursor(groupTable());
-            cursor.rebind(hKey, deep);
-            return cursor;
+        public Cursor cursor(StoreAdapter adapter) {
+            return new HKeyBoundCursor(adapter.newGroupCursor(groupTable()), hKeyExpression, deep);
         }
 
         // PositionalGroupCursorCreator interface
 
-        PositionalGroupCursorCreator(GroupTable groupTable, HKey hKey, boolean deep) {
+        PositionalGroupCursorCreator(GroupTable groupTable, Expression hKeyExpression, boolean deep) {
             super(groupTable);
-            this.hKey = hKey;
+            this.hKeyExpression = hKeyExpression;
             this.deep = deep;
         }
 
@@ -214,12 +213,40 @@ class GroupScan_Default extends PhysicalOperator
 
         @Override
         public String describeRange() {
-            return (deep ? "shallow scan at " : "deep scan at ") + hKey;
+            return (deep ? "shallow scan at " : "deep scan at ") + hKeyExpression;
         }
 
         // object state
 
-        private final HKey hKey;
+        private final Expression hKeyExpression;
+        private final boolean deep;
+    }
+
+    private static class HKeyBoundCursor extends ChainedCursor {
+
+        @Override
+        public void open(Bindings bindings) {
+            Object evaluated = expression.evaluate(null, bindings);
+            if (! (evaluated instanceof HKey)) {
+                throw new RuntimeException("binding failed; expression didn't evaluate to HKey: "
+                        + expression
+                        + " with bindings " + bindings
+                );
+            }
+            HKey hKey = (HKey)evaluated;
+            input.open(bindings);
+            input.rebind(hKey, deep);
+        }
+
+        HKeyBoundCursor(GroupCursor input, Expression hkeyExpression, boolean deep) {
+            super(input);
+            this.input = input;
+            this.expression = hkeyExpression;
+            this.deep = deep;
+        }
+
+        private final GroupCursor input;
+        private final Expression expression;
         private final boolean deep;
     }
 }
