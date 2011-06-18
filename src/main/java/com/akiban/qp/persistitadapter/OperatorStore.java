@@ -17,7 +17,7 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.message.ErrorCode;
 import com.akiban.qp.exec.UpdatePlannable;
@@ -42,6 +42,7 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.NoSuchRowException;
+import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.service.ServiceManagerImpl;
@@ -68,21 +69,22 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), persistitStore, session);
         Schema schema = adapter.schema();
 
-        PersistitGroupRow oldRow = PersistitGroupRow.newPersistitGroupRow(adapter, oldRowData);
         RowDef rowDef = persistitStore.getRowDefCache().rowDef(oldRowData.getRowDefId());
         UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);
 
         UserTable userTable = ais.getUserTable(oldRowData.getRowDefId());
         GroupTable groupTable = userTable.getGroup().getGroupTable();
-        IndexBound bound = new IndexBound(oldRow, ConstantColumnSelector.ALL_ON);
-        IndexKeyRange range = new IndexKeyRange(bound, true, bound, true);
 
-        PhysicalOperator scanOp;
-        Index index = userTable.getPrimaryKeyIncludingInternal().getIndex();
+        TableIndex index = userTable.getPrimaryKeyIncludingInternal().getIndex();
         assert index != null : userTable;
         UserTableRowType tableType = schema.userTableRowType(userTable);
         IndexRowType indexType = tableType.indexRowType(index);
+        IndexBound bound = new IndexBound(new NewRowBackedIndexRow(tableType, new LegacyRowWrapper(oldRowData), index),
+                                          ConstantColumnSelector.ALL_ON);
+        IndexKeyRange range = new IndexKeyRange(bound, true, bound, true);
+
         PhysicalOperator indexScan = indexScan_Default(indexType, false, range);
+        PhysicalOperator scanOp;
         scanOp = ancestorLookup_Default(indexScan, groupTable, indexType, Collections.singletonList(tableType), false);
 
         // MVCC will render this useless, but for now, a limit of 1 ensures we won't see the row we just updated,
