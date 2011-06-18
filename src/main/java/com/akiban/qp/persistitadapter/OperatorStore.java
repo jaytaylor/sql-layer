@@ -168,25 +168,55 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // private static methods
 
-    static PhysicalOperator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex, RowType rowType) {
+    static PhysicalOperator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex, UserTableRowType rowType) {
         List<UserTableRowType> branchTables = branchTablesRootToLeaf(schema, groupIndex);
+        if (branchTables.isEmpty()) {
+            throw new RuntimeException("group index has empty branch: " + groupIndex);
+        }
+
+        boolean singleTableGI = branchTables.size() == 1;
         PhysicalOperator plan = API.groupScan_Default(
                 groupIndex.getGroup().getGroupTable(),
                 NoLimit.instance(),
                 com.akiban.qp.expression.API.variable(HKEY_BINDING_POSITION),
-                true
+                ! singleTableGI
         );
-        plan = API.ancestorLookup_Default(
-                plan,
-                groupIndex.getGroup().getGroupTable(),
-                rowType,
-                branchTables,
-                true
-        );
+        if (singleTableGI) {
+            return plan;
+        }
+
+        UserTable rowTypeTable = rowType.userTable();
+        if (!branchTables.contains(rowType)) {
+            throw new RuntimeException(rowType + " not in branch for " + groupIndex + ": " + branchTables);
+        }
+
+        if (!rowTypeTable.equals(branchTables.get(0).userTable())) {
+            plan = API.ancestorLookup_Default(
+                    plan,
+                    groupIndex.getGroup().getGroupTable(),
+                    rowType,
+                    ancestors(rowType, branchTables),
+                    true
+            );
+        }
+        
+        RowType planRowType = branchTables.get( branchTables.size() - 1 );
         for (RowType branchRowType : branchTables) {
-            plan = API.flatten_HKeyOrdered(plan, plan.rowType(), branchRowType, API.JoinType.INNER_JOIN);
+            plan = API.flatten_HKeyOrdered(plan, planRowType, branchRowType, API.JoinType.INNER_JOIN);
+            planRowType = plan.rowType();
         }
         return plan;
+    }
+
+    private static List<RowType> ancestors(RowType rowType, List<? extends RowType> branchTables) {
+        List<RowType> ancestors = new ArrayList<RowType>();
+        for(RowType ancestor : branchTables) {
+            if (ancestor.equals(rowType)) {
+                return ancestors;
+            }
+            ancestors.add(ancestor);
+        }
+        throw new RuntimeException(rowType + "not found in " + branchTables);
     }
 
     private static List<UserTableRowType> branchTablesRootToLeaf(Schema schema, GroupIndex groupIndex) {

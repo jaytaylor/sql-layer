@@ -213,7 +213,7 @@ class GroupScan_Default extends PhysicalOperator
 
         @Override
         public String describeRange() {
-            return (deep ? "shallow scan at " : "deep scan at ") + hKeyExpression;
+            return deep ? "deep hkey-bound scan" : "shallow hkey-bound scan";
         }
 
         // object state

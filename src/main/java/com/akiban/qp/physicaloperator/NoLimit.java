@@ -33,4 +33,9 @@ public final class NoLimit implements Limit {
     public boolean limitReached(RowBase row) {
         return false;
     }
+
+    @Override
+    public String toString() {
+        return "NO_LIMIT";
+    }
 }
