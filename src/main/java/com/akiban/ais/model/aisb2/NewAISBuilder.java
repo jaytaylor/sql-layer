@@ -15,15 +15,7 @@
 
 package com.akiban.ais.model.aisb2;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-
-public interface NewAISBuilder {
-    /**
-     * Gets the AIS that's been built.
-     * @return the AIS
-     */
-    AkibanInformationSchema ais();
-
+public interface NewAISBuilder extends NewAISProvider {
     /**
      * Sets the default schema
      * @param schema the new default schema name; like SQL's {@code USING}.

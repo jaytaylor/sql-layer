@@ -16,9 +16,11 @@
 package com.akiban.ais.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -85,6 +87,17 @@ public class AkibanInformationSchema implements Serializable, Traversable
     public Map<TableName, GroupTable> getGroupTables()
     {
         return groupTables;
+    }
+
+    public void removeGroup(Group group) {
+        groups.remove(group.getName());
+        GroupTable groupTable = group.getGroupTable();
+        GroupTable removed = groupTables.remove(groupTable.getName());
+        assert removed == groupTable : removed + " != " + groupTable;
+        if (groupTablesById != null && groupTable.getTableId() != null) {
+            removed = groupTablesById.remove(groupTable.getTableId());
+        }
+        assert removed == groupTable : removed + " != " + groupTable;
     }
 
     public Table getTable(String schemaName, String tableName)
