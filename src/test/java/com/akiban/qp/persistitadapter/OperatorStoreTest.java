@@ -23,6 +23,7 @@ import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.SchemaAISBased;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.util.Strings;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -38,7 +39,10 @@ public final class OperatorStoreTest {
                 gi(ais, "gi_name"),
                 rowType(ais, schema, "customer")
         );
-        assertEquals("plan description", "", plan.describePlan());
+        String expected = Strings.join(
+                "GroupScan_Default(shallow hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)"
+        );
+        assertEquals("plan description", expected, plan.describePlan());
     }
 
     @Test
@@ -50,7 +54,13 @@ public final class OperatorStoreTest {
                 gi(ais, "gi_name_sku"),
                 rowType(ais, schema, "customer")
         );
-        assertEquals("plan description", "", plan.describePlan());
+        String expected = Strings.join(
+            "GroupScan_Default(deep hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "Flatten_HKeyOrdered(sch.item INNER sch.customer)",
+            "Flatten_HKeyOrdered(flatten(sch.item, sch.customer) INNER sch.order)",
+            "Flatten_HKeyOrdered(flatten(flatten(sch.item, sch.customer), sch.order) INNER sch.item)"
+        );
+        assertEquals("plan description", expected, plan.describePlan());
     }
 
     @Test
@@ -62,7 +72,14 @@ public final class OperatorStoreTest {
                 gi(ais, "gi_name_sku"),
                 rowType(ais, schema, "item")
         );
-        assertEquals("plan description", "", plan.describePlan());
+        String expected = Strings.join(
+            "GroupScan_Default(deep hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "AncestorLookup_Default(sch.item -> [sch.customer, sch.order])",
+            "Flatten_HKeyOrdered(sch.item INNER sch.customer)",
+            "Flatten_HKeyOrdered(flatten(sch.item, sch.customer) INNER sch.order)",
+            "Flatten_HKeyOrdered(flatten(flatten(sch.item, sch.customer), sch.order) INNER sch.item)"
+        );
+        assertEquals("plan description", expected, plan.describePlan());
     }
 
     // private static methods
