@@ -204,6 +204,8 @@ public class OperatorCompiler
         return stmt;
     }
 
+    enum ProductMethod { HKEY_ORDERED, BY_RUN };
+
     public Result compileSelect(CursorNode cursor) throws StandardException {
         // Get into standard form.
         cursor = (CursorNode)bindAndGroup(cursor);
@@ -221,6 +223,7 @@ public class OperatorCompiler
         
         PhysicalOperator resultOperator;
         boolean needExtract = false;
+        ProductMethod productMethod;
         if (index != null) {
             squery.removeConditions(index.getIndexConditions());
             squery.recomputeUsed();
@@ -300,10 +303,12 @@ public class OperatorCompiler
                                                       true);
                 needExtract = true; // Might bring in things not joined.
             }
+            productMethod = ProductMethod.BY_RUN;
         }
         else {
             resultOperator = groupScan_Default(groupTable);
             needExtract = true; // Brings in the whole tree.
+            productMethod = ProductMethod.HKEY_ORDERED;
         }
         
         // TODO: Can apply most Select conditions before flattening.
@@ -322,9 +327,18 @@ public class OperatorCompiler
         RowType resultRowType = fll.getResultRowType();
         for (int i = 1; i < nbranches; i++) {
             FlattenState flr = fls[i];
-            resultOperator = product_ByRun(resultOperator,
-                                           resultRowType,
-                                           flr.getResultRowType());
+            switch (productMethod) {
+            case BY_RUN:
+                resultOperator = product_ByRun(resultOperator,
+                                               resultRowType,
+                                               flr.getResultRowType());
+                break;
+            default:
+                throw new UnsupportedSQLException("Need " + productMethod + 
+                                                  " product of " +
+                                                  resultRowType + " and " +
+                                                  flr.getResultRowType());
+            }
             resultRowType = resultOperator.rowType();
             fll.mergeTables(flr);
         }
