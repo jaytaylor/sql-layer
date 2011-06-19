@@ -201,8 +201,9 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // private methods
 
     private List<?> groupIndexFields(GroupIndex groupIndex, Row row) {
+        // TODO
         List<Object> objects = new ArrayList<Object>();
-        objects.add(String.valueOf(groupIndex));
+        objects.add(String.valueOf(groupIndex.getIndexName().getName()));
         for (int i=0; i < row.rowType().nFields(); ++i) {
             objects.add(row.field(i, UndefBindings.only()));
         }
