@@ -56,6 +56,7 @@ import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Exchange;
 import com.persistit.Transaction;
+import com.persistit.exception.PersistitException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,7 +66,6 @@ import static com.akiban.qp.physicaloperator.API.ancestorLookup_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
 
 public final class OperatorStore extends DelegatingStore<PersistitStore> {
-    private static final int HKEY_BINDING_POSITION = 0;
 
     // Store interface
 
@@ -73,6 +73,9 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
     public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector)
             throws Exception
     {
+        if (columnSelector != null) {
+            throw new RuntimeException("group index maintence, and possibly other features, won't work with partial rows");
+        }
         PersistitStore persistitStore = getPersistitStore();
         AkibanInformationSchema ais = persistitStore.getRowDefCache().ais();
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), persistitStore, session);
@@ -104,7 +107,9 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
         try {
             transaction.begin();
+            maintainGroupIndexes(session, oldRowData, groupIndexDelete);
             runCursor(oldRowData, rowDef, updateOp, adapter);
+            maintainGroupIndexes(session, newRowData, groupIndexInsert);
             transaction.commit();
         } finally {
             transaction.end();
@@ -113,7 +118,29 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
     @Override
     public void writeRow(Session session, RowData rowData) throws Exception {
-        super.writeRow(session, rowData);
+        Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
+        try {
+            super.writeRow(session, rowData);
+            maintainGroupIndexes(session, rowData, groupIndexInsert);
+        } finally {
+            transaction.end();
+        }
+    }
+
+    @Override
+    public void deleteRow(Session session, RowData rowData) throws Exception {
+        Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
+        try {
+            maintainGroupIndexes(session, rowData, groupIndexDelete);
+            super.deleteRow(session, rowData);
+        } finally {
+            transaction.end();
+        }
+    }
+
+    private void maintainGroupIndexes(Session session, RowData rowData, GroupIndexHandler handler)
+            throws PersistitException
+    {
         AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
 
@@ -139,7 +166,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
                 try {
                     while (cursor.next()) {
                         Row row = cursor.currentRow();
-                        insertIndex(groupIndex, row);
+                        handler.handleRow(groupIndex, row);
                     }
                 } finally {
                     cursor.close();
@@ -158,12 +185,6 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
     public PersistitStore getPersistitStore() {
         return super.getDelegate();
-    }
-
-    // private methods
-
-    private void insertIndex(GroupIndex groupIndex, Row flattenedRow) {
-        throw new UnsupportedOperationException();
     }
 
     // private static methods
@@ -269,6 +290,26 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         return rowDescription;
     }
 
+    // object state
+    
+    private final GroupIndexHandler groupIndexInsert = new GroupIndexHandler() {
+        @Override
+        public void handleRow(GroupIndex index, Row row) {
+            throw new UnsupportedOperationException();
+        }
+    };
+    
+    private final GroupIndexHandler groupIndexDelete = new GroupIndexHandler() {
+        @Override
+        public void handleRow(GroupIndex index, Row row) {
+            
+        }
+    };
+
+    // consts
+
+    private static final int HKEY_BINDING_POSITION = 0;
+
     // nested classes
 
     private static class InternalUpdateFunction implements UpdateFunction {
@@ -317,5 +358,9 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
             }
             return PersistitGroupRow.newPersistitGroupRow(adapter, newRow.toRowData());
         }
+    }
+    
+    interface GroupIndexHandler {
+        void handleRow(GroupIndex index, Row row);
     }
 }
