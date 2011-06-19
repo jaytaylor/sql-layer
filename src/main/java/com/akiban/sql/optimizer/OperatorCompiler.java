@@ -219,7 +219,7 @@ public class OperatorCompiler
         IndexUsage index = pickBestIndex(squery);
         if ((squery.getSortColumns() != null) &&
             !((index != null) && index.isSorting()))
-            throw new UnsupportedSQLException("Unsupported ORDER BY");
+            throw new UnsupportedSQLException("Unsupported ORDER BY: no suitable index on " + squery.getSortColumns());
         
         PhysicalOperator resultOperator;
         boolean needExtract = false;
