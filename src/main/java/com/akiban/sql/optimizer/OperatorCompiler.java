@@ -325,22 +325,33 @@ public class OperatorCompiler
 
         FlattenState fll = fls[0];
         RowType resultRowType = fll.getResultRowType();
-        for (int i = 1; i < nbranches; i++) {
-            FlattenState flr = fls[i];
-            switch (productMethod) {
-            case BY_RUN:
-                resultOperator = product_ByRun(resultOperator,
-                                               resultRowType,
-                                               flr.getResultRowType());
-                break;
-            default:
-                throw new UnsupportedSQLException("Need " + productMethod + 
-                                                  " product of " +
-                                                  resultRowType + " and " +
-                                                  flr.getResultRowType());
+        if (nbranches > 1) {
+            // Product does not work if there are stray rows. Extract
+            // their inputs (the flattened types) before attempting.
+            Collection<RowType> extractTypes = new ArrayList<RowType>(nbranches);
+            for (int i = 0; i < nbranches; i++) {
+                extractTypes.add(fls[i].getResultRowType());
             }
-            resultRowType = resultOperator.rowType();
-            fll.mergeTables(flr);
+            resultOperator = extract_Default(resultOperator, extractTypes);
+            needExtract = false;
+
+            for (int i = 1; i < nbranches; i++) {
+                FlattenState flr = fls[i];
+                switch (productMethod) {
+                case BY_RUN:
+                    resultOperator = product_ByRun(resultOperator,
+                                                   resultRowType,
+                                                   flr.getResultRowType());
+                    break;
+                default:
+                    throw new UnsupportedSQLException("Need " + productMethod + 
+                                                      " product of " +
+                                                      resultRowType + " and " +
+                                                      flr.getResultRowType());
+                }
+                resultRowType = resultOperator.rowType();
+                fll.mergeTables(flr);
+            }
         }
         Map<TableNode,Integer> fieldOffsets = fll.getFieldOffsets();
 
