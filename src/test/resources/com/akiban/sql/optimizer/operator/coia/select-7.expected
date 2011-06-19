@@ -1,6 +1,6 @@
 project([Field(7), Field(10), Field(13), Field(4)])
   Extract_Default([product(flatten(user.customers, user.addresses) x flatten(flatten(user.customers, user.orders), user.items))])
-    product(flatten(user.customers, user.addresses) x flatten(flatten(user.customers, user.orders), user.items))
+    Product_ByRun(flatten(user.customers, user.addresses) x flatten(flatten(user.customers, user.orders), user.items))
       Flatten_HKeyOrdered(user.customers INNER user.addresses)
         Flatten_HKeyOrdered(flatten(user.customers, user.orders) KEEP INNER user.items)
           Flatten_HKeyOrdered(user.customers KEEP INNER user.orders)
