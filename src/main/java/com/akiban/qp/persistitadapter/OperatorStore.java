@@ -16,9 +16,12 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.message.ErrorCode;
 import com.akiban.qp.exec.UpdatePlannable;
@@ -61,7 +64,9 @@ import com.persistit.exception.PersistitException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.akiban.qp.physicaloperator.API.ancestorLookup_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
@@ -183,7 +188,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 try {
                     while (cursor.next()) {
                         Row row = cursor.currentRow();
-                        handler.handleRow(groupIndexFields(groupIndex, row), java.util.Arrays.asList("TODO")); // TODO
+                        sendToHandler(ais, groupIndex, row, handler);
                     }
                 } finally {
                     cursor.close();
@@ -200,14 +205,23 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // private methods
 
-    private List<?> groupIndexFields(GroupIndex groupIndex, Row row) {
-        // TODO
-        List<Object> objects = new ArrayList<Object>();
-        objects.add(String.valueOf(groupIndex.getIndexName().getName()));
-        for (int i=0; i < row.rowType().nFields(); ++i) {
-            objects.add(row.field(i, UndefBindings.only()));
+    private void sendToHandler(AkibanInformationSchema ais, GroupIndex groupIndex, Row row, GroupIndexHandler handler) {
+        // TODO we don't have IndexRowComposition or IndexToHKey for GroupIndexes... yet. So, do it manually.
+        List<Object> fields = new ArrayList<Object>();
+        List<Object> hKey = new ArrayList<Object>();
+        hKey.add("TODO"); // TODO
+
+        Map<UserTable, Integer> prefixFields = prefixFieldsFor(ais);
+        int prefixFieldsBase = prefixFields.get(groupIndex.rootMostTable());
+
+        for (IndexColumn indexColumn : groupIndex.getColumns()) {
+            Column column = indexColumn.getColumn();
+            UserTable userTable = column.getUserTable();
+            int flattenedRowIndex = column.getPosition() + prefixFields.get(userTable) - prefixFieldsBase;
+            fields.add(row.field(flattenedRowIndex, UndefBindings.only()));
         }
-        return objects;
+
+        handler.handleRow(fields, hKey);
     }
 
     // private static methods
@@ -255,6 +269,20 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
         }
         return plan;
+    }
+
+    Map<UserTable, Integer> prefixFieldsFor(AkibanInformationSchema ais) {
+        Map<UserTable, Integer> prefixFieldsMap = new HashMap<UserTable, Integer>();
+        for (final UserTable userTable : ais.getUserTables().values()) {
+            int prefixFields = 0;
+            UserTable ancestor = userTable;
+            while (ancestor.parentTable() != null) {
+                ancestor = ancestor.parentTable();
+                prefixFields += ancestor.getColumns().size();
+            }
+            prefixFieldsMap.put(userTable, prefixFields);
+        }
+        return prefixFieldsMap;
     }
 
     private static List<RowType> ancestors(RowType rowType, List<? extends RowType> branchTables) {
