@@ -187,7 +187,9 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 try {
                     while (cursor.next()) {
                         Row row = cursor.currentRow();
-                        sendToHandler(ais, groupIndex, row, handler);
+                        if (row.rowType().equals(plan.rowType())) {
+                            sendToHandler(ais, groupIndex, row, handler);
+                        }
                     }
                 } finally {
                     cursor.close();

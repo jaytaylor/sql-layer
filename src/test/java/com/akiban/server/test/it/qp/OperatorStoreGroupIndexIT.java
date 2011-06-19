@@ -57,8 +57,9 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 "[1111, alpha] hkey[1, 11, 100]",
                 "[2222, alpha] hkey[1, 12, 101]",
                 "[3333, alpha] hkey[1, 11, 102]",
-                // street_aid_acid_cid
-                "[Causeway, 20, 1] hkey[]"
+                // street_aid_cid
+                "[Harrington, 20, 1] hkey []",
+                "[Causeway, 21, 1] hkey[]"
         );
     }
 
@@ -94,7 +95,7 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         createGroupIndex(groupName, "sku_name", "items.sku, customers.name");
         createGroupIndex(
                 groupName,
-                "street_aid_a-cid", "addresses.street, addresses.aid, addresses.c_id"
+                "street_aid_cid", "addresses.street, addresses.aid, customers.cid"
         );
     }
 
