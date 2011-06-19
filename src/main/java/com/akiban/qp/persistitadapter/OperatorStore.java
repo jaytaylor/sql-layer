@@ -201,7 +201,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // private methods
 
     private List<?> groupIndexFields(GroupIndex groupIndex, Row row) {
-        return java.util.Arrays.asList("not yet working!", groupIndex.hashCode(), row.hashCode());
+        List<Object> objects = new ArrayList<Object>();
+        objects.add(String.valueOf(groupIndex));
+        for (int i=0; i < row.rowType().nFields(); ++i) {
+            objects.add(row.field(i, UndefBindings.only()));
+        }
+        return objects;
     }
 
     // private static methods
@@ -238,10 +243,15 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             );
         }
         
-        RowType planRowType = branchTables.get( branchTables.size() - 1 );
+        RowType parentRowType = null;
         for (RowType branchRowType : branchTables) {
-            plan = API.flatten_HKeyOrdered(plan, planRowType, branchRowType, API.JoinType.INNER_JOIN);
-            planRowType = plan.rowType();
+            if (parentRowType == null) {
+                parentRowType = branchRowType;
+            }
+            else {
+                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, API.JoinType.INNER_JOIN);
+                parentRowType = plan.rowType();
+            }
         }
         return plan;
     }
