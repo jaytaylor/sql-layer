@@ -50,7 +50,7 @@ public class ProjectedRow extends AbstractRow
     @Override
     public HKey hKey()
     {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     // ProjectedRow interface

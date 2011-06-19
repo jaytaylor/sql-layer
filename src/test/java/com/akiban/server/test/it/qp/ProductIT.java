@@ -62,6 +62,14 @@ public class ProductIT extends PhysicalOperatorITBase
             createNewRow(address, 5000L, 5L, "555 5000 st"),
             createNewRow(address, 5001L, 5L, "555 5001 st"),
             createNewRow(customer, 6L, "flybridge"), // no orders or addresses
+            // Add a few items to test Product_ByRun rejecting unexpected input. All other tests remove these items.
+            createNewRow(item, 1000L, 100L),
+            createNewRow(item, 1001L, 101L),
+            createNewRow(item, 2000L, 200L),
+            createNewRow(item, 2001L, 201L),
+            createNewRow(item, 3000L, 300L),
+            createNewRow(item, 4000L, 400L),
+            createNewRow(item, 4001L, 401L),
         };
         use(db);
     }
@@ -106,12 +114,11 @@ public class ProductIT extends PhysicalOperatorITBase
                                 addressRowType,
                                 INNER_JOIN);
         PhysicalOperator plan = product_ByRun(flattenCA, flattenCO.rowType(), flattenCA.rowType());
-        Cursor cursor = cursor(plan, adapter);
-        compareRows(new RowBase[0], cursor);
+        scan(cursor(plan, adapter));
     }
 
-    @Test
-    public void testProductAfterIndexScanOfRoot()
+    @Test(expected = IncompatibleRowException.class)
+    public void testUnflattenedProductInput()
     {
         PhysicalOperator flattenCO =
             flatten_HKeyOrdered(
@@ -121,6 +128,32 @@ public class ProductIT extends PhysicalOperatorITBase
                     customerNameIndexRowType,
                     customerRowType,
                     false),
+                customerRowType,
+                orderRowType,
+                INNER_JOIN,
+                KEEP_PARENT);
+        PhysicalOperator flattenCA =
+            flatten_HKeyOrdered(flattenCO,
+                                customerRowType,
+                                addressRowType,
+                                INNER_JOIN);
+        PhysicalOperator plan = product_ByRun(flattenCA, flattenCO.rowType(), flattenCA.rowType());
+        scan(cursor(plan, adapter));
+    }
+
+    @Test
+    public void testProductAfterIndexScanOfRoot()
+    {
+        PhysicalOperator flattenCO =
+            flatten_HKeyOrdered(
+                cut_Default(
+                    branchLookup_Default(
+                        indexScan_Default(customerNameIndexRowType, false, null),
+                        coi,
+                        customerNameIndexRowType,
+                        customerRowType,
+                        false),
+                    orderRowType),
                 customerRowType,
                 orderRowType,
                 INNER_JOIN,
@@ -151,12 +184,14 @@ public class ProductIT extends PhysicalOperatorITBase
     {
         PhysicalOperator flattenCO =
             flatten_HKeyOrdered(
-                branchLookup_Default(
-                    indexScan_Default(orderSalesmanIndexRowType, false, null),
-                    coi,
-                    orderSalesmanIndexRowType,
-                    customerRowType,
-                    false),
+                cut_Default(
+                    branchLookup_Default(
+                        indexScan_Default(orderSalesmanIndexRowType, false, null),
+                        coi,
+                        orderSalesmanIndexRowType,
+                        customerRowType,
+                        false),
+                    orderRowType),
                 customerRowType,
                 orderRowType,
                 INNER_JOIN,

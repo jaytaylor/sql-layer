@@ -21,6 +21,7 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.persistitadapter.PersistitRowLimit;
 import com.akiban.qp.physicaloperator.*;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -219,6 +220,21 @@ public class PhysicalOperatorITBase extends ITBase
         assertEquals(expected.length, actualRows.size());
     }
 
+    // Useful when scanning is expected to throw an exception
+    protected void scan(Cursor cursor)
+    {
+        List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
+        try {
+            cursor.open(NO_BINDINGS);
+            while (cursor.next()) {
+                RowBase actualRow = cursor.currentRow();
+                actualRows.add(actualRow);
+            }
+        } finally {
+            cursor.close();
+        }
+    }
+
     @SuppressWarnings("unused") // useful for debugging
     protected void dumpToAssertion(Cursor cursor)
     {
@@ -226,7 +242,8 @@ public class PhysicalOperatorITBase extends ITBase
         try {
             cursor.open(NO_BINDINGS);
             while (cursor.next()) {
-                strings.add(String.valueOf(cursor.currentRow()));
+                Row row = cursor.currentRow();
+                strings.add(String.format("%s: %s", row.runId(), row));
             }
         } catch (Throwable t) {
             strings.add("ERROR: " + t);
