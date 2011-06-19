@@ -72,7 +72,7 @@ public final class OperatorStoreTest {
                 rowType(ais, schema, "item")
         );
         String expected = Strings.join(
-            "GroupScan_Default(deep hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "GroupScan_Default(shallow hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
             "AncestorLookup_Default(sch.item -> [sch.customer, sch.order])",
             "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
@@ -125,7 +125,7 @@ public final class OperatorStoreTest {
                 rowType(ais, schema, "item")
         );
         String expected = Strings.join(
-            "GroupScan_Default(deep hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "GroupScan_Default(shallow hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
             "AncestorLookup_Default(sch.item -> [sch.customer, sch.order])",
             "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
@@ -143,7 +143,7 @@ public final class OperatorStoreTest {
                 rowType(ais, schema, "item")
         );
         String expected = Strings.join(
-            "GroupScan_Default(deep hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "GroupScan_Default(shallow hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
             "AncestorLookup_Default(sch.item -> [sch.customer, sch.order])",
             "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
@@ -173,11 +173,61 @@ public final class OperatorStoreTest {
     public void giUpdatePlan_OI_fromC() {
         AkibanInformationSchema ais = coia();
         Schema schema = schema(ais);
-        PhysicalOperator plan = OperatorStore.groupIndexCreationPlan(
+        OperatorStore.groupIndexCreationPlan(
                 schema,
                 gi(ais, "gi_sku_date"),
                 rowType(ais, schema, "customer")
         );
+    }
+
+    @Test
+    public void giUpdatePlan_AC_fromC() {
+        AkibanInformationSchema ais = coia();
+        Schema schema = schema(ais);
+        PhysicalOperator plan = OperatorStore.groupIndexCreationPlan(
+                schema,
+                gi(ais, "gi_street_name"),
+                rowType(ais, schema, "customer")
+        );
+        String expected = Strings.join(
+            "GroupScan_Default(deep hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "Flatten_HKeyOrdered(sch.customer INNER sch.address)"
+        );
+        assertEquals("plan description", expected, plan.describePlan());
+    }
+
+    @Test
+    public void giUpdatePlan_AC_fromA() {
+        AkibanInformationSchema ais = coia();
+        Schema schema = schema(ais);
+        PhysicalOperator plan = OperatorStore.groupIndexCreationPlan(
+                schema,
+                gi(ais, "gi_street_name"),
+                rowType(ais, schema, "address")
+        );
+        String expected = Strings.join(
+            "GroupScan_Default(shallow hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "AncestorLookup_Default(sch.address -> [sch.customer])",
+            "Flatten_HKeyOrdered(sch.customer INNER sch.address)"
+        );
+        assertEquals("plan description", expected, plan.describePlan());
+    }
+
+    @Test
+    public void giUpdatePlan_A_fromA() {
+        AkibanInformationSchema ais = coia();
+        Schema schema = schema(ais);
+        PhysicalOperator plan = OperatorStore.groupIndexCreationPlan(
+                schema,
+                gi(ais, "gi_street"),
+                rowType(ais, schema, "address")
+        );
+        String expected = Strings.join(
+            "GroupScan_Default(shallow hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "AncestorLookup_Default(sch.address -> [sch.customer])",
+            "Flatten_HKeyOrdered(sch.customer INNER sch.address)"
+        );
+        assertEquals("plan description", expected, plan.describePlan());
     }
 
     // private static methods
@@ -231,10 +281,13 @@ public final class OperatorStoreTest {
                     .colLong("c_id")
                     .colString("street", 256)
                     .colString("state", 2)
+                    .joinTo("customer").on("c_id", "cid")
                 .groupIndex("gi_name").on("customer", "name")
                 .groupIndex("gi_name_sku").on("customer", "name").and("item", "sku")
                 .groupIndex("gi_date_name_sku").on("customer", "name").and("item", "sku")
                 .groupIndex("gi_sku_date").on("item", "sku").and("order", "date")
+                .groupIndex("gi_street_name").on("address", "street").and("customer", "name")
+                .groupIndex("gi_street").on("address", "street")
                 .ais();
     }
 

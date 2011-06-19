@@ -14,6 +14,7 @@
  */
 package com.akiban.server.test.it.qp;
 
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.qp.persistitadapter.TestOperatorStore;
 import com.akiban.server.RowData;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -37,7 +38,7 @@ import static org.junit.Assert.assertEquals;
 public final class OperatorStoreGroupIndexIT extends ITBase {
 
     @Test
-    public void thisNeedsABetterName() {
+    public void basic() {
         writeRows(
                 createNewRow(c, 1L, "alpha"),
                 createNewRow(o, 10L, 1L, "01-01-2001"),
@@ -46,13 +47,18 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 createNewRow(i, 101L, 11L, 2222),
                 createNewRow(i, 102L, 11L, 3333),
                 createNewRow(o, 12L, 1L, "03-03-2003"),
+                createNewRow(a, 20L, 1L, "Harrington"),
+                createNewRow(a, 21L, 1L, "Causeway"),
                 createNewRow(c, 2L, "beta")
         );
         testMaintainedRows(
                 createNewRow(c, 1L, "alpha"),
-                "[1111, alpha] hkey[TODO]",
-                "[2222, alpha] hkey[TODO]",
-                "[3333, alpha] hkey[TODO]"
+                // sku_name
+                "[1111, alpha] hkey[1, 11, 100]",
+                "[2222, alpha] hkey[1, 12, 101]",
+                "[3333, alpha] hkey[1, 11, 102]",
+                // street_aid_acid_cid
+                "[Causeway, 20, 1] hkey[]"
         );
     }
 
@@ -77,7 +83,7 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 "sku int",
                 "CONSTRAINT __akiban_i FOREIGN KEY __akiban_i(o_id) REFERENCES orders(oid)"
         );
-        a = createTable(SCHEMA, "address",
+        a = createTable(SCHEMA, "addresses",
                 "aid int key",
                 "c_id int",
                 "street varchar(64)",
@@ -86,6 +92,10 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         final String groupName = getUserTable(SCHEMA,"customers").getGroup().getName();
         createGroupIndex(groupName, "sku_date", "items.sku, orders.date");
         createGroupIndex(groupName, "sku_name", "items.sku, customers.name");
+        createGroupIndex(
+                groupName,
+                "street_aid_a-cid", "addresses.street, addresses.aid, addresses.c_id"
+        );
     }
 
     @After
@@ -117,9 +127,9 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         List<String> actual = Arrays.asList(expectedActions);
         List<String> expected = handler.strings();
         if (!expected.equals(actual)) {
-            assertEquals("updates for " + targetRow, Strings.join(expected), Strings.join(actual));
+            assertEquals("updates for " + targetRow, Strings.join(actual), Strings.join(expected));
             // and just in case...
-            assertEquals("updates for " + targetRow, expected, actual);
+            assertEquals("updates for " + targetRow, actual, expected);
         }
     }
 
@@ -157,7 +167,7 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         // GroupIndexHandler interface
 
         @Override
-        public void handleRow(List<?> fields, List<?> hKey) {
+        public void handleRow(GroupIndex groupIndex, List<?> fields, List<?> hKey) {
             strings.add(String.valueOf(fields) + " hkey" + String.valueOf(hKey));
         }
 

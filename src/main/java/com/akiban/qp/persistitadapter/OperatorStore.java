@@ -219,7 +219,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             fields.add(row.field(flattenedRowIndex, UndefBindings.only()));
         }
 
-        handler.handleRow(fields, hKey);
+        handler.handleRow(groupIndex, fields, hKey);
     }
 
     // private static methods
@@ -233,17 +233,19 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             throw new RuntimeException(rowType + " not in branch for " + groupIndex + ": " + branchTables);
         }
 
-        boolean singleTableGI = branchTables.fromRootMost().size() == 1;
+        boolean deep = !branchTables.leafMost().equals(rowType);
         PhysicalOperator plan = API.groupScan_Default(
                 groupIndex.getGroup().getGroupTable(),
                 NoLimit.instance(),
                 com.akiban.qp.expression.API.variable(HKEY_BINDING_POSITION),
-                ! singleTableGI
+                deep
         );
-        if (singleTableGI) {
+        if (branchTables.fromRoot().size() == 1) {
             return plan;
         }
-
+        // select only the correct type of children!
+        // actually, have to do this along all branches I think
+        // TODO!!!
         if (!branchTables.fromRoot().get(0).equals(rowType)) {
             plan = API.ancestorLookup_Default(
                     plan,
@@ -339,14 +341,14 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     
     private final GroupIndexHandler groupIndexInsert = new GroupIndexHandler() {
         @Override
-        public void handleRow(List<?> fields, List<?> hKey) {
+        public void handleRow(GroupIndex groupIndex, List<?> fields, List<?> hKey) {
             // TODO
         }
     };
     
     private final GroupIndexHandler groupIndexDelete = new GroupIndexHandler() {
         @Override
-        public void handleRow(List<?> fields, List<?> hKey) {
+        public void handleRow(GroupIndex groupIndex, List<?> fields, List<?> hKey) {
             // TODO
         }
     };
@@ -371,6 +373,10 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
         public boolean isEmpty() {
             return fromRootMost().isEmpty();
+        }
+
+        public UserTableRowType leafMost() {
+            return onlyBranch.get(onlyBranch.size()-1);
         }
 
         public BranchTables(Schema schema, GroupIndex groupIndex) {
@@ -448,6 +454,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
     
     protected interface GroupIndexHandler {
-        void handleRow(List<?> fields, List<?> hKey);
+        void handleRow(GroupIndex groupIndex, List<?> fields, List<?> hKey);
     }
 }
