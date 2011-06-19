@@ -737,10 +737,13 @@ public class OperatorCompiler
     class Flattener implements Comparator<FlattenState> {
         private PhysicalOperator resultOperator;
         private int nbranches;
+        private Map<List<RowType>,RowType> flattensDone;
 
         public Flattener(PhysicalOperator resultOperator, int nbranches) {
             this.resultOperator = resultOperator;
             this.nbranches = nbranches;
+            if (nbranches > 1)
+                flattensDone = new HashMap<List<RowType>,RowType>();
         }
         
         public PhysicalOperator getResultOperator() {
@@ -783,19 +786,36 @@ public class OperatorCompiler
                 else if (fright == null) {
                     return fleft;
                 }
-                // Keep the parent side in multi-branch until the last one.
-                // TODO: May keep a few too many when the branch has
-                // multiple steps, (they do get extracted out).
-                EnumSet<FlattenOption> keep = 
-                    ((nbranches > 1) && (branch < nbranches - 1)) ?
-                    EnumSet.of(FlattenOption.KEEP_PARENT) :
-                    EnumSet.noneOf(FlattenOption.class);
-                resultOperator = flatten_HKeyOrdered(resultOperator,
-                                                     fleft.getResultRowType(),
-                                                     fright.getResultRowType(),
-                                                     jjoin.getJoinType(),
-                                                     keep);
-                fleft.setResultRowType(resultOperator.rowType());
+                RowType leftType = fleft.getResultRowType();
+                RowType rightType = fright.getResultRowType();
+                RowType flattenedType = null;
+                List<RowType> flkey = null;
+                if (flattensDone != null) {
+                    // With overlapping branches processed from the
+                    // root, it's possible that we've already done a
+                    // common segment.
+                    flkey = new ArrayList<RowType>(2);
+                    flkey.add(leftType);
+                    flkey.add(rightType);
+                    flattenedType = flattensDone.get(flkey);
+                }
+                if (flattenedType == null) {
+                    // Keep the parent side in multi-branch until the last one.
+                    // TODO: May keep a few too many when the branch has
+                    // multiple steps, (they do get extracted out).
+                    EnumSet<FlattenOption> keep = 
+                        ((nbranches > 1) && (branch < nbranches - 1)) ?
+                        EnumSet.of(FlattenOption.KEEP_PARENT) :
+                        EnumSet.noneOf(FlattenOption.class);
+                    resultOperator = flatten_HKeyOrdered(resultOperator,
+                                                         leftType, rightType,
+                                                         jjoin.getJoinType(), keep);
+                    flattenedType = resultOperator.rowType();
+                    if (flattensDone != null) {
+                        flattensDone.put(flkey, flattenedType);
+                    }
+                }
+                fleft.setResultRowType(flattenedType);
                 fleft.mergeTables(fright);
                 return fleft;
             }
