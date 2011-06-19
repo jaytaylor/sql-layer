@@ -133,6 +133,53 @@ public final class OperatorStoreTest {
         assertEquals("plan description", expected, plan.describePlan());
     }
 
+    @Test
+    public void giUpdatePlan_OI_fromI() {
+        AkibanInformationSchema ais = coia();
+        Schema schema = schema(ais);
+        PhysicalOperator plan = OperatorStore.groupIndexCreationPlan(
+                schema,
+                gi(ais, "gi_sku_date"),
+                rowType(ais, schema, "item")
+        );
+        String expected = Strings.join(
+            "GroupScan_Default(deep hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "AncestorLookup_Default(sch.item -> [sch.customer, sch.order])",
+            "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
+            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
+        );
+        assertEquals("plan description", expected, plan.describePlan());
+    }
+
+    @Test
+    public void giUpdatePlan_OI_fromO() {
+        AkibanInformationSchema ais = coia();
+        Schema schema = schema(ais);
+        PhysicalOperator plan = OperatorStore.groupIndexCreationPlan(
+                schema,
+                gi(ais, "gi_sku_date"),
+                rowType(ais, schema, "order")
+        );
+        String expected = Strings.join(
+            "GroupScan_Default(deep hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "AncestorLookup_Default(sch.order -> [sch.customer])",
+            "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
+            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
+        );
+        assertEquals("plan description", expected, plan.describePlan());
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void giUpdatePlan_OI_fromC() {
+        AkibanInformationSchema ais = coia();
+        Schema schema = schema(ais);
+        PhysicalOperator plan = OperatorStore.groupIndexCreationPlan(
+                schema,
+                gi(ais, "gi_sku_date"),
+                rowType(ais, schema, "customer")
+        );
+    }
+
     // private static methods
 
     private static UserTableRowType rowType(AkibanInformationSchema ais, Schema schema, String tableName) {
@@ -187,6 +234,7 @@ public final class OperatorStoreTest {
                 .groupIndex("gi_name").on("customer", "name")
                 .groupIndex("gi_name_sku").on("customer", "name").and("item", "sku")
                 .groupIndex("gi_date_name_sku").on("customer", "name").and("item", "sku")
+                .groupIndex("gi_sku_date").on("item", "sku").and("order", "date")
                 .ais();
     }
 

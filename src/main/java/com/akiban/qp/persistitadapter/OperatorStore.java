@@ -21,7 +21,6 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.message.ErrorCode;
 import com.akiban.qp.exec.UpdatePlannable;
@@ -212,12 +211,11 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         hKey.add("TODO"); // TODO
 
         Map<UserTable, Integer> prefixFields = prefixFieldsFor(ais);
-        int prefixFieldsBase = prefixFields.get(groupIndex.rootMostTable());
 
         for (IndexColumn indexColumn : groupIndex.getColumns()) {
             Column column = indexColumn.getColumn();
             UserTable userTable = column.getUserTable();
-            int flattenedRowIndex = column.getPosition() + prefixFields.get(userTable) - prefixFieldsBase;
+            int flattenedRowIndex = column.getPosition() + prefixFields.get(userTable);
             fields.add(row.field(flattenedRowIndex, UndefBindings.only()));
         }
 
@@ -227,12 +225,15 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // private static methods
 
     static PhysicalOperator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex, UserTableRowType rowType) {
-        List<UserTableRowType> branchTables = branchTablesRootToLeaf(schema, groupIndex);
+        BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
         if (branchTables.isEmpty()) {
             throw new RuntimeException("group index has empty branch: " + groupIndex);
         }
+        if (!branchTables.fromRootMost().contains(rowType)) {
+            throw new RuntimeException(rowType + " not in branch for " + groupIndex + ": " + branchTables);
+        }
 
-        boolean singleTableGI = branchTables.size() == 1;
+        boolean singleTableGI = branchTables.fromRootMost().size() == 1;
         PhysicalOperator plan = API.groupScan_Default(
                 groupIndex.getGroup().getGroupTable(),
                 NoLimit.instance(),
@@ -243,23 +244,18 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             return plan;
         }
 
-        UserTable rowTypeTable = rowType.userTable();
-        if (!branchTables.contains(rowType)) {
-            throw new RuntimeException(rowType + " not in branch for " + groupIndex + ": " + branchTables);
-        }
-
-        if (!rowTypeTable.equals(branchTables.get(0).userTable())) {
+        if (!branchTables.fromRoot().get(0).equals(rowType)) {
             plan = API.ancestorLookup_Default(
                     plan,
                     groupIndex.getGroup().getGroupTable(),
                     rowType,
-                    ancestors(rowType, branchTables),
+                    ancestors(rowType, branchTables.fromRoot()),
                     true
             );
         }
         
         RowType parentRowType = null;
-        for (RowType branchRowType : branchTables) {
+        for (RowType branchRowType : branchTables.fromRoot()) {
             if (parentRowType == null) {
                 parentRowType = branchRowType;
             }
@@ -296,15 +292,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         throw new RuntimeException(rowType + "not found in " + branchTables);
     }
 
-    private static List<UserTableRowType> branchTablesRootToLeaf(Schema schema, GroupIndex groupIndex) {
-        List<UserTableRowType> tables = new ArrayList<UserTableRowType>();
-        UserTable rootmost = groupIndex.rootMostTable();
-        for (UserTable table = groupIndex.leafMostTable(); !table.equals(rootmost); table = table.parentTable()) {
-            tables.add(schema.userTableRowType(table));
-        }
-        tables.add(schema.userTableRowType(rootmost));
-        Collections.reverse(tables);
-        return tables;
+    private static BranchTables branchTablesRootToLeaf(Schema schema, GroupIndex groupIndex) {
+        return new BranchTables(schema, groupIndex);
     }
 
     private static void runCursor(RowData oldRowData, RowDef rowDef, UpdatePlannable plannable, PersistitAdapter adapter)
@@ -367,6 +356,48 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     private static final int HKEY_BINDING_POSITION = 0;
 
     // nested classes
+
+    private static class BranchTables {
+
+        // BranchTables interface
+
+        public List<UserTableRowType> fromRoot() {
+            return allTablesForBranch;
+        }
+
+        public List<UserTableRowType> fromRootMost() {
+            return onlyBranch;
+        }
+
+        public boolean isEmpty() {
+            return fromRootMost().isEmpty();
+        }
+
+        public BranchTables(Schema schema, GroupIndex groupIndex) {
+            List<UserTableRowType> localTables = new ArrayList<UserTableRowType>();
+            UserTable rootmost = groupIndex.rootMostTable();
+            int branchRootmostIndex = -1;
+            for (UserTable table = groupIndex.leafMostTable(); table != null; table = table.parentTable()) {
+                if (table.equals(rootmost)) {
+                    assert branchRootmostIndex == -1 : branchRootmostIndex;
+                    branchRootmostIndex = table.getDepth();
+                }
+                localTables.add(schema.userTableRowType(table));
+            }
+            if (branchRootmostIndex < 0) {
+                throw new RuntimeException("branch root not found! " + rootmost + " within " + localTables);
+            }
+            Collections.reverse(localTables);
+            this.allTablesForBranch = Collections.unmodifiableList(localTables);
+            this.onlyBranch = branchRootmostIndex == 0
+                    ? allTablesForBranch
+                    : allTablesForBranch.subList(branchRootmostIndex, allTablesForBranch.size());
+        }
+
+        // object state
+        private final List<UserTableRowType> allTablesForBranch;
+        private final List<UserTableRowType> onlyBranch;
+    }
 
     private static class InternalUpdateFunction implements UpdateFunction {
         private final PersistitAdapter adapter;
