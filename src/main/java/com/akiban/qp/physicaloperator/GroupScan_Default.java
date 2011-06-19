@@ -234,8 +234,8 @@ class GroupScan_Default extends PhysicalOperator
                 );
             }
             HKey hKey = (HKey)evaluated;
-            input.open(bindings);
             input.rebind(hKey, deep);
+            input.open(bindings);
         }
 
         HKeyBoundCursor(GroupCursor input, Expression hkeyExpression, boolean deep) {
