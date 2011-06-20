@@ -43,6 +43,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
+import com.akiban.server.FieldDef;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
@@ -57,6 +58,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Exchange;
+import com.persistit.Key;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
@@ -65,6 +67,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -115,9 +118,19 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
         try {
             transaction.begin();
-            maintainGroupIndexes(session, oldRowData, groupIndexDelete);
+
+            maintainGroupIndexes(
+                    session, ais, adapter,
+                    oldRowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.DELETE
+            );
+
             runCursor(oldRowData, rowDef, updateOp, adapter);
-            maintainGroupIndexes(session, newRowData, groupIndexInsert);
+
+            maintainGroupIndexes(
+                    session, ais, adapter,
+                    newRowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.STORE
+            );
+
             transaction.commit();
         } finally {
             transaction.end();
@@ -130,7 +143,14 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         try {
             transaction.begin();
             super.writeRow(session, rowData);
-            maintainGroupIndexes(session, rowData, groupIndexInsert);
+
+            AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
+            PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
+            maintainGroupIndexes(
+                    session, ais, adapter,
+                    rowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.STORE
+            );
+
             transaction.commit();
         } finally {
             transaction.end();
@@ -142,7 +162,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
         try {
             transaction.begin();
-            maintainGroupIndexes(session, rowData, groupIndexDelete);
+            AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
+            PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
+            maintainGroupIndexes(
+                    session, ais, adapter,
+                    rowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.DELETE
+            );
             super.deleteRow(session, rowData);
             transaction.commit();
         } finally {
@@ -162,12 +187,32 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // for use by subclasses
 
-    protected final void maintainGroupIndexes(Session session, RowData rowData, GroupIndexHandler handler)
-            throws PersistitException
+    protected final <A,T extends Throwable> void maintainGroupIndexes(
+            Session session,
+            RowData rowData,
+            GroupIndexHandler<A,T> handler, A action
+    )
+    throws PersistitException, T
     {
         AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
+        maintainGroupIndexes(session, ais, adapter, rowData, handler, action);
+    }
 
+    protected Collection<GroupIndex> optionallyOrderGroupIndexes(Collection<GroupIndex> groupIndexes) {
+        return groupIndexes;
+    }
+
+    // private methods
+
+    protected final <A,T extends Throwable> void maintainGroupIndexes(
+            Session session,
+            AkibanInformationSchema ais, PersistitAdapter adapter,
+            RowData rowData,
+            GroupIndexHandler<A,T> handler, A action
+    )
+    throws PersistitException, T
+    {
         UserTable userTable = ais.getUserTable(rowData.getRowDefId());
 
         Exchange hEx = adapter.takeExchange(userTable.getGroup().getGroupTable());
@@ -191,7 +236,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     while (cursor.next()) {
                         Row row = cursor.currentRow();
                         if (row.rowType().equals(plan.rowType())) {
-                            sendToHandler(ais, groupIndex, row, handler);
+                            sendToHandler(ais, groupIndex, row, handler, action);
                         }
                     }
                 } finally {
@@ -203,13 +248,10 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
 
-    protected Collection<GroupIndex> optionallyOrderGroupIndexes(Collection<GroupIndex> groupIndexes) {
-        return groupIndexes;
-    }
-
-    // private methods
-
-    private void sendToHandler(AkibanInformationSchema ais, GroupIndex groupIndex, Row row, GroupIndexHandler handler) {
+    private <A,T extends Throwable> void sendToHandler(
+            AkibanInformationSchema ais, GroupIndex groupIndex, Row row, GroupIndexHandler<A,T> handler, A action)
+            throws T
+    {
         // TODO we don't have IndexRowComposition or IndexToHKey for GroupIndexes... yet. So, do it manually.
         List<Object> fields = new ArrayList<Object>();
         List<Column> columns = new ArrayList<Column>();
@@ -230,7 +272,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             columns.add(hKeyColumn);
         }
 
-        handler.handleRow(groupIndex, fields, columns);
+        handler.handleRow(action, groupIndex, fields, columns);
     }
 
     // private static methods
@@ -254,9 +296,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         if (branchTables.fromRoot().size() == 1) {
             return plan;
         }
-        // select only the correct type of children!
-        // actually, have to do this along all branches I think
-        // TODO!!!
         if (!branchTables.fromRoot().get(0).equals(rowType)) {
             plan = API.ancestorLookup_Default(
                     plan,
@@ -334,27 +373,64 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         return rowDescription;
     }
 
-    // object state
-    
-    private final GroupIndexHandler groupIndexInsert = new GroupIndexHandler() {
-        @Override
-        public void handleRow(GroupIndex groupIndex, List<?> fields, List<? extends Column> columns) {
-            // TODO
-        }
-    };
-    
-    private final GroupIndexHandler groupIndexDelete = new GroupIndexHandler() {
-        @Override
-        public void handleRow(GroupIndex groupIndex, List<?> fields, List<? extends Column> columns) {
-            // TODO
-        }
-    };
-
     // consts
 
     private static final int HKEY_BINDING_POSITION = 0;
 
     // nested classes
+
+    private static class PersistitKeyHandler implements GroupIndexHandler<PersistitKeyHandler.Action,PersistitException> {
+
+        // GroupIndexHandler interface
+
+        @Override
+        public void handleRow(Action action, GroupIndex groupIndex, List<?> fields, List<? extends Column> columns)
+        throws PersistitException
+        {
+            if (true) { // TODO we can't yet get Exchanges for GroupIndex. When we can, remove this!
+                return;
+            }
+            if (fields.size() != columns.size()) {
+                throw new IllegalArgumentException("values and columns lists not same size: " + fields + ' ' + columns);
+            }
+            Exchange exchange = adapter.takeExchange(groupIndex);
+            Key key = exchange.getKey();
+            key.clear();
+            Iterator<? extends Column> columnsIter = columns.iterator();
+            Iterator<?> fieldsIter = fields.iterator();
+            while (columnsIter.hasNext()) {
+                Column column = columnsIter.next();
+                Object value = fieldsIter.next();
+                RowDef rowDef = (RowDef) column.getUserTable().rowDef();
+                FieldDef fieldDef = rowDef.getFieldDef(column.getPosition());
+                fieldDef.getEncoding().toKey(fieldDef, value, key);
+            }
+            assert !fieldsIter.hasNext() : "fieldsIter had next";
+
+            switch (action) {
+            case STORE:
+                exchange.store();
+                break;
+            case DELETE:
+                exchange.remove();
+                break;
+            default:
+                throw new UnsupportedOperationException(action.name());
+            }
+        }
+
+        public PersistitKeyHandler(PersistitAdapter adapter) {
+            this.adapter = adapter;
+        }
+
+        // object state
+
+        private final PersistitAdapter adapter;
+
+        // nested classes
+
+        public enum Action { STORE, DELETE }
+    }
 
     private static class BranchTables {
 
@@ -500,7 +576,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
     
-    protected interface GroupIndexHandler {
-        void handleRow(GroupIndex groupIndex, List<?> fields, List<? extends Column> columns);
+    protected interface GroupIndexHandler<A, T extends Throwable> {
+        void handleRow(A action, GroupIndex groupIndex, List<?> fields, List<? extends Column> columns) throws T;
     }
 }

@@ -122,7 +122,7 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         RowData rowData = targetRow.toRowData();
         StringsGIHandler handler = new StringsGIHandler();
         try {
-            opStore().testMaintainGroupIndexes(session(), rowData, handler);
+            opStore().testMaintainGroupIndexes(session(), rowData, handler, null);
         } catch (PersistitException e) {
             throw new RuntimeException(e);
         }
@@ -164,12 +164,12 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         }
     }
 
-    private static class StringsGIHandler implements TestOperatorStore.GroupIndexHandler {
+    private static class StringsGIHandler implements TestOperatorStore.GroupIndexHandler<Object, RuntimeException> {
 
         // GroupIndexHandler interface
 
         @Override
-        public void handleRow(GroupIndex groupIndex, List<?> fields, List<? extends Column> columns) {
+        public void handleRow(Object action, GroupIndex groupIndex, List<?> fields, List<? extends Column> columns) {
             String giName = (groupIndex == null) ? "null " : groupIndex.getIndexName().getName() + ' ';
             strings.add(giName + String.valueOf(fields));
         }
