@@ -31,9 +31,7 @@ public class SchemaFactory {
 
     public RowDefCache rowDefCache(String[] ddl) throws Exception {
         AkibanInformationSchema ais = ais(ddl);
-        RowDefCache rowDefCache = new FakeRowDefCache();
-        rowDefCache.setAIS(ais);
-        return rowDefCache;
+        return rowDefCache(ais);
     }
 
     public AkibanInformationSchema ais(String[] ddl) throws Exception {
@@ -44,6 +42,12 @@ public class SchemaFactory {
         final SchemaDefToAis toAis = new SchemaDefToAis(
                 SchemaDef.parseSchema(buffer.toString()), false);
         return toAis.getAis();
+    }
+
+    public RowDefCache rowDefCache(AkibanInformationSchema ais) {
+        RowDefCache rowDefCache = new FakeRowDefCache();
+        rowDefCache.setAIS(ais);
+        return rowDefCache;
     }
 
     private static class FakeRowDefCache extends RowDefCache {
