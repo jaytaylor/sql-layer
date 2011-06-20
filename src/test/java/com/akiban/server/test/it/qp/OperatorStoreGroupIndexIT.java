@@ -52,15 +52,18 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 createNewRow(a, 21L, 1L, "Causeway"),
                 createNewRow(c, 2L, "beta")
         );
+        String skuNameCols = " cols[items.sku, customers.name, customers.cid, orders.oid, items.iid]";
+        String streetAidCidCols = " cols[addresses.street, addresses.aid, customers.cid]";
+
         testMaintainedRows(
                 createNewRow(c, 1L, "alpha"),
                 // sku_name
-                "sku_name [1111, alpha, 1, 11, 100]",
-                "sku_name [2222, alpha, 1, 11, 101]",
-                "sku_name [3333, alpha, 1, 11, 102]",
+                "sku_name [1111, alpha, 1, 11, 100]" + skuNameCols,
+                "sku_name [2222, alpha, 1, 11, 101]" + skuNameCols,
+                "sku_name [3333, alpha, 1, 11, 102]" + skuNameCols,
                 // street_aid_cid
-                "street_aid_cid [Harrington, 20, 1]",
-                "street_aid_cid [Causeway, 21, 1]"
+                "street_aid_cid [Harrington, 20, 1]" + streetAidCidCols,
+                "street_aid_cid [Causeway, 21, 1]" + streetAidCidCols
         );
     }
 
@@ -170,8 +173,9 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
 
         @Override
         public void handleRow(Object action, GroupIndex groupIndex, List<?> fields, List<? extends Column> columns) {
+            assertEquals("list sizes: " + fields + ' ' + columns, fields.size(), columns.size());
             String giName = (groupIndex == null) ? "null " : groupIndex.getIndexName().getName() + ' ';
-            strings.add(giName + String.valueOf(fields));
+            strings.add(giName + String.valueOf(fields) + " cols" + columns);
         }
 
         // StringsGIHandler interface
