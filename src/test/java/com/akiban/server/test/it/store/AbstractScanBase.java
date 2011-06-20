@@ -23,6 +23,7 @@ import java.util.TreeMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Index;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -139,23 +140,10 @@ public abstract class AbstractScanBase extends ITSuiteBase {
         return scanCount;
     }
 
-    protected int findIndexId(final RowDef groupRowDef,
-            final RowDef userRowDef, final int fieldIndex) {
-        final int findField = fieldIndex + userRowDef.getColumnOffset()
-                - groupRowDef.getColumnOffset();
-        for (final IndexDef indexDef : groupRowDef.getIndexDefs()) {
-            if (indexDef.getFields().length == 1
-                    && indexDef.getFields()[0] == findField) {
-                return indexDef.getId();
-            }
-        }
-        return -1;
-    }
-
     protected int findIndexId(final RowDef rowDef, final String name) {
-        for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-            if (indexDef.getName().startsWith(name)) {
-                return indexDef.getId();
+        for (Index index : rowDef.getIndexes()) {
+            if (index.getIndexName().getName().startsWith(name)) {
+                return index.getIndexId();
             }
         }
         return -1;

@@ -24,7 +24,6 @@ import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.test.it.ITBase;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -122,7 +121,7 @@ public final class BasicKeyUpdateIT extends ITBase {
         );
     }
 
-    @Test @Ignore("bug 746006")
+    @Test
     public void oldKeysAreRemoved_2Rows_Partial_IndexAndPKMovesBackward() throws InvalidOperationException {
         int tableId = table();
         runTest(
@@ -151,7 +150,7 @@ public final class BasicKeyUpdateIT extends ITBase {
         );
     }
 
-    @Test @Ignore("bug 746006")
+    @Test
     public void oldKeysAreRemoved_2Rows_Partial_IndexAndPKMovesForward() throws InvalidOperationException {
         int tableId = table();
         runTest(
@@ -174,7 +173,7 @@ public final class BasicKeyUpdateIT extends ITBase {
                         createNewRow(tableId, 3L, "a")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 0L, "a"),
+                        createNewRow(tableId, 3L, "a"),
                         createNewRow(tableId, 1L, "b")
                 )
         );

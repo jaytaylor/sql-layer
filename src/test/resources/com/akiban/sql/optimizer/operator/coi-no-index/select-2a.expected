@@ -1,4 +1,7 @@
-Select_HKeyOrdered(flatten(flatten(user.customers, user.orders), user.items), Field(7) == Literal(1234))
-  Flatten_HKeyOrdered(flatten(user.customers, user.orders) INNER user.items)
-    Flatten_HKeyOrdered(user.customers INNER user.orders)
-      GroupScan_Default(_akiban_customers NO LIMIT)
+project([Field(1), Field(4), Field(7), Field(8)])
+  Select_HKeyOrdered(flatten(flatten(user.customers, user.orders), user.items), Field(7) == Literal(1234))
+    Extract_Default([flatten(flatten(user.customers, user.orders), user.items)])
+      Flatten_HKeyOrdered(flatten(user.customers, user.orders) INNER user.items)
+        Flatten_HKeyOrdered(user.customers INNER user.orders)
+          GroupScan_Default(_akiban_customers NO LIMIT)
+[name:varchar(32)[VARCHAR], order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT]]

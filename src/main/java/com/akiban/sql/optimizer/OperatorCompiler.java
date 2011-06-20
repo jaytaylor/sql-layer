@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer;
 
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.exec.Plannable;
+import com.akiban.qp.rowtype.*;
 import com.akiban.sql.optimizer.SimplifiedQuery.*;
 
 import com.akiban.sql.parser.*;
@@ -47,10 +48,6 @@ import com.akiban.qp.physicaloperator.PhysicalOperator;
 import static com.akiban.qp.physicaloperator.API.*;
 
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
 
 import java.util.*;
 
@@ -66,7 +63,7 @@ public class OperatorCompiler
     protected BooleanNormalizer booleanNormalizer;
     protected SubqueryFlattener subqueryFlattener;
     protected Grouper grouper;
-    protected Schema schema;
+    protected SchemaAISBased schema;
 
     public OperatorCompiler(SQLParser parser, 
                             AkibanInformationSchema ais, String defaultSchemaName) {
@@ -78,51 +75,65 @@ public class OperatorCompiler
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
         grouper = new Grouper(parser);
-        schema = new Schema(ais);
+        schema = new SchemaAISBased(ais);
     }
 
     public void addView(ViewDefinition view) throws StandardException {
         binder.addView(view);
     }
 
+    // Probably subclassed by specific client to capture typing information in some way.
+    public static class ResultColumnBase {
+        private String name;
+        
+        public ResultColumnBase(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+
+    public ResultColumnBase getResultColumn(SimpleSelectColumn selectColumn) 
+            throws StandardException {
+        String name = selectColumn.getName();
+        if (selectColumn.isNameDefaulted() && selectColumn.getExpression().isColumn())
+            // Prefer the case stored in AIS to parser's standardized form.
+            name = ((ColumnExpression)
+                    selectColumn.getExpression()).getColumn().getName();
+        return new ResultColumnBase(name);
+    }
+
     public static class Result {
         private Plannable resultOperator;
-        private RowType resultRowType;
-        private List<Column> resultColumns;
-        private int[] resultColumnOffsets;
+        private List<ResultColumnBase> resultColumns;
         private int offset = 0;
         private int limit = -1;
 
         public Result(Plannable resultOperator,
-                      RowType resultRowType,
-                      List<Column> resultColumns,
-                      int[] resultColumnOffsets,
+                      List<ResultColumnBase> resultColumns,
                       int offset,
                       int limit) {
             this.resultOperator = resultOperator;
-            this.resultRowType = resultRowType;
             this.resultColumns = resultColumns;
-            this.resultColumnOffsets = resultColumnOffsets;
             this.offset = offset;
             this.limit = limit;
         }
-        public Result(Plannable resultOperator,
-                      RowType resultRowType) {
+        public Result(Plannable resultOperator) {
             this.resultOperator = resultOperator;
-            this.resultRowType = resultRowType;
         }
 
         public Plannable getResultOperator() {
             return resultOperator;
         }
-        public RowType getResultRowType() {
-            return resultRowType;
-        }
-        public List<Column> getResultColumns() {
+        public List<ResultColumnBase> getResultColumns() {
             return resultColumns;
-        }
-        public int[] getResultColumnOffsets() {
-            return resultColumnOffsets;
         }
         public int getOffset() {
             return offset;
@@ -141,6 +152,10 @@ public class OperatorCompiler
             for (String operator : explainPlan()) {
                 if (sb.length() > 0) sb.append("\n");
                 sb.append(operator);
+            }
+            if (resultColumns != null) {
+                sb.append("\n");
+                sb.append(resultColumns);
             }
             return sb.toString();
         }
@@ -218,10 +233,10 @@ public class OperatorCompiler
             throw new UnsupportedSQLException("Unsupported ORDER BY");
         
         PhysicalOperator resultOperator;
+        boolean needExtract = false;
         if (index != null) {
             squery.removeConditions(index.getIndexConditions());
             squery.recomputeUsed();
-            squery.removeUnusedJoins();            
             Index iindex = index.getIndex();
             TableNode indexTable = index.getTable();
             squery.getTables().setLeftBranch(indexTable);
@@ -253,8 +268,8 @@ public class OperatorCompiler
             if (descendantUsed) {
                 resultOperator = branchLookup_Default(resultOperator, groupTable,
                                                       indexType, tableType, false);
-                checkForCrossProducts(indexTable);
                 ancestorType = tableType; // Index no longer in stream.
+                needExtract = true; // Might be other descendants, too.
             }
             // Tables above this that also need to be output.
             List<RowType> addAncestors = new ArrayList<RowType>();
@@ -269,7 +284,6 @@ public class OperatorCompiler
                     addAncestors.add(tableRowType(left));
                 }
                 {
-                    TableNode previous = null;
                     TableNode sibling = left;
                     while (true) {
                         sibling = sibling.getNextSibling();
@@ -284,9 +298,6 @@ public class OperatorCompiler
                                 tableUsed = true;
                             }
                             addBranches.add(sibling);
-                            if (previous != null)
-                                needCrossProduct(previous, sibling);
-                            previous = sibling;
                         }
                     }
                 }
@@ -300,12 +311,12 @@ public class OperatorCompiler
                 resultOperator = branchLookup_Default(resultOperator, groupTable,
                                                       tableType, tableRowType(branchTable), 
                                                       true);
-                checkForCrossProducts(branchTable);
+                needExtract = true; // Might bring in things not joined.
             }
         }
         else {
             resultOperator = groupScan_Default(groupTable);
-            checkForCrossProducts(squery.getTables().getRoot());
+            needExtract = true; // Brings in the whole tree.
         }
         
         // TODO: Can apply most Select conditions before flattening.
@@ -315,17 +326,42 @@ public class OperatorCompiler
         // whole (as opposed to the outer join with a subquery
         // containing the condition).
 
+        int nbranches = squery.getTables().colorBranches();
+        FlattenState[] fls = new FlattenState[nbranches];
+
         Flattener fl = new Flattener(resultOperator);
-        FlattenState fls = null;
         try {
             tracer.beginEvent(EventTypes.FLATTEN);
-            fls = fl.flatten(squery.getJoins());
+            for (int i = 0; i < nbranches; i++)
+                fls[i] = fl.flatten(squery.getJoins(), i);
         } finally {
             tracer.endEvent();
         }
+
         resultOperator = fl.getResultOperator();
-        RowType resultRowType = fls.getResultRowType();
-        Map<TableNode,Integer> fieldOffsets = fls.getFieldOffsets();
+        // TODO: Actual Product operators.
+        if (nbranches > 1) {
+            throw new UnsupportedSQLException("Need Product of " + Arrays.asList(fls));
+        }
+        RowType resultRowType = fls[0].getResultRowType();
+        Map<TableNode,Integer> fieldOffsets = fls[0].getFieldOffsets();
+
+        if (needExtract) {
+            // Now that we are done flattening, there is only one row type
+            // that we need.  Extract it.
+            resultOperator = extract_Default(resultOperator,
+                                             Collections.singleton(resultRowType));
+            // When selecting from a single table, we'll have that user
+            // table type and not a flattened type.  If doing a group
+            // scan, there may be descendants that survived the
+            // extract. Cut them.
+            if (resultRowType instanceof UserTableRowType) {
+                UserTable table = ((UserTableRowType)resultRowType).userTable();
+                if (!table.getChildJoins().isEmpty()) {
+                    resultOperator = cut_Default(resultOperator, resultRowType);
+                }
+            }
+        }
 
         for (ColumnCondition condition : squery.getConditions()) {
             Expression predicate = condition.generateExpression(fieldOffsets);
@@ -335,25 +371,23 @@ public class OperatorCompiler
         }
 
         int ncols = squery.getSelectColumns().size();
-        List<Column> resultColumns = new ArrayList<Column>(ncols);
-        int[] resultColumnOffsets = new int[ncols];
-        int i = 0;
-        for (SimpleExpression selectExpr : squery.getSelectColumns()) {
-            if (!selectExpr.isColumn())
-                throw new UnsupportedSQLException("Unsupported result column: " + 
-                                                  selectExpr);
-            ColumnExpression selectColumn = (ColumnExpression)selectExpr;
-            TableNode table = selectColumn.getTable();
-            Column column = selectColumn.getColumn();
-            resultColumns.add(column);
-            resultColumnOffsets[i++] = fieldOffsets.get(table) + column.getPosition();
+        List<ResultColumnBase> resultColumns = new ArrayList<ResultColumnBase>(ncols);
+        List<Expression> resultExpressions = new ArrayList<Expression>(ncols);
+        for (SimpleSelectColumn selectColumn : squery.getSelectColumns()) {
+            ResultColumnBase resultColumn = getResultColumn(selectColumn);
+            resultColumns.add(resultColumn);
+            Expression resultExpression = 
+                selectColumn.getExpression().generateExpression(fieldOffsets);
+            resultExpressions.add(resultExpression);
         }
+        resultOperator = project_Default(resultOperator, resultRowType, 
+                                         resultExpressions);
+        resultRowType = resultOperator.rowType();
 
         int offset = squery.getOffset();
         int limit = squery.getLimit();
 
-        return new Result(resultOperator, resultRowType, 
-                          resultColumns, resultColumnOffsets,
+        return new Result(resultOperator, resultColumns, 
                           offset, limit);
     }
 
@@ -409,7 +443,7 @@ public class OperatorCompiler
 
         Plannable updatePlan = new com.akiban.qp.physicaloperator.Update_Default(resultOperator,
                                             new ExpressionRowUpdateFunction(updateRow));
-        return new Result(updatePlan, targetRowType);
+        return new Result(updatePlan);
     }
 
     public Result compileInsert(InsertNode insert) throws StandardException {
@@ -442,8 +476,6 @@ public class OperatorCompiler
         }
 
         public TableNode getTable() {
-            if (table == null)
-                table = computeDeepestTable();
             return table;
         }
 
@@ -478,6 +510,7 @@ public class OperatorCompiler
         public int compareTo(IndexUsage other) {
             if (sorting) {
                 if (!other.sorting)
+                    // Sorted better than unsorted.
                     return +1;
             }
             else if (other.sorting)
@@ -487,6 +520,7 @@ public class OperatorCompiler
                     return +1;
                 else if (equalityConditions.size() != other.equalityConditions.size())
                     return (equalityConditions.size() > other.equalityConditions.size()) 
+                        // More conditions tested better than fewer.
                         ? +1 : -1;
             }
             else if (other.equalityConditions != null)
@@ -502,12 +536,33 @@ public class OperatorCompiler
                 on++;
             if (n != on) 
                 return (n > on) ? +1 : -1;
+            if (index.getColumns().size() != other.index.getColumns().size())
+                    return (index.getColumns().size() < other.index.getColumns().size()) 
+                        // Fewer columns indexed better than more.
+                        ? +1 : -1;
+            // Deeper better than shallower.
             return getTable().getTable().getTableId().compareTo(other.getTable().getTable().getTableId());
         }
 
         // Can this index be used for part of the given query?
         public boolean usable(SimplifiedQuery squery) {
             List<IndexColumn> indexColumns = index.getColumns();
+            if (index.isGroupIndex()) {
+                // A group index is for the inner join, so all the
+                // tables it indexes must appear in the query as well.
+                // Its hkey is for the deepest table, figure out which
+                // that is, too.
+                TableNode deepest = null;
+                for (IndexColumn indexColumn : indexColumns) {
+                    TableNode table = squery.getColumnTable(indexColumn.getColumn());
+                    if ((table == null) || !table.isUsed() || table.isOuter())
+                        return false;
+                    if ((deepest == null) || (deepest.getDepth() < table.getDepth()))
+                        deepest = table;
+                }
+                if (table == null)
+                    table = deepest;
+            }
             int ncols = indexColumns.size();
             int nequals = 0;
             while (nequals < ncols) {
@@ -578,12 +633,13 @@ public class OperatorCompiler
             }
 
             if ((lowCondition == null) && (highCondition == null)) {
-                IndexBound eq = getIndexBound(index, keys);
+                IndexBound eq = getIndexBound(index, keys, kidx);
                 return new IndexKeyRange(eq, true, eq, true);
             }
             else {
                 Expression[] lowKeys = null, highKeys = null;
                 boolean lowInc = false, highInc = false;
+                int lidx = kidx, hidx = kidx;
                 if (lowCondition != null) {
                     lowKeys = keys;
                     if (highCondition != null) {
@@ -595,32 +651,17 @@ public class OperatorCompiler
                     highKeys = keys;
                 }
                 if (lowCondition != null) {
-                    lowKeys[kidx] = lowCondition.getRight().generateExpression(null);
+                    lowKeys[lidx++] = lowCondition.getRight().generateExpression(null);
                     lowInc = (lowCondition.getOperation() == Comparison.GE);
                 }
                 if (highCondition != null) {
-                    highKeys[kidx] = highCondition.getRight().generateExpression(null);
+                    highKeys[hidx++] = highCondition.getRight().generateExpression(null);
                     highInc = (highCondition.getOperation() == Comparison.LE);
                 }
-                IndexBound lo = getIndexBound(index, lowKeys);
-                IndexBound hi = getIndexBound(index, highKeys);
+                IndexBound lo = getIndexBound(index, lowKeys, lidx);
+                IndexBound hi = getIndexBound(index, highKeys, hidx);
                 return new IndexKeyRange(lo, lowInc, hi, highInc);
             }
-        }
-
-        // A group index has an hkey from the deepest table it indexes.
-        // Take the deepest that we are actually using, for which that
-        // hkey should work, since all indexed columns must be in a
-        // single branch.
-        protected TableNode computeDeepestTable() {
-            TableNode deepest = null;
-            for (ColumnCondition columnCondition : getIndexConditions()) {
-                TableNode table = columnCondition.getTable();
-                if ((deepest == null) || (deepest.getDepth() < table.getDepth()))
-                    deepest = table;
-            }
-            assert (deepest != null);
-            return deepest;
         }
     }
 
@@ -691,6 +732,11 @@ public class OperatorCompiler
             }
             nfields += other.nfields;
         }
+
+        @Override
+        public String toString() {
+            return resultRowType.toString();
+        }
     }
 
     // Holds a partial operator tree while flattening, since need the
@@ -706,9 +752,11 @@ public class OperatorCompiler
             return resultOperator;
         }
 
-        public FlattenState flatten(BaseJoinNode join) {
+        public FlattenState flatten(BaseJoinNode join, int branch) {
             if (join.isTable()) {
                 TableNode table = ((TableJoinNode)join).getTable();
+                if (!table.isUsedOnBranch(branch))
+                    return null;
                 Map<TableNode,Integer> fieldOffsets = new HashMap<TableNode,Integer>();
                 fieldOffsets.put(table, 0);
                 return new FlattenState(tableRowType(table),
@@ -719,21 +767,18 @@ public class OperatorCompiler
                 JoinJoinNode jjoin = (JoinJoinNode)join;
                 BaseJoinNode left = jjoin.getLeft();
                 BaseJoinNode right = jjoin.getRight();
-                FlattenState fleft = flatten(left);
-                FlattenState fright = flatten(right);
-                int flags = DEFAULT;
-                switch (jjoin.getJoinType()) {
-                case LEFT:
-                    flags = LEFT_JOIN;
-                    break;
-                case RIGHT:
-                    flags = RIGHT_JOIN;
-                    break;
+                FlattenState fleft = flatten(left, branch);
+                FlattenState fright = flatten(right, branch);
+                if (fleft == null) {
+                    return fright;
+                }
+                else if (fright == null) {
+                    return fleft;
                 }
                 resultOperator = flatten_HKeyOrdered(resultOperator,
                                                      fleft.getResultRowType(),
                                                      fright.getResultRowType(),
-                                                     flags);
+                                                     jjoin.getJoinType());
                 fleft.setResultRowType(resultOperator.rowType());
                 fleft.mergeFields(fright);
                 return fleft;
@@ -745,7 +790,12 @@ public class OperatorCompiler
         return schema.userTableRowType(table.getTable());
     }
 
-    protected IndexBound getIndexBound(Index index, Expression[] keys) {
+    /** Return an index bound for the given index and expressions.
+     * @param index the index in use
+     * @param keys {@link Expression}s for index lookup key
+     * @param nkeys number of keys actually in use
+     */
+    protected IndexBound getIndexBound(Index index, Expression[] keys, int nkeys) {
         if (keys == null) 
             return null;
         UserTable userTable = null;
@@ -754,13 +804,18 @@ public class OperatorCompiler
         // TODO: group index bound table.
         return new IndexBound(userTable,
                               getIndexExpressionRow(index, keys),
-                              getIndexColumnSelector(index));
+                              getIndexColumnSelector(index, nkeys));
     }
 
-    protected ColumnSelector getIndexColumnSelector(final Index index) {
+    /** Return a column selector that enables the first <code>nkeys</code> fields
+     * of a row of the index's user table. */
+    // TODO: group index fail: the column's position won't be its
+    // field index in the index key row.
+    protected ColumnSelector getIndexColumnSelector(final Index index, final int nkeys) {
         return new ColumnSelector() {
                 public boolean includesColumn(int columnPosition) {
-                    for (IndexColumn indexColumn : index.getColumns()) {
+                    for (int i = 0; i < nkeys; i++) {
+                        IndexColumn indexColumn = index.getColumns().get(i);
                         Column column = indexColumn.getColumn();
                         if (column.getPosition() == columnPosition) {
                             return true;
@@ -789,7 +844,7 @@ public class OperatorCompiler
             return index.getColumns().size();
         }
 
-        public UnknownIndexRowType(Schema schema, UserTableRowType tableType, Index index)
+        public UnknownIndexRowType(SchemaAISBased schema, UserTableRowType tableType, Index index)
         {
             super(schema, tableType, null);
             this.index = index;
@@ -800,6 +855,13 @@ public class OperatorCompiler
         private final Index index;
     }
 
+    /** Return a {@link Row} for the given index containing the given
+     * {@link Expression} values.  
+     *
+     * When testing, this just returns a row with those expressions.
+     * In use with actual index lookup, needs to be overridden to
+     * return a row shaped like the user table.
+     */
     protected Row getIndexExpressionRow(Index index, Expression[] keys) {
         RowType rowType = null;
         if (index.isTableIndex())
@@ -808,33 +870,6 @@ public class OperatorCompiler
             // TODO: See comment above.
             rowType = new UnknownIndexRowType(schema, null, index);
         return new ExpressionRow(rowType, keys);
-    }
-
-    /** Check whether any list of children has a cross-product join,
-     * since that does not come from the group structure. */
-    protected void checkForCrossProducts(TableNode node) 
-            throws StandardException {
-        for (TableNode parent : node.subtree()) {
-            TableNode previous = null;
-            for (TableNode child = parent.getFirstChild(); 
-                 child != null; 
-                 child = child.getNextSibling()) {
-                if (child.subtreeUsed()) {
-                    if (previous != null)
-                        needCrossProduct(previous, child);
-                    previous = child;
-                }
-            }
-        }
-    }
-
-    // TODO: One slow way to do a cross product might be to filter out
-    // any existing right rows and then lookup to get all of them for
-    // the left's hkey.
-    protected void needCrossProduct(TableNode left, TableNode right) 
-            throws StandardException {
-        throw new UnsupportedSQLException("Need cross product between " + left +
-                                          " and " + right);
     }
 
 }

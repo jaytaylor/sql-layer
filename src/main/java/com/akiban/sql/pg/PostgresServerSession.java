@@ -18,6 +18,7 @@ package com.akiban.sql.pg;
 import com.akiban.sql.parser.SQLParser;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.qp.physicaloperator.StoreAdapter;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
@@ -73,5 +74,8 @@ public interface PostgresServerSession
     
     /** Return the object used to trace pg sessions. */
     public SessionTracer getSessionTracer();
+
+    /** Return an adapter for the session's store. */
+    public StoreAdapter getStore();
 
 }

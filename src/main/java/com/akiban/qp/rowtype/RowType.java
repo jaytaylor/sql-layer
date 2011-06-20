@@ -54,14 +54,17 @@ public abstract class RowType
         return typeId;
     }
 
-    public final Ancestry ancestry()
+    public final TypeComposition typeComposition()
     {
-        return ancestry;
+        return typeComposition;
     }
 
     public abstract int nFields();
 
-    public abstract boolean ancestorOf(RowType type);
+    public final boolean ancestorOf(RowType that)
+    {
+        return that.typeComposition != null && this.typeComposition.isAncestorOf(that.typeComposition);
+    }
 
     /**
      * <p>Gets the AIS Column for a given field. This method may throw an exception if the RowType doesn't have
@@ -121,11 +124,9 @@ public abstract class RowType
 
     // For use by subclasses
 
-    protected RowType(Schema schema, int typeId, Ancestry ancestry)
+    protected void typeComposition(TypeComposition typeComposition)
     {
-        this.schema = schema;
-        this.typeId = typeId;
-        this.ancestry = ancestry;
+        this.typeComposition = typeComposition;
     }
 
     protected void checkFieldRange(int field) {
@@ -137,9 +138,15 @@ public abstract class RowType
         }
     }
 
+    protected RowType(Schema schema, int typeId)
+    {
+        this.schema = schema;
+        this.typeId = typeId;
+    }
+
     // Object state
 
     private final Schema schema;
     private final int typeId;
-    private final Ancestry ancestry;
+    private TypeComposition typeComposition;
 }

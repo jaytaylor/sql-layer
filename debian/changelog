@@ -1,3 +1,9 @@
+akiban-server (0.4.2) lucid; urgency=low
+
+  * Development Release.
+
+ -- Akiban Build User <build@akiban.com>  Thu, 16 Jun 2011 16:45:01 +0100
+
 akiban-server (0.4.1) lucid; urgency=low
 
   * Development Release.

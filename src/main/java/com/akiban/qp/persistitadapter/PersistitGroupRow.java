@@ -25,6 +25,8 @@ import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.encoding.EncodingException;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // public for access by PhysicalOperatorIT
 public class PersistitGroupRow extends AbstractRow
@@ -90,8 +92,9 @@ public class PersistitGroupRow extends AbstractRow
                 adapter.persistit.expandRowData(exchange, rowData);
                 row.setRowDef(rowData.getRowDefId());
                 row.setRowData(rowData);
-                persistitHKey().copyFrom(exchange.getKey());
-                rowData.hKey(persistitHKey().key());
+                PersistitHKey persistitHKey = persistitHKey();
+                persistitHKey.copyFrom(exchange.getKey());
+                rowData.hKey(persistitHKey.key());
             } catch (ArrayIndexOutOfBoundsException e) {
                 exception = e;
             } catch (EncodingException e) {
@@ -102,7 +105,13 @@ public class PersistitGroupRow extends AbstractRow
                 }
             }
             if (exception != null) {
-                rowData.reset(new byte[rowData.getBytes().length * 2]);
+                int newSize = rowData.getBytes().length * 2;
+                if (newSize >= MAX_ROWDATA_SIZE_BYTES) {
+                    LOG.error("{}: Unable to copy from exchange for key {}: {}",
+                              new Object[]{this, exchange.getKey(), exception.getMessage()});
+                    throw exception;
+                }
+                rowData.reset(new byte[newSize]);
             }
         } while (exception != null);
     }
@@ -117,10 +126,16 @@ public class PersistitGroupRow extends AbstractRow
     private PersistitHKey persistitHKey()
     {
         RowDef rowDef = row.getRowDef();
-        currentHKey = typedHKeys[rowDef.getOrdinal()];
+        int ordinal = rowDef.getOrdinal();
+        if (ordinal >= typedHKeys.length) {
+            PersistitHKey[] newTypedHKeys = new PersistitHKey[ordinal * 2];
+            System.arraycopy(typedHKeys, 0, newTypedHKeys, 0, typedHKeys.length);
+            typedHKeys = newTypedHKeys;
+        }
+        currentHKey = typedHKeys[ordinal];
         if (currentHKey == null) {
             currentHKey = new PersistitHKey(adapter, rowDef.userTable().hKey());
-            typedHKeys[rowDef.getOrdinal()] = currentHKey;
+            typedHKeys[ordinal] = currentHKey;
         }
         return currentHKey;
     }
@@ -134,12 +149,15 @@ public class PersistitGroupRow extends AbstractRow
     {
         this.adapter = adapter;
         this.rowData = rowData;
-        this.typedHKeys = new PersistitHKey[adapter.schema().maxTypeId() + 1];
+        this.typedHKeys = new PersistitHKey[INITIAL_HKEY_ARRAY_SIZE];
     }
 
     // Class state
 
+    private static final Logger LOG = LoggerFactory.getLogger(PersistitGroupRow.class);
     private static final int INITIAL_ROW_SIZE = 500;
+    private static final int INITIAL_HKEY_ARRAY_SIZE = 10;
+    private static final int MAX_ROWDATA_SIZE_BYTES = 5000000;
 
     // Object state
 
@@ -147,5 +165,5 @@ public class PersistitGroupRow extends AbstractRow
     private RowData rowData;
     private LegacyRowWrapper row;
     private PersistitHKey currentHKey;
-    private final PersistitHKey[] typedHKeys;
+    private PersistitHKey[] typedHKeys;
 }

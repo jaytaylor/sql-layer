@@ -79,4 +79,6 @@ public interface TreeService extends Service<TreeService> {
     String getDataPath();
 
     String volumeForTree(final String schemaName, final String treeName);
+
+    boolean treeExists(final String schemaName, final String treeName) throws PersistitException;
 }

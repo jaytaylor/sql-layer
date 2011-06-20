@@ -224,17 +224,11 @@ class PersistitGroupCursor implements GroupCursor
         @Override
         public void advance() throws PersistitException, InvalidOperationException
         {
-            if (first) {
-                if (!exchange.traverse(Key.GTEQ, true)) {
-                    close();
-                }
-                first = false;
-            } else {
-                if (!exchange.traverse(Key.GT, true) ||
-                    exchange.getKey().firstUniqueByteIndex(controllingHKey) < controllingHKey.getEncodedSize()) {
-                    close();
-                }
+            if (!exchange.traverse(direction, true) ||
+                exchange.getKey().firstUniqueByteIndex(controllingHKey) < controllingHKey.getEncodedSize()) {
+                close();
             }
+            direction = Key.GT;
         }
 
         HKeyAndDescendentsScan(PersistitHKey hKey) throws PersistitException
@@ -243,7 +237,7 @@ class PersistitGroupCursor implements GroupCursor
             hKey.copyTo(controllingHKey);
         }
 
-        private boolean first = true;
+        private Key.Direction direction = Key.GTEQ;
     }
 
     private class HKeyWithoutDescendentsScan implements GroupScan

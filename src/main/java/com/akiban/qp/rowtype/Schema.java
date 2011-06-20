@@ -15,81 +15,22 @@
 
 package com.akiban.qp.rowtype;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.Expression;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
 
-import static java.lang.Math.max;
-
-// UserTable RowTypes are indexed by the UserTable's RowDef's ordinal. Derived RowTypes get higher values.
-
-public class Schema
+public interface Schema
 {
-    public Schema(AkibanInformationSchema ais)
-    {
-        this.ais = ais;
-        this.typeIdCounter = -1;
-        for (UserTable userTable : ais.getUserTables().values()) {
-            UserTableRowType userTableRowType = new UserTableRowType(this, userTable);
-            rowTypes.put(userTable.getTableId(), userTableRowType);
-            this.typeIdCounter = max(this.typeIdCounter, userTable.getTableId());
-            // Indexes
-            this.typeIdCounter++;
-            for (TableIndex index : userTable.getIndexesIncludingInternal()) {
-                IndexRowType indexRowType = new IndexRowType(this, userTableRowType, index);
-                userTableRowType.addIndexRowType(indexRowType);
-                rowTypes.put(indexRowType.typeId(), indexRowType);
-            }
-        }
-        this.typeIdCounter++;
-    }
+    UserTableRowType userTableRowType(UserTable table);
 
-    public AkibanInformationSchema ais()
-    {
-        return ais;
-    }
+    IndexRowType indexRowType(TableIndex index);
 
-    public synchronized UserTableRowType userTableRowType(UserTable table)
-    {
-        return (UserTableRowType) rowTypes.get(table.getTableId());
-    }
+    FlattenedRowType newFlattenType(RowType parent, RowType child);
 
-    public synchronized IndexRowType indexRowType(TableIndex index)
-    {
-        assert index.getTable().isUserTable() : index;
-        return userTableRowType((UserTable) index.getTable()).indexRowType(index);
-    }
+    ProjectedRowType newProjectType(List<Expression> columns);
 
-    public synchronized FlattenedRowType newFlattenType(RowType parent, RowType child)
-    {
-        return new FlattenedRowType(this, typeIdCounter++, parent, child);
-    }
-
-    public synchronized ProjectedRowType newProjectType(List<Expression> columns)
-    {
-        return new ProjectedRowType(this, typeIdCounter++, columns);
-    }
-
-    public int maxTypeId()
-    {
-        return rowTypes.size() - 1;
-    }
-
-    // For use by this package
-
-    synchronized int nextTypeId()
-    {
-        return typeIdCounter++;
-    }
-
-    // Object state
-
-    private final AkibanInformationSchema ais;
-    // Type of rowTypes is ArrayList, not List, to make it clear that null values are permitted.
-    private final Map<Integer, RowType> rowTypes = new HashMap<Integer, RowType>();
-    private volatile int typeIdCounter;
+    Iterator<RowType> rowTypes();
 }

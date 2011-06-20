@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.sql.parser.*;
+import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.sql.StandardException;
 
@@ -26,6 +27,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 
 import static com.akiban.qp.expression.API.*;
+import static com.akiban.qp.physicaloperator.API.JoinType;
 import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;
 
@@ -34,7 +36,7 @@ import java.util.*;
 /**
  * An SQL DML statement turned into a simpler form for the interim
  * heuristic optimizer.
- * 
+ *
  * Takes care of representing what we can optimize today and rejecting
  * what we cannot.
  */
@@ -70,12 +72,46 @@ public class SimplifiedQuery
                 node = parent;
             }
         }
+
+        /** Determine branch occurrence.
+         * @return the number of branches. */
+        public int colorBranches() {
+            return colorBranches(root, 0);
+        }
+
+        private int colorBranches(TableNode node, int nbranches) {
+            int branches = 0;
+            for (TableNode child = node.getFirstChild(); 
+                 child != null; 
+                 child = child.getNextSibling()) {
+                nbranches = colorBranches(child, nbranches);
+                if (child.isUsed()) {
+                    // A parent is on the same branch as any child.
+                    branches |= child.getBranches();
+                }
+            }
+            if (branches == 0) {
+                if (node.isUsed()) {
+                    // The leaf of a new branch.
+                    branches = (1 << nbranches++);
+                }
+            }
+            else if (Integer.bitCount(branches) > 1) {
+                // A parent of children on different branches must be
+                // included to get the necessary cross-product join
+                // fields.
+                node.setUsed(true);
+            }
+            node.setBranches(branches);
+            return nbranches;
+        }
     }
 
     public static class TableNode extends TableTreeBase.TableNodeBase<TableNode> {
         private boolean used, outer;
         private List<ColumnCondition> conditions;
-        private List<ColumnExpression> selectColumns;
+        private List<SimpleSelectColumn> selectColumns;
+        private int branches;
 
         public TableNode(UserTable table) {
             super(table);
@@ -114,14 +150,25 @@ public class SimplifiedQuery
             return ((selectColumns != null) && !selectColumns.isEmpty());
         }
 
-        public List<ColumnExpression> getSelectColumns() {
+        public List<SimpleSelectColumn> getSelectColumns() {
             return selectColumns;
         }
 
-        protected void addSelectColumn(ColumnExpression selectColumn) {
+        protected void addSelectColumn(SimpleSelectColumn selectColumn) {
             if (selectColumns == null)
-                selectColumns = new ArrayList<ColumnExpression>();
+                selectColumns = new ArrayList<SimpleSelectColumn>();
             selectColumns.add(selectColumn);
+        }
+
+        public int getBranches() {
+            return branches;
+        }
+        public void setBranches(int branches) {
+            this.branches = branches;
+        }
+
+        public boolean isUsedOnBranch(int branch) {
+            return used && ((branches & (1 << branch)) != 0);
         }
 
         /** Is this table or any beneath it included in the query? */
@@ -164,10 +211,10 @@ public class SimplifiedQuery
         }
 
         public Integer getMinOrdinal() {
-            return table.getTable().getTableId();
+            return table.getOrdinal();
         }
         public Integer getMaxOrdinal() {
-            return table.getTable().getTableId();
+            return table.getOrdinal();
         }
 
         public boolean isTable() {
@@ -179,17 +226,12 @@ public class SimplifiedQuery
         }
 
         public void promotedOuterJoin() {
-            table.setOuter(false);            
+            table.setOuter(false);
         }
 
         public String toString() {
             return table.toString();
         }
-    }
-
-    // A kind of join.
-    public static enum JoinType {
-        INNER, LEFT, RIGHT, FULL
     }
 
     // A join between two tables / subjoins.
@@ -198,7 +240,7 @@ public class SimplifiedQuery
         private JoinType joinType;
         private Integer minOrdinal, maxOrdinal;
 
-        public JoinJoinNode(BaseJoinNode left, BaseJoinNode right, 
+        public JoinJoinNode(BaseJoinNode left, BaseJoinNode right,
                             JoinType joinType) {
             this.left = left;
             this.right = right;
@@ -240,7 +282,7 @@ public class SimplifiedQuery
         }
 
         public boolean isInnerJoin() {
-            return (joinType == JoinType.INNER);
+            return (joinType == JoinType.INNER_JOIN);
         }
 
         // If the optional side of an outer join cannot be null, turn it into inner.
@@ -250,22 +292,22 @@ public class SimplifiedQuery
             boolean rp = right.promoteOuterJoins(conditionTables);
             boolean promoted = false;
             switch (joinType) {
-            case LEFT:
+            case LEFT_JOIN:
                 promoted = rp;
                 break;
-            case RIGHT:
+            case RIGHT_JOIN:
                 promoted = lp;
                 break;
             }
             if (promoted) {
-                joinType = JoinType.INNER;
+                joinType = JoinType.INNER_JOIN;
                 promotedOuterJoin();
             }
             return lp || rp;
         }
 
         public void promotedOuterJoin() {
-            if (joinType == JoinType.INNER) {
+            if (joinType == JoinType.INNER_JOIN) {
                 left.promotedOuterJoin();
                 right.promotedOuterJoin();
             }
@@ -277,17 +319,49 @@ public class SimplifiedQuery
             left = right;
             right = temp;
             switch (joinType) {
-            case LEFT:
-                joinType = JoinType.RIGHT;
+            case LEFT_JOIN:
+                joinType = JoinType.RIGHT_JOIN;
                 break;
-            case RIGHT:
-                joinType = JoinType.LEFT;
+            case RIGHT_JOIN:
+                joinType = JoinType.LEFT_JOIN;
                 break;
             }
         }
 
         public String toString() {
             return joinType + "(" + left + "," + right + ")";
+        }
+    }
+
+    // An expression used as select column.
+    public static class SimpleSelectColumn {
+        private String name;
+        private boolean nameDefaulted;
+        private SimpleExpression expression;
+        private DataTypeDescriptor type;
+
+        public SimpleSelectColumn(String name, boolean nameDefaulted,
+                                  SimpleExpression expression,
+                                  DataTypeDescriptor type) {
+            this.name = name;
+            this.nameDefaulted = nameDefaulted;
+            this.expression = expression;
+            this.type = type;
+        }
+
+        public String getName() {
+            return name;
+        }
+        public boolean isNameDefaulted() {
+            return nameDefaulted;
+        }
+
+        public SimpleExpression getExpression() {
+            return expression;
+        }
+
+        public DataTypeDescriptor getType() {
+            return type;
         }
     }
 
@@ -304,7 +378,7 @@ public class SimplifiedQuery
     public static class ColumnExpression extends SimpleExpression {
         private TableNode table;
         private Column column;
-        
+
         public ColumnExpression(TableNode table, Column column) {
             this.table = table;
             this.column = column;
@@ -330,11 +404,11 @@ public class SimplifiedQuery
             return field(fieldOffsets.get(table) + column.getPosition());
         }
     }
-    
+
     // An operand with a constant literal value.
     public static class LiteralExpression extends SimpleExpression {
         private Object value;
-        
+
         public LiteralExpression(Object value) {
             if (value instanceof Integer)
                 value = new Long(((Integer)value).intValue());
@@ -357,7 +431,7 @@ public class SimplifiedQuery
     // An operand with a parameter value.
     public static class ParameterExpression extends SimpleExpression {
         private int position;
-        
+
         public ParameterExpression(int position) {
             this.position = position;
         }
@@ -424,7 +498,7 @@ public class SimplifiedQuery
 
         // Is this a condition between the given column and a constant
         // of the given comparison type?
-        public boolean isColumnConstantCondition(Column column, 
+        public boolean isColumnConstantCondition(Column column,
                                                  Comparison comparison) {
             if ((column != left.getColumn()) || !isConstant())
                 return false;
@@ -504,12 +578,12 @@ public class SimplifiedQuery
                 return column.toString() + " DESC";
         }
     }
-    
+
     private GroupBinding group = null;
     private BaseJoinNode joins = null;
     private List<List<SimpleExpression>> values = null;
     private TableTree tables = new TableTree();
-    private List<SimpleExpression> selectColumns = null;
+    private List<SimpleSelectColumn> selectColumns = null;
     private List<ColumnCondition> conditions = new ArrayList<ColumnCondition>();
     private List<SortColumn> sortColumns = null;
     private int offset = 0;
@@ -517,13 +591,13 @@ public class SimplifiedQuery
     private List<Set<Column>> columnEquivalences = new ArrayList<Set<Column>>();
     private Map<Column,Set<Column>> columnEquivalencesByColumn = new HashMap<Column,Set<Column>>();
 
-    public SimplifiedQuery(DMLStatementNode statement, Set<ValueNode> joinConditions) 
+    public SimplifiedQuery(DMLStatementNode statement, Set<ValueNode> joinConditions)
             throws StandardException {
         fillFromResultSet(statement.getResultSetNode(), joinConditions);
     }
 
     protected void fillFromResultSet(ResultSetNode resultSet,
-                                     Set<ValueNode> joinConditions) 
+                                     Set<ValueNode> joinConditions)
             throws StandardException {
         if (resultSet instanceof SelectNode) {
             fillFromSelect((SelectNode)resultSet, joinConditions);
@@ -553,7 +627,7 @@ public class SimplifiedQuery
             throw new UnsupportedSQLException("Unsupported result set", resultSet);
     }
 
-    protected void fillFromSelect(SelectNode select, Set<ValueNode> joinConditions) 
+    protected void fillFromSelect(SelectNode select, Set<ValueNode> joinConditions)
             throws StandardException {
         if (select.getGroupByList() != null)
             throw new UnsupportedSQLException("Unsupported GROUP BY");
@@ -566,14 +640,14 @@ public class SimplifiedQuery
             if (joins == null)
                 joins = getJoinNode(fromTable, false);
             else
-                joins = joinNodes(joins, getJoinNode(fromTable, false), JoinType.INNER);
+                joins = joinNodes(joins, getJoinNode(fromTable, false), JoinType.INNER_JOIN);
         }
 
         ValueNode whereClause = select.getWhereClause();
         while (whereClause != null) {
             if (whereClause.isBooleanTrue()) break;
             if (!(whereClause instanceof AndNode))
-                throw new UnsupportedSQLException("Unsupported complex WHERE", 
+                throw new UnsupportedSQLException("Unsupported complex WHERE",
                                                   whereClause);
             AndNode andNode = (AndNode)whereClause;
             whereClause = andNode.getRightOperand();
@@ -582,16 +656,25 @@ public class SimplifiedQuery
                 continue;
             addCondition(condition);
         }
-        
+
         ResultColumnList rcl = select.getResultColumns();
         if (rcl != null) {
-            selectColumns = new ArrayList<SimpleExpression>(rcl.size());
+            selectColumns = new ArrayList<SimpleSelectColumn>(rcl.size());
             for (ResultColumn result : select.getResultColumns()) {
-                SimpleExpression column = getSimpleExpression(result.getExpression());
+                SimpleExpression expr = getSimpleExpression(result.getExpression());
+                String name = result.getName();
+                boolean nameDefaulted =
+                    // TODO: Maybe mark this in the grammar. Or don't
+                    // worry and accept case imposed by parser.
+                    (result.getExpression() instanceof ColumnReference) &&
+                    (name == ((ColumnReference)result.getExpression()).getColumnName());
+                SimpleSelectColumn column = new SimpleSelectColumn(name, nameDefaulted,
+                                                                   expr,
+                                                                   result.getType());
                 selectColumns.add(column);
-                if (column instanceof ColumnExpression) {
-                    ColumnExpression selectColumn = (ColumnExpression)column;
-                    selectColumn.getTable().addSelectColumn(selectColumn);
+                if (expr.isColumn()) {
+                    ColumnExpression columnExpression = (ColumnExpression)expr;
+                    columnExpression.getTable().addSelectColumn(column);
                 }
             }
         }
@@ -636,8 +719,12 @@ public class SimplifiedQuery
         case NodeTypes.IN_LIST_OPERATOR_NODE:
             addInCondition((InListOperatorNode)condition);
             break;
+        case NodeTypes.BOOLEAN_CONSTANT_NODE:
+            if (condition.isBooleanTrue())
+                break;
+            /* else falls through */
         default:
-            throw new UnsupportedSQLException("Unsupported WHERE predicate", 
+            throw new UnsupportedSQLException("Unsupported WHERE predicate",
                                               condition);
         }
     }
@@ -664,7 +751,7 @@ public class SimplifiedQuery
             throws StandardException {
         ColumnExpression left = getColumnExpression(between.getLeftOperand());
         if (left == null)
-            throw new UnsupportedSQLException("Unsupported BETWEEN operand", 
+            throw new UnsupportedSQLException("Unsupported BETWEEN operand",
                                               between.getLeftOperand());
         ValueNodeList rightOperandList = between.getRightOperandList();
         SimpleExpression right1 = getSimpleExpression(rightOperandList.get(0));
@@ -677,7 +764,7 @@ public class SimplifiedQuery
             throws StandardException {
         ColumnExpression left = getColumnExpression(in.getLeftOperand());
         if (left == null)
-            throw new UnsupportedSQLException("Unsupported IN operand", 
+            throw new UnsupportedSQLException("Unsupported IN operand",
                                               in.getLeftOperand());
         ValueNodeList rightOperandList = in.getRightOperandList();
         if (rightOperandList.size() != 1)
@@ -689,7 +776,7 @@ public class SimplifiedQuery
     protected void fillFromOrderBy(OrderByList orderByList) throws StandardException {
         List<SortColumn> sc = new ArrayList<SortColumn>();
         for (OrderByColumn orderByColumn : orderByList) {
-            Column column = getColumnReferenceColumn(orderByColumn.getExpression(), 
+            Column column = getColumnReferenceColumn(orderByColumn.getExpression(),
                                                      "Unsupported ORDER BY column");
             // If column has a constant value, there is no need to sort on it.
             if (!isColumnConstant(column))
@@ -707,16 +794,16 @@ public class SimplifiedQuery
         limit = getIntegerConstant(limitClause, "Unsupported LIMIT");
     }
 
-    protected BaseJoinNode getJoinNode(FromTable fromTable, boolean outer) 
+    protected BaseJoinNode getJoinNode(FromTable fromTable, boolean outer)
             throws StandardException {
         if (fromTable instanceof FromBaseTable) {
             TableBinding tb = (TableBinding)fromTable.getUserData();
-            if (tb == null) 
-                throw new UnsupportedSQLException("Unsupported FROM table", 
+            if (tb == null)
+                throw new UnsupportedSQLException("Unsupported FROM table",
                                                   fromTable);
             GroupBinding gb = tb.getGroupBinding();
             if (gb == null)
-                throw new UnsupportedSQLException("Unsupported FROM non-group", 
+                throw new UnsupportedSQLException("Unsupported FROM non-group",
                                                   fromTable);
             if (group == null)
                 group = gb;
@@ -734,37 +821,37 @@ public class SimplifiedQuery
             JoinType joinType;
             switch (joinNode.getNodeType()) {
             case NodeTypes.JOIN_NODE:
-                joinType = JoinType.INNER;
+                joinType = JoinType.INNER_JOIN;
                 break;
             case NodeTypes.HALF_OUTER_JOIN_NODE:
                 if (((HalfOuterJoinNode)joinNode).isRightOuterJoin())
-                    joinType = JoinType.RIGHT;
+                    joinType = JoinType.RIGHT_JOIN;
                 else
-                    joinType = JoinType.LEFT;
+                    joinType = JoinType.LEFT_JOIN;
                 break;
             default:
                 throw new UnsupportedSQLException("Unsupported join type", joinNode);
             }
             return joinNodes(getJoinNode((FromTable)joinNode.getLeftResultSet(),
-                                         outer || ((joinType == JoinType.RIGHT) ||
-                                                   (joinType == JoinType.FULL))),
+                                         outer || ((joinType == JoinType.RIGHT_JOIN) ||
+                                                   (joinType == JoinType.FULL_JOIN))),
                              getJoinNode((FromTable)joinNode.getRightResultSet(),
-                                         outer || ((joinType == JoinType.LEFT) ||
-                                                   (joinType == JoinType.FULL))),
+                                         outer || ((joinType == JoinType.LEFT_JOIN) ||
+                                                   (joinType == JoinType.FULL_JOIN))),
                              joinType);
         }
         else
             throw new UnsupportedSQLException("Unsupported FROM non-table", fromTable);
     }
 
-    protected BaseJoinNode joinNodes(BaseJoinNode left, BaseJoinNode right, 
+    protected BaseJoinNode joinNodes(BaseJoinNode left, BaseJoinNode right,
                                      JoinType joinType) throws StandardException {
         return new JoinJoinNode(left, right, joinType);
     }
 
     protected ColumnExpression getColumnExpression(Column column)
             throws StandardException {
-        TableNode table = tables.getNode(column.getUserTable());
+        TableNode table = getColumnTable(column);
         return new ColumnExpression(table, column);
     }
 
@@ -775,7 +862,7 @@ public class SimplifiedQuery
         return getColumnExpression(column);
     }
 
-    protected SimpleExpression getSimpleExpression(ValueNode operand) 
+    protected SimpleExpression getSimpleExpression(ValueNode operand)
             throws StandardException {
         if (operand instanceof ColumnReference)
             return getColumnExpression(getColumnReferenceColumn(operand,
@@ -809,9 +896,9 @@ public class SimplifiedQuery
             return null;
         throw new UnsupportedSQLException(errmsg, value);
     }
-    
+
     // Get the constant integer value that this node represents or else throw error.
-    protected int getIntegerConstant(ValueNode value, String errmsg) 
+    protected int getIntegerConstant(ValueNode value, String errmsg)
             throws StandardException {
         if (value instanceof NumericConstantNode) {
             Object number = ((NumericConstantNode)value).getValue();
@@ -833,7 +920,7 @@ public class SimplifiedQuery
     public TableTree getTables() {
         return tables;
     }
-    public List<SimpleExpression> getSelectColumns() {
+    public List<SimpleSelectColumn> getSelectColumns() {
         return selectColumns;
     }
     public List<ColumnCondition> getConditions() {
@@ -848,7 +935,11 @@ public class SimplifiedQuery
     public int getLimit() {
         return limit;
     }
-    
+
+    public TableNode getColumnTable(Column column) {
+        return tables.getNode(column.getUserTable());
+    }
+
     public List<Set<Column>> getColumnEquivalences() {
         return columnEquivalences;
     }
@@ -890,7 +981,7 @@ public class SimplifiedQuery
         }
     }
 
-    // The initial join tree is in syntax order. 
+    // The initial join tree is in syntax order.
     // Convert it to the preferred AIS order: ancestors on the left as
     // much as possible given that half outer joins are not associative.
     public void reorderJoins() throws StandardException {
@@ -920,7 +1011,7 @@ public class SimplifiedQuery
     protected int countInnerJoins(BaseJoinNode join) {
         if (!join.isInnerJoin())
             return 0;
-        return 1 + 
+        return 1 +
             countInnerJoins(((JoinJoinNode)join).getLeft()) +
             countInnerJoins(((JoinJoinNode)join).getRight());
     }
@@ -952,7 +1043,7 @@ public class SimplifiedQuery
                              });
             BaseJoinNode result = joins.get(0);
             for (int i = 1; i < joins.size(); i++) {
-                result = new JoinJoinNode(result, joins.get(i), JoinType.INNER);
+                result = new JoinJoinNode(result, joins.get(i), JoinType.INNER_JOIN);
             }
             return result;
         }
@@ -1004,6 +1095,9 @@ public class SimplifiedQuery
         }
     }
 
+    /** Coalesce out joins involving tables that aren't used any more.
+     * (Not called currently, since usage can be per-branch.)
+     */
     public void removeUnusedJoins() {
         joins = removeUnusedJoins(joins);
     }

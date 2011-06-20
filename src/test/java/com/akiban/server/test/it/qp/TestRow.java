@@ -16,10 +16,10 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.AbstractRow;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.util.ArgumentValidation;
 
 public class TestRow extends AbstractRow
 {
@@ -45,30 +45,31 @@ public class TestRow extends AbstractRow
 
     // TestRow interface
 
-    public TestRow(RowType rowType)
+    public TestRow(RowType rowType, String hKeyString)
     {
         this.rowType = rowType;
         this.fields = new Object[rowType.nFields()];
+        this.hKeyString = hKeyString;
     }
 
-    public TestRow(RowType rowType, Object[] fields)
+    public TestRow(RowType rowType, Object[] fields, String hKeyString)
     {
-        this(rowType);
-        assert rowType.nFields() == fields.length; // TODO use ArgumentValidation.isEQ ?
+        this(rowType, hKeyString);
+        ArgumentValidation.isEQ("rowType.nFields()", rowType.nFields(), "fields.length", fields.length);
         System.arraycopy(fields, 0, this.fields, 0, fields.length);
     }
 
-    public TestRow(RowType rowType, NewRow row)
-    {
-        this(rowType);
-        assert rowType.nFields() == row.getFields().size(); // TODO use ArgumentValidation.isEQ ?
-        for (int i = 0; i < rowType.nFields(); i++) {
-            fields[i] = row.get(i);
-        }
+    public TestRow(RowType rowType, Object[] fields) {
+        this(rowType, fields, null);
+    }
+
+    public String persistityString() {
+        return hKeyString;
     }
 
     // Object state
 
     private final RowType rowType;
     private final Object[] fields;
+    private final String hKeyString;
 }

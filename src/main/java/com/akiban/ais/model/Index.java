@@ -25,6 +25,12 @@ import java.util.Map;
 
 public abstract class Index implements Serializable, ModelNames, Traversable
 {
+    public abstract HKey hKey();
+    public abstract boolean isTableIndex();
+    public abstract void computeFieldAssociations(Map<Table,Integer> ordinalMap);
+    public abstract Table leafMostTable();
+    public abstract Table rootMostTable();
+    
     public static Index create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         Index index = null;
@@ -59,14 +65,10 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         columns = new ArrayList<IndexColumn>();
     }
 
-    public abstract boolean isTableIndex();
-
     public boolean isGroupIndex()
     {
         return !isTableIndex();
     }
-
-    public abstract HKey hKey();
 
     @SuppressWarnings("unused")
     protected Index()
@@ -193,6 +195,125 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         return isTableIndex() ? IndexType.TABLE : IndexType.GROUP;
     }
 
+    public IndexRowComposition indexRowComposition()
+    {
+        return indexRowComposition;
+    }
+
+    public IndexToHKey indexToHKey()
+    {
+        return indexToHKey;
+    }
+
+    public boolean isHKeyEquivalent()
+    {
+        return isHKeyEquivalent;
+    }
+
+    private static class AssociationBuilder {
+        /**
+         * @param i1 Entry of {@link IndexRowComposition#depths} <b>or</b> {@link IndexToHKey#ordinals}
+         * @param i2 Entry of {@link IndexRowComposition#fieldPositions} <b>or</b> {@link IndexToHKey#indexRowPositions}
+         * @param i3 Entry of {@link IndexRowComposition#hkeyPositions} <b>or</b> {@link IndexToHKey#fieldPositions}
+         */
+        void addEntry(int i1, int i2, int i3) {
+            list1.add(i1); list2.add(i2); list3.add(i3);
+        }
+
+        IndexRowComposition createIndexRowComposition() {
+            return new IndexRowComposition(asArray(list1), asArray(list2), asArray(list3));
+        }
+
+        IndexToHKey createIndexToHKey() {
+            return new IndexToHKey(asArray(list1), asArray(list2), asArray(list3));
+        }
+
+        private int[] asArray(List<Integer> list) {
+            int[] array = new int[list.size()];
+            for(int i = 0; i < list.size(); ++i) {
+                array[i] = list.get(i);
+            }
+            return array;
+        }
+
+        private List<Integer> list1 = new ArrayList<Integer>();
+        private List<Integer> list2 = new ArrayList<Integer>();
+        private List<Integer> list3 = new ArrayList<Integer>();
+    }
+    
+    /**
+     * Note: Probably needs list/array of tables indicating depth to support group indexes
+     * @param ordinalMap Map of Tables to ordinal values
+     * @param indexTable Table the HKey is referencing
+     */
+    protected void internalComputeFieldAssociations(Map<Table,Integer> ordinalMap, Table indexTable) {
+        freezeColumns();
+        computeHKeyEquivalent();
+
+        AssociationBuilder rowCompBuilder = new AssociationBuilder();
+        AssociationBuilder toHKeyBuilder = new AssociationBuilder();
+        List<Column> indexColumns = new ArrayList<Column>();
+
+        // Add index key fields
+        for (IndexColumn iColumn : getColumns()) {
+            Column column = iColumn.getColumn();
+            indexColumns.add(column);
+            rowCompBuilder.addEntry(-1, column.getPosition(), -1);
+        }
+
+        // Add hkey fields not already included
+        HKey hKey = hKey();
+        for (HKeySegment hKeySegment : hKey.segments()) {
+            Integer ordinal = ordinalMap.get(hKeySegment.table());
+            assert ordinal != null : hKeySegment.table();
+            toHKeyBuilder.addEntry(ordinal, -1, -1);
+
+            for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
+                Column column = hKeyColumn.column();
+
+                if (!indexColumns.contains(column)) {
+                    if (indexTable.getColumnsIncludingInternal().contains(column)) {
+                        rowCompBuilder.addEntry(-1, hKeyColumn.column().getPosition(), -1);
+                    } else {
+                        assert hKeySegment.table().isUserTable() : this;
+                        rowCompBuilder.addEntry(-1, -1, hKeyColumn.positionInHKey());
+                    }
+                    indexColumns.add(hKeyColumn.column());
+                }
+
+                int indexRowPos = indexColumns.indexOf(column);
+                int fieldPos = column == null ? -1 : column.getPosition();
+                toHKeyBuilder.addEntry(-1, indexRowPos, fieldPos);
+            }
+        }
+
+        indexRowComposition = rowCompBuilder.createIndexRowComposition();
+        indexToHKey = toHKeyBuilder.createIndexToHKey();
+    }
+
+    private void computeHKeyEquivalent() {
+        isHKeyEquivalent = false;
+        /*
+        isHKeyEquivalent = true;
+        // Collect the HKeyColumns of the index's hkey
+        List<HKeyColumn> hKeyColumns = new ArrayList<HKeyColumn>();
+        for (HKeySegment hKeySegment : index.hKey().segments()) {
+            hKeyColumns.addAll(hKeySegment.columns());
+        }
+        // Scan hkey columns and index columns and see if they match
+        Iterator<HKeyColumn> hKeyColumnScan = hKeyColumns.iterator();
+        Iterator<IndexColumn> indexColumnScan = index.getColumns().iterator();
+        while (hkeyEquivalent && hKeyColumnScan.hasNext() && indexColumnScan.hasNext()) {
+            Column hKeyColumn = hKeyColumnScan.next().column();
+            Column indexColumn = indexColumnScan.next().getColumn();
+            isHKeyEquivalent = hKeyColumn == indexColumn;
+        }
+        if (hkeyEquivalent && !hKeyColumnScan.hasNext() && indexColumnScan.hasNext()) {
+            isHKeyEquivalent = false;
+        }
+        */
+    }
+
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
     public static final String UNIQUE_KEY_CONSTRAINT = "UNIQUE";
     public static final String KEY_CONSTRAINT = "KEY";
@@ -222,7 +343,11 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     private boolean columnsStale = true;
     private List<IndexColumn> columns;
     private boolean columnsFrozen = false;
+
     // It really is an IndexDef, but declaring it that way creates trouble for AIS. We don't want to pull in
     // all the RowDef stuff and have it visible to GWT.
     private transient /* IndexDef */ Object indexDef;
+    private transient IndexRowComposition indexRowComposition;
+    private transient IndexToHKey indexToHKey;
+    private transient boolean isHKeyEquivalent;
 }

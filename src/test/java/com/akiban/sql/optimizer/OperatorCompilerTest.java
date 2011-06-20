@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
@@ -105,15 +106,35 @@ public class OperatorCompilerTest extends TestBase
         }
     }
 
+    static class TestResultColumn extends OperatorCompiler.ResultColumnBase {
+        private String type;
+
+        public TestResultColumn(String name, String type) {
+            super(name);
+            this.type = type;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        @Override
+        public String toString() {
+            return getName() + ":" + getType();
+        }
+    }
+    
     public static class TestOperatorCompiler extends OperatorCompiler {
         public static OperatorCompiler create(SQLParser parser, 
                                               AkibanInformationSchema ais, 
                                               String defaultSchemaName) {
             // This just needs to be enough to keep from UserTableRowType
             // constructor from getting NPE.
-            int tableId = 0;
             for (UserTable userTable : ais.getUserTables().values()) {
-                new RowDef(userTable, new TableStatus(++tableId));
+                int tableId = userTable.getTableId();
+                TableStatus ts = new TableStatus(tableId);
+                ts.setOrdinal(tableId);
+                new RowDef(userTable, ts);
             }
             return new TestOperatorCompiler(parser, ais, "user");
         }
@@ -122,6 +143,22 @@ public class OperatorCompilerTest extends TestBase
                                      AkibanInformationSchema ais, 
                                      String defaultSchemaName) {
             super(parser, ais, defaultSchemaName);
+        }
+
+        @Override
+        public ResultColumnBase getResultColumn(SimplifiedQuery.SimpleSelectColumn selectColumn) {
+            String name = selectColumn.getName();
+            String type = selectColumn.getType().toString();
+            if (selectColumn.getExpression().isColumn()) {
+                Column column = ((SimplifiedQuery.ColumnExpression)
+                                 selectColumn.getExpression()).getColumn();
+                if (selectColumn.isNameDefaulted())
+                    // Prefer the case stored in AIS to parser's standardized form.
+                    name = column.getName();
+                type = column.getTypeDescription() + 
+                    "[" + column.getType().encoding() + "]";
+            }
+            return new TestResultColumn(name, type);
         }
     }
 

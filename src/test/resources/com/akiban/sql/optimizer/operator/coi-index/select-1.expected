@@ -1,1 +1,5 @@
-GroupScan_Default(_akiban_customers NO LIMIT)
+project([Field(0), Field(1)])
+  Cut_Default([user.items, user.orders])
+    Extract_Default([user.items, user.customers, user.orders])
+      GroupScan_Default(_akiban_customers NO LIMIT)
+[cid:int[INT], name:varchar(32)[VARCHAR]]

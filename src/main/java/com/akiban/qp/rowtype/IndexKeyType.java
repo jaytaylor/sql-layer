@@ -36,12 +36,6 @@ public class IndexKeyType extends RowType
         return index.getColumns().size();
     }
 
-    @Override
-    public boolean ancestorOf(RowType type)
-    {
-        throw new UnsupportedOperationException();
-    }
-
     // IndexRowType interface
 
     public Index index()
@@ -49,9 +43,9 @@ public class IndexKeyType extends RowType
         return index;
     }
 
-    public IndexKeyType(Schema schema, Index index)
+    public IndexKeyType(SchemaAISBased schema, Index index)
     {
-        super(schema, schema.nextTypeId(), null);
+        super(schema, schema.nextTypeId());
         this.index = index;
     }
 

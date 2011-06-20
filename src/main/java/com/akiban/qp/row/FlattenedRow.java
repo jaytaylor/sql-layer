@@ -52,17 +52,18 @@ public class FlattenedRow extends AbstractRow
     @Override
     public HKey hKey()
     {
-        return child.get().hKey();
+        return hKey;
     }
 
     // FlattenedRow interface
 
-    public FlattenedRow(FlattenedRowType rowType, Row parent, Row child)
+    public FlattenedRow(FlattenedRowType rowType, Row parent, Row child, HKey hKey)
     {
         this.rowType = rowType;
         this.parent.set(parent);
         this.child.set(child);
         this.nParentFields = rowType.parentType().nFields();
+        this.hKey = hKey;
     }
 
     // Object state
@@ -71,4 +72,5 @@ public class FlattenedRow extends AbstractRow
     private final RowHolder<Row> parent = new RowHolder<Row>();
     private final RowHolder<Row> child = new RowHolder<Row>();
     private final int nParentFields;
+    private final HKey hKey;
 }

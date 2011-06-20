@@ -55,7 +55,7 @@ class Select_HKeyOrdered extends PhysicalOperator
         return describePlan(inputOperator);
     }
 
-    // GroupScan_Default interface
+    // Select_HKeyOrdered interface
 
     public Select_HKeyOrdered(PhysicalOperator inputOperator, RowType predicateRowType, Expression predicate)
     {

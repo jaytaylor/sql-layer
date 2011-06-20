@@ -104,7 +104,7 @@ public class DefaultServiceFactory implements ServiceFactory {
             // TODO once the operator store is fully tested, we should remove this switch and always use it
             ConfigurationService config = configurationService().cast();
             String useOperatorStore = config.getProperty("akserver.debug.useOperatorStore", "false");
-            storeService = Boolean.valueOf(useOperatorStore) ? new OperatorStore() : new PersistitStore();
+            storeService = Boolean.valueOf(useOperatorStore) ? new OperatorStore() : new PersistitStore(true);
         }
         return storeService;
     }
