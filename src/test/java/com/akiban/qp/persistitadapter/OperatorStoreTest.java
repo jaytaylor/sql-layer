@@ -23,6 +23,7 @@ import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.SchemaAISBased;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.server.SchemaFactory;
 import com.akiban.util.Strings;
 import org.junit.Test;
 
@@ -258,29 +259,33 @@ public final class OperatorStoreTest {
         return new SchemaAISBased(ais);
     }
 
-    private static AkibanInformationSchema coia() {
-        return AISBBasedBuilder.create(SCHEMA_NAME)
+    private AkibanInformationSchema coia() {
+        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA_NAME)
                 .userTable("customer")
                     .colLong("cid")
                     .colString("name", 32)
                     .colLong("priority")
+                    .pk("cid")
                 .userTable("order")
                     .colLong("oid")
                     .colLong("c_id")
                     .colLong("date")
                     .colString("description", 128)
+                    .pk("oid")
                     .joinTo("customer").on("c_id", "cid")
                 .userTable("item")
                     .colLong("iid")
                     .colLong("o_id")
                     .colLong("sku")
                     .colLong("quantity")
+                    .pk("iid")
                     .joinTo("order").on("o_id", "oid")
                 .userTable("address")
                     .colLong("aid")
                     .colLong("c_id")
                     .colString("street", 256)
                     .colString("state", 2)
+                    .pk("aid")
                     .joinTo("customer").on("c_id", "cid")
                 .groupIndex("gi_name").on("customer", "name")
                 .groupIndex("gi_name_sku").on("customer", "name").and("item", "sku")
@@ -289,9 +294,12 @@ public final class OperatorStoreTest {
                 .groupIndex("gi_street_name").on("address", "street").and("customer", "name")
                 .groupIndex("gi_street").on("address", "street")
                 .ais();
+        SCHEMA_FACTORY.rowDefCache(ais);
+        return ais;
     }
 
     // consts
 
     private static final String SCHEMA_NAME = "sch";
+    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory();
 }

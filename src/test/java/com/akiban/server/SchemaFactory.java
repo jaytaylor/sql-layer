@@ -36,6 +36,12 @@ public class SchemaFactory {
         return rowDefCache;
     }
 
+    public RowDefCache rowDefCache(AkibanInformationSchema ais) {
+        RowDefCache rowDefCache = new FakeRowDefCache();
+        rowDefCache.setAIS(ais);
+        return rowDefCache;
+    }
+
     public AkibanInformationSchema ais(String[] ddl) throws Exception {
         StringBuilder buffer = new StringBuilder();
         for (String line : ddl) {
