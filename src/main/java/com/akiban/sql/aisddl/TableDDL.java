@@ -15,6 +15,10 @@
 
 package com.akiban.sql.aisddl;
 
+import java.util.Formatter;
+import java.util.HashSet;
+import java.util.Set;
+
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.service.session.Session;
@@ -32,7 +36,9 @@ import com.akiban.sql.types.TypeId.FormatIds;
 import com.akiban.sql.StandardException;
 
 import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
@@ -73,6 +79,7 @@ public class TableDDL
         String tableName = parserName.getTableName();
         
         AISBuilder builder = new AISBuilder();
+        IndexNameGenerator indexNamer = new IndexNameGenerator();
         
         builder.userTable(schemaName, tableName);
         int colpos = 0;
@@ -135,18 +142,17 @@ public class TableDDL
                     throw new StandardException ("Check constraints not supported (yet)");
                 }
                 else if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.PRIMARY_KEY) {
-                    indexName = Index.PRIMARY_KEY_CONSTRAINT;
                     constraint = Index.PRIMARY_KEY_CONSTRAINT;
                 }
                 else if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.UNIQUE) {
-                    indexName = cdn.getName();
                     constraint = Index.UNIQUE_KEY_CONSTRAINT;
                 }
+                indexName = indexNamer.generateName(cdn.getName(), cdn.getColumnList().get(0).getName(), constraint);
+                
                 builder.index(schemaName, tableName, indexName, true, constraint);
                 
                 int colPos = 0;
                 for (ResultColumn col : cdn.getColumnList()) {
-                    assert col.getName() != null : "index column name is null";
                     builder.indexColumn(schemaName, tableName, indexName, col.getName(), colPos++, true, 0);
                 }
             }
@@ -160,4 +166,36 @@ public class TableDDL
             throw new StandardException (ex.getMessage());
         }
     }
+
+    private static final class IndexNameGenerator {
+        private final Set<String> indexNames;
+
+        public IndexNameGenerator() {
+            indexNames = new HashSet<String>();
+        }
+        
+        public String generateName(String indexName, String columnName, String constraint) {
+            // Brute strength. For the low number of collisions we expect, this is simpler, and probably as fast,
+            // as maintaining a Map<String,Integer> which to generate names, which we'd have to double-check are
+            // actually unique.
+            
+            if (constraint.endsWith(Index.PRIMARY_KEY_CONSTRAINT)) {
+                return Index.PRIMARY_KEY_CONSTRAINT;
+            }
+            
+            if (indexName != null && !indexNames.contains(indexName)) {
+                indexNames.add(indexName);
+                return indexName;
+            }
+            
+            String name = columnName;
+            for (int suffixNum=2; indexNames.contains(name); ++suffixNum) {
+                name = String.format("%s_%d", columnName, suffixNum);
+            }
+            indexNames.add(name);
+            return name;
+        }
+    }
+
+
 }

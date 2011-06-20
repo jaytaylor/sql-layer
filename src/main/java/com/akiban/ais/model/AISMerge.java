@@ -111,8 +111,12 @@ public class AISMerge {
         
         // indexes/constraints
         for (TableIndex index : table.getIndexes()) {
+            IndexName indexName = index.getIndexName();
+            assert indexName != null : "Table " + table.getName();
+            assert indexName.getName() != null : "Table: " + table.getName();
+            
             builder.index(schemaName, tableName, 
-                    index.getIndexName().getName(), 
+                    indexName.getName(), 
                     index.isUnique(), 
                     index.getConstraint());
             
@@ -124,7 +128,6 @@ public class AISMerge {
                         col.getIndexedLength());
             }
         }
-        
     }
     
     public static class NoDuplicateNames implements AISMergeValidation {

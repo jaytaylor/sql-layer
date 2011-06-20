@@ -60,7 +60,7 @@ import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.DropTableNode;
 import com.akiban.sql.parser.CreateTableNode;
 
-public class TableDDLIT {
+public class TableDDLTest {
 
     private TableName dropTable;
     private String    defaultSchema = "test";
@@ -135,6 +135,7 @@ public class TableDDLIT {
         TableDDL.createTable(ddlFunctions, null, defaultSchema, (CreateTableNode)stmt);
     }
 
+    @Test
     public void createTableUniqueKey() throws Exception {
         String sql = "CREATE TABLE t1 (C1 int NOT NULL UNIQUE)";
         createTableUniqueKeyGenerateAIS();
@@ -142,6 +143,7 @@ public class TableDDLIT {
         assertTrue (stmt instanceof CreateTableNode);
         TableDDL.createTable(ddlFunctions, null, defaultSchema, (CreateTableNode)stmt);
     }
+    
     private class DDLFunctionsMock implements DDLFunctions {
         public DDLFunctionsMock() {}
         
@@ -342,7 +344,7 @@ public class TableDDLIT {
         
         builder.userTable(defaultSchema, "T1");
         builder.column(defaultSchema, "T1", "C1", 0, "int", (long)0, (long)0, false, false, null, null);
-        builder.index(defaultSchema, "T1", null, true, Index.UNIQUE_KEY_CONSTRAINT);
-        builder.indexColumn(defaultSchema, "T1", null, "C1", 0, true, 0);
+        builder.index(defaultSchema, "T1", "C1", true, Index.UNIQUE_KEY_CONSTRAINT);
+        builder.indexColumn(defaultSchema, "T1", "C1", "C1", 0, true, 0);
     }
 }
