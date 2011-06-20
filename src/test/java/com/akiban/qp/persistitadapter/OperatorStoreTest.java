@@ -146,7 +146,7 @@ public final class OperatorStoreTest {
         String expected = Strings.join(
             "GroupScan_Default(shallow hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "AncestorLookup_Default(sch.item -> [sch.customer, sch.order])",
-            "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
+            "Flatten_HKeyOrdered(sch.customer RIGHT sch.order)",
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
         );
         assertEquals("plan description", expected, plan.describePlan());
@@ -164,7 +164,7 @@ public final class OperatorStoreTest {
         String expected = Strings.join(
             "GroupScan_Default(deep hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "AncestorLookup_Default(sch.order -> [sch.customer])",
-            "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
+            "Flatten_HKeyOrdered(sch.customer RIGHT sch.order)",
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
         );
         assertEquals("plan description", expected, plan.describePlan());
@@ -226,7 +226,7 @@ public final class OperatorStoreTest {
         String expected = Strings.join(
             "GroupScan_Default(shallow hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "AncestorLookup_Default(sch.address -> [sch.customer])",
-            "Flatten_HKeyOrdered(sch.customer INNER sch.address)"
+            "Flatten_HKeyOrdered(sch.customer RIGHT sch.address)"
         );
         assertEquals("plan description", expected, plan.describePlan());
     }
@@ -294,7 +294,7 @@ public final class OperatorStoreTest {
                 .groupIndex("gi_street_name").on("address", "street").and("customer", "name")
                 .groupIndex("gi_street").on("address", "street")
                 .ais();
-        SCHEMA_FACTORY.rowDefCache(ais);
+        SCHEMA_FACTORY.rowDefCache(ais); // create the RowDefCache, and attach RowDefs to the AIS's tables
         return ais;
     }
 

@@ -342,9 +342,9 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             else {
                 plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType);
                 parentRowType = plan.rowType();
-                if (parentRowType.equals(branchTables.rootMost())) {
-                    joinType = API.JoinType.INNER_JOIN;
-                }
+            }
+            if (branchRowType.equals(branchTables.rootMost())) {
+                joinType = API.JoinType.INNER_JOIN;
             }
         }
         return plan;
