@@ -57,7 +57,7 @@ public class SubqueryFlattenerTest extends OptimizerTestBase
         stmt = booleanNormalizer.normalize(stmt);
         typeComputer.compute(stmt);
         stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
-        assertEquals(expected.trim(), unparser.toString(stmt));
+        assertEquals(caseName, expected.trim(), unparser.toString(stmt));
     }
 
 }
