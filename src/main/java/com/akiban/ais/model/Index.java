@@ -212,16 +212,24 @@ public abstract class Index implements Serializable, ModelNames, Traversable
 
     private static class AssociationBuilder {
         /**
-         * @param i1 Entry of {@link IndexRowComposition#depths} <b>or</b> {@link IndexToHKey#ordinals}
-         * @param i2 Entry of {@link IndexRowComposition#fieldPositions} <b>or</b> {@link IndexToHKey#indexRowPositions}
-         * @param i3 Entry of {@link IndexRowComposition#hkeyPositions} <b>or</b> {@link IndexToHKey#fieldPositions}
+         * @param fieldPosition entry of {@link IndexRowComposition#fieldPositions}
+         * @param hkeyPosition entry of {@link IndexRowComposition#hkeyPositions}
          */
-        void addEntry(int i1, int i2, int i3) {
-            list1.add(i1); list2.add(i2); list3.add(i3);
+        void rowCompEntry(int fieldPosition, int hkeyPosition) {
+            list1.add(fieldPosition); list2.add(hkeyPosition);
+        }
+
+        /**
+         * @param ordinal entry of {@link IndexToHKey#ordinals}
+         * @param indexRowPosition entry of {@link IndexToHKey#indexRowPositions}
+         * @param fieldPosition entry of {@link IndexToHKey#fieldPositions}
+         */
+        void toHKeyEntry(int ordinal, int indexRowPosition, int fieldPosition) {
+            list1.add(ordinal); list2.add(indexRowPosition); list3.add(fieldPosition);
         }
 
         IndexRowComposition createIndexRowComposition() {
-            return new IndexRowComposition(asArray(list1), asArray(list2), asArray(list3));
+            return new IndexRowComposition(asArray(list1), asArray(list2));
         }
 
         IndexToHKey createIndexToHKey() {
@@ -258,7 +266,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         for (IndexColumn iColumn : getColumns()) {
             Column column = iColumn.getColumn();
             indexColumns.add(column);
-            rowCompBuilder.addEntry(-1, column.getPosition(), -1);
+            rowCompBuilder.rowCompEntry(column.getPosition(), -1);
         }
 
         // Add hkey fields not already included
@@ -266,24 +274,24 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         for (HKeySegment hKeySegment : hKey.segments()) {
             Integer ordinal = ordinalMap.get(hKeySegment.table());
             assert ordinal != null : hKeySegment.table();
-            toHKeyBuilder.addEntry(ordinal, -1, -1);
+            toHKeyBuilder.toHKeyEntry(ordinal, -1, -1);
 
             for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
                 Column column = hKeyColumn.column();
 
                 if (!indexColumns.contains(column)) {
                     if (indexTable.getColumnsIncludingInternal().contains(column)) {
-                        rowCompBuilder.addEntry(-1, hKeyColumn.column().getPosition(), -1);
+                        rowCompBuilder.rowCompEntry(hKeyColumn.column().getPosition(), -1);
                     } else {
                         assert hKeySegment.table().isUserTable() : this;
-                        rowCompBuilder.addEntry(-1, -1, hKeyColumn.positionInHKey());
+                        rowCompBuilder.rowCompEntry(-1, hKeyColumn.positionInHKey());
                     }
                     indexColumns.add(hKeyColumn.column());
                 }
 
                 int indexRowPos = indexColumns.indexOf(column);
                 int fieldPos = column == null ? -1 : column.getPosition();
-                toHKeyBuilder.addEntry(-1, indexRowPos, fieldPos);
+                toHKeyBuilder.toHKeyEntry(-1, indexRowPos, fieldPos);
             }
         }
 
