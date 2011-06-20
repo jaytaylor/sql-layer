@@ -65,7 +65,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -213,7 +212,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     private void sendToHandler(AkibanInformationSchema ais, GroupIndex groupIndex, Row row, GroupIndexHandler handler) {
         // TODO we don't have IndexRowComposition or IndexToHKey for GroupIndexes... yet. So, do it manually.
         List<Object> fields = new ArrayList<Object>();
-        List<Object> hKey = new ArrayList<Object>();
+        List<Column> columns = new ArrayList<Column>();
 
         GroupIndexMapping mapping = new GroupIndexMapping(ais, groupIndex);
 
@@ -222,14 +221,16 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             UserTable userTable = column.getUserTable();
             int flattenedRowIndex = column.getPosition() + mapping.columnsOffset(userTable);
             fields.add(row.field(flattenedRowIndex, UndefBindings.only()));
+            columns.add(column);
         }
         for (Column hKeyColumn : mapping.hKeyComponents()) {
             UserTable userTable = hKeyColumn.getUserTable();
             int flattenedRowIndex = hKeyColumn.getPosition() + mapping.columnsOffset(userTable);
-            hKey.add(row.field(flattenedRowIndex, UndefBindings.only()));
+            fields.add(row.field(flattenedRowIndex, UndefBindings.only()));
+            columns.add(hKeyColumn);
         }
 
-        handler.handleRow(groupIndex, fields, hKey);
+        handler.handleRow(groupIndex, fields, columns);
     }
 
     // private static methods
@@ -337,14 +338,14 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     
     private final GroupIndexHandler groupIndexInsert = new GroupIndexHandler() {
         @Override
-        public void handleRow(GroupIndex groupIndex, List<?> fields, List<?> hKey) {
+        public void handleRow(GroupIndex groupIndex, List<?> fields, List<? extends Column> columns) {
             // TODO
         }
     };
     
     private final GroupIndexHandler groupIndexDelete = new GroupIndexHandler() {
         @Override
-        public void handleRow(GroupIndex groupIndex, List<?> fields, List<?> hKey) {
+        public void handleRow(GroupIndex groupIndex, List<?> fields, List<? extends Column> columns) {
             // TODO
         }
     };
@@ -500,6 +501,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
     
     protected interface GroupIndexHandler {
-        void handleRow(GroupIndex groupIndex, List<?> fields, List<?> hKey);
+        void handleRow(GroupIndex groupIndex, List<?> fields, List<? extends Column> columns);
     }
 }

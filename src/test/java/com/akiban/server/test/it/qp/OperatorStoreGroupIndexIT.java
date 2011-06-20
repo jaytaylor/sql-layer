@@ -14,6 +14,7 @@
  */
 package com.akiban.server.test.it.qp;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.qp.persistitadapter.TestOperatorStore;
 import com.akiban.server.RowData;
@@ -54,12 +55,12 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         testMaintainedRows(
                 createNewRow(c, 1L, "alpha"),
                 // sku_name
-                "[1111, alpha] hkey[1, 11, 100]",
-                "[2222, alpha] hkey[1, 11, 101]",
-                "[3333, alpha] hkey[1, 11, 102]",
+                "sku_name [1111, alpha, 1, 11, 100]",
+                "sku_name [2222, alpha, 1, 11, 101]",
+                "sku_name [3333, alpha, 1, 11, 102]",
                 // street_aid_cid
-                "[Harrington, 20, 1] hkey[]",
-                "[Causeway, 21, 1] hkey[]"
+                "street_aid_cid [Harrington, 20, 1]",
+                "street_aid_cid [Causeway, 21, 1]"
         );
     }
 
@@ -168,8 +169,9 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         // GroupIndexHandler interface
 
         @Override
-        public void handleRow(GroupIndex groupIndex, List<?> fields, List<?> hKey) {
-            strings.add(String.valueOf(fields) + " hkey" + String.valueOf(hKey));
+        public void handleRow(GroupIndex groupIndex, List<?> fields, List<? extends Column> columns) {
+            String giName = (groupIndex == null) ? "null " : groupIndex.getIndexName().getName() + ' ';
+            strings.add(giName + String.valueOf(fields));
         }
 
         // StringsGIHandler interface
