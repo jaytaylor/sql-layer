@@ -303,11 +303,11 @@ public abstract class Index implements Serializable, ModelNames, Traversable
             }
         }
 
-        this.indexRowComposition = rowCompBuilder.createIndexRowComposition();
-        this.indexToHKey = toHKeyBuilder.createIndexToHKey();
+        indexRowComposition = rowCompBuilder.createIndexRowComposition();
+        indexToHKey = toHKeyBuilder.createIndexToHKey();
     }
 
-    protected void computeHKeyEquivalent() {
+    private void computeHKeyEquivalent() {
         isHKeyEquivalent = false;
         /*
         isHKeyEquivalent = true;
