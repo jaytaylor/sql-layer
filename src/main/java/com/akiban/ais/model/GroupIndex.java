@@ -15,6 +15,9 @@
 
 package com.akiban.ais.model;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -111,9 +114,50 @@ public class GroupIndex extends Index
 
     @Override
     public void computeFieldAssociations(Map<Table, Integer> ordinalMap) {
-        throw new UnsupportedOperationException("Implement");
-        // Probably something like:
-        //internalComputeFieldAssociations(ordinalMap, leftMostTable);
+        freezeColumns();
+        computeHKeyEquivalent();
+
+        Map<UserTable,Integer> columnOffsets = new HashMap<UserTable,Integer>();
+        int curOffset = 0;
+        for(UserTable table : tablesByDepth.values()) {
+            columnOffsets.put(table, curOffset);
+            curOffset += table.getColumnsIncludingInternal().size();
+        }
+
+        AssociationBuilder rowCompBuilder = new AssociationBuilder();
+        AssociationBuilder toHKeyBuilder = new AssociationBuilder();
+        List<Column> indexColumns = new ArrayList<Column>();
+
+        // Add index key fields
+        for (IndexColumn iColumn : getColumns()) {
+            Column column = iColumn.getColumn();
+            indexColumns.add(column);
+            Integer offset = columnOffsets.get(column.getUserTable());
+            rowCompBuilder.rowCompEntry(offset + column.getPosition(), -1);
+        }
+
+        // Add hkey fields not already included
+        HKey hKey = hKey();
+        for (HKeySegment hKeySegment : hKey.segments()) {
+            Integer ordinal = ordinalMap.get(hKeySegment.table());
+            assert ordinal != null : hKeySegment.table();
+            toHKeyBuilder.toHKeyEntry(ordinal, -1, -1);
+
+            for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
+                Column column = hKeyColumn.column();
+                if (!indexColumns.contains(column)) {
+                    Integer offset = columnOffsets.get(column.getUserTable());
+                    rowCompBuilder.rowCompEntry(offset + column.getPosition(), -1);
+                    indexColumns.add(hKeyColumn.column());
+                }
+
+                int indexRowPos = indexColumns.indexOf(column);
+                int fieldPos = column == null ? -1 : column.getPosition();
+                toHKeyBuilder.toHKeyEntry(-1, indexRowPos, fieldPos);
+            }
+        }
+
+        setFieldAssociations(rowCompBuilder.createIndexRowComposition(), toHKeyBuilder.createIndexToHKey());
     }
 
     public Group getGroup()
@@ -129,9 +173,7 @@ public class GroupIndex extends Index
     
     @SuppressWarnings("unused")
     private GroupIndex()
-    {
-
-    }
+    {}
 
     private Group group;
     private final NavigableMap<Integer,UserTable> tablesByDepth = new TreeMap<Integer, UserTable>();

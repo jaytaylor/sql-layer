@@ -210,7 +210,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         return isHKeyEquivalent;
     }
 
-    private static class AssociationBuilder {
+    protected static class AssociationBuilder {
         /**
          * @param fieldPosition entry of {@link IndexRowComposition#fieldPositions}
          * @param hkeyPosition entry of {@link IndexRowComposition#hkeyPositions}
@@ -295,11 +295,10 @@ public abstract class Index implements Serializable, ModelNames, Traversable
             }
         }
 
-        indexRowComposition = rowCompBuilder.createIndexRowComposition();
-        indexToHKey = toHKeyBuilder.createIndexToHKey();
+        setFieldAssociations(rowCompBuilder.createIndexRowComposition(), toHKeyBuilder.createIndexToHKey());
     }
 
-    private void computeHKeyEquivalent() {
+    protected void computeHKeyEquivalent() {
         isHKeyEquivalent = false;
         /*
         isHKeyEquivalent = true;
@@ -320,6 +319,11 @@ public abstract class Index implements Serializable, ModelNames, Traversable
             isHKeyEquivalent = false;
         }
         */
+    }
+
+    protected void setFieldAssociations(IndexRowComposition rowComp, IndexToHKey toHKey) {
+        this.indexRowComposition = rowComp;
+        this.indexToHKey = toHKey;
     }
 
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
