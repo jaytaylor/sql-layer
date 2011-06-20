@@ -84,16 +84,18 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector)
             throws Exception
     {
-        if (columnSelector != null) {
-            throw new RuntimeException("group index maintence, and possibly other features, won't work with partial rows");
-        }
         PersistitStore persistitStore = getPersistitStore();
         AkibanInformationSchema ais = persistitStore.getRowDefCache().ais();
+
+        RowDef rowDef = persistitStore.getRowDefCache().rowDef(oldRowData.getRowDefId());
+        if ((columnSelector != null) && !rowDef.table().getGroupIndexes().isEmpty()) {
+            throw new RuntimeException("group index maintence won't work with partial rows");
+        }
+
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), persistitStore, session);
         Schema schema = adapter.schema();
 
         PersistitGroupRow oldRow = PersistitGroupRow.newPersistitGroupRow(adapter, oldRowData);
-        RowDef rowDef = persistitStore.getRowDefCache().rowDef(oldRowData.getRowDefId());
         UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);
 
         UserTable userTable = ais.getUserTable(oldRowData.getRowDefId());
@@ -205,7 +207,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // private methods
 
-    protected final <A,T extends Throwable> void maintainGroupIndexes(
+    private <A,T extends Throwable> void maintainGroupIndexes(
             Session session,
             AkibanInformationSchema ais, PersistitAdapter adapter,
             RowData rowData,
@@ -217,7 +219,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
         Exchange hEx = adapter.takeExchange(userTable.getGroup().getGroupTable());
         try {
-            getPersistitStore().constructHKey(session, hEx, (RowDef) userTable.rowDef(), rowData, true);
+            // the rowData's hidden PK (if any) will have already been incremented by now, so never increment it again
+            getPersistitStore().constructHKey(session, hEx, (RowDef) userTable.rowDef(), rowData, false);
             PersistitHKey persistitHKey = new PersistitHKey(adapter, userTable.hKey());
             persistitHKey.copyFrom(hEx.getKey());
 
