@@ -56,6 +56,17 @@ public class NewRowBackedIndexRow implements RowBase
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public int runId() {
+        return runId;
+    }
+
+    @Override
+    public void runId(int runId) {
+        this.runId  = runId;
+    }
+
+    private int runId = RowBase.UNDEFINED_RUN_ID;
     private final NewRow row;
     private final RowType rowType;
     private final TableIndex index;
