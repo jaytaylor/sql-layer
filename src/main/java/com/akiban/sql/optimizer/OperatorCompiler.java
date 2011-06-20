@@ -880,26 +880,17 @@ public class OperatorCompiler
         if (index.isTableIndex())
             userTable = (UserTable)((TableIndex)index).getTable();
         // TODO: group index bound table.
-        return new IndexBound(userTable,
-                              getIndexExpressionRow(index, keys),
+        return new IndexBound(getIndexExpressionRow(index, keys),
                               getIndexColumnSelector(index, nkeys));
     }
 
     /** Return a column selector that enables the first <code>nkeys</code> fields
      * of a row of the index's user table. */
-    // TODO: group index fail: the column's position won't be its
-    // field index in the index key row.
     protected ColumnSelector getIndexColumnSelector(final Index index, final int nkeys) {
+        assert nkeys <= index.getColumns().size() : index + " " + nkeys;
         return new ColumnSelector() {
                 public boolean includesColumn(int columnPosition) {
-                    for (int i = 0; i < nkeys; i++) {
-                        IndexColumn indexColumn = index.getColumns().get(i);
-                        Column column = indexColumn.getColumn();
-                        if (column.getPosition() == columnPosition) {
-                            return true;
-                        }
-                    }
-                    return false;
+                    return columnPosition < nkeys;
                 }
             };
     }

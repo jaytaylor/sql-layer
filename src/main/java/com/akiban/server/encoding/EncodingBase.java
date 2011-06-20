@@ -19,10 +19,17 @@ import com.akiban.server.FieldDef;
 import com.akiban.server.Quote;
 import com.akiban.server.RowData;
 import com.akiban.util.AkibanAppender;
+import com.persistit.Key;
 
 abstract class EncodingBase<T> implements Encoding<T> {
     EncodingBase() {
     }
+
+    /**
+     * Internal helper for getting the Class of the object returned by toObject.
+     * @return Class expected to be returned.
+     */
+    protected abstract Class<T> getToObjectClass();
 
     protected static long getOffsetAndWidth(FieldDef fieldDef, RowData rowData) {
         return fieldDef.getRowDef().fieldLocation(rowData, fieldDef.getFieldIndex());
@@ -43,6 +50,12 @@ abstract class EncodingBase<T> implements Encoding<T> {
         } catch (EncodingException e) {
             sb.append("null");
         }
+    }
+
+    @Override
+    public T toObject(Key key) {
+        Object o = key.decode();
+        return getToObjectClass().cast(o);
     }
 
     @Override
