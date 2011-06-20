@@ -10,14 +10,14 @@ resultSet:
 
 		[0]:		
 		com.akiban.sql.parser.ResultColumn@2c19e15c
-		exposedName: X
-		name: X
+		exposedName: x
+		name: x
 		tableName: null
 		isDefaultColumn: false
 		type: null
 		expression: 			
 			com.akiban.sql.parser.ColumnReference@571a75a2
-			columnName: X
+			columnName: x
 			tableName: null
 			type: null
 			userData: com.akiban.sql.parser.ResultColumn@fcfa52 from com.akiban.sql.parser.FromSubquery@6bffc686
@@ -26,22 +26,22 @@ resultSet:
 
 		[0]:		
 		com.akiban.sql.parser.FromSubquery@6bffc686
-		correlation Name: V1
+		correlation Name: v1
 		null
 		resultColumns: 			
 			com.akiban.sql.parser.ResultColumnList@6542bece
 
 			[0]:			
 			com.akiban.sql.parser.ResultColumn@fcfa52
-			exposedName: X
-			name: X
+			exposedName: x
+			name: x
 			tableName: null
 			isDefaultColumn: false
 			type: null
 			[1]:			
 			com.akiban.sql.parser.ResultColumn@60961dff
-			exposedName: Y
-			name: Y
+			exposedName: y
+			name: y
 			tableName: null
 			isDefaultColumn: false
 			type: null
@@ -53,27 +53,27 @@ resultSet:
 
 				[0]:				
 				com.akiban.sql.parser.ResultColumn@15aaf0b3
-				exposedName: Y
-				name: Y
+				exposedName: y
+				name: y
 				tableName: null
 				isDefaultColumn: false
 				type: null
 				expression: 					
 					com.akiban.sql.parser.ColumnReference@9a082e2
-					columnName: Y
+					columnName: y
 					tableName: null
 					type: null
 					userData: t1.y from com.akiban.sql.parser.FromBaseTable@5cac6a45
 				[1]:				
 				com.akiban.sql.parser.ResultColumn@8f0c85e
-				exposedName: Z
-				name: Z
+				exposedName: z
+				name: z
 				tableName: null
 				isDefaultColumn: false
 				type: null
 				expression: 					
 					com.akiban.sql.parser.ColumnReference@77f297e7
-					columnName: Z
+					columnName: z
 					tableName: null
 					type: null
 					userData: t1.z from com.akiban.sql.parser.FromBaseTable@5cac6a45
@@ -82,7 +82,7 @@ resultSet:
 
 				[0]:				
 				com.akiban.sql.parser.FromBaseTable@5cac6a45
-				tableName: T1
+				tableName: t1
 				updateOrDelete: null
 				null
 				correlation Name: null
@@ -100,7 +100,7 @@ resultSet:
 					type: null
 					operand: 						
 						com.akiban.sql.parser.ColumnReference@2e5bbd6
-						columnName: Y
+						columnName: y
 						tableName: null
 						type: null
 						userData: t1.y from com.akiban.sql.parser.FromBaseTable@5cac6a45
@@ -111,7 +111,7 @@ resultSet:
 		type: null
 		leftOperand: 			
 			com.akiban.sql.parser.ColumnReference@351563ff
-			columnName: Y
+			columnName: y
 			tableName: null
 			type: null
 			userData: com.akiban.sql.parser.ResultColumn@60961dff from com.akiban.sql.parser.FromSubquery@6bffc686

@@ -24,13 +24,13 @@ resultSet:
 
 				[0]:				
 				com.akiban.sql.parser.ColumnReference@214a55f2
-				columnName: X
+				columnName: x
 				tableName: null
 				type: null
 				userData: t1.x from com.akiban.sql.parser.FromBaseTable@72e6f7d2
 				[1]:				
 				com.akiban.sql.parser.ColumnReference@175093f1
-				columnName: Z
+				columnName: z
 				tableName: null
 				type: null
 				userData: t1.z from com.akiban.sql.parser.FromBaseTable@72e6f7d2
@@ -39,7 +39,7 @@ resultSet:
 
 		[0]:		
 		com.akiban.sql.parser.FromBaseTable@72e6f7d2
-		tableName: T1
+		tableName: t1
 		updateOrDelete: null
 		null
 		correlation Name: null
