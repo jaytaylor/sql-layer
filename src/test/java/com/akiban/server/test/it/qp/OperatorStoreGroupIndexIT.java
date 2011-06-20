@@ -52,20 +52,37 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 createNewRow(a, 21L, 1L, "Causeway"),
                 createNewRow(c, 2L, "beta")
         );
-        String skuNameCols = " cols[items.sku, customers.name, customers.cid, orders.oid, items.iid]";
-        String streetAidCidCols = " cols[addresses.street, addresses.aid, customers.cid]";
         String actionString = "testing! ";
 
         testMaintainedRows(
                 actionString,
                 createNewRow(c, 1L, "alpha"),
                 // sku_name
-                actionString + "sku_name [1111, alpha, 1, 11, 100]" + skuNameCols,
-                actionString + "sku_name [2222, alpha, 1, 11, 101]" + skuNameCols,
-                actionString + "sku_name [3333, alpha, 1, 11, 102]" + skuNameCols,
+                actionString + "sku_name [1111, alpha, 1, 11, 100]" + SKU_NAME_COLS,
+                actionString + "sku_name [2222, alpha, 1, 11, 101]" + SKU_NAME_COLS,
+                actionString + "sku_name [3333, alpha, 1, 11, 102]" + SKU_NAME_COLS,
                 // street_aid_cid
-                actionString + "street_aid_cid [Harrington, 20, 1]" + streetAidCidCols,
-                actionString + "street_aid_cid [Causeway, 21, 1]" + streetAidCidCols
+                actionString + "street_aid_cid [Harrington, 20, 1]" + STREET_AID_CID_COLS,
+                actionString + "street_aid_cid [Causeway, 21, 1]" + STREET_AID_CID_COLS
+        );
+    }
+
+    @Test
+    public void oiIndexOrphanedO() {
+        writeRows(
+                createNewRow(o, 11L, 1L, "02-02-2002"),
+                createNewRow(i, 100L, 11L, 1111),
+                createNewRow(i, 101L, 11L, 2222)
+        );
+        String actionString = "orphan test: ";
+
+        testMaintainedRows(
+                actionString,
+                createNewRow(o, 11L, 1L, "02-02-2002"),
+                // date sku
+                actionString + "date_sku [02-02-2001, 1111, 1, 11, 100]" + DATE_SKU_COLS,
+                actionString + "date_sku [02-02-2001, 2222, 1, 11, 101]" + DATE_SKU_COLS,
+                actionString + "date_sku [02-02-2001, 3333, 1, 11, 101]" + DATE_SKU_COLS
         );
     }
 
@@ -97,6 +114,7 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o(c_id) REFERENCES customers(cid)"
         );
         final String groupName = getUserTable(SCHEMA,"customers").getGroup().getName();
+        createGroupIndex(groupName, "date_sku", "orders.date, items.sku");
         createGroupIndex(groupName, "sku_date", "items.sku, orders.date");
         createGroupIndex(groupName, "sku_name", "items.sku, customers.name");
         createGroupIndex(
@@ -155,6 +173,9 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     // const
 
     private final static String SCHEMA = "sch";
+    private static final String DATE_SKU_COLS = " cols[orders.date, items.sku, customers.cid, orders.oid, items.iid]";
+    private static final String SKU_NAME_COLS = " cols[items.sku, customers.name, customers.cid, orders.oid, items.iid]";
+    private static final String STREET_AID_CID_COLS = " cols[addresses.street, addresses.aid, customers.cid]";
 
     // nested classes
 
