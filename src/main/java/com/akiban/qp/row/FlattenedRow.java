@@ -64,6 +64,10 @@ public class FlattenedRow extends AbstractRow
         this.child.set(child);
         this.nParentFields = rowType.parentType().nFields();
         this.hKey = hKey;
+        if (parent != null && child != null) {
+            assert parent.runId() == child.runId();
+        }
+        super.runId(parent == null ? child.runId() : parent.runId());
     }
 
     // Object state

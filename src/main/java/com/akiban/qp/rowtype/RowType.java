@@ -18,6 +18,7 @@ package com.akiban.qp.rowtype;
 // Fields are untyped for now. Field name is just position within the type.
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.UserTable;
 
 public abstract class RowType
@@ -59,11 +60,16 @@ public abstract class RowType
         return typeComposition;
     }
 
-    public abstract int nFields();
-
     public final boolean ancestorOf(RowType that)
     {
         return that.typeComposition != null && this.typeComposition.isAncestorOf(that.typeComposition);
+    }
+
+    public abstract int nFields();
+
+    public HKey hKey()
+    {
+        return null;
     }
 
     /**

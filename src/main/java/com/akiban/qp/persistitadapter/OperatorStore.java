@@ -103,6 +103,18 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
 
+    // OperatorStore interface
+
+    public OperatorStore() {
+        super(new PersistitStore(false));
+    }
+
+    public PersistitStore getPersistitStore() {
+        return super.getDelegate();
+    }
+
+    // private static methods
+
     private static void runCursor(RowData oldRowData, RowDef rowDef, UpdatePlannable plannable, PersistitAdapter adapter)
             throws DuplicateKeyException, NoSuchRowException
     {
@@ -142,17 +154,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         return rowDescription;
     }
 
-    // OperatorStore interface
-
-    public OperatorStore() {
-        super(new PersistitStore(false));
-    }
-
-    public PersistitStore getPersistitStore() {
-        return super.getDelegate();
-    }
-
-    // inner classes
+    // nested classes
 
     private static class InternalUpdateFunction implements UpdateFunction {
         private final PersistitAdapter adapter;
