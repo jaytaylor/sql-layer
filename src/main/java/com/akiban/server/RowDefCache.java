@@ -247,6 +247,7 @@ public class RowDefCache {
     private static String getTreeName(String groupName, GroupIndex index) {
         return String.format("%s$$%s", groupName, index.getIndexName().getName());
     }
+    
     private RowDef createUserTableRowDef(UserTable table) {
         RowDef rowDef = new RowDef(table, tableStatusCache.getTableStatus(table.getTableId()));
         // parentRowDef
