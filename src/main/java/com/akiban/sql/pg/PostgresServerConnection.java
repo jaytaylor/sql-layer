@@ -13,10 +13,6 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-import com.akiban.server.store.Store;ro General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
- */
-
 package com.akiban.sql.pg;
 
 import com.akiban.sql.StandardException;
@@ -31,7 +27,6 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.physicaloperator.StoreAdapter;
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.service.instrumentation.PostgresSessionTracer;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.EventTypes;
 import com.akiban.server.service.ServiceManager;
@@ -91,7 +86,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         this.socket = socket;
         this.pid = pid;
         this.secret = secret;
-        this.sessionTracer = ServiceManagerImpl.get().getInstrumentationService().createSqlSessionTracer(pid);
+        this.sessionTracer = (PostgresSessionTracer) ServiceManagerImpl.get().getInstrumentationService().createSqlSessionTracer(pid);
         sessionTracer.setRemoteAddress(socket.getInetAddress().getHostAddress());
     }
 

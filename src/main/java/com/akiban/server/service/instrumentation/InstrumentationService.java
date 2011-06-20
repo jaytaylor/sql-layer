@@ -15,6 +15,8 @@
 
 package com.akiban.server.service.instrumentation;
 
+import com.akiban.sql.pg.PostgresSessionTracer;
+
 public interface InstrumentationService {
 
     public PostgresSessionTracer createSqlSessionTracer(int sessionId);

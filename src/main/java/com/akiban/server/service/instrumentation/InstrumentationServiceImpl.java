@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.sql.pg.PostgresSessionTracer;
 
 public class InstrumentationServiceImpl implements
     InstrumentationService, JmxManageable, Service<InstrumentationService>, 
