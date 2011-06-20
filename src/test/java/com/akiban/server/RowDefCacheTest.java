@@ -18,12 +18,17 @@ package com.akiban.server;
 import static junit.framework.Assert.assertSame;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.IndexToHKey;
+import com.akiban.ais.model.Table;
 import junit.framework.Assert;
 
 import org.junit.Test;
@@ -978,6 +983,202 @@ public class RowDefCacheTest
         assertEquals(6, indexToHKey.getFieldPosition(2));
     }
 
+    @Test
+    public void checkSingleTableGroupIndex() throws Exception {
+        String[] ddl = { "use "+SCHEMA+";",
+                         "create table customer(cid int, name varchar(32), primary key(cid)) engine=akibandb;"
+        };
+
+        final RowDefCache rowDefCache;
+        {
+            AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+            Table customerTable = ais.getTable(SCHEMA, "customer");
+            GroupIndex index = GroupIndex.create(ais, customerTable.getGroup(), "cName", 100, false, Index.KEY_CONSTRAINT);
+            index.addColumn(new IndexColumn(index, customerTable.getColumn("name"), 0,true, null));
+            rowDefCache = SCHEMA_FACTORY.rowDefCache(ais);
+        }
+
+        Index index;
+        IndexRowComposition rowComp;
+        IndexToHKey indexToHKey;
+
+        RowDef customer = rowDefCache.getRowDef(tableName("customer"));
+        RowDef customer_group = rowDefCache.getRowDef(customer.getGroupRowDefId());
+        // group index on name
+        index = customer_group.getGroupIndex("cName");
+        assertNotNull(index);
+        assertFalse(index.isPrimaryKey());
+        assertFalse(index.isUnique());
+        rowComp = index.indexRowComposition();
+        assertEquals(1, rowComp.getFieldPosition(0)); // c.name
+        // customer hkey
+        assertEquals(0, rowComp.getFieldPosition(1)); // c.cid
+        assertEquals(2, rowComp.getLength());
+        indexToHKey = index.indexToHKey();
+        assertEquals(customer.getOrdinal(), indexToHKey.getOrdinal(0)); // c ordinal
+        assertEquals(1, indexToHKey.getIndexRowPosition(1)); // index cid
+    }
+
+
+    @Test
+    public void checkCOGroupIndex() throws Exception {
+        String[] ddl = { "use "+SCHEMA+";",
+                         "create table customer(cid int, name varchar(32), primary key(cid)) engine=akibandb;",
+                         "create table orders(oid int, cid int, date date, primary key(oid), "+
+                                 "constraint __akiban foreign key(cid) references customer(cid)) engine=akibandb;"
+        };
+
+        final RowDefCache rowDefCache;
+        {
+            AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+            Table customerTable = ais.getTable(SCHEMA, "customer");
+            Table ordersTable = ais.getTable(SCHEMA, "orders");
+            GroupIndex index = GroupIndex.create(ais, customerTable.getGroup(), "cName_oDate", 100, false, Index.KEY_CONSTRAINT);
+            index.addColumn(new IndexColumn(index, customerTable.getColumn("name"), 0, true, null));
+            index.addColumn(new IndexColumn(index, ordersTable.getColumn("date"), 1, true, null));
+            rowDefCache = SCHEMA_FACTORY.rowDefCache(ais);
+        }
+
+        Index index;
+        IndexRowComposition rowComp;
+        IndexToHKey indexToHKey;
+
+        RowDef customer = rowDefCache.getRowDef(tableName("customer"));
+        RowDef orders = rowDefCache.getRowDef(tableName("orders"));
+        assertEquals(customer.getGroupRowDefId(), orders.getGroupRowDefId());
+        RowDef customer_group = rowDefCache.getRowDef(customer.getGroupRowDefId());
+        // group index on c.name,o.date
+        index = customer_group.getGroupIndex("cName_oDate");
+        assertNotNull(index);
+        assertFalse(index.isPrimaryKey());
+        assertFalse(index.isUnique());
+        rowComp = index.indexRowComposition();
+        // Flattened: (c.cid, c.name, o.oid, o.cid, o.date)
+        assertEquals(1, rowComp.getFieldPosition(0)); // c.name
+        assertEquals(4, rowComp.getFieldPosition(1)); // o.date
+        // order hkey
+        assertEquals(3, rowComp.getFieldPosition(2)); // o.cid
+        assertEquals(2, rowComp.getFieldPosition(3)); // o.oid
+        assertEquals(4, rowComp.getLength());
+        indexToHKey = index.indexToHKey();
+        assertEquals(customer.getOrdinal(), indexToHKey.getOrdinal(0)); // c ordinal
+        assertEquals(2, indexToHKey.getIndexRowPosition(1));            // index cid
+        assertEquals(orders.getOrdinal(), indexToHKey.getOrdinal(2));   // o ordinal
+        assertEquals(3, indexToHKey.getIndexRowPosition(3));            // index oid
+    }
+
+    @Test
+    public void checkCOIGroupIndex() throws Exception {
+        String[] ddl = { "use "+SCHEMA+";",
+                         "create table customer(cid int, name varchar(32), primary key(cid)) engine=akibandb;",
+                         "create table orders(oid int, cid int, date date, primary key(oid), "+
+                                 "constraint __akiban foreign key(cid) references customer(cid)) engine=akibandb;",
+                         "create table items(iid int, oid int, sku int, primary key(iid), "+
+                                 "constraint __akiban foreign key(oid) references orders(oid)) engine=akibandb;"
+        };
+
+        final RowDefCache rowDefCache;
+        {
+            AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+            Table customerTable = ais.getTable(SCHEMA, "customer");
+            Table ordersTable = ais.getTable(SCHEMA, "orders");
+            Table itemsTable = ais.getTable(SCHEMA, "items");
+            GroupIndex index = GroupIndex.create(ais, customerTable.getGroup(), "cName_oDate_iSku", 100, false, Index.KEY_CONSTRAINT);
+            index.addColumn(new IndexColumn(index, customerTable.getColumn("name"), 0, true, null));
+            index.addColumn(new IndexColumn(index, ordersTable.getColumn("date"), 1, true, null));
+            index.addColumn(new IndexColumn(index, itemsTable.getColumn("sku"), 2, true, null));
+            rowDefCache = SCHEMA_FACTORY.rowDefCache(ais);
+        }
+
+        Index index;
+        IndexRowComposition rowComp;
+        IndexToHKey indexToHKey;
+
+        RowDef customer = rowDefCache.getRowDef(tableName("customer"));
+        RowDef orders = rowDefCache.getRowDef(tableName("orders"));
+        assertEquals(customer.getGroupRowDefId(), orders.getGroupRowDefId());
+        RowDef items = rowDefCache.getRowDef(tableName("items"));
+        assertEquals(orders.getGroupRowDefId(), items.getGroupRowDefId());
+        RowDef customer_group = rowDefCache.getRowDef(customer.getGroupRowDefId());
+        // group index on c.name,o.date,i.sku
+        index = customer_group.getGroupIndex("cName_oDate_iSku");
+        assertNotNull(index);
+        assertFalse(index.isPrimaryKey());
+        assertFalse(index.isUnique());
+        rowComp = index.indexRowComposition();
+        // Flattened: (c.cid, c.name, o.oid, o.cid, o.date, i.iid, i.oid, i.sku)
+        assertEquals(1, rowComp.getFieldPosition(0)); // c.name
+        assertEquals(4, rowComp.getFieldPosition(1)); // o.date
+        assertEquals(7, rowComp.getFieldPosition(2)); // i.sku
+        // item hkey
+        assertEquals(3, rowComp.getFieldPosition(3)); // o.cid
+        assertEquals(6, rowComp.getFieldPosition(4)); // o.oid
+        assertEquals(5, rowComp.getFieldPosition(5)); // i.iid
+        assertEquals(6, rowComp.getLength());
+        indexToHKey = index.indexToHKey();
+        assertEquals(customer.getOrdinal(), indexToHKey.getOrdinal(0)); // c ordinal
+        assertEquals(3, indexToHKey.getIndexRowPosition(1));            // index cid
+        assertEquals(orders.getOrdinal(), indexToHKey.getOrdinal(2));   // o ordinal
+        assertEquals(4, indexToHKey.getIndexRowPosition(3));            // index oid
+        assertEquals(items.getOrdinal(), indexToHKey.getOrdinal(4));    // i ordinal
+        assertEquals(5, indexToHKey.getIndexRowPosition(5));            // index iid
+    }
+
+    @Test
+    public void checkOIGroupIndex() throws Exception {
+        String[] ddl = { "use "+SCHEMA+";",
+                         "create table customer(cid int, name varchar(32), primary key(cid)) engine=akibandb;",
+                         "create table orders(oid int, cid int, date date, primary key(oid), "+
+                                 "constraint __akiban foreign key(cid) references customer(cid)) engine=akibandb;",
+                         "create table items(iid int, oid int, sku int, primary key(iid), "+
+                                 "constraint __akiban foreign key(oid) references orders(oid)) engine=akibandb;"
+        };
+
+        final RowDefCache rowDefCache;
+        {
+            AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+            Table customerTable = ais.getTable(SCHEMA, "customer");
+            Table ordersTable = ais.getTable(SCHEMA, "orders");
+            Table itemsTable = ais.getTable(SCHEMA, "items");
+            GroupIndex index = GroupIndex.create(ais, customerTable.getGroup(), "oDate_iSku", 100, false, Index.KEY_CONSTRAINT);
+            index.addColumn(new IndexColumn(index, ordersTable.getColumn("date"), 0, true, null));
+            index.addColumn(new IndexColumn(index, itemsTable.getColumn("sku"), 1, true, null));
+            rowDefCache = SCHEMA_FACTORY.rowDefCache(ais);
+        }
+
+        Index index;
+        IndexRowComposition rowComp;
+        IndexToHKey indexToHKey;
+
+        RowDef customer = rowDefCache.getRowDef(tableName("customer"));
+        RowDef orders = rowDefCache.getRowDef(tableName("orders"));
+        assertEquals(customer.getGroupRowDefId(), orders.getGroupRowDefId());
+        RowDef items = rowDefCache.getRowDef(tableName("items"));
+        assertEquals(orders.getGroupRowDefId(), items.getGroupRowDefId());
+        RowDef customer_group = rowDefCache.getRowDef(customer.getGroupRowDefId());
+        // group index on o.oid,i.sku
+        index = customer_group.getGroupIndex("oDate_iSku");
+        assertNotNull(index);
+        assertFalse(index.isPrimaryKey());
+        assertFalse(index.isUnique());
+        rowComp = index.indexRowComposition();
+        // Flattened: (c.cid, c.name, o.oid, o.cid, o.date, i.iid, i.oid, i.sku)
+        assertEquals(4, rowComp.getFieldPosition(0)); // o.date
+        assertEquals(7, rowComp.getFieldPosition(1)); // i.sku
+        // item hkey
+        assertEquals(3, rowComp.getFieldPosition(2)); // o.cid
+        assertEquals(6, rowComp.getFieldPosition(3)); // i.oid
+        assertEquals(5, rowComp.getFieldPosition(4)); // i.iid
+        assertEquals(5, rowComp.getLength());
+        indexToHKey = index.indexToHKey();
+        assertEquals(customer.getOrdinal(), indexToHKey.getOrdinal(0)); // c ordinal
+        assertEquals(2, indexToHKey.getIndexRowPosition(1));            // index cid
+        assertEquals(orders.getOrdinal(), indexToHKey.getOrdinal(2));   // o ordinal
+        assertEquals(3, indexToHKey.getIndexRowPosition(3));            // index oid
+        assertEquals(items.getOrdinal(), indexToHKey.getOrdinal(4));    // i ordinal
+        assertEquals(4, indexToHKey.getIndexRowPosition(5));            // index iid
+    }
+
     private void checkFields(RowDef rowdef, String... expectedFields)
     {
         FieldDef[] fields = rowdef.getFieldDefs();
@@ -989,7 +1190,7 @@ public class RowDefCacheTest
 
     private String tableName(String name)
     {
-        return String.format("%s.%s", SCHEMA, name);
+        return RowDefCache.nameOf(SCHEMA, name);
     }
 
     private void checkField(String name, RowDef rowDef, int fieldNumber)

@@ -118,7 +118,12 @@ public class GroupIndex extends Index
         computeHKeyEquivalent();
 
         Map<UserTable,Integer> columnOffsets = new HashMap<UserTable,Integer>();
+        UserTable curTable = rootMostTable();
         int curOffset = 0;
+        while(curTable.getParentJoin() != null) {
+            curTable = curTable.getParentJoin().getParent();
+            curOffset += curTable.getColumnsIncludingInternal().size();
+        }
         for(UserTable table : tablesByDepth.values()) {
             columnOffsets.put(table, curOffset);
             curOffset += table.getColumnsIncludingInternal().size();
