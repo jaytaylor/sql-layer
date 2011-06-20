@@ -40,7 +40,7 @@ public final class OperatorStoreTest {
                 rowType(ais, schema, "customer")
         );
         String expected = Strings.join(
-                "GroupScan_Default(shallow hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)"
+                "GroupScan_Default(shallow hkey-bound scan on _akiban_sch_customer NO_LIMIT)"
         );
         assertEquals("plan description", expected, plan.describePlan());
     }
@@ -55,7 +55,7 @@ public final class OperatorStoreTest {
                 rowType(ais, schema, "customer")
         );
         String expected = Strings.join(
-            "GroupScan_Default(deep hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "GroupScan_Default(deep hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
         );
@@ -72,7 +72,7 @@ public final class OperatorStoreTest {
                 rowType(ais, schema, "item")
         );
         String expected = Strings.join(
-            "GroupScan_Default(shallow hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "GroupScan_Default(shallow hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "AncestorLookup_Default(sch.item -> [sch.customer, sch.order])",
             "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
@@ -90,7 +90,7 @@ public final class OperatorStoreTest {
                 rowType(ais, schema, "customer")
         );
         String expected = Strings.join(
-            "GroupScan_Default(deep hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "GroupScan_Default(deep hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
         );
@@ -107,7 +107,7 @@ public final class OperatorStoreTest {
                 rowType(ais, schema, "order")
         );
         String expected = Strings.join(
-            "GroupScan_Default(deep hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "GroupScan_Default(deep hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "AncestorLookup_Default(sch.order -> [sch.customer])",
             "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
@@ -125,7 +125,7 @@ public final class OperatorStoreTest {
                 rowType(ais, schema, "item")
         );
         String expected = Strings.join(
-            "GroupScan_Default(shallow hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "GroupScan_Default(shallow hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "AncestorLookup_Default(sch.item -> [sch.customer, sch.order])",
             "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
@@ -143,7 +143,7 @@ public final class OperatorStoreTest {
                 rowType(ais, schema, "item")
         );
         String expected = Strings.join(
-            "GroupScan_Default(shallow hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "GroupScan_Default(shallow hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "AncestorLookup_Default(sch.item -> [sch.customer, sch.order])",
             "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
@@ -161,7 +161,7 @@ public final class OperatorStoreTest {
                 rowType(ais, schema, "order")
         );
         String expected = Strings.join(
-            "GroupScan_Default(deep hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "GroupScan_Default(deep hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "AncestorLookup_Default(sch.order -> [sch.customer])",
             "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
@@ -190,7 +190,7 @@ public final class OperatorStoreTest {
                 rowType(ais, schema, "customer")
         );
         String expected = Strings.join(
-            "GroupScan_Default(deep hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "GroupScan_Default(deep hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "Flatten_HKeyOrdered(sch.customer INNER sch.address)"
         );
         assertEquals("plan description", expected, plan.describePlan());
@@ -206,7 +206,7 @@ public final class OperatorStoreTest {
                 rowType(ais, schema, "address")
         );
         String expected = Strings.join(
-            "GroupScan_Default(shallow hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "GroupScan_Default(shallow hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "AncestorLookup_Default(sch.address -> [sch.customer])",
             "Flatten_HKeyOrdered(sch.customer INNER sch.address)"
         );
@@ -223,7 +223,7 @@ public final class OperatorStoreTest {
                 rowType(ais, schema, "address")
         );
         String expected = Strings.join(
-            "GroupScan_Default(shallow hkey-bound scan on GroupTable(sch._akiban_sch_customer -> sch.customer)NO_LIMIT)",
+            "GroupScan_Default(shallow hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "AncestorLookup_Default(sch.address -> [sch.customer])",
             "Flatten_HKeyOrdered(sch.customer INNER sch.address)"
         );

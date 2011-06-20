@@ -29,7 +29,7 @@ class GroupScan_Default extends PhysicalOperator
     @Override
     public String toString()
     {
-        return getClass().getSimpleName() + '(' + cursorCreator + limit + ')';
+        return getClass().getSimpleName() + '(' + cursorCreator + ' ' +  limit + ')';
     }
 
     // PhysicalOperator interface
@@ -129,7 +129,7 @@ class GroupScan_Default extends PhysicalOperator
 
         @Override
         public final String toString() {
-            return describeRange() + " on " + targetGroupTable;
+            return describeRange() + " on " + targetGroupTable.getName().getTableName();
         }
 
         // for overriding in subclasses
