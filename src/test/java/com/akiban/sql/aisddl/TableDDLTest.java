@@ -59,11 +59,13 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.DropTableNode;
 import com.akiban.sql.parser.CreateTableNode;
+import com.akiban.sql.StandardException;
 
 public class TableDDLTest {
 
     private TableName dropTable;
     private String    defaultSchema = "test";
+    private String    defaultTable  = "T1";
     protected SQLParser parser;
     private DDLFunctionsMock ddlFunctions;
     private AkibanInformationSchema ais;
@@ -143,6 +145,17 @@ public class TableDDLTest {
         assertTrue (stmt instanceof CreateTableNode);
         TableDDL.createTable(ddlFunctions, null, defaultSchema, (CreateTableNode)stmt);
     }
+
+    
+    @Test (expected=StandardException.class)
+    public void createTable2PKs() throws Exception {
+        String sql = "CREATE TABLE test.t1 (c1 int primary key, c2 int NOT NULL, primary key (c2))";
+        
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue (stmt instanceof CreateTableNode);
+        TableDDL.createTable(ddlFunctions, null, defaultSchema, (CreateTableNode)stmt);
+    }
+    
     
     private class DDLFunctionsMock implements DDLFunctions {
         public DDLFunctionsMock() {}
@@ -160,9 +173,12 @@ public class TableDDLTest {
             
             assertEquals(table.getName(), dropTable);
             for (Column col : table.getColumnsIncludingInternal()) {
+                assertNotNull (col.getName());
+                assertNotNull (ais.getUserTable(dropTable));
                 assertNotNull (ais.getUserTable(dropTable).getColumn(col.getName()));
             }
             for (Column col : ais.getTable(dropTable).getColumnsIncludingInternal()) {
+                assertNotNull (col.getName());
                 assertNotNull (table.getColumn(col.getName()));
             }
             
@@ -314,37 +330,38 @@ public class TableDDLTest {
     }
     /*"CREATE TABLE t1 (c1 INT)";*/
     private void createTableSimpleGenerateAIS () {
-        dropTable = TableName.create(defaultSchema, "T1");
+        dropTable = TableName.create(defaultSchema, defaultTable);
         ais = new AkibanInformationSchema();
         AISBuilder builder = new AISBuilder(ais);
         
-        builder.userTable(defaultSchema, "T1");
-        builder.column(defaultSchema, "T1", "C1", 0, "int", Long.valueOf(0), Long.valueOf(0), true, false, null, null);
+        builder.userTable(defaultSchema, defaultTable);
+        builder.column(defaultSchema, defaultTable, "C1", 0, "int", Long.valueOf(0), Long.valueOf(0), true, false, null, null);
         builder.basicSchemaIsComplete();
     }
     
     /*CREATE TABLE t1 (c1 INT NOT NULL PRIMARY KEY)*/
     private void createTablePKGenerateAIS() {
-        dropTable = TableName.create(defaultSchema, "T1");
+        dropTable = TableName.create(defaultSchema, defaultTable);
         ais = new AkibanInformationSchema();
         AISBuilder builder = new AISBuilder(ais);
         
-        builder.userTable(defaultSchema, "T1");
-        builder.column(defaultSchema, "T1", "C1", 0, "int", (long)0, (long)0, false, false, null, null);
-        builder.index(defaultSchema, "T1", "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn(defaultSchema, "T1", "PRIMARY", "C1", 0, true, 0);
+        builder.userTable(defaultSchema, defaultTable);
+        builder.column(defaultSchema, defaultTable, "C1", 0, "int", (long)0, (long)0, false, false, null, null);
+        builder.index(defaultSchema, defaultTable, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(defaultSchema, defaultTable, "PRIMARY", "C1", 0, true, 0);
         builder.basicSchemaIsComplete();
     }
 
     /*CREATE TABLE t1 (C1 int NOT NULL UNIQUE) */
     private void createTableUniqueKeyGenerateAIS() {
-        dropTable = TableName.create(defaultSchema, "T1");
+        dropTable = TableName.create(defaultSchema, defaultTable);
         ais = new AkibanInformationSchema();
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(ais);
         
-        builder.userTable(defaultSchema, "T1");
-        builder.column(defaultSchema, "T1", "C1", 0, "int", (long)0, (long)0, false, false, null, null);
-        builder.index(defaultSchema, "T1", "C1", true, Index.UNIQUE_KEY_CONSTRAINT);
-        builder.indexColumn(defaultSchema, "T1", "C1", "C1", 0, true, 0);
+        builder.userTable(defaultSchema, defaultTable);
+        builder.column(defaultSchema, defaultTable, "C1", 0, "int", (long)0, (long)0, false, false, null, null);
+        builder.index(defaultSchema, defaultTable, "C1", true, Index.UNIQUE_KEY_CONSTRAINT);
+        builder.indexColumn(defaultSchema, defaultTable, "C1", "C1", 0, true, 0);
+        builder.basicSchemaIsComplete();
     }
 }

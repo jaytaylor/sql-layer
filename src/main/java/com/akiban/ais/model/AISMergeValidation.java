@@ -28,6 +28,8 @@ import com.akiban.server.InvalidOperationException;
  *
  */
 public interface AISMergeValidation {
-    public void validate (AkibanInformationSchema targetSchema, AkibanInformationSchema validateSchema) 
+    public void validate (AkibanInformationSchema targetSchema, UserTable validateUserTable) 
+        throws InvalidOperationException;
+    public void validate (AkibanInformationSchema targetSchema, AkibanInformationSchema sourceSchema)
         throws InvalidOperationException;
 }

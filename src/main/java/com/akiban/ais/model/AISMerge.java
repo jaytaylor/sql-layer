@@ -58,9 +58,15 @@ public class AISMerge {
 
     public AISMerge validate () throws InvalidOperationException {
         targetAIS.checkIntegrity();
-        if (sourceAIS != null) { sourceAIS.checkIntegrity(); }
-        for (AISMergeValidation validator : checkers) {
-            validator.validate(targetAIS, sourceAIS);
+        if (sourceAIS != null) {
+            sourceAIS.checkIntegrity(); 
+            for (AISMergeValidation validator : checkers) {
+                validator.validate(targetAIS, sourceAIS);
+            }
+        } else if (sourceTable != null) {
+            for (AISMergeValidation validator : checkers) {
+                validator.validate (targetAIS, sourceTable);
+            }
         }
         return this;
     }
@@ -112,8 +118,6 @@ public class AISMerge {
         // indexes/constraints
         for (TableIndex index : table.getIndexes()) {
             IndexName indexName = index.getIndexName();
-            assert indexName != null : "Table " + table.getName();
-            assert indexName.getName() != null : "Table: " + table.getName();
             
             builder.index(schemaName, tableName, 
                     indexName.getName(), 
@@ -131,16 +135,19 @@ public class AISMerge {
     }
     
     public static class NoDuplicateNames implements AISMergeValidation {
+        public void validate (AkibanInformationSchema targetSchema, UserTable sourceTable)
+            throws InvalidOperationException {
+            if (targetSchema.getUserTables().containsKey(sourceTable.getName()) ||
+                targetSchema.getGroupTables().containsKey(sourceTable.getName())) {
+                throw new InvalidOperationException (ErrorCode.DUPLICATE_TABLE,
+                        "Merge Schema already contains a user table: %s",
+                        sourceTable.getName().toString());
+            }
+        }
         public void validate (AkibanInformationSchema targetSchema, AkibanInformationSchema validateSchema) 
         throws InvalidOperationException {
             for (UserTable table : validateSchema.getUserTables().values()) {
-                if (targetSchema.getUserTables().containsKey(table.getName()) ||
-                    targetSchema.getGroupTables().containsKey(table.getName())) {
-                    throw new InvalidOperationException (ErrorCode.DUPLICATE_TABLE, 
-                            "Merge Schema already contains a user table: %s.%s",
-                            table.getName().getSchemaName(), table.getName().getTableName());
-                    
-                }
+                validate (targetSchema, table);
             }
             for (GroupTable table : validateSchema.getGroupTables().values()) {
                 if (targetSchema.getUserTables().containsKey(table.getName()) ||
@@ -151,61 +158,89 @@ public class AISMerge {
                 }
             }
         }
- 
     }
     
     public static class NoAkibanSchemaTables implements AISMergeValidation {
+        public void validate (AkibanInformationSchema targetSchema, UserTable sourceTable)
+        throws InvalidOperationException {
+            if (TableName.AKIBAN_INFORMATION_SCHEMA.equals(sourceTable.getName().getSchemaName())) {
+                throw new InvalidOperationException (ErrorCode.PROTECTED_TABLE,
+                        "Cannot create table `%s` in protected schema `%s`",
+                        sourceTable.getName().getTableName(), 
+                        sourceTable.getName().getSchemaName());
+            }
+        }
         public void validate (AkibanInformationSchema targetSchema, AkibanInformationSchema validateSchema)
         throws InvalidOperationException {
             for (UserTable table : validateSchema.getUserTables().values()) {
-                final String schemaName = table.getName().getSchemaName();
-                final String tableName = table.getName().getTableName();
-                if (TableName.AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
-                    throw new InvalidOperationException(ErrorCode.PROTECTED_TABLE,
-                            "Cannot create table `%s` in protected schema `%s`",
-                            tableName, schemaName);
-                }
+                validate(targetSchema, table);
             }
         }
     }
     
     public static class TableColumnSupportedDatatypes implements AISMergeValidation {
+        public void validate (AkibanInformationSchema targetSchema, UserTable sourceTable)
+        throws InvalidOperationException {
+            for (Column column : sourceTable.getColumnsIncludingInternal()) {
+                if (!targetSchema.isTypeSupported(column.getType().name())) {
+                    throw new InvalidOperationException (ErrorCode.UNSUPPORTED_DATA_TYPE,
+                            "Table %s column %s uses unsupported type %s", 
+                            sourceTable.getName().toString(), 
+                            column.getName(), column.getType().name());
+                }
+            }
+        }
         public void validate (AkibanInformationSchema targetSchema, AkibanInformationSchema validateSchema)
         throws InvalidOperationException {
             for (UserTable table : validateSchema.getUserTables().values()) {
-                final String schemaName = table.getName().getSchemaName();
-                final String tableName = table.getName().getTableName();
-                for (Column column : table.getColumnsIncludingInternal()) {
-                    final String typeName = column.getType().name();
-                    if (!targetSchema.isTypeSupported(typeName)) {
-                        throw new InvalidOperationException(
-                                ErrorCode.UNSUPPORTED_DATA_TYPE,
-                                "Table `%s`.`%s` column `%s` is unsupported type %s",
-                                schemaName, tableName, column.getName(), typeName);
-                    }
-                }
+                validate (targetSchema, table);
             }
         }
     }
     
     public static class IndexColumnsSupportedDatatypes implements AISMergeValidation {
-        public void validate (AkibanInformationSchema targetSchema, AkibanInformationSchema validateSchema)
+        public void validate (AkibanInformationSchema targetSchema, UserTable sourceTable)
         throws InvalidOperationException {
-            for (UserTable table : validateSchema.getUserTables().values()) { 
-                final String schemaName = table.getName().getSchemaName();
-                final String tableName = table.getName().getTableName();
-                for (Index index : table.getIndexesIncludingInternal()) {
-                    for (IndexColumn col : index.getColumns()) {
-                        final String typeName = col.getColumn().getType().name();
-                        if (!targetSchema.isTypeSupportedAsIndex(typeName)) {
-                            throw new InvalidOperationException(
-                                    ErrorCode.UNSUPPORTED_INDEX_DATA_TYPE,
-                                    "Table `%s`.`%s` index `%s` has unsupported type `%s` from column `%s`",
-                                    schemaName, tableName, index.getIndexName().getName(), 
-                                    typeName, col.getColumn().getName());
-                        }
+            for (Index index : sourceTable.getIndexesIncludingInternal()) {
+                for (IndexColumn col : index.getColumns()) {
+                    final String typeName = col.getColumn().getType().name();
+                    if (!targetSchema.isTypeSupportedAsIndex(typeName)) {
+                        throw new InvalidOperationException(
+                                ErrorCode.UNSUPPORTED_INDEX_DATA_TYPE,
+                                "Table %s index `%s` has unsupported type `%s` from column `%s`",
+                                sourceTable.getName().toString(), index.getIndexName().getName(), 
+                                typeName, col.getColumn().getName());
+
                     }
                 }
+            }
+        }
+
+        public void validate (AkibanInformationSchema targetSchema, AkibanInformationSchema validateSchema)
+        throws InvalidOperationException {
+            for (UserTable table : validateSchema.getUserTables().values()) {
+                validate (targetSchema, table);
+            }
+        }
+    }
+    
+    public static class IndexNamesNotNull implements AISMergeValidation {
+        public void validate (AkibanInformationSchema targetSchema, UserTable sourceTable)
+        throws InvalidOperationException {
+            for (Index index : sourceTable.getIndexesIncludingInternal()) {
+                if (index.getIndexName() == null ||
+                    index.getIndexName().getName() == null)
+                    throw new InvalidOperationException (ErrorCode.UNSUPPORTED_OPERATION,
+                            "Index name for table %s is null",
+                            sourceTable.getName().toString());
+            }
+        }
+        
+        
+        public void validate (AkibanInformationSchema targetSchema, AkibanInformationSchema validateSchema)
+        throws InvalidOperationException {
+            for (UserTable table : validateSchema.getUserTables().values()) {
+                validate (targetSchema, table);
             }
         }
     }

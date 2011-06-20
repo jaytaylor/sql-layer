@@ -15,7 +15,6 @@
 
 package com.akiban.sql.aisddl;
 
-import java.util.Formatter;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -36,9 +35,7 @@ import com.akiban.sql.types.TypeId.FormatIds;
 import com.akiban.sql.StandardException;
 
 import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
@@ -174,12 +171,12 @@ public class TableDDL
             indexNames = new HashSet<String>();
         }
         
-        public String generateName(String indexName, String columnName, String constraint) {
-            // Brute strength. For the low number of collisions we expect, this is simpler, and probably as fast,
-            // as maintaining a Map<String,Integer> which to generate names, which we'd have to double-check are
-            // actually unique.
-            
+        public String generateName(String indexName, String columnName, String constraint) throws StandardException {
             if (constraint.endsWith(Index.PRIMARY_KEY_CONSTRAINT)) {
+                if (indexNames.contains(Index.PRIMARY_KEY_CONSTRAINT)) {
+                    throw new StandardException ("Table already has a Primary key, not allowed to define a second one");
+                }
+                indexNames.add(Index.PRIMARY_KEY_CONSTRAINT);
                 return Index.PRIMARY_KEY_CONSTRAINT;
             }
             
