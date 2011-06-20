@@ -61,6 +61,7 @@ import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.RollbackException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -118,62 +119,83 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         Update_Default updateOp = new Update_Default(scanOp, updateFunction);
 
         Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
-        try {
-            transaction.begin();
+        for(int retryCount=0; ; ++retryCount) {
+            try {
+                transaction.begin();
 
-            maintainGroupIndexes(
-                    session, ais, adapter,
-                    oldRowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.DELETE
-            );
+                maintainGroupIndexes(
+                        session, ais, adapter,
+                        oldRowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.DELETE
+                );
 
-            runCursor(oldRowData, rowDef, updateOp, adapter);
+                runCursor(oldRowData, rowDef, updateOp, adapter);
 
-            maintainGroupIndexes(
-                    session, ais, adapter,
-                    newRowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.STORE
-            );
+                maintainGroupIndexes(
+                        session, ais, adapter,
+                        newRowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.STORE
+                );
 
-            transaction.commit();
-        } finally {
-            transaction.end();
+                transaction.commit();
+                break;
+            } catch (RollbackException e) {
+                if (retryCount >= MAX_RETRIES) {
+                    throw e;
+                }
+            } finally {
+                transaction.end();
+            }
         }
     }
 
     @Override
     public void writeRow(Session session, RowData rowData) throws Exception {
         Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
-        try {
-            transaction.begin();
-            super.writeRow(session, rowData);
+        for(int retryCount=0; ; ++retryCount) {
+            try {
+                transaction.begin();
+                super.writeRow(session, rowData);
 
-            AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
-            PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
-            maintainGroupIndexes(
-                    session, ais, adapter,
-                    rowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.STORE
-            );
+                AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
+                PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
+                maintainGroupIndexes(
+                        session, ais, adapter,
+                        rowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.STORE
+                );
 
-            transaction.commit();
-        } finally {
-            transaction.end();
+                transaction.commit();
+                break;
+            } catch (RollbackException e) {
+                if (retryCount >= MAX_RETRIES) {
+                    throw e;
+                }
+            } finally {
+                transaction.end();
+            }
         }
     }
 
     @Override
     public void deleteRow(Session session, RowData rowData) throws Exception {
         Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
-        try {
-            transaction.begin();
-            AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
-            PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
-            maintainGroupIndexes(
-                    session, ais, adapter,
-                    rowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.DELETE
-            );
-            super.deleteRow(session, rowData);
-            transaction.commit();
-        } finally {
-            transaction.end();
+        for(int retryCount=0; ; ++retryCount) {
+            try {
+                transaction.begin();
+                AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
+                PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
+                maintainGroupIndexes(
+                        session, ais, adapter,
+                        rowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.DELETE
+                );
+                super.deleteRow(session, rowData);
+                transaction.commit();
+                break;
+            } catch (RollbackException e) {
+                if (retryCount >= MAX_RETRIES) {
+                    throw e;
+                }
+            } finally {
+                transaction.end();
+            }
         }
     }
 
@@ -379,6 +401,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // consts
 
     private static final int HKEY_BINDING_POSITION = 0;
+    private static final int MAX_RETRIES = 10;
 
     // nested classes
 
