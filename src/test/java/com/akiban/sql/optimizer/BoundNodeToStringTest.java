@@ -72,7 +72,7 @@ public class BoundNodeToStringTest extends TestBase
     public void testBound() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
         binder.bind(stmt);
-        assertEquals(expected, unparser.toString(stmt));
+        assertEquals(caseName, expected, unparser.toString(stmt));
     }
 
 }
