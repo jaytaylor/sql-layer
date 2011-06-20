@@ -186,16 +186,17 @@ class AncestorLookup_Default extends PhysicalOperator
             }
         }
 
-        private void findAncestors(Row row)
+        private void findAncestors(Row inputRow)
         {
             assert pending.isEmpty();
-            HKey hKey = row.hKey();
+            HKey hKey = inputRow.hKey();
             int nSegments = hKey.segments();
             for (int i = 0; i < ancestorTypeDepth.length; i++) {
                 int depth = ancestorTypeDepth[i];
                 hKey.useSegments(depth);
                 readAncestorRow(hKey);
                 if (ancestorRow.isNotNull()) {
+                    ancestorRow.get().runId(inputRow.runId());
                     pending.add(ancestorRow.get());
                 }
             }

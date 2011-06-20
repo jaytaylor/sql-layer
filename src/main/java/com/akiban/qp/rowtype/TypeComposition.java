@@ -23,6 +23,13 @@ import java.util.*;
 
 public class TypeComposition
 {
+    /**
+     * Indicates whether this is an ancestor of that: this is identical to that, or:
+     * - the tables comprising this and that are disjoint, and
+     * - the rootmost table of that has an ancestor among the tables of this.
+     * @param that
+     * @return true if this is an ancestor of that, false otherwise.
+     */
     public boolean isAncestorOf(TypeComposition that)
     {
         Boolean ancestor;

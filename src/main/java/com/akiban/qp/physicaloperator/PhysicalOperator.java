@@ -15,8 +15,10 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.RowDef;
 
 import java.util.Collections;
 import java.util.List;
@@ -54,5 +56,12 @@ public abstract class PhysicalOperator implements Plannable
         buffer.append('\n');
         buffer.append(toString());
         return buffer.toString();
+    }
+
+    // For use by subclasses
+
+    protected int ordinal(UserTable table)
+    {
+        return ((RowDef) table.rowDef()).getOrdinal();
     }
 }
