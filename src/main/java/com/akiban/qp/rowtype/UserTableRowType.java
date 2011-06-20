@@ -15,6 +15,7 @@
 
 package com.akiban.qp.rowtype;
 
+import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
@@ -40,6 +41,12 @@ public class UserTableRowType extends RowType
     public int nFields()
     {
         return table.getColumnsIncludingInternal().size();
+    }
+
+    @Override
+    public HKey hKey()
+    {
+        return table.hKey();
     }
 
     // UserTableRowType interface

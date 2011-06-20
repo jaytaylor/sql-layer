@@ -1,1 +1,1 @@
-com.akiban.sql.optimizer.UnsupportedSQLException: Unsupported ORDER BY
+Unsupported ORDER BY: no suitable index on [orders.order_date DESC]

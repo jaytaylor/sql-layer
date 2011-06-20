@@ -44,6 +44,16 @@ public class TableIndex extends Index
         internalComputeFieldAssociations(ordinalMap, getTable());
     }
 
+    @Override
+    public Table leafMostTable() {
+        return getTable();
+    }
+
+    @Override
+    public Table rootMostTable() {
+        return getTable();
+    }
+
     public Table getTable()
     {
         return table;
