@@ -64,8 +64,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 
 import static com.akiban.qp.physicaloperator.API.ancestorLookup_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
@@ -210,15 +214,19 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         // TODO we don't have IndexRowComposition or IndexToHKey for GroupIndexes... yet. So, do it manually.
         List<Object> fields = new ArrayList<Object>();
         List<Object> hKey = new ArrayList<Object>();
-        hKey.add("TODO"); // TODO
 
-        Map<UserTable, Integer> prefixFields = prefixFieldsFor(ais);
+        GroupIndexMapping mapping = new GroupIndexMapping(ais, groupIndex);
 
         for (IndexColumn indexColumn : groupIndex.getColumns()) {
             Column column = indexColumn.getColumn();
             UserTable userTable = column.getUserTable();
-            int flattenedRowIndex = column.getPosition() + prefixFields.get(userTable);
+            int flattenedRowIndex = column.getPosition() + mapping.columnsOffset(userTable);
             fields.add(row.field(flattenedRowIndex, UndefBindings.only()));
+        }
+        for (Column hKeyColumn : mapping.hKeyComponents()) {
+            UserTable userTable = hKeyColumn.getUserTable();
+            int flattenedRowIndex = hKeyColumn.getPosition() + mapping.columnsOffset(userTable);
+            hKey.add(row.field(flattenedRowIndex, UndefBindings.only()));
         }
 
         handler.handleRow(groupIndex, fields, hKey);
@@ -269,20 +277,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
         }
         return plan;
-    }
-
-    Map<UserTable, Integer> prefixFieldsFor(AkibanInformationSchema ais) {
-        Map<UserTable, Integer> prefixFieldsMap = new HashMap<UserTable, Integer>();
-        for (final UserTable userTable : ais.getUserTables().values()) {
-            int prefixFields = 0;
-            UserTable ancestor = userTable;
-            while (ancestor.parentTable() != null) {
-                ancestor = ancestor.parentTable();
-                prefixFields += ancestor.getColumns().size();
-            }
-            prefixFieldsMap.put(userTable, prefixFields);
-        }
-        return prefixFieldsMap;
     }
 
     private static List<RowType> ancestors(RowType rowType, List<? extends RowType> branchTables) {
@@ -405,6 +399,56 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         // object state
         private final List<UserTableRowType> allTablesForBranch;
         private final List<UserTableRowType> onlyBranch;
+    }
+
+    private static class GroupIndexMapping {
+
+        GroupIndexMapping(AkibanInformationSchema ais, GroupIndex groupIndex) {
+            Map<UserTable, Integer> localMap = new HashMap<UserTable, Integer>();
+            for (final UserTable userTable : ais.getUserTables().values()) {
+                int prefixFields = 0;
+                UserTable ancestor = userTable;
+                while (ancestor.parentTable() != null) {
+                    ancestor = ancestor.parentTable();
+                    prefixFields += ancestor.getColumns().size();
+                }
+                localMap.put(userTable, prefixFields);
+            }
+            this.prefixFieldsMap = Collections.unmodifiableMap(localMap);
+
+            Set<Column> elidedHKeys = new HashSet<Column>();
+            for (IndexColumn indexColumn : groupIndex.getColumns()) {
+                Column column = indexColumn.getColumn();
+                elidedHKeys.add(column);
+            }
+            UserTable userTable = groupIndex.leafMostTable();
+            List<Column> hKeyCols = new ArrayList<Column>();
+            while (userTable != null) {
+                Index pk = userTable.getPrimaryKey().getIndex();
+                List<IndexColumn> pkCols = pk.getColumns();
+                for (ListIterator<IndexColumn> iter = pkCols.listIterator(pkCols.size()); iter.hasPrevious(); ) {
+                    Column pkCol = iter.previous().getColumn();
+                    if (!elidedHKeys.contains(pkCol)) {
+                        hKeyCols.add(pkCol);
+                    }
+                }
+                userTable = userTable.parentTable();
+            }
+            Collections.reverse(hKeyCols);
+            this.hKeyColumns = Collections.unmodifiableList(hKeyCols);
+        }
+
+        public int columnsOffset(UserTable table) {
+            return prefixFieldsMap.get(table);
+        }
+
+        public List<Column> hKeyComponents() {
+            return hKeyColumns;
+        }
+
+        // object state
+        private final Map<UserTable,Integer> prefixFieldsMap;
+        private final List<Column> hKeyColumns;
     }
 
     private static class InternalUpdateFunction implements UpdateFunction {

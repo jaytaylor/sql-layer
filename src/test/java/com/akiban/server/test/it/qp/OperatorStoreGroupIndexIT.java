@@ -55,10 +55,10 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 createNewRow(c, 1L, "alpha"),
                 // sku_name
                 "[1111, alpha] hkey[1, 11, 100]",
-                "[2222, alpha] hkey[1, 12, 101]",
+                "[2222, alpha] hkey[1, 11, 101]",
                 "[3333, alpha] hkey[1, 11, 102]",
                 // street_aid_cid
-                "[Harrington, 20, 1] hkey []",
+                "[Harrington, 20, 1] hkey[]",
                 "[Causeway, 21, 1] hkey[]"
         );
     }
