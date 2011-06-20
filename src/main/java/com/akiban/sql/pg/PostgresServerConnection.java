@@ -13,6 +13,10 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
+import com.akiban.server.store.Store;ro General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses.
+ */
+
 package com.akiban.sql.pg;
 
 import com.akiban.sql.StandardException;
@@ -33,6 +37,8 @@ import com.akiban.server.service.EventTypes;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.store.PersistitStore;
+import com.akiban.server.store.Store;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

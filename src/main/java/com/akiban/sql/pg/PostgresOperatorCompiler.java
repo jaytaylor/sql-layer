@@ -41,6 +41,8 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 
+import com.akiban.server.service.EventTypes;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
