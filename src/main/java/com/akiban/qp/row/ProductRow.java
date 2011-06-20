@@ -1,4 +1,4 @@
-/**
+/** *
  * Copyright (C) 2011 Akiban Technologies Inc.
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
@@ -15,22 +15,19 @@
 
 package com.akiban.qp.row;
 
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.rowtype.FlattenedRowType;
-import com.akiban.qp.rowtype.ProjectedRowType;
+import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
 
-import java.util.List;
-
-public class ProjectedRow extends AbstractRow
+public class ProductRow extends AbstractRow
 {
     // Object interface
 
     @Override
     public String toString()
     {
-        return String.format("%s[%s]", row, projections);
+        return String.format("%s, %s", left, right);
     }
 
     // Row interface
@@ -44,7 +41,13 @@ public class ProjectedRow extends AbstractRow
     @Override
     public Object field(int i, Bindings bindings)
     {
-        return projections.get(i).evaluate(row.get(), bindings);
+        Object field;
+        if (i < nLeftFields) {
+            field = left.isNull() ? null : left.get().field(i, bindings);
+        } else {
+            field = right.isNull() ? null : right.get().field(i - nLeftFields, bindings);
+        }
+        return field;
     }
 
     @Override
@@ -53,19 +56,24 @@ public class ProjectedRow extends AbstractRow
         return null;
     }
 
-    // ProjectedRow interface
+    // ProductRow interface
 
-    public ProjectedRow(ProjectedRowType rowType, Row row, List<Expression> projections)
+    public ProductRow(ProductRowType rowType, Row left, Row right)
     {
         this.rowType = rowType;
-        this.row.set(row);
-        this.projections = projections;
-        super.runId(row.runId());
+        this.left.set(left);
+        this.right.set(right);
+        this.nLeftFields = rowType.leftType().nFields();
+        if (left != null && right != null) {
+            assert left.runId() == right.runId();
+        }
+        super.runId(left == null ? right.runId() : left.runId());
     }
 
     // Object state
 
-    private final ProjectedRowType rowType;
-    private final RowHolder<Row> row = new RowHolder<Row>();
-    private final List<Expression> projections;
+    private final ProductRowType rowType;
+    private final RowHolder<Row> left = new RowHolder<Row>();
+    private final RowHolder<Row> right = new RowHolder<Row>();
+    private final int nLeftFields;
 }

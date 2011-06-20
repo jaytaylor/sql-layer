@@ -31,7 +31,6 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.server.AkServerUtil;
 import com.akiban.server.TableStatusCache;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManagerImpl;
@@ -54,8 +53,6 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     private final static Session.Key<Map<Tree, List<Exchange>>> EXCHANGE_MAP = Session.Key
             .named("exchangemap");
 
-    private final static int MEGA = 1024 * 1024;
-
     private static final Logger LOG = LoggerFactory
             .getLogger(TreeServiceImpl.class.getName());
 
@@ -65,22 +62,10 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
     private static final String BUFFER_SIZE_PROP_NAME = "buffersize";
 
-    private static final String BUFFER_COUNT_PROP_NAME = "buffer.count.";
-
     private static final String DEFAULT_DATAPATH = "/tmp/akiban_server";
 
     // Must be one of 1024, 2048, 4096, 8192, 16384:
-    private static final int DEFAULT_BUFFER_SIZE = 8192;
-
-    // Generally this is used only for unit tests and is
-    // overridden by memory allocation calculation.
-    private static final int DEFAULT_BUFFER_COUNT = 1024;
-
-    private final static long MEMORY_RESERVATION = 64 * MEGA;
-
-    private final static float PERSISTIT_ALLOCATION_FRACTION = 0.5f;
-
-    private static final String FIXED_ALLOCATION_PROPERTY_NAME = "akserver.fixed";
+    static final int DEFAULT_BUFFER_SIZE = 16384;
 
     static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
@@ -140,65 +125,16 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
     public synchronized void start() throws Exception {
         configService = ServiceManagerImpl.get().getConfigurationService();
+
         assert getDb() == null;
         // TODO - remove this when sure we don't need it
         ++instanceCount;
         assert instanceCount == 1 : instanceCount;
-        final Properties properties = configService.getModuleConfiguration(
-                PERSISTIT_MODULE_NAME).getProperties();
-        //
-        // This section modifies the properties gotten from the
-        // default configuration plus chunkserver.properties. It
-        //
-        // (a) copies akserver.datapath to datapath
-        // (b) sets the buffersize property if null
-        // (c) sets the buffercount property if null.
-        //
-        // Copies the akserver.datapath property to the Persistit properties
-        // set.
-        // This allows Persistit to perform substitution of ${datapath} with
-        // the server-specified home directory.
-        //
-        final String datapath = configService.getProperty("akserver."
-                + DATAPATH_PROP_NAME, DEFAULT_DATAPATH);
-        properties.setProperty(DATAPATH_PROP_NAME, datapath);
-        ensureDirectoryExists(datapath, false);
 
-        // Note - this is an akserver property, not a persistit property.
-        // Is used by unit tests to limit the size of buffer pool -
-        // for startup/shutdown speed.
-        //
-        final boolean isFixedAllocation = "true".equals(configService
-                .getProperty(FIXED_ALLOCATION_PROPERTY_NAME, "false"));
-
-        // Get the configured buffer size:
-        // Default is 16K. Can be overridden with
-        //
-        // persistit.buffersize=8K
-        //
-        // for example.
-        if (!properties.containsKey(BUFFER_SIZE_PROP_NAME)) {
-            properties.setProperty(BUFFER_SIZE_PROP_NAME,
-                    String.valueOf(DEFAULT_BUFFER_SIZE));
-        }
-        //
-        // Now compute the actual allocation of buffers
-        // of that size. The bufferCount method computes
-        // an allocation based on heap size.
-        //
+        final Properties properties = setupPersistitProperties(configService);
         final int bufferSize = Integer.parseInt(properties
                 .getProperty(BUFFER_SIZE_PROP_NAME));
-        final String bufferCountPropString = BUFFER_COUNT_PROP_NAME
-                + bufferSize;
-        if (!properties.containsKey(bufferCountPropString)) {
-            properties.setProperty(bufferCountPropString,
-                    String.valueOf(bufferCount(bufferSize, isFixedAllocation)));
-        }
-        //
-        // Now we're ready to create the Persistit instance.
-        // Note that the Volume specifications will substitute
-        // ${buffersize}, so that property must be valid.
-        //
+
         Persistit db = new Persistit();
         dbRef.set(db);
 
@@ -216,6 +152,48 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
                             bufferSize / 1024,
                             db.getProperty("buffer.count." + bufferSize) });
         }
+    }
+
+    final Properties setupPersistitProperties(
+            final ConfigurationService configService)
+            throws FileNotFoundException {
+        //
+        // Copies all the Persistit properties to a local Properties object.
+        // Note that this strips the prefix "persistit." from each key, for
+        // example, if the configuration file specifies
+        //
+        // persistit.appendonly=true
+        //
+        // then the corresponding key created by getModuleConfiguration will be
+        // just "appendonly".
+        //
+        final Properties properties = configService.getModuleConfiguration(
+                PERSISTIT_MODULE_NAME).getProperties();
+        //
+        // Copies the akserver.datapath property to the Persistit properties
+        // set. This allows Persistit to perform substitution of ${datapath}
+        // with the server-specified home directory.
+        //
+        // Sets the property named "buffersize" so that the volume
+        // specifications can use the substitution syntax ${buffersize}.
+        //
+        final String datapath = configService.getProperty("akserver."
+                + DATAPATH_PROP_NAME, DEFAULT_DATAPATH);
+        properties.setProperty(DATAPATH_PROP_NAME, datapath);
+        ensureDirectoryExists(datapath, false);
+
+        // Get the configured buffer size:
+        // Default is 16K. Can be overridden with
+        //
+        // persistit.buffersize=8K
+        //
+        // for example.
+        if (!properties.containsKey(BUFFER_SIZE_PROP_NAME)) {
+            properties.setProperty(BUFFER_SIZE_PROP_NAME,
+                    String.valueOf(DEFAULT_BUFFER_SIZE));
+        }
+
+        return properties;
     }
 
     /**
@@ -247,16 +225,6 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
                 ensureDirectoryExists(path, true);
             }
         }
-    }
-
-    private int bufferCount(final int bufferSize,
-            final boolean isFixedAllocation) {
-        if (isFixedAllocation) {
-            return DEFAULT_BUFFER_COUNT;
-        }
-        final long allocation = (long) ((AkServerUtil.availableMemory() - MEMORY_RESERVATION) * PERSISTIT_ALLOCATION_FRACTION);
-        final int allocationPerBuffer = (int) (bufferSize * 1.5);
-        return Math.max(512, (int) (allocation / allocationPerBuffer));
     }
 
     public void stop() throws Exception {
@@ -460,6 +428,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     /**
      * Provide a list of Exchange instances already created for a particular
      * Tree.
+     * 
      * @param session
      * @param tree
      * @return
@@ -482,7 +451,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
                         && !list.get(list.size() - 1).getTree().isValid()) {
                     //
                     // The Tree on which this list of cached Exchanges is
-                    // based was deleted.  Need to clear the list.  Further,
+                    // based was deleted. Need to clear the list. Further,
                     // remove the obsolete Tree object from the Map and replace
                     // it with the new valid Tree.
                     list.clear();
@@ -518,7 +487,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     @Override
-    public boolean treeExists(final String schemaName, final String treeName) throws PersistitException {
+    public boolean treeExists(final String schemaName, final String treeName)
+            throws PersistitException {
         final Volume volume = mappedVolume(schemaName, treeName);
         final Tree tree = volume.getTree(treeName, false);
         return tree != null;

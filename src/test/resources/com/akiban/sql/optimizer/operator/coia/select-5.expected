@@ -1,5 +1,8 @@
-** CROSS PRODUCT GOES HERE **
-Flatten_HKeyOrdered(flatten(user.customers, user.addresses) INNER user.orders)
-  Flatten_HKeyOrdered(user.customers INNER user.addresses)
-    BranchLookup_Default(_akiban_customers Index(user.customers.name[IndexColumn(name)]) -> user.customers limit NO LIMIT)
-      IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>=user.customers=ExpressionRow[Literal(IBM)],<=user.customers=ExpressionRow[Literal(IBM)]))
+project([Field(7), Field(10), Field(4)])
+  Product_ByRun(flatten(user.customers, user.addresses) x flatten(user.customers, user.orders))
+    Extract_Default([flatten(user.customers, user.orders), flatten(user.customers, user.addresses)])
+      Flatten_HKeyOrdered(user.customers INNER user.orders)
+        Flatten_HKeyOrdered(user.customers KEEP INNER user.addresses)
+          BranchLookup_Default(_akiban_customers Index(user.customers.name[IndexColumn(name)]) -> user.customers limit NO LIMIT)
+            IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>=user.customers=ExpressionRow[Literal(IBM)],<=user.customers=ExpressionRow[Literal(IBM)]))
+[name:varchar(32)[VARCHAR], order_date:date[DATE], state:char(2)[VARCHAR]]
