@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
@@ -97,6 +98,12 @@ public class RowDef implements TreeLink {
      */
     private Index[] indexes;
 
+    /**
+     * Array of group index definitions for this row. Populated only if this
+     * is the RowDef for a group table.
+     */
+    private GroupIndex[] groupIndexes;
+    
     /**
      * Array computed by the {@link #preComputeFieldCoordinates(FieldDef[])}
      * method to assist in looking up a field's offset and length.
@@ -413,6 +420,10 @@ public class RowDef implements TreeLink {
         return indexes;
     }
 
+    public GroupIndex[] getGroupIndexes() {
+        return groupIndexes;
+    }
+
     public Index getIndex(final String indexName) {
         return table.getIndex(indexName);
     }
@@ -480,6 +491,10 @@ public class RowDef implements TreeLink {
 
     public void setIndexes(Index[] indexes) {
         this.indexes = indexes;
+    }
+
+    public void setGroupIndexes(GroupIndex[] groupIndexes) {
+        this.groupIndexes = groupIndexes;
     }
 
     public void setParentJoinFields(int[] parentJoinFields) {
@@ -597,6 +612,11 @@ public class RowDef implements TreeLink {
         }
         for (Index index : indexes) {
             index.computeFieldAssociations(ordinalMap);
+        }
+        if (groupIndexes != null) {
+            for (GroupIndex index : groupIndexes) {
+                index.computeFieldAssociations(ordinalMap);
+            }
         }
     }
 
