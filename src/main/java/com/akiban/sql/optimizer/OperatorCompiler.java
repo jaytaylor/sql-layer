@@ -234,9 +234,9 @@ public class OperatorCompiler
             IndexRowType indexType;
             // TODO: See comment on this class.
             if (iindex.isTableIndex())
-                indexType = tableType.indexRowType(iindex);
+                indexType = schema.indexRowType((TableIndex)iindex);
             else
-                indexType = new UnknownIndexRowType(schema, tableType, iindex);
+                indexType = new UnknownIndexRowType(schema, iindex);
             resultOperator = indexScan_Default(indexType, 
                                                index.isReverse(),
                                                index.getIndexKeyRange());
@@ -909,9 +909,11 @@ public class OperatorCompiler
             return index.getColumns().size();
         }
 
-        public UnknownIndexRowType(SchemaAISBased schema, UserTableRowType tableType, Index index)
+        public UnknownIndexRowType(SchemaAISBased schema, Index index)
         {
-            super(schema, tableType, null);
+            super(schema, 
+                  schema.userTableRowType((UserTable)index.leafMostTable()), 
+                  null);
             this.index = index;
         }
 
@@ -929,7 +931,7 @@ public class OperatorCompiler
             rowType = schema.indexRowType((TableIndex)index);
         else
             // TODO: See comment above.
-            rowType = new UnknownIndexRowType(schema, null, index);
+            rowType = new UnknownIndexRowType(schema, index);
         return new ExpressionRow(rowType, keys);
     }
 
