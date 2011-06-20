@@ -334,13 +334,17 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
         
         RowType parentRowType = null;
+        API.JoinType joinType = API.JoinType.RIGHT_JOIN;
         for (RowType branchRowType : branchTables.fromRoot()) {
             if (parentRowType == null) {
                 parentRowType = branchRowType;
             }
             else {
-                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, API.JoinType.INNER_JOIN);
+                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType);
                 parentRowType = plan.rowType();
+                if (parentRowType.equals(branchTables.rootMost())) {
+                    joinType = API.JoinType.INNER_JOIN;
+                }
             }
         }
         return plan;
@@ -478,6 +482,10 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
         public UserTableRowType leafMost() {
             return onlyBranch.get(onlyBranch.size()-1);
+        }
+
+        public UserTableRowType rootMost() {
+            return onlyBranch.get(0);
         }
 
         public BranchTables(Schema schema, GroupIndex groupIndex) {
