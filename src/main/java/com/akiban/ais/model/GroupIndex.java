@@ -114,55 +114,7 @@ public class GroupIndex extends Index
 
     @Override
     public void computeFieldAssociations(Map<Table, Integer> ordinalMap) {
-        freezeColumns();
-        computeHKeyEquivalent();
-
-        Map<UserTable,Integer> columnOffsets = new HashMap<UserTable,Integer>();
-        UserTable curTable = rootMostTable();
-        int curOffset = 0;
-        while(curTable.getParentJoin() != null) {
-            curTable = curTable.getParentJoin().getParent();
-            curOffset += curTable.getColumnsIncludingInternal().size();
-        }
-        for(UserTable table : tablesByDepth.values()) {
-            columnOffsets.put(table, curOffset);
-            curOffset += table.getColumnsIncludingInternal().size();
-        }
-
-        AssociationBuilder rowCompBuilder = new AssociationBuilder();
-        AssociationBuilder toHKeyBuilder = new AssociationBuilder();
-        List<Column> indexColumns = new ArrayList<Column>();
-
-        // Add index key fields
-        for (IndexColumn iColumn : getColumns()) {
-            Column column = iColumn.getColumn();
-            indexColumns.add(column);
-            Integer offset = columnOffsets.get(column.getUserTable());
-            rowCompBuilder.rowCompEntry(offset + column.getPosition(), -1);
-        }
-
-        // Add hkey fields not already included
-        HKey hKey = hKey();
-        for (HKeySegment hKeySegment : hKey.segments()) {
-            Integer ordinal = ordinalMap.get(hKeySegment.table());
-            assert ordinal != null : hKeySegment.table();
-            toHKeyBuilder.toHKeyEntry(ordinal, -1, -1);
-
-            for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
-                Column column = hKeyColumn.column();
-                if (!indexColumns.contains(column)) {
-                    Integer offset = columnOffsets.get(column.getUserTable());
-                    rowCompBuilder.rowCompEntry(offset + column.getPosition(), -1);
-                    indexColumns.add(hKeyColumn.column());
-                }
-
-                int indexRowPos = indexColumns.indexOf(column);
-                int fieldPos = column == null ? -1 : column.getPosition();
-                toHKeyBuilder.toHKeyEntry(-1, indexRowPos, fieldPos);
-            }
-        }
-
-        setFieldAssociations(rowCompBuilder.createIndexRowComposition(), toHKeyBuilder.createIndexToHKey());
+        computeFieldAssociations(ordinalMap, null, true);
     }
 
     public Group getGroup()

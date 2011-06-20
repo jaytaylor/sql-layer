@@ -249,12 +249,16 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         private List<Integer> list3 = new ArrayList<Integer>();
     }
     
+    private static int columnPosition(boolean useGroupPosition, Column column) {
+        return useGroupPosition ? column.getGroupColumn().getPosition() : column.getPosition();
+    }
+
     /**
-     * Note: Probably needs list/array of tables indicating depth to support group indexes
-     * @param ordinalMap Map of Tables to ordinal values
-     * @param indexTable Table the HKey is referencing
+     * @param ordinalMap Map of Tables to Ordinal values
+     * @param indexTable If specified, prefer columns from this table over the hkey
+     * @param useGroupPosition Whether or not to use a Columns position in the group
      */
-    protected void internalComputeFieldAssociations(Map<Table,Integer> ordinalMap, Table indexTable) {
+    protected void computeFieldAssociations(Map<Table,Integer> ordinalMap, Table indexTable, boolean useGroupPosition) {
         freezeColumns();
         computeHKeyEquivalent();
 
@@ -266,7 +270,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         for (IndexColumn iColumn : getColumns()) {
             Column column = iColumn.getColumn();
             indexColumns.add(column);
-            rowCompBuilder.rowCompEntry(column.getPosition(), -1);
+            rowCompBuilder.rowCompEntry(columnPosition(useGroupPosition, column), -1);
         }
 
         // Add hkey fields not already included
@@ -280,22 +284,27 @@ public abstract class Index implements Serializable, ModelNames, Traversable
                 Column column = hKeyColumn.column();
 
                 if (!indexColumns.contains(column)) {
-                    if (indexTable.getColumnsIncludingInternal().contains(column)) {
-                        rowCompBuilder.rowCompEntry(hKeyColumn.column().getPosition(), -1);
-                    } else {
+                    if (indexTable == null) {
+                        rowCompBuilder.rowCompEntry(columnPosition(useGroupPosition, column), -1);
+                    }
+                    else if (indexTable.getColumnsIncludingInternal().contains(column)) {
+                        rowCompBuilder.rowCompEntry(columnPosition(useGroupPosition, column), -1);
+                    }
+                    else {
                         assert hKeySegment.table().isUserTable() : this;
                         rowCompBuilder.rowCompEntry(-1, hKeyColumn.positionInHKey());
                     }
-                    indexColumns.add(hKeyColumn.column());
+                    indexColumns.add(column);
                 }
 
                 int indexRowPos = indexColumns.indexOf(column);
-                int fieldPos = column == null ? -1 : column.getPosition();
+                int fieldPos = column == null ? -1 : columnPosition(useGroupPosition, column);
                 toHKeyBuilder.toHKeyEntry(-1, indexRowPos, fieldPos);
             }
         }
 
-        setFieldAssociations(rowCompBuilder.createIndexRowComposition(), toHKeyBuilder.createIndexToHKey());
+        this.indexRowComposition = rowCompBuilder.createIndexRowComposition();
+        this.indexToHKey = toHKeyBuilder.createIndexToHKey();
     }
 
     protected void computeHKeyEquivalent() {
@@ -319,11 +328,6 @@ public abstract class Index implements Serializable, ModelNames, Traversable
             isHKeyEquivalent = false;
         }
         */
-    }
-
-    protected void setFieldAssociations(IndexRowComposition rowComp, IndexToHKey toHKey) {
-        this.indexRowComposition = rowComp;
-        this.indexToHKey = toHKey;
     }
 
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
