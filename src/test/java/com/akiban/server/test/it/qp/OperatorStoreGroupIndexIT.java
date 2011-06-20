@@ -54,16 +54,18 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         );
         String skuNameCols = " cols[items.sku, customers.name, customers.cid, orders.oid, items.iid]";
         String streetAidCidCols = " cols[addresses.street, addresses.aid, customers.cid]";
+        String actionString = "testing! ";
 
         testMaintainedRows(
+                actionString,
                 createNewRow(c, 1L, "alpha"),
                 // sku_name
-                "sku_name [1111, alpha, 1, 11, 100]" + skuNameCols,
-                "sku_name [2222, alpha, 1, 11, 101]" + skuNameCols,
-                "sku_name [3333, alpha, 1, 11, 102]" + skuNameCols,
+                actionString + "sku_name [1111, alpha, 1, 11, 100]" + skuNameCols,
+                actionString + "sku_name [2222, alpha, 1, 11, 101]" + skuNameCols,
+                actionString + "sku_name [3333, alpha, 1, 11, 102]" + skuNameCols,
                 // street_aid_cid
-                "street_aid_cid [Harrington, 20, 1]" + streetAidCidCols,
-                "street_aid_cid [Causeway, 21, 1]" + streetAidCidCols
+                actionString + "street_aid_cid [Harrington, 20, 1]" + streetAidCidCols,
+                actionString + "street_aid_cid [Causeway, 21, 1]" + streetAidCidCols
         );
     }
 
@@ -121,11 +123,11 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
 
     // private methods
 
-    void testMaintainedRows(NewRow targetRow, String... expectedActions) {
+    void testMaintainedRows(String action, NewRow targetRow, String... expectedActions) {
         RowData rowData = targetRow.toRowData();
         StringsGIHandler handler = new StringsGIHandler();
         try {
-            opStore().testMaintainGroupIndexes(session(), rowData, handler, null);
+            opStore().testMaintainGroupIndexes(session(), rowData, handler, action);
         } catch (PersistitException e) {
             throw new RuntimeException(e);
         }
@@ -167,15 +169,15 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         }
     }
 
-    private static class StringsGIHandler implements TestOperatorStore.GroupIndexHandler<Object, RuntimeException> {
+    private static class StringsGIHandler implements TestOperatorStore.GroupIndexHandler<String, RuntimeException> {
 
         // GroupIndexHandler interface
 
         @Override
-        public void handleRow(Object action, GroupIndex groupIndex, List<?> fields, List<? extends Column> columns) {
+        public void handleRow(String action, GroupIndex groupIndex, List<?> fields, List<? extends Column> columns) {
             assertEquals("list sizes: " + fields + ' ' + columns, fields.size(), columns.size());
             String giName = (groupIndex == null) ? "null " : groupIndex.getIndexName().getName() + ' ';
-            strings.add(giName + String.valueOf(fields) + " cols" + columns);
+            strings.add(action + giName + String.valueOf(fields) + " cols" + columns);
         }
 
         // StringsGIHandler interface
