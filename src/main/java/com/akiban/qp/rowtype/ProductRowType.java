@@ -15,20 +15,19 @@
 
 package com.akiban.qp.rowtype;
 
-import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.UserTable;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class FlattenedRowType extends DerivedRowType
+public class ProductRowType extends DerivedRowType
 {
     // Object interface
 
     @Override
     public String toString()
     {
-        return String.format("flatten(%s, %s)", parent, child);
+        return String.format("product(%s x %s)", left, right);
     }
 
 
@@ -37,36 +36,35 @@ public class FlattenedRowType extends DerivedRowType
     @Override
     public int nFields()
     {
-        return parent.nFields() + child.nFields();
+        return left.nFields() + right.nFields();
     }
 
-    @Override
-    public HKey hKey()
+    // ProductRowType interface
+
+    public RowType leftType()
     {
-        return child.hKey();
+        return left;
     }
 
-    // FlattenedRowType interface
-
-    public RowType parentType()
+    public RowType rightType()
     {
-        return parent;
+        return right;
     }
 
-    public FlattenedRowType(Schema schema, int typeId, RowType parent, RowType child)
+    public ProductRowType(Schema schema, int typeId, RowType left, RowType right)
     {
         super(schema, typeId);
-        assert parent.schema() == schema : parent;
-        assert child.schema() == schema : child;
-        this.parent = parent;
-        this.child = child;
-        List<UserTable> parentAndChildTables = new ArrayList<UserTable>(parent.typeComposition().tables());
-        parentAndChildTables.addAll(child.typeComposition().tables());
+        assert left.schema() == schema : left;
+        assert right.schema() == schema : right;
+        this.left = left;
+        this.right = right;
+        List<UserTable> parentAndChildTables = new ArrayList<UserTable>(left.typeComposition().tables());
+        parentAndChildTables.addAll(right.typeComposition().tables());
         typeComposition(new TypeComposition(this, parentAndChildTables));
     }
 
     // Object state
 
-    private final RowType parent;
-    private final RowType child;
+    private final RowType left;
+    private final RowType right;
 }

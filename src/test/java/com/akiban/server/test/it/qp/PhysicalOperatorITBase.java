@@ -20,10 +20,8 @@ import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.persistitadapter.PersistitRowLimit;
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.Limit;
-import com.akiban.qp.physicaloperator.UndefBindings;
+import com.akiban.qp.physicaloperator.*;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -45,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.akiban.qp.physicaloperator.API.cursor;
 import static org.junit.Assert.*;
 
 public class PhysicalOperatorITBase extends ITBase
@@ -221,13 +220,30 @@ public class PhysicalOperatorITBase extends ITBase
         assertEquals(expected.length, actualRows.size());
     }
 
+    // Useful when scanning is expected to throw an exception
+    protected void scan(Cursor cursor)
+    {
+        List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
+        try {
+            cursor.open(NO_BINDINGS);
+            while (cursor.next()) {
+                RowBase actualRow = cursor.currentRow();
+                actualRows.add(actualRow);
+            }
+        } finally {
+            cursor.close();
+        }
+    }
+
     @SuppressWarnings("unused") // useful for debugging
-    protected void dumpToAssertion(Cursor cursor) {
+    protected void dumpToAssertion(Cursor cursor)
+    {
         List<String> strings = new ArrayList<String>();
         try {
             cursor.open(NO_BINDINGS);
             while (cursor.next()) {
-                strings.add(String.valueOf(cursor.currentRow()));
+                Row row = cursor.currentRow();
+                strings.add(String.format("%s: %s", row.runId(), row));
             }
         } catch (Throwable t) {
             strings.add("ERROR: " + t);
@@ -236,6 +252,12 @@ public class PhysicalOperatorITBase extends ITBase
         }
         strings.add(0, strings.size() == 1 ? "1 string:" : strings.size() + " strings:");
         throw new AssertionError(Strings.join(strings));
+    }
+
+    @SuppressWarnings("unused") // useful for debugging
+    protected void dumpToAssertion(PhysicalOperator plan)
+    {
+        dumpToAssertion(cursor(plan, adapter));
     }
 
     protected void compareRenderedHKeys(String[] expected, Cursor cursor)
@@ -268,6 +290,12 @@ public class PhysicalOperatorITBase extends ITBase
                 expectedField != null && actualField != null && expectedField.equals(actualField);
         }
         return equal;
+    }
+
+    protected int ordinal(RowType rowType)
+    {
+        RowDef rowDef = (RowDef) rowType.userTable().rowDef();
+        return rowDef.getOrdinal();
     }
 
     protected static final Bindings NO_BINDINGS = UndefBindings.only();

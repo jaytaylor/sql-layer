@@ -16,6 +16,7 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.physicaloperator.Cursor;
+import com.akiban.qp.physicaloperator.IncompatibleRowException;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
@@ -167,7 +168,7 @@ public class FlattenIT extends PhysicalOperatorITBase
                 INNER_JOIN, LEFT_JOIN_SHORTENS_HKEY);
     }
 
-    @Test @Ignore("bug 797433")
+    @Test
     public void testLeftJoinCO()
     {
         PhysicalOperator plan = flatten_HKeyOrdered(groupScan_Default(coi),
@@ -263,7 +264,7 @@ public class FlattenIT extends PhysicalOperatorITBase
         compareRows(expected, cursor);
     }
 
-    @Test @Ignore("bug 797433")
+    @Test(expected = IncompatibleRowException.class)
     public void testLeftJoinCOI_WithPartiallyLeftShortenedHKey()
     {
         PhysicalOperator coPlan = flatten_HKeyOrdered(
@@ -299,7 +300,7 @@ public class FlattenIT extends PhysicalOperatorITBase
         compareRows(expected, cursor);
     }
 
-    @Test @Ignore("bug 797433")
+    @Test(expected = IncompatibleRowException.class)
     public void testLeftJoinCOI_WithFullKey()
     {
         PhysicalOperator coPlan = flatten_HKeyOrdered(
@@ -573,14 +574,19 @@ public class FlattenIT extends PhysicalOperatorITBase
     }
 
     private String cKey(Long cid) {
-        return String.format("{%d,(long)%s}",customer, cid);
+        return String.format("{%d,%s}", customer, hKeyValue(cid));
     }
 
     private String oKey(Long cid, Long oid) {
-        return String.format("{%d,(long)%s,%d,(long)%s}",customer, cid, order, oid);
+        return String.format("{%d,%s,%d,%s}",customer, hKeyValue(cid), order, hKeyValue(oid));
     }
 
     private String iKey(Long cid, Long oid, Long iid) {
-        return String.format("{%d,(long)%s,%d,(long)%s,%d,(long)%s}",customer, cid, order, oid, item, iid);
+        return String.format("{%d,%s,%d,%s,%d,%s}",customer, hKeyValue(cid), order, hKeyValue(oid), item, hKeyValue(iid));
+    }
+
+    private String hKeyValue(Long x)
+    {
+        return x == null ? "null" : String.format("(long)%d", x);
     }
 }
