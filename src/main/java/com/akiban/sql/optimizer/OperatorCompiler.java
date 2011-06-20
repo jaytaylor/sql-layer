@@ -876,10 +876,6 @@ public class OperatorCompiler
     protected IndexBound getIndexBound(Index index, Expression[] keys, int nkeys) {
         if (keys == null) 
             return null;
-        UserTable userTable = null;
-        if (index.isTableIndex())
-            userTable = (UserTable)((TableIndex)index).getTable();
-        // TODO: group index bound table.
         return new IndexBound(getIndexExpressionRow(index, keys),
                               getIndexColumnSelector(index, nkeys));
     }
@@ -926,10 +922,6 @@ public class OperatorCompiler
 
     /** Return a {@link Row} for the given index containing the given
      * {@link Expression} values.  
-     *
-     * When testing, this just returns a row with those expressions.
-     * In use with actual index lookup, needs to be overridden to
-     * return a row shaped like the user table.
      */
     protected Row getIndexExpressionRow(Index index, Expression[] keys) {
         RowType rowType = null;
