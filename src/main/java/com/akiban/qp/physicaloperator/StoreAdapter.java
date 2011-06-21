@@ -41,7 +41,7 @@ public abstract class StoreAdapter
         return newIndexCursor(index, false, null);
     }
 
-    public abstract Cursor newIndexCursor(TableIndex index, boolean reverse, IndexKeyRange keyRange);
+    public abstract Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange);
 
     public abstract HKey newHKey(RowType rowType);
 
