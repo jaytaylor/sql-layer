@@ -51,7 +51,7 @@ public final class GroupIndexUpdateIT extends ITBase {
                 "Horton, 01-01-2001, 2222, 1, 11, 102",
                 "Horton, 01-01-2001, 3333, 1, 11, 103"
         );
-        // update
+        // update parent
         dml().updateRow(
                 session(),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -63,8 +63,21 @@ public final class GroupIndexUpdateIT extends ITBase {
                 "Horton, 01-01-1999, 2222, 1, 11, 102",
                 "Horton, 01-01-1999, 3333, 1, 11, 103"
         );
+        // update child
+        dml().updateRow(
+                session(),
+                createNewRow(i, 102L, 11L, 2222),
+                createNewRow(i, 102L, 11L, 2442),
+                null
+        );
+        checkIndex("name_when_sku",
+                "Horton, 01-01-1999, 1111, 1, 11, 101",
+                "Horton, 01-01-1999, 2442, 1, 11, 102",
+                "Horton, 01-01-1999, 3333, 1, 11, 103"
+        );
+
         // delete child
-        dml().deleteRow(session(), createNewRow(i, 102L, 11L, 2222));
+        dml().deleteRow(session(), createNewRow(i, 102L, 11L, 222211));
         checkIndex("name_when_sku",
                 "Horton, 01-01-1999, 1111, 1, 11, 101",
                 "Horton, 01-01-1999, 3333, 1, 11, 103"
@@ -74,12 +87,191 @@ public final class GroupIndexUpdateIT extends ITBase {
         checkIndex("name_when_sku");
     }
 
+    @Test
+    public void createGIOnPopulatedTables() {
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(o, 11L, 1L, "01-01-2001"),
+                createNewRow(i, 101L, 11L, 1111)
+        );
+        createGroupIndex(groupName, "name_when_sku", "c.name, o.when, i.sku");
+        checkIndex("name_when_sku",
+                "Horton, 01-01-2001, 1111, 1, 11, 101"
+        );
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void uniqueGI() {
+        try {
+            createGroupIndex(groupName, "name_when_sku", true, "c.name, o.when, i.sku");
+        } catch (UnsupportedOperationException e) {
+            throw new RuntimeException(e);
+        }
+        writeRows(
+                createNewRow(c, 1L, "Horton")
+        );
+    }
+
+    @Test
+    public void ihIndexNoOrphans() {
+        String indexName = "sku_handling-instructions";
+        createGroupIndex(groupName, indexName, "i.sku, h.handling_instructions");
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(o, 11L, 1L, "01-01-2001"),
+                createNewRow(i, 101L, 11L, 1111),
+                createNewRow(h, 1001L, 101L, "handle with care")
+        );
+        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001");
+
+        // delete from root on up
+        dml().deleteRow(session(), createNewRow(c, 1L, "Horton"));
+        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001");
+
+        dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
+        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001");
+
+        dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111));
+        checkIndex(indexName);
+
+        dml().deleteRow(session(), createNewRow(h, 1001L, 101L, "handle with care"));
+        checkIndex(indexName);
+    }
+
+    @Test
+    public void ihIndexOIsOrphaned() {
+        String indexName = "sku_handling-instructions";
+        createGroupIndex(groupName, indexName, "i.sku, h.handling_instructions");
+        writeRows(
+                createNewRow(o, 11L, 1L, "01-01-2001"),
+                createNewRow(i, 101L, 11L, 1111),
+                createNewRow(h, 1001L, 101L, "handle with care")
+        );
+        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001");
+
+        // delete from root on up
+
+        dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
+        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001");
+
+        dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111));
+        checkIndex(indexName);
+
+        dml().deleteRow(session(), createNewRow(h, 1001L, 101L, "handle with care"));
+        checkIndex(indexName);
+    }
+
+    @Test
+    public void ihIndexIIsOrphaned() {
+        String indexName = "sku_handling-instructions";
+        createGroupIndex(groupName, indexName, "i.sku, h.handling_instructions");
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(c, -1L, "Notroh"),
+                createNewRow(i, 101L, 11L, 1111),
+                createNewRow(h, 1001L, 101L, "handle with care")
+        );
+        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001");
+
+        // delete from root on up
+
+        dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111));
+        checkIndex(indexName);
+
+        dml().deleteRow(session(), createNewRow(h, 1001L, 101L, "handle with care"));
+        checkIndex(indexName);
+    }
+
+    @Test
+    public void ihIndexIIsOrphanedButCExists() {
+        String indexName = "sku_handling-instructions";
+        createGroupIndex(groupName, indexName, "i.sku, h.handling_instructions");
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(i, 101L, 11L, 1111),
+                createNewRow(h, 1001L, 101L, "handle with care")
+        );
+        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001");
+
+        // delete from root on up
+
+        dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111));
+        checkIndex(indexName);
+
+        dml().deleteRow(session(), createNewRow(h, 1001L, 101L, "handle with care"));
+        checkIndex(indexName);
+    }
+
+    @Test
+    public void ihIndexHIsOrphaned() {
+        String indexName = "sku_handling-instructions";
+        createGroupIndex(groupName, indexName, "i.sku, h.handling_instructions");
+        writeRows(
+                createNewRow(h, 1001L, 101L, "handle with care")
+        );
+        checkIndex(indexName);
+
+        // delete from root on up
+
+        dml().deleteRow(session(), createNewRow(h, 1001L, 101L, "handle with care"));
+        checkIndex(indexName);
+    }
+
+    @Test
+    public void adoptionChangesHKey() {
+        String indexName = "sku_handling-instructions";
+        createGroupIndex(groupName, indexName, "i.sku, h.handling_instructions");
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(i, 101L, 11L, 1111),
+                createNewRow(h, 1001L, 101L, "handle with care")
+        );
+        checkIndex(indexName,
+                "1111, handle with care, null, 11, 101, 1001"
+        );
+
+        // bring an o that adopts the i
+        dml().writeRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
+        checkIndex(indexName,
+                "1111, handle with care, 1, 11, 101, 1001"
+        );
+    }
+
+    @Test
+    public void testTwoBranches() {
+        createGroupIndex(groupName, "when_name", "o.when, c.name");
+        createGroupIndex(groupName, "name_street", "c.name, a.street");
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(o, 11L, 1L, "01-01-2001"),
+                createNewRow(o, 12L, 1L, "03-03-2003"),
+                createNewRow(a, 21L, 1L, "Harrington"),
+                createNewRow(a, 22L, 1L, "Causeway"),
+                createNewRow(c, 2L, "David"),
+                createNewRow(o, 13L, 2L, "02-02-2002"),
+                createNewRow(a, 23L, 2L, "Highland")
+        );
+
+        checkIndex(
+                "when_name",
+                "01-01-2001, Horton, 1, 11",
+                "02-02-2002, David, 2, 13",
+                "03-03-2003, Horton, 1, 12"
+        );
+        checkIndex(
+                "name_street",
+                "David, Highland, 2, 23",
+                "Horton, Causeway, 1, 22",
+                "Horton, Harrington, 1, 21"
+        );
+    }
 
     @Before
     public void createTables() {
         c = createTable(SCHEMA, "c", "cid int key, name varchar(32)");
         o = createTable(SCHEMA, "o", "oid int key, c_id int, when varchar(32)", akibanFK("c_id", "c", "cid") );
         i = createTable(SCHEMA, "i", "iid int key, o_id int, sku int", akibanFK("o_id", "o", "oid") );
+        h = createTable(SCHEMA, "h", "sid int key, i_id int, handling_instructions varchar(32)", akibanFK("i_id", "i", "iid") );
         a = createTable(SCHEMA, "a", "oid int key, c_id int, street varchar(56)", akibanFK("c_id", "c", "cid") );
         groupName = getUserTable(c).getGroup().getName();
     }
@@ -132,6 +324,7 @@ public final class GroupIndexUpdateIT extends ITBase {
     private Integer c;
     private Integer o;
     private Integer i;
+    private Integer h;
     private Integer a;
 
     // consts

@@ -37,15 +37,12 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.OperatorStore;
-import com.akiban.server.api.dml.scan.ColumnSet;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
 import com.akiban.server.util.GroupIndexCreator;
-import com.akiban.util.Strings;
 import com.akiban.util.Undef;
 import junit.framework.Assert;
 
@@ -321,12 +318,16 @@ public class ApiTestBase {
         return createTable(schema, table, unifiedDef.toString());
     }
 
-    protected final void createGroupIndex(String groupName, String indexName, String tableColumnPairs)
+    protected final void createGroupIndex(String groupName, String indexName, String tableColumnPairs) {
+        createGroupIndex(groupName, indexName, false, tableColumnPairs);
+    }
+
+    protected final void createGroupIndex(String groupName, String indexName, boolean unique, String tableColumnPairs)
             throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
         final Index index;
         try {
-            index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnPairs);
+            index = GroupIndexCreator.createIndex(ais, groupName, indexName, unique, tableColumnPairs);
         } catch(GroupIndexCreator.GroupIndexCreatorException e) {
             throw new InvalidOperationException(e);
         }
