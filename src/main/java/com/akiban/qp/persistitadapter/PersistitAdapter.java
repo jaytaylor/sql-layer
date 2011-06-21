@@ -66,7 +66,7 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public Cursor newIndexCursor(TableIndex index, boolean reverse, IndexKeyRange keyRange)
+    public Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange)
     {
         Cursor cursor;
         try {
