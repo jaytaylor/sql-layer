@@ -15,6 +15,7 @@
 
 package com.akiban.qp.rowtype;
 
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.Expression;
@@ -41,7 +42,7 @@ public class SchemaPerSession implements Schema
     }
 
     @Override
-    public synchronized IndexRowType indexRowType(TableIndex index)
+    public synchronized IndexRowType indexRowType(Index index)
     {
         return aisSchema.indexRowType(index);
     }

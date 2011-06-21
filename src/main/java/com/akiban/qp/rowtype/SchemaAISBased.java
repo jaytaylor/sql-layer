@@ -15,15 +15,10 @@
 
 package com.akiban.qp.rowtype;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.*;
 import com.akiban.qp.expression.Expression;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static java.lang.Math.max;
 
@@ -40,10 +35,12 @@ public class SchemaAISBased implements Schema
     }
 
     @Override
-    public synchronized IndexRowType indexRowType(TableIndex index)
+    public synchronized IndexRowType indexRowType(Index index)
     {
-        assert index.getTable().isUserTable() : index;
-        return userTableRowType((UserTable) index.getTable()).indexRowType(index);
+        return
+            index.isTableIndex()
+            ? userTableRowType((UserTable) ((TableIndex) index).getTable()).indexRowType(index)
+            : groupIndexRowType((GroupIndex) index);
     }
 
     @Override
@@ -83,13 +80,22 @@ public class SchemaAISBased implements Schema
             rowTypes.put(tableTypeId, userTableRowType);
             typeIdCounter = max(typeIdCounter, userTableRowType.typeId());
         }
-        // Create RowTypes for AIS Indexes
+        // Create RowTypes for AIS TableIndexes
         for (UserTable userTable : ais.getUserTables().values()) {
             UserTableRowType userTableRowType = userTableRowType(userTable);
             for (TableIndex index : userTable.getIndexesIncludingInternal()) {
                 IndexRowType indexRowType = new IndexRowType(this, userTableRowType, index);
                 userTableRowType.addIndexRowType(indexRowType);
                 rowTypes.put(indexRowType.typeId(), indexRowType);
+            }
+        }
+        // Create RowTypes for AIS GroupIndexes
+        for (Group group : ais.getGroups().values()) {
+            for (GroupIndex groupIndex : group.getIndexes()) {
+                IndexRowType indexRowType =
+                    new IndexRowType(this, userTableRowType(groupIndex.leafMostTable()), groupIndex);
+                rowTypes.put(indexRowType.typeId(), indexRowType);
+                groupIndexRowTypes.add(indexRowType);
             }
         }
     }
@@ -106,9 +112,22 @@ public class SchemaAISBased implements Schema
         return ++typeIdCounter;
     }
 
+    // For use by this class
+
+    private IndexRowType groupIndexRowType(GroupIndex groupIndex)
+    {
+        for (IndexRowType groupIndexRowType : groupIndexRowTypes) {
+            if (groupIndexRowType.index() == groupIndex) {
+                return groupIndexRowType;
+            }
+        }
+        return null;
+    }
+
     // Object state
 
     private final AkibanInformationSchema ais;
     private final Map<Integer, RowType> rowTypes = new HashMap<Integer, RowType>();
+    private final List<IndexRowType> groupIndexRowTypes = new ArrayList<IndexRowType>();
     private volatile int typeIdCounter = 0;
 }
