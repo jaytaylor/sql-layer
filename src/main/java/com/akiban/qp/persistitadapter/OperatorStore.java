@@ -19,6 +19,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
@@ -195,6 +196,35 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
 
+    @Override
+    public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) throws Exception {
+        List<TableIndex> tableIndexes = new ArrayList<TableIndex>();
+        List<GroupIndex> groupIndexes = new ArrayList<GroupIndex>();
+        for(Index index : indexes) {
+            if(index.isTableIndex()) {
+                tableIndexes.add((TableIndex)index);
+            }
+            else if(index.isGroupIndex()) {
+                groupIndexes.add((GroupIndex)index);
+            }
+            else {
+                throw new IllegalArgumentException("Unknown index type: " + index);
+            }
+        }
+
+        if(!tableIndexes.isEmpty()) {
+            super.buildIndexes(session, tableIndexes, defer);
+        }
+
+        AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
+        PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
+        for(GroupIndex groupIndex : groupIndexes) {
+            PhysicalOperator plan = groupIndexCreationPlan(adapter.schema(), groupIndex);
+            maintainGroupIndexes(adapter, groupIndex, plan, UndefBindings.only(),
+                                 new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.STORE);
+        }
+    }
+
     // OperatorStore interface
 
     public OperatorStore() {
@@ -210,7 +240,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     protected final <A,T extends Throwable> void maintainGroupIndexes(
             Session session,
             RowData rowData,
-            GroupIndexHandler<A,T> handler, A action
+            GroupIndexHandler<A,T> handler,
+            A action
     )
     throws PersistitException, T
     {
@@ -227,9 +258,11 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     private <A,T extends Throwable> void maintainGroupIndexes(
             Session session,
-            AkibanInformationSchema ais, PersistitAdapter adapter,
+            AkibanInformationSchema ais,
+            PersistitAdapter adapter,
             RowData rowData,
-            GroupIndexHandler<A,T> handler, A action
+            GroupIndexHandler<A,T> handler,
+            A action
     )
     throws PersistitException, T
     {
@@ -256,30 +289,37 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                         groupIndex,
                         adapter.schema().userTableRowType(userTable)
                 );
-                Cursor cursor = API.cursor(plan, adapter);
-                cursor.open(bindings);
-                try {
-                    while (cursor.next()) {
-                        Row row = cursor.currentRow();
-                        if (row.rowType().equals(plan.rowType())) {
-                            sendToHandler(groupIndex, row, handler, action);
-                        }
-                    }
-                } finally {
-                    cursor.close();
-                }
+                maintainGroupIndexes(adapter, groupIndex, plan, bindings, handler, action);
             }
         } finally {
             adapter.returnExchange(hEx);
         }
     }
 
-    private <A,T extends Throwable> void sendToHandler(
-            GroupIndex groupIndex, Row row, GroupIndexHandler<A, T> handler, A action)
-            throws T
+    private <A,T extends Throwable> void maintainGroupIndexes(
+            PersistitAdapter adapter,
+            GroupIndex groupIndex,
+            PhysicalOperator plan,
+            Bindings bindings,
+            GroupIndexHandler<A,T> handler,
+            A action
+    )
+    throws T
     {
-        handler.handleRow(action, groupIndex, row);
+        Cursor cursor = API.cursor(plan, adapter);
+        cursor.open(bindings);
+        try {
+            while (cursor.next()) {
+                Row row = cursor.currentRow();
+                if (row.rowType().equals(plan.rowType())) {
+                    handler.handleRow(action, groupIndex, row);
+                }
+            }
+        } finally {
+            cursor.close();
+        }
     }
+
 
     // private static methods
 
@@ -326,6 +366,29 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 joinType = API.JoinType.INNER_JOIN;
             }
         }
+        return plan;
+    }
+
+    static PhysicalOperator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex) {
+        BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
+
+        PhysicalOperator plan = API.groupScan_Default(groupIndex.getGroup().getGroupTable(), NoLimit.instance());
+
+        RowType parentRowType = null;
+        API.JoinType joinType = API.JoinType.RIGHT_JOIN;
+        for (RowType branchRowType : branchTables.fromRoot()) {
+            if (parentRowType == null) {
+                parentRowType = branchRowType;
+            }
+            else {
+                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType);
+                parentRowType = plan.rowType();
+            }
+            if (branchRowType.equals(branchTables.rootMost())) {
+                joinType = API.JoinType.INNER_JOIN;
+            }
+        }
+        
         return plan;
     }
 
