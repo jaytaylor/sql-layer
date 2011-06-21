@@ -248,6 +248,9 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             bindings.set(HKEY_BINDING_POSITION, persistitHKey);
 
             for (GroupIndex groupIndex : optionallyOrderGroupIndexes(userTable.getGroupIndexes())) {
+                if (groupIndex.isUnique()) {
+                    throw new UnsupportedOperationException("UNIQUE GROUP INDEXES WILL BE SUPPORTED SOON!"); // TODO
+                }
                 PhysicalOperator plan = groupIndexCreationPlan(
                         adapter.schema(),
                         groupIndex,
