@@ -1,4 +1,4 @@
-/**
+**
  * Copyright (C) 2011 Akiban Technologies Inc.
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
@@ -382,7 +382,6 @@ public class PostgresType
     }
 
     public Object decodeParameter(String value) throws StandardException {
-        System.out.println(oid + " -- " + encoder);
         if (encoder != null)
             return encoder.encodeFromObject(value);
         else

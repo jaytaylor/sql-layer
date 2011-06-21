@@ -135,7 +135,7 @@ public class PostgresOperatorCompiler extends OperatorCompiler
             }
         }
 
-        logger.debug("Operator:\n{}\n{}", result, parameterTypes);
+        logger.debug("Operator:\n{}", result);
 
         if (result.isModify())
             return new PostgresModifyOperatorStatement(stmt.statementToString(),
