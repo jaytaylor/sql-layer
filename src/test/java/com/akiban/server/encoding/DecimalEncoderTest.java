@@ -72,7 +72,7 @@ public final class DecimalEncoderTest {
             // The only value that was in the c_ytd_payment decimal(12,2) field
             new TestElement(12, 2, "10.00", "0x800000000A00"),
 
-            // These booleanNext two aren't part of the bug, but we have them here anyway.
+            // These next two aren't part of the bug, but we have them here anyway.
             // One is an example from mysql docs, and the other caused us a problem before.
             new TestElement(14, 4, "1234567890.1234", "0x810DFB38D204D2"),
             new TestElement(12, 10, "90.1956251262", "0xDA0BA900A602")

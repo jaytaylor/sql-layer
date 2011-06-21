@@ -94,7 +94,7 @@ public interface GroupingVisitor <T>{
     void visitChild(TableName parentName, List<String> parentColumns, TableName childName, List<String> childColumns);
 
     /**
-     * <p>Indicates that we're about to visit a table's children. Specifically, the booleanNext call to
+     * <p>Indicates that we're about to visit a table's children. Specifically, the next call to
      * {@linkplain #visitChild(TableName, List, TableName, List)} will have for a parent the last child we saw in
      * the previous {@linkplain #visitChild(TableName, List, TableName, List)}. This parent table will stay the same
      * until we see subsequent calls to this method or {@linkplain #finishVisitingChildren()}.</p>

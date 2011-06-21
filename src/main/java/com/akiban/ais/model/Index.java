@@ -328,8 +328,8 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         Iterator<HKeyColumn> hKeyColumnScan = hKeyColumns.iterator();
         Iterator<IndexColumn> indexColumnScan = index.getColumns().iterator();
         while (hkeyEquivalent && hKeyColumnScan.hasNext() && indexColumnScan.hasNext()) {
-            Column hKeyColumn = hKeyColumnScan.booleanNext().column();
-            Column indexColumn = indexColumnScan.booleanNext().getColumn();
+            Column hKeyColumn = hKeyColumnScan.next().column();
+            Column indexColumn = indexColumnScan.next().getColumn();
             isHKeyEquivalent = hKeyColumn == indexColumn;
         }
         if (hkeyEquivalent && !hKeyColumnScan.hasNext() && indexColumnScan.hasNext()) {

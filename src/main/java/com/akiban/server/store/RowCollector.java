@@ -40,7 +40,7 @@ public interface RowCollector {
     public final int SCAN_FLAGS_DEEP = 1 << 7;
 
     /**
-     * Place the booleanNext row into payload if there is another row, and if there is room in payload.
+     * Place the next row into payload if there is another row, and if there is room in payload.
      * @param payload
      * @return true if a row was placed into payload, false otherwise
      * @throws Exception

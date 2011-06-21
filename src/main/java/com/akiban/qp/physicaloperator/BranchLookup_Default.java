@@ -297,7 +297,7 @@ public class BranchLookup_Default extends PhysicalOperator
         // After the first lookup row has been retrieved, and before we have discovered that there are no more
         // lookup rows.
         SCANNING,
-        // After the lookup rows for the current input row have all been scanned, (known because lookupCursor.booleanNext
+        // After the lookup rows for the current input row have all been scanned, (known because lookupCursor.next
         // returned false).
         AFTER
     }

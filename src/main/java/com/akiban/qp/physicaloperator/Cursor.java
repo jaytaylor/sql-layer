@@ -32,7 +32,7 @@ public interface Cursor
     Row next();
 
     /**
-     * Terminates the scan of the underlying table or index. Further calls to booleanNext() will return false.
+     * Terminates the scan of the underlying table or index. Further calls to next() will return false.
      */
     void close();
 }

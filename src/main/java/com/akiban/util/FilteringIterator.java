@@ -108,7 +108,7 @@ public abstract class FilteringIterator<T> implements Iterator<T> {
      *
      * At the end of this method, this FilteringIterator's state will be either DONE or NEXT_KNOWN. This method
      * should only be invoked when the state is NEEDS_NEXT. If the state of this iterator is NEXT_KNOWN on return,
-     * the "booleanNext" field will point to the correct item.
+     * the "next" field will point to the correct item.
      */
     private void advance() {
         assert (state == State.FRESH) || (state == State.NEXT_RETRIEVED) : state;
