@@ -114,7 +114,7 @@ public class AISBBasedBuilder
 
         private NewUserTableBuilder colLong(String name, boolean nullable, boolean autoIncrement) {
             checkUsable();
-            aisb.column(schema, userTable, name, ++uTableColumnPos, "INT", 10L, null, nullable, autoIncrement, null, null);
+            aisb.column(schema, userTable, name, uTableColumnPos++, "INT", 10L, null, nullable, autoIncrement, null, null);
             return this;
         }
 
@@ -131,7 +131,7 @@ public class AISBBasedBuilder
         @Override
         public NewUserTableBuilder colString(String name, int length, boolean nullable, String charset) {
             checkUsable();
-            aisb.column(schema, userTable, name, ++uTableColumnPos, "VARCHAR", (long)length, null, nullable, false, charset, null);
+            aisb.column(schema, userTable, name, uTableColumnPos++, "VARCHAR", (long)length, null, nullable, false, charset, null);
             return this;
         }
 
