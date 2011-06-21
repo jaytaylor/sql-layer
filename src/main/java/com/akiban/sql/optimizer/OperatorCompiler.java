@@ -231,12 +231,7 @@ public class OperatorCompiler
             TableNode indexTable = index.getTable();
             squery.getTables().setLeftBranch(indexTable);
             UserTableRowType tableType = tableRowType(indexTable);
-            IndexRowType indexType;
-            // TODO: See comment on this class.
-            if (iindex.isTableIndex())
-                indexType = schema.indexRowType((TableIndex)iindex);
-            else
-                indexType = new UnknownIndexRowType(schema, iindex);
+            IndexRowType indexType = schema.indexRowType(iindex);
             resultOperator = indexScan_Default(indexType, 
                                                index.isReverse(),
                                                index.getIndexKeyRange());
@@ -891,47 +886,11 @@ public class OperatorCompiler
             };
     }
 
-    // TODO: This is just good enough to print properly in plan, not
-    // to actually run.
-    static class UnknownIndexRowType extends IndexRowType {
-
-        @Override
-        public String toString()
-        {
-            return index.toString();
-        }
-
-        // RowType interface
-
-        @Override
-        public int nFields()
-        {
-            return index.getColumns().size();
-        }
-
-        public UnknownIndexRowType(SchemaAISBased schema, Index index)
-        {
-            super(schema, 
-                  schema.userTableRowType((UserTable)index.leafMostTable()), 
-                  null);
-            this.index = index;
-        }
-
-        // Object state
-
-        private final Index index;
-    }
-
     /** Return a {@link Row} for the given index containing the given
      * {@link Expression} values.  
      */
     protected Row getIndexExpressionRow(Index index, Expression[] keys) {
-        RowType rowType = null;
-        if (index.isTableIndex())
-            rowType = schema.indexRowType((TableIndex)index);
-        else
-            // TODO: See comment above.
-            rowType = new UnknownIndexRowType(schema, index);
+        RowType rowType = schema.indexRowType(index);
         return new ExpressionRow(rowType, keys);
     }
 
