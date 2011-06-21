@@ -19,8 +19,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.message.ErrorCode;
@@ -68,13 +67,7 @@ import com.persistit.exception.RollbackException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Set;
 
 import static com.akiban.qp.physicaloperator.API.ancestorLookup_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
@@ -266,7 +259,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     while (cursor.next()) {
                         Row row = cursor.currentRow();
                         if (row.rowType().equals(plan.rowType())) {
-                            sendToHandler(ais, groupIndex, row, handler, action);
+                            sendToHandler(groupIndex, row, handler, action);
                         }
                     }
                 } finally {
@@ -279,30 +272,10 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     private <A,T extends Throwable> void sendToHandler(
-            AkibanInformationSchema ais, GroupIndex groupIndex, Row row, GroupIndexHandler<A,T> handler, A action)
+            GroupIndex groupIndex, Row row, GroupIndexHandler<A, T> handler, A action)
             throws T
     {
-        // TODO we don't have IndexRowComposition or IndexToHKey for GroupIndexes... yet. So, do it manually.
-        List<Object> fields = new ArrayList<Object>();
-        List<Column> columns = new ArrayList<Column>();
-
-        GroupIndexMapping mapping = new GroupIndexMapping(ais, groupIndex);
-
-        for (IndexColumn indexColumn : groupIndex.getColumns()) {
-            Column column = indexColumn.getColumn();
-            UserTable userTable = column.getUserTable();
-            int flattenedRowIndex = column.getPosition() + mapping.columnsOffset(userTable);
-            fields.add(row.field(flattenedRowIndex, UndefBindings.only()));
-            columns.add(column);
-        }
-        for (Column hKeyColumn : mapping.hKeyComponents()) {
-            UserTable userTable = hKeyColumn.getUserTable();
-            int flattenedRowIndex = hKeyColumn.getPosition() + mapping.columnsOffset(userTable);
-            fields.add(row.field(flattenedRowIndex, UndefBindings.only()));
-            columns.add(hKeyColumn);
-        }
-
-        handler.handleRow(action, groupIndex, fields, columns);
+        handler.handleRow(action, groupIndex, row);
     }
 
     // private static methods
@@ -419,28 +392,31 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         // GroupIndexHandler interface
 
         @Override
-        public void handleRow(Action action, GroupIndex groupIndex, List<?> fields, List<? extends Column> columns)
+        public void handleRow(Action action, GroupIndex groupIndex, Row row)
         throws PersistitException
         {
-            if (true) { // TODO we can't yet get Exchanges for GroupIndex. When we can, remove this!
-                return;
-            }
-            if (fields.size() != columns.size()) {
-                throw new IllegalArgumentException("values and columns lists not same size: " + fields + ' ' + columns);
-            }
             Exchange exchange = adapter.takeExchange(groupIndex);
             Key key = exchange.getKey();
             key.clear();
-            Iterator<? extends Column> columnsIter = columns.iterator();
-            Iterator<?> fieldsIter = fields.iterator();
-            while (columnsIter.hasNext()) {
-                Column column = columnsIter.next();
-                Object value = fieldsIter.next();
-                RowDef rowDef = (RowDef) column.getUserTable().rowDef();
+            IndexRowComposition irc = groupIndex.indexRowComposition();
+            for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
+                final int flattenedIndex;
+                if (irc.isInRowData(i)) {
+                    flattenedIndex = irc.getFieldPosition(i);
+                }
+                else if (irc.isInHKey(i)) {
+                    flattenedIndex = irc.getHKeyPosition(i);
+                }
+                else {
+                    throw new RuntimeException(row + " index " + i + " for group index " + groupIndex);
+                }
+
+                Column column = groupIndex.getGroup().getGroupTable().getColumn(flattenedIndex);
+                Object value = row.field(flattenedIndex, UndefBindings.only());
+                RowDef rowDef = (RowDef) column.getTable().rowDef();
                 FieldDef fieldDef = rowDef.getFieldDef(column.getPosition());
                 fieldDef.getEncoding().toKey(fieldDef, value, key);
             }
-            assert !fieldsIter.hasNext() : "fieldsIter had next";
 
             switch (action) {
             case STORE:
@@ -517,56 +493,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         private final List<UserTableRowType> onlyBranch;
     }
 
-    private static class GroupIndexMapping {
-
-        GroupIndexMapping(AkibanInformationSchema ais, GroupIndex groupIndex) {
-            Map<UserTable, Integer> localMap = new HashMap<UserTable, Integer>();
-            for (final UserTable userTable : ais.getUserTables().values()) {
-                int prefixFields = 0;
-                UserTable ancestor = userTable;
-                while (ancestor.parentTable() != null) {
-                    ancestor = ancestor.parentTable();
-                    prefixFields += ancestor.getColumns().size();
-                }
-                localMap.put(userTable, prefixFields);
-            }
-            this.prefixFieldsMap = Collections.unmodifiableMap(localMap);
-
-            Set<Column> elidedHKeys = new HashSet<Column>();
-            for (IndexColumn indexColumn : groupIndex.getColumns()) {
-                Column column = indexColumn.getColumn();
-                elidedHKeys.add(column);
-            }
-            UserTable userTable = groupIndex.leafMostTable();
-            List<Column> hKeyCols = new ArrayList<Column>();
-            while (userTable != null) {
-                Index pk = userTable.getPrimaryKey().getIndex();
-                List<IndexColumn> pkCols = pk.getColumns();
-                for (ListIterator<IndexColumn> iter = pkCols.listIterator(pkCols.size()); iter.hasPrevious(); ) {
-                    Column pkCol = iter.previous().getColumn();
-                    if (!elidedHKeys.contains(pkCol)) {
-                        hKeyCols.add(pkCol);
-                    }
-                }
-                userTable = userTable.parentTable();
-            }
-            Collections.reverse(hKeyCols);
-            this.hKeyColumns = Collections.unmodifiableList(hKeyCols);
-        }
-
-        public int columnsOffset(UserTable table) {
-            return prefixFieldsMap.get(table);
-        }
-
-        public List<Column> hKeyComponents() {
-            return hKeyColumns;
-        }
-
-        // object state
-        private final Map<UserTable,Integer> prefixFieldsMap;
-        private final List<Column> hKeyColumns;
-    }
-
     private static class InternalUpdateFunction implements UpdateFunction {
         private final PersistitAdapter adapter;
         private final RowData newRowData;
@@ -616,6 +542,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
     
     protected interface GroupIndexHandler<A, T extends Throwable> {
-        void handleRow(A action, GroupIndex groupIndex, List<?> fields, List<? extends Column> columns) throws T;
+        void handleRow(A action, GroupIndex groupIndex, Row row) throws T;
     }
 }

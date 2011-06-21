@@ -16,7 +16,10 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.qp.persistitadapter.TestOperatorStore;
+import com.akiban.qp.physicaloperator.UndefBindings;
+import com.akiban.qp.row.Row;
 import com.akiban.server.RowData;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.service.Service;
@@ -195,9 +198,24 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         // GroupIndexHandler interface
 
         @Override
-        public void handleRow(String action, GroupIndex groupIndex, List<?> fields, List<? extends Column> columns) {
-            assertEquals("list sizes: " + fields + ' ' + columns, fields.size(), columns.size());
-            String giName = (groupIndex == null) ? "null " : groupIndex.getIndexName().getName() + ' ';
+        public void handleRow(String action, GroupIndex groupIndex, Row row) {
+            String giName = ' ' + groupIndex.getIndexName().getName();
+            List<Object> fields = new ArrayList<Object>();
+            List<Column> columns = new ArrayList<Column>();
+            IndexRowComposition irc = groupIndex.indexRowComposition();
+            for (int i=0; i < irc.getLength(); ++i ) {
+                final int rowIndex;
+                if (irc.isInHKey(i)) {
+                    rowIndex = irc.getHKeyPosition(i);
+                }
+                else if (irc.isInRowData(i)) {
+                    rowIndex = irc.getFieldPosition(i);
+                } else {
+                    throw new AssertionError(i);
+                }
+                fields.add(row.field(rowIndex, UndefBindings.only()));
+                columns.add(groupIndex.getGroup().getGroupTable().getColumn(rowIndex).getUserColumn());
+            }
             strings.add(action + giName + String.valueOf(fields) + " cols" + columns);
         }
 
