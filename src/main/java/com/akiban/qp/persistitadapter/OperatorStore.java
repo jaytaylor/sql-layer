@@ -405,7 +405,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
                 assert irc.isInRowData(i);
                 assert ! irc.isInHKey(i);
-                final int flattenedIndex = irc.getHKeyPosition(i);
+                final int flattenedIndex = irc.getFieldPosition(i);
 
                 Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
                 Object value = row.field(flattenedIndex, UndefBindings.only());
