@@ -266,6 +266,213 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
     }
 
+    @Test
+    public void updateModifiesHKeyWithinBranch() {
+        // branch is I-H, we're modifying the hkey of an H
+        createGroupIndex(groupName, "sku_handling", "i.sku, h.handling_instructions");
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(o, 11L, 1L, "01-01-2001"),
+                createNewRow(i, 101L, 11L, "1111"),
+                createNewRow(h, 1001L, 101L, "don't break"),
+                createNewRow(c, 2L, "David"),
+                createNewRow(o, 12L, 2L, "02-02-2002"),
+                createNewRow(i, 102L, 12L, "2222")
+        );
+        checkIndex(
+                "sku_handling",
+                "1111, don't break, 1, 11, 101, 1001"
+        );
+
+        dml().updateRow(
+                session(),
+                createNewRow(h, 1001L, 101L, "don't break"),
+                createNewRow(h, 1001L, 102L, "don't break"),
+                null
+        );
+
+        checkIndex(
+                "sku_handling",
+                "2222, don't break, 2, 12, 102, 1001"
+        );
+    }
+
+    @Test
+    public void updateModifiesHKeyDirectlyAboveBranch() {
+        // branch is I-H, we're modifying the hkey of an I
+        createGroupIndex(groupName, "sku_handling", "i.sku, h.handling_instructions");
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(o, 11L, 1L, "01-01-2001"),
+                createNewRow(i, 101L, 11L, "1111"),
+                createNewRow(h, 1001L, 101L, "don't break"),
+                createNewRow(c, 2L, "David"),
+                createNewRow(o, 12L, 2L, "02-02-2002"),
+                createNewRow(i, 102L, 12L, "2222")
+        );
+        checkIndex(
+                "sku_handling",
+                "1111, don't break, 1, 11, 101, 1001"
+        );
+
+        dml().updateRow(
+                session(),
+                createNewRow(i, 101L, 11L, "1111"),
+                createNewRow(i, 101L, 12L, "1111"),
+                null
+        );
+
+        checkIndex(
+                "sku_handling",
+                "1111, don't break, 2, 12, 101, 1001"
+        );
+    }
+
+    @Test
+    public void updateModifiesHKeyHigherAboveBranch() {
+        // branch is I-H, we're modifying the hkey of an O referenced by an I
+        createGroupIndex(groupName, "sku_handling", "i.sku, h.handling_instructions");
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(o, 11L, 1L, "01-01-2001"),
+                createNewRow(i, 101L, 11L, "1111"),
+                createNewRow(h, 1001L, 101L, "don't break"),
+                createNewRow(c, 2L, "David"),
+                createNewRow(o, 12L, 2L, "02-02-2002"),
+                createNewRow(i, 102L, 12L, "2222")
+        );
+        checkIndex(
+                "sku_handling",
+                "1111, don't break, 1, 11, 101, 1001"
+        );
+
+        dml().updateRow(
+                session(),
+                createNewRow(o, 11L, 1L, "01-01-2001"),
+                createNewRow(o, 11L, 2L, "01-01-2001"),
+                null
+        );
+
+        checkIndex(
+                "sku_handling",
+                "1111, don't break, 2, 11, 101, 1001"
+        );
+    }
+
+    @Test
+    public void updateOrphansHKeyWithinBranch() {
+        // branch is I-H, we're modifying the hkey of an H
+        createGroupIndex(groupName, "sku_handling", "i.sku, h.handling_instructions");
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(o, 11L, 1L, "01-01-2001"),
+                createNewRow(i, 101L, 11L, "1111"),
+                createNewRow(h, 1001L, 101L, "don't break"),
+                createNewRow(c, 2L, "David"),
+                createNewRow(o, 12L, 2L, "02-02-2002"),
+                createNewRow(i, 102L, 12L, "2222")
+        );
+        checkIndex(
+                "sku_handling",
+                "1111, don't break, 1, 11, 101, 1001"
+        );
+
+        dml().updateRow(
+                session(),
+                createNewRow(h, 1001L, 101L, "don't break"),
+                createNewRow(h, 1001L, 666L, "don't break"),
+                null
+        );
+
+        checkIndex(
+                "sku_handling",
+                "2222, don't break, null, null, 666, 1001"
+        );
+    }
+
+    @Test
+    public void updateOrphansHKeyDirectlyAboveBranch() {
+        // branch is I-H, we're modifying the hkey of an I
+        createGroupIndex(groupName, "sku_handling", "i.sku, h.handling_instructions");
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(o, 11L, 1L, "01-01-2001"),
+                createNewRow(i, 101L, 11L, "1111"),
+                createNewRow(h, 1001L, 101L, "don't break"),
+                createNewRow(c, 2L, "David"),
+                createNewRow(o, 12L, 2L, "02-02-2002"),
+                createNewRow(i, 102L, 12L, "2222")
+        );
+        checkIndex(
+                "sku_handling",
+                "1111, don't break, 1, 11, 101, 1001"
+        );
+
+        dml().updateRow(
+                session(),
+                createNewRow(i, 101L, 11L, "1111"),
+                createNewRow(i, 101L, 66L, "1111"),
+                null
+        );
+
+        checkIndex(
+                "sku_handling",
+                "1111, don't break, null, 66, 101, 1001"
+        );
+    }
+
+    @Test
+    public void updateOrphansHKeyHigherAboveBranch() {
+        // branch is I-H, we're modifying the hkey of an O referenced by an I
+        createGroupIndex(groupName, "sku_handling", "i.sku, h.handling_instructions");
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(o, 11L, 1L, "01-01-2001"),
+                createNewRow(i, 101L, 11L, "1111"),
+                createNewRow(h, 1001L, 101L, "don't break"),
+                createNewRow(c, 2L, "David"),
+                createNewRow(o, 12L, 2L, "02-02-2002"),
+                createNewRow(i, 102L, 12L, "2222")
+        );
+        checkIndex(
+                "sku_handling",
+                "1111, don't break, 1, 11, 101, 1001"
+        );
+
+        dml().updateRow(
+                session(),
+                createNewRow(o, 11L, 1L, "01-01-2001"),
+                createNewRow(o, 11L, 6L, "01-01-2001"),
+                null
+        );
+
+        checkIndex(
+                "sku_handling",
+                "1111, don't break, 6, 11, 101, 1001"
+        );
+    }
+
+    /**
+     * Create the endgame of {@linkplain #updateOrphansHKeyHigherAboveBranch} initially, as a santy check
+     */
+    @Test
+    public void originallyOrphansHKeyHigherAboveBranch() {
+        createGroupIndex(groupName, "sku_handling", "i.sku, h.handling_instructions");
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(o, 11L, 6L, "01-01-2001"),
+                createNewRow(i, 101L, 11L, "1111"),
+                createNewRow(h, 1001L, 101L, "don't break"),
+                createNewRow(c, 2L, "David"),
+                createNewRow(o, 12L, 2L, "02-02-2002"),
+                createNewRow(i, 102L, 12L, "2222")
+        );
+        checkIndex(
+                "sku_handling",
+                "1111, don't break, 6, 11, 101, 1001"
+        );
+    }
+
     @Before
     public void createTables() {
         c = createTable(SCHEMA, "c", "cid int key, name varchar(32)");
