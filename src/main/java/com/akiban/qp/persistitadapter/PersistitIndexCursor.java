@@ -48,13 +48,6 @@ class PersistitIndexCursor implements Cursor
     }
 
     @Override
-    public boolean booleanNext()
-    {
-        assert false;
-        return false;
-    }
-
-    @Override
     public Row next()
     {
         try {
@@ -81,12 +74,6 @@ class PersistitIndexCursor implements Cursor
             indexFilter = null;
             row.set(null);
         }
-    }
-
-    @Override
-    public Row currentRow()
-    {
-        return row.get();
     }
 
     // For use by this package

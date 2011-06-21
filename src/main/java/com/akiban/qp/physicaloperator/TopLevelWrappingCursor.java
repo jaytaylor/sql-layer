@@ -35,28 +35,10 @@ class TopLevelWrappingCursor extends ChainedCursor {
     }
 
     @Override
-    public boolean booleanNext() {
-        try {
-            return super.booleanNext();
-        } catch (RuntimeException e) {
-            throw launder(e);
-        }
-    }
-
-    @Override
     public void close() {
         try {
             super.close();
             CURSOR_SCAN_TAP.out();
-        } catch (RuntimeException e) {
-            throw launder(e);
-        }
-    }
-
-    @Override
-    public Row currentRow() {
-        try {
-            return super.currentRow();
         } catch (RuntimeException e) {
             throw launder(e);
         }

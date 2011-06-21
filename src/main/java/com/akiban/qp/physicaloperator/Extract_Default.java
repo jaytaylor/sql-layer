@@ -97,7 +97,7 @@ class Extract_Default extends PhysicalOperator
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // Cursor interface
 
@@ -105,13 +105,6 @@ class Extract_Default extends PhysicalOperator
         public void open(Bindings bindings)
         {
             input.open(bindings);
-        }
-
-        @Override
-        public boolean booleanNext()
-        {
-            assert false;
-            return false;
         }
 
         @Override
@@ -132,7 +125,6 @@ class Extract_Default extends PhysicalOperator
         @Override
         public void close()
         {
-            outputRow(null);
             input.close();
             closed = true;
         }

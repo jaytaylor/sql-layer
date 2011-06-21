@@ -72,7 +72,7 @@ class Select_HKeyOrdered extends PhysicalOperator
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // Cursor interface
 
@@ -84,32 +84,32 @@ class Select_HKeyOrdered extends PhysicalOperator
         }
 
         @Override
-        public boolean booleanNext()
+        public Row next()
         {
-            outputRow(null);
+            Row row = null;
             Row inputRow = input.next();
-            while (outputRow() == null && inputRow != null) {
+            while (row == null && inputRow != null) {
                 if (inputRow.rowType() == predicateRowType) {
                     // New row of predicateRowType
                     if ((Boolean) predicate.evaluate(inputRow, bindings)) {
                         selectedRow.set(inputRow);
-                        outputRow(selectedRow.get());
+                        row = selectedRow.get();
                     }
                 } else if (predicateRowType.ancestorOf(inputRow.rowType())) {
                     // Row's type is a descendent of predicateRowType.
                     if (selectedRow.isNotNull() && selectedRow.get().ancestorOf(inputRow)) {
-                        outputRow(inputRow);
+                        row = inputRow;
                     } else {
                         selectedRow.set(null);
                     }
                 } else {
-                    outputRow(inputRow);
+                    row = inputRow;
                 }
-                if (outputRow() == null) {
+                if (row == null) {
                     inputRow = input.next();
                 }
             }
-            return outputRow() != null;
+            return row;
         }
 
         @Override

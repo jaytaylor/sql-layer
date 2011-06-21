@@ -141,7 +141,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // Cursor interface
 
@@ -149,13 +149,6 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         public void open(Bindings bindings)
         {
             input.open(bindings);
-        }
-
-        @Override
-        public boolean booleanNext()
-        {
-            assert false;
-            return false;
         }
 
         @Override

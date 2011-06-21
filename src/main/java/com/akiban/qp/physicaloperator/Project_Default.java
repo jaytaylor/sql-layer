@@ -83,7 +83,7 @@ class Project_Default extends PhysicalOperator
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // Cursor interface
 
@@ -91,13 +91,6 @@ class Project_Default extends PhysicalOperator
         public void open(Bindings bindings)
         {
             input.open(bindings);
-        }
-
-        @Override
-        public boolean booleanNext()
-        {
-            assert false;
-            return false;
         }
 
         @Override

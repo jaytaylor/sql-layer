@@ -169,7 +169,7 @@ public class BranchLookup_Default extends PhysicalOperator
     private final int branchRootOrdinal;
     private final Limit limit;
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // Cursor interface
 
@@ -178,13 +178,6 @@ public class BranchLookup_Default extends PhysicalOperator
         {
             inputCursor.open(bindings);
             advanceInput();
-        }
-
-        @Override
-        public boolean booleanNext()
-        {
-            assert false;
-            return false;
         }
 
         @Override
@@ -222,7 +215,6 @@ public class BranchLookup_Default extends PhysicalOperator
         @Override
         public void close()
         {
-            outputRow(null);
             inputCursor.close();
             inputRow.set(null);
             lookupCursor.close();

@@ -26,14 +26,6 @@ public interface Cursor
     void open(Bindings bindings);
 
     /**
-     * Advances to the next row of the underlying table or index.
-     *
-     * @return true if there is a booleanNext row, false otherwise.
-     * @deprecated
-     */
-    boolean booleanNext();
-
-    /**
      * Advances to and returns the next row of the underlying table or index.
      * @return The next row of the scan, or null if all rows have been visited.
      */
@@ -43,12 +35,4 @@ public interface Cursor
      * Terminates the scan of the underlying table or index. Further calls to booleanNext() will return false.
      */
     void close();
-
-    /**
-     * The current row of the underlying table or index.
-     *
-     * @return The current row of the underlying table or index, or null if the scan has ended.
-     * @deprecated
-     */
-    Row currentRow();
 }

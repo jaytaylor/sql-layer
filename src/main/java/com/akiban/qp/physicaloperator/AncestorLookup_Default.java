@@ -135,7 +135,7 @@ class AncestorLookup_Default extends PhysicalOperator
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // Cursor interface
 
@@ -144,13 +144,6 @@ class AncestorLookup_Default extends PhysicalOperator
         {
             input.open(bindings);
             advance();
-        }
-
-        @Override
-        public boolean booleanNext()
-        {
-            assert false;
-            return false;
         }
 
         @Override
@@ -169,7 +162,6 @@ class AncestorLookup_Default extends PhysicalOperator
         @Override
         public void close()
         {
-            outputRow(null);
             input.close();
             ancestorRow.set(null);
             pending.clear();

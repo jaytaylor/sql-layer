@@ -79,12 +79,6 @@ final class Limit_Default extends PhysicalOperator {
         // Cursor interface
 
         @Override
-        public boolean booleanNext() {
-            assert false;
-            return false;
-        }
-
-        @Override
         public Row next() {
             if (rowsLeft < 0) {
                 return null;

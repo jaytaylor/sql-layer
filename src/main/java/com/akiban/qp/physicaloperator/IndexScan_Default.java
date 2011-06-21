@@ -63,7 +63,7 @@ class IndexScan_Default extends PhysicalOperator
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // OperatorExecution interface
 
@@ -73,13 +73,6 @@ class IndexScan_Default extends PhysicalOperator
         public void open(Bindings bindings)
         {
             cursor.open(bindings);
-        }
-
-        @Override
-        public boolean booleanNext()
-        {
-            assert false;
-            return false;
         }
 
         @Override
@@ -100,7 +93,6 @@ class IndexScan_Default extends PhysicalOperator
         @Override
         public void close()
         {
-            outputRow(null);
             cursor.close();
         }
 

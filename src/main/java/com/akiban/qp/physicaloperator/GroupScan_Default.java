@@ -56,7 +56,7 @@ class GroupScan_Default extends PhysicalOperator
 
     // Inner classes
 
-    private static class Execution extends SingleRowCachingCursor
+    private static class Execution implements Cursor
     {
 
         // Cursor interface
@@ -65,13 +65,6 @@ class GroupScan_Default extends PhysicalOperator
         public void open(Bindings bindings)
         {
             cursor.open(bindings);
-        }
-
-        @Override
-        public boolean booleanNext()
-        {
-            assert false;
-            return false;
         }
 
         @Override
@@ -88,7 +81,6 @@ class GroupScan_Default extends PhysicalOperator
         @Override
         public void close()
         {
-            outputRow(null);
             cursor.close();
         }
 

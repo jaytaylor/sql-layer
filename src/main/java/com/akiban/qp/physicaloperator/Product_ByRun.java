@@ -84,7 +84,7 @@ class Product_ByRun extends PhysicalOperator
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // Cursor interface
 
@@ -92,13 +92,6 @@ class Product_ByRun extends PhysicalOperator
         public void open(Bindings bindings)
         {
             input.open(bindings);
-        }
-
-        @Override
-        public boolean booleanNext()
-        {
-            assert false;
-            return false;
         }
 
         @Override
@@ -149,7 +142,6 @@ class Product_ByRun extends PhysicalOperator
         @Override
         public void close()
         {
-            outputRow(null);
             input.close();
         }
 

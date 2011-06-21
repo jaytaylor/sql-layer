@@ -80,13 +80,6 @@ class PersistitGroupCursor implements GroupCursor
     }
 
     @Override
-    public boolean booleanNext()
-    {
-        assert false;
-        return false;
-    }
-
-    @Override
     public Row next()
     {
         try {
@@ -118,12 +111,6 @@ class PersistitGroupCursor implements GroupCursor
             exchange = null;
             groupScan = null;
         }
-    }
-
-    @Override
-    public Row currentRow()
-    {
-        return row.get();
     }
 
     // For use by this package
