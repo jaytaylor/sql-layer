@@ -27,6 +27,7 @@ import java.util.Set;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
@@ -329,13 +330,20 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new GenericInvalidOperationException(e);
         }
 
-        // TODO: Keep GroupIndexes in main list when implemented at the store level
         Collection<Index> newIndexes = new ArrayList<Index>();
         for(Index index : indexesToAdd) {
+            IndexName name = index.getIndexName();
             if(index.isTableIndex()) {
-                Table table = getTable(session, ((TableIndex)index).getTable().getName());
-                newIndexes.add(table.getIndex(index.getIndexName().getName()));
+                Table table = getTable(session, new TableName(name.getSchemaName(), name.getTableName()));
+                newIndexes.add(table.getIndex(name.getName()));
                 checkCursorsForDDLModification(session, table);
+            }
+            else if(index.isGroupIndex()) {
+                newIndexes.add(getAIS(session).getGroup(name.getTableName()).getIndex(name.getName()));
+                // TODO: checkCursorsForDDLModification() ?
+            }
+            else {
+                throw new IllegalArgumentException("Unknown index type: " + index);
             }
         }
 
@@ -410,8 +418,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         try {
-            // TODO: Delete group index data when store supports it
-            //store().deleteIndexes(session, indexes);
+            // Drop them from the Store before while IndexDefs still exist
+            store().deleteIndexes(session, indexes);
             schemaManager().dropIndexes(session, indexes);
             // TODO: checkCursorsForDDLModification ?
         } catch(Exception e) {
