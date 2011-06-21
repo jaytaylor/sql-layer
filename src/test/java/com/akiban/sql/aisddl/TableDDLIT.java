@@ -32,13 +32,13 @@ public class TableDDLIT extends PostgresServerITBase {
         connection.createStatement().execute(sqlCreate);
         
         AkibanInformationSchema ais = ddlServer().getAIS(session());
-        assertNotNull (ais.getUserTable ("TEST", "T1"));
+        assertNotNull (ais.getUserTable ("test", "t1"));
         
         String sqlDrop = "DROP TABLE test.t1";
         connection.createStatement().execute(sqlDrop);
 
         ais = ddlServer().getAIS(session());
-        assertNull (ais.getUserTable("TEST", "T1"));
+        assertNull (ais.getUserTable("test", "t1"));
     }
     
     protected DDLFunctions ddlServer() {

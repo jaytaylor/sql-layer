@@ -65,7 +65,7 @@ public class TableDDLTest {
 
     private TableName dropTable;
     private String    defaultSchema = "test";
-    private String    defaultTable  = "T1";
+    private String    defaultTable  = "t1";
     protected SQLParser parser;
     private DDLFunctionsMock ddlFunctions;
     private AkibanInformationSchema ais;
@@ -80,7 +80,7 @@ public class TableDDLTest {
     public void dropTableSimple() throws Exception {
         String sql = "DROP TABLE t1";
         
-        dropTable = TableName.create(defaultSchema, "T1");
+        dropTable = TableName.create(defaultSchema, defaultTable);
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof DropTableNode);
         
@@ -91,7 +91,7 @@ public class TableDDLTest {
     public void dropTableSchema() throws Exception {
         String sql = "DROP TABLE foo.t1";
         
-        dropTable = TableName.create("FOO", "T1");
+        dropTable = TableName.create("foo", defaultTable);
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof DropTableNode);
         TableDDL.dropTable(ddlFunctions, null, defaultSchema, (DropTableNode)stmt);
@@ -99,9 +99,9 @@ public class TableDDLTest {
     
     @Test
     public void dropTableQuoted() throws Exception {
-        String sql = "DROP TABLE \"t1\"";
+        String sql = "DROP TABLE \"T1\"";
         
-        dropTable = TableName.create(defaultSchema, "t1");
+        dropTable = TableName.create(defaultSchema, "T1");
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof DropTableNode);
         TableDDL.dropTable(ddlFunctions, null, defaultSchema, (DropTableNode)stmt);
@@ -335,7 +335,7 @@ public class TableDDLTest {
         AISBuilder builder = new AISBuilder(ais);
         
         builder.userTable(defaultSchema, defaultTable);
-        builder.column(defaultSchema, defaultTable, "C1", 0, "int", Long.valueOf(0), Long.valueOf(0), true, false, null, null);
+        builder.column(defaultSchema, defaultTable, "c1", 0, "int", Long.valueOf(0), Long.valueOf(0), true, false, null, null);
         builder.basicSchemaIsComplete();
     }
     
@@ -346,9 +346,9 @@ public class TableDDLTest {
         AISBuilder builder = new AISBuilder(ais);
         
         builder.userTable(defaultSchema, defaultTable);
-        builder.column(defaultSchema, defaultTable, "C1", 0, "int", (long)0, (long)0, false, false, null, null);
+        builder.column(defaultSchema, defaultTable, "c1", 0, "int", (long)0, (long)0, false, false, null, null);
         builder.index(defaultSchema, defaultTable, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn(defaultSchema, defaultTable, "PRIMARY", "C1", 0, true, 0);
+        builder.indexColumn(defaultSchema, defaultTable, "PRIMARY", "c1", 0, true, 0);
         builder.basicSchemaIsComplete();
     }
 
@@ -359,9 +359,9 @@ public class TableDDLTest {
         AISBuilder builder = new AISBuilder(ais);
         
         builder.userTable(defaultSchema, defaultTable);
-        builder.column(defaultSchema, defaultTable, "C1", 0, "int", (long)0, (long)0, false, false, null, null);
-        builder.index(defaultSchema, defaultTable, "C1", true, Index.UNIQUE_KEY_CONSTRAINT);
-        builder.indexColumn(defaultSchema, defaultTable, "C1", "C1", 0, true, 0);
+        builder.column(defaultSchema, defaultTable, "c1", 0, "int", (long)0, (long)0, false, false, null, null);
+        builder.index(defaultSchema, defaultTable, "c1", true, Index.UNIQUE_KEY_CONSTRAINT);
+        builder.indexColumn(defaultSchema, defaultTable, "c1", "c1", 0, true, 0);
         builder.basicSchemaIsComplete();
     }
 }
