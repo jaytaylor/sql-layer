@@ -228,10 +228,11 @@ public class OperatorCompiler
             squery.removeConditions(index.getIndexConditions());
             squery.recomputeUsed();
             Index iindex = index.getIndex();
-            TableNode indexTable = index.getTable();
+            TableNode indexTable = index.getLeafMostTable();
             squery.getTables().setLeftBranch(indexTable);
             UserTableRowType tableType = tableRowType(indexTable);
             IndexRowType indexType = schema.indexRowType(iindex);
+            // TODO: Pass tableRowType(index.getLeafMostInner()).
             resultOperator = indexScan_Default(indexType, 
                                                index.isReverse(),
                                                index.getIndexKeyRange());
@@ -413,7 +414,7 @@ public class OperatorCompiler
         IndexUsage index = pickBestIndex(supdate);
         PhysicalOperator resultOperator;
         if (index != null) {
-            assert (targetTable == index.getTable());
+            assert (targetTable == index.getLeafMostTable());
             supdate.removeConditions(index.getIndexConditions());
             Index iindex = index.getIndex();
             IndexRowType indexType = targetRowType.indexRowType(iindex);
@@ -468,19 +469,29 @@ public class OperatorCompiler
 
     // A possible index.
     class IndexUsage implements Comparable<IndexUsage> {
-        private TableNode table;
         private Index index;
+        private TableNode rootMostTable, leafMostTable, leafMostInner;
         private List<ColumnCondition> equalityConditions;
         private ColumnCondition lowCondition, highCondition;
         private boolean sorting, reverse;
         
-        public IndexUsage(Index index, TableNode table) {
+        public IndexUsage(TableIndex index, TableNode table) {
             this.index = index;
-            this.table = table; // Can be null: will be computed from columns.
+            rootMostTable = leafMostTable = leafMostInner = table;
         }
 
-        public TableNode getTable() {
-            return table;
+        public IndexUsage(GroupIndex index) {
+            this.index = index;
+        }
+
+        public TableNode getRootMostTable() {
+            return rootMostTable;
+        }
+        public TableNode getLeafMostTable() {
+            return leafMostTable;
+        }
+        public TableNode getLeafMostInner() {
+            return leafMostInner;
         }
 
         public Index getIndex() {
@@ -545,27 +556,38 @@ public class OperatorCompiler
                         // Fewer columns indexed better than more.
                         ? +1 : -1;
             // Deeper better than shallower.
-            return getTable().getTable().getTableId().compareTo(other.getTable().getTable().getTableId());
+            return getLeafMostTable().getTable().getTableId().compareTo(other.getLeafMostTable().getTable().getTableId());
         }
 
         // Can this index be used for part of the given query?
         public boolean usable(SimplifiedQuery squery) {
             List<IndexColumn> indexColumns = index.getColumns();
             if (index.isGroupIndex()) {
-                // A group index is for the inner join, so all the
-                // tables it indexes must appear in the query as well.
-                // Its hkey is for the deepest table, figure out which
-                // that is, too.
-                TableNode deepest = null;
-                for (IndexColumn indexColumn : indexColumns) {
-                    TableNode table = squery.getColumnTable(indexColumn.getColumn());
-                    if ((table == null) || !table.isUsed() || table.isOuter())
-                        return false;
-                    if ((deepest == null) || (deepest.getDepth() < table.getDepth()))
-                        deepest = table;
+                // A group index is for a left join, so we can use it
+                // for joins that are inner from the root for a while
+                // and then left from there to the leaf.
+                UserTable limitTable = (UserTable)index.rootMostTable();
+                UserTable userTable = (UserTable)index.leafMostTable();
+                while (true) {
+                    TableNode table = squery.getTables().getNode(userTable);
+                    if ((table != null) && table.isUsed()) {
+                        rootMostTable = table;
+                        if (leafMostTable == null)
+                            leafMostTable = table;
+                        if (table.isOuter()) {
+                            if (leafMostInner != null)
+                                // Already begun inner joins; can't go back.
+                                return false;
+                        }
+                        else if (leafMostInner == null)
+                            leafMostInner = table;
+                    }
+                    if (userTable == limitTable)
+                        break;
+                    userTable = userTable.parentTable();
                 }
-                if (table == null)
-                    table = deepest;
+                if (leafMostTable == null)
+                    return false; // Didn't involve any of our tables.
             }
             int ncols = indexColumns.size();
             int nequals = 0;
@@ -685,7 +707,7 @@ public class OperatorCompiler
             }
         }
         for (GroupIndex index : squery.getGroup().getGroup().getIndexes()) {
-            IndexUsage candidate = new IndexUsage(index, null);
+            IndexUsage candidate = new IndexUsage(index);
             bestIndex = betterIndex(squery, bestIndex, candidate);
             
         }
