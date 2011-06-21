@@ -204,6 +204,8 @@ public class OperatorCompiler
         return stmt;
     }
 
+    enum ProductMethod { HKEY_ORDERED, BY_RUN };
+
     public Result compileSelect(CursorNode cursor) throws StandardException {
         // Get into standard form.
         cursor = (CursorNode)bindAndGroup(cursor);
@@ -217,10 +219,11 @@ public class OperatorCompiler
         IndexUsage index = pickBestIndex(squery);
         if ((squery.getSortColumns() != null) &&
             !((index != null) && index.isSorting()))
-            throw new UnsupportedSQLException("Unsupported ORDER BY");
+            throw new UnsupportedSQLException("Unsupported ORDER BY: no suitable index on " + squery.getSortColumns());
         
         PhysicalOperator resultOperator;
         boolean needExtract = false;
+        ProductMethod productMethod;
         if (index != null) {
             squery.removeConditions(index.getIndexConditions());
             squery.recomputeUsed();
@@ -300,10 +303,12 @@ public class OperatorCompiler
                                                       true);
                 needExtract = true; // Might bring in things not joined.
             }
+            productMethod = ProductMethod.BY_RUN;
         }
         else {
             resultOperator = groupScan_Default(groupTable);
             needExtract = true; // Brings in the whole tree.
+            productMethod = ProductMethod.HKEY_ORDERED;
         }
         
         // TODO: Can apply most Select conditions before flattening.
@@ -314,18 +319,41 @@ public class OperatorCompiler
         // containing the condition).
 
         int nbranches = squery.getTables().colorBranches();
-        FlattenState[] fls = new FlattenState[nbranches];
-
-        Flattener fl = new Flattener(resultOperator);
-        for (int i = 0; i < nbranches; i++)
-            fls[i] = fl.flatten(squery.getJoins(), i);
+        Flattener fl = new Flattener(resultOperator, nbranches);
+        FlattenState[] fls = fl.flatten(squery.getJoins());
         resultOperator = fl.getResultOperator();
-        // TODO: Actual Product operators.
+
+        FlattenState fll = fls[0];
+        RowType resultRowType = fll.getResultRowType();
         if (nbranches > 1) {
-            throw new UnsupportedSQLException("Need Product of " + Arrays.asList(fls));
+            // Product does not work if there are stray rows. Extract
+            // their inputs (the flattened types) before attempting.
+            Collection<RowType> extractTypes = new ArrayList<RowType>(nbranches);
+            for (int i = 0; i < nbranches; i++) {
+                extractTypes.add(fls[i].getResultRowType());
+            }
+            resultOperator = extract_Default(resultOperator, extractTypes);
+            needExtract = false;
+
+            for (int i = 1; i < nbranches; i++) {
+                FlattenState flr = fls[i];
+                switch (productMethod) {
+                case BY_RUN:
+                    resultOperator = product_ByRun(resultOperator,
+                                                   resultRowType,
+                                                   flr.getResultRowType());
+                    break;
+                default:
+                    throw new UnsupportedSQLException("Need " + productMethod + 
+                                                      " product of " +
+                                                      resultRowType + " and " +
+                                                      flr.getResultRowType());
+                }
+                resultRowType = resultOperator.rowType();
+                fll.mergeTables(flr);
+            }
         }
-        RowType resultRowType = fls[0].getResultRowType();
-        Map<TableNode,Integer> fieldOffsets = fls[0].getFieldOffsets();
+        Map<TableNode,Integer> fieldOffsets = fll.getFieldOffsets();
 
         if (needExtract) {
             // Now that we are done flattening, there is only one row type
@@ -681,13 +709,16 @@ public class OperatorCompiler
 
     static class FlattenState {
         private RowType resultRowType;
+        private List<TableNode> tables;
         private Map<TableNode,Integer> fieldOffsets;
         int nfields;
 
         public FlattenState(RowType resultRowType,
+                            List<TableNode> tables,
                             Map<TableNode,Integer> fieldOffsets,
                             int nfields) {
             this.resultRowType = resultRowType;
+            this.tables = tables;
             this.fieldOffsets = fieldOffsets;
             this.nfields = nfields;
         }
@@ -699,6 +730,10 @@ public class OperatorCompiler
             this.resultRowType = resultRowType;
         }
 
+        public List<TableNode> getTables() {
+            return tables;
+        }
+
         public Map<TableNode,Integer> getFieldOffsets() {
             return fieldOffsets;
         }
@@ -707,7 +742,9 @@ public class OperatorCompiler
         }
 
         
-        public void mergeFields(FlattenState other) {
+        public void mergeTables(FlattenState other) {
+            if (tables != null)
+                tables.addAll(other.tables);
             for (TableNode table : other.fieldOffsets.keySet()) {
                 fieldOffsets.put(table, other.fieldOffsets.get(table) + nfields);
             }
@@ -722,15 +759,29 @@ public class OperatorCompiler
 
     // Holds a partial operator tree while flattening, since need the
     // single return value for above per-branch result.
-    class Flattener {
+    class Flattener implements Comparator<FlattenState> {
         private PhysicalOperator resultOperator;
+        private int nbranches;
+        private Map<List<RowType>,RowType> flattensDone;
 
-        public Flattener(PhysicalOperator resultOperator) {
+        public Flattener(PhysicalOperator resultOperator, int nbranches) {
             this.resultOperator = resultOperator;
+            this.nbranches = nbranches;
+            if (nbranches > 1)
+                flattensDone = new HashMap<List<RowType>,RowType>();
         }
         
         public PhysicalOperator getResultOperator() {
             return resultOperator;
+        }
+
+        public FlattenState[] flatten(BaseJoinNode join) {
+            FlattenState[] result = new FlattenState[nbranches];
+            for (int i = 0; i < nbranches; i++)
+                result[i] = flatten(join, i);
+            if (nbranches > 1)
+                Arrays.sort(result, this);
+            return result;
         }
 
         public FlattenState flatten(BaseJoinNode join, int branch) {
@@ -740,9 +791,13 @@ public class OperatorCompiler
                     return null;
                 Map<TableNode,Integer> fieldOffsets = new HashMap<TableNode,Integer>();
                 fieldOffsets.put(table, 0);
+                List<TableNode> tables = null;
+                if (nbranches > 1) {
+                    tables = new ArrayList<TableNode>();
+                    tables.add(table);
+                }
                 return new FlattenState(tableRowType(table),
-                                        fieldOffsets,
-                                        table.getNFields());
+                                        tables, fieldOffsets, table.getNFields());
             }
             else {
                 JoinJoinNode jjoin = (JoinJoinNode)join;
@@ -756,13 +811,55 @@ public class OperatorCompiler
                 else if (fright == null) {
                     return fleft;
                 }
-                resultOperator = flatten_HKeyOrdered(resultOperator,
-                                                     fleft.getResultRowType(),
-                                                     fright.getResultRowType(),
-                                                     jjoin.getJoinType());
-                fleft.setResultRowType(resultOperator.rowType());
-                fleft.mergeFields(fright);
+                RowType leftType = fleft.getResultRowType();
+                RowType rightType = fright.getResultRowType();
+                RowType flattenedType = null;
+                List<RowType> flkey = null;
+                if (flattensDone != null) {
+                    // With overlapping branches processed from the
+                    // root, it's possible that we've already done a
+                    // common segment.
+                    flkey = new ArrayList<RowType>(2);
+                    flkey.add(leftType);
+                    flkey.add(rightType);
+                    flattenedType = flattensDone.get(flkey);
+                }
+                if (flattenedType == null) {
+                    // Keep the parent side in multi-branch until the last one.
+                    // TODO: May keep a few too many when the branch has
+                    // multiple steps, (they do get extracted out).
+                    EnumSet<FlattenOption> keep = 
+                        ((nbranches > 1) && (branch < nbranches - 1)) ?
+                        EnumSet.of(FlattenOption.KEEP_PARENT) :
+                        EnumSet.noneOf(FlattenOption.class);
+                    resultOperator = flatten_HKeyOrdered(resultOperator,
+                                                         leftType, rightType,
+                                                         jjoin.getJoinType(), keep);
+                    flattenedType = resultOperator.rowType();
+                    if (flattensDone != null) {
+                        flattensDone.put(flkey, flattenedType);
+                    }
+                }
+                fleft.setResultRowType(flattenedType);
+                fleft.mergeTables(fright);
                 return fleft;
+            }
+        }
+
+        // Dictionary order on flattened table ordinals.
+        public int compare(FlattenState fl1, FlattenState fl2) {
+            List<TableNode> ts1 = fl1.getTables();
+            List<TableNode> ts2 = fl2.getTables();
+            int i = 0;
+            assert ts1.get(i) == ts2.get(i) : "No common root";
+            while (true) {
+                i++;
+                assert (i < ts1.size()) && (i < ts2.size()) : "Branch is subset";
+                TableNode t1 = ts1.get(i);
+                TableNode t2 = ts2.get(i);
+                if (t1 != t2) {
+                    return t1.getOrdinal() - t2.getOrdinal();
+                }
             }
         }
     }
@@ -783,26 +880,17 @@ public class OperatorCompiler
         if (index.isTableIndex())
             userTable = (UserTable)((TableIndex)index).getTable();
         // TODO: group index bound table.
-        return new IndexBound(userTable,
-                              getIndexExpressionRow(index, keys),
+        return new IndexBound(getIndexExpressionRow(index, keys),
                               getIndexColumnSelector(index, nkeys));
     }
 
     /** Return a column selector that enables the first <code>nkeys</code> fields
      * of a row of the index's user table. */
-    // TODO: group index fail: the column's position won't be its
-    // field index in the index key row.
     protected ColumnSelector getIndexColumnSelector(final Index index, final int nkeys) {
+        assert nkeys <= index.getColumns().size() : index + " " + nkeys;
         return new ColumnSelector() {
                 public boolean includesColumn(int columnPosition) {
-                    for (int i = 0; i < nkeys; i++) {
-                        IndexColumn indexColumn = index.getColumns().get(i);
-                        Column column = indexColumn.getColumn();
-                        if (column.getPosition() == columnPosition) {
-                            return true;
-                        }
-                    }
-                    return false;
+                    return columnPosition < nkeys;
                 }
             };
     }

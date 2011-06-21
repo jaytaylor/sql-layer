@@ -15,6 +15,7 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.ais.model.Index;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
@@ -42,7 +43,7 @@ class PersistitIndexCursor implements Cursor
             throw new PersistitAdapterException(e);
         }
         if (keyRange != null) {
-            indexFilter = adapter.filterFactory.computeIndexFilter(exchange.getKey(), indexDef(), keyRange, bindings);
+            indexFilter = adapter.filterFactory.computeIndexFilter(exchange.getKey(), index(), keyRange, bindings);
         }
     }
 
@@ -116,9 +117,9 @@ class PersistitIndexCursor implements Cursor
         return row;
     }
 
-    private IndexDef indexDef()
+    private Index index()
     {
-        return (IndexDef) indexRowType.index().indexDef();
+        return indexRowType.index();
     }
 
     PersistitAdapter adapter() {

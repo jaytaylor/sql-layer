@@ -88,6 +88,8 @@ class IndexScan_Default extends PhysicalOperator
             Row row = cursor.next();
             if (row == null) {
                 close();
+            } else {
+                row.runId(runIdCounter++);
             }
             if (LOG.isDebugEnabled()) {
                 LOG.debug("IndexScan: {}", row);
@@ -112,5 +114,6 @@ class IndexScan_Default extends PhysicalOperator
         // Object state
 
         private final Cursor cursor;
+        private int runIdCounter = 0;
     }
 }

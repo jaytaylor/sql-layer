@@ -431,21 +431,21 @@ public class BranchLookupIT extends PhysicalOperatorITBase
 
     private IndexBound customerNameIndexBound(String name)
     {
-        return new IndexBound(userTable(customer), row(customerRowType, null, name), new SetColumnSelector(1));
+        return new IndexBound(row(customerNameIndexRowType, name), new SetColumnSelector(0));
     }
 
     private IndexBound addressAddressIndexBound(String addr)
     {
-        return new IndexBound(userTable(address), row(addressRowType, null, null, addr), new SetColumnSelector(2));
+        return new IndexBound(row(addressAddressIndexRowType, addr), new SetColumnSelector(0));
     }
 
     private IndexBound orderSalesmanIndexBound(String salesman)
     {
-        return new IndexBound(userTable(order), row(orderRowType, null, null, salesman), new SetColumnSelector(2));
+        return new IndexBound(row(orderSalesmanIndexRowType, salesman), new SetColumnSelector(0));
     }
 
     private IndexBound itemIidIndexBound(long iid)
     {
-        return new IndexBound(userTable(item), row(itemRowType, iid, null), new SetColumnSelector(0));
+        return new IndexBound(row(itemIidIndexRowType, iid), new SetColumnSelector(0));
     }
 }

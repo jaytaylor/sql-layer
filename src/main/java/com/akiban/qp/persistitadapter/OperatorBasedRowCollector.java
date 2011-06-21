@@ -71,7 +71,13 @@ public abstract class OperatorBasedRowCollector implements RowCollector
          // another payload with room, (resulting from a ScanRowsMoreRequest). currentRow is used only to hold onto
          // the current row across these two invocations.
         boolean wroteToPayload = false;
-        PersistitGroupRow row = (PersistitGroupRow) cursor.next();
+        PersistitGroupRow row;
+        if (currentRow.isNull()) {
+            row = (PersistitGroupRow) cursor.next();
+        } else {
+            row = (PersistitGroupRow) currentRow.get();
+            currentRow.set(null);
+        }
         if (row == null) {
             close();
         } else {
@@ -225,6 +231,17 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         this.schema = new SchemaPerSession(SchemaCache.globalSchema(store.getRowDefCache().ais()));
         this.adapter = new PersistitAdapter(schema, store, session);
         this.rowCollectorId = idCounter.getAndIncrement();
+    }
+
+    protected static ColumnSelector indexSelectorFromTableSelector(Index index, final ColumnSelector tableSelector) {
+        final IndexRowComposition rowComp = index.indexRowComposition();
+        return new ColumnSelector() {
+            @Override
+            public boolean includesColumn(int columnPosition) {
+                int tablePos = rowComp.getFieldPosition(columnPosition);
+                return tableSelector.includesColumn(tablePos);
+            }
+        };
     }
 
     private void createPlan(ScanLimit scanLimit, boolean singleRow, boolean descending, boolean deep)

@@ -17,12 +17,15 @@ package com.akiban.ais.model.aisb2;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 public class AISBBasedBuilder
@@ -37,15 +40,18 @@ public class AISBBasedBuilder
 
     private static class ActualBuilder implements NewAISBuilder, NewUserTableBuilder, NewAkibanJoinBuilder {
 
-        // ActualBuilder interface
+        // NewAISProvider interface
 
         @Override
         public AkibanInformationSchema ais() {
             usable = false;
             aisb.basicSchemaIsComplete();
             aisb.groupingIsComplete();
-            return aisb.akibanInformationSchema();
+            AkibanInformationSchema result = aisb.akibanInformationSchema();
+            return result;
         }
+
+        // NewAISBuilder interface
 
         @Override
         public NewAISBuilder defaultSchema(String schema) {
@@ -73,6 +79,11 @@ public class AISBBasedBuilder
             tablesToGroups.put(TableName.create(schema, table), groupName);
             uTableColumnPos = 0;
             return this;
+        }
+
+        @Override
+        public NewAISGroupIndexBuilder groupIndex(String indexName) {
+            return new ActualGroupIndexBuilder(ais(), schema).groupIndex(indexName);
         }
 
         private String groupName(String table) {
@@ -103,7 +114,7 @@ public class AISBBasedBuilder
 
         private NewUserTableBuilder colLong(String name, boolean nullable, boolean autoIncrement) {
             checkUsable();
-            aisb.column(schema, userTable, name, ++uTableColumnPos, "INT", 10L, null, nullable, autoIncrement, null, null);
+            aisb.column(schema, userTable, name, uTableColumnPos++, "INT", 10L, null, nullable, autoIncrement, null, null);
             return this;
         }
 
@@ -120,7 +131,7 @@ public class AISBBasedBuilder
         @Override
         public NewUserTableBuilder colString(String name, int length, boolean nullable, String charset) {
             checkUsable();
-            aisb.column(schema, userTable, name, ++uTableColumnPos, "VARCHAR", (long)length, null, nullable, false, charset, null);
+            aisb.column(schema, userTable, name, uTableColumnPos++, "VARCHAR", (long)length, null, nullable, false, charset, null);
             return this;
         }
 
@@ -167,11 +178,17 @@ public class AISBBasedBuilder
             this.fkIndexPos = 0;
             this.referencesSchema = schema;
             this.referencesTable = table;
+
+            Group oldGroup = aisb.akibanInformationSchema().getUserTable(this.schema, this.userTable).getGroup();
+
             aisb.index(this.schema, this.userTable, fkIndexName, false, "KEY");
             aisb.joinTables(fkJoinName, schema, table, this.schema, this.userTable);
 
             String fkGroupName = tablesToGroups.get(TableName.create(referencesSchema, referencesTable));
             aisb.moveTreeToGroup(this.schema, this.userTable, fkGroupName, fkJoinName);
+            aisb.akibanInformationSchema().removeGroup(oldGroup);
+            String oldGroupName = tablesToGroups.put(TableName.create(this.schema, this.userTable), fkGroupName);
+            assert oldGroup.getName().equals(oldGroupName) : oldGroup.getName() + " != " + oldGroupName;
             return this;
         }
 
@@ -231,5 +248,92 @@ public class AISBBasedBuilder
         private static final boolean NULLABLE_DEFAULT = false;
         private static final String CHARSET_DEFAULT = "UTF-8";
         private static final String PRIMARY = "PRIMARY";
+    }
+
+    private static class ActualGroupIndexBuilder implements NewAISGroupIndexBuilder {
+
+        // NewAISProvider interface
+
+        @Override
+        public AkibanInformationSchema ais() {
+            if (unstartedIndex()) {
+                throw new IllegalStateException("a groupIndex was started but not given any columns: " + indexName);
+            }
+            return aisb.akibanInformationSchema();
+        }
+
+        // NewAISGroupIndexBuilder interface
+
+        @Override
+        public NewAISGroupIndexBuilder groupIndex(String indexName) {
+            this.indexName = indexName;
+            this.groupName = null;
+            this.position = -1;
+            return this;
+        }
+
+        @Override
+        public NewAISGroupIndexBuilder on(String table, String column) {
+            return on(defaultSchema, table, column);
+        }
+
+        @Override
+        public NewAISGroupIndexBuilder on(String schema, String table, String column) {
+            UserTable userTable = aisb.akibanInformationSchema().getUserTable(schema, table);
+            if (userTable == null) {
+                throw new NoSuchElementException("no table " + schema + '.' + table);
+            }
+            if (userTable.getGroup() == null) {
+                throw new IllegalStateException("ungrouped table: " + schema + '.' + table);
+            }
+            String localGroupName = userTable.getGroup().getName();
+            if (localGroupName == null) {
+                throw new IllegalStateException("unnamed group for " + schema + '.' + table);
+            }
+            this.groupName = localGroupName;
+            this.position = 0;
+            aisb.groupIndex(this.groupName, this.indexName, false);
+            return and(schema, table, column);
+        }
+
+        @Override
+        public NewAISGroupIndexBuilder and(String table, String column) {
+            return and(defaultSchema, table, column);
+        }
+
+        @Override
+        public NewAISGroupIndexBuilder and(String schema, String table, String column) {
+            if (unstartedIndex()) {
+                throw new IllegalStateException("never called on(table,column) for " + indexName);
+            }
+            aisb.groupIndexColumn(groupName, indexName, schema, table, column, position++);
+            return this;
+        }
+
+        // ActualFinisher interface
+
+        public ActualGroupIndexBuilder(AkibanInformationSchema ais, String defaultSchema) {
+            this.aisb = new AISBuilder(ais);
+            this.defaultSchema = defaultSchema;
+        }
+
+        // private methods
+
+        private boolean unstartedIndex() {
+            // indexName is assigned as soon as groupIndex is invoked, but groupName is only resolved
+            // by on.
+            boolean hasUnstarted = (indexName != null) && (groupName == null);
+            assert hasUnstarted == (position < 0) : String.format("%s but %d", hasUnstarted, position);
+            return hasUnstarted;
+        }
+
+        // object states
+
+        private final AISBuilder aisb;
+        private final String defaultSchema;
+
+        private int position;
+        private String indexName;
+        private String groupName;
     }
 }

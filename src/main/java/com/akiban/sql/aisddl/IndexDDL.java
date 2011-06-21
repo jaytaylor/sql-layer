@@ -41,9 +41,7 @@ public class IndexDDL
         String schemaName = tableName.getSchemaName();
         if (schemaName == null)
             schemaName = defaultSchemaName;
-        UserTable table = ais.getUserTable(schemaName,
-                                           // TODO: Akiban DB is case sensitive.
-                                           tableName.getTableName().toLowerCase());
+        UserTable table = ais.getUserTable(schemaName, tableName.getTableName());
         if (table == null)
             throw new StandardException("Table not found: " + tableName);
         // TODO: What about indexName schemaName?
@@ -87,9 +85,7 @@ public class IndexDDL
             String schemaName = tableName.getSchemaName();
             if (schemaName == null)
                 schemaName = defaultSchemaName;
-            table = ais.getUserTable(schemaName,
-                                     // NOTE: Case sensitive.
-                                     tableName.getTableName().toLowerCase());
+            table = ais.getUserTable(schemaName, tableName.getTableName());
             if (table == null)
                 throw new StandardException("Table not found: " + tableName);
         }

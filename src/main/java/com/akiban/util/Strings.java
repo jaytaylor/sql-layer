@@ -54,6 +54,16 @@ public abstract class Strings {
     }
 
     /**
+     * Joins the given Strings into a single, newline-delimited String. Newline is the system-dependent one as
+     * defined by the system property <tt>line.separator</tt>.
+     * @param strings the strings
+     * @return the String
+     */
+    public static String join(String... strings) {
+        return join(Arrays.asList(strings));
+    }
+
+    /**
      * Joins the given Strings into a single String with the given delimiter. The last String in the list will
      * not have the delimiter appended. If the list is empty, this returns an empty string.
      * @param strings a list of strings. May not be null.

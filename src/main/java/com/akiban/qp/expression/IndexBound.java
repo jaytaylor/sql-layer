@@ -15,7 +15,6 @@
 
 package com.akiban.qp.expression;
 
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.ColumnSelector;
 
@@ -23,12 +22,7 @@ public class IndexBound
 {
     public String toString()
     {
-        return String.format("%s=%s", table, row);
-    }
-
-    public UserTable table()
-    {
-        return table;
+        return String.format("%s", row);
     }
 
     public RowBase row()
@@ -41,16 +35,14 @@ public class IndexBound
         return columnSelector;
     }
 
-    public IndexBound(UserTable table, RowBase row, ColumnSelector columnSelector)
+    public IndexBound(RowBase row, ColumnSelector columnSelector)
     {
-        this.table = table;
         this.row = row;
         this.columnSelector = columnSelector;
     }
 
     // Object state
 
-    private final UserTable table;
     private final RowBase row;
     private final ColumnSelector columnSelector;
 }

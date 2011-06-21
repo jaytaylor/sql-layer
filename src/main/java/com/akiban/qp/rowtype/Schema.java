@@ -32,5 +32,7 @@ public interface Schema
 
     ProjectedRowType newProjectType(List<Expression> columns);
 
+    ProductRowType newProductType(RowType left, RowType right);
+
     Iterator<RowType> rowTypes();
 }

@@ -18,6 +18,7 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -80,12 +81,26 @@ public class API
                                                      Limit limit,
                                                      IndexKeyRange indexKeyRange)
     {
-        return new GroupScan_Default(groupTable, limit, indexKeyRange);
+        GroupScan_Default.GroupCursorCreator groupCursorCreator = (indexKeyRange != null)
+                ? new GroupScan_Default.RangedGroupCursorCreator(groupTable, indexKeyRange)
+                : new GroupScan_Default.FullGroupCursorCreator(groupTable);
+        return new GroupScan_Default(groupCursorCreator, limit);
     }
 
     public static PhysicalOperator groupScan_Default(GroupTable groupTable, Limit limit)
     {
-        return new GroupScan_Default(groupTable, limit, null);
+        return new GroupScan_Default(new GroupScan_Default.FullGroupCursorCreator(groupTable), limit);
+    }
+
+    public static PhysicalOperator groupScan_Default(GroupTable groupTable,
+                                                     Limit limit,
+                                                     Expression hkeyExpression,
+                                                     boolean deep)
+    {
+        return new GroupScan_Default(
+                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hkeyExpression, deep),
+                limit
+        );
     }
 
     public static PhysicalOperator branchLookup_Default(PhysicalOperator inputOperator,
@@ -114,7 +129,7 @@ public class API
     public static PhysicalOperator ancestorLookup_Default(PhysicalOperator inputOperator,
                                                           GroupTable groupTable,
                                                           RowType rowType,
-                                                          List<? extends RowType> ancestorTypes,
+                                                          Collection<? extends RowType> ancestorTypes,
                                                           boolean keepInput)
     {
         return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, keepInput);
@@ -146,6 +161,13 @@ public class API
                                                    Collection<RowType> extractTypes)
     {
         return new Extract_Default(inputOperator, extractTypes);
+    }
+
+    public static PhysicalOperator product_ByRun(PhysicalOperator input,
+                                                 RowType leftType,
+                                                 RowType rightType)
+    {
+        return new Product_ByRun(input, leftType, rightType);
     }
 
     private static final Limit NO_LIMIT = new Limit()

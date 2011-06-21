@@ -58,6 +58,12 @@ public final class ArgumentValidation {
         }
     }
 
+    public static void isNotSame(String oneName, Object one, String twoName, Object two) {
+        if (one == two) {
+            throw new IllegalArgumentException(String.format("%s(%d) == %s(%d)", oneName, one, twoName, two));
+        }
+    }
+
     /**
      * Makes sure the given number is greater than or equal to the given minimum.
      * @param i the number to test

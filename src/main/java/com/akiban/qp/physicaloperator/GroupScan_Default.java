@@ -16,7 +16,9 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.util.ArgumentValidation;
 
@@ -27,17 +29,7 @@ class GroupScan_Default extends PhysicalOperator
     @Override
     public String toString()
     {
-        StringBuilder buffer = new StringBuilder();
-        buffer.append(getClass().getSimpleName());
-        buffer.append('(');
-        buffer.append(groupTable.getName().getTableName());
-        if (indexKeyRange != null) {
-            buffer.append(" range");
-        }
-        buffer.append(' ');
-        buffer.append(limit);
-        buffer.append(')');
-        return buffer.toString();
+        return getClass().getSimpleName() + '(' + cursorCreator + ' ' +  limit + ')';
     }
 
     // PhysicalOperator interface
@@ -45,28 +37,26 @@ class GroupScan_Default extends PhysicalOperator
     @Override
     protected Cursor cursor(StoreAdapter adapter)
     {
-        return new Execution(adapter, indexKeyRange);
+        return new Execution(cursorCreator.cursor(adapter), limit);
     }
 
     // GroupScan_Default interface
 
-    public GroupScan_Default(GroupTable groupTable, Limit limit, IndexKeyRange indexKeyRange)
+    public GroupScan_Default(GroupCursorCreator cursorCreator, Limit limit)
     {
-        ArgumentValidation.notNull("groupTable", groupTable);
-        this.groupTable = groupTable;
+        ArgumentValidation.notNull("groupTable", cursorCreator);
         this.limit = limit;
-        this.indexKeyRange = indexKeyRange;
+        this.cursorCreator = cursorCreator;
     }
 
     // Object state
 
-    private final GroupTable groupTable;
     private final Limit limit;
-    private final IndexKeyRange indexKeyRange;
+    private final GroupCursorCreator cursorCreator;
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private static class Execution extends SingleRowCachingCursor
     {
 
         // Cursor interface
@@ -104,13 +94,159 @@ class GroupScan_Default extends PhysicalOperator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, IndexKeyRange indexKeyRange)
+        Execution(Cursor cursor, Limit limit)
         {
-            this.cursor = adapter.newGroupCursor(groupTable, indexKeyRange);
+            this.cursor = cursor;
+            this.limit = limit;
         }
 
         // Object state
 
         private final Cursor cursor;
+        private final Limit limit;
+    }
+
+    static interface GroupCursorCreator {
+        Cursor cursor(StoreAdapter adapter);
+        GroupTable groupTable();
+    }
+
+    private static abstract class AbstractGroupCursorCreator implements GroupCursorCreator {
+
+        // GroupCursorCreator interface
+
+        @Override
+        public final GroupTable groupTable() {
+            return targetGroupTable;
+        }
+
+
+        // for use by subclasses
+
+        protected AbstractGroupCursorCreator(GroupTable groupTable) {
+            this.targetGroupTable = groupTable;
+        }
+
+        @Override
+        public final String toString() {
+            return describeRange() + " on " + targetGroupTable.getName().getTableName();
+        }
+
+        // for overriding in subclasses
+
+        protected abstract String describeRange();
+
+        private final GroupTable targetGroupTable;
+    }
+
+    static class FullGroupCursorCreator extends AbstractGroupCursorCreator {
+
+        // GroupCursorCreator interface
+
+        @Override
+        public Cursor cursor(StoreAdapter adapter) {
+            return adapter.newGroupCursor(groupTable());
+        }
+
+        // FullGroupCursorCreator interface
+
+        public FullGroupCursorCreator(GroupTable groupTable) {
+            super(groupTable);
+        }
+
+        // AbstractGroupCursorCreator interface
+
+        @Override
+        public String describeRange() {
+            return "full scan";
+        }
+    }
+
+    static class RangedGroupCursorCreator extends AbstractGroupCursorCreator  {
+
+        // GroupCursorCreator interface
+
+        @Override
+        public Cursor cursor(StoreAdapter adapter) {
+            return adapter.newGroupCursor(groupTable(), indexKeyRange);
+        }
+
+        // RangedGroupCursorCreator interface
+
+        public RangedGroupCursorCreator(GroupTable groupTable, IndexKeyRange indexKeyRange) {
+            super(groupTable);
+            ArgumentValidation.notNull("range", indexKeyRange);
+            this.indexKeyRange = indexKeyRange;
+        }
+
+        // AbstractGroupCursorCreator interface
+
+        @Override
+        public String describeRange() {
+            return indexKeyRange.toString();
+        }
+
+
+        // object state
+
+        private final IndexKeyRange indexKeyRange;
+    }
+
+    static class PositionalGroupCursorCreator extends AbstractGroupCursorCreator {
+
+        // GroupCursorCreator interface
+
+        @Override
+        public Cursor cursor(StoreAdapter adapter) {
+            return new HKeyBoundCursor(adapter.newGroupCursor(groupTable()), hKeyExpression, deep);
+        }
+
+        // PositionalGroupCursorCreator interface
+
+        PositionalGroupCursorCreator(GroupTable groupTable, Expression hKeyExpression, boolean deep) {
+            super(groupTable);
+            this.hKeyExpression = hKeyExpression;
+            this.deep = deep;
+        }
+
+        // AbstractGroupCursorCreator interface
+
+        @Override
+        public String describeRange() {
+            return deep ? "deep hkey-bound scan" : "shallow hkey-bound scan";
+        }
+
+        // object state
+
+        private final Expression hKeyExpression;
+        private final boolean deep;
+    }
+
+    private static class HKeyBoundCursor extends ChainedCursor {
+
+        @Override
+        public void open(Bindings bindings) {
+            Object evaluated = expression.evaluate(null, bindings);
+            if (! (evaluated instanceof HKey)) {
+                throw new RuntimeException("binding failed; expression didn't evaluate to HKey: "
+                        + expression
+                        + " with bindings " + bindings
+                );
+            }
+            HKey hKey = (HKey)evaluated;
+            input.rebind(hKey, deep);
+            input.open(bindings);
+        }
+
+        HKeyBoundCursor(GroupCursor input, Expression hkeyExpression, boolean deep) {
+            super(input);
+            this.input = input;
+            this.expression = hkeyExpression;
+            this.deep = deep;
+        }
+
+        private final GroupCursor input;
+        private final Expression expression;
+        private final boolean deep;
     }
 }

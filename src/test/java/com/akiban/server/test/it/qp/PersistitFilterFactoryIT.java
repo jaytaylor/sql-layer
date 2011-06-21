@@ -71,7 +71,7 @@ public final class PersistitFilterFactoryIT extends ITBase {
         );
         Row row = new TestRow(itemRowType, objArray(100L, 10L));
 
-        IndexBound bound = new IndexBound(getUserTable(iTable), row, ConstantColumnSelector.ALL_ON);
+        IndexBound bound = new IndexBound(row, ConstantColumnSelector.ALL_ON);
         IndexKeyRange range = new IndexKeyRange(bound, true, bound, true);
 
         PhysicalOperator groupScan = API.groupScan_Default(
@@ -91,8 +91,8 @@ public final class PersistitFilterFactoryIT extends ITBase {
         assertSame("second term", KeyFilter.ALL, keyFilter.getTerm(1));
 
         List<Row> rows = new ArrayList<Row>();
-        while (groupCursor.booleanNext()) {
-            rows.add( groupCursor.currentRow() );
+        while ((row = groupCursor.next()) != null) {
+            rows.add( row );
         }
         groupCursor.close();
 

@@ -17,12 +17,10 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.rowtype.IndexKeyType;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.ByteArrayColumnSelector;
@@ -105,15 +103,15 @@ public class TwoTableRowCollector extends OperatorBasedRowCollector
             IndexBound lo =
                 userTableStart == null
                 ? null
-                : new IndexBound(predicateTable,
-                                 PersistitGroupRow.newPersistitGroupRow(adapter, userTableStart.toRowData()),
-                                 userColumnSelector(predicateTable, startColumns));
+                : new IndexBound(new NewRowBackedIndexRow(predicateType, userTableStart, predicateIndex),
+                                 indexSelectorFromTableSelector(predicateIndex, userColumnSelector(predicateTable,
+                                                                                                   startColumns)));
             IndexBound hi =
                 userTableEnd == null
                 ? null
-                : new IndexBound(predicateTable,
-                                 PersistitGroupRow.newPersistitGroupRow(adapter, userTableEnd.toRowData()),
-                                 userColumnSelector(predicateTable, endColumns));
+                : new IndexBound(new NewRowBackedIndexRow(predicateType, userTableEnd, predicateIndex),
+                                 indexSelectorFromTableSelector(predicateIndex, userColumnSelector(predicateTable,
+                                                                                                   endColumns)));
             indexKeyRange = new IndexKeyRange
                 (lo,
                  lo != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0,

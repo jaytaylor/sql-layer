@@ -86,9 +86,15 @@ class PersistitHKey implements HKey
     }
 
     @Override
-    public void extend(UserTable userTable)
+    public void extendWithOrdinal(int ordinal)
     {
-        hKey.append(((RowDef)userTable.rowDef()).getOrdinal());
+        hKey.append(ordinal);
+    }
+
+    @Override
+    public void extendWithNull()
+    {
+        hKey.append(null);
     }
 
     // PersistitHKey interface
