@@ -65,8 +65,8 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 actionString + "sku_name [2222, alpha, 1, 11, 101]" + SKU_NAME_COLS,
                 actionString + "sku_name [3333, alpha, 1, 11, 102]" + SKU_NAME_COLS,
                 // street_aid_cid
-                actionString + "street_aid_cid [Harrington, 20, 1]" + STREET_AID_CID_COLS,
-                actionString + "street_aid_cid [Causeway, 21, 1]" + STREET_AID_CID_COLS
+                actionString + "street_aid_cid [Harrington, 20, 1, 1]" + STREET_AID_CID_COLS,
+                actionString + "street_aid_cid [Causeway, 21, 1, 1]" + STREET_AID_CID_COLS
         );
     }
 
@@ -178,7 +178,7 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     private final static String SCHEMA = "sch";
     private static final String DATE_SKU_COLS = " cols[orders.odate, items.sku, orders.c_id, items.o_id, items.iid]";
     private static final String SKU_NAME_COLS = " cols[items.sku, customers.name, orders.c_id, items.o_id, items.iid]";
-    private static final String STREET_AID_CID_COLS = " cols[addresses.street, addresses.aid, addresses.c_id]";
+    private static final String STREET_AID_CID_COLS = " cols[addresses.street, addresses.aid, customers.cid, addresses.c_id]";
 
     // nested classes
 
