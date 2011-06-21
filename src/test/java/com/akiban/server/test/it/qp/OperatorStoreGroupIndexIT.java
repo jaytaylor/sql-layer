@@ -84,9 +84,9 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 actionString,
                 createNewRow(o, 11L, 1L, "02-02-2002"),
                 // date sku
-                actionString + "date_sku [02-02-2002, 1111, null, 11, 100]" + DATE_SKU_COLS,
-                actionString + "date_sku [02-02-2002, 2222, null, 11, 101]" + DATE_SKU_COLS,
-                actionString + "date_sku [02-02-2002, 3333, null, 11, 102]" + DATE_SKU_COLS
+                actionString + "date_sku [02-02-2002, 1111, 1, 11, 100]" + DATE_SKU_COLS,
+                actionString + "date_sku [02-02-2002, 2222, 1, 11, 101]" + DATE_SKU_COLS,
+                actionString + "date_sku [02-02-2002, 3333, 1, 11, 102]" + DATE_SKU_COLS
         );
     }
 
@@ -176,9 +176,9 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     // const
 
     private final static String SCHEMA = "sch";
-    private static final String DATE_SKU_COLS = " cols[orders.odate, items.sku, customers.cid, orders.oid, items.iid]";
-    private static final String SKU_NAME_COLS = " cols[items.sku, customers.name, customers.cid, orders.oid, items.iid]";
-    private static final String STREET_AID_CID_COLS = " cols[addresses.street, addresses.aid, customers.cid]";
+    private static final String DATE_SKU_COLS = " cols[orders.odate, items.sku, orders.c_id, items.o_id, items.iid]";
+    private static final String SKU_NAME_COLS = " cols[items.sku, customers.name, orders.c_id, items.o_id, items.iid]";
+    private static final String STREET_AID_CID_COLS = " cols[addresses.street, addresses.aid, addresses.c_id]";
 
     // nested classes
 
@@ -199,7 +199,7 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
 
         @Override
         public void handleRow(String action, GroupIndex groupIndex, Row row) {
-            String giName = ' ' + groupIndex.getIndexName().getName();
+            String giName = groupIndex.getIndexName().getName();
             List<Object> fields = new ArrayList<Object>();
             List<Column> columns = new ArrayList<Column>();
             IndexRowComposition irc = groupIndex.indexRowComposition();
@@ -216,7 +216,7 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 fields.add(row.field(rowIndex, UndefBindings.only()));
                 columns.add(groupIndex.getGroup().getGroupTable().getColumn(rowIndex).getUserColumn());
             }
-            strings.add(action + giName + String.valueOf(fields) + " cols" + columns);
+            strings.add(action + giName + ' ' + fields + " cols" + columns);
         }
 
         // StringsGIHandler interface
