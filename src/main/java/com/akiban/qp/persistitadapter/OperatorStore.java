@@ -400,18 +400,11 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             key.clear();
             IndexRowComposition irc = groupIndex.indexRowComposition();
             for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
-                final int flattenedIndex;
-                if (irc.isInRowData(i)) {
-                    flattenedIndex = irc.getFieldPosition(i);
-                }
-                else if (irc.isInHKey(i)) {
-                    flattenedIndex = irc.getHKeyPosition(i);
-                }
-                else {
-                    throw new RuntimeException(row + " index " + i + " for group index " + groupIndex);
-                }
+                assert irc.isInRowData(i);
+                assert ! irc.isInHKey(i);
+                final int flattenedIndex = irc.getHKeyPosition(i);
 
-                Column column = groupIndex.getGroup().getGroupTable().getColumn(flattenedIndex);
+                Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
                 Object value = row.field(flattenedIndex, UndefBindings.only());
                 RowDef rowDef = (RowDef) column.getTable().rowDef();
                 FieldDef fieldDef = rowDef.getFieldDef(column.getPosition());

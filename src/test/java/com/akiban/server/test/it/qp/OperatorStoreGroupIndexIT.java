@@ -204,15 +204,9 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
             List<Column> columns = new ArrayList<Column>();
             IndexRowComposition irc = groupIndex.indexRowComposition();
             for (int i=0; i < irc.getLength(); ++i ) {
-                final int rowIndex;
-                if (irc.isInHKey(i)) {
-                    rowIndex = irc.getHKeyPosition(i);
-                }
-                else if (irc.isInRowData(i)) {
-                    rowIndex = irc.getFieldPosition(i);
-                } else {
-                    throw new AssertionError(i);
-                }
+                assert irc.isInRowData(i);
+                assert ! irc.isInHKey(i);
+                final int rowIndex = irc.getFieldPosition(i);
                 fields.add(row.field(rowIndex, UndefBindings.only()));
                 columns.add(groupIndex.getColumnForFlattenedRow(rowIndex));
             }

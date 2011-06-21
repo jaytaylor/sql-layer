@@ -264,7 +264,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     /**
      * @param ordinalMap Map of Tables to Ordinal values
      * @param indexTable If specified, prefer columns from this table over the hkey
-     * @param flattenedRowOffsets Whether or not to use a Columns position in the group
+     * @param flattenedRowOffsets if not null, a mapping of each table's field offset within the flattened row
      */
     protected void computeFieldAssociations(Map<Table,Integer> ordinalMap, Table indexTable, Map<? extends Table,Integer> flattenedRowOffsets) {
         freezeColumns();
