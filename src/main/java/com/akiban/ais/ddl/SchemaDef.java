@@ -150,7 +150,7 @@ public class SchemaDef {
         //      Foo [UNIQUE [KEY] | [PRIMARY] KEY] Bar
         // where Foo and Bar are some column option keyword other than UNIQUE/PRIMARY/KEY
 
-        // At the end of this method, we'll set the next iteration's prevColumnOption. To help ensure that
+        // At the end of this method, we'll set the booleanNext iteration's prevColumnOption. To help ensure that
         // we do this explicitly in all code paths, we'll do it via a local "final" var.
         final ColumnOption nextPrevious;
 

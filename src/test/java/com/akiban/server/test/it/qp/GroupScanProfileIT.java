@@ -41,7 +41,7 @@ public class GroupScanProfileIT extends QPProfileITBase
         for (int s = 0; s < SCANS; s++) {
             Cursor cursor = cursor(plan, adapter);
             cursor.open(NO_BINDINGS);
-            while (cursor.next()) {
+            while (cursor.booleanNext()) {
                 cursor.currentRow();
             }
             cursor.close();

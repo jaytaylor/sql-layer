@@ -154,12 +154,12 @@ public final class JsonOutputter implements HapiOutputter
                 }
                 // Generate output for row
                 output.write('{');
-                int rowTableId = rowTable.getTableId(); // Save this before going to the next row
+                int rowTableId = rowTable.getTableId(); // Save this before going to the booleanNext row
                 row.toJSONString((RowDef) rowTable.rowDef(), appender);
                 advanceInput();
                 // We're now at a new row. If the new row is a child of the previous one, then
                 // generateChildOutput then takes care of the children, (including children present
-                // in the schema but not present in the data). If the next row is not a child of the previous
+                // in the schema but not present in the data). If the booleanNext row is not a child of the previous
                 // row, then generateChildOutput is still necessary to handle the missing children.
                 assert rowDepth <= tableDepth + 1 : row;
                 generateChildOutput(tableDepth + 1, rowTableId, false);

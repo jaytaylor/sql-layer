@@ -24,6 +24,7 @@ import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.Limit;
 import com.akiban.qp.physicaloperator.UndefBindings;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -197,8 +198,8 @@ public class PhysicalOperatorITBase extends ITBase
         List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
         try {
             cursor.open(bindings);
-            while (cursor.next()) {
-                RowBase actualRow = cursor.currentRow();
+            RowBase actualRow;
+            while ((actualRow = cursor.next()) != null) {
                 int count = actualRows.size();
                 assertTrue(String.format("failed test %d < %d", count, expected.length), count < expected.length);
                 if(!equal(expected[count], actualRow)) {
@@ -226,8 +227,9 @@ public class PhysicalOperatorITBase extends ITBase
         List<String> strings = new ArrayList<String>();
         try {
             cursor.open(NO_BINDINGS);
-            while (cursor.next()) {
-                strings.add(String.valueOf(cursor.currentRow()));
+            Row row;
+            while ((row = cursor.next()) != null) {
+                strings.add(String.valueOf(row));
             }
         } catch (Throwable t) {
             strings.add("ERROR: " + t);
@@ -245,8 +247,8 @@ public class PhysicalOperatorITBase extends ITBase
             cursor.open(NO_BINDINGS);
             count = 0;
             List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
-            while (cursor.next()) {
-                RowBase actualRow = cursor.currentRow();
+            RowBase actualRow;
+            while ((actualRow = cursor.next()) != null) {
                 assertEquals(expected[count], actualRow.hKey().toString());
                 count++;
                 actualRows.add(actualRow);

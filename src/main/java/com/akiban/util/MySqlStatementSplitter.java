@@ -234,7 +234,7 @@ public class MySqlStatementSplitter implements Iterable<String> {
     }
 
     /**
-     * Gets the next line.
+     * Gets the booleanNext line.
      */
     public String parse() {
         // If we have a String pending, return that
@@ -360,9 +360,9 @@ public class MySqlStatementSplitter implements Iterable<String> {
                 if (builder.trimmed()) {
                     // If we have a \n or \r, we'll get it plus its twin \r or
                     // \n (respectively).
-                    // handleNewLine will return the next char, OR -1 if a twin
+                    // handleNewLine will return the booleanNext char, OR -1 if a twin
                     // \r or \n was found.
-                    // So, if (and only if) we have a next char, we'll buffer
+                    // So, if (and only if) we have a booleanNext char, we'll buffer
                     // it.
                     int toBuffer = handleNewline(theInt);
                     if (toBuffer >= 0) {
@@ -455,7 +455,7 @@ public class MySqlStatementSplitter implements Iterable<String> {
      * you have already read any lines, they will not be in the returned List.
      * 
      * Similarly, after you call this method, ready() will always return false,
-     * and next() will always return null.
+     * and booleanNext() will always return null.
      * 
      * @return a List of Strings that haven't been read before
      */

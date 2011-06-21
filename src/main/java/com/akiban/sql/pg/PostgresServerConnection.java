@@ -521,7 +521,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         DDLFunctions ddl = serviceManager.getDXL().ddlFunctions();
         // TODO: This could be more reliable if the AIS object itself
         // also knew its generation. Right now, can get new generation
-        // # and old AIS and not notice until next change.
+        // # and old AIS and not notice until booleanNext change.
         int currentGeneration = ddl.getGeneration();
         if (aisGeneration == currentGeneration) 
             return;             // Unchanged.

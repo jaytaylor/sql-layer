@@ -152,8 +152,8 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
         Iterator<Column> parentPKColumnScan = parentPK.getColumns().iterator();
         Iterator<JoinColumn> joinColumnScan = joinColumns.iterator();
         while (parentPKColumnScan.hasNext()) {
-            Column parentPKColumn = parentPKColumnScan.next();
-            Column parentJoinColumn = joinColumnScan.next().getParent();
+            Column parentPKColumn = parentPKColumnScan.booleanNext();
+            Column parentJoinColumn = joinColumnScan.booleanNext().getParent();
             if (parentPKColumn != parentJoinColumn) {
                 throw new AISBuilder.UngroupableJoinException(this);
             }

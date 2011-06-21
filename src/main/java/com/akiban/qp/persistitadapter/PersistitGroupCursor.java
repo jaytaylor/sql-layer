@@ -76,7 +76,14 @@ class PersistitGroupCursor implements GroupCursor
     }
 
     @Override
-    public boolean next()
+    public boolean booleanNext()
+    {
+        assert false;
+        return false;
+    }
+
+    @Override
+    public Row next()
     {
         try {
             boolean next = exchange != null;
@@ -91,7 +98,7 @@ class PersistitGroupCursor implements GroupCursor
             if (LOG.isDebugEnabled()) {
                 LOG.debug("PersistitGroupCursor: {}", next ? row : null);
             }
-            return next;
+            return next ? row.get() : null;
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         } catch (InvalidOperationException e) {
@@ -170,11 +177,6 @@ class PersistitGroupCursor implements GroupCursor
     RowHolder<PersistitGroupRow> currentHeldRow()
     {
         return row;
-    }
-
-    PersistitAdapter adapter()
-    {
-        return adapter;
     }
 
     private final PersistitAdapter adapter;

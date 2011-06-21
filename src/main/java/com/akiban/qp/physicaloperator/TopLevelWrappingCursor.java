@@ -35,9 +35,9 @@ class TopLevelWrappingCursor extends ChainedCursor {
     }
 
     @Override
-    public boolean next() {
+    public boolean booleanNext() {
         try {
-            return super.next();
+            return super.booleanNext();
         } catch (RuntimeException e) {
             throw launder(e);
         }

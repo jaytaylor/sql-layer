@@ -186,7 +186,14 @@ public class BranchLookup_Default extends PhysicalOperator
         }
 
         @Override
-        public boolean next()
+        public boolean booleanNext()
+        {
+            assert false;
+            return false;
+        }
+
+        @Override
+        public Row next()
         {
             Row nextRow = null;
             while (nextRow == null && inputRow.isNotNull()) {
@@ -211,11 +218,10 @@ public class BranchLookup_Default extends PhysicalOperator
                         break;
                 }
             }
-            outputRow(nextRow);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Lookup: {}", lookupRow.isNull() ? null : lookupRow.get());
             }
-            return nextRow != null;
+            return nextRow;
         }
 
         @Override
@@ -241,19 +247,14 @@ public class BranchLookup_Default extends PhysicalOperator
 
         private void advanceLookup()
         {
-            if (lookupCursor.next()) {
-                Row currentRow = lookupCursor.currentRow();
-                if (currentRow == null) {
+            Row currentRow;
+            if ((currentRow = lookupCursor.next()) != null) {
+                if (limit.limitReached(currentRow)) {
                     lookupState = LookupState.AFTER;
                     lookupRow.set(null);
+                    close();
                 } else {
-                    if (limit.limitReached(currentRow)) {
-                        lookupState = LookupState.AFTER;
-                        lookupRow.set(null);
-                        close();
-                    } else {
-                        lookupRow.set(currentRow);
-                    }
+                    lookupRow.set(currentRow);
                 }
             } else {
                 lookupState = LookupState.AFTER;
@@ -266,8 +267,8 @@ public class BranchLookup_Default extends PhysicalOperator
             lookupState = LookupState.BEFORE;
             lookupRow.set(null);
             lookupCursor.close();
-            if (inputCursor.next()) {
-                Row currentInputRow = inputCursor.currentRow();
+            Row currentInputRow = inputCursor.next();
+            if (currentInputRow != null) {
                 if (currentInputRow.rowType() == inputRowType) {
                     lookupRow.set(null);
                     computeLookupRowHKey(currentInputRow.hKey());
@@ -308,7 +309,7 @@ public class BranchLookup_Default extends PhysicalOperator
         // After the first lookup row has been retrieved, and before we have discovered that there are no more
         // lookup rows.
         SCANNING,
-        // After the lookup rows for the current input row have all been scanned, (known because lookupCursor.next
+        // After the lookup rows for the current input row have all been scanned, (known because lookupCursor.booleanNext
         // returned false).
         AFTER
     }

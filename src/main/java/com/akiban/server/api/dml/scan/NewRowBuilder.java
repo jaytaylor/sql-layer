@@ -53,11 +53,11 @@ public final class NewRowBuilder {
     }
 
     /**
-     * <p>Puts a value into the next column. The "next" column is defined as the column whose position is one greater
+     * <p>Puts a value into the booleanNext column. The "booleanNext" column is defined as the column whose position is one greater
      * than the last column to be put. If no column has been put yet, this method puts to the 0th column.</p>
      *
      * <p>Note that if you invoke <tt>put(1, obj1)</tt> then <tt>put(0, obj2)</tt>, a call to <tt>put(obj3)</tt> will
-     * override the first put's value, since the last put was at 0, so the next one will be at 1.</p>
+     * override the first put's value, since the last put was at 0, so the booleanNext one will be at 1.</p>
      * @param object the object to put
      * @return this instance
      */

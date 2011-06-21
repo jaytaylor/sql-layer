@@ -84,12 +84,11 @@ class Select_HKeyOrdered extends PhysicalOperator
         }
 
         @Override
-        public boolean next()
+        public boolean booleanNext()
         {
             outputRow(null);
-            boolean moreInput = input.next();
-            while (outputRow() == null && moreInput) {
-                Row inputRow = input.currentRow();
+            Row inputRow = input.next();
+            while (outputRow() == null && inputRow != null) {
                 if (inputRow.rowType() == predicateRowType) {
                     // New row of predicateRowType
                     if ((Boolean) predicate.evaluate(inputRow, bindings)) {
@@ -107,7 +106,7 @@ class Select_HKeyOrdered extends PhysicalOperator
                     outputRow(inputRow);
                 }
                 if (outputRow() == null) {
-                    moreInput = input.next();
+                    inputRow = input.next();
                 }
             }
             return outputRow() != null;

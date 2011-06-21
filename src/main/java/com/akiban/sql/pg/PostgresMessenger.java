@@ -122,11 +122,11 @@ public class PostgresMessenger implements DataInput, DataOutput
         this.cancel = cancel;
     }
 
-    /** Read the next message from the stream, without any type opcode. */
+    /** Read the booleanNext message from the stream, without any type opcode. */
     protected int readMessage() throws IOException {
         return readMessage(true);
     }
-    /** Read the next message from the stream, starting with the message type opcode. */
+    /** Read the booleanNext message from the stream, starting with the message type opcode. */
     protected int readMessage(boolean hasType) throws IOException {
         int type;
         if (hasType) {

@@ -62,7 +62,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
         compareRenderedHKeys(expected, cursor);
     }
 
-    // Naming schema for next tests:
+    // Naming schema for booleanNext tests:
     // testLoABHiCD
     // A: Inclusive/Exclusive for lo bound
     // B: Match/Miss indicates whether the lo bound matches or misses an actual value in the db

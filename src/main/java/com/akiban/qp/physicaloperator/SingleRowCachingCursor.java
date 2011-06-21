@@ -40,6 +40,12 @@ abstract class SingleRowCachingCursor implements Cursor
         return currentRow;
     }
 
+    @Override
+    public Row next()
+    {
+        return booleanNext() ? currentRow() : null;
+    }
+
     // SingleRowCachingCursor interface
 
     protected Row outputRow()

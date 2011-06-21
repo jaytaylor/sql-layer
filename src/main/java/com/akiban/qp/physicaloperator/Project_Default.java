@@ -94,18 +94,24 @@ class Project_Default extends PhysicalOperator
         }
 
         @Override
-        public boolean next()
+        public boolean booleanNext()
+        {
+            assert false;
+            return false;
+        }
+
+        @Override
+        public Row next()
         {
             Row projectedRow = null;
-            if (input.next()) {
-                Row inputRow = input.currentRow();
+            Row inputRow;
+            if ((inputRow = input.next()) != null) {
                 projectedRow =
                     inputRow.rowType() == rowType
                     ? new ProjectedRow(projectType, inputRow, projections)
                     : inputRow;
             }
-            outputRow(projectedRow);
-            return outputRow() != null;
+            return projectedRow;
         }
 
         @Override

@@ -57,7 +57,7 @@ public class
         if (ais != null) {
             Map<TableName, UserTable> userTables = ais.getUserTables();
             Map<TableName, GroupTable> groupTables = ais.getGroupTables();
-            // Yuval: this next line isn't actually necessary if we initialize
+            // Yuval: this booleanNext line isn't actually necessary if we initialize
             // tableIdGenerator to random, but I'm
             // keeping it in case we change that randomness.
             this.tableIdGenerator += (userTables == null ? 0 : userTables

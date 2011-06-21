@@ -47,7 +47,7 @@ public final class EnumeratingIteratorTest
         List<Character> list = Arrays.asList('e', 'f', 'g', 'h');
         Iterator<Enumerated<Character>> iterator = EnumeratingIterator.of(list).iterator();
 
-        assertTrue("has next", iterator.hasNext());
+        assertTrue("has booleanNext", iterator.hasNext());
         assertEquals("value", Character.valueOf('e'), iterator.next().get());
         iterator.remove();
     }

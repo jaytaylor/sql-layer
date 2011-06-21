@@ -76,7 +76,7 @@ public final class SerializableEnumSet<T extends Enum<T>> implements Set<T>, Ser
     public void loadInt(int serialized)
     {
         this.serialized = serialized;
-        set = null; // will force the next usage to re-initialize
+        set = null; // will force the booleanNext usage to re-initialize
     }
 
     private void init()

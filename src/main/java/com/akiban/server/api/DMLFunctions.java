@@ -96,7 +96,7 @@ public interface DMLFunctions {
      * are more rows to be scanned. Note that passing a limit of 0 is essentially analogous to a "hasMore()" method.
      * As such, the Cursor will assume you now know there are no rows to scan, and any subsequent invocation of this
      * method will throw a CursorIsFinishedException -- even if that invocation uses a limit of 0. This is actually
-     * a specific case of the general rule: if this method ever returns false, the next invocation using the same
+     * a specific case of the general rule: if this method ever returns false, the booleanNext invocation using the same
      * cursor ID will throw a CursorIsFinishedException.</p>
      *
      * <p>The check for whether the cursor is finished is performed
@@ -154,7 +154,7 @@ public interface DMLFunctions {
      * are more rows to be scanned. Note that passing a limit of 0 is essentially analogous to a "hasMore()" method.
      * As such, the Cursor will assume you now know there are no rows to scan, and any subsequent invocation of this
      * method will throw a CursorIsFinishedException -- even if that invocation uses a limit of 0. This is actually
-     * a specific case of the general rule: if this method ever returns false, the next invocation using the same
+     * a specific case of the general rule: if this method ever returns false, the booleanNext invocation using the same
      * cursor ID will throw a CursorIsFinishedException.</p>
      *
      * <p>The check for whether the cursor is finished is performed

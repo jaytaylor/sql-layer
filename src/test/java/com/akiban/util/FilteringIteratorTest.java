@@ -94,7 +94,7 @@ public final class FilteringIteratorTest {
             public Iterator<Integer> get() {
                 Iterator<Integer> iterator = onlyEvens(1, 2);
                 assertTrue("hasNext == false", iterator.hasNext());
-                assertEquals("next()", 2, iterator.next().intValue());
+                assertEquals("booleanNext()", 2, iterator.next().intValue());
                 iterator.remove();
                 return iterator;
             }
@@ -109,7 +109,7 @@ public final class FilteringIteratorTest {
             public Iterator<Integer> get() {
                 Iterator<Integer> iterator = onlyEvens(list(2), false);
                 assertTrue("hasNext == false", iterator.hasNext());
-                assertEquals("next()", 2, iterator.next().intValue());
+                assertEquals("booleanNext()", 2, iterator.next().intValue());
                 return iterator;
             }
         });
@@ -123,7 +123,7 @@ public final class FilteringIteratorTest {
             public Iterator<Integer> get() {
                 Iterator<Integer> iterator = onlyEvens(Collections.unmodifiableList(list(2)), false);
                 assertTrue("hasNext == false", iterator.hasNext());
-                assertEquals("next()", 2, iterator.next().intValue());
+                assertEquals("booleanNext()", 2, iterator.next().intValue());
                 return iterator;
             }
         });
@@ -135,7 +135,7 @@ public final class FilteringIteratorTest {
         Iterator<Integer> iterator = onlyEvens(1, 2, 3);
         assertTrue("hasNext 1", iterator.hasNext());
         assertTrue("hasNext 2", iterator.hasNext());
-        assertEquals("next", 2, iterator.next().intValue());
+        assertEquals("booleanNext", 2, iterator.next().intValue());
         assertFalse("hasNext 3", iterator.hasNext());
     }
 

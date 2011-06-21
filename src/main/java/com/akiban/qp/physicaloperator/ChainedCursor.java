@@ -30,7 +30,13 @@ public abstract class ChainedCursor implements Cursor {
     }
 
     @Override
-    public boolean next() {
+    public boolean booleanNext() {
+        return input.booleanNext();
+    }
+
+    @Override
+    public Row next()
+    {
         return input.next();
     }
 

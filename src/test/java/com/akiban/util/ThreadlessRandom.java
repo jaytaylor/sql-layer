@@ -28,7 +28,7 @@ public final class ThreadlessRandom {
     }
 
     /**
-     * Returns the next random number in the sequence
+     * Returns the booleanNext random number in the sequence
      * @return a pseudo-random number
      */
     public int nextInt() {
@@ -36,7 +36,7 @@ public final class ThreadlessRandom {
     }
 
     /**
-     * Returns the next random number in the sequence, bounded by the given bounds.
+     * Returns the booleanNext random number in the sequence, bounded by the given bounds.
      * @param min the minimum value of the random number, inclusive
      * @param max the maximum value of the random number, isShared
      * @return a number N such that {@code min <= N < max}
