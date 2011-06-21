@@ -37,9 +37,11 @@ public class SchemaAISBased implements Schema
     @Override
     public synchronized IndexRowType indexRowType(Index index)
     {
+        assert ais.getTable(index.getIndexName().getSchemaName(),
+                            index.getIndexName().getTableName()).isUserTable() : index;
         return
             index.isTableIndex()
-            ? userTableRowType((UserTable) ((TableIndex) index).getTable()).indexRowType(index)
+            ? userTableRowType((UserTable) index.leafMostTable()).indexRowType(index)
             : groupIndexRowType((GroupIndex) index);
     }
 
