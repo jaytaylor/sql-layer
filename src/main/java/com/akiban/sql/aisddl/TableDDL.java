@@ -18,6 +18,9 @@ package com.akiban.sql.aisddl;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.service.session.Session;
@@ -43,6 +46,7 @@ import com.akiban.ais.model.Types;
 /** DDL operations on Tables */
 public class TableDDL
 {
+    private final static Logger logger = LoggerFactory.getLogger(TableDDL.class);
     private TableDDL() {
     }
 
@@ -59,6 +63,7 @@ public class TableDDL
         try {
             ddlFunctions.dropTable(session, tableName);
         } catch (InvalidOperationException ex) {
+            logger.error(ex.getMessage(), ex.getStackTrace());
             throw new StandardException (ex.getMessage());
         }
     }
@@ -160,6 +165,7 @@ public class TableDDL
         try {
             ddlFunctions.createTable(session, table);
         } catch (InvalidOperationException ex) {
+            logger.error(ex.getMessage(), ex.getStackTrace());
             throw new StandardException (ex.getMessage());
         }
     }

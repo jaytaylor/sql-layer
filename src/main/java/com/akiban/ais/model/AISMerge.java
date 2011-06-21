@@ -14,8 +14,10 @@
  */
 package com.akiban.ais.model;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import com.akiban.ais.io.AISTarget;
 import com.akiban.ais.io.Writer;
@@ -24,28 +26,23 @@ import com.akiban.server.InvalidOperationException;
 
 public class AISMerge {
     /* state */
-    private AkibanInformationSchema sourceAIS;
     private AkibanInformationSchema targetAIS;
     private UserTable sourceTable;
     private List<AISMergeValidation> checkers;
-    
-    public AISMerge (AkibanInformationSchema primaryAIS, AkibanInformationSchema secondaryAIS) throws Exception {
-        targetAIS = new AkibanInformationSchema();
-        new Writer(new AISTarget(targetAIS)).save(primaryAIS);
-        
-        sourceAIS = new AkibanInformationSchema();
-        new Writer(new AISTarget(sourceAIS)).save(secondaryAIS);
-        sourceTable = null;
-        checkers = new LinkedList<AISMergeValidation>();
-    }
+    private GroupNamer groupNames; 
     
     public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) throws Exception {
         targetAIS = new AkibanInformationSchema();
         new Writer(new AISTarget(targetAIS)).save(primaryAIS);
         
-        sourceAIS = null;
         sourceTable = newTable;
+
         checkers = new LinkedList<AISMergeValidation>();
+        
+        groupNames = new GroupNamer();
+        for (String groupName : targetAIS.getGroups().keySet()) {
+            groupNames.name(groupName);
+        }
     }
     
     public AkibanInformationSchema getAIS () {
@@ -58,34 +55,32 @@ public class AISMerge {
 
     public AISMerge validate () throws InvalidOperationException {
         targetAIS.checkIntegrity();
-        if (sourceAIS != null) {
-            sourceAIS.checkIntegrity(); 
-            for (AISMergeValidation validator : checkers) {
-                validator.validate(targetAIS, sourceAIS);
-            }
-        } else if (sourceTable != null) {
-            for (AISMergeValidation validator : checkers) {
-                validator.validate (targetAIS, sourceTable);
-            }
+        for (AISMergeValidation validator : checkers) {
+            validator.validate (targetAIS, sourceTable);
         }
         return this;
     }
     
     public AISMerge merge() {
         final AISBuilder builder = new AISBuilder(targetAIS);
-        
-        // loop through user tables and add to AIS
-        // user table
-        if (sourceAIS != null) {
-            for (UserTable sourceTable : sourceAIS.getUserTables().values()) {
-                addTable(builder, sourceTable);
-            }
-        } else if (sourceTable != null) {
-            addTable (builder, sourceTable); 
-        }
+
+        // Add the user table to the targetAIS
+        addTable (builder, sourceTable); 
         builder.basicSchemaIsComplete();
-        
-        // loop through group tables and add to AIS
+        // Joins or group table?
+        if (sourceTable.getParentJoin() == null) {
+            String groupName = groupNames.name(sourceTable.getName().getTableName());
+            String groupTableName = groupTableName(groupName);
+            
+            builder.createGroup(groupName, 
+                    sourceTable.getName().getSchemaName(), 
+                    groupTableName);
+            builder.addTableToGroup(groupName, 
+                    sourceTable.getName().getSchemaName(), 
+                    sourceTable.getName().getTableName());
+        } else {
+            ; // TODO : currently not yet complete, There is a parent join, perform the join.  
+        }
         builder.groupingIsComplete();
         return this;
     }
@@ -131,6 +126,34 @@ public class AISMerge {
                         col.isAscending(), 
                         col.getIndexedLength());
             }
+        }
+        
+    }
+
+    private String groupTableName(final String group) {
+        return "_akiban_" + group;
+    }
+
+    private static class GroupNamer {
+        private final Set<String> names = new HashSet<String>();
+
+        public String name(final String name) {
+            if (names.add(name)) {
+                return name;
+            }
+
+            int i = 0;
+            StringBuilder builder = new StringBuilder(name).append('$');
+            final int appendAt = builder.length();
+            String ret;
+
+            do {
+                builder.setLength(appendAt);
+                builder.append(i++);
+            }
+            while(!names.add(ret = builder.toString()));
+            
+            return ret;
         }
     }
     

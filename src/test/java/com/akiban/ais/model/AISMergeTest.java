@@ -17,7 +17,6 @@ package com.akiban.ais.model;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNotNull;
 
@@ -49,7 +48,7 @@ public class AISMergeTest {
         b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
         
         b.basicSchemaIsComplete();
-        AISMerge merge = new AISMerge (t, s);
+        AISMerge merge = new AISMerge (t, s.getUserTable(TABLENAME));
         t = merge.validate().merge().getAIS();
         UserTable targetTable = t.getUserTable(TABLENAME);
         UserTable sourceTable = s.getUserTable(TABLENAME);
@@ -70,6 +69,10 @@ public class AISMergeTest {
                 sourceTable.getColumn(Column.AKIBAN_PK_NAME).getPosition());
         
         t.checkIntegrity();
+        // merge will have created a group table for the user table we merged.
+        assertEquals (t.getGroups().keySet().size(), 1);
+        assertNotNull(t.getGroup(TABLE));
+        checkColumns (t.getGroup(TABLE).getGroupTable().getColumns(), "t1$c1", "t1$c2", "t1$"+Column.AKIBAN_PK_NAME);
     }
 
     @Test
@@ -79,7 +82,7 @@ public class AISMergeTest {
         b.index(SCHEMA, TABLE, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, "PRIMARY", "c1", 0, true, 0);
         b.basicSchemaIsComplete();
-        AISMerge merge = new AISMerge (t,s);
+        AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
         t = merge.validate().merge().getAIS();
         
         UserTable targetTable = t.getUserTable(TABLENAME);
@@ -91,6 +94,8 @@ public class AISMergeTest {
         checkColumns(targetTable.getPrimaryKey().getColumns(), "c1");
         
         t.checkIntegrity();
+        assertNotNull(t.getGroup(TABLE));
+        assertNotNull(t.getGroup(TABLE).getGroupTable().getIndex("t1$PRIMARY"));
     }
     
     @Test
@@ -100,7 +105,7 @@ public class AISMergeTest {
         b.index(SCHEMA, TABLE, "c1", true, Index.UNIQUE_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, "c1", "c1", 0, true, 0);
         
-        AISMerge merge = new AISMerge (t,s);
+        AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
         t = merge.validate().merge().getAIS();
         
         UserTable targetTable = t.getUserTable(TABLENAME);
@@ -110,6 +115,10 @@ public class AISMergeTest {
         assertEquals (targetTable.getIndexes().size(), sourceTable.getIndexes().size());
         assertNotNull (targetTable.getIndex("c1"));
         checkIndexColumns (targetTable.getIndex("c1").getColumns(), "c1");
+        assertNotNull(t.getGroup(TABLE));
+        assertNotNull(t.getGroup(TABLE).getGroupTable().getIndex("t1$c1"));
+        
+        
     }
     
     private void checkColumns(List<Column> actual, String ... expected)
