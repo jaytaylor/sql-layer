@@ -249,16 +249,24 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         private List<Integer> list3 = new ArrayList<Integer>();
     }
     
-    private static int columnPosition(boolean useGroupPosition, Column column) {
-        return useGroupPosition ? column.getGroupColumn().getPosition() : column.getPosition();
+    private static int columnPosition(Map<? extends Table,Integer> flattenedRowOffsets, Column column) {
+        int position = column.getPosition();
+        if (flattenedRowOffsets != null) {
+            Integer offset = flattenedRowOffsets.get(column.getTable());
+            if (offset == null) {
+                throw new NullPointerException("no offset for " + column.getTable() + " in " + flattenedRowOffsets);
+            }
+            position += offset;
+        }
+        return position;
     }
 
     /**
      * @param ordinalMap Map of Tables to Ordinal values
      * @param indexTable If specified, prefer columns from this table over the hkey
-     * @param useGroupPosition Whether or not to use a Columns position in the group
+     * @param flattenedRowOffsets Whether or not to use a Columns position in the group
      */
-    protected void computeFieldAssociations(Map<Table,Integer> ordinalMap, Table indexTable, boolean useGroupPosition) {
+    protected void computeFieldAssociations(Map<Table,Integer> ordinalMap, Table indexTable, Map<? extends Table,Integer> flattenedRowOffsets) {
         freezeColumns();
         computeHKeyEquivalent();
 
@@ -270,7 +278,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         for (IndexColumn iColumn : getColumns()) {
             Column column = iColumn.getColumn();
             indexColumns.add(column);
-            rowCompBuilder.rowCompEntry(columnPosition(useGroupPosition, column), -1);
+            rowCompBuilder.rowCompEntry(columnPosition(flattenedRowOffsets, column), -1);
         }
 
         // Add hkey fields not already included
@@ -285,10 +293,10 @@ public abstract class Index implements Serializable, ModelNames, Traversable
 
                 if (!indexColumns.contains(column)) {
                     if (indexTable == null) {
-                        rowCompBuilder.rowCompEntry(columnPosition(useGroupPosition, column), -1);
+                        rowCompBuilder.rowCompEntry(columnPosition(flattenedRowOffsets, column), -1);
                     }
                     else if (indexTable.getColumnsIncludingInternal().contains(column)) {
-                        rowCompBuilder.rowCompEntry(columnPosition(useGroupPosition, column), -1);
+                        rowCompBuilder.rowCompEntry(columnPosition(flattenedRowOffsets, column), -1);
                     }
                     else {
                         assert hKeySegment.table().isUserTable() : this;
@@ -298,7 +306,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
                 }
 
                 int indexRowPos = indexColumns.indexOf(column);
-                int fieldPos = column == null ? -1 : columnPosition(useGroupPosition, column);
+                int fieldPos = column == null ? -1 : columnPosition(flattenedRowOffsets, column);
                 toHKeyBuilder.toHKeyEntry(-1, indexRowPos, fieldPos);
             }
         }

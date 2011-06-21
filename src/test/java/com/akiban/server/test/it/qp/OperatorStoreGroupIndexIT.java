@@ -214,7 +214,7 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                     throw new AssertionError(i);
                 }
                 fields.add(row.field(rowIndex, UndefBindings.only()));
-                columns.add(groupIndex.getGroup().getGroupTable().getColumn(rowIndex).getUserColumn());
+                columns.add(groupIndex.getColumnForFlattenedRow(rowIndex));
             }
             strings.add(action + giName + ' ' + fields + " cols" + columns);
         }
