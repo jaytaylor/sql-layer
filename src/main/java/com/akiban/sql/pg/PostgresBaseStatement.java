@@ -27,14 +27,18 @@ public abstract class PostgresBaseStatement implements PostgresStatement
 {
     private List<String> columnNames;
     private List<PostgresType> columnTypes;
+    private List<PostgresType> parameterTypes;
 
-    protected PostgresBaseStatement() {
+    protected PostgresBaseStatement(List<PostgresType> parameterTypes) {
+        this.parameterTypes = parameterTypes;
     }
 
     protected PostgresBaseStatement(List<String> columnNames, 
-                                    List<PostgresType> columnTypes) {
+                                    List<PostgresType> columnTypes,
+                                    List<PostgresType> parameterTypes) {
         this.columnNames = columnNames;
         this.columnTypes = columnTypes;
+        this.parameterTypes = parameterTypes;
     }
 
     public List<String> getColumnNames() {
@@ -47,6 +51,10 @@ public abstract class PostgresBaseStatement implements PostgresStatement
 
     public boolean isColumnBinary(int i) {
         return false;
+    }
+
+    public List<PostgresType> getParameterTypes() throws StandardException {
+        return parameterTypes;
     }
 
     public void sendDescription(PostgresServerSession server, boolean always) 

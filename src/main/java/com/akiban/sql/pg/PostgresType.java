@@ -362,4 +362,31 @@ public class PostgresType
         }
     }
 
+    public void pickEncoder() {
+        switch (oid) {
+        case INT2_TYPE_OID:
+        case INT4_TYPE_OID:
+        case INT8_TYPE_OID:
+            encoder = EncoderFactory.INT;
+            break;
+        case DATE_TYPE_OID:
+            encoder = EncoderFactory.DATE;
+            break;
+        case TIME_TYPE_OID:
+            encoder = EncoderFactory.TIME;
+            break;
+        case TIMESTAMP_TYPE_OID:
+            encoder = EncoderFactory.DATETIME;
+            break;
+        }
+    }
+
+    public Object decodeParameter(String value) throws StandardException {
+        System.out.println(oid + " -- " + encoder);
+        if (encoder != null)
+            return encoder.encodeFromObject(value);
+        else
+            return value;
+    }
+
 }

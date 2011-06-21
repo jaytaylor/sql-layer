@@ -27,6 +27,8 @@ import com.akiban.sql.optimizer.ExpressionRow;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
+import com.akiban.sql.parser.ValueNode;
+import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.sql.views.ViewDefinition;
 
@@ -115,11 +117,30 @@ public class PostgresOperatorCompiler extends OperatorCompiler
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
         Result result = compile(dmlStmt);
 
-        logger.debug("Operator:\n{}", result);
+        List<PostgresType> parameterTypes = null;
+        {
+            List<ValueNode> parameterNodes = session.getParser().getParameterList();
+            if ((parameterNodes != null) && (parameterNodes.size() > 0)) {
+                parameterTypes = new ArrayList<PostgresType>(parameterNodes.size());
+                for (ValueNode valueNode : parameterNodes) {
+                    DataTypeDescriptor sqlType = valueNode.getType();
+                    PostgresType pgType = null;
+                    if (sqlType != null) {
+                        pgType = PostgresType.fromDerby(sqlType);
+                        if (pgType != null)
+                            pgType.pickEncoder();
+                    }
+                    parameterTypes.add(pgType);
+                }
+            }
+        }
+
+        logger.debug("Operator:\n{}\n{}", result, parameterTypes);
 
         if (result.isModify())
             return new PostgresModifyOperatorStatement(stmt.statementToString(),
-                                                       (UpdatePlannable) result.getResultOperator());
+                                                       (UpdatePlannable) result.getResultOperator(),
+                                                       parameterTypes);
         else {
             int ncols = result.getResultColumns().size();
             List<String> columnNames = new ArrayList<String>(ncols);
@@ -131,6 +152,7 @@ public class PostgresOperatorCompiler extends OperatorCompiler
             }
             return new PostgresOperatorStatement((PhysicalOperator)result.getResultOperator(),
                                                  columnNames, columnTypes,
+                                                 parameterTypes,
                                                  result.getOffset(),
                                                  result.getLimit());
         }
