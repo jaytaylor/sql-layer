@@ -45,6 +45,7 @@ import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
 import com.akiban.server.util.GroupIndexCreator;
+import com.akiban.util.Strings;
 import com.akiban.util.Undef;
 import junit.framework.Assert;
 
@@ -185,6 +186,7 @@ public class ApiTestBase {
     private ServiceManager sm;
     private Session session;
     private int aisGeneration;
+    private int akibanFKCount;
 
     @Before
     public final void startTestServices() throws Exception {
@@ -257,6 +259,13 @@ public class ApiTestBase {
 
     protected final Store store() {
         return sm.getStore();
+    }
+
+    protected String akibanFK(String childCol, String parentTable, String parentCol) {
+        ++akibanFKCount;
+        return String.format("CONSTRAINT __akiban_fk_%d FOREIGN KEY __akiban_fk_%d (%s) REFERENCES %s (%s)",
+                akibanFKCount, akibanFKCount, childCol, parentTable, parentCol
+        );
     }
 
     protected final Session session() {

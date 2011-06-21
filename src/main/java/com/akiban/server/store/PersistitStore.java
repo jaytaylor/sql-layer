@@ -1459,7 +1459,7 @@ public class PersistitStore implements Store {
         }
     }
 
-    public void traverse(Session session, Index index, IndexRecordVisitor visitor)
+    public <V extends IndexRecordVisitor> V traverse(Session session, Index index, V visitor)
             throws PersistitException, InvalidOperationException {
         if (index.isHKeyEquivalent()) {
             throw new IllegalArgumentException("HKeyEquivalent not allowed: " + index);
@@ -1474,5 +1474,6 @@ public class PersistitStore implements Store {
         } finally {
             releaseExchange(session, exchange);
         }
+        return visitor;
     }
 }
