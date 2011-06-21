@@ -461,9 +461,7 @@ public class AISBinder implements Visitor
         String schemaName = tableName.getSchemaName();
         if (schemaName == null)
             schemaName = defaultSchemaName;
-        Table result = ais.getUserTable(schemaName, 
-                                        // TODO: Akiban DB thinks it's case sensitive.
-                                        tableName.getTableName().toLowerCase());
+        Table result = ais.getUserTable(schemaName, tableName.getTableName());
         if (result == null)
             throw new StandardException("Table " + tableName.getFullTableName() +
                                         " not found");
@@ -672,7 +670,7 @@ public class AISBinder implements Visitor
         TableBinding tableBinding = (TableBinding)fromTable.getUserData();
         Table table = tableBinding.getTable();
         for (Column column : table.getColumns()) {
-            String columnName = column.getName().toUpperCase();
+            String columnName = column.getName();
             ValueNode valueNode = (ValueNode)
                 nodeFactory.getNode(NodeTypes.COLUMN_REFERENCE,
                                     columnName,

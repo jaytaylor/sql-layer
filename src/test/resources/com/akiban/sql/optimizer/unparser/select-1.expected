@@ -1,1 +1,1 @@
-SELECT ((user.t1.X + user.t1.Y) + user.t1.Z) AS _SQL_COL_1 FROM user.t1 WHERE (user.t1.X > 0) AND (user.t1.Y > 'foo')
+SELECT ((user.t1.x + user.t1.y) + user.t1.z) AS _SQL_COL_1 FROM user.t1 WHERE (user.t1.x > 0) AND (user.t1.y > 'foo')

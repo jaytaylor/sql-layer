@@ -356,7 +356,7 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
 
     private IndexBound itemIidIndexBound(int iid)
     {
-        return new IndexBound(userTable(item), row(itemRowType, iid, null), new SetColumnSelector(0));
+        return new IndexBound(row(itemIidIndexRowType, iid), new SetColumnSelector(0));
     }
 
     private List<RowType> list(RowType... rowTypes)

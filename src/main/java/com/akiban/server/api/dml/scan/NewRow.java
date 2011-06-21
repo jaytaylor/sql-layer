@@ -111,6 +111,13 @@ public abstract class NewRow {
     public abstract ColumnSelector getActiveColumns();
 
     /**
+     * Returns whether or not the column at the given position is null or unset.
+     * @param columnId the column whose value to test
+     * @return true if null or unset, false otherwise
+     */
+    public abstract boolean isColumnNull(int columnId);
+
+    /**
      * <p>Compares the specified object with this NewRow. Returns <tt>true</tt> if the given object is also a
      * <tt>NewRow</tt>, defines the same (ColumnId, Object) mapping and corresponds to the same TableId.</p>
      *

@@ -126,6 +126,11 @@ public class NiceRow extends NewRow {
     }
 
     @Override
+    public boolean isColumnNull(int columnId) {
+        return get(columnId) == null;
+    }
+
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder().append("[{");
         sb.append( rowDef.table().getName().getTableName() );

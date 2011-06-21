@@ -119,6 +119,11 @@ public final class LegacyRowWrapper extends NewRow
     }
 
     @Override
+    public boolean isColumnNull(int columnId) {
+        return toRowData().isNull(columnId);
+    }
+
+    @Override
     public boolean equals(Object o)
     {
         boolean eq;

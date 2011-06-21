@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -243,6 +244,10 @@ public class RowDefCache {
         return String.format("%s$$%s$$%s$$%s", groupName, schemaName, tableName, indexName);
     }
 
+    private static String getTreeName(String groupName, GroupIndex index) {
+        return String.format("%s$$%s", groupName, index.getIndexName().getName());
+    }
+    
     private RowDef createUserTableRowDef(UserTable table) {
         RowDef rowDef = new RowDef(table, tableStatusCache.getTableStatus(table.getTableId()));
         // parentRowDef
@@ -327,9 +332,18 @@ public class RowDefCache {
             } // else: Don't create a group table index for an artificial
               // IndeDef that has no fields.
         }
+        // Group indexes
+        final List<GroupIndex> groupIndexList = new ArrayList<GroupIndex>();
+        for (GroupIndex index : table.getGroup().getIndexes()) {
+            String treeName = getTreeName(groupTableName, index);
+            IndexDef indexDef = new IndexDef(treeName, rowDef, index);
+            groupIndexList.add(index);
+
+        }
         rowDef.setTreeName(groupTableTreeName);
         rowDef.setUserTableRowDefs(userTableRowDefs);
         rowDef.setIndexes(indexList.toArray(new Index[indexList.size()]));
+        rowDef.setGroupIndexes(groupIndexList.toArray(new GroupIndex[groupIndexList.size()]));
         return rowDef;
     }
     

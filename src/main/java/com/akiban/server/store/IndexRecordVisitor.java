@@ -48,5 +48,5 @@ public abstract class IndexRecordVisitor
         return keyList;
     }
 
-    private Exchange exchange;
+    protected Exchange exchange;
 }

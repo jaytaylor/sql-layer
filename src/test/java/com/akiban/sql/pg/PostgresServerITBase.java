@@ -59,6 +59,9 @@ public class PostgresServerITBase extends ITBase
 
     public void loadDatabase(File dir) throws Exception {
         loadSchemaFile(new File(dir, "schema.ddl"));
+        File groupIndex = new File(dir, "group.idx");
+        if (groupIndex.exists())
+            loadGroupIndexFile(groupIndex);
         for (File data : dir.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
             loadDataFile(data);
         }
@@ -95,6 +98,29 @@ public class PostgresServerITBase extends ITBase
                         line = line.substring(0, line.length() - 1);
                     tableDefinition.add(line);
                 }
+            }
+        }
+        finally {
+            if (rdr != null) {
+                try {
+                    rdr.close();
+                }
+                catch (IOException ex) {
+                }
+            }
+        }
+    }
+
+    protected void loadGroupIndexFile(File file) throws Exception {
+        Reader rdr = null;
+        try {
+            rdr = new FileReader(file);
+            BufferedReader brdr = new BufferedReader(rdr);
+            while (true) {
+                String line = brdr.readLine();
+                if (line == null) break;
+                String defn[] = line.split("\t");
+                createGroupIndex(defn[0], defn[1], defn[2]);
             }
         }
         finally {

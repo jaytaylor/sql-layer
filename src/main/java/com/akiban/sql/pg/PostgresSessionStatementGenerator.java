@@ -17,6 +17,7 @@ package com.akiban.sql.pg;
 
 import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.StatementNode;
+import com.akiban.sql.parser.TransactionControlNode;
 
 import com.akiban.sql.StandardException;
 
@@ -31,6 +32,25 @@ public class PostgresSessionStatementGenerator extends PostgresBaseStatementGene
                                       StatementNode stmt, int[] paramTypes) 
             throws StandardException {
         switch (stmt.getNodeType()) {
+        case NodeTypes.TRANSACTION_CONTROL_NODE:
+            {
+                PostgresSessionStatement.Operation operation;
+                switch (((TransactionControlNode)stmt).getOperation()) {
+                case BEGIN:
+                    operation = PostgresSessionStatement.Operation.BEGIN_TRANSACTION;
+                    break;
+                case COMMIT:
+                    operation = PostgresSessionStatement.Operation.COMMIT_TRANSACTION;
+                    break;
+                case ROLLBACK:
+                    operation = PostgresSessionStatement.Operation.ROLLBACK_TRANSACTION;
+                    break;
+                default:
+                    assert false : "Unknown operation " + stmt;
+                    operation = null;
+                }
+                return new PostgresSessionStatement(operation, stmt);
+            }
         default:
             return null;
         }

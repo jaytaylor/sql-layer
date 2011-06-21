@@ -233,6 +233,17 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         this.rowCollectorId = idCounter.getAndIncrement();
     }
 
+    protected static ColumnSelector indexSelectorFromTableSelector(Index index, final ColumnSelector tableSelector) {
+        final IndexRowComposition rowComp = index.indexRowComposition();
+        return new ColumnSelector() {
+            @Override
+            public boolean includesColumn(int columnPosition) {
+                int tablePos = rowComp.getFieldPosition(columnPosition);
+                return tableSelector.includesColumn(tablePos);
+            }
+        };
+    }
+
     private void createPlan(ScanLimit scanLimit, boolean singleRow, boolean descending, boolean deep)
     {
         // Plan and query

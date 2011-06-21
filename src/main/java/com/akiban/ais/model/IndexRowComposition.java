@@ -24,14 +24,12 @@ import java.util.Arrays;
  * fields are whatever is necessary to ensure that all of the hkey is represented.
  */
 public class IndexRowComposition {
-    public IndexRowComposition(int[] depths, int[] fieldPositions, int[] hkeyPositions) {
-        if(depths.length != fieldPositions.length || depths.length != hkeyPositions.length) {
-            throw new IllegalArgumentException("All indexes must be of equal length: " +
-                                               depths.length + ", " +
+    public IndexRowComposition(int[] fieldPositions, int[] hkeyPositions) {
+        if(fieldPositions.length != hkeyPositions.length) {
+            throw new IllegalArgumentException("Both arrays must be of equal length: " +
                                                fieldPositions.length + ", " +
                                                hkeyPositions.length);
         }
-        this.depths = depths;
         this.fieldPositions = fieldPositions;
         this.hkeyPositions = hkeyPositions;
     }
@@ -42,10 +40,6 @@ public class IndexRowComposition {
 
     public boolean isInHKey(int indexPos) {
         return hkeyPositions[indexPos] >= 0;
-    }
-
-    public int getDepth(int indexPos) {
-        return depths[indexPos];
     }
 
     public int getFieldPosition(int indexPos) {
@@ -62,13 +56,10 @@ public class IndexRowComposition {
 
     @Override
     public String toString() {
-        return "depths: " + Arrays.toString(depths) +
-               " fieldPos: " + Arrays.toString(fieldPositions) +
+        return "fieldPos: " + Arrays.toString(fieldPositions) +
                " hkeyPos: " + Arrays.toString(hkeyPositions);
     }
 
-    /** If set, value >= 0, is the depth of the associated table for index position i **/
-    private final int[] depths;
     /** If set, value >= 0, is the field position for index position i **/
     private final int[] fieldPositions;
     /** If set, value >= 0, is the hkey position for index position i **/

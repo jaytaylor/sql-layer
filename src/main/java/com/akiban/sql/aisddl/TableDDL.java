@@ -84,6 +84,7 @@ public class TableDDL
         IndexNameGenerator indexNamer = new IndexNameGenerator();
         
         builder.userTable(schemaName, tableName);
+
         int colpos = 0;
         // first loop through table elements, add the columns
         for (TableElementNode tableElement : createTable.getTableElementList()) {

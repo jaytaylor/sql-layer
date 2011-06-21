@@ -37,7 +37,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 
 import java.io.IOException;
 
-/** SQL statements that affect session / environment state. */
+/** SQL DDL statements. */
 public class PostgresDDLStatement implements PostgresStatement
 {
     private DDLStatementNode ddl;

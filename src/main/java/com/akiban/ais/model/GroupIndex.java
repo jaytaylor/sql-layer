@@ -15,6 +15,9 @@
 
 package com.akiban.ais.model;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -111,9 +114,7 @@ public class GroupIndex extends Index
 
     @Override
     public void computeFieldAssociations(Map<Table, Integer> ordinalMap) {
-        throw new UnsupportedOperationException("Implement");
-        // Probably something like:
-        //internalComputeFieldAssociations(ordinalMap, leftMostTable);
+        computeFieldAssociations(ordinalMap, null, true);
     }
 
     public Group getGroup()
@@ -129,9 +130,7 @@ public class GroupIndex extends Index
     
     @SuppressWarnings("unused")
     private GroupIndex()
-    {
-
-    }
+    {}
 
     private Group group;
     private final NavigableMap<Integer,UserTable> tablesByDepth = new TreeMap<Integer, UserTable>();

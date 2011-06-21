@@ -41,7 +41,7 @@ public class TableIndex extends Index
 
     @Override
     public void computeFieldAssociations(Map<Table, Integer> ordinalMap) {
-        internalComputeFieldAssociations(ordinalMap, getTable());
+        computeFieldAssociations(ordinalMap, getTable(), false);
     }
 
     @Override
