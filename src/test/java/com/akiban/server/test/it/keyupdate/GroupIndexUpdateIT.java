@@ -17,6 +17,7 @@ package com.akiban.server.test.it.keyupdate;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.store.IndexRecordVisitor;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.Strings;
@@ -30,6 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public final class GroupIndexUpdateIT extends ITBase {
 
@@ -100,16 +102,27 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test(expected = OperatorStore.UniqueIndexUnsupportedException.class)
     public void uniqueGI() {
+        OperatorStore.DEBUG_POINT.set(true);
         try {
             createGroupIndex(groupName, "name_when_sku", true, "c.name, o.when, i.sku");
         } catch (UnsupportedOperationException e) {
+            // irrelevant
+        }
+        try {
+            writeRows(
+                    createNewRow(c, 1L, "Horton")
+            );
+        } catch (final Exception e) {
+            for (Throwable cause = e; cause != null; cause = cause.getCause()) {
+                if (cause instanceof OperatorStore.UniqueIndexUnsupportedException) {
+                    throw (OperatorStore.UniqueIndexUnsupportedException)cause;
+                }
+            }
             throw new RuntimeException(e);
         }
-        writeRows(
-                createNewRow(c, 1L, "Horton")
-        );
+        fail("expected an exception of some sort");
     }
 
     @Test
@@ -125,11 +138,12 @@ public final class GroupIndexUpdateIT extends ITBase {
         checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001");
 
         // delete from root on up
+        OperatorStore.DEBUG_POINT.set(true);
         dml().deleteRow(session(), createNewRow(c, 1L, "Horton"));
         checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001");
 
         dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
-        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001");
+        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001");
 
         dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111));
         checkIndex(indexName);
@@ -152,7 +166,7 @@ public final class GroupIndexUpdateIT extends ITBase {
         // delete from root on up
 
         dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
-        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001");
+        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001");
 
         dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111));
         checkIndex(indexName);
@@ -403,9 +417,40 @@ public final class GroupIndexUpdateIT extends ITBase {
                 null
         );
 
+        checkIndex("sku_handling");
+    }
+
+    @Test
+    public void updateMovesHKeyWithinBranch() {
+        // branch is I-H, we're modifying the hkey of an H
+        createGroupIndex(groupName, "sku_handling", "i.sku, h.handling_instructions");
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(o, 11L, 1L, "01-01-2001"),
+                createNewRow(i, 101L, 11L, "1111"),
+                createNewRow(h, 1001L, 101L, "don't break"),
+                createNewRow(c, 2L, "David"),
+                createNewRow(o, 12L, 2L, "02-02-2002"),
+                createNewRow(i, 102L, 12L, "2222"),
+
+                createNewRow(o, 66L, 6L, "03-03-2003"),
+                createNewRow(i, 666L, 66L, "6666")
+        );
         checkIndex(
                 "sku_handling",
-                "2222, don't break, null, null, 666, 1001"
+                "1111, don't break, 1, 11, 101, 1001"
+        );
+
+        dml().updateRow(
+                session(),
+                createNewRow(h, 1001L, 101L, "don't break"),
+                createNewRow(h, 1001L, 666L, "don't break"),
+                null
+        );
+
+        checkIndex(
+                "sku_handling",
+                "6666, don't break, 6, 66, 666, 1001"
         );
     }
 

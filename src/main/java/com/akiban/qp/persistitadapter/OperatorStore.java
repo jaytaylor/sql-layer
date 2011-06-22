@@ -61,11 +61,9 @@ import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Exchange;
 import com.persistit.Key;
-import com.persistit.Persistit;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
-import com.sun.corba.se.spi.ior.IdentifiableFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -226,7 +224,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         for(GroupIndex groupIndex : groupIndexes) {
             PhysicalOperator plan = groupIndexCreationPlan(adapter.schema(), groupIndex);
             runMaintenancePlan(adapter, groupIndex, plan, UndefBindings.only(),
-                    new PersistitKeyHandler(adapter), new RowAction(null, Action.STORE)); // TODO
+                    new PersistitKeyHandler(adapter), RowAction.FOR_BULK);
         }
     }
 
@@ -291,7 +289,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
             for (GroupIndex groupIndex : optionallyOrderGroupIndexes(branchIndexes)) {
                 if (groupIndex.isUnique()) {
-                    throw new UnsupportedOperationException("unique indexes not supported");
+                    throw new UniqueIndexUnsupportedException();
                 }
                 PhysicalOperator plan = groupIndexCreationPlan(
                         adapter.schema(),
@@ -485,26 +483,23 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
             UserTable sourceTable = action.sourceTable();
             final boolean sourceRowAboveIndex;
-            final UserTable leafmost = groupIndex.leafMostTable();
+            final UserTable leafMost = groupIndex.leafMostTable();
             if (sourceTable == null) {
+                assert Action.BULK_ADD.equals(action.action) : action;
                 sourceRowAboveIndex = true;
             }
-            else if (sourceTable.equals(leafmost)) {
+            else if (sourceTable.equals(leafMost)) {
                 sourceRowAboveIndex = false;
             }
-            else if (sourceTable.isDescendantOf(leafmost)) {
+            else if (sourceTable.isDescendantOf(leafMost)) {
                 return; // nothing to do
             }
             else if (groupIndex.rootMostTable().equals(sourceTable)) {
                 sourceRowAboveIndex = false;
             }
-            else if (groupIndex.rootMostTable().isDescendantOf(sourceTable)) {
-                sourceRowAboveIndex = true;
-            }
             else {
-                sourceRowAboveIndex = false; // source table is within this branch
+                sourceRowAboveIndex = groupIndex.rootMostTable().isDescendantOf(sourceTable);
             }
-
 
             // nullPoint is the point at which we should stop nulling hkey values; needs a better name.
             // This is the last index of the hkey component that should be nulled.
@@ -525,7 +520,15 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 }
             }
 
+            if (!Action.BULK_ADD.equals(action.action()) && sourceRowAboveIndex && nullPoint < 0) {
+                return;
+            }
+
             switch (action.action()) {
+            case BULK_ADD:
+                assert nullPoint < 0 : nullPoint;
+                exchange.store();
+                break;
             case STORE:
                 exchange.store();
                 if (nullOutHKey(nullPoint, groupIndex, row, key)) {
@@ -588,8 +591,9 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
 
         public RowAction(UserTable sourceTable, Action action) {
-//            assert sourceTable != null : "source table is null"; // TODO this shouldn't be null, I think
             assert action != null : "action is null";
+            assert Action.BULK_ADD.equals(action) == (sourceTable == null)
+                    : String.format("(sourceTable=null)==%s but action=%s", sourceTable==null, action);
             this.sourceTable = sourceTable;
             this.action = action;
         }
@@ -601,6 +605,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
         private final UserTable sourceTable;
         private final Action action;
+
+        private static RowAction FOR_BULK = new RowAction(null, Action.BULK_ADD);
     }
 
     private static class BranchTables {
@@ -705,5 +711,11 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         void handleRow(A action, GroupIndex groupIndex, Row row) throws T;
     }
 
-    public enum Action {STORE, DELETE }
+    public enum Action {STORE, DELETE, BULK_ADD }
+
+    public class UniqueIndexUnsupportedException extends UnsupportedOperationException {
+        public UniqueIndexUnsupportedException() {
+            super("unique indexes not supported");
+        }
+    }
 }

@@ -70,7 +70,7 @@ public class GroupIndexCreator {
         final String tableColPairs[] = tableColumnList.split(",");
 
         int pos = 0;
-        final GroupIndex tmpIndex = new GroupIndex(group, indexName, 0, false, "KEY");
+        final GroupIndex tmpIndex = new GroupIndex(group, indexName, 0, unique, "KEY");
         for(String tableCol : tableColPairs) {
             int period = tableCol.indexOf('.');
             if(period == -1) {
