@@ -240,8 +240,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     protected final <A,T extends Throwable> void maintainGroupIndexes(
             Session session,
             RowData rowData,
-            GroupIndexHandler<A,T> handler,
-            A action
+            GroupIndexHandler<A,T> handler, A action
     )
     throws PersistitException, T
     {
@@ -258,11 +257,9 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     private <A,T extends Throwable> void maintainGroupIndexes(
             Session session,
-            AkibanInformationSchema ais,
-            PersistitAdapter adapter,
+            AkibanInformationSchema ais, PersistitAdapter adapter,
             RowData rowData,
-            GroupIndexHandler<A,T> handler,
-            A action
+            GroupIndexHandler<A,T> handler, A action
     )
     throws PersistitException, T
     {
@@ -301,8 +298,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             GroupIndex groupIndex,
             PhysicalOperator plan,
             Bindings bindings,
-            GroupIndexHandler<A,T> handler,
-            A action
+            GroupIndexHandler<A,T> handler, A action
     )
     throws T
     {
@@ -369,6 +365,13 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         return plan;
     }
 
+    /**
+     * Create plan for the complete selection of all rows of the given GroupIndex (e.g. creating an
+     * index on existing date).
+     * @param schema Schema
+     * @param groupIndex GroupIndex
+     * @return PhysicalOperator
+     */
     static PhysicalOperator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex) {
         BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
 
