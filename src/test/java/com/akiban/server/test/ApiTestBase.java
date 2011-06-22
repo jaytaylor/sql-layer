@@ -312,7 +312,7 @@ public class ApiTestBase {
         return createTable(schema, table, unifiedDef.toString());
     }
 
-    protected final void createGroupIndex(String groupName, String indexName, String tableColumnPairs)
+    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs)
             throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
         final Index index;
@@ -322,6 +322,7 @@ public class ApiTestBase {
             throw new InvalidOperationException(e);
         }
         ddl().createIndexes(session(), Collections.singleton(index));
+        return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
     }
 
     /**

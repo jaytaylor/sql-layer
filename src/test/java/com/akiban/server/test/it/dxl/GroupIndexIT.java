@@ -20,12 +20,21 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Table;
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.store.IndexRecordVisitor;
 import com.akiban.server.test.it.ITBase;
+import junit.framework.Assert;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
+import java.io.Serializable;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -33,15 +42,31 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 public class GroupIndexIT extends ITBase {
-    private void createTables() {
-        createTable("test", "c", "id int key, name varchar(32)");
-        createTable("test", "o", "id int key, cid int, odate int, constraint __akiban foreign key(cid) references c(id)");
+    private int cId;
+    private int aId;
+    private int oId;
+    private int iId;
+    private String groupName;
+
+    @Before
+    public void createTables() {
+        cId = createTable("test", "c", "id int key, name varchar(32)");
+        aId = createTable("test", "a", "id int key, cid int, addr varchar(32), constraint __akiban foreign key(cid) references c(id)");
+        oId = createTable("test", "o", "id int key, cid int, odate int, constraint __akiban foreign key(cid) references c(id)");
+        iId = createTable("test", "i", "id int key, oid int, sku int, constraint __akiban foreign key(oid) references o(id)");
+        groupName = getUserTable(cId).getGroup().getName();
+    }
+
+    @After
+    public void removeTables() {
+        String groupName = getUserTable(cId).getGroup().getName();
+        ddl().dropGroup(session(), groupName);
+        cId = aId = oId = iId = -1;
+        groupName = "";
     }
 
     @Test
     public void basicCreation() throws InvalidOperationException {
-        createTables();
-        final String groupName = getUserTable("test", "c").getGroup().getName();
         createGroupIndex(groupName, "name_date", "c.name, o.odate");
         final Group group = ddl().getAIS(session()).getGroup(groupName);
         assertEquals("group index count", 1, group.getIndexes().size());
@@ -62,8 +87,6 @@ public class GroupIndexIT extends ITBase {
 
     @Test
     public void basicDeletion() throws InvalidOperationException {
-        createTables();
-        final String groupName = getUserTable("test","c").getGroup().getName();
         createGroupIndex(groupName, "name_date", "c.name, o.odate");
         assertNotNull("name_date exists", ddl().getAIS(session()).getGroup(groupName).getIndex("name_date"));
         ddl().dropGroupIndexes(session(), groupName, Collections.singleton("name_date"));
@@ -78,19 +101,121 @@ public class GroupIndexIT extends ITBase {
 
     @Test(expected=InvalidOperationException.class)
     public void tableNotInGroup() throws InvalidOperationException {
-        createTables();
         createTable("test", "foo", "id int key, d double");
-        final String groupName = getUserTable("test","c").getGroup().getName();
         createGroupIndex(groupName, "name_d", "c.name, foo.d");
     }
 
     @Test(expected=GroupIndex.GroupIndexCreationException.class)
     public void branchingNotAllowed() throws InvalidOperationException {
-        createTables();
-        createTable("test", "a", "id int key, cid int, addr int, constraint __akiban foreign key(cid) references c(id)");
-        final String groupName = getUserTable("test","c").getGroup().getName();
         createGroupIndex(groupName, "name_addr_date", "c.name, a.addr, o.odate");
     }
+
+    @Test
+    public void createCOWithExistingData() throws Exception {
+        writeRows(createNewRow(cId, 1, "bob"),
+                    createNewRow(oId, 1, 1, 20100702),
+                    createNewRow(oId, 2, 1, 20110621),
+                  createNewRow(cId, 2, "jill"),
+                    createNewRow(oId, 3, 2, 20050930),
+                  createNewRow(cId, 3, "foo"),
+                  createNewRow(cId, 4, "bar"));
+
+        GroupIndex oDate_cName = createGroupIndex(groupName, "oDate_cName", "o.odate, c.name");
+        expectIndexContents(oDate_cName,
+                            new Object[]{20050930L, "jill", 2L, 3L},
+                            new Object[]{20100702, "bob", 1L, 1L},
+                            new Object[]{20110621, "bob", 1L, 2L});
+    }
+
+    @Test
+    public void createIOWithExistingData() throws Exception {
+        writeRows(createNewRow(cId, 1, "bob"),
+                    createNewRow(oId, 1, 1, 20100702),
+                      createNewRow(iId, 1, 1, 5623),
+                      createNewRow(iId, 2, 1, 1832),
+                    createNewRow(oId, 2, 1, 20110621),
+                  createNewRow(cId, 2, "jill"),
+                    createNewRow(oId, 3, 2, 20050930),
+                      createNewRow(iId, 3, 3, 9218),
+                      createNewRow(iId, 4, 3, 7822),
+                  createNewRow(cId, 3, "foo"),
+                  createNewRow(cId, 4, "bar"),
+                    createNewRow(oId, 4, 4, 20070101),
+                      createNewRow(iId, 5, 4, 3456L));
+
+        GroupIndex iSku_oDate = createGroupIndex(groupName, "iSku_oDate", "i.sku, o.odate");
+        expectIndexContents(iSku_oDate,
+                            new Object[]{1832L, 20100702L, 1L, 1L, 2L},
+                            new Object[]{3456L, 20070101L, 4L, 4L, 5L},
+                            new Object[]{5623L, 20100702L, 1L, 1L, 1L},
+                            new Object[]{7822L, 20050930L, 2L, 3L, 4L},
+                            new Object[]{9218L, 20050930L, 2L, 3L, 3L});
+    }
+
+    @Test
+    public void createACWithExistingData() throws Exception {
+        writeRows(createNewRow(cId, 1, "bob"),
+                    createNewRow(aId, 3, 1, 123),
+                  createNewRow(cId, 2, "jill"),
+                    createNewRow(aId, 1, 2, 875),
+                  createNewRow(cId, 3, "foo"),
+                  createNewRow(cId, 4, "bar"),
+                    createNewRow(aId, 2, 4, 23));
+
+        GroupIndex aAddr_cID = createGroupIndex(groupName, "aAddr_cID", "a.addr, c.id");
+        expectIndexContents(aAddr_cID,
+                            new Object[]{123L, 1L, 1L, 3L},
+                            new Object[]{23L, 4L, 4L, 2L},
+                            new Object[]{875L, 2L, 2L, 1L});
+    }
+
+
+    private void expectIndexContents(GroupIndex groupIndex, Object[]... keys) throws Exception {
+        final Iterator<Object[]> keyIt = Arrays.asList(keys).iterator();
+        final List<List<Object>> extraKeys = new ArrayList<List<Object>>();
+
+        final int[] curKey = {0};
+        final String indexName = groupIndex.getIndexName().getName();
+        persistitStore().traverse(session(), groupIndex, new IndexRecordVisitor() {
+            @Override
+            public void visit(List<Object> actual) {
+                if(!keyIt.hasNext()) {
+                    extraKeys.add(actual);
+                }
+                else {
+                    List<Object> expected = Arrays.asList(keyIt.next());
+                    assertEquals(String.format("Key entry %d of index %s", curKey[0], indexName),
+                                 expected.toString(), actual.toString());
+                    curKey[0]++;
+                }
+            }
+        });
+
+        if(!extraKeys.isEmpty()) {
+            Assert.fail(String.format("Extra keys tree for index %s: %s", indexName, extraKeys));
+        }
+        else if(keyIt.hasNext()) {
+            String expectedMoreStr = "";
+            for(int i = curKey[0]; i < keys.length; ++i) {
+                expectedMoreStr += Arrays.toString(keys[i]) + ",";
+            }
+            Assert.fail(String.format("Expected more keys in index %s: %s", indexName, expectedMoreStr));
+        }
+    }
+
+/*
+            writeRows(createNewRow(cId, 1, "bob"),
+                    createNewRow(oId, 1, 1, "2010-07-02"),
+                      createNewRow(iId, 1, 1, 2435),
+                      createNewRow(iId, 2, 1, 3246),
+                    createNewRow(oId, 2, 1, "2011-06-21"),
+                      createNewRow(iId, 3, 2, 8493),
+                  createNewRow(cId, 2, "jill"),
+                    createNewRow(oId, 3, 2, "2005-09-30"),
+                      createNewRow(iId, 4, 3, 9232),
+                  createNewRow(cId, 3, "foo"),
+                  createNewRow(cId, 4, "bar"));
+    */
 
     private static void checkGroupIndexes(Table onTable, GroupIndex... indexes) {
         Set<GroupIndex> expected = new HashSet<GroupIndex>(Arrays.asList(indexes));
