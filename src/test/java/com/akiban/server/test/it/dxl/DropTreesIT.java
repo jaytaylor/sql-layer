@@ -346,4 +346,74 @@ public final class DropTreesIT extends ITBase {
         expectNoTree(o);
         expectNoTree(c);
     }
+
+    @Test
+    public void groupIndexWithNoData() throws Exception {
+        int pid = createTable("s", "p", "id int key, name varchar(32)");
+        int cid = createTable("s", "c", "id int key, pid int, val int, constraint __akiban foreign key(pid) references p(id))");
+        Table p = getUserTable(pid);
+        Table c = getUserTable(cid);
+        Index index = createGroupIndex(p.getGroup().getName(), "name_val", "p.name,c.val");
+        ddl().dropTable(session(), c.getName());
+        expectNoTree(index);
+        ddl().dropTable(session(), p.getName());
+        expectNoTree(c);
+        expectNoTree(p);
+    }
+
+    @Test
+    public void groupIndexWithData() throws Exception {
+        int pid = createTable("s", "p", "id int key, name varchar(32)");
+        int cid = createTable("s", "c", "id int key, pid int, val int, constraint __akiban foreign key(pid) references p(id))");
+        Table p = getUserTable(pid);
+        Table c = getUserTable(cid);
+        Index index = createGroupIndex(p.getGroup().getName(), "name_val", "p.name,c.val");
+        writeRows(createNewRow(pid, 1, "bob"),
+                    createNewRow(cid, 1, 1, 100),
+                    createNewRow(cid, 2, 1, 101),
+                  createNewRow(pid, 2, "joe"),
+                    createNewRow(cid, 3, 2, 102),
+                  createNewRow(pid, 3, "foo"));
+        ddl().dropTable(session(), c.getName());
+        expectNoTree(index);
+        ddl().dropTable(session(), p.getName());
+        expectNoTree(c);
+        expectNoTree(p);
+    }
+
+    @Test
+    public void dropGroupIndexWithNoData() throws Exception {
+        int pid = createTable("s", "p", "id int key, name varchar(32)");
+        int cid = createTable("s", "c", "id int key, pid int, val int, constraint __akiban foreign key(pid) references p(id))");
+        Table p = getUserTable(pid);
+        Table c = getUserTable(cid);
+        Index index = createGroupIndex(p.getGroup().getName(), "name_val", "p.name,c.val");
+        ddl().dropGroupIndexes(session(), p.getGroup().getName(), Collections.singleton("name_val"));
+        ddl().dropTable(session(), c.getName());
+        expectNoTree(index);
+        ddl().dropTable(session(), p.getName());
+        expectNoTree(c);
+        expectNoTree(p);
+    }
+
+    @Test
+    public void dropGroupIndexWithData() throws Exception {
+        int pid = createTable("s", "p", "id int key, name varchar(32)");
+        int cid = createTable("s", "c", "id int key, pid int, val int, constraint __akiban foreign key(pid) references p(id))");
+        Table p = getUserTable(pid);
+        Table c = getUserTable(cid);
+        Index index = createGroupIndex(p.getGroup().getName(), "name_val", "p.name,c.val");
+        writeRows(createNewRow(pid, 1, "bob"),
+                    createNewRow(cid, 1, 1, 100),
+                    createNewRow(cid, 2, 1, 101),
+                  createNewRow(pid, 2, "joe"),
+                    createNewRow(cid, 3, 2, 102),
+                  createNewRow(pid, 3, "foo"));
+        ddl().dropGroupIndexes(session(), p.getGroup().getName(), Collections.singleton("name_val"));
+        expectNoTree(index);
+        ddl().dropTable(session(), c.getName());
+        ddl().dropTable(session(), p.getName());
+        expectNoTree(c);
+        expectNoTree(p);
+    }
 }
