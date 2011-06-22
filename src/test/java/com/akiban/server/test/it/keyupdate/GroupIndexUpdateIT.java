@@ -104,7 +104,6 @@ public final class GroupIndexUpdateIT extends ITBase {
 
     @Test(expected = OperatorStore.UniqueIndexUnsupportedException.class)
     public void uniqueGI() {
-        OperatorStore.DEBUG_POINT.set(true);
         try {
             createGroupIndex(groupName, "name_when_sku", true, "c.name, o.when, i.sku");
         } catch (UnsupportedOperationException e) {
@@ -138,7 +137,6 @@ public final class GroupIndexUpdateIT extends ITBase {
         checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001");
 
         // delete from root on up
-        OperatorStore.DEBUG_POINT.set(true);
         dml().deleteRow(session(), createNewRow(c, 1L, "Horton"));
         checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001");
 

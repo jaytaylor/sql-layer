@@ -464,8 +464,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     private static final int HKEY_BINDING_POSITION = 0;
     private static final int MAX_RETRIES = 10;
 
-    public static AtomicBoolean DEBUG_POINT = new AtomicBoolean(false); // TODO remove this! If you see this in a merge proposal, tell Yuval to remove it!
-
     // nested classes
 
     private static class PersistitKeyHandler implements GroupIndexHandler<RowAction,PersistitException> {
