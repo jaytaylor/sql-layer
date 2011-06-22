@@ -20,9 +20,7 @@ import com.akiban.sql.pg.PostgresSessionTracer;
 public interface InstrumentationService {
 
     public PostgresSessionTracer createSqlSessionTracer(int sessionId);
-    
-    public void removeSqlSessionTracer(int sessionId);
-    
+        
     public PostgresSessionTracer getSqlSessionTracer(int sessionId);
     
     /*

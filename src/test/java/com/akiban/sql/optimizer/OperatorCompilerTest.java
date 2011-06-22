@@ -19,6 +19,7 @@ import com.akiban.sql.TestBase;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.SQLParser;
+import com.akiban.sql.pg.PostgresSessionTracer;
 
 import org.junit.Test;
 import org.junit.runners.Parameterized;
@@ -38,7 +39,6 @@ import com.akiban.server.util.GroupIndexCreator;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.server.service.instrumentation.PostgresSessionTracer;
 import com.akiban.server.test.it.qp.TestRow;
 
 import org.junit.Before;

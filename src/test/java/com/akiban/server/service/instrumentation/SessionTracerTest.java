@@ -21,6 +21,8 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import com.akiban.sql.pg.PostgresSessionTracer;
+
 public class SessionTracerTest {
     
     @Test

@@ -15,35 +15,23 @@
 
 package com.akiban.server.service.instrumentation;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import com.akiban.server.service.Service;
-import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.sql.pg.PostgresServer;
 import com.akiban.sql.pg.PostgresSessionTracer;
 
 public class InstrumentationServiceImpl implements
-    InstrumentationService, JmxManageable, Service<InstrumentationService>, 
-    InstrumentationMXBean {
+    InstrumentationService, Service<InstrumentationService> {
     
     // InstrumentationService interface
     
     public synchronized PostgresSessionTracer createSqlSessionTracer(int sessionId) {
-        PostgresSessionTracer ret = new PostgresSessionTracer(sessionId, enabled.get());
-        currentSqlSessions.put(sessionId, ret);
+        PostgresSessionTracer ret = new PostgresSessionTracer(sessionId, pgServer.isInstrumentationEnabled());
         return ret;
     }
     
-    public synchronized void removeSqlSessionTracer(int sessionId) {
-        currentSqlSessions.remove(sessionId);
-    }
-    
     public synchronized PostgresSessionTracer getSqlSessionTracer(int sessionId) {
-        return currentSqlSessions.get(sessionId);
+        return (PostgresSessionTracer)pgServer.getConnection(sessionId).getSessionTracer();
     }
 
     // Service interface
@@ -60,128 +48,51 @@ public class InstrumentationServiceImpl implements
 
     @Override
     public void start() throws Exception {
-        // do we need to synchronize?
-        currentSqlSessions = new HashMap<Integer, PostgresSessionTracer>();
-        enabled = new AtomicBoolean(false);
+        pgServer = ServiceManagerImpl.get().getPostgresService().getServer();
     }
 
     @Override
     public void stop() throws Exception {
         // anything to do?
-        currentSqlSessions.clear();
-        enabled.set(false);
     }
 
     @Override
     public void crash() throws Exception {
         // anything to do?
     }
-    
-    // JmxManageable interface
-
-    @Override
-    public final JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("Instrumentation", this, InstrumentationMXBean.class);
-    }
-    
-    // InstrumentationMXBean
-
-    @Override
-    public Set<Integer> getCurrentSessions() {
-        return new HashSet<Integer>(currentSqlSessions.keySet());
-
-    }
 
     @Override
     public boolean isEnabled() {
-        return enabled.get();
+        return pgServer.isInstrumentationEnabled();
     }
 
     @Override
     public void enable() {
-        for (SessionTracer tracer : currentSqlSessions.values()) {
-            tracer.enable();
-        }
-        enabled.set(true);
+        pgServer.enableInstrumentation();
     }
 
     @Override
     public void disable() {
-        for (SessionTracer tracer : currentSqlSessions.values()) {
-            tracer.disable();
-        }
-        enabled.set(false);  
+        pgServer.disableInstrumentation();
     }
 
     @Override
     public boolean isEnabled(int sessionId) {
-        return getSqlSessionTracer(sessionId).isEnabled();
+        return pgServer.isInstrumentationEnabled(sessionId);
     }
 
     @Override
     public void enable(int sessionId) {
-        getSqlSessionTracer(sessionId).enable();   
+        pgServer.enableInstrumentation(sessionId);
     }
 
     @Override
     public void disable(int sessionId) {  
-        getSqlSessionTracer(sessionId).disable();
+        pgServer.disableInstrumentation(sessionId);
     }
-
-    @Override
-    public String getSqlText(int sessionId) {
-        return getSqlSessionTracer(sessionId).getCurrentStatement();
-    }
-
-    @Override
-    public String getRemoteAddress(int sessionId) {
-        return getSqlSessionTracer(sessionId).getRemoteAddress();
-    }
-
-    @Override
-    public Date getStartTime(int sessionId) {
-        return getSqlSessionTracer(sessionId).getStartTime();
-    }
-
-    @Override
-    public long getProcessingTime(int sessionId) {
-        return getSqlSessionTracer(sessionId).getProcessingTime();
-    }
-
-    @Override
-    public long getParseTime(int sessionId) {
-        return getSqlSessionTracer(sessionId).getEventTime("sql: parse");
-    }
-
-    @Override
-    public long getOptimizeTime(int sessionId) {
-        return getSqlSessionTracer(sessionId).getEventTime("sql: optimize");
-    }
-
-    @Override
-    public long getExecuteTime(int sessionId) {
-        return getSqlSessionTracer(sessionId).getEventTime("sql: execute");
-    }
-
-    @Override
-    public long getEventTime(int sessionId, String eventName) {
-        return getSqlSessionTracer(sessionId).getEventTime(eventName);
-    }
-
-    @Override
-    public long getTotalEventTime(int sessionId, String eventName) {
-        return getSqlSessionTracer(sessionId).getTotalEventTime(eventName);
-    }
-
-    @Override
-    public int getNumberOfRowsReturned(int sessionId) {
-        return getSqlSessionTracer(sessionId).getNumberOfRowsReturned();
-    }
-    
+  
     // state
-    
-    private Map<Integer, PostgresSessionTracer> currentSqlSessions;
-    
-    private AtomicBoolean enabled;
+            
+    private PostgresServer pgServer;
 
 }
