@@ -26,6 +26,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.test.it.ITBase;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -348,7 +349,7 @@ public final class DropTreesIT extends ITBase {
     }
 
     @Test
-    public void groupIndexWithNoData() throws Exception {
+    public void dropTableInGroupIndexWithNoData() throws Exception {
         int pid = createTable("s", "p", "id int key, name varchar(32)");
         int cid = createTable("s", "c", "id int key, pid int, val int, constraint __akiban foreign key(pid) references p(id))");
         Table p = getUserTable(pid);
@@ -362,7 +363,7 @@ public final class DropTreesIT extends ITBase {
     }
 
     @Test
-    public void groupIndexWithData() throws Exception {
+    public void dropTableInGroupIndexWithData() throws Exception {
         int pid = createTable("s", "p", "id int key, name varchar(32)");
         int cid = createTable("s", "c", "id int key, pid int, val int, constraint __akiban foreign key(pid) references p(id))");
         Table p = getUserTable(pid);
@@ -414,6 +415,31 @@ public final class DropTreesIT extends ITBase {
         ddl().dropTable(session(), c.getName());
         ddl().dropTable(session(), p.getName());
         expectNoTree(c);
+        expectNoTree(p);
+    }
+
+    @Test
+    public void dropSingleTableWithGroupIndexWithNoData() throws Exception {
+        int pid = createTable("s", "p", "id int key, name varchar(32)");
+        Table p = getUserTable(pid);
+        Index index = createGroupIndex(p.getGroup().getName(), "name", "p.name");
+        ddl().dropTable(session(), p.getName());
+        expectNoTree(index);
+        expectNoTree(p);
+    }
+
+    @Ignore("Can't write rows to group index that is on single/root table?")
+    @Test
+    public void dropSingleTableWithGroupIndexWithData() throws Exception {
+        int pid = createTable("s", "p", "id int key, name varchar(32)");
+        Table p = getUserTable(pid);
+        Index index = createGroupIndex(p.getGroup().getName(), "name", "p.name");
+        writeRows(createNewRow(pid, 1, "foo"),
+                  createNewRow(pid, 2, "bar"));
+        expectTree(p);
+        expectTree(index);
+        ddl().dropTable(session(), p.getName());
+        expectNoTree(index);
         expectNoTree(p);
     }
 }
