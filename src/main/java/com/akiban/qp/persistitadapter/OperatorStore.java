@@ -279,7 +279,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
             for (GroupIndex groupIndex : optionallyOrderGroupIndexes(userTable.getGroupIndexes())) {
                 if (groupIndex.isUnique()) {
-                    throw new UnsupportedOperationException("UNIQUE GROUP INDEXES WILL BE SUPPORTED SOON!"); // TODO
+                    throw new UnsupportedOperationException("unique indexes not supported");
                 }
                 PhysicalOperator plan = groupIndexCreationPlan(
                         adapter.schema(),
