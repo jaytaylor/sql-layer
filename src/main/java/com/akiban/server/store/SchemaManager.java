@@ -48,8 +48,9 @@ public interface SchemaManager {
      * @param indexes List of index definitions to add.
      * @throws Exception If the request is invalid (e.g. duplicate index name, malformed Index) or there
      * was an internal error.
+     * @return List of newly created indexes.
      */
-    void createIndexes(Session session, Collection<Index> indexes) throws Exception;
+    List<Index> createIndexes(Session session, Collection<Index> indexes) throws Exception;
 
     /**
      * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are

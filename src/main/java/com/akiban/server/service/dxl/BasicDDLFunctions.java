@@ -27,10 +27,8 @@ import java.util.Set;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
@@ -319,8 +317,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
+        final Collection<Index> newIndexes;
         try {
-            schemaManager().createIndexes(session, indexesToAdd);
+            newIndexes = schemaManager().createIndexes(session, indexesToAdd);
         }
         catch(InvalidOperationException e) {
             throwIfInstanceOf(e, NoSuchTableException.class, NoSuchGroupException.class);
@@ -330,21 +329,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new GenericInvalidOperationException(e);
         }
 
-        Collection<Index> newIndexes = new ArrayList<Index>();
-        for(Index index : indexesToAdd) {
-            IndexName name = index.getIndexName();
-            if(index.isTableIndex()) {
-                Table table = getTable(session, new TableName(name.getSchemaName(), name.getTableName()));
-                newIndexes.add(table.getIndex(name.getName()));
-                checkCursorsForDDLModification(session, table);
-            }
-            else if(index.isGroupIndex()) {
-                newIndexes.add(getAIS(session).getGroup(name.getTableName()).getIndex(name.getName()));
-                // TODO: checkCursorsForDDLModification() ?
-            }
-            else {
-                throw new IllegalArgumentException("Unknown index type: " + index);
-            }
+        for(Index index : newIndexes) {
+            checkCursorsForDDLModification(session, index.leafMostTable());
         }
 
         try {
@@ -353,9 +339,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             // Try and roll back all changes
             try {
                 store().deleteIndexes(session, newIndexes);
-                schemaManager().dropIndexes(session, indexesToAdd);
+                schemaManager().dropIndexes(session, newIndexes);
             } catch(Exception e2) {
-                logger.error("Exception while rolling back failed createIndex: " + indexesToAdd, e2);
+                logger.error("Exception while rolling back failed createIndex: " + newIndexes, e2);
             }
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ioe, DuplicateKeyException.class);
