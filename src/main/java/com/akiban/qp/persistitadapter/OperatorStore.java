@@ -61,14 +61,17 @@ import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Exchange;
 import com.persistit.Key;
+import com.persistit.Persistit;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
+import com.sun.corba.se.spi.ior.IdentifiableFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.akiban.qp.physicaloperator.API.ancestorLookup_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
@@ -279,7 +282,14 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             ArrayBindings bindings = new ArrayBindings(1);
             bindings.set(HKEY_BINDING_POSITION, persistitHKey);
 
-            for (GroupIndex groupIndex : optionallyOrderGroupIndexes(userTable.getGroupIndexes())) {
+            Collection<GroupIndex> branchIndexes = new ArrayList<GroupIndex>();
+            for (GroupIndex groupIndex : userTable.getGroup().getIndexes()) {
+                if (groupIndex.leafMostTable().isDescendantOf(userTable)) {
+                    branchIndexes.add(groupIndex);
+                }
+            }
+
+            for (GroupIndex groupIndex : optionallyOrderGroupIndexes(branchIndexes)) {
                 if (groupIndex.isUnique()) {
                     throw new UnsupportedOperationException("unique indexes not supported");
                 }
@@ -326,7 +336,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         if (branchTables.isEmpty()) {
             throw new RuntimeException("group index has empty branch: " + groupIndex);
         }
-        if (!branchTables.fromRootMost().contains(rowType)) {
+        if (!branchTables.fromRoot().contains(rowType)) {
             throw new RuntimeException(rowType + " not in branch for " + groupIndex + ": " + branchTables);
         }
 
@@ -456,6 +466,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     private static final int HKEY_BINDING_POSITION = 0;
     private static final int MAX_RETRIES = 10;
 
+    public static AtomicBoolean DEBUG_POINT = new AtomicBoolean(false); // TODO remove this! If you see this in a merge proposal, tell Yuval to remove it!
+
     // nested classes
 
     private static class PersistitKeyHandler implements GroupIndexHandler<RowAction,PersistitException> {
@@ -470,28 +482,87 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             Key key = exchange.getKey();
             key.clear();
             IndexRowComposition irc = groupIndex.indexRowComposition();
+
+            UserTable sourceTable = action.sourceTable();
+            final boolean sourceRowAboveIndex;
+            final UserTable leafmost = groupIndex.leafMostTable();
+            if (sourceTable == null) {
+                sourceRowAboveIndex = true;
+            }
+            else if (sourceTable.equals(leafmost)) {
+                sourceRowAboveIndex = false;
+            }
+            else if (sourceTable.isDescendantOf(leafmost)) {
+                return; // nothing to do
+            }
+            else if (groupIndex.rootMostTable().equals(sourceTable)) {
+                sourceRowAboveIndex = false;
+            }
+            else if (groupIndex.rootMostTable().isDescendantOf(sourceTable)) {
+                sourceRowAboveIndex = true;
+            }
+            else {
+                sourceRowAboveIndex = false; // source table is within this branch
+            }
+
+
+            // nullPoint is the point at which we should stop nulling hkey values; needs a better name.
+            // This is the last index of the hkey component that should be nulled.
+            int nullPoint = -1;
             for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
                 assert irc.isInRowData(i);
                 assert ! irc.isInHKey(i);
-                final int flattenedIndex = irc.getFieldPosition(i);
 
+                final int flattenedIndex = irc.getFieldPosition(i);
                 Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
                 Object value = row.field(flattenedIndex, UndefBindings.only());
                 RowDef rowDef = (RowDef) column.getTable().rowDef();
                 FieldDef fieldDef = rowDef.getFieldDef(column.getPosition());
                 fieldDef.getEncoding().toKey(fieldDef, value, key);
+                boolean isHKeyComponent = i+1 > groupIndex.getColumns().size();
+                if (sourceRowAboveIndex && isHKeyComponent && column.getTable().equals(sourceTable)) {
+                    nullPoint = i;
+                }
             }
 
             switch (action.action()) {
             case STORE:
                 exchange.store();
+                if (nullOutHKey(nullPoint, groupIndex, row, key)) {
+                    exchange.remove();
+                }
                 break;
             case DELETE:
                 exchange.remove();
+                if (nullOutHKey(nullPoint, groupIndex, row, key)) {
+                    exchange.store();
+                }
                 break;
             default:
                 throw new UnsupportedOperationException(action.action().name());
             }
+        }
+
+        private boolean nullOutHKey(int nullPoint, GroupIndex groupIndex, Row row, Key key) {
+            if (nullPoint < 0) {
+                return false;
+            }
+            key.setDepth(nullPoint);
+            IndexRowComposition irc = groupIndex.indexRowComposition();
+            for (int i = groupIndex.getColumns().size(), LEN=irc.getLength(); i < LEN; ++i) {
+                if (i <= nullPoint) {
+                    key.append(null);
+                }
+                else {
+                    final int flattenedIndex = irc.getFieldPosition(i);
+                    Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
+                    Object value = row.field(flattenedIndex, UndefBindings.only());
+                    RowDef rowDef = (RowDef) column.getTable().rowDef();
+                    FieldDef fieldDef = rowDef.getFieldDef(column.getPosition());
+                    fieldDef.getEncoding().toKey(fieldDef, value, key);
+                }
+            }
+            return true;
         }
 
         public PersistitKeyHandler(PersistitAdapter adapter) {

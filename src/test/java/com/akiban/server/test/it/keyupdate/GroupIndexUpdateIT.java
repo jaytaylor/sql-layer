@@ -218,7 +218,26 @@ public final class GroupIndexUpdateIT extends ITBase {
     }
 
     @Test
-    public void adoptionChangesHKey() {
+    public void adoptionChangesHKeyNoCustomer() {
+        String indexName = "sku_handling-instructions";
+        createGroupIndex(groupName, indexName, "i.sku, h.handling_instructions");
+        writeRows(
+                createNewRow(i, 101L, 11L, 1111),
+                createNewRow(h, 1001L, 101L, "handle with care")
+        );
+        checkIndex(indexName,
+                "1111, handle with care, null, 11, 101, 1001"
+        );
+
+        // bring an o that adopts the i
+        dml().writeRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
+        checkIndex(indexName,
+                "1111, handle with care, 1, 11, 101, 1001"
+        );
+    }
+
+    @Test
+    public void adoptionChangesHKeyWithC() {
         String indexName = "sku_handling-instructions";
         createGroupIndex(groupName, indexName, "i.sku, h.handling_instructions");
         writeRows(
