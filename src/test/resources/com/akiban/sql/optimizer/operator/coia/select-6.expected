@@ -1,9 +1,9 @@
-project([Field(1), Field(8), Field(4)])
-** NEED Product **
-  Extract_Default([flatten(flatten(user.customers, user.addresses), user.orders)])
-    Flatten_HKeyOrdered(flatten(user.customers, user.addresses) INNER user.orders)
+project([Field(7), Field(10), Field(4)])
+  Product_ByRun(flatten(user.customers, user.addresses) x flatten(user.customers, user.orders))
+    Extract_Default([flatten(user.customers, user.orders), flatten(user.customers, user.addresses)])
       Flatten_HKeyOrdered(user.customers INNER user.addresses)
-        BranchLookup_Default(_akiban_customers user.orders -> user.addresses limit NO LIMIT)
-          AncestorLookup_Default(Index(user.orders.order_date[IndexColumn(order_date)]) -> [user.customers, user.orders])
-            IndexScan_Default(Index(user.orders.order_date[IndexColumn(order_date)]) (>user.orders=ExpressionRow[Literal(2011-01-01)],))
+        Flatten_HKeyOrdered(user.customers KEEP INNER user.orders)
+          BranchLookup_Default(_akiban_customers user.orders -> user.addresses limit NO LIMIT)
+            AncestorLookup_Default(Index(user.orders.order_date[IndexColumn(order_date)]) -> [user.customers, user.orders])
+              IndexScan_Default(Index(user.orders.order_date[IndexColumn(order_date)]) (>ExpressionRow[Literal(2011-01-01)],))
 [name:varchar(32)[VARCHAR], order_date:date[DATE], state:char(2)[VARCHAR]]

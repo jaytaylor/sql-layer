@@ -20,7 +20,11 @@ import com.akiban.qp.exec.UpdateResult;
 import com.akiban.sql.StandardException;
 
 import com.akiban.qp.physicaloperator.ArrayBindings;
+import com.akiban.qp.physicaloperator.BindingNotSetException;
 import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.physicaloperator.IncompatibleRowException;
+import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
+import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.UndefBindings;
 
 import java.util.*;
@@ -45,7 +49,22 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         throws IOException, StandardException {
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
-        UpdateResult updateResult = resultOperator.run(bindings, server.getStore());
+        UpdateResult updateResult;
+        try {
+            updateResult = resultOperator.run(bindings, server.getStore());
+        }
+        catch (BindingNotSetException ex) {
+            throw new StandardException(ex);
+        }
+        catch (IncompatibleRowException ex) {
+            throw new StandardException(ex);
+        }
+        catch (StoreAdapterRuntimeException ex) {
+            throw new StandardException(ex);
+        }
+        catch (CursorUpdateException ex) {
+            throw new StandardException(ex);
+        }
         {        
             messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
             messenger.writeString(statementType + " " + updateResult.rowsModified());

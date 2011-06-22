@@ -15,6 +15,7 @@
 
 package com.akiban.qp.rowtype;
 
+import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.UserTable;
 
 import java.util.ArrayList;
@@ -39,16 +40,17 @@ public class FlattenedRowType extends DerivedRowType
         return parent.nFields() + child.nFields();
     }
 
+    @Override
+    public HKey hKey()
+    {
+        return child.hKey();
+    }
+
     // FlattenedRowType interface
 
     public RowType parentType()
     {
         return parent;
-    }
-
-    public RowType childType()
-    {
-        return child;
     }
 
     public FlattenedRowType(Schema schema, int typeId, RowType parent, RowType child)

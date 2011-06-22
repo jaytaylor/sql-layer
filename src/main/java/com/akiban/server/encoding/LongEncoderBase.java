@@ -27,6 +27,11 @@ public abstract class LongEncoderBase extends EncodingBase<Long> {
     LongEncoderBase() {
     }
     
+    @Override
+    protected Class<Long> getToObjectClass() {
+        return Long.class;
+    }
+
     /**
      * Encode an object to a long. The only strict requirement is null
      * must be handled. In general, at least String and Number should be

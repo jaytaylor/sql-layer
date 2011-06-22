@@ -30,6 +30,11 @@ public class StringEncoder extends EncodingBase<String> {
     }
 
     @Override
+    protected Class<String> getToObjectClass() {
+        return String.class;
+    }
+
+    @Override
     public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
                           int offset) {
         return EncodingUtils.objectToString(value, dest, offset, fieldDef);

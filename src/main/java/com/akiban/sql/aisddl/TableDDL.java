@@ -50,8 +50,7 @@ public class TableDDL
         if (schemaName == null)
             schemaName = defaultSchemaName;
         UserTable table = UserTable.create(ais, schemaName, 
-                                           // TODO: Akiban DB is case sensitive.
-                                           tableName.getTableName().toLowerCase(),
+                                           tableName.getTableName(),
                                            // TODO: tableIdGenerator++ from where?
                                            -1);
         int colpos = 0;

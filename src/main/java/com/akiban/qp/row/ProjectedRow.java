@@ -50,7 +50,7 @@ public class ProjectedRow extends AbstractRow
     @Override
     public HKey hKey()
     {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     // ProjectedRow interface
@@ -60,6 +60,7 @@ public class ProjectedRow extends AbstractRow
         this.rowType = rowType;
         this.row.set(row);
         this.projections = projections;
+        super.runId(row.runId());
     }
 
     // Object state

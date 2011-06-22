@@ -25,7 +25,8 @@ import java.io.IOException;
 public class PostgresSessionStatement implements PostgresStatement
 {
     enum Operation {
-        USE
+        USE,
+        BEGIN_TRANSACTION, COMMIT_TRANSACTION, ROLLBACK_TRANSACTION
     };
 
     private Operation operation;
@@ -59,14 +60,7 @@ public class PostgresSessionStatement implements PostgresStatement
     @Override
     public int execute(PostgresServerSession server, int maxrows)
             throws IOException, StandardException {
-        switch (operation) {
-        case USE:
-            // TODO: From the appropriate kind of statement, which
-            // does not exist in the parser yet, although <CONNECT> is
-            // known to be a reserved word.
-            server.setDefaultSchemaName("...");
-            break;
-        }
+        doOperation(server);
         {        
             PostgresMessenger messenger = server.getMessenger();
             messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
@@ -74,6 +68,26 @@ public class PostgresSessionStatement implements PostgresStatement
             messenger.sendMessage();
         }
         return 0;
+    }
+
+    protected void doOperation(PostgresServerSession server) throws StandardException {
+        switch (operation) {
+        case USE:
+            // TODO: From the appropriate kind of statement, which
+            // does not exist in the parser yet, although <CONNECT> is
+            // known to be a reserved word.
+            server.setDefaultSchemaName("...");
+            break;
+        case BEGIN_TRANSACTION:
+            server.beginTransaction();
+            break;
+        case COMMIT_TRANSACTION:
+            server.commitTransaction();
+            break;
+        case ROLLBACK_TRANSACTION:
+            server.rollbackTransaction();
+            break;
+        }
     }
 
 }

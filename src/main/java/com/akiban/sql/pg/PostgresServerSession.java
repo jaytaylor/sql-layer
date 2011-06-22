@@ -15,6 +15,8 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.StandardException;
+
 import com.akiban.sql.parser.SQLParser;
 
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -77,5 +79,14 @@ public interface PostgresServerSession
 
     /** Return an adapter for the session's store. */
     public StoreAdapter getStore();
+
+    /** Begin a new transaction. */
+    public void beginTransaction() throws StandardException;
+
+    /** Commit the current transaction. */
+    public void commitTransaction() throws StandardException;
+
+    /** Rollback the current transaction. */
+    public void rollbackTransaction() throws StandardException;
 
 }

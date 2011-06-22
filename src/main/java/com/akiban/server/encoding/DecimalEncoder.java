@@ -30,6 +30,11 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
     DecimalEncoder() {
     }
     
+    @Override
+    protected Class<BigDecimal> getToObjectClass() {
+        return BigDecimal.class;
+    }
+
     //
     // DECIMAL related defines as specified at:
     // http://dev.mysql.com/doc/refman/5.4/en/storage-requirements.html

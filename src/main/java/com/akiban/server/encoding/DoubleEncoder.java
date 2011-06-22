@@ -25,6 +25,11 @@ public class DoubleEncoder extends EncodingBase<Double> {
     DoubleEncoder() {
     }
 
+    @Override
+    protected Class<Double> getToObjectClass() {
+        return Double.class;
+    }
+
     public static long encodeFromObject(Object obj) {
         final double d;
         if(obj == null) {

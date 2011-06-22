@@ -15,9 +15,8 @@
 
 package com.akiban.qp.rowtype;
 
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.server.IndexDef;
 
 public class IndexRowType extends RowType
 {
@@ -44,27 +43,25 @@ public class IndexRowType extends RowType
         return tableType;
     }
 
-    public IndexKeyType keyType()
-    {
-        return keyType;
-    }
-
-    public TableIndex index()
+    public Index index()
     {
         return index;
     }
 
-    public IndexRowType(SchemaAISBased schema, UserTableRowType tableType, TableIndex index)
+    public IndexRowType(SchemaAISBased schema, UserTableRowType tableType, Index index)
     {
         super(schema, schema.nextTypeId());
+        if (index.isGroupIndex()) {
+            GroupIndex groupIndex = (GroupIndex) index;
+            assert groupIndex.leafMostTable() == tableType.userTable();
+        }
         this.tableType = tableType;
         this.index = index;
-        this.keyType = new IndexKeyType(schema, index);
     }
 
     // Object state
 
+    // If index is a GroupIndex, then tableType.userTable() is the leafmost table of the GroupIndex.
     private final UserTableRowType tableType;
-    private final TableIndex index;
-    private final IndexKeyType keyType;
+    private final Index index;
 }

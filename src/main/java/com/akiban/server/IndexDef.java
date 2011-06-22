@@ -46,6 +46,10 @@ public class IndexDef implements TreeLink {
         }
     }
 
+    /**
+     * @deprecated Use IndexRowComposition or just IndexColumns where appropriate
+     * @return Array of index position to table position
+     * */
     public int[] getFields() {
         return fields;
     }

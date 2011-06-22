@@ -25,6 +25,11 @@ public class FloatEncoder extends EncodingBase<Float> {
     FloatEncoder() {
     }
 
+    @Override
+    protected Class<Float> getToObjectClass() {
+        return Float.class;
+    }
+
     public static int encodeFromObject(Object obj) {
         final float f;
         if(obj == null) {

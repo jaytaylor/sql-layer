@@ -15,8 +15,10 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
@@ -56,7 +58,7 @@ class IndexScan_Default extends PhysicalOperator
 
     // Object state
 
-    private final TableIndex index;
+    private final Index index;
     private final boolean reverse;
     private final IndexKeyRange indexKeyRange;
 
@@ -79,7 +81,9 @@ class IndexScan_Default extends PhysicalOperator
         {
             boolean next = cursor.next();
             if (next) {
-                outputRow(cursor.currentRow());
+                Row row = cursor.currentRow();
+                row.runId(runIdCounter++);
+                outputRow(row);
             } else {
                 close();
             }
@@ -106,5 +110,6 @@ class IndexScan_Default extends PhysicalOperator
         // Object state
 
         private final Cursor cursor;
+        private int runIdCounter = 0;
     }
 }

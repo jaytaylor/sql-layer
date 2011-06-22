@@ -15,6 +15,7 @@
 
 package com.akiban.qp.rowtype;
 
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.Expression;
@@ -29,6 +30,7 @@ public class SchemaPerSession implements Schema
 {
     // Schema interface
 
+    @Override
     public synchronized UserTableRowType userTableRowType(UserTable table)
     {
         UserTableRowType rowType = (UserTableRowType) rowTypes.get(table.getTableId());
@@ -39,25 +41,37 @@ public class SchemaPerSession implements Schema
         return rowType;
     }
 
-    public synchronized IndexRowType indexRowType(TableIndex index)
+    @Override
+    public synchronized IndexRowType indexRowType(Index index)
     {
         return aisSchema.indexRowType(index);
     }
 
+    @Override
     public synchronized FlattenedRowType newFlattenType(RowType parent, RowType child)
     {
-        FlattenedRowType rowType = new FlattenedRowType(this, aisSchema.nextTypeId(), parent, child);
+        FlattenedRowType rowType = aisSchema.newFlattenType(parent, child);
         rowTypes.put(rowType.typeId(), rowType);
         return rowType;
     }
 
+    @Override
     public synchronized ProjectedRowType newProjectType(List<Expression> columns)
     {
-        ProjectedRowType rowType = new ProjectedRowType(this, aisSchema.nextTypeId(), columns);
+        ProjectedRowType rowType = aisSchema.newProjectType(columns);
         rowTypes.put(rowType.typeId(), rowType);
         return rowType;
     }
 
+    @Override
+    public ProductRowType newProductType(RowType left, RowType right)
+    {
+        ProductRowType rowType = aisSchema.newProductType(left, right);
+        rowTypes.put(rowType.typeId(), rowType);
+        return rowType;
+    }
+
+    @Override
     public synchronized Iterator<RowType> rowTypes()
     {
         return new MultiIterator<RowType>(aisSchema.rowTypes(), rowTypes.values().iterator());

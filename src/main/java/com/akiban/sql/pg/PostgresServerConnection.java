@@ -35,6 +35,10 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 
+import com.persistit.Transaction;
+import com.persistit.exception.PersistitException;
+import com.persistit.exception.RollbackException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,6 +79,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     private PostgresStatementParser[] unparsedGenerators;
     private PostgresStatementGenerator[] parsedGenerators;
     private Thread thread;
+    private Transaction transaction;
     
     private boolean instrumentationEnabled = false;
     private String sql;
@@ -145,82 +150,90 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     protected void topLevel() throws IOException, StandardException {
         logger.info("Connect from {}" + socket.getRemoteSocketAddress());
         boolean startupComplete = false;
-        while (running) {
-            int type = messenger.readMessage(startupComplete);
-            if (ignoreUntilSync) {
-                if ((type != -1) && (type != PostgresMessenger.SYNC_TYPE))
-                    continue;
-                ignoreUntilSync = false;
-            }
-            ErrorMode errorMode = ErrorMode.NONE;
-            try {
-                sessionTracer.beginEvent(EventTypes.PROCESS);
-                switch (type) {
-                case -1:                                    // EOF
-                    stop();
-                    break;
-                case PostgresMessenger.SYNC_TYPE:
-                    readyForQuery();
-                    break;
-                case PostgresMessenger.STARTUP_MESSAGE_TYPE:
-                    startupComplete = processStartupMessage();
-                    break;
-                case PostgresMessenger.PASSWORD_MESSAGE_TYPE:
-                    processPasswordMessage();
-                    break;
-                case PostgresMessenger.QUERY_TYPE:
-                    errorMode = ErrorMode.SIMPLE;
-                    processQuery();
-                    break;
-                case PostgresMessenger.PARSE_TYPE:
-                    errorMode = ErrorMode.EXTENDED;
-                    processParse();
-                    break;
-                case PostgresMessenger.BIND_TYPE:
-                    errorMode = ErrorMode.EXTENDED;
-                    processBind();
-                    break;
-                case PostgresMessenger.DESCRIBE_TYPE:
-                    errorMode = ErrorMode.EXTENDED;
-                    processDescribe();
-                    break;
-                case PostgresMessenger.EXECUTE_TYPE:
-                    errorMode = ErrorMode.EXTENDED;
-                    processExecute();
-                    break;
-                case PostgresMessenger.CLOSE_TYPE:
-                    processClose();
-                    break;
-                case PostgresMessenger.TERMINATE_TYPE:
-                    processTerminate();
-                    break;
-                default:
-                    throw new IOException("Unknown message type: " + (char)type);
+        try {
+            while (running) {
+                int type = messenger.readMessage(startupComplete);
+                if (ignoreUntilSync) {
+                    if ((type != -1) && (type != PostgresMessenger.SYNC_TYPE))
+                        continue;
+                    ignoreUntilSync = false;
                 }
-            }
-            catch (StandardException ex) {
-                logger.warn("Error in query", ex);
-                if (errorMode == ErrorMode.NONE) throw ex;
-                {
-                    messenger.beginMessage(PostgresMessenger.ERROR_RESPONSE_TYPE);
-                    messenger.write('S');
-                    messenger.writeString("ERROR");
-                    // TODO: Could dummy up an SQLSTATE, etc.
-                    messenger.write('M');
-                    messenger.writeString(ex.getMessage());
-                    messenger.write(0);
-                    messenger.sendMessage(true);
+                ErrorMode errorMode = ErrorMode.NONE;
+                try {
+                    sessionTracer.beginEvent(EventTypes.PROCESS);
+                    switch (type) {
+                    case -1:                                    // EOF
+                        stop();
+                        break;
+                    case PostgresMessenger.SYNC_TYPE:
+                        readyForQuery();
+                        break;
+                    case PostgresMessenger.STARTUP_MESSAGE_TYPE:
+                        startupComplete = processStartupMessage();
+                        break;
+                    case PostgresMessenger.PASSWORD_MESSAGE_TYPE:
+                        processPasswordMessage();
+                        break;
+                    case PostgresMessenger.QUERY_TYPE:
+                        errorMode = ErrorMode.SIMPLE;
+                        processQuery();
+                        break;
+                    case PostgresMessenger.PARSE_TYPE:
+                        errorMode = ErrorMode.EXTENDED;
+                        processParse();
+                        break;
+                    case PostgresMessenger.BIND_TYPE:
+                        errorMode = ErrorMode.EXTENDED;
+                        processBind();
+                        break;
+                    case PostgresMessenger.DESCRIBE_TYPE:
+                        errorMode = ErrorMode.EXTENDED;
+                        processDescribe();
+                        break;
+                    case PostgresMessenger.EXECUTE_TYPE:
+                        errorMode = ErrorMode.EXTENDED;
+                        processExecute();
+                        break;
+                    case PostgresMessenger.CLOSE_TYPE:
+                        processClose();
+                        break;
+                    case PostgresMessenger.TERMINATE_TYPE:
+                        processTerminate();
+                        break;
+                    default:
+                        throw new IOException("Unknown message type: " + (char)type);
+                    }
                 }
-                if (errorMode == ErrorMode.EXTENDED)
-                    ignoreUntilSync = true;
-                else
-                    readyForQuery();
-            }
-            finally {
-                sessionTracer.endEvent();
+                catch (StandardException ex) {
+                    logger.warn("Error in query", ex);
+                    if (errorMode == ErrorMode.NONE) throw ex;
+                    {
+                        messenger.beginMessage(PostgresMessenger.ERROR_RESPONSE_TYPE);
+                        messenger.write('S');
+                        messenger.writeString("ERROR");
+                        // TODO: Could dummy up an SQLSTATE, etc.
+                        messenger.write('M');
+                        messenger.writeString(ex.getMessage());
+                        messenger.write(0);
+                        messenger.sendMessage(true);
+                    }
+                    if (errorMode == ErrorMode.EXTENDED)
+                        ignoreUntilSync = true;
+                    else
+                        readyForQuery();
+                }
+                finally {
+                    sessionTracer.endEvent();
+                }
             }
         }
-        server.removeConnection(pid);
+        finally {
+            if (transaction != null) {
+                transaction.end();
+                transaction = null;
+            }
+            server.removeConnection(pid);
+        }
     }
 
     protected void readyForQuery() throws IOException {
@@ -689,6 +702,50 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     
     public String getRemoteAddress() {
         return socket.getInetAddress().getHostAddress();
+    }
+
+    public void beginTransaction() throws StandardException {
+        if (transaction != null)
+            throw new StandardException("A transaction is already in progress.");
+        transaction = serviceManager.getTreeService().getTransaction(session);
+        try {
+            transaction.begin();
+        }
+        catch (PersistitException ex) {
+            throw new StandardException(ex);
+        }
+    }
+
+    public void commitTransaction() throws StandardException {
+        if (transaction == null)
+            throw new StandardException("No transaction is in progress.");
+        try {
+            transaction.commit();
+        }
+        catch (PersistitException ex) {
+            throw new StandardException(ex);
+        }
+        finally {
+            transaction.end();
+        }
+        transaction = null;
+    }
+
+    public void rollbackTransaction() throws StandardException {
+        if (transaction == null)
+            throw new StandardException("No transaction is in progress.");
+        try {
+            transaction.rollback();
+        }
+        catch (PersistitException ex) {
+            throw new StandardException(ex);
+        }
+        catch (RollbackException ex) {
+        }
+        finally {
+            transaction.end();
+        }
+        transaction = null;
     }
 
 }

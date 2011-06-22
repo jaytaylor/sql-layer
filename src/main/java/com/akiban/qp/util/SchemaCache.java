@@ -16,36 +16,25 @@
 package com.akiban.qp.util;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.SchemaAISBased;
+import com.akiban.util.CachePair;
 
 public final class SchemaCache {
 
     // static SchemaCache interface
 
     public static SchemaAISBased globalSchema(AkibanInformationSchema ais) {
-        return GLOBAL.schema(ais);
+        return GLOBAL.get(ais);
     }
-
-    // SchemaCache interface
-
-    private SchemaAISBased schema(AkibanInformationSchema ais) {
-        synchronized(LOCK) {
-            if (this.ais != ais) {
-                this.ais = ais;
-                this.schema = new SchemaAISBased(ais);
-            }
-            return schema;
-        }
-    }
-
-    // object state
-
-    private final Object LOCK = new Object();
-    private AkibanInformationSchema ais = null;
-    private SchemaAISBased schema = null;
 
     // class state
 
-    private static final SchemaCache GLOBAL = new SchemaCache();
+    private static final CachePair<AkibanInformationSchema, SchemaAISBased> GLOBAL = CachePair.using(
+            new CachePair.CachedValueProvider<AkibanInformationSchema, SchemaAISBased>() {
+                @Override
+                public SchemaAISBased valueFor(AkibanInformationSchema ais) {
+                    return new SchemaAISBased(ais);
+                }
+            }
+    );
 }
