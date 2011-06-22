@@ -222,8 +222,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
         for(GroupIndex groupIndex : groupIndexes) {
             PhysicalOperator plan = groupIndexCreationPlan(adapter.schema(), groupIndex);
-            maintainGroupIndexes(adapter, groupIndex, plan, UndefBindings.only(),
-                                 new PersistitKeyHandler(adapter), new RowAction(null, Action.STORE)); // TODO
+            runMaintenancePlan(adapter, groupIndex, plan, UndefBindings.only(),
+                    new PersistitKeyHandler(adapter), new RowAction(null, Action.STORE)); // TODO
         }
     }
 
@@ -288,19 +288,19 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                         groupIndex,
                         adapter.schema().userTableRowType(userTable)
                 );
-                maintainGroupIndexes(adapter, groupIndex, plan, bindings, handler, action);
+                runMaintenancePlan(adapter, groupIndex, plan, bindings, handler, action);
             }
         } finally {
             adapter.returnExchange(hEx);
         }
     }
 
-    private <A,T extends Throwable> void maintainGroupIndexes(
+    private <A,T extends Throwable> void runMaintenancePlan(
             PersistitAdapter adapter,
             GroupIndex groupIndex,
             PhysicalOperator plan,
             Bindings bindings,
-            GroupIndexHandler<A,T> handler, A action
+            GroupIndexHandler<A, T> handler, A action
     )
     throws T
     {
