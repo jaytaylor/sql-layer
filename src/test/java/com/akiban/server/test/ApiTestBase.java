@@ -431,7 +431,7 @@ public class ApiTestBase {
         return items;
     }
 
-    protected static Object[] objArray(Object... items) {
+    protected static Object[] array(Object... items) {
         return array(Object.class, items);
     }
 

@@ -118,9 +118,9 @@ public class GroupIndexIT extends ITBase {
 
         GroupIndex oDate_cName = createGroupIndex(groupName, "oDate_cName", "o.odate, c.name");
         expectIndexContents(oDate_cName,
-                            array(Object.class, 20050930L, "jill"),
-                            array(Object.class, 20100702, "bob"),
-                            array(Object.class, 20110621, "bob"));
+                            array(20050930L, "jill"),
+                            array(20100702, "bob"),
+                            array(20110621, "bob"));
     }
 
     @Test
@@ -141,11 +141,11 @@ public class GroupIndexIT extends ITBase {
 
         GroupIndex iSku_oDate = createGroupIndex(groupName, "iSku_oDate", "i.sku, o.odate");
         expectIndexContents(iSku_oDate,
-                            array(Object.class, 1832L, 20100702L),
-                            array(Object.class, 3456L, 20070101L),
-                            array(Object.class, 5623L, 20100702L),
-                            array(Object.class, 7822L, 20050930L),
-                            array(Object.class, 9218L, 20050930L));
+                            array(1832L, 20100702L),
+                            array(3456L, 20070101L),
+                            array(5623L, 20100702L),
+                            array(7822L, 20050930L),
+                            array(9218L, 20050930L));
     }
 
     @Test
@@ -160,9 +160,9 @@ public class GroupIndexIT extends ITBase {
 
         GroupIndex aAddr_cID = createGroupIndex(groupName, "aAddr_cID", "a.addr, c.id");
         expectIndexContents(aAddr_cID,
-                            array(Object.class, 123L, 1L),
-                            array(Object.class, 23L, 4L),
-                            array(Object.class, 875L, 2L));
+                            array(123L, 1L),
+                            array(23L, 4L),
+                            array(875L, 2L));
     }
 
 
