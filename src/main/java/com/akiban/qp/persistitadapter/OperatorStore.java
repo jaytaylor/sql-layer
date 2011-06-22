@@ -122,14 +122,14 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
                 maintainGroupIndexes(
                         session, ais, adapter,
-                        oldRowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.DELETE
+                        oldRowData, new PersistitKeyHandler(adapter), new RowAction(userTable, Action.DELETE)
                 );
 
                 runCursor(oldRowData, rowDef, updateOp, adapter);
 
                 maintainGroupIndexes(
                         session, ais, adapter,
-                        newRowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.STORE
+                        newRowData, new PersistitKeyHandler(adapter), new RowAction(userTable, Action.STORE)
                 );
 
                 transaction.commit();
@@ -154,9 +154,10 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
                 AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
                 PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
+                UserTable uTable = ais.getUserTable(rowData.getRowDefId());
                 maintainGroupIndexes(
                         session, ais, adapter,
-                        rowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.STORE
+                        rowData, new PersistitKeyHandler(adapter), new RowAction(uTable, Action.STORE)
                 );
 
                 transaction.commit();
@@ -179,9 +180,10 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 transaction.begin();
                 AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
                 PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
+                UserTable uTable = ais.getUserTable(rowData.getRowDefId());
                 maintainGroupIndexes(
                         session, ais, adapter,
-                        rowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.DELETE
+                        rowData, new PersistitKeyHandler(adapter), new RowAction(uTable, Action.DELETE)
                 );
                 super.deleteRow(session, rowData);
                 transaction.commit();
@@ -221,7 +223,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         for(GroupIndex groupIndex : groupIndexes) {
             PhysicalOperator plan = groupIndexCreationPlan(adapter.schema(), groupIndex);
             maintainGroupIndexes(adapter, groupIndex, plan, UndefBindings.only(),
-                                 new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.STORE);
+                                 new PersistitKeyHandler(adapter), new RowAction(null, Action.STORE)); // TODO
         }
     }
 
@@ -456,12 +458,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // nested classes
 
-    private static class PersistitKeyHandler implements GroupIndexHandler<PersistitKeyHandler.Action,PersistitException> {
+    private static class PersistitKeyHandler implements GroupIndexHandler<RowAction,PersistitException> {
 
         // GroupIndexHandler interface
 
         @Override
-        public void handleRow(Action action, GroupIndex groupIndex, Row row)
+        public void handleRow(RowAction action, GroupIndex groupIndex, Row row)
         throws PersistitException
         {
             Exchange exchange = adapter.takeExchange(groupIndex);
@@ -480,7 +482,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 fieldDef.getEncoding().toKey(fieldDef, value, key);
             }
 
-            switch (action) {
+            switch (action.action()) {
             case STORE:
                 exchange.store();
                 break;
@@ -488,7 +490,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 exchange.remove();
                 break;
             default:
-                throw new UnsupportedOperationException(action.name());
+                throw new UnsupportedOperationException(action.action().name());
             }
         }
 
@@ -502,7 +504,32 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
         // nested classes
 
-        public enum Action { STORE, DELETE }
+    }
+
+    private static class RowAction {
+
+        public UserTable sourceTable() {
+            return sourceTable;
+        }
+
+        public Action action() {
+            return action;
+        }
+
+        public RowAction(UserTable sourceTable, Action action) {
+//            assert sourceTable != null : "source table is null"; // TODO this shouldn't be null, I think
+            assert action != null : "action is null";
+            this.sourceTable = sourceTable;
+            this.action = action;
+        }
+
+        @Override
+        public String toString() {
+            return action().name() + ' ' + sourceTable();
+        }
+
+        private final UserTable sourceTable;
+        private final Action action;
     }
 
     private static class BranchTables {
@@ -606,4 +633,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     protected interface GroupIndexHandler<A, T extends Throwable> {
         void handleRow(A action, GroupIndex groupIndex, Row row) throws T;
     }
+
+    public enum Action {STORE, DELETE }
 }
