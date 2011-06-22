@@ -17,7 +17,6 @@ package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Table;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.store.IndexRecordVisitor;
@@ -27,8 +26,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.Serializable;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,7 +56,6 @@ public class GroupIndexIT extends ITBase {
 
     @After
     public void removeTables() {
-        String groupName = getUserTable(cId).getGroup().getName();
         ddl().dropGroup(session(), groupName);
         cId = aId = oId = iId = -1;
         groupName = "";
@@ -122,9 +118,9 @@ public class GroupIndexIT extends ITBase {
 
         GroupIndex oDate_cName = createGroupIndex(groupName, "oDate_cName", "o.odate, c.name");
         expectIndexContents(oDate_cName,
-                            new Object[]{20050930L, "jill", 2L, 3L},
-                            new Object[]{20100702, "bob", 1L, 1L},
-                            new Object[]{20110621, "bob", 1L, 2L});
+                            new Object[]{20050930L, "jill"},
+                            new Object[]{20100702, "bob"},
+                            new Object[]{20110621, "bob"});
     }
 
     @Test
@@ -145,11 +141,11 @@ public class GroupIndexIT extends ITBase {
 
         GroupIndex iSku_oDate = createGroupIndex(groupName, "iSku_oDate", "i.sku, o.odate");
         expectIndexContents(iSku_oDate,
-                            new Object[]{1832L, 20100702L, 1L, 1L, 2L},
-                            new Object[]{3456L, 20070101L, 4L, 4L, 5L},
-                            new Object[]{5623L, 20100702L, 1L, 1L, 1L},
-                            new Object[]{7822L, 20050930L, 2L, 3L, 4L},
-                            new Object[]{9218L, 20050930L, 2L, 3L, 3L});
+                            new Object[]{1832L, 20100702L},
+                            new Object[]{3456L, 20070101L},
+                            new Object[]{5623L, 20100702L},
+                            new Object[]{7822L, 20050930L},
+                            new Object[]{9218L, 20050930L});
     }
 
     @Test
@@ -164,15 +160,20 @@ public class GroupIndexIT extends ITBase {
 
         GroupIndex aAddr_cID = createGroupIndex(groupName, "aAddr_cID", "a.addr, c.id");
         expectIndexContents(aAddr_cID,
-                            new Object[]{123L, 1L, 1L, 3L},
-                            new Object[]{23L, 4L, 4L, 2L},
-                            new Object[]{875L, 2L, 2L, 1L});
+                            new Object[]{123L, 1L},
+                            new Object[]{23L, 4L},
+                            new Object[]{875L, 2L});
     }
 
 
     private void expectIndexContents(GroupIndex groupIndex, Object[]... keys) throws Exception {
         final Iterator<Object[]> keyIt = Arrays.asList(keys).iterator();
         final List<List<Object>> extraKeys = new ArrayList<List<Object>>();
+
+        final int declaredColumns = groupIndex.getColumns().size();
+        for(Object[] key : keys) {
+            assertEquals("Expected key doesn't have declared column count", declaredColumns, key.length);
+        }
 
         final int[] curKey = {0};
         final String indexName = groupIndex.getIndexName().getName();
@@ -184,8 +185,9 @@ public class GroupIndexIT extends ITBase {
                 }
                 else {
                     List<Object> expected = Arrays.asList(keyIt.next());
+                    List<Object> actualOfDeclared = actual.subList(0, declaredColumns);
                     assertEquals(String.format("Key entry %d of index %s", curKey[0], indexName),
-                                 expected.toString(), actual.toString());
+                                 expected.toString(), actualOfDeclared.toString());
                     curKey[0]++;
                 }
             }
