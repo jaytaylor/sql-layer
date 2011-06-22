@@ -118,9 +118,9 @@ public class GroupIndexIT extends ITBase {
 
         GroupIndex oDate_cName = createGroupIndex(groupName, "oDate_cName", "o.odate, c.name");
         expectIndexContents(oDate_cName,
-                            new Object[]{20050930L, "jill"},
-                            new Object[]{20100702, "bob"},
-                            new Object[]{20110621, "bob"});
+                            array(Object.class, 20050930L, "jill"),
+                            array(Object.class, 20100702, "bob"),
+                            array(Object.class, 20110621, "bob"));
     }
 
     @Test
@@ -141,11 +141,11 @@ public class GroupIndexIT extends ITBase {
 
         GroupIndex iSku_oDate = createGroupIndex(groupName, "iSku_oDate", "i.sku, o.odate");
         expectIndexContents(iSku_oDate,
-                            new Object[]{1832L, 20100702L},
-                            new Object[]{3456L, 20070101L},
-                            new Object[]{5623L, 20100702L},
-                            new Object[]{7822L, 20050930L},
-                            new Object[]{9218L, 20050930L});
+                            array(Object.class, 1832L, 20100702L),
+                            array(Object.class, 3456L, 20070101L),
+                            array(Object.class, 5623L, 20100702L),
+                            array(Object.class, 7822L, 20050930L),
+                            array(Object.class, 9218L, 20050930L));
     }
 
     @Test
@@ -160,9 +160,9 @@ public class GroupIndexIT extends ITBase {
 
         GroupIndex aAddr_cID = createGroupIndex(groupName, "aAddr_cID", "a.addr, c.id");
         expectIndexContents(aAddr_cID,
-                            new Object[]{123L, 1L},
-                            new Object[]{23L, 4L},
-                            new Object[]{875L, 2L});
+                            array(Object.class, 123L, 1L),
+                            array(Object.class, 23L, 4L),
+                            array(Object.class, 875L, 2L));
     }
 
 
@@ -204,20 +204,6 @@ public class GroupIndexIT extends ITBase {
             Assert.fail(String.format("Expected more keys in index %s: %s", indexName, expectedMoreStr));
         }
     }
-
-/*
-            writeRows(createNewRow(cId, 1, "bob"),
-                    createNewRow(oId, 1, 1, "2010-07-02"),
-                      createNewRow(iId, 1, 1, 2435),
-                      createNewRow(iId, 2, 1, 3246),
-                    createNewRow(oId, 2, 1, "2011-06-21"),
-                      createNewRow(iId, 3, 2, 8493),
-                  createNewRow(cId, 2, "jill"),
-                    createNewRow(oId, 3, 2, "2005-09-30"),
-                      createNewRow(iId, 4, 3, 9232),
-                  createNewRow(cId, 3, "foo"),
-                  createNewRow(cId, 4, "bar"));
-    */
 
     private static void checkGroupIndexes(Table onTable, GroupIndex... indexes) {
         Set<GroupIndex> expected = new HashSet<GroupIndex>(Arrays.asList(indexes));
