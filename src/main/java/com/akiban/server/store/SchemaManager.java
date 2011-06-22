@@ -50,7 +50,7 @@ public interface SchemaManager {
      * was an internal error.
      * @return List of newly created indexes.
      */
-    List<Index> createIndexes(Session session, Collection<Index> indexes) throws Exception;
+    Collection<Index> createIndexes(Session session, Collection<Index> indexes) throws Exception;
 
     /**
      * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are

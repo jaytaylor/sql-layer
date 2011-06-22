@@ -214,7 +214,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
     
     @Override
-    public List<Index> createIndexes(Session session, Collection<Index> indexesToAdd) throws Exception {
+    public Collection<Index> createIndexes(Session session, Collection<Index> indexesToAdd) throws Exception {
         final Map<String,String> volumeToSchema = new HashMap<String,String>();
         final AkibanInformationSchema newAIS = new AkibanInformationSchema();
         new Writer(new AISTarget(newAIS)).save(ais);
