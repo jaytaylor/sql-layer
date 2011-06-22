@@ -170,15 +170,21 @@ public final class OperatorStoreTest {
         assertEquals("plan description", expected, plan.describePlan());
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void giUpdatePlan_OI_fromC() {
         AkibanInformationSchema ais = coia();
         Schema schema = schema(ais);
-        OperatorStore.groupIndexCreationPlan(
+        PhysicalOperator plan = OperatorStore.groupIndexCreationPlan(
                 schema,
                 gi(ais, "gi_sku_date"),
                 rowType(ais, schema, "customer")
         );
+        String expected = Strings.join(
+                "GroupScan_Default(deep hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
+                "Flatten_HKeyOrdered(sch.customer RIGHT sch.order)",
+                "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
+        );
+        assertEquals("plan description", expected, plan.describePlan());
     }
 
     @Test
