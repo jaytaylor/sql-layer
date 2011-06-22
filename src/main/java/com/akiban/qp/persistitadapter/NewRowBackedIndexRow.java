@@ -25,11 +25,23 @@ import com.akiban.server.api.dml.scan.NewRow;
 
 public class NewRowBackedIndexRow implements RowBase
 {
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        return row.toString();
+    }
+
+    // NewRowBackedIndexRow interface
+
     NewRowBackedIndexRow(RowType rowType, NewRow row, TableIndex index) {
         this.rowType = rowType;
         this.row = row;
         this.index = index;
     }
+
+    // RowBase interface
 
     @Override
     public RowType rowType() {
