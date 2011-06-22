@@ -231,12 +231,7 @@ public class OperatorCompiler
             TableNode indexTable = index.getTable();
             squery.getTables().setLeftBranch(indexTable);
             UserTableRowType tableType = tableRowType(indexTable);
-            IndexRowType indexType;
-            // TODO: See comment on this class.
-            if (iindex.isTableIndex())
-                indexType = tableType.indexRowType(iindex);
-            else
-                indexType = new UnknownIndexRowType(schema, tableType, iindex);
+            IndexRowType indexType = schema.indexRowType(iindex);
             resultOperator = indexScan_Default(indexType, 
                                                index.isReverse(),
                                                index.getIndexKeyRange());
@@ -876,10 +871,6 @@ public class OperatorCompiler
     protected IndexBound getIndexBound(Index index, Expression[] keys, int nkeys) {
         if (keys == null) 
             return null;
-        UserTable userTable = null;
-        if (index.isTableIndex())
-            userTable = (UserTable)((TableIndex)index).getTable();
-        // TODO: group index bound table.
         return new IndexBound(getIndexExpressionRow(index, keys),
                               getIndexColumnSelector(index, nkeys));
     }
@@ -895,49 +886,11 @@ public class OperatorCompiler
             };
     }
 
-    // TODO: This is just good enough to print properly in plan, not
-    // to actually run.
-    static class UnknownIndexRowType extends IndexRowType {
-
-        @Override
-        public String toString()
-        {
-            return index.toString();
-        }
-
-        // RowType interface
-
-        @Override
-        public int nFields()
-        {
-            return index.getColumns().size();
-        }
-
-        public UnknownIndexRowType(SchemaAISBased schema, UserTableRowType tableType, Index index)
-        {
-            super(schema, tableType, null);
-            this.index = index;
-        }
-
-        // Object state
-
-        private final Index index;
-    }
-
     /** Return a {@link Row} for the given index containing the given
      * {@link Expression} values.  
-     *
-     * When testing, this just returns a row with those expressions.
-     * In use with actual index lookup, needs to be overridden to
-     * return a row shaped like the user table.
      */
     protected Row getIndexExpressionRow(Index index, Expression[] keys) {
-        RowType rowType = null;
-        if (index.isTableIndex())
-            rowType = schema.indexRowType((TableIndex)index);
-        else
-            // TODO: See comment above.
-            rowType = new UnknownIndexRowType(schema, null, index);
+        RowType rowType = schema.indexRowType(index);
         return new ExpressionRow(rowType, keys);
     }
 

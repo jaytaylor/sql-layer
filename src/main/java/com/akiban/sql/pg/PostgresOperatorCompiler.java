@@ -136,16 +136,6 @@ public class PostgresOperatorCompiler extends OperatorCompiler
         }
     }
 
-    @Override
-    protected Row getIndexExpressionRow(Index index, Expression[] keys) {
-        if (!index.isTableIndex())
-            return super.getIndexExpressionRow(index, keys);
-        // TODO: get group index row type
-        UserTable userTable = (UserTable)((TableIndex)index).getTable();
-        RowType rowType = schema.userTableRowType(userTable).indexRowType(index);
-        return new ExpressionRow(rowType, keys);
-    }
-
     protected Schema getSchema() {
         return schema;
     }
