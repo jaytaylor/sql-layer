@@ -141,7 +141,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // Cursor interface
 
@@ -152,12 +152,12 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         }
 
         @Override
-        public boolean next()
+        public Row next()
         {
-            outputRow(pending.take());
-            boolean moreInput;
-            while (outputRow() == null && ((moreInput = input.next()) || parent.isNotNull())) {
-                if (!moreInput) {
+            Row outputRow = pending.take();
+            Row inputRow;
+            while (outputRow == null && (((inputRow = input.next()) != null) || parent.isNotNull())) {
+                if (inputRow == null) {
                     // child rows are processed immediately. parent rows are not,
                     // because when seen, we don't know if the next row will be another
                     // parent, a child, a row of child type that is not actually a child,
@@ -169,7 +169,6 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                     }
                     parent.set(null);
                 } else {
-                    Row inputRow = input.currentRow();
                     RowType inputRowType = inputRow.rowType();
                     if (inputRowType == parentType) {
                         if (parent.isNotNull() && childlessParent) {
@@ -205,9 +204,9 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                         }
                     }
                 }
-                outputRow(pending.take());
+                outputRow = pending.take();
             }
-            return outputRow() != null;
+            return outputRow;
         }
 
         @Override

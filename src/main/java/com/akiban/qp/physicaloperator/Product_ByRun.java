@@ -84,7 +84,7 @@ class Product_ByRun extends PhysicalOperator
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // Cursor interface
 
@@ -95,56 +95,53 @@ class Product_ByRun extends PhysicalOperator
         }
 
         @Override
-        public boolean next()
+        public Row next()
         {
             Row row = null;
-            while (row == null && (runState.compareTo(RunState.AFTER_RIGHT) < 0 || input.next())) {
-                if (runState == RunState.RIGHT) {
-                    row = nextProductRow();
-                }
-                if (row == null) {
-                    if (input.next()) {
-                        Row inputRow = input.currentRow();
-                        if (inputRow.runId() == RowBase.UNDEFINED_RUN_ID) {
-                            throw new IncompatibleRowException
-                                ("Product_ByRun cannot take input from a GroupScan_Default");
-                        }
-                        if (inputRow.runId() != currentRunId) {
-                            startNewRun(inputRow);
-                        }
-                        setRunState(inputRow);
-                        switch (runState) {
-                            case BEFORE_LEFT:
-                                row = inputRow;
-                                break;
-                            case LEFT:
-                                rememberLeftRow(inputRow);
-                                break;
-                            case BETWEEN:
-                                row = inputRow;
-                                break;
-                            case RIGHT:
-                                rememberRightRow(inputRow);
-                                break;
-                            case AFTER_RIGHT:
-                                row = inputRow;
-                                terminateRunProduct();
-                                break;
-                        }
-                    } else {
-                        runState = RunState.AFTER_RIGHT;
-
+            if (runState == RunState.RIGHT) {
+                row = nextProductRow();
+            }
+            while (row == null && (runState.compareTo(RunState.AFTER_RIGHT) < 0 || inputRow.isNotNull())) {
+                inputRow.set(input.next());
+                Row currentRow = inputRow.get();
+                if (currentRow == null) {
+                    runState = RunState.AFTER_RIGHT;
+                } else {
+                    if (currentRow.runId() == RowBase.UNDEFINED_RUN_ID) {
+                        throw new IncompatibleRowException
+                            ("Product_ByRun cannot take input from a GroupScan_Default");
+                    }
+                    if (currentRow.runId() != currentRunId) {
+                        startNewRun(currentRow);
+                    }
+                    setRunState(currentRow);
+                    switch (runState) {
+                        case BEFORE_LEFT:
+                            row = currentRow;
+                            break;
+                        case LEFT:
+                            rememberLeftRow(currentRow);
+                            break;
+                        case BETWEEN:
+                            row = currentRow;
+                            break;
+                        case RIGHT:
+                            rememberRightRow(currentRow);
+                            row = nextProductRow();
+                            break;
+                        case AFTER_RIGHT:
+                            row = currentRow;
+                            terminateRunProduct();
+                            break;
                     }
                 }
             }
-            outputRow(row);
-            return row != null;
+            return row;
         }
 
         @Override
         public void close()
         {
-            outputRow(null);
             input.close();
         }
 
@@ -239,6 +236,7 @@ class Product_ByRun extends PhysicalOperator
         private final RowList leftRows = new RowList();
         private RowList.Scan leftScan;
         private final RowHolder<Row> rightRow = new RowHolder<Row>();
+        private final RowHolder<Row> inputRow = new RowHolder<Row>();
         private int currentRunId = RowBase.UNDEFINED_RUN_ID;
         private RunState runState = RunState.BEFORE_LEFT;
     }

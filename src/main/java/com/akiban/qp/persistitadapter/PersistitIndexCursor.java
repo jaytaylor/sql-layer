@@ -48,7 +48,7 @@ class PersistitIndexCursor implements Cursor
     }
 
     @Override
-    public boolean next()
+    public Row next()
     {
         try {
             if (exchange != null &&
@@ -62,7 +62,7 @@ class PersistitIndexCursor implements Cursor
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }
-        return exchange != null;
+        return exchange == null ? null : row.get();
     }
 
     @Override
@@ -74,12 +74,6 @@ class PersistitIndexCursor implements Cursor
             indexFilter = null;
             row.set(null);
         }
-    }
-
-    @Override
-    public Row currentRow()
-    {
-        return row.get();
     }
 
     // For use by this package

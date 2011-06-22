@@ -32,7 +32,6 @@ import com.akiban.qp.rowtype.SchemaAISBased;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.store.PersistitStore;
@@ -192,8 +191,8 @@ public class QPProfileITBase extends ITBase
         List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
         try {
             cursor.open(bindings);
-            while (cursor.next()) {
-                RowBase actualRow = cursor.currentRow();
+            RowBase actualRow;
+            while ((actualRow = cursor.next()) != null) {
                 int count = actualRows.size();
                 assertTrue(count < expected.length);
                 if(!equal(expected[count], actualRow)) {
@@ -216,8 +215,8 @@ public class QPProfileITBase extends ITBase
             cursor.open(NO_BINDINGS);
             count = 0;
             List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
-            while (cursor.next()) {
-                RowBase actualRow = cursor.currentRow();
+            RowBase actualRow;
+            while ((actualRow = cursor.next()) != null) {
                 assertEquals(expected[count], actualRow.hKey().toString());
                 count++;
                 actualRows.add(actualRow);

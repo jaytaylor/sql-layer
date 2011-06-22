@@ -91,8 +91,8 @@ public final class PersistitFilterFactoryIT extends ITBase {
         assertSame("second term", KeyFilter.ALL, keyFilter.getTerm(1));
 
         List<Row> rows = new ArrayList<Row>();
-        while (groupCursor.next()) {
-            rows.add( groupCursor.currentRow() );
+        while ((row = groupCursor.next()) != null) {
+            rows.add( row );
         }
         groupCursor.close();
 

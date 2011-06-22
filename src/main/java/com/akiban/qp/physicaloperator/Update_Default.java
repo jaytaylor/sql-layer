@@ -51,9 +51,9 @@ public final class Update_Default implements UpdatePlannable {
         Cursor inputCursor = inputOperator.cursor(adapter);
         inputCursor.open(bindings);
         try {
-            while (inputCursor.next()) {
+            Row oldRow;
+            while ((oldRow = inputCursor.next()) != null) {
                 ++seen;
-                Row oldRow = inputCursor.currentRow();
                 if (updateFunction.rowIsSelected(oldRow)) {
                     Row newRow = updateFunction.evaluate(oldRow, bindings);
                     adapter.updateRow(oldRow, newRow, bindings);

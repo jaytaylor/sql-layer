@@ -305,8 +305,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         Cursor cursor = API.cursor(plan, adapter);
         cursor.open(bindings);
         try {
-            while (cursor.next()) {
-                Row row = cursor.currentRow();
+            Row row;
+            while ((row = cursor.next()) != null) {
                 if (row.rowType().equals(plan.rowType())) {
                     handler.handleRow(action, groupIndex, row);
                 }

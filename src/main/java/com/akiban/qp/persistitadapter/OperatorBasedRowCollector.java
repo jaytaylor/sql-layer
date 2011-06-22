@@ -58,7 +58,9 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         }
         cursor = cursor(operator, adapter);
         cursor.open(UndefBindings.only());
-        closed = !cursor.next();
+        // closed was initialized to true, because hasMore is checked before open. (This is due to scan being
+        // spread across possibly multiple requests.) Now set closed to false for the actual scanning of rows.
+        closed = false;
     }
 
     @Override
@@ -69,23 +71,24 @@ public abstract class OperatorBasedRowCollector implements RowCollector
          // another payload with room, (resulting from a ScanRowsMoreRequest). currentRow is used only to hold onto
          // the current row across these two invocations.
         boolean wroteToPayload = false;
-        if (!closed) {
-            PersistitGroupRow row = (PersistitGroupRow) (currentRow.isNull() ? cursor.currentRow() : currentRow.get());
-            if (row == null) {
-                close();
-            } else {
-                RowData rowData = row.rowData();
-                try {
-                    payload.put(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
-                    wroteToPayload = true;
-                    rowCount++;
-                    if (!cursor.next()) {
-                        close();
-                    }
-                } catch (BufferOverflowException e) {
-                    assert !wroteToPayload;
-                    currentRow.set(row);
-                }
+        PersistitGroupRow row;
+        if (currentRow.isNull()) {
+            row = (PersistitGroupRow) cursor.next();
+        } else {
+            row = (PersistitGroupRow) currentRow.get();
+            currentRow.set(null);
+        }
+        if (row == null) {
+            close();
+        } else {
+            RowData rowData = row.rowData();
+            try {
+                payload.put(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
+                wroteToPayload = true;
+                rowCount++;
+            } catch (BufferOverflowException e) {
+                assert !wroteToPayload;
+                currentRow.set(row);
             }
         }
         return wroteToPayload;
@@ -95,18 +98,13 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     public RowData collectNextRow() throws Exception
     {
         RowData rowData = null;
-        if (!closed) {
-            currentRow.set(cursor.currentRow());
-            PersistitGroupRow row = (PersistitGroupRow) currentRow.get();
-            if (row == null) {
-                close();
-            } else {
-                rowData = row.rowData();
-                rowCount++;
-                if (!cursor.next()) {
-                    close();
-                }
-            }
+        PersistitGroupRow row = (PersistitGroupRow) cursor.next();
+        if (row == null) {
+            close();
+        } else {
+            currentRow.set(row);
+            rowData = row.rowData();
+            rowCount++;
         }
         return rowData;
     }
@@ -122,7 +120,9 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     {
         if (!closed) {
             currentRow.set(null);
-            cursor.close();
+            if (cursor != null) {
+                cursor.close();
+            }
             cursor = null;
             closed = true;
         }
@@ -377,9 +377,9 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     protected final Set<UserTable> requiredUserTables = new HashSet<UserTable>();
     protected IndexKeyRange indexKeyRange;
     private Cursor cursor;
-    private boolean closed = true;
     private int rowCount = 0;
     private RowHolder<Row> currentRow = new RowHolder<Row>();
+    private boolean closed = true; // Not false, so that initial call to hasMore, prior to open, will proceed to call open.
 
 //    // inner class
 //    static class OpenInfoStruct {
