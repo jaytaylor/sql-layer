@@ -141,14 +141,6 @@ public class AkServerUtil {
         }
     }
 
-    public static float getFloat(byte[] bytes, int index) {
-        return Float.intBitsToFloat(getInt(bytes, index));
-    }
-
-    public static double getDouble(byte[] bytes, int index) {
-        return Double.longBitsToDouble(getLong(bytes, index));
-    }
-
     public static int putByte(byte[] bytes, int index, int value) {
         bytes[index] = (byte) (value);
         return index + 1;
@@ -225,53 +217,6 @@ public class AkServerUtil {
             bytes[index + 7] = (byte) (value >>> 56);
         }
         return index + 8;
-    }
-
-    public static int putFloat(byte[] bytes, int index, float value) {
-        return putInt(bytes, index, Float.floatToIntBits(value));
-    }
-
-    public static int putDouble(byte[] bytes, int index, double value) {
-        return putLong(bytes, index, Double.doubleToLongBits(value));
-    }
-
-    public static int putBytes(byte[] bytes, int index, byte[] value) {
-        System.arraycopy(value, 0, bytes, index, value.length);
-        return index + value.length;
-    }
-
-    public static int putBytes(byte[] bytes, int index, byte[] value,
-            int offset, int length) {
-        System.arraycopy(value, offset, bytes, index, length);
-        return index + length;
-    }
-
-    public static String dump(char[] c, int offset, int size) {
-        StringBuilder sb1 = new StringBuilder();
-        StringBuilder sb2 = new StringBuilder();
-        for (int m = 0; m < size - offset; m += 8) {
-            sb2.setLength(0);
-            hex(sb1, m, 4);
-            sb1.append(":");
-            for (int i = 0; i < 8; i++) {
-                sb1.append("  ");
-                if (i % 4 == 0)
-                    sb1.append(" ");
-                int j = m + i;
-                if (j < size - offset) {
-                    hex(sb1, c[j + offset], 4);
-                    if (c[j + offset] >= 32 && c[j] < 127)
-                        sb2.append(c[j]);
-                    else
-                        sb2.append(".");
-                } else
-                    sb1.append("    ");
-            }
-            sb1.append("    ");
-            sb1.append(sb2.toString());
-            sb1.append(NEW_LINE);
-        }
-        return sb1.toString();
     }
 
     public static String dump(byte[] b, int offset, int size) {
@@ -375,8 +320,6 @@ public class AkServerUtil {
      * bytes as a little-endian string size and constructs a string from the
      * remaining bytes.
      * 
-     * TODO: does not handle non US-ASCII character sets.
-     * 
      * @param bytes
      * @param offset
      * @param width
@@ -449,16 +392,6 @@ public class AkServerUtil {
     public static int varWidth(final int length) {
         return length == 0 ? 0 : length < 0x100 ? 1 : length < 0x10000 ? 2
                 : length < 0x1000000 ? 3 : 4;
-    }
-
-    public static long availableMemory() {
-        final MemoryUsage mu = ManagementFactory.getMemoryMXBean()
-                .getHeapMemoryUsage();
-        long max = mu.getMax();
-        if (max == -1) {
-            max = mu.getInit();
-        }
-        return max;
     }
     
     public static boolean equals(final Object a, final Object b) {
