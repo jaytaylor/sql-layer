@@ -33,14 +33,12 @@ import com.akiban.qp.physicaloperator.ArrayBindings;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.CursorUpdateException;
-import com.akiban.qp.physicaloperator.NoLimit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.physicaloperator.UpdateFunction;
 import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
@@ -59,6 +57,7 @@ import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.util.CachePair;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Transaction;
@@ -69,7 +68,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Map;
 
 import static com.akiban.qp.physicaloperator.API.ancestorLookup_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
@@ -222,7 +221,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
         for(GroupIndex groupIndex : groupIndexes) {
-            PhysicalOperator plan = groupIndexCreationPlan(adapter.schema(), groupIndex);
+            PhysicalOperator plan = MaintenancePlanCreator.groupIndexCreationPlan(adapter.schema(), groupIndex);
             runMaintenancePlan(adapter, groupIndex, plan, UndefBindings.only(),
                     new PersistitKeyHandler(adapter), RowAction.FOR_BULK);
         }
@@ -278,7 +277,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             persistitHKey.copyFrom(hEx.getKey());
 
             ArrayBindings bindings = new ArrayBindings(1);
-            bindings.set(HKEY_BINDING_POSITION, persistitHKey);
+            bindings.set(MaintenancePlanCreator.HKEY_BINDING_POSITION, persistitHKey);
 
             Collection<GroupIndex> branchIndexes = new ArrayList<GroupIndex>();
             for (GroupIndex groupIndex : userTable.getGroup().getIndexes()) {
@@ -292,7 +291,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     throw new UniqueIndexUnsupportedException();
                 }
                 PhysicalOperator plan = groupIndexCreationPlan(
-                        adapter.schema(),
+                        ais,
                         groupIndex,
                         adapter.schema().userTableRowType(userTable)
                 );
@@ -326,99 +325,22 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
 
+    private PhysicalOperator groupIndexCreationPlan(
+            AkibanInformationSchema ais, GroupIndex groupIndex, UserTableRowType rowType
+    ) {
+        Map<GroupIndex, Map<UserTableRowType,PhysicalOperator>> gisToPlansMapMap = maintenancePlans.get(ais);
+        Map<UserTableRowType,PhysicalOperator> plansMap = gisToPlansMapMap.get(groupIndex);
+        if (plansMap == null) {
+            throw new RuntimeException("no plan found for group index " + groupIndex);
+        }
+        PhysicalOperator plan = plansMap.get(rowType);
+        if (plan == null) {
+            throw new RuntimeException("no plan for row type " + rowType + " in group index " + groupIndex);
+        }
+        return plan;
+    }
 
     // private static methods
-
-    static PhysicalOperator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex, UserTableRowType rowType) {
-        BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
-        if (branchTables.isEmpty()) {
-            throw new RuntimeException("group index has empty branch: " + groupIndex);
-        }
-        if (!branchTables.fromRoot().contains(rowType)) {
-            throw new RuntimeException(rowType + " not in branch for " + groupIndex + ": " + branchTables);
-        }
-
-        boolean deep = !branchTables.leafMost().equals(rowType);
-        PhysicalOperator plan = API.groupScan_Default(
-                groupIndex.getGroup().getGroupTable(),
-                NoLimit.instance(),
-                com.akiban.qp.expression.API.variable(HKEY_BINDING_POSITION),
-                deep
-        );
-        if (branchTables.fromRoot().size() == 1) {
-            return plan;
-        }
-        if (!branchTables.fromRoot().get(0).equals(rowType)) {
-            plan = API.ancestorLookup_Default(
-                    plan,
-                    groupIndex.getGroup().getGroupTable(),
-                    rowType,
-                    ancestors(rowType, branchTables.fromRoot()),
-                    true
-            );
-        }
-        
-        RowType parentRowType = null;
-        API.JoinType joinType = API.JoinType.RIGHT_JOIN;
-        for (RowType branchRowType : branchTables.fromRoot()) {
-            if (parentRowType == null) {
-                parentRowType = branchRowType;
-            }
-            else {
-                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType);
-                parentRowType = plan.rowType();
-            }
-            if (branchRowType.equals(branchTables.rootMost())) {
-                joinType = API.JoinType.INNER_JOIN;
-            }
-        }
-        return plan;
-    }
-
-    /**
-     * Create plan for the complete selection of all rows of the given GroupIndex (e.g. creating an
-     * index on existing date).
-     * @param schema Schema
-     * @param groupIndex GroupIndex
-     * @return PhysicalOperator
-     */
-    static PhysicalOperator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex) {
-        BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
-
-        PhysicalOperator plan = API.groupScan_Default(groupIndex.getGroup().getGroupTable(), NoLimit.instance());
-
-        RowType parentRowType = null;
-        API.JoinType joinType = API.JoinType.RIGHT_JOIN;
-        for (RowType branchRowType : branchTables.fromRoot()) {
-            if (parentRowType == null) {
-                parentRowType = branchRowType;
-            }
-            else {
-                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType);
-                parentRowType = plan.rowType();
-            }
-            if (branchRowType.equals(branchTables.rootMost())) {
-                joinType = API.JoinType.INNER_JOIN;
-            }
-        }
-        
-        return plan;
-    }
-
-    private static List<RowType> ancestors(RowType rowType, List<? extends RowType> branchTables) {
-        List<RowType> ancestors = new ArrayList<RowType>();
-        for(RowType ancestor : branchTables) {
-            if (ancestor.equals(rowType)) {
-                return ancestors;
-            }
-            ancestors.add(ancestor);
-        }
-        throw new RuntimeException(rowType + "not found in " + branchTables);
-    }
-
-    private static BranchTables branchTablesRootToLeaf(Schema schema, GroupIndex groupIndex) {
-        return new BranchTables(schema, groupIndex);
-    }
 
     private static void runCursor(RowData oldRowData, RowDef rowDef, UpdatePlannable plannable, PersistitAdapter adapter)
             throws DuplicateKeyException, NoSuchRowException
@@ -459,9 +381,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         return rowDescription;
     }
 
-    // consts
+    // object state
 
-    private static final int HKEY_BINDING_POSITION = 0;
+    private final CachePair<AkibanInformationSchema, Map<GroupIndex, Map<UserTableRowType,PhysicalOperator>>> maintenancePlans
+            = CachePair.using(new MaintenancePlanCreator());
+
+    // consts
     private static final int MAX_RETRIES = 10;
 
     // nested classes
@@ -605,56 +530,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         private final Action action;
 
         private static RowAction FOR_BULK = new RowAction(null, Action.BULK_ADD);
-    }
-
-    private static class BranchTables {
-
-        // BranchTables interface
-
-        public List<UserTableRowType> fromRoot() {
-            return allTablesForBranch;
-        }
-
-        public List<UserTableRowType> fromRootMost() {
-            return onlyBranch;
-        }
-
-        public boolean isEmpty() {
-            return fromRootMost().isEmpty();
-        }
-
-        public UserTableRowType leafMost() {
-            return onlyBranch.get(onlyBranch.size()-1);
-        }
-
-        public UserTableRowType rootMost() {
-            return onlyBranch.get(0);
-        }
-
-        public BranchTables(Schema schema, GroupIndex groupIndex) {
-            List<UserTableRowType> localTables = new ArrayList<UserTableRowType>();
-            UserTable rootmost = groupIndex.rootMostTable();
-            int branchRootmostIndex = -1;
-            for (UserTable table = groupIndex.leafMostTable(); table != null; table = table.parentTable()) {
-                if (table.equals(rootmost)) {
-                    assert branchRootmostIndex == -1 : branchRootmostIndex;
-                    branchRootmostIndex = table.getDepth();
-                }
-                localTables.add(schema.userTableRowType(table));
-            }
-            if (branchRootmostIndex < 0) {
-                throw new RuntimeException("branch root not found! " + rootmost + " within " + localTables);
-            }
-            Collections.reverse(localTables);
-            this.allTablesForBranch = Collections.unmodifiableList(localTables);
-            this.onlyBranch = branchRootmostIndex == 0
-                    ? allTablesForBranch
-                    : allTablesForBranch.subList(branchRootmostIndex, allTablesForBranch.size());
-        }
-
-        // object state
-        private final List<UserTableRowType> allTablesForBranch;
-        private final List<UserTableRowType> onlyBranch;
     }
 
     private static class InternalUpdateFunction implements UpdateFunction {
