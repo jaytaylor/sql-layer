@@ -26,7 +26,6 @@ import com.akiban.server.store.IndexRecordVisitor;
 import com.akiban.server.test.it.ITBase;
 import com.persistit.Key;
 import junit.framework.Assert;
-import org.apache.zookeeper.data.Id;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -62,7 +61,7 @@ public class KeyToObjectIT extends ITBase {
             private int rowCounter = 0;
 
             @Override
-            public void visit(List<Object> _) {
+            protected void visit(List<Object> _) {
                 if(!rowIt.hasNext()) {
                     Assert.fail("More index entries than rows: rows("+allRows+") index("+index+")");
                 }

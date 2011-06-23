@@ -179,7 +179,7 @@ public class GroupIndexIT extends ITBase {
         final String indexName = groupIndex.getIndexName().getName();
         persistitStore().traverse(session(), groupIndex, new IndexRecordVisitor() {
             @Override
-            public void visit(List<Object> actual) {
+            protected void visit(List<Object> actual) {
                 if(!keyIt.hasNext()) {
                     extraKeys.add(actual);
                 }

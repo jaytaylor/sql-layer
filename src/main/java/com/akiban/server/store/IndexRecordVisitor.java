@@ -24,17 +24,17 @@ import java.util.*;
 
 public abstract class IndexRecordVisitor
 {
-    public final void visit() throws PersistitException, InvalidOperationException
+    final void visit() throws PersistitException, InvalidOperationException
     {
         visit(key());
     }
 
-    public final void initialize(Exchange exchange)
+    final void initialize(Exchange exchange)
     {
         this.exchange = exchange;
     }
 
-    public abstract void visit(List<Object> key);
+    protected abstract void visit(List<Object> key);
 
     private List<Object> key()
     {

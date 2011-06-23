@@ -23,7 +23,7 @@ import java.util.List;
 public class RecordCollectingIndexRecordVisitor extends IndexRecordVisitor
 {
     @Override
-    public void visit(List<Object> key)
+    protected void visit(List<Object> key)
     {
         records.add(key);
     }
