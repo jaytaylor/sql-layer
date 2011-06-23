@@ -16,8 +16,11 @@
 package com.akiban.sql.pg;
 
 import com.akiban.sql.parser.StatementNode;
+import com.akiban.sql.parser.ParameterNode;
 
 import com.akiban.sql.StandardException;
+
+import java.util.List;
 
 /** Turn an SQL statement into something executable. */
 public interface PostgresStatementGenerator extends PostgresStatementParser
@@ -26,7 +29,8 @@ public interface PostgresStatementGenerator extends PostgresStatementParser
     /** Return executable form of the given parsed statement or
      * <code>null</code> if this generator cannot handle it. */
     public PostgresStatement generate(PostgresServerSession server,
-                                      StatementNode stmt, int[] paramTypes) 
+                                      StatementNode stmt, 
+                                      List<ParameterNode> params, int[] paramTypes) 
             throws StandardException;
 
 }

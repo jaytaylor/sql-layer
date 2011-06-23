@@ -16,6 +16,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.sql.StandardException;
+import com.akiban.sql.parser.SQLParser;
 
 public abstract class PostgresBaseStatementGenerator 
                 implements PostgresStatementGenerator
@@ -26,7 +27,9 @@ public abstract class PostgresBaseStatementGenerator
                                    String sql, int[] paramTypes) 
             throws StandardException {
         // This very inefficient reparsing by every generator is actually avoided.
-        return generate(server, server.getParser().parseStatement(sql), paramTypes);
+        SQLParser parser = server.getParser();
+        return generate(server, parser.parseStatement(sql), 
+                        parser.getParameterList(), paramTypes);
     }
 
     @Override

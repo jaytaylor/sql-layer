@@ -178,16 +178,17 @@ public class OperatorCompiler
         }
     }
 
-    public Result compile(DMLStatementNode stmt) throws StandardException {
+    public Result compile(DMLStatementNode stmt, List<ParameterNode> params)
+            throws StandardException {
         switch (stmt.getNodeType()) {
         case NodeTypes.CURSOR_NODE:
-            return compileSelect((CursorNode)stmt);
+            return compileSelect((CursorNode)stmt, params);
         case NodeTypes.UPDATE_NODE:
-            return compileUpdate((UpdateNode)stmt);
+            return compileUpdate((UpdateNode)stmt, params);
         case NodeTypes.INSERT_NODE:
-            return compileInsert((InsertNode)stmt);
+            return compileInsert((InsertNode)stmt, params);
         case NodeTypes.DELETE_NODE:
-            return compileDelete((DeleteNode)stmt);
+            return compileDelete((DeleteNode)stmt, params);
         default:
             throw new UnsupportedSQLException("Unsupported statement type: " + 
                                               stmt.statementToString());
@@ -206,7 +207,8 @@ public class OperatorCompiler
 
     enum ProductMethod { HKEY_ORDERED, BY_RUN };
 
-    public Result compileSelect(CursorNode cursor) throws StandardException {
+    public Result compileSelect(CursorNode cursor, List<ParameterNode> params) 
+            throws StandardException {
         // Get into standard form.
         cursor = (CursorNode)bindAndGroup(cursor);
         SimplifiedSelectQuery squery = 
@@ -395,7 +397,8 @@ public class OperatorCompiler
                           offset, limit);
     }
 
-    public Result compileUpdate(UpdateNode update) throws StandardException {
+    public Result compileUpdate(UpdateNode update, List<ParameterNode> params) 
+            throws StandardException {
         update = (UpdateNode)bindAndGroup(update);
         SimplifiedUpdateStatement supdate = 
             new SimplifiedUpdateStatement(update, grouper.getJoinConditions());
@@ -450,7 +453,8 @@ public class OperatorCompiler
         return new Result(updatePlan);
     }
 
-    public Result compileInsert(InsertNode insert) throws StandardException {
+    public Result compileInsert(InsertNode insert, List<ParameterNode> params) 
+            throws StandardException {
         insert = (InsertNode)bindAndGroup(insert);
         SimplifiedInsertStatement sstmt = 
             new SimplifiedInsertStatement(insert, grouper.getJoinConditions());
@@ -458,7 +462,8 @@ public class OperatorCompiler
         throw new UnsupportedSQLException("No Insert operators yet");
     }
 
-    public Result compileDelete(DeleteNode delete) throws StandardException {
+    public Result compileDelete(DeleteNode delete, List<ParameterNode> params) 
+            throws StandardException {
         delete = (DeleteNode)bindAndGroup(delete);
         SimplifiedDeleteStatement sstmt = 
             new SimplifiedDeleteStatement(delete, grouper.getJoinConditions());

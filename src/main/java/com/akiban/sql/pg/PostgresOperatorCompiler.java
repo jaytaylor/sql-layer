@@ -27,7 +27,7 @@ import com.akiban.sql.optimizer.ExpressionRow;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.parser.ValueNode;
+import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.sql.views.ViewDefinition;
@@ -68,7 +68,9 @@ public class PostgresOperatorCompiler extends OperatorCompiler
                                    String sql, int[] paramTypes) 
             throws StandardException {
         // This very inefficient reparsing by every generator is actually avoided.
-        return generate(server, server.getParser().parseStatement(sql), paramTypes);
+        SQLParser parser = server.getParser();
+        return generate(server, parser.parseStatement(sql), 
+                        parser.getParameterList(), paramTypes);
     }
 
     @Override
@@ -110,20 +112,22 @@ public class PostgresOperatorCompiler extends OperatorCompiler
 
     @Override
     public PostgresStatement generate(PostgresServerSession session,
-                                      StatementNode stmt, int[] paramTypes)
+                                      StatementNode stmt, 
+                                      List<ParameterNode> params, int[] paramTypes)
             throws StandardException {
         if (!(stmt instanceof DMLStatementNode))
             return null;
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
-        Result result = compile(dmlStmt);
+        Result result = compile(dmlStmt, params);
+
+        logger.debug("Operator:\n{}", result);
 
         List<PostgresType> parameterTypes = null;
         {
-            List<ValueNode> parameterNodes = session.getParser().getParameterList();
-            if ((parameterNodes != null) && (parameterNodes.size() > 0)) {
-                parameterTypes = new ArrayList<PostgresType>(parameterNodes.size());
-                for (ValueNode valueNode : parameterNodes) {
-                    DataTypeDescriptor sqlType = valueNode.getType();
+            if ((params != null) && !params.isEmpty()) {
+                parameterTypes = new ArrayList<PostgresType>(params.size());
+                for (ParameterNode param : params) {
+                    DataTypeDescriptor sqlType = param.getType();
                     PostgresType pgType = null;
                     if (sqlType != null) {
                         pgType = PostgresType.fromDerby(sqlType);
@@ -134,8 +138,6 @@ public class PostgresOperatorCompiler extends OperatorCompiler
                 }
             }
         }
-
-        logger.debug("Operator:\n{}", result);
 
         if (result.isModify())
             return new PostgresModifyOperatorStatement(stmt.statementToString(),
