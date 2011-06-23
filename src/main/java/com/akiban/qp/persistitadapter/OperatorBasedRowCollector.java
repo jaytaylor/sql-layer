@@ -155,7 +155,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     @Override
     public IndexDef getIndexDef()
     {
-        return (IndexDef) predicateIndex.indexDef();
+        return predicateIndex == null ? null : (IndexDef) predicateIndex.indexDef();
     }
 
     @Override
