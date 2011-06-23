@@ -60,6 +60,10 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         testMaintainedRows(
                 actionString,
                 createNewRow(c, 1L, "alpha"),
+                // date_sku
+                actionString + "date_sku [02-02-2002, 1111, 1, 11, 100]" + DATE_SKU_COLS,
+                actionString + "date_sku [02-02-2002, 2222, 1, 11, 101]" + DATE_SKU_COLS,
+                actionString + "date_sku [02-02-2002, 3333, 1, 11, 102]" + DATE_SKU_COLS,
                 // sku_name
                 actionString + "sku_name [1111, alpha, 1, 11, 100]" + SKU_NAME_COLS,
                 actionString + "sku_name [2222, alpha, 1, 11, 101]" + SKU_NAME_COLS,

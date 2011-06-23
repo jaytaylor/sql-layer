@@ -95,6 +95,39 @@ public class GroupIndexIT extends ITBase {
         assertEquals("c group vs o group", getUserTable("test", "o").getGroup(), getUserTable("test", "c").getGroup());
     }
 
+    @Test
+    public void deletedWhenTableDroppedSpansMultipleTables() throws InvalidOperationException {
+        createGroupIndex(groupName, "name_date_sku", "c.name, o.odate, i.sku");
+        assertNotNull("name_date_sku exists", ddl().getAIS(session()).getGroup(groupName).getIndex("name_date_sku"));
+        ddl().dropTable(session(), tableName(iId));
+        assertNull("name_date_sku does not exist", ddl().getAIS(session()).getGroup(groupName).getIndex("name_date_sku"));
+        checkGroupIndexes(getUserTable("test", "c"));
+        checkGroupIndexes(getUserTable("test", "o"));
+        checkGroupIndexes(getUserTable("test", "c").getGroup().getGroupTable());
+    }
+
+    @Test
+    public void deletedWhenTableDroppedSpansOneTableIsChild() throws InvalidOperationException {
+        createGroupIndex(groupName, "sku", "i.sku");
+        assertNotNull("sku exists", ddl().getAIS(session()).getGroup(groupName).getIndex("sku"));
+        ddl().dropTable(session(), tableName(iId));
+        assertNull("i doesn't exist", ddl().getAIS(session()).getUserTable("test", "i"));
+        assertNull("sku does not exist", ddl().getAIS(session()).getGroup(groupName).getIndex("sku"));
+    }
+
+    @Test
+    public void deletedWhenTableDroppedSpansOneTableIsRoot() throws InvalidOperationException {
+        ddl().dropTable(session(), tableName(iId));
+        ddl().dropTable(session(), tableName(oId));
+        ddl().dropTable(session(), tableName(aId));
+        createGroupIndex(groupName, "name", "c.name");
+        assertNotNull("name exists", ddl().getAIS(session()).getGroup(groupName).getIndex("name"));
+        ddl().dropTable(session(), tableName(cId));
+        assertNull("c doesn't exist", ddl().getAIS(session()).getUserTable("test", "c"));
+        assertNull("group does not exist", ddl().getAIS(session()).getGroup(groupName));
+    }
+
+
     @Test(expected=InvalidOperationException.class)
     public void tableNotInGroup() throws InvalidOperationException {
         createTable("test", "foo", "id int key, d double");

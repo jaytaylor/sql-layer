@@ -499,13 +499,19 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         AISBuilder builder = new AISBuilder(newAis);
         Set<String> handledGroups = new HashSet<String>();
         for(TableName tn : tableNames) {
-            final UserTable userTable = ais.getUserTable(tn);
-            if(userTable != null) {
-                final String groupName = userTable.getGroup().getName();
-                final Group group = newAis.getGroup(groupName);
-                if(group != null && !handledGroups.contains(groupName)) {
-                    builder.generateGroupTableColumns(group);
-                    builder.generateGroupTableIndexes(group);
+            final UserTable oldUserTable = ais.getUserTable(tn);
+            if(oldUserTable != null) {
+                final String groupName = oldUserTable.getGroup().getName();
+                final Group newGroup = newAis.getGroup(groupName);
+                if(newGroup != null && !handledGroups.contains(groupName)) {
+                    // Since removeIndexes() removes by value, and not name, must get new instances
+                    List<GroupIndex> groupIndexes = new ArrayList<GroupIndex>();
+                    for(GroupIndex index : oldUserTable.getGroupIndexes()) {
+                        groupIndexes.add(newGroup.getIndex(index.getIndexName().getName()));
+                    }
+                    newGroup.removeIndexes(groupIndexes);
+                    builder.generateGroupTableColumns(newGroup);
+                    builder.generateGroupTableIndexes(newGroup);
                     handledGroups.add(groupName);
                 }
             }
