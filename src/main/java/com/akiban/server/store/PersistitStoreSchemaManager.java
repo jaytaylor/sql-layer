@@ -966,32 +966,35 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         for(;;) {
             final TreeLink schemaTreeLink =  treeService.treeLink(schemaName, SCHEMA_TREE_NAME);
             final Exchange schemaEx = treeService.getExchange(session, schemaTreeLink);
-            transaction.begin();
             try {
-                if(callback != null) {
-                    callback.beforeCommit(schemaEx, treeService);
-                }
-
-                schemaEx.clear().append(BY_AIS);
-                schemaEx.getValue().clear();
-                schemaEx.getValue().putByteArray(buffer.array(), buffer.position(), buffer.limit());
-                schemaEx.store();
-
-                transaction.commit(new DefaultCommitListener() {
-                    @Override
-                    public void committed() {
-                        onTransactionCommit(newAIS, transaction.getCommitTimestamp());
+                transaction.begin();
+                try {
+                    if(callback != null) {
+                        callback.beforeCommit(schemaEx, treeService);
                     }
-                }, forceToDisk);
 
-                break; // Success
-                
-            } catch (RollbackException e) {
-                if (--retries < 0) {
-                    throw new TransactionFailedException();
+                    schemaEx.clear().append(BY_AIS);
+                    schemaEx.getValue().clear();
+                    schemaEx.getValue().putByteArray(buffer.array(), buffer.position(), buffer.limit());
+                    schemaEx.store();
+
+                    transaction.commit(new DefaultCommitListener() {
+                        @Override
+                        public void committed() {
+                            onTransactionCommit(newAIS, transaction.getCommitTimestamp());
+                        }
+                    }, forceToDisk);
+
+                    break; // Success
+
+                } catch (RollbackException e) {
+                    if (--retries < 0) {
+                        throw new TransactionFailedException();
+                    }
+                } finally {
+                    transaction.end();
                 }
             } finally {
-                transaction.end();
                 treeService.releaseExchange(session, schemaEx);
             }
         }

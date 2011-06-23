@@ -424,10 +424,9 @@ public class PersistitStore implements Store {
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         checkNoGroupIndexes(rowDef.table());
         final Transaction transaction = treeService.getTransaction(session);
-        Exchange hEx = null;
+        Exchange hEx = getExchange(session, rowDef);
         try {
             long uniqueId = -1;
-            hEx = getExchange(session, rowDef);
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
                 transaction.begin();
@@ -1128,10 +1127,13 @@ public class PersistitStore implements Store {
         synchronized (deferredIndexKeys) {
             for (final Map.Entry<Tree, SortedSet<KeyState>> entry : deferredIndexKeys
                     .entrySet()) {
-                final Exchange iEx = treeService.getExchange(session,
-                        entry.getKey());
-                buildIndexAddKeys(entry.getValue(), iEx);
-                entry.getValue().clear();
+                final Exchange iEx = treeService.getExchange(session, entry.getKey());
+                try {
+                    buildIndexAddKeys(entry.getValue(), iEx);
+                    entry.getValue().clear();
+                } finally {
+                    treeService.releaseExchange(session, iEx);
+                }
             }
             deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
         }
