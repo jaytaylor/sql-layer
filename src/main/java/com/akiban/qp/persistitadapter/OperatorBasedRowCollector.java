@@ -263,8 +263,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                     limit);
         } else {
             assert !descending;
-            assert indexKeyRange == null || indexKeyRange.unbounded(): indexKeyRange;
-            rootOperator = groupScan_Default(groupTable, limit, indexKeyRange);
+            rootOperator = groupScan_Default(groupTable, limit);
         }
         // Fill in ancestors above predicate
         if (queryRootType != predicateType) {
