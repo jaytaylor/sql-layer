@@ -434,6 +434,10 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 return;
             }
 
+            int rightmostTableDepth = depthFromHKey(groupIndex, row);
+            exchange.getValue().clear();
+            exchange.getValue().put(rightmostTableDepth);
+
             switch (action.action()) {
             case BULK_ADD:
                 assert nullPoint < 0 : nullPoint;
@@ -454,6 +458,23 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             default:
                 throw new UnsupportedOperationException(action.action().name());
             }
+        }
+
+        private static int depthFromHKey(GroupIndex groupIndex, Row row) {
+            final int targetSegments = row.hKey().segments();
+            for(UserTable table=groupIndex.leafMostTable(), END=groupIndex.rootMostTable().parentTable();
+                    !(table == null || table.equals(END));
+                    table = table.parentTable()
+            ){
+                if (table.hKey().segments().size() == targetSegments) {
+                    return table.getDepth();
+                }
+            }
+            throw new AssertionError(
+                    String.format("couldn't find a table with %d segments for row %s (hkey=%s) in group index %s",
+                            targetSegments, row, row.hKey(), groupIndex
+                    )
+            );
         }
 
         private static GroupIndexPosition positionWithinBranch(GroupIndex groupIndex, UserTable table) {
