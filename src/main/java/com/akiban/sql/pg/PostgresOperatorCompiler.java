@@ -122,20 +122,15 @@ public class PostgresOperatorCompiler extends OperatorCompiler
 
         logger.debug("Operator:\n{}", result);
 
-        List<PostgresType> parameterTypes = null;
-        {
-            if ((params != null) && !params.isEmpty()) {
-                parameterTypes = new ArrayList<PostgresType>(params.size());
-                for (ParameterNode param : params) {
-                    DataTypeDescriptor sqlType = param.getType();
-                    PostgresType pgType = null;
-                    if (sqlType != null) {
-                        pgType = PostgresType.fromDerby(sqlType);
-                        if (pgType != null)
-                            pgType.pickEncoder();
-                    }
-                    parameterTypes.add(pgType);
-                }
+        PostgresType[] parameterTypes = null;
+        if (result.getParameterTypes() != null) {
+            DataTypeDescriptor[] sqlTypes = result.getParameterTypes();
+            int nparams = sqlTypes.length;
+            parameterTypes = new PostgresType[nparams];
+            for (int i = 0; i < nparams; i++) {
+                DataTypeDescriptor sqlType = sqlTypes[i];
+                if (sqlType != null)
+                    parameterTypes[i] = PostgresType.fromDerby(sqlType);
             }
         }
 

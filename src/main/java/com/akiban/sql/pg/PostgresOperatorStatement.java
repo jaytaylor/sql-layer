@@ -45,7 +45,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     public PostgresOperatorStatement(PhysicalOperator resultOperator,
                                      List<String> columnNames,
                                      List<PostgresType> columnTypes,
-                                     List<PostgresType> parameterTypes,
+                                     PostgresType[] parameterTypes,
                                      int offset,
                                      int limit) {
         super(columnNames, columnTypes, parameterTypes);
@@ -168,17 +168,8 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             return this;        // Can be reused.
 
         Bindings bindings = getBindings();
-        if (parameters != null) {
-            List<PostgresType> parameterTypes = getParameterTypes();
-            ArrayBindings ab = new ArrayBindings(parameters.length);
-            for (int i = 0; i < parameters.length; i++) {
-                PostgresType pgType = (parameterTypes == null) ? null 
-                                                               : parameterTypes.get(i);
-                ab.set(i, (pgType == null) ? parameters[i] 
-                                           : pgType.decodeParameter(parameters[i]));
-            }
-            bindings = ab;
-        }
+        if (parameters != null)
+            bindings = getParameterBindings(parameters);
         return new BoundStatement(resultOperator,
                                   getColumnNames(), getColumnTypes(),
                                   offset, limit, bindings, 

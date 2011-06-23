@@ -22,6 +22,7 @@ import com.akiban.sql.optimizer.SimplifiedQuery.*;
 
 import com.akiban.sql.parser.*;
 import com.akiban.sql.compiler.*;
+import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.views.ViewDefinition;
@@ -111,20 +112,25 @@ public class OperatorCompiler
     public static class Result {
         private Plannable resultOperator;
         private List<ResultColumnBase> resultColumns;
+        private DataTypeDescriptor[] parameterTypes;
         private int offset = 0;
         private int limit = -1;
 
         public Result(Plannable resultOperator,
                       List<ResultColumnBase> resultColumns,
+                      DataTypeDescriptor[] parameterTypes,
                       int offset,
                       int limit) {
             this.resultOperator = resultOperator;
             this.resultColumns = resultColumns;
+            this.parameterTypes = parameterTypes;
             this.offset = offset;
             this.limit = limit;
         }
-        public Result(Plannable resultOperator) {
+        public Result(Plannable resultOperator,
+                      DataTypeDescriptor[] parameterTypes) {
             this.resultOperator = resultOperator;
+            this.parameterTypes = parameterTypes;
         }
 
         public Plannable getResultOperator() {
@@ -132,6 +138,9 @@ public class OperatorCompiler
         }
         public List<ResultColumnBase> getResultColumns() {
             return resultColumns;
+        }
+        public DataTypeDescriptor[] getParameterTypes() {
+            return parameterTypes;
         }
         public int getOffset() {
             return offset;
@@ -394,6 +403,7 @@ public class OperatorCompiler
         int limit = squery.getLimit();
 
         return new Result(resultOperator, resultColumns, 
+                          getParameterTypes(params),
                           offset, limit);
     }
 
@@ -450,7 +460,7 @@ public class OperatorCompiler
 
         Plannable updatePlan = new com.akiban.qp.physicaloperator.Update_Default(resultOperator,
                                             new ExpressionRowUpdateFunction(updateRow));
-        return new Result(updatePlan);
+        return new Result(updatePlan, getParameterTypes(params));
     }
 
     public Result compileInsert(InsertNode insert, List<ParameterNode> params) 
@@ -863,7 +873,7 @@ public class OperatorCompiler
             }
         }
     }
-
+    
     protected UserTableRowType tableRowType(TableNode table) {
         return schema.userTableRowType(table.getTable());
     }
@@ -897,6 +907,21 @@ public class OperatorCompiler
     protected Row getIndexExpressionRow(Index index, Expression[] keys) {
         RowType rowType = schema.indexRowType(index);
         return new ExpressionRow(rowType, keys);
+    }
+
+    protected DataTypeDescriptor[] getParameterTypes(List<ParameterNode> params) {
+        int nparams = 0;
+        for (ParameterNode param : params) {
+            if (nparams < param.getParameterNumber() + 1)
+                nparams = param.getParameterNumber() + 1;
+        }
+        if (nparams == 0)
+            return null;
+        DataTypeDescriptor[] result = new DataTypeDescriptor[nparams];
+        for (ParameterNode param : params) {
+            result[param.getParameterNumber()] = param.getType();
+        }        
+        return result;
     }
 
 }

@@ -19,7 +19,6 @@ import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.sql.StandardException;
 
-import com.akiban.qp.physicaloperator.ArrayBindings;
 import com.akiban.qp.physicaloperator.BindingNotSetException;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.IncompatibleRowException;
@@ -41,7 +40,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         
     public PostgresModifyOperatorStatement(String statementType,
                                            UpdatePlannable resultOperator,
-                                           List<PostgresType> parameterTypes) {
+                                           PostgresType[] parameterTypes) {
         super(parameterTypes);
         this.statementType = statementType;
         this.resultOperator = resultOperator;
@@ -104,15 +103,8 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         if (parameters == null)
             return this;        // Can be reused.
 
-        List<PostgresType> parameterTypes = getParameterTypes();
-        ArrayBindings bindings = new ArrayBindings(parameters.length);
-        for (int i = 0; i < parameters.length; i++) {
-            PostgresType pgType = (parameterTypes == null) ? null 
-                                                           : parameterTypes.get(i);
-            bindings.set(i, (pgType == null) ? parameters[i] 
-                                             : pgType.decodeParameter(parameters[i]));
-        }
-        return new BoundStatement(statementType, resultOperator, bindings);
+        return new BoundStatement(statementType, resultOperator, 
+                                  getParameterBindings(parameters));
     }
 
 }

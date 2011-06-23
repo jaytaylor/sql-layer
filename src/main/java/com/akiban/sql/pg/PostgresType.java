@@ -244,6 +244,8 @@ public class PostgresType
 
         TypeId typeId = type.getTypeId();
 
+        LongEncoderBase encoder = null;
+
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.BIT_TYPE_ID:
             oid = BIT_TYPE_OID;
@@ -256,6 +258,7 @@ public class PostgresType
             break;
         case TypeId.FormatIds.DATE_TYPE_ID:
             oid = DATE_TYPE_OID;
+            encoder = EncoderFactory.DATE;
             break;
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
         case TypeId.FormatIds.NUMERIC_TYPE_ID:
@@ -266,9 +269,11 @@ public class PostgresType
             break;
         case TypeId.FormatIds.INT_TYPE_ID:
             oid = INT4_TYPE_OID;
+            encoder = EncoderFactory.INT;
             break;
         case TypeId.FormatIds.LONGINT_TYPE_ID:
             oid = INT8_TYPE_OID;
+            encoder = EncoderFactory.INT;
             break;
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
             oid = TEXT_TYPE_OID;
@@ -281,12 +286,15 @@ public class PostgresType
             break;
         case TypeId.FormatIds.SMALLINT_TYPE_ID:
             oid = INT2_TYPE_OID;
+            encoder = EncoderFactory.INT;
             break;
         case TypeId.FormatIds.TIME_TYPE_ID:
             oid = TIME_TYPE_OID;
+            encoder = EncoderFactory.TIME;
             break;
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
             oid = TIMESTAMP_TYPE_OID;
+            encoder = EncoderFactory.TIMESTAMP;
             break;
         case TypeId.FormatIds.TINYINT_TYPE_ID:
             oid = BYTEA_TYPE_OID;
@@ -321,7 +329,12 @@ public class PostgresType
             length = (short)typeId.getMaximumMaximumWidth();
         }
         
-        return new PostgresType(oid, length, modifier);
+        PostgresType result = new PostgresType(oid, length, modifier);;
+        
+        if (encoder != null)
+            result.encoder = encoder;
+
+        return result;
     }
 
     public static final DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
@@ -359,25 +372,6 @@ public class PostgresType
         }
         catch (UnsupportedEncodingException ex) {
             throw new StandardException(ex);
-        }
-    }
-
-    public void pickEncoder() {
-        switch (oid) {
-        case INT2_TYPE_OID:
-        case INT4_TYPE_OID:
-        case INT8_TYPE_OID:
-            encoder = EncoderFactory.INT;
-            break;
-        case DATE_TYPE_OID:
-            encoder = EncoderFactory.DATE;
-            break;
-        case TIME_TYPE_OID:
-            encoder = EncoderFactory.TIME;
-            break;
-        case TIMESTAMP_TYPE_OID:
-            encoder = EncoderFactory.DATETIME;
-            break;
         }
     }
 

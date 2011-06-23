@@ -17,6 +17,9 @@ package com.akiban.sql.pg;
 
 import com.akiban.sql.StandardException;
 
+import com.akiban.qp.physicaloperator.ArrayBindings;
+import com.akiban.qp.physicaloperator.Bindings;
+
 import java.util.*;
 import java.io.IOException;
 
@@ -27,15 +30,15 @@ public abstract class PostgresBaseStatement implements PostgresStatement
 {
     private List<String> columnNames;
     private List<PostgresType> columnTypes;
-    private List<PostgresType> parameterTypes;
+    private PostgresType[] parameterTypes;
 
-    protected PostgresBaseStatement(List<PostgresType> parameterTypes) {
+    protected PostgresBaseStatement(PostgresType[] parameterTypes) {
         this.parameterTypes = parameterTypes;
     }
 
     protected PostgresBaseStatement(List<String> columnNames, 
                                     List<PostgresType> columnTypes,
-                                    List<PostgresType> parameterTypes) {
+                                    PostgresType[] parameterTypes) {
         this.columnNames = columnNames;
         this.columnTypes = columnTypes;
         this.parameterTypes = parameterTypes;
@@ -53,7 +56,7 @@ public abstract class PostgresBaseStatement implements PostgresStatement
         return false;
     }
 
-    public List<PostgresType> getParameterTypes() throws StandardException {
+    public PostgresType[] getParameterTypes() throws StandardException {
         return parameterTypes;
     }
 
@@ -82,6 +85,17 @@ public abstract class PostgresBaseStatement implements PostgresStatement
             }
         }
         messenger.sendMessage();
+    }
+
+    protected Bindings getParameterBindings(String[] parameters) 
+            throws StandardException {
+        ArrayBindings bindings = new ArrayBindings(parameters.length);
+        for (int i = 0; i < parameters.length; i++) {
+            PostgresType pgType = (parameterTypes == null) ? null : parameterTypes[i];
+            bindings.set(i, (pgType == null) ? parameters[i] 
+                                             : pgType.decodeParameter(parameters[i]));
+        }
+        return bindings;
     }
 
 }
