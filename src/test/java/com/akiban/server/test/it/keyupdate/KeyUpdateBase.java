@@ -223,27 +223,27 @@ public abstract class KeyUpdateBase extends ITBase {
         assertEquals(testVisitor.records(), realVisitor.records());
         assertEquals("records count", countAllRows(), testVisitor.records().size());
         // Check indexes
-        RecordCollectingIndexRecordVisitor indexVisitor;
+        RecordCollectingIndexKeyRecordVisitor indexVisitor;
         if (checkChildPKs()) {
             // Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
             // Order PK index
-            indexVisitor = new RecordCollectingIndexRecordVisitor();
+            indexVisitor = new RecordCollectingIndexKeyRecordVisitor();
             testStore.traverse(session(), orderRowDef.getPKIndex(), indexVisitor);
             assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
             assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
             // Item PK index
-            indexVisitor = new RecordCollectingIndexRecordVisitor();
+            indexVisitor = new RecordCollectingIndexKeyRecordVisitor();
             testStore.traverse(session(), itemRowDef.getPKIndex(), indexVisitor);
             assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
             assertEquals("order PKs", countRows(itemRowDef), indexVisitor.records().size());
         }
         // Order priority index
-        indexVisitor = new RecordCollectingIndexRecordVisitor();
+        indexVisitor = new RecordCollectingIndexKeyRecordVisitor();
         testStore.traverse(session(), index(orderRowDef, "priority"), indexVisitor);
         assertEquals(orderPriorityIndex(testVisitor.records()), indexVisitor.records());
         assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
         // Order timestamp index
-        indexVisitor = new RecordCollectingIndexRecordVisitor();
+        indexVisitor = new RecordCollectingIndexKeyRecordVisitor();
         testStore.traverse(session(), index(orderRowDef, "when"), indexVisitor);
         assertEquals(orderWhenIndex(testVisitor.records()), indexVisitor.records());
         assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());

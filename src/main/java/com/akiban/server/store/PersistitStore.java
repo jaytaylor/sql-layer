@@ -1459,7 +1459,7 @@ public class PersistitStore implements Store {
         }
     }
 
-    public void traverse(Session session, Index index, IndexRecordVisitor visitor)
+    public void traverse(Session session, Index index, IndexKeyVisitor visitor)
             throws PersistitException, InvalidOperationException {
         if (index.isHKeyEquivalent()) {
             throw new IllegalArgumentException("HKeyEquivalent not allowed: " + index);

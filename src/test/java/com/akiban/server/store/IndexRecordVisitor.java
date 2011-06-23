@@ -16,30 +16,28 @@
 package com.akiban.server.store;
 
 import com.akiban.server.InvalidOperationException;
-import com.persistit.Exchange;
+import com.akiban.util.Undef;
 import com.persistit.Key;
+import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-public abstract class IndexRecordVisitor
-{
-    final void visit() throws PersistitException, InvalidOperationException
-    {
-        visit(key());
+public abstract class IndexRecordVisitor extends IndexKeyVisitor {
+
+    protected abstract void visit(List<?> key, Object value);
+
+    @Override
+    protected final void visit(Key key, Value value) throws PersistitException, InvalidOperationException {
+        List<?> keyList = key(key);
+        Object valueObj = value.isDefined() ? value.get() : Undef.only();
+        visit(keyList, valueObj);
     }
 
-    final void initialize(Exchange exchange)
-    {
-        this.exchange = exchange;
-    }
-
-    protected abstract void visit(List<Object> key);
-
-    private List<Object> key()
+    private List<?> key(Key key)
     {
         // Key traversal
-        Key key = exchange.getKey();
         int keySize = key.getDepth();
         List<Object> keyList = new ArrayList<Object>(keySize);
         for (int k = 0; k < keySize; k++) {
@@ -47,6 +45,4 @@ public abstract class IndexRecordVisitor
         }
         return keyList;
     }
-
-    protected Exchange exchange;
 }

@@ -13,25 +13,26 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.test.it.keyupdate;
+package com.akiban.server.store;
 
-import com.akiban.server.store.IndexRecordVisitor;
+import com.akiban.server.InvalidOperationException;
+import com.persistit.Exchange;
+import com.persistit.Key;
+import com.persistit.Value;
+import com.persistit.exception.PersistitException;
 
-import java.util.ArrayList;
-import java.util.List;
 
-public class RecordCollectingIndexRecordVisitor extends IndexRecordVisitor
-{
-    @Override
-    protected void visit(List<Object> key)
-    {
-        records.add(key);
+public abstract class IndexKeyVisitor {
+    protected abstract void visit(Key key, Value value) throws PersistitException, InvalidOperationException;
+
+    final void visit() throws PersistitException, InvalidOperationException {
+        visit(exchange.getKey(), exchange.getValue());
     }
 
-    public List<List<Object>> records()
+    final void initialize(Exchange exchange)
     {
-        return records;
+        this.exchange = exchange;
     }
 
-    private final List<List<Object>> records = new ArrayList<List<Object>>();
+    private Exchange exchange;
 }
