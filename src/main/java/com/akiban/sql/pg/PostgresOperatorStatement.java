@@ -17,7 +17,6 @@ package com.akiban.sql.pg;
 
 import com.akiban.sql.StandardException;
 
-import com.akiban.ais.model.Column;
 import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.ArrayBindings;
 import com.akiban.qp.physicaloperator.BindingNotSetException;
@@ -29,7 +28,6 @@ import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.service.session.Session;
 
 import java.util.*;
 import java.io.IOException;
@@ -71,8 +69,8 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             cursor.open(bindings);
             List<PostgresType> columnTypes = getColumnTypes();
             int ncols = columnTypes.size();
-            while (cursor.next()) {
-                Row row = cursor.currentRow();
+            Row row;
+            while ((row = cursor.next()) != null) {
                 assert (row.rowType() == resultRowType) : row;
                 if (nskip > 0) {
                     nskip--;

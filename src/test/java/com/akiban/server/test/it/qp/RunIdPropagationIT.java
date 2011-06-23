@@ -62,8 +62,8 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);
         int expectedRunId = 0;
-        while (cursor.next()) {
-            RowBase row = cursor.currentRow();
+        RowBase row;
+        while ((row = cursor.next()) != null) {
             assertEquals(expectedRunId++, row.runId());
         }
         assertEquals(4, expectedRunId);
@@ -82,19 +82,17 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);
         int expectedRunId = 0;
-        while (cursor.next()) {
+        RowBase row;
+        while ((row = cursor.next()) != null) {
             // customer
-            RowBase row = cursor.currentRow();
             assertEquals(customerRowType, row.rowType());
             assertEquals(expectedRunId, row.runId());
             // order
-            assertTrue(cursor.next());
-            row = cursor.currentRow();
+            assertTrue((row = cursor.next()) != null);
             assertEquals(orderRowType, row.rowType());
             assertEquals(expectedRunId, row.runId());
             // item
-            assertTrue(cursor.next());
-            row = cursor.currentRow();
+            assertTrue((row = cursor.next()) != null);
             assertEquals(itemRowType, row.rowType());
             assertEquals(expectedRunId, row.runId());
             // done with this run
@@ -116,21 +114,19 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);
         int expectedRunId = 0;
-        while (cursor.next()) {
+        RowBase row;
+        while ((row = cursor.next()) != null) {
             // customer
-            RowBase row = cursor.currentRow();
             assertEquals(customerRowType, row.rowType());
             assertEquals(expectedRunId, row.runId());
             // each customer has 2 orders
             for (int o = 0; o < 2; o++) {
-                assertTrue(cursor.next());
-                row = cursor.currentRow();
+                assertTrue((row = cursor.next()) != null);
                 assertEquals(orderRowType, row.rowType());
                 assertEquals(expectedRunId, row.runId());
                 // each order has 2 items
                 for (int i = 0; i < 2; i++) {
-                    assertTrue(cursor.next());
-                    row = cursor.currentRow();
+                    assertTrue((row = cursor.next()) != null);
                     assertEquals(itemRowType, row.rowType());
                     assertEquals(expectedRunId, row.runId());
                 }
@@ -156,8 +152,8 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);
         int expectedRunId = 0;
-        while (cursor.next()) {
-            RowBase row = cursor.currentRow();
+        RowBase row;
+        while ((row = cursor.next()) != null) {
             assertEquals(customerRowType, row.rowType());
             assertEquals(expectedRunId++, row.runId());
         }
@@ -179,19 +175,18 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);
         int expectedRunId = 0;
-        while (cursor.next()) {
+        RowBase row;
+        while ((row = cursor.next()) != null) {
             // Each customer has 2 orders
             for (int o = 0; o < 2; o++) {
                 if (o > 0) {
-                    assertTrue(cursor.next());
+                    assertTrue((row = cursor.next()) != null);
                 }
-                RowBase row = cursor.currentRow();
                 assertEquals(orderRowType, row.rowType());
                 assertEquals(expectedRunId, row.runId());
                 // Each order has 2 items
                 for (int i = 0; i < 2; i++) {
-                    assertTrue(cursor.next());
-                    row = cursor.currentRow();
+                    assertTrue((row = cursor.next()) != null);
                     assertEquals(itemRowType, row.rowType());
                     assertEquals(expectedRunId, row.runId());
                 }
@@ -222,13 +217,13 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);
         int expectedRunId = 0;
-        while (cursor.next()) {
+        RowBase row;
+        while ((row = cursor.next()) != null) {
             // There should be 2 co rows per run
             for (int co = 0; co < 2; co++) {
                 if (co > 0) {
-                    assertTrue(cursor.next());
+                    assertTrue((row = cursor.next()) != null);
                 }
-                RowBase row = cursor.currentRow();
                 assertEquals(coRowType, row.rowType());
                 assertEquals(expectedRunId, row.runId());
             }
@@ -257,13 +252,13 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);
         int expectedRunId = 0;
-        while (cursor.next()) {
+        RowBase row;
+        while ((row = cursor.next()) != null) {
             // There should be 1 projected row per run
             for (int p = 0; p < 1; p++) {
                 if (p > 0) {
-                    assertTrue(cursor.next());
+                    assertTrue((row = cursor.next()) != null);
                 }
-                RowBase row = cursor.currentRow();
                 assertEquals(customerNameRowType, row.rowType());
                 assertEquals(expectedRunId, row.runId());
             }
@@ -280,8 +275,8 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);
         int count = 0;
-        while (cursor.next()) {
-            RowBase row = cursor.currentRow();
+        RowBase row;
+        while ((row = cursor.next()) != null) {
             assertEquals(-1, row.runId());
             count++;
         }

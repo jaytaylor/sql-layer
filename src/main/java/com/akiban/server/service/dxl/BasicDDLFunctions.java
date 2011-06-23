@@ -29,7 +29,6 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
@@ -163,6 +162,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             else {
                 dml.truncateTable(session, table.getTableId());
                 store().deleteIndexes(session, userTable.getIndexesIncludingInternal());
+                store().deleteIndexes(session, userTable.getGroupIndexes());
             }
             schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
             checkCursorsForDDLModification(session, table);
@@ -350,8 +350,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
+        final Collection<Index> newIndexes;
         try {
-            schemaManager().createIndexes(session, indexesToAdd);
+            newIndexes = schemaManager().createIndexes(session, indexesToAdd);
         }
         catch(InvalidOperationException e) {
             throwIfInstanceOf(e, NoSuchTableException.class, NoSuchGroupException.class);
@@ -361,14 +362,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new GenericInvalidOperationException(e);
         }
 
-        // TODO: Keep GroupIndexes in main list when implemented at the store level
-        Collection<Index> newIndexes = new ArrayList<Index>();
-        for(Index index : indexesToAdd) {
-            if(index.isTableIndex()) {
-                Table table = getTable(session, ((TableIndex)index).getTable().getName());
-                newIndexes.add(table.getIndex(index.getIndexName().getName()));
-                checkCursorsForDDLModification(session, table);
-            }
+        for(Index index : newIndexes) {
+            checkCursorsForDDLModification(session, index.leafMostTable());
         }
 
         try {
@@ -377,9 +372,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             // Try and roll back all changes
             try {
                 store().deleteIndexes(session, newIndexes);
-                schemaManager().dropIndexes(session, indexesToAdd);
+                schemaManager().dropIndexes(session, newIndexes);
             } catch(Exception e2) {
-                logger.error("Exception while rolling back failed createIndex: " + indexesToAdd, e2);
+                logger.error("Exception while rolling back failed createIndex: " + newIndexes, e2);
             }
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ioe, DuplicateKeyException.class);
@@ -442,8 +437,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         try {
-            // TODO: Delete group index data when store supports it
-            //store().deleteIndexes(session, indexes);
+            // Drop them from the Store before while IndexDefs still exist
+            store().deleteIndexes(session, indexes);
             schemaManager().dropIndexes(session, indexes);
             // TODO: checkCursorsForDDLModification ?
         } catch(Exception e) {

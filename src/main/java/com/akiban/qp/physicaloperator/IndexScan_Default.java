@@ -15,6 +15,7 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
@@ -57,13 +58,13 @@ class IndexScan_Default extends PhysicalOperator
 
     // Object state
 
-    private final TableIndex index;
+    private final Index index;
     private final boolean reverse;
     private final IndexKeyRange indexKeyRange;
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // OperatorExecution interface
 
@@ -76,26 +77,23 @@ class IndexScan_Default extends PhysicalOperator
         }
 
         @Override
-        public boolean next()
+        public Row next()
         {
-            boolean next = cursor.next();
-            if (next) {
-                Row row = cursor.currentRow();
-                row.runId(runIdCounter++);
-                outputRow(row);
-            } else {
+            Row row = cursor.next();
+            if (row == null) {
                 close();
+            } else {
+                row.runId(runIdCounter++);
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("IndexScan: {}", next ? outputRow() : null);
+                LOG.debug("IndexScan: {}", row);
             }
-            return next;
+            return row;
         }
 
         @Override
         public void close()
         {
-            outputRow(null);
             cursor.close();
         }
 

@@ -16,6 +16,7 @@
 package com.akiban.ais.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,10 @@ public class GroupIndex extends Index
     {
         super(new TableName("", group.getName()), indexName, indexId, isUnique, constraint);
         this.group = group;
+    }
+
+    public Column getColumnForFlattenedRow(int fieldIndex) {
+        return columnsPerFlattenedField.get(fieldIndex);
     }
 
     @Override
@@ -114,7 +119,21 @@ public class GroupIndex extends Index
 
     @Override
     public void computeFieldAssociations(Map<Table, Integer> ordinalMap) {
-        computeFieldAssociations(ordinalMap, null, true);
+        List<UserTable> branchTables = new ArrayList<UserTable>();
+        for(UserTable userTable = leafMostTable(); userTable != null; userTable = userTable.parentTable()) {
+            branchTables.add(userTable);
+        }
+        Collections.reverse(branchTables);
+
+        Map<UserTable,Integer> offsetsMap = new HashMap<UserTable, Integer>();
+        int offset = 0;
+        columnsPerFlattenedField = new ArrayList<Column>();
+        for (UserTable userTable : branchTables) {
+            offsetsMap.put(userTable, offset);
+            offset += userTable.getColumnsIncludingInternal().size();
+            columnsPerFlattenedField.addAll(userTable.getColumnsIncludingInternal());
+        }
+        computeFieldAssociations(ordinalMap, null, offsetsMap);
     }
 
     public Group getGroup()
@@ -134,6 +153,7 @@ public class GroupIndex extends Index
 
     private Group group;
     private final NavigableMap<Integer,UserTable> tablesByDepth = new TreeMap<Integer, UserTable>();
+    private List<Column> columnsPerFlattenedField;
 
     // nested classes
     public static class GroupIndexCreationException extends RuntimeException {
