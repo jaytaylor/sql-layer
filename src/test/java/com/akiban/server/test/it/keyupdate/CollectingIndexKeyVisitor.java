@@ -20,7 +20,7 @@ import com.akiban.server.store.IndexKeyRecordVisitor;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RecordCollectingIndexKeyRecordVisitor extends IndexKeyRecordVisitor
+public class CollectingIndexKeyVisitor extends IndexKeyRecordVisitor
 {
     @Override
     protected void visit(List<?> key)

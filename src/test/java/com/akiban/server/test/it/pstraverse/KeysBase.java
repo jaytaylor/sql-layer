@@ -19,7 +19,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.server.test.it.keyupdate.RecordCollectingIndexKeyRecordVisitor;
+import com.akiban.server.test.it.keyupdate.CollectingIndexKeyVisitor;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -107,7 +107,7 @@ public abstract class KeysBase extends ITBase {
     protected void traversePK(int rowDefId, List<? super Long>... expectedIndexes) throws Exception {
         Index pkIndex = rowDefCache().rowDef(rowDefId).getPKIndex();
 
-        RecordCollectingIndexKeyRecordVisitor visitor = new RecordCollectingIndexKeyRecordVisitor();
+        CollectingIndexKeyVisitor visitor = new CollectingIndexKeyVisitor();
         persistitStore().traverse(session(), pkIndex, visitor);
 
         assertEquals("traversed indexes", Arrays.asList(expectedIndexes), visitor.records());
