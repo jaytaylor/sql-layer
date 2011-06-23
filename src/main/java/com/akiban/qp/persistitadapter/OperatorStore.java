@@ -17,6 +17,7 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
@@ -59,6 +60,7 @@ import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.util.CachePair;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Transaction;
@@ -68,8 +70,9 @@ import com.persistit.exception.RollbackException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Map;
 
 import static com.akiban.qp.physicaloperator.API.ancestorLookup_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
@@ -292,7 +295,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     throw new UniqueIndexUnsupportedException();
                 }
                 PhysicalOperator plan = groupIndexCreationPlan(
-                        adapter.schema(),
+                        ais,
                         groupIndex,
                         adapter.schema().userTableRowType(userTable)
                 );
@@ -327,50 +330,94 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
 
-    // private static methods
 
-    static PhysicalOperator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex, UserTableRowType rowType) {
-        BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
-        if (branchTables.isEmpty()) {
-            throw new RuntimeException("group index has empty branch: " + groupIndex);
-        }
-        if (!branchTables.fromRoot().contains(rowType)) {
-            throw new RuntimeException(rowType + " not in branch for " + groupIndex + ": " + branchTables);
-        }
+    private final CachePair<AkibanInformationSchema, Map<GroupIndex, Map<UserTableRowType,PhysicalOperator>>> maintenancePlans
+            = CachePair.using(new MaintenancePlanCreator());
 
-        boolean deep = !branchTables.leafMost().equals(rowType);
-        PhysicalOperator plan = API.groupScan_Default(
-                groupIndex.getGroup().getGroupTable(),
-                NoLimit.instance(),
-                com.akiban.qp.expression.API.variable(HKEY_BINDING_POSITION),
-                deep
-        );
-        if (branchTables.fromRoot().size() == 1) {
+    static class MaintenancePlanCreator
+            implements CachePair.CachedValueProvider<AkibanInformationSchema, Map<GroupIndex, Map<UserTableRowType,PhysicalOperator>>>
+    {
+        static PhysicalOperator createGroupIndexCreationPlan(Schema schema, GroupIndex groupIndex, UserTableRowType rowType) {
+            BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
+            if (branchTables.isEmpty()) {
+                throw new RuntimeException("group index has empty branch: " + groupIndex);
+            }
+            if (!branchTables.fromRoot().contains(rowType)) {
+                throw new RuntimeException(rowType + " not in branch for " + groupIndex + ": " + branchTables);
+            }
+
+            boolean deep = !branchTables.leafMost().equals(rowType);
+            PhysicalOperator plan = API.groupScan_Default(
+                    groupIndex.getGroup().getGroupTable(),
+                    NoLimit.instance(),
+                    com.akiban.qp.expression.API.variable(HKEY_BINDING_POSITION),
+                    deep
+            );
+            if (branchTables.fromRoot().size() == 1) {
+                return plan;
+            }
+            if (!branchTables.fromRoot().get(0).equals(rowType)) {
+                plan = API.ancestorLookup_Default(
+                        plan,
+                        groupIndex.getGroup().getGroupTable(),
+                        rowType,
+                        ancestors(rowType, branchTables.fromRoot()),
+                        true
+                );
+            }
+
+            RowType parentRowType = null;
+            API.JoinType joinType = API.JoinType.RIGHT_JOIN;
+            for (RowType branchRowType : branchTables.fromRoot()) {
+                if (parentRowType == null) {
+                    parentRowType = branchRowType;
+                }
+                else {
+                    plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType);
+                    parentRowType = plan.rowType();
+                }
+                if (branchRowType.equals(branchTables.rootMost())) {
+                    joinType = API.JoinType.INNER_JOIN;
+                }
+            }
             return plan;
         }
-        if (!branchTables.fromRoot().get(0).equals(rowType)) {
-            plan = API.ancestorLookup_Default(
-                    plan,
-                    groupIndex.getGroup().getGroupTable(),
-                    rowType,
-                    ancestors(rowType, branchTables.fromRoot()),
-                    true
-            );
+
+        @Override
+        public Map<GroupIndex, Map<UserTableRowType, PhysicalOperator>> valueFor(AkibanInformationSchema ais) {
+            Schema schema = SchemaCache.globalSchema(ais);
+            Map<GroupIndex, Map<UserTableRowType, PhysicalOperator>> giToMapMap
+                    = new HashMap<GroupIndex, Map<UserTableRowType, PhysicalOperator>>();
+            for (Group group : ais.getGroups().values()) {
+                for (GroupIndex groupIndex : group.getIndexes()) {
+                    Map<UserTableRowType, PhysicalOperator> plansPerType = generateGiPlans(schema, groupIndex);
+                    giToMapMap.put(groupIndex, plansPerType);
+                }
+            }
+            return Collections.unmodifiableMap(giToMapMap);
         }
-        
-        RowType parentRowType = null;
-        API.JoinType joinType = API.JoinType.RIGHT_JOIN;
-        for (RowType branchRowType : branchTables.fromRoot()) {
-            if (parentRowType == null) {
-                parentRowType = branchRowType;
+
+        private static Map<UserTableRowType, PhysicalOperator> generateGiPlans(Schema schema, GroupIndex groupIndex) {
+            Map<UserTableRowType, PhysicalOperator> plansPerType = new HashMap<UserTableRowType, PhysicalOperator>();
+            for(UserTable table = groupIndex.leafMostTable(); table != null; table = table.parentTable()) {
+                UserTableRowType rowType = schema.userTableRowType(table);
+                PhysicalOperator plan = createGroupIndexCreationPlan(schema, groupIndex, rowType);
+                plansPerType.put(rowType, plan);
             }
-            else {
-                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType);
-                parentRowType = plan.rowType();
-            }
-            if (branchRowType.equals(branchTables.rootMost())) {
-                joinType = API.JoinType.INNER_JOIN;
-            }
+            return Collections.unmodifiableMap(plansPerType);
+        }
+    }
+
+    // private static methods
+    PhysicalOperator groupIndexCreationPlan(AkibanInformationSchema ais, GroupIndex groupIndex, UserTableRowType rowType) {
+        Map<GroupIndex, Map<UserTableRowType,PhysicalOperator>> gisToPlansMapMap = maintenancePlans.get(ais);
+        Map<UserTableRowType,PhysicalOperator> plansMap = gisToPlansMapMap.get(groupIndex);
+        if (plansMap == null) {
+            throw new RuntimeException("no plan found for group index " + groupIndex);
+        }
+        PhysicalOperator plan = plansMap.get(rowType);
+        if (plan == null) {
+            throw new RuntimeException("no plan for row type " + rowType + " in group index " + groupIndex);
         }
         return plan;
     }
