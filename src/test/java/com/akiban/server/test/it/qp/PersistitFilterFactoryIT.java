@@ -53,7 +53,7 @@ public final class PersistitFilterFactoryIT extends ITBase {
         }
     }
 
-    @Ignore("780614")
+    // @Ignore("780614")
     @Test
     public void coiScanOnI() throws Exception {
         RememberingFilterFactoryHook hook = new RememberingFilterFactoryHook();

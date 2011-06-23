@@ -81,9 +81,8 @@ class PersistitFilterFactory
                 List<Column> matchingColumns = segmentColumn.equivalentColumns();
                 for (int m = 0; filterTerm == KeyFilter.ALL && m < matchingColumns.size(); m++) {
                     Column column = matchingColumns.get(m);
-                    int columnPos = column.getPosition();
-                    if(columnPos < leafRowDef.getFieldCount()) {
-                        filterTerm = computeKeyFilterTerm(key, column, columnPos, keyRange, bindings);
+                    if (column.getTable() == leafRowDef.table()) {
+                        filterTerm = computeKeyFilterTerm(key, column, column.getPosition(), keyRange, bindings);
                     }
                 }
                 terms[t++] = filterTerm;
