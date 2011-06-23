@@ -165,7 +165,8 @@ public class Tester
                 break;
             case OPERATORS:
                 {
-                    Object compiled = operatorCompiler.compile((DMLStatementNode)stmt);
+                    Object compiled = operatorCompiler.compile((DMLStatementNode)stmt,
+                                                               parser.getParameterList());
                     if (!silent)
                         System.out.println(compiled);
                 }
