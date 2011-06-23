@@ -48,6 +48,10 @@ public class AISMergeTest {
         b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
         
         b.basicSchemaIsComplete();
+        
+        assertNotNull(s.getUserTable(SCHEMA, TABLE));
+        assertNotNull(s.getUserTable(SCHEMA, TABLE).getAIS());
+        
         AISMerge merge = new AISMerge (t, s.getUserTable(TABLENAME));
         t = merge.validate().merge().getAIS();
         UserTable targetTable = t.getUserTable(TABLENAME);

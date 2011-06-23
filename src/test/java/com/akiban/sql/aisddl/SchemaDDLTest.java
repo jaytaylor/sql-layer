@@ -23,6 +23,7 @@ import org.junit.Before;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.server.api.DDLFunctions;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.CreateSchemaNode;
@@ -30,7 +31,7 @@ import com.akiban.sql.parser.DropSchemaNode;
 import com.akiban.sql.StandardException;
 
 
-public class SchemaDDLIT {
+public class SchemaDDLTest {
 
     @Before
     public void before() throws Exception {
@@ -49,7 +50,7 @@ public class SchemaDDLIT {
         SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt);
     }
     
-    @Test
+    @Test (expected=com.akiban.sql.StandardException.class)
     public void createSchemaUsed() throws Exception
     {
         String sql = "CREATE SCHEMA S";
@@ -60,12 +61,7 @@ public class SchemaDDLIT {
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateSchemaNode);
         
-        try {
-            SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt);
-            fail();
-        } catch (StandardException ex) {
-            ; // do nothing, exception expected. 
-        }
+        SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt);
     }
     
     @Test
@@ -77,8 +73,9 @@ public class SchemaDDLIT {
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof DropSchemaNode);
         
-        SchemaDDL.dropSchema(ais, null, (DropSchemaNode)stmt);
+        DDLFunctions ddlFunctions = new TableDDLTest.DDLFunctionsMock(ais);
         
+        SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)stmt);
     }
 
     @Test(expected=com.akiban.sql.StandardException.class)
@@ -91,8 +88,9 @@ public class SchemaDDLIT {
         
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof DropSchemaNode);
+        DDLFunctions ddlFunctions = new TableDDLTest.DDLFunctionsMock(ais);
         
-        SchemaDDL.dropSchema(ais, null, (DropSchemaNode)stmt);
+        SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)stmt);
     }
 
     protected SQLParser parser;

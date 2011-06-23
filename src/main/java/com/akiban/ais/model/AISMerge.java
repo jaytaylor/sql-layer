@@ -18,11 +18,21 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.akiban.ais.io.AISTarget;
-import com.akiban.ais.io.TableSubsetWriter;
 import com.akiban.ais.io.Writer;
 import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
 
+/**
+ * AISMerge is designed to merge a single UserTable definition into an existing AIS. The merge process 
+ * does not assume that UserTable.getAIS() returns a validated and complete 
+ * AkibanInformationSchema object.
+ * 
+ * AISMerge also supports the AISValidation, which verifies it is safe and OK to merge the 
+ * UserTable into primaryAIS. 
+ * 
+ * @See UserTable
+ * @See AkibanInformationSchema
+ */
 public class AISMerge {
     /* state */
     private AkibanInformationSchema targetAIS;
@@ -30,6 +40,13 @@ public class AISMerge {
     private List<AISMergeValidation> checkers;
     private NameGenerator groupNames; 
     
+    /**
+     * Creates an AISMerger with the starting values. 
+     * 
+     * @param primaryAIS - where the table will end up
+     * @param newTable - UserTable to merge into the primaryAIS
+     * @throws Exception
+     */
     public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) throws Exception {
         targetAIS = new AkibanInformationSchema();
         new Writer(new AISTarget(targetAIS)).save(primaryAIS);
@@ -40,7 +57,11 @@ public class AISMerge {
         
         groupNames = new DefaultNameGenerator().setDefaultGroupNames(targetAIS.getGroups().keySet());
     }
-    
+
+    /**
+     * 
+     * @return - the primaryAIS, after merge() with the UserTable added.
+     */
     public AkibanInformationSchema getAIS () {
         return targetAIS;
     }
@@ -49,6 +70,13 @@ public class AISMerge {
         checkers.add(validator);
     }
 
+    /**
+     * Validate verifies the UserTable can be merged without errors into the 
+     * primaryAIS. 
+     *  
+     * @return - this
+     * @throws InvalidOperationException
+     */
     public AISMerge validate () throws InvalidOperationException {
         targetAIS.checkIntegrity();
         for (AISMergeValidation validator : checkers) {
@@ -58,6 +86,11 @@ public class AISMerge {
     }
     
     public AISMerge merge() {
+        // I should use TableSubsetWriter(new AISTarget(targetAIS))
+        // but that assumes the UserTable.getAIS() is complete and valid. 
+        // i.e. has a group and group table, joins are accurate, etc. 
+        // this may not be true 
+        
         final AISBuilder builder = new AISBuilder(targetAIS);
 
         // Add the user table to the targetAIS
@@ -83,17 +116,11 @@ public class AISMerge {
 
     private void addTable(AISBuilder builder, final UserTable table) {
         
-        try {
-            new TableSubsetWriter (new AISTarget(targetAIS)) {
-                @Override
-                public boolean shouldSaveTable(Table checkTable) {
-                    return checkTable == table;
-                }
-            }.save(table.getAIS());
-        } catch (Exception ex) {
-            
-        }
-        /*
+        // I should use TableSubsetWriter(new AISTarget(targetAIS))
+        // but that assumes the UserTable.getAIS() is complete and valid. 
+        // i.e. has a group and group table.
+
+        
         final String schemaName = table.getName().getSchemaName();
         final String tableName = table.getName().getTableName();
 
@@ -135,7 +162,6 @@ public class AISMerge {
                         col.getIndexedLength());
             }
         }
-        */
     }
 
   

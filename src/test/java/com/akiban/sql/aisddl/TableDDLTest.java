@@ -63,12 +63,12 @@ import com.akiban.sql.StandardException;
 
 public class TableDDLTest {
 
-    private TableName dropTable;
+    private static TableName dropTable;
     private String    defaultSchema = "test";
     private String    defaultTable  = "t1";
     protected SQLParser parser;
     private DDLFunctionsMock ddlFunctions;
-    private AkibanInformationSchema ais;
+    private static AkibanInformationSchema ais;
     
     @Before
     public void before() throws Exception {
@@ -146,7 +146,7 @@ public class TableDDLTest {
         TableDDL.createTable(ddlFunctions, null, defaultSchema, (CreateTableNode)stmt);
     }
 
-    
+    /* Test removed because the DefaultNameGenerator no longer validates the 2 PKs as an error
     @Test (expected=StandardException.class)
     public void createTable2PKs() throws Exception {
         String sql = "CREATE TABLE test.t1 (c1 int primary key, c2 int NOT NULL, primary key (c2))";
@@ -155,10 +155,13 @@ public class TableDDLTest {
         assertTrue (stmt instanceof CreateTableNode);
         TableDDL.createTable(ddlFunctions, null, defaultSchema, (CreateTableNode)stmt);
     }
+    */
     
-    
-    private class DDLFunctionsMock implements DDLFunctions {
+    public static class DDLFunctionsMock implements DDLFunctions {
+        private AkibanInformationSchema internalAIS = null;
         public DDLFunctionsMock() {}
+        
+        public DDLFunctionsMock(AkibanInformationSchema ais) { this.internalAIS = ais; }
         
         @Override
         public void createTable(Session session, UserTable table)
@@ -184,6 +187,16 @@ public class TableDDLTest {
             
             checkIndexes (table, ais.getUserTable(dropTable));
             checkIndexes (ais.getUserTable(dropTable), table);
+        }
+
+        private void checkIndexes(UserTable sourceTable, UserTable checkTable) {
+            for (Index index : sourceTable.getIndexesIncludingInternal()) {
+                assertNotNull(checkTable.getIndexIncludingInternal(index.getIndexName().getName()));
+                Index checkIndex = checkTable.getIndexIncludingInternal(index.getIndexName().getName());
+                for (IndexColumn col : index.getColumns()) {
+                    checkIndex.getColumns().get(col.getPosition());
+                }
+            }
         }
 
         @Override
@@ -239,7 +252,6 @@ public class TableDDLTest {
                 ForeignConstraintDDLException, UnsupportedDropException,
                 GenericInvalidOperationException {
             // TODO Auto-generated method stub
-            
         }
 
 
@@ -259,8 +271,7 @@ public class TableDDLTest {
 
         @Override
         public AkibanInformationSchema getAIS(Session session) {
-            // TODO Auto-generated method stub
-            return null;
+            return internalAIS;
         }
 
         @Override
@@ -319,15 +330,6 @@ public class TableDDLTest {
         
     }
 
-    private void checkIndexes(UserTable sourceTable, UserTable checkTable) {
-        for (Index index : sourceTable.getIndexesIncludingInternal()) {
-            assertNotNull(checkTable.getIndexIncludingInternal(index.getIndexName().getName()));
-            Index checkIndex = checkTable.getIndexIncludingInternal(index.getIndexName().getName());
-            for (IndexColumn col : index.getColumns()) {
-                checkIndex.getColumns().get(col.getPosition());
-            }
-        }
-    }
     /*"CREATE TABLE t1 (c1 INT)";*/
     private void createTableSimpleGenerateAIS () {
         dropTable = TableName.create(defaultSchema, defaultTable);
