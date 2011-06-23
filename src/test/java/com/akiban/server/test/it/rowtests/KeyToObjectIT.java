@@ -22,11 +22,11 @@ import com.akiban.server.FieldDef;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.store.IndexRecordVisitor;
+import com.akiban.server.store.IndexVisitor;
 import com.akiban.server.test.it.ITBase;
 import com.persistit.Key;
+import com.persistit.Value;
 import junit.framework.Assert;
-import org.apache.zookeeper.data.Id;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -58,17 +58,16 @@ public class KeyToObjectIT extends ITBase {
         final RowDef rowDef = (RowDef)table.rowDef();
         final Iterator<NewRow> rowIt = allRows.iterator();
 
-        persistitStore().traverse(session(), index, new IndexRecordVisitor() {
+        persistitStore().traverse(session(), index, new IndexVisitor() {
             private int rowCounter = 0;
 
             @Override
-            public void visit(List<Object> _) {
+            protected void visit(Key key, Value value) {
                 if(!rowIt.hasNext()) {
                     Assert.fail("More index entries than rows: rows("+allRows+") index("+index+")");
                 }
 
                 final NewRow row = rowIt.next();
-                final Key key = this.exchange.getKey();
                 key.indexTo(0);
                 
                 for(IndexColumn indexColumn : index.getColumns()) {
