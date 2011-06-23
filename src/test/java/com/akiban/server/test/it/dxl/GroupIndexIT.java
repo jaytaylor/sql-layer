@@ -19,7 +19,7 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Table;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.store.IndexKeyRecordVisitor;
+import com.akiban.server.store.IndexKeyVisitor;
 import com.akiban.server.test.it.ITBase;
 import junit.framework.Assert;
 import org.junit.After;
@@ -210,7 +210,7 @@ public class GroupIndexIT extends ITBase {
 
         final int[] curKey = {0};
         final String indexName = groupIndex.getIndexName().getName();
-        persistitStore().traverse(session(), groupIndex, new IndexKeyRecordVisitor() {
+        persistitStore().traverse(session(), groupIndex, new IndexKeyVisitor() {
             @Override
             protected void visit(List<?> actual) {
                 if(!keyIt.hasNext()) {

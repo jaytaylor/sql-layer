@@ -19,7 +19,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.store.IndexKeyRecordVisitor;
+import com.akiban.server.store.IndexKeyVisitor;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.TreeRecordVisitor;
@@ -69,7 +69,7 @@ public class TestStore
         }
     }
 
-    public void traverse(Session session, Index index, IndexKeyRecordVisitor visitor)
+    public void traverse(Session session, Index index, IndexKeyVisitor visitor)
         throws Exception
     {
         persistitStore.traverse(session, index, visitor);

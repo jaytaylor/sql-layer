@@ -17,7 +17,7 @@ package com.akiban.server.store;
 
 import java.util.*;
 
-public abstract class IndexKeyRecordVisitor extends IndexRecordVisitor
+public abstract class IndexKeyVisitor extends IndexRecordVisitor
 {
     protected abstract void visit(List<?> key);
 

@@ -15,12 +15,12 @@
 
 package com.akiban.server.test.it.keyupdate;
 
-import com.akiban.server.store.IndexKeyRecordVisitor;
+import com.akiban.server.store.IndexKeyVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class CollectingIndexKeyVisitor extends IndexKeyRecordVisitor
+public class CollectingIndexKeyVisitor extends IndexKeyVisitor
 {
     @Override
     protected void visit(List<?> key)
