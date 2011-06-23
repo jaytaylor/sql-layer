@@ -21,8 +21,11 @@ import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.ExplainStatementNode;
 import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.StatementNode;
+import com.akiban.sql.parser.ParameterNode;
 
 import com.akiban.sql.StandardException;
+
+import java.util.List;
 
 /** SQL statement to explain another one. */
 public class PostgresExplainStatementGenerator extends PostgresBaseStatementGenerator
@@ -35,7 +38,9 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
 
     @Override
     public PostgresStatement generate(PostgresServerSession server,
-                                      StatementNode stmt, int[] paramTypes) 
+                                      StatementNode stmt, 
+                                      List<ParameterNode> params,
+                                      int[] paramTypes) 
             throws StandardException {
         if (stmt.getNodeType() != NodeTypes.EXPLAIN_STATEMENT_NODE)
             return null;
@@ -44,7 +49,8 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
             throw new StandardException("Optimizer does not support EXPLAIN");
         if (!(innerStmt instanceof DMLStatementNode))
             throw new StandardException("Cannot EXPLAIN this statement");
-        OperatorCompiler.Result result = compiler.compile((DMLStatementNode)innerStmt);
+        OperatorCompiler.Result result = compiler.compile((DMLStatementNode)innerStmt,
+                                                          params);
         return new PostgresExplainStatement(result.explainPlan());
     }
 

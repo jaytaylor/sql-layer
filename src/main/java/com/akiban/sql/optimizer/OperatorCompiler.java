@@ -22,6 +22,7 @@ import com.akiban.sql.optimizer.SimplifiedQuery.*;
 
 import com.akiban.sql.parser.*;
 import com.akiban.sql.compiler.*;
+import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.views.ViewDefinition;
@@ -111,20 +112,25 @@ public class OperatorCompiler
     public static class Result {
         private Plannable resultOperator;
         private List<ResultColumnBase> resultColumns;
+        private DataTypeDescriptor[] parameterTypes;
         private int offset = 0;
         private int limit = -1;
 
         public Result(Plannable resultOperator,
                       List<ResultColumnBase> resultColumns,
+                      DataTypeDescriptor[] parameterTypes,
                       int offset,
                       int limit) {
             this.resultOperator = resultOperator;
             this.resultColumns = resultColumns;
+            this.parameterTypes = parameterTypes;
             this.offset = offset;
             this.limit = limit;
         }
-        public Result(Plannable resultOperator) {
+        public Result(Plannable resultOperator,
+                      DataTypeDescriptor[] parameterTypes) {
             this.resultOperator = resultOperator;
+            this.parameterTypes = parameterTypes;
         }
 
         public Plannable getResultOperator() {
@@ -132,6 +138,9 @@ public class OperatorCompiler
         }
         public List<ResultColumnBase> getResultColumns() {
             return resultColumns;
+        }
+        public DataTypeDescriptor[] getParameterTypes() {
+            return parameterTypes;
         }
         public int getOffset() {
             return offset;
@@ -178,16 +187,17 @@ public class OperatorCompiler
         }
     }
 
-    public Result compile(DMLStatementNode stmt) throws StandardException {
+    public Result compile(DMLStatementNode stmt, List<ParameterNode> params)
+            throws StandardException {
         switch (stmt.getNodeType()) {
         case NodeTypes.CURSOR_NODE:
-            return compileSelect((CursorNode)stmt);
+            return compileSelect((CursorNode)stmt, params);
         case NodeTypes.UPDATE_NODE:
-            return compileUpdate((UpdateNode)stmt);
+            return compileUpdate((UpdateNode)stmt, params);
         case NodeTypes.INSERT_NODE:
-            return compileInsert((InsertNode)stmt);
+            return compileInsert((InsertNode)stmt, params);
         case NodeTypes.DELETE_NODE:
-            return compileDelete((DeleteNode)stmt);
+            return compileDelete((DeleteNode)stmt, params);
         default:
             throw new UnsupportedSQLException("Unsupported statement type: " + 
                                               stmt.statementToString());
@@ -206,7 +216,8 @@ public class OperatorCompiler
 
     enum ProductMethod { HKEY_ORDERED, BY_RUN };
 
-    public Result compileSelect(CursorNode cursor) throws StandardException {
+    public Result compileSelect(CursorNode cursor, List<ParameterNode> params) 
+            throws StandardException {
         // Get into standard form.
         cursor = (CursorNode)bindAndGroup(cursor);
         SimplifiedSelectQuery squery = 
@@ -392,10 +403,12 @@ public class OperatorCompiler
         int limit = squery.getLimit();
 
         return new Result(resultOperator, resultColumns, 
+                          getParameterTypes(params),
                           offset, limit);
     }
 
-    public Result compileUpdate(UpdateNode update) throws StandardException {
+    public Result compileUpdate(UpdateNode update, List<ParameterNode> params) 
+            throws StandardException {
         update = (UpdateNode)bindAndGroup(update);
         SimplifiedUpdateStatement supdate = 
             new SimplifiedUpdateStatement(update, grouper.getJoinConditions());
@@ -447,10 +460,11 @@ public class OperatorCompiler
 
         Plannable updatePlan = new com.akiban.qp.physicaloperator.Update_Default(resultOperator,
                                             new ExpressionRowUpdateFunction(updateRow));
-        return new Result(updatePlan);
+        return new Result(updatePlan, getParameterTypes(params));
     }
 
-    public Result compileInsert(InsertNode insert) throws StandardException {
+    public Result compileInsert(InsertNode insert, List<ParameterNode> params) 
+            throws StandardException {
         insert = (InsertNode)bindAndGroup(insert);
         SimplifiedInsertStatement sstmt = 
             new SimplifiedInsertStatement(insert, grouper.getJoinConditions());
@@ -458,7 +472,8 @@ public class OperatorCompiler
         throw new UnsupportedSQLException("No Insert operators yet");
     }
 
-    public Result compileDelete(DeleteNode delete) throws StandardException {
+    public Result compileDelete(DeleteNode delete, List<ParameterNode> params) 
+            throws StandardException {
         delete = (DeleteNode)bindAndGroup(delete);
         SimplifiedDeleteStatement sstmt = 
             new SimplifiedDeleteStatement(delete, grouper.getJoinConditions());
@@ -858,7 +873,7 @@ public class OperatorCompiler
             }
         }
     }
-
+    
     protected UserTableRowType tableRowType(TableNode table) {
         return schema.userTableRowType(table.getTable());
     }
@@ -892,6 +907,21 @@ public class OperatorCompiler
     protected Row getIndexExpressionRow(Index index, Expression[] keys) {
         RowType rowType = schema.indexRowType(index);
         return new ExpressionRow(rowType, keys);
+    }
+
+    protected DataTypeDescriptor[] getParameterTypes(List<ParameterNode> params) {
+        if ((params == null) || params.isEmpty())
+            return null;
+        int nparams = 0;
+        for (ParameterNode param : params) {
+            if (nparams < param.getParameterNumber() + 1)
+                nparams = param.getParameterNumber() + 1;
+        }
+        DataTypeDescriptor[] result = new DataTypeDescriptor[nparams];
+        for (ParameterNode param : params) {
+            result[param.getParameterNumber()] = param.getType();
+        }        
+        return result;
     }
 
 }
