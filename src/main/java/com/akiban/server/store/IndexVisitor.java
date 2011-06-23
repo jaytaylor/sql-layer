@@ -22,7 +22,7 @@ import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 
 
-public abstract class IndexKeyVisitor {
+public abstract class IndexVisitor {
     protected abstract void visit(Key key, Value value) throws PersistitException, InvalidOperationException;
 
     final void visit() throws PersistitException, InvalidOperationException {

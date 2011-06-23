@@ -24,7 +24,7 @@ import com.persistit.exception.PersistitException;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class IndexRecordVisitor extends IndexKeyVisitor {
+public abstract class IndexRecordVisitor extends IndexVisitor {
 
     protected abstract void visit(List<?> key, Object value);
 

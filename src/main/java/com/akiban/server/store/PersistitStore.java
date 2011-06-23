@@ -30,7 +30,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.ScanLimit;
@@ -1461,7 +1460,7 @@ public class PersistitStore implements Store {
         }
     }
 
-    public <V extends IndexKeyVisitor> V traverse(Session session, Index index, V visitor)
+    public <V extends IndexVisitor> V traverse(Session session, Index index, V visitor)
             throws PersistitException, InvalidOperationException {
         if (index.isHKeyEquivalent()) {
             throw new IllegalArgumentException("HKeyEquivalent not allowed: " + index);
