@@ -69,6 +69,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.akiban.qp.physicaloperator.API.ancestorLookup_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
@@ -122,14 +123,14 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
                 maintainGroupIndexes(
                         session, ais, adapter,
-                        oldRowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.DELETE
+                        oldRowData, new PersistitKeyHandler(adapter), new RowAction(userTable, Action.DELETE)
                 );
 
                 runCursor(oldRowData, rowDef, updateOp, adapter);
 
                 maintainGroupIndexes(
                         session, ais, adapter,
-                        newRowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.STORE
+                        newRowData, new PersistitKeyHandler(adapter), new RowAction(userTable, Action.STORE)
                 );
 
                 transaction.commit();
@@ -154,9 +155,10 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
                 AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
                 PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
+                UserTable uTable = ais.getUserTable(rowData.getRowDefId());
                 maintainGroupIndexes(
                         session, ais, adapter,
-                        rowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.STORE
+                        rowData, new PersistitKeyHandler(adapter), new RowAction(uTable, Action.STORE)
                 );
 
                 transaction.commit();
@@ -179,9 +181,10 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 transaction.begin();
                 AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
                 PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
+                UserTable uTable = ais.getUserTable(rowData.getRowDefId());
                 maintainGroupIndexes(
                         session, ais, adapter,
-                        rowData, new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.DELETE
+                        rowData, new PersistitKeyHandler(adapter), new RowAction(uTable, Action.DELETE)
                 );
                 super.deleteRow(session, rowData);
                 transaction.commit();
@@ -220,8 +223,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
         for(GroupIndex groupIndex : groupIndexes) {
             PhysicalOperator plan = groupIndexCreationPlan(adapter.schema(), groupIndex);
-            maintainGroupIndexes(adapter, groupIndex, plan, UndefBindings.only(),
-                                 new PersistitKeyHandler(adapter), PersistitKeyHandler.Action.STORE);
+            runMaintenancePlan(adapter, groupIndex, plan, UndefBindings.only(),
+                    new PersistitKeyHandler(adapter), RowAction.FOR_BULK);
         }
     }
 
@@ -277,28 +280,35 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             ArrayBindings bindings = new ArrayBindings(1);
             bindings.set(HKEY_BINDING_POSITION, persistitHKey);
 
-            for (GroupIndex groupIndex : optionallyOrderGroupIndexes(userTable.getGroupIndexes())) {
+            Collection<GroupIndex> branchIndexes = new ArrayList<GroupIndex>();
+            for (GroupIndex groupIndex : userTable.getGroup().getIndexes()) {
+                if (groupIndex.leafMostTable().isDescendantOf(userTable)) {
+                    branchIndexes.add(groupIndex);
+                }
+            }
+
+            for (GroupIndex groupIndex : optionallyOrderGroupIndexes(branchIndexes)) {
                 if (groupIndex.isUnique()) {
-                    throw new UnsupportedOperationException("UNIQUE GROUP INDEXES WILL BE SUPPORTED SOON!"); // TODO
+                    throw new UniqueIndexUnsupportedException();
                 }
                 PhysicalOperator plan = groupIndexCreationPlan(
                         adapter.schema(),
                         groupIndex,
                         adapter.schema().userTableRowType(userTable)
                 );
-                maintainGroupIndexes(adapter, groupIndex, plan, bindings, handler, action);
+                runMaintenancePlan(adapter, groupIndex, plan, bindings, handler, action);
             }
         } finally {
             adapter.returnExchange(hEx);
         }
     }
 
-    private <A,T extends Throwable> void maintainGroupIndexes(
+    private <A,T extends Throwable> void runMaintenancePlan(
             PersistitAdapter adapter,
             GroupIndex groupIndex,
             PhysicalOperator plan,
             Bindings bindings,
-            GroupIndexHandler<A,T> handler, A action
+            GroupIndexHandler<A, T> handler, A action
     )
     throws T
     {
@@ -324,7 +334,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         if (branchTables.isEmpty()) {
             throw new RuntimeException("group index has empty branch: " + groupIndex);
         }
-        if (!branchTables.fromRootMost().contains(rowType)) {
+        if (!branchTables.fromRoot().contains(rowType)) {
             throw new RuntimeException(rowType + " not in branch for " + groupIndex + ": " + branchTables);
         }
 
@@ -456,40 +466,104 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // nested classes
 
-    private static class PersistitKeyHandler implements GroupIndexHandler<PersistitKeyHandler.Action,PersistitException> {
+    private static class PersistitKeyHandler implements GroupIndexHandler<RowAction,PersistitException> {
 
         // GroupIndexHandler interface
 
         @Override
-        public void handleRow(Action action, GroupIndex groupIndex, Row row)
+        public void handleRow(RowAction action, GroupIndex groupIndex, Row row)
         throws PersistitException
         {
             Exchange exchange = adapter.takeExchange(groupIndex);
             Key key = exchange.getKey();
             key.clear();
             IndexRowComposition irc = groupIndex.indexRowComposition();
+
+            UserTable sourceTable = action.sourceTable();
+            final boolean sourceRowAboveIndex;
+            final UserTable leafMost = groupIndex.leafMostTable();
+            if (sourceTable == null) {
+                assert Action.BULK_ADD.equals(action.action) : action;
+                sourceRowAboveIndex = true;
+            }
+            else if (sourceTable.equals(leafMost)) {
+                sourceRowAboveIndex = false;
+            }
+            else if (sourceTable.isDescendantOf(leafMost)) {
+                return; // nothing to do
+            }
+            else if (groupIndex.rootMostTable().equals(sourceTable)) {
+                sourceRowAboveIndex = false;
+            }
+            else {
+                sourceRowAboveIndex = groupIndex.rootMostTable().isDescendantOf(sourceTable);
+            }
+
+            // nullPoint is the point at which we should stop nulling hkey values; needs a better name.
+            // This is the last index of the hkey component that should be nulled.
+            int nullPoint = -1;
             for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
                 assert irc.isInRowData(i);
                 assert ! irc.isInHKey(i);
-                final int flattenedIndex = irc.getFieldPosition(i);
 
+                final int flattenedIndex = irc.getFieldPosition(i);
                 Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
                 Object value = row.field(flattenedIndex, UndefBindings.only());
                 RowDef rowDef = (RowDef) column.getTable().rowDef();
                 FieldDef fieldDef = rowDef.getFieldDef(column.getPosition());
                 fieldDef.getEncoding().toKey(fieldDef, value, key);
+                boolean isHKeyComponent = i+1 > groupIndex.getColumns().size();
+                if (sourceRowAboveIndex && isHKeyComponent && column.getTable().equals(sourceTable)) {
+                    nullPoint = i;
+                }
             }
 
-            switch (action) {
+            if (!Action.BULK_ADD.equals(action.action()) && sourceRowAboveIndex && nullPoint < 0) {
+                return;
+            }
+
+            switch (action.action()) {
+            case BULK_ADD:
+                assert nullPoint < 0 : nullPoint;
+                exchange.store();
+                break;
             case STORE:
                 exchange.store();
+                if (nullOutHKey(nullPoint, groupIndex, row, key)) {
+                    exchange.remove();
+                }
                 break;
             case DELETE:
                 exchange.remove();
+                if (nullOutHKey(nullPoint, groupIndex, row, key)) {
+                    exchange.store();
+                }
                 break;
             default:
-                throw new UnsupportedOperationException(action.name());
+                throw new UnsupportedOperationException(action.action().name());
             }
+        }
+
+        private boolean nullOutHKey(int nullPoint, GroupIndex groupIndex, Row row, Key key) {
+            if (nullPoint < 0) {
+                return false;
+            }
+            key.setDepth(nullPoint);
+            IndexRowComposition irc = groupIndex.indexRowComposition();
+            for (int i = groupIndex.getColumns().size(), LEN=irc.getLength(); i < LEN; ++i) {
+                if (i <= nullPoint) {
+                    key.append(null);
+                }
+                else {
+                    final int flattenedIndex = irc.getFieldPosition(i);
+                    Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
+                    Object value = row.field(flattenedIndex, UndefBindings.only());
+                    RowDef rowDef = (RowDef) column.getTable().rowDef();
+                    FieldDef fieldDef = rowDef.getFieldDef(column.getPosition());
+                    fieldDef.getEncoding().toKey(fieldDef, value, key);
+                }
+            }
+            return true;
         }
 
         public PersistitKeyHandler(PersistitAdapter adapter) {
@@ -502,7 +576,35 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
         // nested classes
 
-        public enum Action { STORE, DELETE }
+    }
+
+    private static class RowAction {
+
+        public UserTable sourceTable() {
+            return sourceTable;
+        }
+
+        public Action action() {
+            return action;
+        }
+
+        public RowAction(UserTable sourceTable, Action action) {
+            assert action != null : "action is null";
+            assert Action.BULK_ADD.equals(action) == (sourceTable == null)
+                    : String.format("(sourceTable=null)==%s but action=%s", sourceTable==null, action);
+            this.sourceTable = sourceTable;
+            this.action = action;
+        }
+
+        @Override
+        public String toString() {
+            return action().name() + ' ' + sourceTable();
+        }
+
+        private final UserTable sourceTable;
+        private final Action action;
+
+        private static RowAction FOR_BULK = new RowAction(null, Action.BULK_ADD);
     }
 
     private static class BranchTables {
@@ -605,5 +707,13 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     
     protected interface GroupIndexHandler<A, T extends Throwable> {
         void handleRow(A action, GroupIndex groupIndex, Row row) throws T;
+    }
+
+    public enum Action {STORE, DELETE, BULK_ADD }
+
+    public class UniqueIndexUnsupportedException extends UnsupportedOperationException {
+        public UniqueIndexUnsupportedException() {
+            super("unique indexes not supported");
+        }
     }
 }
