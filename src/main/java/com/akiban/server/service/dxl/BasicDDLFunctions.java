@@ -130,6 +130,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             else {
                 dml.truncateTable(session, table.getTableId());
                 store().deleteIndexes(session, userTable.getIndexesIncludingInternal());
+                store().deleteIndexes(session, userTable.getGroupIndexes());
             }
             schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
             checkCursorsForDDLModification(session, table);

@@ -504,6 +504,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 final String groupName = userTable.getGroup().getName();
                 final Group group = newAis.getGroup(groupName);
                 if(group != null && !handledGroups.contains(groupName)) {
+                    group.removeIndexes(userTable.getGroupIndexes());
                     builder.generateGroupTableColumns(group);
                     builder.generateGroupTableIndexes(group);
                     handledGroups.add(groupName);
