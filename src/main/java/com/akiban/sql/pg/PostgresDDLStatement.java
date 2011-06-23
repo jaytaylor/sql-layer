@@ -78,7 +78,7 @@ public class PostgresDDLStatement implements PostgresStatement
             SchemaDDL.createSchema(ais, schema, (CreateSchemaNode)ddl);
             break;
         case NodeTypes.DROP_SCHEMA_NODE:
-            SchemaDDL.dropSchema(ais, schema, (DropSchemaNode)ddl);
+            SchemaDDL.dropSchema(ddlFunctions, session, (DropSchemaNode)ddl);
             break;
         case NodeTypes.CREATE_TABLE_NODE:
             TableDDL.createTable(ddlFunctions, session, schema, (CreateTableNode)ddl);
@@ -96,6 +96,9 @@ public class PostgresDDLStatement implements PostgresStatement
         case NodeTypes.CREATE_INDEX_NODE:
             IndexDDL.createIndex(ais, schema, (CreateIndexNode)ddl);
             break;
+        case NodeTypes.RENAME_NODE:
+        case NodeTypes.ALTER_TABLE_NODE:
+        case NodeTypes.REVOKE_NODE:
         default:
             throw new StandardException(ddl.statementToString() + " not supported yet");
         }
@@ -107,5 +110,4 @@ public class PostgresDDLStatement implements PostgresStatement
             messenger.sendMessage();
         }
     }
-
 }

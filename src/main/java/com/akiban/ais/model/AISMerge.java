@@ -14,12 +14,11 @@
  */
 package com.akiban.ais.model;
 
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 import com.akiban.ais.io.AISTarget;
+import com.akiban.ais.io.TableSubsetWriter;
 import com.akiban.ais.io.Writer;
 import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
@@ -29,7 +28,7 @@ public class AISMerge {
     private AkibanInformationSchema targetAIS;
     private UserTable sourceTable;
     private List<AISMergeValidation> checkers;
-    private GroupNamer groupNames; 
+    private NameGenerator groupNames; 
     
     public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) throws Exception {
         targetAIS = new AkibanInformationSchema();
@@ -39,10 +38,7 @@ public class AISMerge {
 
         checkers = new LinkedList<AISMergeValidation>();
         
-        groupNames = new GroupNamer();
-        for (String groupName : targetAIS.getGroups().keySet()) {
-            groupNames.name(groupName);
-        }
+        groupNames = new DefaultNameGenerator().setDefaultGroupNames(targetAIS.getGroups().keySet());
     }
     
     public AkibanInformationSchema getAIS () {
@@ -69,8 +65,8 @@ public class AISMerge {
         builder.basicSchemaIsComplete();
         // Joins or group table?
         if (sourceTable.getParentJoin() == null) {
-            String groupName = groupNames.name(sourceTable.getName().getTableName());
-            String groupTableName = groupTableName(groupName);
+            String groupName = groupNames.generateGroupName(sourceTable);
+            String groupTableName = groupNames.generateGroupTableName(groupName);
             
             builder.createGroup(groupName, 
                     sourceTable.getName().getSchemaName(), 
@@ -85,7 +81,19 @@ public class AISMerge {
         return this;
     }
 
-    private void addTable(AISBuilder builder, UserTable table) {
+    private void addTable(AISBuilder builder, final UserTable table) {
+        
+        try {
+            new TableSubsetWriter (new AISTarget(targetAIS)) {
+                @Override
+                public boolean shouldSaveTable(Table checkTable) {
+                    return checkTable == table;
+                }
+            }.save(table.getAIS());
+        } catch (Exception ex) {
+            
+        }
+        /*
         final String schemaName = table.getName().getSchemaName();
         final String tableName = table.getName().getTableName();
 
@@ -127,36 +135,10 @@ public class AISMerge {
                         col.getIndexedLength());
             }
         }
-        
+        */
     }
 
-    private String groupTableName(final String group) {
-        return "_akiban_" + group;
-    }
-
-    private static class GroupNamer {
-        private final Set<String> names = new HashSet<String>();
-
-        public String name(final String name) {
-            if (names.add(name)) {
-                return name;
-            }
-
-            int i = 0;
-            StringBuilder builder = new StringBuilder(name).append('$');
-            final int appendAt = builder.length();
-            String ret;
-
-            do {
-                builder.setLength(appendAt);
-                builder.append(i++);
-            }
-            while(!names.add(ret = builder.toString()));
-            
-            return ret;
-        }
-    }
-    
+  
     public static class NoDuplicateNames implements AISMergeValidation {
         public void validate (AkibanInformationSchema targetSchema, UserTable sourceTable)
             throws InvalidOperationException {

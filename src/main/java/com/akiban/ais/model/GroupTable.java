@@ -159,6 +159,7 @@ public class GroupTable extends Table
         }
     }
 
+    @SuppressWarnings("unused")
     private GroupTable()
     {
         super();

@@ -38,7 +38,10 @@ import com.akiban.sql.types.TypeId.FormatIds;
 import com.akiban.sql.StandardException;
 
 import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
@@ -81,7 +84,8 @@ public class TableDDL
         String tableName = parserName.getTableName();
         
         AISBuilder builder = new AISBuilder();
-        IndexNameGenerator indexNamer = new IndexNameGenerator();
+        builder.setTableIdOffset(1);
+        NameGenerator indexNamer = new DefaultNameGenerator();
         
         builder.userTable(schemaName, tableName);
 
@@ -150,7 +154,7 @@ public class TableDDL
                 else if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.UNIQUE) {
                     constraint = Index.UNIQUE_KEY_CONSTRAINT;
                 }
-                indexName = indexNamer.generateName(cdn.getName(), cdn.getColumnList().get(0).getName(), constraint);
+                indexName = indexNamer.generateIndexName(cdn.getName(), cdn.getColumnList().get(0).getName(), constraint);
                 
                 builder.index(schemaName, tableName, indexName, true, constraint);
                 
@@ -179,7 +183,7 @@ public class TableDDL
         }
         
         public String generateName(String indexName, String columnName, String constraint) throws StandardException {
-            if (constraint.endsWith(Index.PRIMARY_KEY_CONSTRAINT)) {
+            if (constraint.equals(Index.PRIMARY_KEY_CONSTRAINT)) {
                 if (indexNames.contains(Index.PRIMARY_KEY_CONSTRAINT)) {
                     throw new StandardException ("Table already has a Primary key, not allowed to define a second one");
                 }
@@ -201,5 +205,15 @@ public class TableDDL
         }
     }
 
+    private int computeTableIdOffset(AkibanInformationSchema ais) {
+        // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
+        int offset = 1;
+        for(UserTable table : ais.getUserTables().values()) {
+            if(!table.getName().getSchemaName().equals("akiban_information_schema")) {
+                offset = Math.max(offset, table.getTableId() + 1);
+            }
+        }
+        return offset;
+    }
 
 }
