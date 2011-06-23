@@ -26,8 +26,6 @@ import java.nio.ByteBuffer;
 
 public class AkServerUtil {
 
-    private final static boolean BIG_ENDIAN = false;
-
     private final static char[] HEX_DIGITS = { '0', '1', '2', '3', '4', '5',
             '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
@@ -82,55 +80,25 @@ public class AkServerUtil {
     }
 
     public static int getShort(byte[] bytes, int index) {
-        if (BIG_ENDIAN) {
-            return (short) ((bytes[index + 1] & 0xFF) | (bytes[index + 0]) << 8);
-        } else {
-            return (short) ((bytes[index + 0] & 0xFF) | (bytes[index + 1]) << 8);
-        }
+        return (short) ((bytes[index + 0] & 0xFF) | (bytes[index + 1]) << 8);
     }
 
     public static int getChar(byte[] bytes, int index) {
-        if (BIG_ENDIAN) {
-            return (bytes[index + 1] & 0xFF) | (bytes[index + 0] & 0xFF) << 8;
-        } else {
-            return (bytes[index + 0] & 0xFF) | (bytes[index + 1] & 0xFF) << 8;
-        }
+        return (bytes[index + 0] & 0xFF) | (bytes[index + 1] & 0xFF) << 8;
     }
 
     public static int getMediumInt(byte[] bytes, int index) {
-        if (BIG_ENDIAN) {
-            return (bytes[index + 2] & 0xFF) | (bytes[index + 1] & 0xFF) << 8
-                    | (bytes[index + 0] & 0xFF) << 16;
-        } else {
-            return (bytes[index + 0] & 0xFF) | (bytes[index + 1] & 0xFF) << 8
-                    | (bytes[index + 2] & 0xFF) << 16;
-        }
+        return (bytes[index + 0] & 0xFF) | (bytes[index + 1] & 0xFF) << 8 | (bytes[index + 2] & 0xFF) << 16;
     }
 
     public static int getInt(byte[] bytes, int index) {
-        if (BIG_ENDIAN) {
-            return (bytes[index + 3] & 0xFF) | (bytes[index + 2] & 0xFF) << 8
-                    | (bytes[index + 1] & 0xFF) << 16
-                    | (bytes[index + 0] & 0xFF) << 24;
-        } else {
-            return (bytes[index + 0] & 0xFF) | (bytes[index + 1] & 0xFF) << 8
+        return (bytes[index + 0] & 0xFF) | (bytes[index + 1] & 0xFF) << 8
                     | (bytes[index + 2] & 0xFF) << 16
                     | (bytes[index + 3] & 0xFF) << 24;
-        }
     }
 
     public static long getLong(byte[] bytes, int index) {
-        if (BIG_ENDIAN) {
-            return (long) (bytes[index + 7] & 0xFF)
-                    | (long) (bytes[index + 6] & 0xFF) << 8
-                    | (long) (bytes[index + 5] & 0xFF) << 16
-                    | (long) (bytes[index + 4] & 0xFF) << 24
-                    | (long) (bytes[index + 3] & 0xFF) << 32
-                    | (long) (bytes[index + 2] & 0xFF) << 40
-                    | (long) (bytes[index + 1] & 0xFF) << 48
-                    | (long) (bytes[index + 0] & 0xFF) << 56;
-        } else {
-            return (long) (bytes[index + 0] & 0xFF)
+        return (long) (bytes[index + 0] & 0xFF)
                     | (long) (bytes[index + 1] & 0xFF) << 8
                     | (long) (bytes[index + 2] & 0xFF) << 16
                     | (long) (bytes[index + 3] & 0xFF) << 24
@@ -138,7 +106,6 @@ public class AkServerUtil {
                     | (long) (bytes[index + 5] & 0xFF) << 40
                     | (long) (bytes[index + 6] & 0xFF) << 48
                     | (long) (bytes[index + 7] & 0xFF) << 56;
-        }
     }
 
     public static int putByte(byte[] bytes, int index, int value) {
@@ -147,75 +114,41 @@ public class AkServerUtil {
     }
 
     public static int putShort(byte[] bytes, int index, int value) {
-        if (BIG_ENDIAN) {
-            bytes[index + 1] = (byte) (value);
-            bytes[index + 0] = (byte) (value >>> 8);
-        } else {
-            bytes[index + 0] = (byte) (value);
-            bytes[index + 1] = (byte) (value >>> 8);
-        }
+        bytes[index + 0] = (byte) (value);
+        bytes[index + 1] = (byte) (value >>> 8);
         return index + 2;
     }
 
     public static int putChar(byte[] bytes, int index, int value) {
-        if (BIG_ENDIAN) {
-            bytes[index + 1] = (byte) (value);
-            bytes[index + 0] = (byte) (value >>> 8);
-        } else {
-            bytes[index + 0] = (byte) (value);
-            bytes[index + 1] = (byte) (value >>> 8);
-        }
+        bytes[index + 0] = (byte) (value);
+        bytes[index + 1] = (byte) (value >>> 8);
         return index + 2;
     }
 
     public static int putMediumInt(byte[] bytes, int index, int value) {
-        if (BIG_ENDIAN) {
-            bytes[index + 2] = (byte) (value);
-            bytes[index + 1] = (byte) (value >>> 8);
-            bytes[index + 0] = (byte) (value >>> 16);
-        } else {
-            bytes[index + 0] = (byte) (value);
-            bytes[index + 1] = (byte) (value >>> 8);
-            bytes[index + 2] = (byte) (value >>> 16);
-        }
+        bytes[index + 0] = (byte) (value);
+        bytes[index + 1] = (byte) (value >>> 8);
+        bytes[index + 2] = (byte) (value >>> 16);
         return index + 3;
     }
 
     public static int putInt(byte[] bytes, int index, int value) {
-        if (BIG_ENDIAN) {
-            bytes[index + 3] = (byte) (value);
-            bytes[index + 2] = (byte) (value >>> 8);
-            bytes[index + 1] = (byte) (value >>> 16);
-            bytes[index + 0] = (byte) (value >>> 24);
-        } else {
-            bytes[index + 0] = (byte) (value);
-            bytes[index + 1] = (byte) (value >>> 8);
-            bytes[index + 2] = (byte) (value >>> 16);
-            bytes[index + 3] = (byte) (value >>> 24);
-        }
+        bytes[index + 0] = (byte) (value);
+        bytes[index + 1] = (byte) (value >>> 8);
+        bytes[index + 2] = (byte) (value >>> 16);
+        bytes[index + 3] = (byte) (value >>> 24);
         return index + 4;
     }
 
     public static int putLong(byte[] bytes, int index, long value) {
-        if (BIG_ENDIAN) {
-            bytes[index + 7] = (byte) (value);
-            bytes[index + 6] = (byte) (value >>> 8);
-            bytes[index + 5] = (byte) (value >>> 16);
-            bytes[index + 4] = (byte) (value >>> 24);
-            bytes[index + 3] = (byte) (value >>> 32);
-            bytes[index + 2] = (byte) (value >>> 40);
-            bytes[index + 1] = (byte) (value >>> 48);
-            bytes[index + 0] = (byte) (value >>> 56);
-        } else {
-            bytes[index + 0] = (byte) (value);
-            bytes[index + 1] = (byte) (value >>> 8);
-            bytes[index + 2] = (byte) (value >>> 16);
-            bytes[index + 3] = (byte) (value >>> 24);
-            bytes[index + 4] = (byte) (value >>> 32);
-            bytes[index + 5] = (byte) (value >>> 40);
-            bytes[index + 6] = (byte) (value >>> 48);
-            bytes[index + 7] = (byte) (value >>> 56);
-        }
+        bytes[index + 0] = (byte) (value);
+        bytes[index + 1] = (byte) (value >>> 8);
+        bytes[index + 2] = (byte) (value >>> 16);
+        bytes[index + 3] = (byte) (value >>> 24);
+        bytes[index + 4] = (byte) (value >>> 32);
+        bytes[index + 5] = (byte) (value >>> 40);
+        bytes[index + 6] = (byte) (value >>> 48);
+        bytes[index + 7] = (byte) (value >>> 56);
         return index + 8;
     }
 
