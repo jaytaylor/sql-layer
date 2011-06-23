@@ -910,13 +910,13 @@ public class OperatorCompiler
     }
 
     protected DataTypeDescriptor[] getParameterTypes(List<ParameterNode> params) {
+        if ((params == null) || params.isEmpty())
+            return null;
         int nparams = 0;
         for (ParameterNode param : params) {
             if (nparams < param.getParameterNumber() + 1)
                 nparams = param.getParameterNumber() + 1;
         }
-        if (nparams == 0)
-            return null;
         DataTypeDescriptor[] result = new DataTypeDescriptor[nparams];
         for (ParameterNode param : params) {
             result[param.getParameterNumber()] = param.getType();
