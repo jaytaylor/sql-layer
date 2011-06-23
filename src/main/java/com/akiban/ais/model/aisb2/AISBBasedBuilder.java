@@ -47,8 +47,7 @@ public class AISBBasedBuilder
             usable = false;
             aisb.basicSchemaIsComplete();
             aisb.groupingIsComplete();
-            AkibanInformationSchema result = aisb.akibanInformationSchema();
-            return result;
+            return aisb.akibanInformationSchema();
         }
 
         // NewAISBuilder interface
@@ -82,7 +81,7 @@ public class AISBBasedBuilder
         }
 
         @Override
-        public NewAISGroupIndexBuilder groupIndex(String indexName) {
+        public NewAISGroupIndexStarter groupIndex(String indexName) {
             return new ActualGroupIndexBuilder(ais(), schema).groupIndex(indexName);
         }
 
@@ -250,7 +249,7 @@ public class AISBBasedBuilder
         private static final String PRIMARY = "PRIMARY";
     }
 
-    private static class ActualGroupIndexBuilder implements NewAISGroupIndexBuilder {
+    private static class ActualGroupIndexBuilder implements NewAISGroupIndexStarter, NewAISGroupIndexBuilder {
 
         // NewAISProvider interface
 
@@ -265,7 +264,7 @@ public class AISBBasedBuilder
         // NewAISGroupIndexBuilder interface
 
         @Override
-        public NewAISGroupIndexBuilder groupIndex(String indexName) {
+        public NewAISGroupIndexStarter groupIndex(String indexName) {
             this.indexName = indexName;
             this.groupName = null;
             this.position = -1;

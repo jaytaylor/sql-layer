@@ -30,17 +30,13 @@ public abstract class ChainedCursor implements Cursor {
     }
 
     @Override
-    public boolean next() {
+    public Row next()
+    {
         return input.next();
     }
 
     @Override
     public void close() {
         input.close();
-    }
-
-    @Override
-    public Row currentRow() {
-        return input.currentRow();
     }
 }

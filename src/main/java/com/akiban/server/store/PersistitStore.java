@@ -30,6 +30,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.ScanLimit;
@@ -1338,8 +1339,9 @@ public class PersistitStore implements Store {
     public void removeTrees(Session session, Table table) throws PersistitException {
         Exchange hEx = null;
         Exchange iEx = null;
-        Collection<? extends Index> indexes = table.isUserTable() ?
-                                              ((UserTable)table).getIndexesIncludingInternal() : table.getIndexes();
+        Collection<Index> indexes = new ArrayList<Index>();
+        indexes.addAll(table.isUserTable() ? ((UserTable)table).getIndexesIncludingInternal() : table.getIndexes());
+        indexes.addAll(table.getGroupIndexes());
 
         try {
             final Transaction transaction = treeService.getTransaction(session);
@@ -1459,7 +1461,7 @@ public class PersistitStore implements Store {
         }
     }
 
-    public void traverse(Session session, Index index, IndexRecordVisitor visitor)
+    public <V extends IndexRecordVisitor> V traverse(Session session, Index index, V visitor)
             throws PersistitException, InvalidOperationException {
         if (index.isHKeyEquivalent()) {
             throw new IllegalArgumentException("HKeyEquivalent not allowed: " + index);
@@ -1474,5 +1476,6 @@ public class PersistitStore implements Store {
         } finally {
             releaseExchange(session, exchange);
         }
+        return visitor;
     }
 }
