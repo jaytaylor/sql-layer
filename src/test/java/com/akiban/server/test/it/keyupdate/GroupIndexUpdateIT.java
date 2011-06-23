@@ -607,7 +607,7 @@ public final class GroupIndexUpdateIT extends ITBase {
         // IndexRecordVisitor interface
 
         @Override
-        public void visit(List<Object> key) {
+        public void visit(List<?> key, Object value) {
             _strings.add(String.valueOf(key));
         }
 
