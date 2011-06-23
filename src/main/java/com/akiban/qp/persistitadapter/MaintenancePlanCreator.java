@@ -88,7 +88,8 @@ class MaintenancePlanCreator
 
     // for use by unit tests
     
-    static PhysicalOperator createGroupIndexCreationPlan(Schema schema, GroupIndex groupIndex, UserTableRowType rowType) {
+    static PhysicalOperator createGroupIndexMaintenancePlan(Schema schema, GroupIndex groupIndex,
+                                                            UserTableRowType rowType) {
         BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
         if (branchTables.isEmpty()) {
             throw new RuntimeException("group index has empty branch: " + groupIndex);
@@ -144,7 +145,7 @@ class MaintenancePlanCreator
         Map<UserTableRowType, PhysicalOperator> plansPerType = new HashMap<UserTableRowType, PhysicalOperator>();
         for(UserTable table = groupIndex.leafMostTable(); table != null; table = table.parentTable()) {
             UserTableRowType rowType = schema.userTableRowType(table);
-            PhysicalOperator plan = createGroupIndexCreationPlan(schema, groupIndex, rowType);
+            PhysicalOperator plan = createGroupIndexMaintenancePlan(schema, groupIndex, rowType);
             plansPerType.put(rowType, plan);
         }
         return Collections.unmodifiableMap(plansPerType);
