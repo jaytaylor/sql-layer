@@ -49,9 +49,9 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         // write
         checkIndex("name_when_sku",
-                "Horton, 01-01-2001, 1111, 1, 11, 101",
-                "Horton, 01-01-2001, 2222, 1, 11, 102",
-                "Horton, 01-01-2001, 3333, 1, 11, 103"
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => ? (Undef)",
+                "Horton, 01-01-2001, 2222, 1, 11, 102 => ? (Undef)",
+                "Horton, 01-01-2001, 3333, 1, 11, 103 => ? (Undef)"
         );
         // update parent
         dml().updateRow(
@@ -61,9 +61,9 @@ public final class GroupIndexUpdateIT extends ITBase {
                 null
         );
         checkIndex("name_when_sku",
-                "Horton, 01-01-1999, 1111, 1, 11, 101",
-                "Horton, 01-01-1999, 2222, 1, 11, 102",
-                "Horton, 01-01-1999, 3333, 1, 11, 103"
+                "Horton, 01-01-1999, 1111, 1, 11, 101 => ? (Undef)",
+                "Horton, 01-01-1999, 2222, 1, 11, 102 => ? (Undef)",
+                "Horton, 01-01-1999, 3333, 1, 11, 103 => ? (Undef)"
         );
         // update child
         dml().updateRow(
@@ -73,16 +73,16 @@ public final class GroupIndexUpdateIT extends ITBase {
                 null
         );
         checkIndex("name_when_sku",
-                "Horton, 01-01-1999, 1111, 1, 11, 101",
-                "Horton, 01-01-1999, 2442, 1, 11, 102",
-                "Horton, 01-01-1999, 3333, 1, 11, 103"
+                "Horton, 01-01-1999, 1111, 1, 11, 101 => ? (Undef)",
+                "Horton, 01-01-1999, 2442, 1, 11, 102 => ? (Undef)",
+                "Horton, 01-01-1999, 3333, 1, 11, 103 => ? (Undef)"
         );
 
         // delete child
         dml().deleteRow(session(), createNewRow(i, 102L, 11L, 222211));
         checkIndex("name_when_sku",
-                "Horton, 01-01-1999, 1111, 1, 11, 101",
-                "Horton, 01-01-1999, 3333, 1, 11, 103"
+                "Horton, 01-01-1999, 1111, 1, 11, 101 => ? (Undef)",
+                "Horton, 01-01-1999, 3333, 1, 11, 103 => ? (Undef)"
         );
         // delete parent
         dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
@@ -98,7 +98,7 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         createGroupIndex(groupName, "name_when_sku", "c.name, o.when, i.sku");
         checkIndex("name_when_sku",
-                "Horton, 01-01-2001, 1111, 1, 11, 101"
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => ? (Undef)"
         );
     }
 
@@ -134,14 +134,14 @@ public final class GroupIndexUpdateIT extends ITBase {
                 createNewRow(i, 101L, 11L, 1111),
                 createNewRow(h, 1001L, 101L, "handle with care")
         );
-        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001");
+        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => ? (Undef)");
 
         // delete from root on up
         dml().deleteRow(session(), createNewRow(c, 1L, "Horton"));
-        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001");
+        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => ? (Undef)");
 
-        dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
-        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001");
+        dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001 => ? (Undef)"));
+        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001 => ? (Undef)");
 
         dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111));
         checkIndex(indexName);
@@ -159,12 +159,12 @@ public final class GroupIndexUpdateIT extends ITBase {
                 createNewRow(i, 101L, 11L, 1111),
                 createNewRow(h, 1001L, 101L, "handle with care")
         );
-        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001");
+        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => ? (Undef)");
 
         // delete from root on up
 
         dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
-        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001");
+        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001 => ? (Undef)");
 
         dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111));
         checkIndex(indexName);
@@ -183,7 +183,7 @@ public final class GroupIndexUpdateIT extends ITBase {
                 createNewRow(i, 101L, 11L, 1111),
                 createNewRow(h, 1001L, 101L, "handle with care")
         );
-        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001");
+        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001 => ? (Undef)");
 
         // delete from root on up
 
@@ -203,7 +203,7 @@ public final class GroupIndexUpdateIT extends ITBase {
                 createNewRow(i, 101L, 11L, 1111),
                 createNewRow(h, 1001L, 101L, "handle with care")
         );
-        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001");
+        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001 => ? (Undef)");
 
         // delete from root on up
 
@@ -238,13 +238,13 @@ public final class GroupIndexUpdateIT extends ITBase {
                 createNewRow(h, 1001L, 101L, "handle with care")
         );
         checkIndex(indexName,
-                "1111, handle with care, null, 11, 101, 1001"
+                "1111, handle with care, null, 11, 101, 1001 => ? (Undef)"
         );
 
         // bring an o that adopts the i
         dml().writeRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
         checkIndex(indexName,
-                "1111, handle with care, 1, 11, 101, 1001"
+                "1111, handle with care, 1, 11, 101, 1001 => ? (Undef)"
         );
     }
 
@@ -258,13 +258,13 @@ public final class GroupIndexUpdateIT extends ITBase {
                 createNewRow(h, 1001L, 101L, "handle with care")
         );
         checkIndex(indexName,
-                "1111, handle with care, null, 11, 101, 1001"
+                "1111, handle with care, null, 11, 101, 1001 => ? (Undef)"
         );
 
         // bring an o that adopts the i
         dml().writeRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
         checkIndex(indexName,
-                "1111, handle with care, 1, 11, 101, 1001"
+                "1111, handle with care, 1, 11, 101, 1001 => ? (Undef)"
         );
     }
 
@@ -285,15 +285,15 @@ public final class GroupIndexUpdateIT extends ITBase {
 
         checkIndex(
                 "when_name",
-                "01-01-2001, Horton, 1, 11",
-                "02-02-2002, David, 2, 13",
-                "03-03-2003, Horton, 1, 12"
+                "01-01-2001, Horton, 1, 11 => ? (Undef)",
+                "02-02-2002, David, 2, 13 => ? (Undef)",
+                "03-03-2003, Horton, 1, 12 => ? (Undef)"
         );
         checkIndex(
                 "name_street",
-                "David, Highland, 2, 23",
-                "Horton, Causeway, 1, 22",
-                "Horton, Harrington, 1, 21"
+                "David, Highland, 2, 23 => ? (Undef)",
+                "Horton, Causeway, 1, 22 => ? (Undef)",
+                "Horton, Harrington, 1, 21 => ? (Undef)"
         );
     }
 
@@ -312,7 +312,7 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 1, 11, 101, 1001"
+                "1111, don't break, 1, 11, 101, 1001 => ? (Undef)"
         );
 
         dml().updateRow(
@@ -324,7 +324,7 @@ public final class GroupIndexUpdateIT extends ITBase {
 
         checkIndex(
                 "sku_handling",
-                "2222, don't break, 2, 12, 102, 1001"
+                "2222, don't break, 2, 12, 102, 1001 => ? (Undef)"
         );
     }
 
@@ -343,7 +343,7 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 1, 11, 101, 1001"
+                "1111, don't break, 1, 11, 101, 1001 => ? (Undef)"
         );
 
         dml().updateRow(
@@ -355,7 +355,7 @@ public final class GroupIndexUpdateIT extends ITBase {
 
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 2, 12, 101, 1001"
+                "1111, don't break, 2, 12, 101, 1001 => ? (Undef)"
         );
     }
 
@@ -374,7 +374,7 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 1, 11, 101, 1001"
+                "1111, don't break, 1, 11, 101, 1001 => ? (Undef)"
         );
 
         dml().updateRow(
@@ -386,7 +386,7 @@ public final class GroupIndexUpdateIT extends ITBase {
 
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 2, 11, 101, 1001"
+                "1111, don't break, 2, 11, 101, 1001 => ? (Undef)"
         );
     }
 
@@ -405,7 +405,7 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 1, 11, 101, 1001"
+                "1111, don't break, 1, 11, 101, 1001 => ? (Undef)"
         );
 
         dml().updateRow(
@@ -436,7 +436,7 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 1, 11, 101, 1001"
+                "1111, don't break, 1, 11, 101, 1001 => ? (Undef)"
         );
 
         dml().updateRow(
@@ -448,7 +448,7 @@ public final class GroupIndexUpdateIT extends ITBase {
 
         checkIndex(
                 "sku_handling",
-                "6666, don't break, 6, 66, 666, 1001"
+                "6666, don't break, 6, 66, 666, 1001 => ? (Undef)"
         );
     }
 
@@ -467,7 +467,7 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 1, 11, 101, 1001"
+                "1111, don't break, 1, 11, 101, 1001 => ? (Undef)"
         );
 
         dml().updateRow(
@@ -479,7 +479,7 @@ public final class GroupIndexUpdateIT extends ITBase {
 
         checkIndex(
                 "sku_handling",
-                "1111, don't break, null, 66, 101, 1001"
+                "1111, don't break, null, 66, 101, 1001 => ? (Undef)"
         );
     }
 
@@ -498,7 +498,7 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 1, 11, 101, 1001"
+                "1111, don't break, 1, 11, 101, 1001 => ? (Undef)"
         );
 
         dml().updateRow(
@@ -510,7 +510,7 @@ public final class GroupIndexUpdateIT extends ITBase {
 
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 6, 11, 101, 1001"
+                "1111, don't break, 6, 11, 101, 1001 => ? (Undef)"
         );
     }
 
@@ -531,7 +531,7 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 6, 11, 101, 1001"
+                "1111, don't break, 6, 11, 101, 1001 => ? (Undef)"
         );
     }
 
@@ -576,9 +576,13 @@ public final class GroupIndexUpdateIT extends ITBase {
         } catch (PersistitException e) {
             throw new RuntimeException(e);
         }
-        // Add the [] to each expected entry
+        // convert "a, b, c => d" to "[a, b, c] => d"
         for (int i = 0; i < expected.length; ++i) {
-            expected[i] = '[' + expected[i] + ']';
+            String original = expected[i];
+            int arrow = original.indexOf(" => ");
+            String keys = original.substring(0, arrow);
+            String value = original.substring(arrow + " => ".length());
+            expected[i] = String.format("[%s] => %s", keys, value);
         }
 
         List<String> expectedList = Arrays.asList(expected);
@@ -608,7 +612,10 @@ public final class GroupIndexUpdateIT extends ITBase {
 
         @Override
         public void visit(List<?> key, Object value) {
-            _strings.add(String.valueOf(key));
+            String asString = (value == null)
+                    ? String.format("%s => null", key)
+                    : String.format("%s => %s (%s)", key, value, value.getClass().getSimpleName());
+            _strings.add(asString);
         }
 
         // StringsIndexScanner interface
