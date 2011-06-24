@@ -28,12 +28,6 @@ import java.util.Map;
 import static org.junit.Assert.*;
 
 public final class AkServerUtilTest {
-    private static class BadException extends RuntimeException {
-        public BadException(Throwable cause) {
-            super(cause);
-        }
-    }
-
     @Test
     public void decodeUTF8() throws Exception {
         testDecoding("hello snowman: ☃", "UTF-8");
@@ -63,12 +57,8 @@ public final class AkServerUtilTest {
     @Test(expected=IllegalArgumentException.class)
     public void decodeNullCharset() {
         final byte[] someBytes;
-        try {
-            someBytes = "some bytes".getBytes();
-            assertTrue("someBytes was empty!", someBytes.length > 0);
-        } catch (NullPointerException e) {
-            throw new BadException(e);
-        }
+        someBytes = "some bytes".getBytes();
+        assertTrue("someBytes was empty!", someBytes.length > 0);
         AkServerUtil.decodeString(ByteBuffer.wrap(someBytes), null);
     }
 
@@ -78,7 +68,7 @@ public final class AkServerUtilTest {
             byte[] bytes = testString.getBytes(charset);
             buffer = ByteBuffer.wrap(bytes);
         } catch (UnsupportedEncodingException e) {
-            throw new BadException(e);
+            throw new RuntimeException(e);
         }
         String decoded = AkServerUtil.decodeString(buffer, charset);
         assertEquals("test string", testString, decoded);
