@@ -29,48 +29,35 @@ public class AkServerUtil {
 
     public final static String NEW_LINE = System.getProperty("line.separator");
 
-    public static long getSignedIntegerByWidth(final byte[] bytes,
-            final int index, final int width) {
+    private static String UNEXPECTED_WIDTH_MSG = "Width must be 0,1,2,3,4 or 8 but was: ";
+
+
+    public static long getSignedIntegerByWidth(final byte[] bytes, final int index, final int width) {
         switch (width) {
-        case 0:
-            return 0;
-        case 1:
-            return (byte) bytes[index];
-        case 2:
-            return (short) getShort(bytes, index);
-        case 3:
-            return getMediumInt(bytes, index);
-        case 4:
-            return (int) getInt(bytes, index);
-        case 8:
-            return getLong(bytes, index);
-        default:
-            throw new IllegalArgumentException(
-                    "Width must be 0,2,3,4 or 8 but is: " + width);
+            case 0: return 0;
+            case 1: return bytes[index];
+            case 2: return getShort(bytes, index);
+            case 3: return getMediumInt(bytes, index);
+            case 4: return getInt(bytes, index);
+            case 8: return getLong(bytes, index);
         }
+
+        throw new IllegalArgumentException(UNEXPECTED_WIDTH_MSG + width);
     }
 
-    public static long getUnsignedIntegerByWidth(final byte[] bytes,
-            final int index, final int width) {
+    public static long getUnsignedIntegerByWidth(final byte[] bytes,final int index, final int width) {
         switch (width) {
-        case 0:
-            return 0;
-        case 1:
-            return getByte(bytes, index) & 0xFF;
-        case 2:
-            return getUShort(bytes, index) & 0xFFFF;
-        case 3:
-            return getMediumInt(bytes, index) & 0xFFFFFF;
-        case 4:
-            return getInt(bytes, index) & 0xFFFFFFFF;
-        case 8:
-            return getLong(bytes, index); // TODO
-            // throw new UnsupportedOperationException(
-            // "Currently can't handle unsigned 64-bit integers");
-        default:
-            throw new IllegalArgumentException(
-                    "Width must be 0,1,2,3,4 or 8 but is: " + width);
+            case 0: return 0;
+            case 1: return getUByte(bytes, index);
+            case 2: return getUShort(bytes, index);
+            case 3: return getUMediumInt(bytes, index);
+            case 4: return getUInt(bytes, index);
+
+            // TODO: Requires getULong(), would need to return a BigInteger
+            case 8: return getLong(bytes, index);
         }
+        
+        throw new IllegalArgumentException(UNEXPECTED_WIDTH_MSG + width);
     }
 
     public static byte getByte(byte[] bytes, int index) {
