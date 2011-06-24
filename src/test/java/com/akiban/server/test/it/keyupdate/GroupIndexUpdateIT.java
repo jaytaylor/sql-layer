@@ -15,8 +15,8 @@
 
 package com.akiban.server.test.it.keyupdate;
 
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.*;
+import com.akiban.ais.model.HKey;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.store.IndexRecordVisitor;
 import com.akiban.server.test.it.ITBase;
@@ -28,12 +28,44 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public final class GroupIndexUpdateIT extends ITBase {
+
+    @Test
+    public void hkeys() {
+        Collection<UserTable> userTables = Arrays.asList(
+                getUserTable(c),
+                getUserTable(o),
+                getUserTable(i),
+                getUserTable(h)
+        );
+        for (UserTable userTable : userTables) {
+            if (!SCHEMA.equals(userTable.getName().getSchemaName())) {
+                continue;
+            }
+            System.out.println(userTable);
+
+            HKey hkey = userTable.hKey();
+            System.out.printf("\tHKEY 0x%x: %s%n", System.identityHashCode(hkey), hkey);
+            for (HKeySegment segment : hkey.segments()) {
+                System.out.printf("\t\tSEGMENT 0x%x: %s%n", System.identityHashCode(segment), segment);
+                for (HKeyColumn hKeyColumn : segment.columns()) {
+                    System.out.printf("\t\t\tCOLUMN 0x%x: %s = %s%n",
+                            System.identityHashCode(hKeyColumn),
+                            hKeyColumn,
+                            hKeyColumn.equivalentColumns()
+                    );
+                }
+            }
+
+            System.out.println();
+        }
+    }
 
     @Test
     public void coiGIsNoOrphan() {

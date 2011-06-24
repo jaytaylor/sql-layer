@@ -16,6 +16,8 @@
 package com.akiban.ais.model;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class HKeyColumn
@@ -42,6 +44,10 @@ public class HKeyColumn
 
     public List<Column> equivalentColumns()
     {
+        if (equivalentColumns == null) {
+            assert column.getTable().isGroupTable() : "null equivalentColumns on non-group-table column: "  + column;
+            throw new UnsupportedOperationException("group tables have no equivalent columns");
+        }
         return equivalentColumns;
     }
 
@@ -55,12 +61,9 @@ public class HKeyColumn
         this.segment = segment;
         this.column = column;
         this.positionInHKey = segment.positionInHKey() + segment.columns().size() + 1;
-        if (column.getTable().isGroupTable()) {
-            GroupTable groupTable = (GroupTable) column.getTable();
-            this.equivalentColumns = groupTable.matchingColumns(column);
-        } else {
-            this.equivalentColumns = new ArrayList<Column>();
-            this.equivalentColumns.add(column);
+        if (column.getTable().isUserTable()) {
+            UserTable userTable = (UserTable) column.getTable();
+            this.equivalentColumns = Collections.unmodifiableList(userTable.matchingColumns(column));
         }
     }
 

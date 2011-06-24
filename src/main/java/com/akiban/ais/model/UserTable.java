@@ -15,10 +15,13 @@
 
 package com.akiban.ais.model;
 
+import com.akiban.util.ArgumentValidation;
+
 import java.util.*;
 
 public class UserTable extends Table
 {
+
     public static UserTable create(AkibanInformationSchema ais,
                                    String schemaName,
                                    String tableName,
@@ -48,6 +51,54 @@ public class UserTable extends Table
         if (index.isPrimaryKey()) {
             assert primaryKey == null;
             primaryKey = new PrimaryKey(index);
+        }
+    }
+
+    // Returns the columns in this table that are constrained to match the given column, e.g.
+    // customer$cid and order$cid.
+    public List<Column> matchingColumns(Column column)
+    {
+        ArgumentValidation.isTrue(column + " doesn't belong to " + getName(), column.getTable() == this);
+        List<Column> matchingColumns = new ArrayList<Column>();
+        matchingColumns.add(column);
+        findMatchingAncestorColumns(column, matchingColumns);
+        findMatchingDescendantColumns(column, matchingColumns);
+        Collections.sort(matchingColumns, COLUMNS_BY_TABLE_DEPTH);
+        return matchingColumns;
+    }
+
+    private void findMatchingAncestorColumns(Column fromColumn, List<Column> matchingColumns)
+    {
+        Join join = ((UserTable)fromColumn.getTable()).getParentJoin();
+        if (join != null) {
+            JoinColumn ancestorJoinColumn = null;
+            for (JoinColumn joinColumn : join.getJoinColumns()) {
+                if (joinColumn.getChild() == fromColumn) {
+                    ancestorJoinColumn = joinColumn;
+                }
+            }
+            if (ancestorJoinColumn != null) {
+                Column ancestorColumn = ancestorJoinColumn.getParent();
+                matchingColumns.add(ancestorColumn);
+                findMatchingAncestorColumns(ancestorJoinColumn.getParent(), matchingColumns);
+            }
+        }
+    }
+
+    private void findMatchingDescendantColumns(Column fromColumn, List<Column> matchingColumns)
+    {
+        for (Join join : getChildJoins()) {
+            JoinColumn descendantJoinColumn = null;
+            for (JoinColumn joinColumn : join.getJoinColumns()) {
+                if (joinColumn.getParent() == fromColumn) {
+                    descendantJoinColumn = joinColumn;
+                }
+            }
+            if (descendantJoinColumn != null) {
+                Column descendantColumn = descendantJoinColumn.getChild();
+                matchingColumns.add(descendantColumn);
+                findMatchingDescendantColumns(descendantJoinColumn.getChild(), matchingColumns);
+            }
         }
     }
 
@@ -416,4 +467,13 @@ public class UserTable extends Table
     private transient HKey branchHKey;
     private transient List<Column> allHKeyColumns;
     private transient Integer depth = null;
+
+    // consts
+
+    private static final Comparator<Column> COLUMNS_BY_TABLE_DEPTH = new Comparator<Column>() {
+        @Override
+        public int compare(Column o1, Column o2) {
+            return o1.getUserTable().getDepth() - o2.getUserTable().getDepth();
+        }
+    };
 }
