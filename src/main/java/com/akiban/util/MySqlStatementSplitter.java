@@ -318,7 +318,7 @@ public class MySqlStatementSplitter implements Iterable<String> {
                 if ((nextChar = getChar()) == '-') {
                     commentMode = COMMENT_TO_EOL;
                     nextChar = -1;
-                    // nextNextChar = getChar();
+                    // nextNextChar = getUShort();
                     // if (nextNextChar == ' ')
                     // {
                     // commentMode = COMMENT_TO_EOL;

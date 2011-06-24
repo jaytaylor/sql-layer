@@ -19,8 +19,6 @@ import com.akiban.util.AkibanAppender;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryUsage;
 import java.lang.management.RuntimeMXBean;
 import java.nio.ByteBuffer;
 
@@ -60,7 +58,7 @@ public class AkServerUtil {
         case 1:
             return getByte(bytes, index) & 0xFF;
         case 2:
-            return getChar(bytes, index) & 0xFFFF;
+            return getUShort(bytes, index) & 0xFFFF;
         case 3:
             return getMediumInt(bytes, index) & 0xFFFFFF;
         case 4:
@@ -83,7 +81,7 @@ public class AkServerUtil {
         return (short) ((bytes[index + 0] & 0xFF) | (bytes[index + 1]) << 8);
     }
 
-    public static int getChar(byte[] bytes, int index) {
+    public static int getUShort(byte[] bytes, int index) {
         return (bytes[index + 0] & 0xFF) | (bytes[index + 1] & 0xFF) << 8;
     }
 
@@ -303,7 +301,7 @@ public class AkServerUtil {
                 length = getByte(bytes, offset);
                 break;
             case 2:
-                length = getChar(bytes, offset);
+                length = getUShort(bytes, offset);
                 break;
             case 3:
                 length = getMediumInt(bytes, offset);

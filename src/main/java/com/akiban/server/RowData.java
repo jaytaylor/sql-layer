@@ -20,7 +20,6 @@ import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
 
-import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.util.AkibanAppender;
@@ -177,7 +176,7 @@ public class RowData {
                 throw new CorruptRowDataException("Invalid record length: "
                         + recordLength + " at offset: " + offset);
             }
-            if (AkServerUtil.getChar(bytes, O_SIGNATURE_A + offset) != SIGNATURE_A) {
+            if (AkServerUtil.getUShort(bytes, O_SIGNATURE_A + offset) != SIGNATURE_A) {
                 throw new CorruptRowDataException(
                         "Invalid signature at offset: " + offset);
             }
@@ -188,7 +187,7 @@ public class RowData {
                         "Invalid trailing record length " + trailingLength
                                 + " in record at offset: " + offset);
             }
-            if (AkServerUtil.getChar(bytes, offset + recordLength
+            if (AkServerUtil.getUShort(bytes, offset + recordLength
                     + O_SIGNATURE_B) != SIGNATURE_B) {
                 throw new CorruptRowDataException(
                         "Invalid signature at offset: " + offset);
@@ -246,7 +245,7 @@ public class RowData {
     }
 
     public int getFieldCount() {
-        return AkServerUtil.getChar(bytes, rowStart + O_FIELD_COUNT);
+        return AkServerUtil.getUShort(bytes, rowStart + O_FIELD_COUNT);
     }
 
     public int getRowDefId() {
