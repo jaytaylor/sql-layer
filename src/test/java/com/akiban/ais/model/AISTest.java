@@ -595,7 +595,6 @@ public class AISTest
             }
         }
         assertNotNull(column);
-        assertNotNull(column.equivalentColumns());
         Set<String> expected = new HashSet<String>();
         for (Column equivalentColumn : column.equivalentColumns()) {
             assertSame(groupTable, equivalentColumn.getTable());
