@@ -37,37 +37,6 @@ import static org.junit.Assert.fail;
 public final class GroupIndexUpdateIT extends ITBase {
 
     @Test
-    public void hkeys() {
-        Collection<UserTable> userTables = Arrays.asList(
-                getUserTable(c),
-                getUserTable(o),
-                getUserTable(i),
-                getUserTable(h)
-        );
-        for (UserTable userTable : userTables) {
-            if (!SCHEMA.equals(userTable.getName().getSchemaName())) {
-                continue;
-            }
-            System.out.println(userTable);
-
-            HKey hkey = userTable.hKey();
-            System.out.printf("\tHKEY 0x%x: %s%n", System.identityHashCode(hkey), hkey);
-            for (HKeySegment segment : hkey.segments()) {
-                System.out.printf("\t\tSEGMENT 0x%x: %s%n", System.identityHashCode(segment), segment);
-                for (HKeyColumn hKeyColumn : segment.columns()) {
-                    System.out.printf("\t\t\tCOLUMN 0x%x: %s = %s%n",
-                            System.identityHashCode(hKeyColumn),
-                            hKeyColumn,
-                            hKeyColumn.equivalentColumns()
-                    );
-                }
-            }
-
-            System.out.println();
-        }
-    }
-
-    @Test
     public void coiGIsNoOrphan() {
         createGroupIndex(groupName, "name_when_sku", "c.name, o.when, i.sku");
         writeRows(
