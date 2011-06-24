@@ -343,9 +343,9 @@ public class RowData {
         final int fieldCount = rowDef.getFieldCount();
         int offset = rowStart;
 
-        AkServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
+        AkServerUtil.putShort(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
         AkServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
-        AkServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
+        AkServerUtil.putShort(bytes, offset + O_FIELD_COUNT, fieldCount);
 
         offset = setupNullMap(nullMap, nullMapOffset, offset, fieldCount);
         // If the row is a projection, then the field array list is less than
@@ -365,7 +365,7 @@ public class RowData {
             }
         }
 
-        AkServerUtil.putChar(bytes, offset, SIGNATURE_B);
+        AkServerUtil.putShort(bytes, offset, SIGNATURE_B);
         offset += 6;
         final int length = offset - rowStart;
         AkServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);
@@ -423,9 +423,9 @@ public class RowData {
             throw new IllegalArgumentException("Too many values.");
         }
         int offset = rowStart;
-        AkServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
+        AkServerUtil.putShort(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
         AkServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
-        AkServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
+        AkServerUtil.putShort(bytes, offset + O_FIELD_COUNT, fieldCount);
         offset = offset + O_NULL_MAP;
         for (int index = 0; index < fieldCount; index += 8) {
             int b = 0;
@@ -474,7 +474,7 @@ public class RowData {
                         AkServerUtil.putByte(bytes, offset, (byte) vlength);
                         break;
                     case 2:
-                        AkServerUtil.putChar(bytes, offset, (char) vlength);
+                        AkServerUtil.putShort(bytes, offset, (char) vlength);
                         break;
                     case 3:
                         AkServerUtil.putMediumInt(bytes, offset, (int) vlength);
@@ -495,7 +495,7 @@ public class RowData {
                 }
             }
         }
-        AkServerUtil.putChar(bytes, offset, SIGNATURE_B);
+        AkServerUtil.putShort(bytes, offset, SIGNATURE_B);
         offset += 6;
         final int length = offset - rowStart;
         AkServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);

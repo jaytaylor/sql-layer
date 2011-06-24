@@ -132,39 +132,29 @@ public class AkServerUtil {
                 | (bytes[index + 7] & 0xFFL) << 56;
     }
 
-    public static int putByte(byte[] bytes, int index, int value) {
+    public static void putByte(byte[] bytes, int index, int value) {
         bytes[index] = (byte) (value);
-        return index + 1;
     }
 
-    public static int putShort(byte[] bytes, int index, int value) {
+    public static void putShort(byte[] bytes, int index, int value) {
         bytes[index]     = (byte) (value);
         bytes[index + 1] = (byte) (value >>> 8);
-        return index + 2;
     }
 
-    public static int putChar(byte[] bytes, int index, int value) {
-        bytes[index]     = (byte) (value);
-        bytes[index + 1] = (byte) (value >>> 8);
-        return index + 2;
-    }
-
-    public static int putMediumInt(byte[] bytes, int index, int value) {
+    public static void putMediumInt(byte[] bytes, int index, int value) {
         bytes[index]     = (byte) (value);
         bytes[index + 1] = (byte) (value >>> 8);
         bytes[index + 2] = (byte) (value >>> 16);
-        return index + 3;
     }
 
-    public static int putInt(byte[] bytes, int index, int value) {
+    public static void putInt(byte[] bytes, int index, int value) {
         bytes[index]     = (byte) (value);
         bytes[index + 1] = (byte) (value >>> 8);
         bytes[index + 2] = (byte) (value >>> 16);
         bytes[index + 3] = (byte) (value >>> 24);
-        return index + 4;
     }
 
-    public static int putLong(byte[] bytes, int index, long value) {
+    public static void putLong(byte[] bytes, int index, long value) {
         bytes[index]     = (byte) (value);
         bytes[index + 1] = (byte) (value >>> 8);
         bytes[index + 2] = (byte) (value >>> 16);
@@ -173,7 +163,6 @@ public class AkServerUtil {
         bytes[index + 5] = (byte) (value >>> 40);
         bytes[index + 6] = (byte) (value >>> 48);
         bytes[index + 7] = (byte) (value >>> 56);
-        return index + 8;
     }
 
     public static String dump(byte[] b, int offset, int size) {
@@ -249,7 +238,7 @@ public class AkServerUtil {
         System.out.println();
     }
 
-    public final static void cleanUpDirectory(final File file) {
+    public static void cleanUpDirectory(final File file) {
         if (!file.exists()) {
             file.mkdirs();
             return;
@@ -263,7 +252,7 @@ public class AkServerUtil {
         }
     }
 
-    public final static void cleanUpFiles(final File[] files) {
+    public static void cleanUpFiles(final File[] files) {
         for (final File file : files) {
             if (file.isDirectory()) {
                 cleanUpDirectory(file);
@@ -277,13 +266,13 @@ public class AkServerUtil {
      * bytes as a little-endian string size and constructs a string from the
      * remaining bytes.
      * 
-     * @param bytes
-     * @param offset
-     * @param width
-     * @return
+     * @param bytes Byte array to read string from
+     * @param offset Position within bytes to start at
+     * @param width Number of available bytes 
+     * @param fieldDef Corresponding field
+     * @return The decoded string.
      */
-    public static String decodeMySQLString(byte[] bytes, final int offset,
-            final int width, final FieldDef fieldDef) {
+    public static String decodeMySQLString(byte[] bytes, final int offset, final int width, final FieldDef fieldDef) {
         ByteBuffer buff = byteBufferForMySQLString(bytes, offset, width, fieldDef);
         return decodeString(buff, fieldDef.column().getCharsetAndCollation().charset());
     }

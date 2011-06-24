@@ -1244,11 +1244,11 @@ public class PersistitStore implements Store {
         // elision
         //
         AkServerUtil.putInt(rowDataBytes, RowData.O_LENGTH_A, rowDataSize);
-        AkServerUtil.putChar(rowDataBytes, RowData.O_SIGNATURE_A,
+        AkServerUtil.putShort(rowDataBytes, RowData.O_SIGNATURE_A,
                 RowData.SIGNATURE_A);
         System.arraycopy(valueBytes, 0, rowDataBytes, RowData.O_FIELD_COUNT,
                 size);
-        AkServerUtil.putChar(rowDataBytes, RowData.O_SIGNATURE_B + rowDataSize,
+        AkServerUtil.putShort(rowDataBytes, RowData.O_SIGNATURE_B + rowDataSize,
                 RowData.SIGNATURE_B);
         AkServerUtil.putInt(rowDataBytes, RowData.O_LENGTH_B + rowDataSize,
                 rowDataSize);
