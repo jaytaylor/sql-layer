@@ -39,21 +39,41 @@ public final class GroupIndexUpdateIT extends ITBase {
     @Test
     public void coiGIsNoOrphan() {
         createGroupIndex(groupName, "name_when_sku", "c.name, o.when, i.sku");
-        writeRows(
-                createNewRow(c, 1L, "Horton"),
-                createNewRow(o, 11L, 1L, "01-01-2001"),
-                createNewRow(i, 101L, 11L, 1111),
-                createNewRow(i, 102L, 11L, 2222),
-                createNewRow(i, 103L, 11L, 3333),
-                createNewRow(o, 12L, 1L, "02-02-2002"),
-                createNewRow(a, 10001L, 1L, "Causeway")
+        // write write write
+        writeRows(createNewRow(c, 1L, "Horton"));
+        checkIndex("name_when_sku",
+                "Horton, null, null, 1, null, null => " + depthOf(c)
         );
+        writeRows(createNewRow(o, 11L, 1L, "01-01-2001"));
+        checkIndex("name_when_sku",
+                "Horton, 01-01-2001, null, 1, 11, null => " + depthOf(o)
+        );
+        writeRows(createNewRow(i, 101L, 11L, 1111));
+        checkIndex("name_when_sku",
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i)
+        );
+        writeRows(createNewRow(i, 102L, 11L, 2222));
+        // write
+        checkIndex("name_when_sku",
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i),
+                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + depthOf(i)
+        );
+        writeRows(createNewRow(i, 103L, 11L, 3333));
         // write
         checkIndex("name_when_sku",
                 "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i),
                 "Horton, 01-01-2001, 2222, 1, 11, 102 => " + depthOf(i),
                 "Horton, 01-01-2001, 3333, 1, 11, 103 => " + depthOf(i)
         );
+        writeRows(createNewRow(o, 12L, 1L, "02-02-2002"));
+        writeRows(createNewRow(a, 10001L, 1L, "Causeway"));
+        // write
+        checkIndex("name_when_sku",
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i),
+                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + depthOf(i),
+                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + depthOf(i)
+        );
+
         // update parent
         dml().updateRow(
                 session(),

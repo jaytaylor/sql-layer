@@ -30,9 +30,12 @@ import com.akiban.util.CachePair;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.akiban.qp.physicaloperator.API.FlattenOption;
 
 class MaintenancePlanCreator
         implements CachePair.CachedValueProvider<AkibanInformationSchema, Map<GroupIndex, Map<UserTableRowType,PhysicalOperator>>>
@@ -119,17 +122,20 @@ class MaintenancePlanCreator
         }
 
         RowType parentRowType = null;
+
+        EnumSet<FlattenOption> flattenOptions = RIGHT_JOIN_OPTIONS;
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;
         for (RowType branchRowType : branchTables.fromRoot()) {
             if (parentRowType == null) {
                 parentRowType = branchRowType;
             }
             else {
-                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType);
+                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType, flattenOptions);
                 parentRowType = plan.rowType();
             }
             if (branchRowType.equals(branchTables.rootMost())) {
-                joinType = API.JoinType.INNER_JOIN;
+                joinType = API.JoinType.LEFT_JOIN;
+                flattenOptions = LEFT_JOIN_OPTIONS;
             }
         }
         return plan;
@@ -165,6 +171,8 @@ class MaintenancePlanCreator
     // package consts
 
     static final int HKEY_BINDING_POSITION = 0;
+    private static final EnumSet<FlattenOption> RIGHT_JOIN_OPTIONS = EnumSet.noneOf(FlattenOption.class);
+    private static final EnumSet<FlattenOption> LEFT_JOIN_OPTIONS = EnumSet.of(FlattenOption.LEFT_JOIN_SHORTENS_HKEY);
 
     // nested classes
 
