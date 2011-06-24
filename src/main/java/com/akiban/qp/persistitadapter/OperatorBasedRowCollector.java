@@ -155,7 +155,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     @Override
     public IndexDef getIndexDef()
     {
-        return (IndexDef) predicateIndex.indexDef();
+        return predicateIndex == null ? null : (IndexDef) predicateIndex.indexDef();
     }
 
     @Override
@@ -262,8 +262,8 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                     false,
                     limit);
         } else {
-            // assert !descending;
-            rootOperator = groupScan_Default(groupTable, limit, indexKeyRange);
+            assert !descending;
+            rootOperator = groupScan_Default(groupTable, limit);
         }
         // Fill in ancestors above predicate
         if (queryRootType != predicateType) {

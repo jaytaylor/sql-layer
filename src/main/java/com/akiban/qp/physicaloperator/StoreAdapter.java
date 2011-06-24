@@ -29,12 +29,7 @@ import com.akiban.server.RowDef;
 
 public abstract class StoreAdapter
 {
-    public final GroupCursor newGroupCursor(GroupTable groupTable)
-    {
-        return newGroupCursor(groupTable, null);
-    }
-
-    public abstract GroupCursor newGroupCursor(GroupTable groupTable, IndexKeyRange indexKeyRange);
+    public abstract GroupCursor newGroupCursor(GroupTable groupTable);
 
     public final Cursor newIndexCursor(TableIndex index)
     {
