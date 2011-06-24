@@ -45,7 +45,7 @@ public class AkServerUtil {
         throw new IllegalArgumentException(UNEXPECTED_WIDTH_MSG + width);
     }
 
-    public static long getUnsignedIntegerByWidth(final byte[] bytes,final int index, final int width) {
+    public static long getUnsignedIntegerByWidth(final byte[] bytes, final int index, final int width) {
         switch (width) {
             case 0: return 0;
             case 1: return getUByte(bytes, index);
@@ -58,6 +58,28 @@ public class AkServerUtil {
         }
         
         throw new IllegalArgumentException(UNEXPECTED_WIDTH_MSG + width);
+    }
+
+    /**
+     * Write an integer into a byte array.
+     * @param destination Byte buffer to write into
+     * @param destinationIndex Position in destination to write at
+     * @param width Width of integer (= number of bytes to write)
+     * @param value Value to write
+     * @return The number of bytes written
+     */
+    public static int putIntegerByWidth(byte[] destination, int destinationIndex, int width, long value) {
+        switch (width) {
+            case 0: break;
+            case 1: putByte(destination, destinationIndex, (byte)value);     break;
+            case 2: putShort(destination, destinationIndex, (short)value);   break;
+            case 3: putMediumInt(destination, destinationIndex, (int)value); break;
+            case 4: putInt(destination, destinationIndex, (int)value);       break;
+            case 8: putLong(destination, destinationIndex, value);           break;
+            default:
+                throw new IllegalArgumentException(UNEXPECTED_WIDTH_MSG + width);
+        }
+        return width;
     }
 
     public static byte getByte(byte[] bytes, int index) {

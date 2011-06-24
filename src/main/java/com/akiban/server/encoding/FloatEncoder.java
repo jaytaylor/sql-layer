@@ -17,6 +17,7 @@ package com.akiban.server.encoding;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.FieldDef;
 import com.akiban.server.RowData;
 import com.persistit.Key;
@@ -73,7 +74,7 @@ public class FloatEncoder extends EncodingBase<Float> {
     @Override
     public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
         final int intBits = encodeFromObject(value);
-        return EncodingUtils.putInt(dest, offset, intBits, STORAGE_SIZE);
+        return AkServerUtil.putIntegerByWidth(dest, offset, STORAGE_SIZE, intBits);
     }
 
     @Override

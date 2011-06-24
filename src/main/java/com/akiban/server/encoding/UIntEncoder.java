@@ -16,6 +16,7 @@
 package com.akiban.server.encoding;
 
 import com.akiban.ais.model.Type;
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.FieldDef;
 import com.akiban.server.RowData;
 
@@ -34,7 +35,7 @@ public final class UIntEncoder extends LongEncoderBase {
     public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
         final long longValue = encodeFromObject(value);
         final int width = fieldDef.getMaxStorageSize();
-        return EncodingUtils.putUInt(dest, offset, longValue, width);
+        return AkServerUtil.putIntegerByWidth(dest, offset, width, longValue);
     }
 
     @Override
