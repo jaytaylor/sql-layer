@@ -25,7 +25,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 public final class HKeySegmentTest {
-    
+
     @Test
     public void nonCascading() {
         AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA)
@@ -53,6 +53,74 @@ public final class HKeySegmentTest {
         checkHKeyColumn(ais, "o", 2, 1, 1, 0, 0, c("o", "oid"), c("i", "o_id"));
 
         checkHKeyColumn(ais, "i", 3, 0, 1, 0, 1, c("c", "cid"), c("o", "c_id"));
+        checkHKeyColumn(ais, "i", 3, 1, 1, 0, 1, c("o", "oid"), c("i", "o_id"));
+        checkHKeyColumn(ais, "i", 3, 2, 1, 0, 0, c("i", "iid"));
+    }
+
+    @Test
+    public void cascading() {
+        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA)
+                .userTable("c")
+                    .colLong("cid")
+                    .colString("name", 64)
+                    .pk("cid")
+                .userTable("o")
+                    .colLong("c_id")
+                    .colLong("oid")
+                    .colString("date", 32)
+                    .pk("c_id", "oid")
+                    .joinTo("c").on("c_id", "cid")
+                .userTable("i")
+                    .colLong("c__id")
+                    .colLong("o_id")
+                    .colLong("iid")
+                    .colLong("sku")
+                    .pk("c__id", "o_id", "iid")
+                    .joinTo("o").on("c__id","c_id").and("o_id", "oid")
+                .ais();
+
+        checkHKeyColumn(ais, "c", 1, 0, 1, 0, 0, c("c", "cid"), c("o", "c_id"));
+
+        checkHKeyColumn(ais, "o", 2, 0, 1, 0, 1, c("c", "cid"), c("o", "c_id"), c("i", "c__id"));
+        checkHKeyColumn(ais, "o", 2, 1, 1, 0, 0, c("o", "oid"), c("i", "o_id"));
+
+        checkHKeyColumn(ais, "i", 3, 0, 1, 0, 2, c("c", "cid"), c("o", "c_id"), c("i", "c__id"));
+        checkHKeyColumn(ais, "i", 3, 1, 1, 0, 1, c("o", "oid"), c("i", "o_id"));
+        checkHKeyColumn(ais, "i", 3, 2, 1, 0, 0, c("i", "iid"));
+    }
+
+    @Test
+    public void multiColumnPkNoCascade() {
+        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA)
+                .userTable("c")
+                    .colLong("cid1")
+                    .colLong("cid2")
+                    .colString("name", 64)
+                    .pk("cid1", "cid2")
+                .userTable("o")
+                    .colLong("oid")
+                    .colLong("c_id1")
+                    .colLong("c_id2")
+                    .colString("date", 32)
+                    .pk("oid")
+                    .joinTo("c").on("c_id1", "cid1").and("c_id2", "cid2")
+                .userTable("i")
+                    .colLong("iid")
+                    .colLong("o_id")
+                    .colLong("sku")
+                    .pk("iid")
+                    .joinTo("o").on("o_id", "oid")
+                .ais();
+
+        checkHKeyColumn(ais, "c", 1, 0, 2, 0, 0, c("c", "cid1"), c("o", "c_id1"));
+        checkHKeyColumn(ais, "c", 1, 0, 2, 1, 0, c("c", "cid2"), c("o", "c_id2"));
+
+        checkHKeyColumn(ais, "o", 2, 0, 2, 0, 1, c("c", "cid1"), c("o", "c_id1"));
+        checkHKeyColumn(ais, "o", 2, 0, 2, 1, 1, c("c", "cid2"), c("o", "c_id2"));
+        checkHKeyColumn(ais, "o", 2, 1, 1, 0, 0, c("o", "oid"), c("i", "o_id"));
+
+        checkHKeyColumn(ais, "i", 3, 0, 2, 0, 1, c("c", "cid1"), c("o", "c_id1"));
+        checkHKeyColumn(ais, "i", 3, 0, 2, 1, 1, c("c", "cid2"), c("o", "c_id2"));
         checkHKeyColumn(ais, "i", 3, 1, 1, 0, 1, c("o", "oid"), c("i", "o_id"));
         checkHKeyColumn(ais, "i", 3, 2, 1, 0, 0, c("i", "iid"));
     }
