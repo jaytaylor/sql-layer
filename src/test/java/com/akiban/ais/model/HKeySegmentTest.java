@@ -47,14 +47,32 @@ public final class HKeySegmentTest {
                     .joinTo("o").on("o_id", "oid")
                 .ais();
 
-        checkHKeyColumn(ais, "c", 1, 0, 1, 0, 0, c("c", "cid"), c("o", "c_id"));
+        checkHKeyColumn(
+                ais, "c",
+                expectedSegments(1).checkSegment(0).expectedCols(1).checkCol(0).expectAtIndex(0),
+                c("c", "cid"), c("o", "c_id"));
 
-        checkHKeyColumn(ais, "o", 2, 0, 1, 0, 1, c("c", "cid"), c("o", "c_id"));
-        checkHKeyColumn(ais, "o", 2, 1, 1, 0, 0, c("o", "oid"), c("i", "o_id"));
+        checkHKeyColumn(
+                ais, "o",
+                expectedSegments(2).checkSegment(0).expectedCols(1).checkCol(0).expectAtIndex(1),
+                c("c", "cid"), c("o", "c_id"));
+        checkHKeyColumn(
+                ais, "o",
+                expectedSegments(2).checkSegment(1).expectedCols(1).checkCol(0).expectAtIndex(0),
+                c("o", "oid"), c("i", "o_id"));
 
-        checkHKeyColumn(ais, "i", 3, 0, 1, 0, 1, c("c", "cid"), c("o", "c_id"));
-        checkHKeyColumn(ais, "i", 3, 1, 1, 0, 1, c("o", "oid"), c("i", "o_id"));
-        checkHKeyColumn(ais, "i", 3, 2, 1, 0, 0, c("i", "iid"));
+        checkHKeyColumn(
+                ais, "i",
+                expectedSegments(3).checkSegment(0).expectedCols(1).checkCol(0).expectAtIndex(1),
+                c("c", "cid"), c("o", "c_id"));
+        checkHKeyColumn(
+                ais, "i",
+                expectedSegments(3).checkSegment(1).expectedCols(1).checkCol(0).expectAtIndex(1),
+                c("o", "oid"), c("i", "o_id"));
+        checkHKeyColumn(
+                ais, "i",
+                expectedSegments(3).checkSegment(2).expectedCols(1).checkCol(0).expectAtIndex(0),
+                c("i", "iid"));
     }
 
     @Test
@@ -79,14 +97,32 @@ public final class HKeySegmentTest {
                     .joinTo("o").on("c__id","c_id").and("o_id", "oid")
                 .ais();
 
-        checkHKeyColumn(ais, "c", 1, 0, 1, 0, 0, c("c", "cid"), c("o", "c_id"));
+        checkHKeyColumn(
+                ais, "c",
+                expectedSegments(1).checkSegment(0).expectedCols(1).checkCol(0).expectAtIndex(0),
+                c("c", "cid"), c("o", "c_id"));
 
-        checkHKeyColumn(ais, "o", 2, 0, 1, 0, 1, c("c", "cid"), c("o", "c_id"), c("i", "c__id"));
-        checkHKeyColumn(ais, "o", 2, 1, 1, 0, 0, c("o", "oid"), c("i", "o_id"));
+        checkHKeyColumn(
+                ais, "o",
+                expectedSegments(2).checkSegment(0).expectedCols(1).checkCol(0).expectAtIndex(1),
+                c("c", "cid"), c("o", "c_id"), c("i", "c__id"));
+        checkHKeyColumn(
+                ais, "o",
+                expectedSegments(2).checkSegment(1).expectedCols(1).checkCol(0).expectAtIndex(0),
+                c("o", "oid"), c("i", "o_id"));
 
-        checkHKeyColumn(ais, "i", 3, 0, 1, 0, 2, c("c", "cid"), c("o", "c_id"), c("i", "c__id"));
-        checkHKeyColumn(ais, "i", 3, 1, 1, 0, 1, c("o", "oid"), c("i", "o_id"));
-        checkHKeyColumn(ais, "i", 3, 2, 1, 0, 0, c("i", "iid"));
+        checkHKeyColumn(
+                ais, "i",
+                expectedSegments(3).checkSegment(0).expectedCols(1).checkCol(0).expectAtIndex(2),
+                c("c", "cid"), c("o", "c_id"), c("i", "c__id"));
+        checkHKeyColumn(
+                ais, "i",
+                expectedSegments(3).checkSegment(1).expectedCols(1).checkCol(0).expectAtIndex(1),
+                c("o", "oid"), c("i", "o_id"));
+        checkHKeyColumn(
+                ais, "i",
+                expectedSegments(3).checkSegment(2).expectedCols(1).checkCol(0).expectAtIndex(0),
+                c("i", "iid"));
     }
 
     @Test
@@ -112,31 +148,57 @@ public final class HKeySegmentTest {
                     .joinTo("o").on("o_id", "oid")
                 .ais();
 
-        checkHKeyColumn(ais, "c", 1, 0, 2, 0, 0, c("c", "cid1"), c("o", "c_id1"));
-        checkHKeyColumn(ais, "c", 1, 0, 2, 1, 0, c("c", "cid2"), c("o", "c_id2"));
+        checkHKeyColumn(
+                ais, "c",
+                expectedSegments(1).checkSegment(0).expectedCols(2).checkCol(0).expectAtIndex(0),
+                c("c", "cid1"), c("o", "c_id1"));
+        checkHKeyColumn(
+                ais, "c",
+                expectedSegments(1).checkSegment(0).expectedCols(2).checkCol(1).expectAtIndex(0),
+                c("c", "cid2"), c("o", "c_id2"));
 
-        checkHKeyColumn(ais, "o", 2, 0, 2, 0, 1, c("c", "cid1"), c("o", "c_id1"));
-        checkHKeyColumn(ais, "o", 2, 0, 2, 1, 1, c("c", "cid2"), c("o", "c_id2"));
-        checkHKeyColumn(ais, "o", 2, 1, 1, 0, 0, c("o", "oid"), c("i", "o_id"));
+        checkHKeyColumn(
+                ais, "o",
+                expectedSegments(2).checkSegment(0).expectedCols(2).checkCol(0).expectAtIndex(1),
+                c("c", "cid1"), c("o", "c_id1"));
+        checkHKeyColumn(
+                ais, "o",
+                expectedSegments(2).checkSegment(0).expectedCols(2).checkCol(1).expectAtIndex(1),
+                c("c", "cid2"), c("o", "c_id2"));
+        checkHKeyColumn(
+                ais, "o",
+                expectedSegments(2).checkSegment(1).expectedCols(1).checkCol(0).expectAtIndex(0),
+                c("o", "oid"), c("i", "o_id"));
 
-        checkHKeyColumn(ais, "i", 3, 0, 2, 0, 1, c("c", "cid1"), c("o", "c_id1"));
-        checkHKeyColumn(ais, "i", 3, 0, 2, 1, 1, c("c", "cid2"), c("o", "c_id2"));
-        checkHKeyColumn(ais, "i", 3, 1, 1, 0, 1, c("o", "oid"), c("i", "o_id"));
-        checkHKeyColumn(ais, "i", 3, 2, 1, 0, 0, c("i", "iid"));
+        checkHKeyColumn(
+                ais, "i",
+                expectedSegments(3).checkSegment(0).expectedCols(2).checkCol(0).expectAtIndex(1),
+                c("c", "cid1"), c("o", "c_id1"));
+        checkHKeyColumn(
+                ais, "i",
+                expectedSegments(3).checkSegment(0).expectedCols(2).checkCol(1).expectAtIndex(1),
+                c("c", "cid2"), c("o", "c_id2"));
+        checkHKeyColumn(
+                ais, "i",
+                expectedSegments(3).checkSegment(1).expectedCols(1).checkCol(0).expectAtIndex(1),
+                c("o", "oid"), c("i", "o_id"));
+        checkHKeyColumn(
+                ais, "i",
+                expectedSegments(3).checkSegment(2).expectedCols(1).checkCol(0).expectAtIndex(0),
+                c("i", "iid"));
     }
 
-    private void checkHKeyColumn(AkibanInformationSchema ais, String tableName,
-                                 int expectedSegments, int checkSegment,
-                                 int expectedColumns, int checkColumn,
-                                 int mainColumnIndex,
+    private void checkHKeyColumn(
+                AkibanInformationSchema ais, String tableName,
+                                 SegmentCheckParameters segmentParameters,
                                  ColumnName... equivalentColumns)
     {
         List<HKeySegment> segments = ais.getUserTable(SCHEMA, tableName).hKey().segments();
-        assertEquals("segments size for " + segments, expectedSegments, segments.size());
-        List<HKeyColumn> hKeyColumns = segments.get(checkSegment).columns();
-        assertEquals("hKeyColumns size", expectedColumns, hKeyColumns.size());
-        HKeyColumn hKeyColumn = hKeyColumns.get(checkColumn);
-        checkColumnName(hKeyColumn.column(),equivalentColumns[mainColumnIndex]);
+        assertEquals("segments size for " + segments, segmentParameters.expectedSegments, segments.size());
+        List<HKeyColumn> hKeyColumns = segments.get(segmentParameters.checkSegment).columns();
+        assertEquals("hKeyColumns size", segmentParameters.expectedColumns, hKeyColumns.size());
+        HKeyColumn hKeyColumn = hKeyColumns.get(segmentParameters.checkColumn);
+        checkColumnName(hKeyColumn.column(), equivalentColumns[segmentParameters.mainColumnIndex]);
         checkEquivalentColumns(Arrays.asList(equivalentColumns), hKeyColumn.equivalentColumns());
     }
 
@@ -156,9 +218,76 @@ public final class HKeySegmentTest {
     private static ColumnName c(String table, String column) {
         return new ColumnName(SCHEMA, table, column);
     }
+    
+    private static SegmentCheckParameters expectedSegments(int expectedSegments) {
+        return new SegmentCheckParameters().expectedSegments(expectedSegments);
+    }
 
     // consts
     private static final String SCHEMA = "hkeytest";
+
+    // nested classes
+
+    private static class SegmentCheckParameters {
+        /**
+         * How many HKeySegments we expect in the HKey
+         * @param expectedSegments expected size of {@link HKey#segments()}
+         * @return this object (for chaining)
+         */
+        SegmentCheckParameters expectedSegments(int expectedSegments) {
+            this.expectedSegments = expectedSegments;
+            return this;
+        }
+
+        /**
+         * Which segment to check ( must be between 0 and expectedSegments )
+         * @param checkSegment the index of {@link HKey#segments()} to check
+         * @return this object (for chaining)
+         */
+        SegmentCheckParameters checkSegment(int checkSegment) {
+            this.checkSegment = checkSegment;
+            return this;
+        }
+
+        /**
+         * How many columns we expect in this segment
+         * @param expectedColumns the expected size of {@link HKeySegment#columns}
+         * @return this object (for chaining)
+         */
+        SegmentCheckParameters expectedCols(int expectedColumns) {
+            this.expectedColumns = expectedColumns;
+            return this;
+        }
+
+        /**
+         * Which column to check
+         * @param checkColumn the index of {@link HKeySegment#columns} to check
+         * @return this object (for chaining)
+         */
+        SegmentCheckParameters checkCol(int checkColumn) {
+            this.checkColumn = checkColumn;
+            return this;
+        }
+
+        /**
+         * Where in the equivalent columns list we expect the "main" column to be. In other words, we'll check that
+         * {@link HKeyColumn#column()} is the same as the entry of the given index in
+         * {@link HKeyColumn#equivalentColumns()}.
+         * @param mainColumnIndex the index within {@linkplain HKeyColumn#equivalentColumns()} to expect to find
+         * {@link HKeyColumn#column()}
+         * @return this object (for chaining)
+         */
+        SegmentCheckParameters expectAtIndex(int mainColumnIndex) {
+            this.mainColumnIndex = mainColumnIndex;
+            return this;
+        }
+
+        private int expectedSegments = -1;
+        private int checkSegment = -1;
+        private int expectedColumns = -1;
+        private int checkColumn = -1;
+        private int mainColumnIndex = -1;
+    }
 
     private static class ColumnName {
 
