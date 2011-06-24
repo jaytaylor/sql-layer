@@ -289,33 +289,14 @@ public class AkServerUtil {
         }
     }
 
-    public static ByteBuffer byteBufferForMySQLString(byte[] bytes, final int offset,
-                                           final int width, final FieldDef fieldDef) {
+    public static ByteBuffer byteBufferForMySQLString(byte[] bytes, int offset, int width, FieldDef fieldDef) {
         if (width == 0) {
             return null;
         }
 
         final int prefixSize = fieldDef.getPrefixSize();
-        int length;
-        switch (prefixSize) {
-            case 0:
-                length = 0;
-                break;
-            case 1:
-                length = getByte(bytes, offset);
-                break;
-            case 2:
-                length = getUShort(bytes, offset);
-                break;
-            case 3:
-                length = getMediumInt(bytes, offset);
-                break;
-            case 4:
-                length = getInt(bytes, offset);
-                break;
-            default:
-                throw new Error("No such case");
-        }
+        int length = (int) getUnsignedIntegerByWidth(bytes, offset, prefixSize);
+        
         if (length > width) {
             throw new IllegalArgumentException(String.format(
                     "String is wider than available bytes: %d > %d", length, width));

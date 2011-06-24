@@ -362,10 +362,10 @@ public class RowDef implements TreeLink {
             // Compute the starting and ending offsets (from the beginning of
             // the rowData byte array) of the variable-length segment.
             //
-            int start = (int) rowData.getIntegerValue((previous & 0xFFFFFF)
+            int start = (int) rowData.getSignedIntegerValue((previous & 0xFFFFFF)
                     + dataStart, previous >>> 24);
 
-            int end = (int) rowData.getIntegerValue((current & 0xFFFFFF)
+            int end = (int) rowData.getSignedIntegerValue((current & 0xFFFFFF)
                     + dataStart, current >>> 24);
             //
             // Encode and return the offset and length

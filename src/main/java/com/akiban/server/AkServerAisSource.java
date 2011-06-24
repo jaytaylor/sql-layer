@@ -99,21 +99,21 @@ public class AkServerAisSource extends Source {
                 switch (modelObject.attributes().get(index).type()) {
                 case BOOLEAN: {
                     assert fieldDef.isFixedSize();
-                    final int v = (int) rowData.getIntegerValue((int) location,
+                    final int v = (int) rowData.getSignedIntegerValue((int) location,
                             (int) (location >>> 32));
                     values.put(attrName, Boolean.valueOf(v != 0));
                     break;
                 }
                 case INTEGER: {
                     assert fieldDef.isFixedSize();
-                    final int v = (int) rowData.getIntegerValue((int) location,
+                    final int v = (int) rowData.getSignedIntegerValue((int) location,
                             (int) (location >>> 32));
                     values.put(attrName, Integer.valueOf(v));
                     break;
                 }
                 case LONG: {
                     assert fieldDef.isFixedSize();
-                    final long v = rowData.getIntegerValue((int) location,
+                    final long v = rowData.getSignedIntegerValue((int) location,
                             (int) (location >>> 32));
                     values.put(attrName, Long.valueOf(v));
                     break;

@@ -51,7 +51,7 @@ public class DoubleEncoder extends EncodingBase<Double> {
     private static long fromRowData(RowData rowData, long offsetAndWidth) {
         final int offset = (int)offsetAndWidth;
         final int width = (int)(offsetAndWidth >>> 32);
-        return rowData.getIntegerValue(offset, width);
+        return rowData.getSignedIntegerValue(offset, width);
     }
     
 

@@ -17,9 +17,17 @@ package com.akiban.server.encoding;
 
 import com.akiban.ais.model.Type;
 import com.akiban.server.FieldDef;
+import com.akiban.server.RowData;
 
 public final class UIntEncoder extends LongEncoderBase {
     UIntEncoder() {
+    }
+
+    @Override
+    protected long fromRowData(RowData rowData, long offsetAndWidth) {
+        final int offset = (int)offsetAndWidth;
+        final int width = (int)(offsetAndWidth >>> 32);
+        return rowData.getUnsignedIntegerValue(offset, width);
     }
 
     @Override

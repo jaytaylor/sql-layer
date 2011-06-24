@@ -72,11 +72,7 @@ public abstract class LongEncoderBase extends EncodingBase<Long> {
     protected long fromRowData(RowData rowData, long offsetAndWidth) {
         final int offset = (int)offsetAndWidth;
         final int width = (int)(offsetAndWidth >>> 32);
-        final int shiftSize = 64 - width*8;
-        long v = rowData.getIntegerValue(offset, width);
-        v <<= shiftSize;
-        v >>= shiftSize;
-        return v;
+        return rowData.getSignedIntegerValue(offset, width);
     }
 
     

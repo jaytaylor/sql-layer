@@ -30,7 +30,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.ScanLimit;
@@ -451,7 +450,7 @@ public class PersistitStore implements Store {
                                 rowDef.getAutoIncrementField());
                         if (location != 0) {
                             final long autoIncrementValue = rowData
-                                    .getIntegerValue((int) location,
+                                    .getSignedIntegerValue((int) location,
                                             (int) (location >>> 32));
                             tableStatusCache.updateAutoIncrementValue(rowDefId,
                                     autoIncrementValue);

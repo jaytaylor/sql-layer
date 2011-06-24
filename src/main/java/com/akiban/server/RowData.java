@@ -279,7 +279,15 @@ public class RowData {
         return true;
     }
 
-    public long getIntegerValue(final int offset, final int width) {
+    public long getSignedIntegerValue(final int offset, final int width) {
+        if (offset < rowStart || offset + width >= rowEnd) {
+            throw new IllegalArgumentException(String.format("Bad location: {offset=%d width=%d start=%d end=%d}",
+                    offset, width, rowStart, rowEnd));
+        }
+        return AkServerUtil.getSignedIntegerByWidth(bytes, offset, width);
+    }
+
+    public long getUnsignedIntegerValue(final int offset, final int width) {
         if (offset < rowStart || offset + width >= rowEnd) {
             throw new IllegalArgumentException(String.format("Bad location: {offset=%d width=%d start=%d end=%d}",
                     offset, width, rowStart, rowEnd));

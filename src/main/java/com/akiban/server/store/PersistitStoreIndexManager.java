@@ -408,7 +408,7 @@ public class PersistitStoreIndexManager implements IndexManager {
                 final long rowCountLocation = indexAnalysisRowDef
                         .fieldLocation(rowData, ROW_COUNT_FIELD_INDEX);
                 final long rowCount = rowData
-                        .getIntegerValue((int) rowCountLocation,
+                        .getSignedIntegerValue((int) rowCountLocation,
                                 (int) (rowCountLocation >>> 32));
                 final long rowDataLocation = indexAnalysisRowDef.fieldLocation(
                         rowData, ROW_DATA_FIELD_INDEX);

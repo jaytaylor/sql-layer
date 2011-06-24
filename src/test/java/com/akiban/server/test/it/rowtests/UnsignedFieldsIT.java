@@ -68,7 +68,7 @@ public class UnsignedFieldsIT extends ITBase {
     }
 
     private Object[] getTestValues(int bitCount) {
-        long signedMax = 1L << (bitCount - 1);
+        long signedMax = (1L << (bitCount - 1)) - 1;
         return array(0L, 1L, signedMax - 2, signedMax - 1, signedMax, signedMax + 1, signedMax + 2, signedMax*2 + 1);
     }
 
