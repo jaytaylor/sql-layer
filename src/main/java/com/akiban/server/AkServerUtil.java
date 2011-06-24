@@ -129,26 +129,26 @@ public class AkServerUtil {
     }
 
     public static int putShort(byte[] bytes, int index, int value) {
-        bytes[index + 0] = (byte) (value);
+        bytes[index]     = (byte) (value);
         bytes[index + 1] = (byte) (value >>> 8);
         return index + 2;
     }
 
     public static int putChar(byte[] bytes, int index, int value) {
-        bytes[index + 0] = (byte) (value);
+        bytes[index]     = (byte) (value);
         bytes[index + 1] = (byte) (value >>> 8);
         return index + 2;
     }
 
     public static int putMediumInt(byte[] bytes, int index, int value) {
-        bytes[index + 0] = (byte) (value);
+        bytes[index]     = (byte) (value);
         bytes[index + 1] = (byte) (value >>> 8);
         bytes[index + 2] = (byte) (value >>> 16);
         return index + 3;
     }
 
     public static int putInt(byte[] bytes, int index, int value) {
-        bytes[index + 0] = (byte) (value);
+        bytes[index]     = (byte) (value);
         bytes[index + 1] = (byte) (value >>> 8);
         bytes[index + 2] = (byte) (value >>> 16);
         bytes[index + 3] = (byte) (value >>> 24);
@@ -156,7 +156,7 @@ public class AkServerUtil {
     }
 
     public static int putLong(byte[] bytes, int index, long value) {
-        bytes[index + 0] = (byte) (value);
+        bytes[index]     = (byte) (value);
         bytes[index + 1] = (byte) (value >>> 8);
         bytes[index + 2] = (byte) (value >>> 16);
         bytes[index + 3] = (byte) (value >>> 24);
