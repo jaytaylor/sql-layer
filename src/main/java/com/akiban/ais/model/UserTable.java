@@ -54,9 +54,15 @@ public class UserTable extends Table
         }
     }
 
-    // Returns the columns in this table that are constrained to match the given column, e.g.
-    // customer$cid and order$cid.
-    public List<Column> matchingColumns(Column column)
+    /**
+    * Returns the columns in this table that are constrained to match the given column, e.g.
+     * customer.cid and order.cid. These will be ordered by the table they appear on, root to leaf.
+     * The given column will itself be in the resulting list. The list is calculated anew each time
+     * and may be modified as needed by the caller.
+     * @param column the column for which to find matching columns.
+     * @return a new list of columns equivalent to the given column, including that column itself.
+     */
+    List<Column> matchingColumns(Column column)
     {
         ArgumentValidation.isTrue(column + " doesn't belong to " + getName(), column.getTable() == this);
         List<Column> matchingColumns = new ArrayList<Column>();
