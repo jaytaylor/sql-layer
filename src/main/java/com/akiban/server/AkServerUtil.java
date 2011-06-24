@@ -73,37 +73,54 @@ public class AkServerUtil {
         }
     }
 
-    public static int getByte(byte[] bytes, int index) {
-        return (bytes[index + 0] & 0xFF);
+    public static byte getByte(byte[] bytes, int index) {
+        return bytes[index];
     }
 
-    public static int getShort(byte[] bytes, int index) {
-        return (short) ((bytes[index + 0] & 0xFF) | (bytes[index + 1]) << 8);
+    public static short getUByte(byte[] bytes, int index) {
+        return (short) (bytes[index] & 0xFF);
+    }
+
+    public static short getShort(byte[] bytes, int index) {
+        return (short) ((bytes[index] & 0xFF) | (bytes[index+1] & 0xFF) << 8);
     }
 
     public static int getUShort(byte[] bytes, int index) {
-        return (bytes[index + 0] & 0xFF) | (bytes[index + 1] & 0xFF) << 8;
+        return getShort(bytes, index) & 0xFFFF;
     }
 
     public static int getMediumInt(byte[] bytes, int index) {
-        return (bytes[index + 0] & 0xFF) | (bytes[index + 1] & 0xFF) << 8 | (bytes[index + 2] & 0xFF) << 16;
+        final int value = getUMediumInt(bytes, index);
+        // Negative values have bit 23 set so the sign extension promotes to 32bit representation
+        return (value << 8) >> 8;
+    }
+
+    public static int getUMediumInt(byte[] bytes, int index) {
+        return (bytes[index] & 0xFF)
+                | (bytes[index + 1] & 0xFF) << 8
+                | (bytes[index + 2] & 0xFF) << 16;
     }
 
     public static int getInt(byte[] bytes, int index) {
-        return (bytes[index + 0] & 0xFF) | (bytes[index + 1] & 0xFF) << 8
-                    | (bytes[index + 2] & 0xFF) << 16
-                    | (bytes[index + 3] & 0xFF) << 24;
+        return (bytes[index] & 0xFF)
+                | (bytes[index + 1] & 0xFF) << 8
+                | (bytes[index + 2] & 0xFF) << 16
+                | (bytes[index + 3] & 0xFF) << 24;
+    }
+
+    public static long getUInt(byte[] bytes, int index) {
+        return getInt(bytes, index) & 0xFFFFFFFFL;
     }
 
     public static long getLong(byte[] bytes, int index) {
-        return (long) (bytes[index + 0] & 0xFF)
-                    | (long) (bytes[index + 1] & 0xFF) << 8
-                    | (long) (bytes[index + 2] & 0xFF) << 16
-                    | (long) (bytes[index + 3] & 0xFF) << 24
-                    | (long) (bytes[index + 4] & 0xFF) << 32
-                    | (long) (bytes[index + 5] & 0xFF) << 40
-                    | (long) (bytes[index + 6] & 0xFF) << 48
-                    | (long) (bytes[index + 7] & 0xFF) << 56;
+        return (bytes[index] & 0xFFL)
+                | (bytes[index + 1] & 0xFFL) << 8
+                | (bytes[index + 2] & 0xFFL) << 16
+                | (bytes[index + 3] & 0xFFL) << 24
+                | (bytes[index + 4] & 0xFFL) << 32
+                | (bytes[index + 5] & 0xFFL) << 40
+                | (bytes[index + 6] & 0xFFL) << 48
+                | (bytes[index + 7] & 0xFFL) << 56;
     }
 
     public static int putByte(byte[] bytes, int index, int value) {
