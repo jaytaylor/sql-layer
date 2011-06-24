@@ -13,26 +13,25 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.physicaloperator;
+package com.akiban.server.test.it.keyupdate;
 
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowBase;
+import com.akiban.server.store.IndexKeyVisitor;
 
-public interface Cursor
+import java.util.ArrayList;
+import java.util.List;
+
+public class CollectingIndexKeyVisitor extends IndexKeyVisitor
 {
-    /**
-     * Starts a complete scan of the underlying table or index.
-     */
-    void open(Bindings bindings);
+    @Override
+    protected void visit(List<?> key)
+    {
+        records.add(key);
+    }
 
-    /**
-     * Advances to and returns the next row of the underlying table or index.
-     * @return The next row of the scan, or null if all rows have been visited.
-     */
-    Row next();
+    public List<List<?>> records()
+    {
+        return records;
+    }
 
-    /**
-     * Terminates the scan of the underlying table or index. Further calls to next() will return false.
-     */
-    void close();
+    private final List<List<?>> records = new ArrayList<List<?>>();
 }

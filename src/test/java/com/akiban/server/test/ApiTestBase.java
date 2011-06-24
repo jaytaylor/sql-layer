@@ -40,7 +40,6 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.OperatorStore;
-import com.akiban.server.api.dml.scan.ColumnSet;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
@@ -185,6 +184,7 @@ public class ApiTestBase {
     private ServiceManager sm;
     private Session session;
     private int aisGeneration;
+    private int akibanFKCount;
 
     @Before
     public final void startTestServices() throws Exception {
@@ -259,6 +259,13 @@ public class ApiTestBase {
         return sm.getStore();
     }
 
+    protected String akibanFK(String childCol, String parentTable, String parentCol) {
+        ++akibanFKCount;
+        return String.format("CONSTRAINT __akiban_fk_%d FOREIGN KEY __akiban_fk_%d (%s) REFERENCES %s (%s)",
+                akibanFKCount, akibanFKCount, childCol, parentTable, parentCol
+        );
+    }
+
     protected final Session session() {
         return session;
     }
@@ -308,20 +315,26 @@ public class ApiTestBase {
         for (String definition : definitions) {
             unifiedDef.append(definition).append(',');
         }
-        unifiedDef.setLength( unifiedDef.length() - 1);
+        unifiedDef.setLength(unifiedDef.length() - 1);
         return createTable(schema, table, unifiedDef.toString());
     }
 
-    protected final void createGroupIndex(String groupName, String indexName, String tableColumnPairs)
+    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs)
+            throws InvalidOperationException {
+        return createGroupIndex(groupName, indexName, false, tableColumnPairs);
+    }
+
+    protected final GroupIndex createGroupIndex(String groupName, String indexName, boolean unique, String tableColumnPairs)
             throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
         final Index index;
         try {
-            index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnPairs);
+            index = GroupIndexCreator.createIndex(ais, groupName, indexName, unique, tableColumnPairs);
         } catch(GroupIndexCreator.GroupIndexCreatorException e) {
             throw new InvalidOperationException(e);
         }
         ddl().createIndexes(session(), Collections.singleton(index));
+        return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
     }
 
     /**
@@ -430,7 +443,7 @@ public class ApiTestBase {
         return items;
     }
 
-    protected static Object[] objArray(Object... items) {
+    protected static Object[] array(Object... items) {
         return array(Object.class, items);
     }
 

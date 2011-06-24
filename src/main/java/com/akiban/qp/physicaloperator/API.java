@@ -77,16 +77,6 @@ public class API
         return groupScan_Default(groupTable, NO_LIMIT);
     }
 
-    public static PhysicalOperator groupScan_Default(GroupTable groupTable,
-                                                     Limit limit,
-                                                     IndexKeyRange indexKeyRange)
-    {
-        GroupScan_Default.GroupCursorCreator groupCursorCreator = (indexKeyRange != null)
-                ? new GroupScan_Default.RangedGroupCursorCreator(groupTable, indexKeyRange)
-                : new GroupScan_Default.FullGroupCursorCreator(groupTable);
-        return new GroupScan_Default(groupCursorCreator, limit);
-    }
-
     public static PhysicalOperator groupScan_Default(GroupTable groupTable, Limit limit)
     {
         return new GroupScan_Default(new GroupScan_Default.FullGroupCursorCreator(groupTable), limit);

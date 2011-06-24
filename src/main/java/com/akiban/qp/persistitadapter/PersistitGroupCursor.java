@@ -16,22 +16,14 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.GroupCursor;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowBase;
 import com.akiban.qp.row.RowHolder;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowDef;
 import com.persistit.Exchange;
 import com.persistit.Key;
-import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,17 +62,15 @@ class PersistitGroupCursor implements GroupCursor
         try {
             exchange = adapter.takeExchange(groupTable).clear();
             groupScan =
-                hKeyRange == null && hKey == null ? new FullScan() :
-                hKeyRange == null && hKeyDeep ? new HKeyAndDescendentsScan(hKey) :
-                hKeyRange == null && !hKeyDeep ? new HKeyWithoutDescendentsScan(hKey) :
-                hKeyRange.unbounded() ? new FullScan() : new HKeyRangeAndDescendentsScan(hKeyRange, bindings);
+                hKey == null ? new FullScan() :
+                hKeyDeep ? new HKeyAndDescendentsScan(hKey) : new HKeyWithoutDescendentsScan(hKey);
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
     }
 
     @Override
-    public boolean next()
+    public Row next()
     {
         try {
             boolean next = exchange != null;
@@ -95,7 +85,7 @@ class PersistitGroupCursor implements GroupCursor
             if (LOG.isDebugEnabled()) {
                 LOG.debug("PersistitGroupCursor: {}", next ? row : null);
             }
-            return next;
+            return next ? row.get() : null;
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         } catch (InvalidOperationException e) {
@@ -113,18 +103,11 @@ class PersistitGroupCursor implements GroupCursor
         }
     }
 
-    @Override
-    public Row currentRow()
-    {
-        return row.get();
-    }
-
     // For use by this package
 
-    PersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable, IndexKeyRange indexKeyRange)
+    PersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable)
         throws PersistitException
     {
-        this.hKeyRange = indexKeyRange;
         this.adapter = adapter;
         this.groupTable = groupTable;
         this.row = new RowHolder<PersistitGroupRow>(adapter.newGroupRow());
@@ -176,11 +159,6 @@ class PersistitGroupCursor implements GroupCursor
         return row;
     }
 
-    PersistitAdapter adapter()
-    {
-        return adapter;
-    }
-
     private final PersistitAdapter adapter;
     private final GroupTable groupTable;
     private final RowHolder<PersistitGroupRow> row;
@@ -188,7 +166,6 @@ class PersistitGroupCursor implements GroupCursor
     private Key controllingHKey;
     private PersistitHKey hKey;
     private boolean hKeyDeep;
-    private final IndexKeyRange hKeyRange;
     private GroupScan groupScan;
 
     // Inner classes
@@ -265,53 +242,6 @@ class PersistitGroupCursor implements GroupCursor
             hKey.copyTo(exchange.getKey());
         }
 
-        private boolean first = true;
-    }
-
-    private class HKeyRangeAndDescendentsScan implements GroupScan
-    {
-        @Override
-        public void advance() throws PersistitException, InvalidOperationException
-        {
-            if (first) {
-                if (!exchange.traverse(Key.GTEQ, hKeyRangeFilter, VALUE_BYTES)) {
-                    close();
-                } else {
-                    exchange.getKey().copyTo(controllingHKey);
-                }
-                first = false;
-            } else {
-                if (!exchange.traverse(Key.GT, true)) {
-                    close();
-                } else {
-                    if (exchange.getKey().firstUniqueByteIndex(controllingHKey) < controllingHKey.getEncodedSize()) {
-                        // Current key is not a descendent of the controlling hkey
-                        if (hKeyRangeFilter.selected(exchange.getKey())) {
-                            // But it is still selected by hKeyRange
-                            exchange.getKey().copyTo(controllingHKey);
-                        } else {
-                            // Not selected. Could be that we need to skip over some orphans.
-                            if (!exchange.traverse(Key.GT, hKeyRangeFilter, VALUE_BYTES)) {
-                                close();
-                            } else {
-                                exchange.getKey().copyTo(controllingHKey);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        HKeyRangeAndDescendentsScan(IndexKeyRange hKeyRange, Bindings bindings) throws PersistitException
-        {
-            RowBase rowBase = (hKeyRange.lo() == null ? hKeyRange.hi().row() : hKeyRange.lo().row());
-            RowType rowType = rowBase.rowType();
-            assert (rowType instanceof UserTableRowType) : "Bound must be UserTableRow: " + rowBase +" "+ rowType;
-            RowDef rowDef = (RowDef) rowType.userTable().rowDef();
-            hKeyRangeFilter = adapter.filterFactory.computeHKeyFilter(exchange.getKey(), rowDef, hKeyRange, bindings);
-        }
-
-        private final KeyFilter hKeyRangeFilter;
         private boolean first = true;
     }
 }

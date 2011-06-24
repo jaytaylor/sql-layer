@@ -64,7 +64,7 @@ class IndexScan_Default extends PhysicalOperator
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // OperatorExecution interface
 
@@ -77,26 +77,23 @@ class IndexScan_Default extends PhysicalOperator
         }
 
         @Override
-        public boolean next()
+        public Row next()
         {
-            boolean next = cursor.next();
-            if (next) {
-                Row row = cursor.currentRow();
-                row.runId(runIdCounter++);
-                outputRow(row);
-            } else {
+            Row row = cursor.next();
+            if (row == null) {
                 close();
+            } else {
+                row.runId(runIdCounter++);
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("IndexScan: {}", next ? outputRow() : null);
+                LOG.debug("IndexScan: {}", row);
             }
-            return next;
+            return row;
         }
 
         @Override
         public void close()
         {
-            outputRow(null);
             cursor.close();
         }
 

@@ -83,7 +83,7 @@ class Project_Default extends PhysicalOperator
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // Cursor interface
 
@@ -94,18 +94,17 @@ class Project_Default extends PhysicalOperator
         }
 
         @Override
-        public boolean next()
+        public Row next()
         {
             Row projectedRow = null;
-            if (input.next()) {
-                Row inputRow = input.currentRow();
+            Row inputRow;
+            if ((inputRow = input.next()) != null) {
                 projectedRow =
                     inputRow.rowType() == rowType
                     ? new ProjectedRow(projectType, inputRow, projections)
                     : inputRow;
             }
-            outputRow(projectedRow);
-            return outputRow() != null;
+            return projectedRow;
         }
 
         @Override

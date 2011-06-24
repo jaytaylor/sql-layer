@@ -13,26 +13,16 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.physicaloperator;
+package com.akiban.server.store;
 
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowBase;
+import java.util.*;
 
-public interface Cursor
+public abstract class IndexKeyVisitor extends IndexRecordVisitor
 {
-    /**
-     * Starts a complete scan of the underlying table or index.
-     */
-    void open(Bindings bindings);
+    protected abstract void visit(List<?> key);
 
-    /**
-     * Advances to and returns the next row of the underlying table or index.
-     * @return The next row of the scan, or null if all rows have been visited.
-     */
-    Row next();
-
-    /**
-     * Terminates the scan of the underlying table or index. Further calls to next() will return false.
-     */
-    void close();
+    @Override
+    protected final void visit(List<?> key, Object value) {
+        visit(key);
+    }
 }

@@ -54,11 +54,11 @@ public class PersistitAdapter extends StoreAdapter
     // StoreAdapter interface
 
     @Override
-    public GroupCursor newGroupCursor(GroupTable groupTable, IndexKeyRange indexKeyRange)
+    public GroupCursor newGroupCursor(GroupTable groupTable)
     {
         GroupCursor cursor;
         try {
-            cursor = new PersistitGroupCursor(this, groupTable, indexKeyRange);
+            cursor = new PersistitGroupCursor(this, groupTable);
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }

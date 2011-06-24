@@ -15,6 +15,7 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 
@@ -78,21 +79,21 @@ final class Limit_Default extends PhysicalOperator {
         // Cursor interface
 
         @Override
-        public boolean next() {
+        public Row next() {
             if (rowsLeft < 0) {
-                return false;
+                return null;
             }
             if (rowsLeft == 0) {
                 input.close();
-                return false;
+                return null;
             }
-
-            if (!input.next()) {
+            Row row;
+            if ((row = input.next()) == null) {
                 rowsLeft = -1;
-                return false;
+                return null;
             }
             --rowsLeft;
-            return true;
+            return row;
         }
 
         // Execution interface
