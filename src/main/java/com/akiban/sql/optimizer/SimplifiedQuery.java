@@ -1055,7 +1055,7 @@ public class SimplifiedQuery
             BaseJoinNode right = jjoin.getRight();
             right = reorderJoinNode(right);
             jjoin.setRight(right);
-            if (left.getMaxOrdinal().compareTo(right.getMaxOrdinal()) > 0)
+            if (left.getMinOrdinal().compareTo(right.getMinOrdinal()) > 0)
                 jjoin.reverse();
         }
         return join;
