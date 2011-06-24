@@ -184,10 +184,8 @@ public final class HKeySegmentTest {
 
             ColumnName that = (ColumnName) o;
 
-            if (!columnName.equals(that.columnName)) return false;
-            if (!tableName.equals(that.tableName)) return false;
+            return columnName.equals(that.columnName) && tableName.equals(that.tableName);
 
-            return true;
         }
 
         @Override
