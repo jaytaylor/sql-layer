@@ -99,7 +99,7 @@ public class AdminLoader
         Admin admin = Admin.only();
         for (String key : AdminKey.CONFIG_KEYS) {
             AdminValue value = admin.get(key);
-            assert key.charAt(0) == File.separatorChar;
+            assert key.charAt(0) == '/';
             String relativePath = key.substring(1);
             String newValue = fileContents(new File(configRoot, relativePath));
             admin.set(key, value == null ? -1 : value.version(), newValue);
