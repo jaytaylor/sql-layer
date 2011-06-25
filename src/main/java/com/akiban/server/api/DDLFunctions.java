@@ -88,6 +88,20 @@ public interface DDLFunctions {
             UnsupportedIndexSizeException,
             GenericInvalidOperationException;
 
+    void createTable (Session session, UserTable table)
+            throws UnsupportedCharsetException,
+            ProtectedTableDDLException,
+            DuplicateTableNameException,
+            GroupWithProtectedTableException,
+            JoinToUnknownTableException,
+            JoinToWrongColumnsException,
+            NoPrimaryKeyException,
+            DuplicateColumnNameException,
+            UnsupportedDataTypeException,
+            JoinToMultipleParentsException,
+            UnsupportedIndexDataTypeException,
+            UnsupportedIndexSizeException,
+            GenericInvalidOperationException;
     /**
      * Drops a table if it exists.
      * @param tableName the table to drop
