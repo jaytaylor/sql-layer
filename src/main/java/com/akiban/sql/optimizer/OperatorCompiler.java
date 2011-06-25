@@ -271,13 +271,17 @@ public class OperatorCompiler
             List<RowType> addAncestors = new ArrayList<RowType>();
             // Any other branches need to be added beside the main one.
             List<TableNode> addBranches = new ArrayList<TableNode>();
+            RowType branchType = (tableUsed || descendantUsed) ? tableType : null;
             for (TableNode left = indexTable; 
                  left != null; 
                  left = left.getParent()) {
                 if ((left == indexTable) ?
                     (!descendantUsed && tableUsed) :
                     left.isUsed()) {
-                    addAncestors.add(tableRowType(left));
+                    RowType atype = tableRowType(left);
+                    addAncestors.add(atype);
+                    if (branchType == null)
+                        branchType = atype;
                 }
                 {
                     TableNode sibling = left;
@@ -285,15 +289,22 @@ public class OperatorCompiler
                         sibling = sibling.getNextSibling();
                         if (sibling == null) break;
                         if (sibling.subtreeUsed()) {
-                            if (!descendantUsed && !tableUsed) {
-                                // TODO: Better would be to set a flag
-                                // for ancestorLookup below to keep
-                                // the index type in the output and
-                                // use it for the branch lookup.
-                                addAncestors.add(0, tableType);
-                                tableUsed = true;
-                            }
                             addBranches.add(sibling);
+                            if (branchType == null) {
+                                // Need an input type for branch lookups. 
+                                // Prefer to take one that we're already looking up,
+                                // but can't go above the branchpoint.
+                                if ((sibling.getParent() == null) ||
+                                    !sibling.getParent().isUsed()) {
+                                    // TODO: Better might be to set a flag
+                                    // for ancestorLookup below to keep
+                                    // the index type in the output and
+                                    // use it for the branch lookup.
+                                    addAncestors.add(0, tableType);
+                                    tableUsed = true;
+                                    branchType = tableType;
+                                }
+                            }
                         }
                     }
                 }
@@ -305,7 +316,7 @@ public class OperatorCompiler
             }
             for (TableNode branchTable : addBranches) {
                 resultOperator = branchLookup_Default(resultOperator, groupTable,
-                                                      tableType, tableRowType(branchTable), 
+                                                      branchType, tableRowType(branchTable), 
                                                       true);
                 needExtract = true; // Might bring in things not joined.
             }
