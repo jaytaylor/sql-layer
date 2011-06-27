@@ -37,6 +37,41 @@ import static org.junit.Assert.fail;
 public final class GroupIndexUpdateIT extends ITBase {
 
     @Test
+    public void leftGIPlaceholderNoOrphan() {
+        createGroupIndex(groupName, "name_when", "c.name, o.when");
+        writeRows(
+                createNewRow(c, 1L, "Bergy")
+        );
+        checkIndex(
+                "name_when",
+                "Bergy, null, 1, null => " + depthOf(c)
+        );
+        writeRows(
+                createNewRow(o, 10L, 1L, "01-01-2001")
+        );
+        checkIndex(
+                "name_when",
+                "Bergy, 01-01-2001, 1, 10 => " + depthOf(o)
+        );
+    }
+
+    @Test
+    public void leftGIPlaceholderWithOrphan() {
+        createGroupIndex(groupName, "name_when", "c.name, o.when");
+        writeRows(
+                createNewRow(o, 10L, 1L, "01-01-2001")
+        );
+        checkIndex("name_when");
+        writeRows(
+                createNewRow(c, 1L, "Bergy")
+        );
+        checkIndex(
+                "name_when",
+                "Bergy, 01-01-2001, 1, 10 => " + depthOf(o)
+        );
+    }
+
+    @Test
     public void coiGIsNoOrphan() {
         createGroupIndex(groupName, "name_when_sku", "c.name, o.when, i.sku");
         // write write write
