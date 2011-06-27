@@ -20,6 +20,7 @@ import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 public class NullFieldIT extends ITBase
 {
@@ -34,7 +35,13 @@ public class NullFieldIT extends ITBase
         final int tid = createTable("test", "t", "id int key, c2 int unsigned, index(c2)");
         writeRows(createNewRow(tid, 1, 10), createNewRow(tid, 2, null));
     }
-    
+
+    @Test
+    public void ubigintEncoder() throws InvalidOperationException {
+        final int tid = createTable("test", "t", "id int key, c2 bigint unsigned, index(c2)");
+        writeRows(createNewRow(tid, 1, BigInteger.valueOf(10)), createNewRow(tid, 2, null));
+    }
+
     @Test
     public void floatEncoder() throws InvalidOperationException {
         final int tid = createTable("test", "t", "id int key, c2 float, index(c2)");
