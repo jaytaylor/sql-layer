@@ -95,7 +95,7 @@ public class VisitToStringTest {
         }
 
         // lop off the last newline
-        expectedString.getBuffer().setLength( expectedString.toString().length() - 1 );
+        expectedString.getBuffer().setLength( expectedString.getBuffer().length() - VisitToString.NL.length() );
         assertEquals(expectedString.toString(), grouping.traverse(VISITOR));
     }
 }

@@ -20,6 +20,7 @@ import com.akiban.util.ArgumentValidation;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
@@ -138,7 +139,13 @@ public class QuoteTest {
         }
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        PrintWriter pr = new PrintWriter(os);
+        PrintWriter pr;
+        try {
+          pr = new PrintWriter(new OutputStreamWriter(os, "UTF-8"));
+        }
+        catch (UnsupportedEncodingException ex) {
+          throw new RuntimeException(ex);
+        }
         AkibanAppender appender = AkibanAppender.of(os, pr);
         Quote.writeBytes(appender, testBytes, preBytes, testBytes.length - preBytes - postBytes, charset, quote);
         pr.flush();
