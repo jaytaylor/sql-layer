@@ -280,39 +280,33 @@ public class RowData {
         return true;
     }
 
-    public long getSignedIntegerValue(final int offset, final int width) {
+    private void checkOffsetAndWidth(int offset, int width) {
         if (offset < rowStart || offset + width >= rowEnd) {
             throw new IllegalArgumentException(String.format("Bad location: {offset=%d width=%d start=%d end=%d}",
                     offset, width, rowStart, rowEnd));
         }
+    }
+
+    public long getSignedIntegerValue(final int offset, final int width) {
+        checkOffsetAndWidth(offset, width);
         return AkServerUtil.getSignedIntegerByWidth(bytes, offset, width);
     }
 
     public long getUnsignedIntegerValue(final int offset, final int width) {
-        if (offset < rowStart || offset + width >= rowEnd) {
-            throw new IllegalArgumentException(String.format("Bad location: {offset=%d width=%d start=%d end=%d}",
-                    offset, width, rowStart, rowEnd));
-        }
+        checkOffsetAndWidth(offset, width);
         return AkServerUtil.getUnsignedIntegerByWidth(bytes, offset, width);
     }
 
     public BigInteger getUnsignedLongValue(final int offset, final int width) {
-        if (offset < rowStart || offset + width >= rowEnd) {
-            throw new IllegalArgumentException(String.format("Bad location: {offset=%d width=%d start=%d end=%d}",
-                    offset, width, rowStart, rowEnd));
-        }
+        checkOffsetAndWidth(offset, width);
         return AkServerUtil.getULong(bytes, offset);
     }
 
-    public String getStringValue(final int offset, final int width,
-            final FieldDef fieldDef) {
+    public String getStringValue(final int offset, final int width, final FieldDef fieldDef) {
         if (offset == 0 && width == 0) {
             return null;
         }
-        if (offset < rowStart || offset + width >= rowEnd) {
-            throw new IllegalArgumentException("Bad location: " + offset + ":"
-                    + width);
-        }
+        checkOffsetAndWidth(offset, width);
         return AkServerUtil.decodeMySQLString(bytes, offset, width, fieldDef);
     }
 
@@ -320,10 +314,7 @@ public class RowData {
         if (offset == 0 && width == 0) {
             return null;
         }
-        if (offset < rowStart || offset + width >= rowEnd) {
-            throw new IllegalArgumentException("Bad location: " + offset + ":"
-                    + width);
-        }
+        checkOffsetAndWidth(offset, width);
         return AkServerUtil.byteBufferForMySQLString(bytes, offset, width, fieldDef);
     }
 
