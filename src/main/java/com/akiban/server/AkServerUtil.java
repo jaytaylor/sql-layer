@@ -250,7 +250,7 @@ public class AkServerUtil {
         System.out.println();
     }
 
-    public static void cleanUpDirectory(final File file) {
+    public final static void cleanUpDirectory(final File file) {
         if (!file.exists()) {
             file.mkdirs();
             return;
@@ -264,7 +264,7 @@ public class AkServerUtil {
         }
     }
 
-    public static void cleanUpFiles(final File[] files) {
+    public final static void cleanUpFiles(final File[] files) {
         for (final File file : files) {
             if (file.isDirectory()) {
                 cleanUpDirectory(file);
@@ -284,7 +284,8 @@ public class AkServerUtil {
      * @param fieldDef Corresponding field
      * @return The decoded string.
      */
-    public static String decodeMySQLString(byte[] bytes, final int offset, final int width, final FieldDef fieldDef) {
+    public static String decodeMySQLString(byte[] bytes, final int offset,
+            final int width, final FieldDef fieldDef) {
         ByteBuffer buff = byteBufferForMySQLString(bytes, offset, width, fieldDef);
         return decodeString(buff, fieldDef.column().getCharsetAndCollation().charset());
     }
@@ -312,7 +313,8 @@ public class AkServerUtil {
         }
     }
 
-    public static ByteBuffer byteBufferForMySQLString(byte[] bytes, int offset, int width, FieldDef fieldDef) {
+    public static ByteBuffer byteBufferForMySQLString(byte[] bytes, final int offset,
+                                           final int width, final FieldDef fieldDef) {
         if (width == 0) {
             return null;
         }

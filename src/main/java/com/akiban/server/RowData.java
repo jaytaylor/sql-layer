@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
 
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.util.AkibanAppender;
@@ -280,14 +281,7 @@ public class RowData {
         return true;
     }
 
-    private void checkOffsetAndWidth(int offset, int width) {
-        if (offset < rowStart || offset + width >= rowEnd) {
-            throw new IllegalArgumentException(String.format("Bad location: {offset=%d width=%d start=%d end=%d}",
-                    offset, width, rowStart, rowEnd));
-        }
-    }
-
-    public long getSignedIntegerValue(final int offset, final int width) {
+    public long getIntegerValue(final int offset, final int width) {
         checkOffsetAndWidth(offset, width);
         return AkServerUtil.getSignedIntegerByWidth(bytes, offset, width);
     }
@@ -316,6 +310,13 @@ public class RowData {
         }
         checkOffsetAndWidth(offset, width);
         return AkServerUtil.byteBufferForMySQLString(bytes, offset, width, fieldDef);
+    }
+
+    private void checkOffsetAndWidth(int offset, int width) {
+        if (offset < rowStart || offset + width >= rowEnd) {
+            throw new IllegalArgumentException(String.format("Bad location: {offset=%d width=%d start=%d end=%d}",
+                    offset, width, rowStart, rowEnd));
+        }
     }
 
     public int setupNullMap(BitSet nullMap, int nullMapOffset,

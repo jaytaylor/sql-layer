@@ -35,7 +35,8 @@ abstract class EncodingUtils {
      * @param fieldDef Corresponding field
      * @return How many positions in bytes were used
      */
-    static int objectToString(final Object obj, final byte[] bytes, final int offset, final FieldDef fieldDef) {
+    static int objectToString(final Object obj, final byte[] bytes, final int offset,
+                       final FieldDef fieldDef) {
         final String s = obj == null ? "" : obj.toString();
         final byte b[] = stringBytes(s);
         return putByteArray(b, 0, b.length, bytes, offset, fieldDef);
@@ -50,15 +51,18 @@ abstract class EncodingUtils {
 
     }
 
-    static void toKeyStringEncoding(final FieldDef fieldDef, final RowData rowData, final Key key) {
-        final long location = fieldDef.getRowDef().fieldLocation(rowData, fieldDef.getFieldIndex());
+    static void toKeyStringEncoding(final FieldDef fieldDef, final RowData rowData,
+                             final Key key) {
+        final long location = fieldDef.getRowDef().fieldLocation(rowData,
+                fieldDef.getFieldIndex());
         key.append(AkServerUtil.decodeMySQLString(rowData.getBytes(),
-                                                  (int) location, (int) (location >>> 32),
-                                                  fieldDef));
+                (int) location, (int) (location >>> 32), fieldDef));
     }
 
-    static void toKeyByteArrayEncoding(final FieldDef fieldDef, final RowData rowData, final Key key) {
-        final long location = fieldDef.getRowDef().fieldLocation(rowData, fieldDef.getFieldIndex());
+    static void toKeyByteArrayEncoding(final FieldDef fieldDef, final RowData rowData,
+                                final Key key) {
+        final long location = fieldDef.getRowDef().fieldLocation(rowData,
+                fieldDef.getFieldIndex());
         final int offset = (int) location;
         final int length = (int) (location >>> 32);
         final byte[] bytes;
@@ -66,25 +70,18 @@ abstract class EncodingUtils {
             bytes = null;
         } else {
             bytes = new byte[length - fieldDef.getPrefixSize()];
-            System.arraycopy(rowData.getBytes(), offset + fieldDef.getPrefixSize(), bytes, 0, bytes.length);
+            System.arraycopy(rowData.getBytes(), offset + fieldDef.getPrefixSize(),
+                             bytes, 0, bytes.length);
         }
         key.append(bytes);
     }
 
-    /**
-     * TODO: Properly handle character set
-     * @param s String to get length of
-     * @return Length of string
-     */
+    // TODO - These methods destroy character encoding
+
     static int stringByteLength(final String s) {
         return s.length();
     }
 
-    /**
-     * TODO: Properly handle character set
-     * @param s String to write
-     * @return Newly created buffer
-     */
     private static byte[] stringBytes(final String s) {
         final byte[] b = new byte[s.length()];
         for (int i = 0; i < b.length; i++) {

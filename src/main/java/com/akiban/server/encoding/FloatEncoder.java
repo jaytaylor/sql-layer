@@ -52,7 +52,7 @@ public class FloatEncoder extends EncodingBase<Float> {
     private static int fromRowData(RowData rowData, long offsetAndWidth) {
         final int offset = (int)offsetAndWidth;
         final int width = (int)(offsetAndWidth >>> 32);
-        long value = rowData.getSignedIntegerValue(offset, width);
+        long value = rowData.getIntegerValue(offset, width);
         value <<= 32;
         value >>= 32;
         return (int)value;

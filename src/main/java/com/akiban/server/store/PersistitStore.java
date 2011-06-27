@@ -450,7 +450,7 @@ public class PersistitStore implements Store {
                                 rowDef.getAutoIncrementField());
                         if (location != 0) {
                             final long autoIncrementValue = rowData
-                                    .getSignedIntegerValue((int) location,
+                                    .getIntegerValue((int) location,
                                             (int) (location >>> 32));
                             tableStatusCache.updateAutoIncrementValue(rowDefId,
                                     autoIncrementValue);
