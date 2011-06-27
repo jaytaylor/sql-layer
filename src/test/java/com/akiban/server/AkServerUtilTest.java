@@ -18,6 +18,7 @@ package com.akiban.server;
 import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -170,5 +171,21 @@ public final class AkServerUtilTest {
         assertEquals(-9223372036854775808L, AkServerUtil.getLong(byteArray(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80), 0));
         assertEquals(                   -2, AkServerUtil.getLong(byteArray(0xFE, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF), 0));
         assertEquals(                   -1, AkServerUtil.getLong(byteArray(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF), 0));
+    }
+
+    @Test
+    public void getUnsignedLong() {
+        assertEquals(new BigInteger("0"),
+                     AkServerUtil.getULong(byteArray(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00), 0));
+        assertEquals(new BigInteger("1"),
+                     AkServerUtil.getULong(byteArray(0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00), 0));
+        assertEquals(new BigInteger("9223372036854775807"),
+                     AkServerUtil.getULong(byteArray(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F), 0));
+        assertEquals(new BigInteger("9223372036854775808"),
+                     AkServerUtil.getULong(byteArray(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80), 0));
+        assertEquals(new BigInteger("18446744073709551614"),
+                     AkServerUtil.getULong(byteArray(0xFE, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF), 0));
+        assertEquals(new BigInteger("18446744073709551615"),
+                     AkServerUtil.getULong(byteArray(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF), 0));
     }
 }

@@ -16,10 +16,12 @@
 package com.akiban.server;
 
 import com.akiban.util.AkibanAppender;
+import sun.security.util.BigInt;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.lang.management.RuntimeMXBean;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
 public class AkServerUtil {
@@ -130,6 +132,18 @@ public class AkServerUtil {
                 | (bytes[index + 5] & 0xFFL) << 40
                 | (bytes[index + 6] & 0xFFL) << 48
                 | (bytes[index + 7] & 0xFFL) << 56;
+    }
+
+    public static BigInteger getULong(byte[] bytes, int index) {
+        byte longBytes[] = {bytes[index+7],
+                            bytes[index+6], 
+                            bytes[index+5],
+                            bytes[index+4],
+                            bytes[index+3],
+                            bytes[index+2],
+                            bytes[index+1],
+                            bytes[index]};
+        return new BigInteger(1, longBytes);
     }
 
     public static void putByte(byte[] bytes, int index, int value) {
