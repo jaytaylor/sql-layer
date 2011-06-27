@@ -260,24 +260,32 @@ public class OperatorCompiler
                     break;
                 }
             }
-            RowType ancestorType = indexType;
+            RowType ancestorInputType = indexType;
+            boolean ancestorInputKept = false;
             if (descendantUsed) {
                 resultOperator = branchLookup_Default(resultOperator, groupTable,
                                                       indexType, tableType, false);
-                ancestorType = tableType; // Index no longer in stream.
+                ancestorInputType = tableType; // Index no longer in stream.
+                ancestorInputKept = tableUsed;
                 needExtract = true; // Might be other descendants, too.
             }
             // Tables above this that also need to be output.
             List<RowType> addAncestors = new ArrayList<RowType>();
             // Any other branches need to be added beside the main one.
             List<TableNode> addBranches = new ArrayList<TableNode>();
+            // Can use index's table if gotten from branch lookup or
+            // needed via ancestor lookup.
+            RowType branchInputType = (tableUsed || descendantUsed) ? tableType : null;
             for (TableNode left = indexTable; 
                  left != null; 
                  left = left.getParent()) {
                 if ((left == indexTable) ?
                     (!descendantUsed && tableUsed) :
                     left.isUsed()) {
-                    addAncestors.add(tableRowType(left));
+                    RowType atype = tableRowType(left);
+                    addAncestors.add(atype);
+                    if (branchInputType == null)
+                        branchInputType = atype;
                 }
                 {
                     TableNode sibling = left;
@@ -285,27 +293,38 @@ public class OperatorCompiler
                         sibling = sibling.getNextSibling();
                         if (sibling == null) break;
                         if (sibling.subtreeUsed()) {
-                            if (!descendantUsed && !tableUsed) {
-                                // TODO: Better would be to set a flag
-                                // for ancestorLookup below to keep
-                                // the index type in the output and
-                                // use it for the branch lookup.
-                                addAncestors.add(0, tableType);
-                                tableUsed = true;
-                            }
                             addBranches.add(sibling);
+                            if (branchInputType == null) {
+                                // Need an input type for branch lookups. 
+                                // Prefer to take one that we're already looking up,
+                                // but can't go above the branchpoint.
+                                if ((sibling.getParent() == null) ||
+                                    !sibling.getParent().isUsed()) {
+                                    // Include the index's table in
+                                    // ancestor lookup anyway so it
+                                    // can be used for branch lookup.
+                                    // TODO: Better might be to set
+                                    // ancestorInputKept and use
+                                    // ancestorInputType (i.e.,
+                                    // indexType), but that is not
+                                    // currently supported by either
+                                    // operator.
+                                    addAncestors.add(0, tableType);
+                                    branchInputType = tableType;
+                                }
+                            }
                         }
                     }
                 }
             }
             if (!addAncestors.isEmpty()) {
                 resultOperator = ancestorLookup_Default(resultOperator, groupTable,
-                                                        ancestorType, addAncestors, 
-                                                        (descendantUsed && tableUsed));
+                                                        ancestorInputType, addAncestors, 
+                                                        ancestorInputKept);
             }
             for (TableNode branchTable : addBranches) {
                 resultOperator = branchLookup_Default(resultOperator, groupTable,
-                                                      tableType, tableRowType(branchTable), 
+                                                      branchInputType, tableRowType(branchTable), 
                                                       true);
                 needExtract = true; // Might bring in things not joined.
             }
