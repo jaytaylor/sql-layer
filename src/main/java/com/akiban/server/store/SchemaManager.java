@@ -22,6 +22,7 @@ import java.util.SortedMap;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.service.session.Session;
 
@@ -40,6 +41,8 @@ public interface SchemaManager {
      * @return The name of the table that was created.
      */
     TableName createTableDefinition(Session session, String defaultSchemaName, String statement) throws Exception;
+    
+    TableName createTableDefinition(Session session, UserTable newTable) throws Exception;
 
     /**
      * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are
@@ -130,4 +133,6 @@ public interface SchemaManager {
      * @return The current schema generation value.
      */
     int getSchemaGeneration();
+
+
 }

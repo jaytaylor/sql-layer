@@ -20,7 +20,7 @@ import java.util.List;
 import com.akiban.ais.model.TableName;
 
 final class VisitToString implements GroupingVisitor<String> {
-    final static String NL = "\n";
+    final static String NL = System.getProperty("line.separator");
     
     public static VisitToString getInstance() {
         return new VisitToString(); // singleton would have concurrency issues
@@ -64,7 +64,7 @@ final class VisitToString implements GroupingVisitor<String> {
         assert depth == 0 : "unexpected depth: " + depth;
         deleteExtraComma();
         // Turn the last newline into a semicolon
-        builder.setCharAt(builder.length() - 1, ';');
+        builder.replace(builder.length() - NL.length(), builder.length(), ";");
     }
 
     @Override

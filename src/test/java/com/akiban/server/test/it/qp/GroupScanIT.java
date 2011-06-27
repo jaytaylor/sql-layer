@@ -124,36 +124,6 @@ public class GroupScanIT extends PhysicalOperatorITBase
         // any uses of GroupScan.
     }
 
-    @Test
-    public void testHKeyIndexRange()
-    {
-        use(db);
-        IndexBound c1 = customerCidBound(1);
-        IndexKeyRange indexKeyRange = new IndexKeyRange(c1, true, c1, true);
-        PhysicalOperator groupScan = groupScan_Default(coi, NO_LIMIT, indexKeyRange);
-        Cursor cursor = cursor(groupScan, adapter);
-        RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
-                                           row(orderRowType, 11L, 1L, "ori"),
-                                           row(itemRowType, 111L, 11L),
-                                           row(itemRowType, 112L, 11L),
-                                           row(orderRowType, 12L, 1L, "david"),
-                                           row(itemRowType, 121L, 12L),
-                                           row(itemRowType, 122L, 12L)
-        };
-        compareRows(expected, cursor);
-    }
-
-    @Test
-    public void testHKeyIndexRange_EmptyDB()
-    {
-        use(emptyDB);
-        IndexBound c1 = customerCidBound(1);
-        IndexKeyRange indexKeyRange = new IndexKeyRange(c1, true, c1, true);
-        PhysicalOperator groupScan = groupScan_Default(coi, NO_LIMIT, indexKeyRange);
-        Cursor cursor = cursor(groupScan, adapter);
-        compareRows(EMPTY_EXPECTED, cursor);
-    }
-
     private IndexBound orderSalesmanIndexBound(String salesman)
     {
         return new IndexBound(row(orderSalesmanIndexRowType, salesman), new SetColumnSelector(0));

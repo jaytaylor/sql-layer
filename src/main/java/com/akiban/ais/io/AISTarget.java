@@ -76,7 +76,7 @@ public class AISTarget extends Target
     }
 
     @Override
-    protected final void write(String typename, Map<String, Object> map) throws Exception {
+    protected final void write(String typename, Map<String, Object> map) {
         ++actualCount;
         lastTypename = typename;
 

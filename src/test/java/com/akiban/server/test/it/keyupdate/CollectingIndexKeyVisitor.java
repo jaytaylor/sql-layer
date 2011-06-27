@@ -13,14 +13,25 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.ais.model;
+package com.akiban.server.test.it.keyupdate;
 
-public interface NameGenerator
+import com.akiban.server.store.IndexKeyVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class CollectingIndexKeyVisitor extends IndexKeyVisitor
 {
-    String generateColumnName(Column column);
-    String generateGroupIndexName(TableIndex userTableIndex);
-    String generateGroupName (UserTable userTable);
-    String generateGroupTableName (String groupName);
-    String generateIndexName (String indexName, String columnName, String constraint);
-    String generateJoinName (UserTable parentTable, UserTable childTable, TableIndex joinIndex);
+    @Override
+    protected void visit(List<?> key)
+    {
+        records.add(key);
+    }
+
+    public List<List<?>> records()
+    {
+        return records;
+    }
+
+    private final List<List<?>> records = new ArrayList<List<?>>();
 }

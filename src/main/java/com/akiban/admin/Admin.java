@@ -56,8 +56,9 @@ public abstract class Admin
     private static boolean fileBased(String akibanAdmin)
     {
         return
-            akibanAdmin.startsWith(File.separator) || // absolute
-            akibanAdmin.startsWith(".");              // relative
+            akibanAdmin.startsWith("/") || // Unix absolute
+            akibanAdmin.startsWith(".") || // relative
+            akibanAdmin.matches("[A-Z]:\\\\.*"); // Windows absolute
     }
 
     public abstract boolean real();

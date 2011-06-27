@@ -154,36 +154,6 @@ class GroupScan_Default extends PhysicalOperator
         }
     }
 
-    static class RangedGroupCursorCreator extends AbstractGroupCursorCreator  {
-
-        // GroupCursorCreator interface
-
-        @Override
-        public Cursor cursor(StoreAdapter adapter) {
-            return adapter.newGroupCursor(groupTable(), indexKeyRange);
-        }
-
-        // RangedGroupCursorCreator interface
-
-        public RangedGroupCursorCreator(GroupTable groupTable, IndexKeyRange indexKeyRange) {
-            super(groupTable);
-            ArgumentValidation.notNull("range", indexKeyRange);
-            this.indexKeyRange = indexKeyRange;
-        }
-
-        // AbstractGroupCursorCreator interface
-
-        @Override
-        public String describeRange() {
-            return indexKeyRange.toString();
-        }
-
-
-        // object state
-
-        private final IndexKeyRange indexKeyRange;
-    }
-
     static class PositionalGroupCursorCreator extends AbstractGroupCursorCreator {
 
         // GroupCursorCreator interface

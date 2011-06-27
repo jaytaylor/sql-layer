@@ -197,7 +197,8 @@ public class OperatorCompilerTest extends TestBase
     @Test
     public void testOperator() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
-        OperatorCompiler.Result result = compiler.compile((DMLStatementNode)stmt);
+        OperatorCompiler.Result result = compiler.compile((DMLStatementNode)stmt, 
+                                                          parser.getParameterList());
         assertEqualsWithoutHashes(caseName, expected, result.toString());
     }
 

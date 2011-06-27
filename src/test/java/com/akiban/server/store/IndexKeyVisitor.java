@@ -13,14 +13,16 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.ais.model;
+package com.akiban.server.store;
 
-public interface NameGenerator
+import java.util.*;
+
+public abstract class IndexKeyVisitor extends IndexRecordVisitor
 {
-    String generateColumnName(Column column);
-    String generateGroupIndexName(TableIndex userTableIndex);
-    String generateGroupName (UserTable userTable);
-    String generateGroupTableName (String groupName);
-    String generateIndexName (String indexName, String columnName, String constraint);
-    String generateJoinName (UserTable parentTable, UserTable childTable, TableIndex joinIndex);
+    protected abstract void visit(List<?> key);
+
+    @Override
+    protected final void visit(List<?> key, Object value) {
+        visit(key);
+    }
 }
