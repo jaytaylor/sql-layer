@@ -38,19 +38,19 @@ import java.util.Map;
 import static com.akiban.qp.physicaloperator.API.FlattenOption;
 
 class MaintenancePlanCreator
-        implements CachePair.CachedValueProvider<AkibanInformationSchema, Map<GroupIndex, Map<UserTableRowType,PhysicalOperator>>>
+        implements CachePair.CachedValueProvider<AkibanInformationSchema, Map<GroupIndex, Map<UserTableRowType,MaintenancePlan>>>
 {
 
     // CachedValueProvider interface
 
     @Override
-    public Map<GroupIndex, Map<UserTableRowType, PhysicalOperator>> valueFor(AkibanInformationSchema ais) {
+    public Map<GroupIndex, Map<UserTableRowType, MaintenancePlan>> valueFor(AkibanInformationSchema ais) {
         Schema schema = SchemaCache.globalSchema(ais);
-        Map<GroupIndex, Map<UserTableRowType, PhysicalOperator>> giToMapMap
-                = new HashMap<GroupIndex, Map<UserTableRowType, PhysicalOperator>>();
+        Map<GroupIndex, Map<UserTableRowType, MaintenancePlan>> giToMapMap
+                = new HashMap<GroupIndex, Map<UserTableRowType, MaintenancePlan>>();
         for (Group group : ais.getGroups().values()) {
             for (GroupIndex groupIndex : group.getIndexes()) {
-                Map<UserTableRowType, PhysicalOperator> plansPerType = generateGiPlans(schema, groupIndex);
+                Map<UserTableRowType, MaintenancePlan> plansPerType = generateGiPlans(schema, groupIndex);
                 giToMapMap.put(groupIndex, plansPerType);
             }
         }
@@ -91,7 +91,7 @@ class MaintenancePlanCreator
 
     // for use by unit tests
     
-    static PhysicalOperator createGroupIndexMaintenancePlan(Schema schema, GroupIndex groupIndex,
+    static MaintenancePlan createGroupIndexMaintenancePlan(Schema schema, GroupIndex groupIndex,
                                                             UserTableRowType rowType) {
         BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
         if (branchTables.isEmpty()) {
@@ -109,7 +109,8 @@ class MaintenancePlanCreator
                 deep
         );
         if (branchTables.fromRoot().size() == 1) {
-            return plan;
+            assert !deep : "deep scan although GI branch was size 1: " + groupIndex;
+            return new MaintenancePlan(plan, null); // TODO rowType throws UnsupportedOperationException
         }
         if (!branchTables.fromRoot().get(0).equals(rowType)) {
             plan = API.ancestorLookup_Default(
@@ -125,7 +126,11 @@ class MaintenancePlanCreator
 
         EnumSet<FlattenOption> flattenOptions = RIGHT_JOIN_OPTIONS;
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;
+        RowType flattenedParentRowType = null;
         for (RowType branchRowType : branchTables.fromRoot()) {
+            if (branchRowType.equals(rowType)) {
+//                flattenedParentRowType = plan.rowType(); // TODO rowType throws UnsupportedOperationException
+            }
             if (parentRowType == null) {
                 parentRowType = branchRowType;
             }
@@ -138,7 +143,8 @@ class MaintenancePlanCreator
                 flattenOptions = LEFT_JOIN_OPTIONS;
             }
         }
-        return plan;
+//        assert flattenedParentRowType != null; // TODO rowType throws UnsupportedOperationException
+        return new MaintenancePlan(plan, flattenedParentRowType);
     }
 
     // static helpers for use in this class
@@ -147,11 +153,11 @@ class MaintenancePlanCreator
         return new BranchTables(schema, groupIndex);
     }
 
-    private static Map<UserTableRowType, PhysicalOperator> generateGiPlans(Schema schema, GroupIndex groupIndex) {
-        Map<UserTableRowType, PhysicalOperator> plansPerType = new HashMap<UserTableRowType, PhysicalOperator>();
+    private static Map<UserTableRowType, MaintenancePlan> generateGiPlans(Schema schema, GroupIndex groupIndex) {
+        Map<UserTableRowType, MaintenancePlan> plansPerType = new HashMap<UserTableRowType, MaintenancePlan>();
         for(UserTable table = groupIndex.leafMostTable(); table != null; table = table.parentTable()) {
             UserTableRowType rowType = schema.userTableRowType(table);
-            PhysicalOperator plan = createGroupIndexMaintenancePlan(schema, groupIndex, rowType);
+            MaintenancePlan plan = createGroupIndexMaintenancePlan(schema, groupIndex, rowType);
             plansPerType.put(rowType, plan);
         }
         return Collections.unmodifiableMap(plansPerType);

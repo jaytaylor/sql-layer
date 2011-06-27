@@ -290,12 +290,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 if (groupIndex.isUnique()) {
                     throw new UniqueIndexUnsupportedException();
                 }
-                PhysicalOperator plan = groupIndexCreationPlan(
+                MaintenancePlan plan = groupIndexCreationPlan(
                         ais,
                         groupIndex,
                         adapter.schema().userTableRowType(userTable)
                 );
-                runMaintenancePlan(adapter, groupIndex, plan, bindings, handler, action);
+                runMaintenancePlan(adapter, groupIndex, plan.plan(), bindings, handler, action);
             }
         } finally {
             adapter.returnExchange(hEx);
@@ -325,15 +325,15 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
 
-    private PhysicalOperator groupIndexCreationPlan(
+    private MaintenancePlan groupIndexCreationPlan(
             AkibanInformationSchema ais, GroupIndex groupIndex, UserTableRowType rowType
     ) {
-        Map<GroupIndex, Map<UserTableRowType,PhysicalOperator>> gisToPlansMapMap = maintenancePlans.get(ais);
-        Map<UserTableRowType,PhysicalOperator> plansMap = gisToPlansMapMap.get(groupIndex);
+        Map<GroupIndex, Map<UserTableRowType,MaintenancePlan>> gisToPlansMapMap = maintenancePlans.get(ais);
+        Map<UserTableRowType,MaintenancePlan> plansMap = gisToPlansMapMap.get(groupIndex);
         if (plansMap == null) {
             throw new RuntimeException("no plan found for group index " + groupIndex);
         }
-        PhysicalOperator plan = plansMap.get(rowType);
+        MaintenancePlan plan = plansMap.get(rowType);
         if (plan == null) {
             throw new RuntimeException("no plan for row type " + rowType + " in group index " + groupIndex);
         }
@@ -383,7 +383,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // object state
 
-    private final CachePair<AkibanInformationSchema, Map<GroupIndex, Map<UserTableRowType,PhysicalOperator>>> maintenancePlans
+    private final CachePair<AkibanInformationSchema, Map<GroupIndex, Map<UserTableRowType,MaintenancePlan>>> maintenancePlans
             = CachePair.using(new MaintenancePlanCreator());
 
     // consts
