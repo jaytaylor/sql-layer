@@ -1057,7 +1057,7 @@ public class RowDefCacheTest
         assertEquals(1, rowComp.getFieldPosition(0)); // c.name
         assertEquals(4, rowComp.getFieldPosition(1)); // o.date
         // order hkey
-        assertEquals(3, rowComp.getFieldPosition(2)); // o.cid
+        assertEquals(0, rowComp.getFieldPosition(2)); // c.cid
         assertEquals(2, rowComp.getFieldPosition(3)); // o.oid
         assertEquals(4, rowComp.getLength());
         indexToHKey = index.indexToHKey();
@@ -1111,8 +1111,8 @@ public class RowDefCacheTest
         assertEquals(4, rowComp.getFieldPosition(1)); // o.date
         assertEquals(7, rowComp.getFieldPosition(2)); // i.sku
         // item hkey
-        assertEquals(3, rowComp.getFieldPosition(3)); // o.cid
-        assertEquals(6, rowComp.getFieldPosition(4)); // o.oid
+        assertEquals(0, rowComp.getFieldPosition(3)); // c.cid
+        assertEquals(2, rowComp.getFieldPosition(4)); // i.oid
         assertEquals(5, rowComp.getFieldPosition(5)); // i.iid
         assertEquals(6, rowComp.getLength());
         indexToHKey = index.indexToHKey();
@@ -1167,7 +1167,7 @@ public class RowDefCacheTest
         assertEquals(7, rowComp.getFieldPosition(1)); // i.sku
         // item hkey
         assertEquals(3, rowComp.getFieldPosition(2)); // o.cid
-        assertEquals(6, rowComp.getFieldPosition(3)); // i.oid
+        assertEquals(2, rowComp.getFieldPosition(3)); // o.oid
         assertEquals(5, rowComp.getFieldPosition(4)); // i.iid
         assertEquals(5, rowComp.getLength());
         indexToHKey = index.indexToHKey();
