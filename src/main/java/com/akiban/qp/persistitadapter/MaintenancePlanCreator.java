@@ -66,7 +66,7 @@ class MaintenancePlanCreator
      * @param groupIndex GroupIndex
      * @return PhysicalOperator
      */
-    static PhysicalOperator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex) {
+    static MaintenancePlan groupIndexCreationPlan(Schema schema, GroupIndex groupIndex) {
         BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
 
         PhysicalOperator plan = API.groupScan_Default(groupIndex.getGroup().getGroupTable(), NoLimit.instance());
@@ -86,7 +86,7 @@ class MaintenancePlanCreator
             }
         }
 
-        return plan;
+        return new MaintenancePlan(plan, null);
     }
 
     // for use by unit tests

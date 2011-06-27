@@ -221,7 +221,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
         for(GroupIndex groupIndex : groupIndexes) {
-            PhysicalOperator plan = MaintenancePlanCreator.groupIndexCreationPlan(adapter.schema(), groupIndex);
+            MaintenancePlan plan = MaintenancePlanCreator.groupIndexCreationPlan(adapter.schema(), groupIndex);
             runMaintenancePlan(adapter, groupIndex, plan, UndefBindings.only(),
                     new PersistitKeyHandler(adapter), RowAction.FOR_BULK);
         }
@@ -295,7 +295,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                         groupIndex,
                         adapter.schema().userTableRowType(userTable)
                 );
-                runMaintenancePlan(adapter, groupIndex, plan.plan(), bindings, handler, action);
+                runMaintenancePlan(adapter, groupIndex, plan, bindings, handler, action);
             }
         } finally {
             adapter.returnExchange(hEx);
@@ -305,18 +305,19 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     private <A,T extends Throwable> void runMaintenancePlan(
             PersistitAdapter adapter,
             GroupIndex groupIndex,
-            PhysicalOperator plan,
+            MaintenancePlan plan,
             Bindings bindings,
             GroupIndexHandler<A, T> handler, A action
     )
     throws T
     {
-        Cursor cursor = API.cursor(plan, adapter);
+        PhysicalOperator rootOperator = plan.plan();
+        Cursor cursor = API.cursor(rootOperator, adapter);
         cursor.open(bindings);
         try {
             Row row;
             while ((row = cursor.next()) != null) {
-                if (row.rowType().equals(plan.rowType())) {
+                if (row.rowType().equals(rootOperator.rowType())) {
                     handler.handleRow(action, groupIndex, row);
                 }
             }
