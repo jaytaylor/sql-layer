@@ -110,7 +110,7 @@ class MaintenancePlanCreator
         );
         if (branchTables.fromRoot().size() == 1) {
             assert !deep : "deep scan although GI branch was size 1: " + groupIndex;
-            return new MaintenancePlan(plan, null); // TODO rowType throws UnsupportedOperationException
+            return new MaintenancePlan(plan, null); // there is no ancestor row
         }
         if (!branchTables.fromRoot().get(0).equals(rowType)) {
             plan = API.ancestorLookup_Default(
@@ -128,22 +128,23 @@ class MaintenancePlanCreator
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;
         RowType flattenedParentRowType = null;
         for (RowType branchRowType : branchTables.fromRoot()) {
-            if (branchRowType.equals(rowType)) {
-//                flattenedParentRowType = plan.rowType(); // TODO rowType throws UnsupportedOperationException
-            }
             if (parentRowType == null) {
                 parentRowType = branchRowType;
             }
             else {
+                if (branchRowType.equals(rowType)) {
+                    assert flattenedParentRowType == null : flattenedParentRowType;
+                    flattenedParentRowType = parentRowType;
+                }
                 plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType, flattenOptions);
                 parentRowType = plan.rowType();
+
             }
             if (branchRowType.equals(branchTables.rootMost())) {
                 joinType = API.JoinType.LEFT_JOIN;
                 flattenOptions = LEFT_JOIN_OPTIONS;
             }
         }
-//        assert flattenedParentRowType != null; // TODO rowType throws UnsupportedOperationException
         return new MaintenancePlan(plan, flattenedParentRowType);
     }
 

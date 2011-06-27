@@ -27,6 +27,7 @@ import com.akiban.util.Strings;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public final class MaintenancePlanCreatorTest {
 
@@ -43,7 +44,7 @@ public final class MaintenancePlanCreatorTest {
                 "GroupScan_Default(shallow hkey-bound scan on _akiban_sch_customer NO_LIMIT)"
         );
         assertEquals("plan description", expected, plan.plan().describePlan());
-        //assertEquals("plan placeholder ancestor", "☃", plan.flattenedParentRowType().toString());
+        checkFlattenedAncestorType(plan, NULL_FLATTENED_ROW);
     }
 
     @Test
@@ -61,7 +62,7 @@ public final class MaintenancePlanCreatorTest {
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) LEFT sch.item)"
         );
         assertEquals("plan description", expected, plan.plan().describePlan());
-        //assertEquals("plan placeholder ancestor", "☃", plan.flattenedParentRowType().toString());
+        checkFlattenedAncestorType(plan, NULL_FLATTENED_ROW);
     }
 
     @Test
@@ -80,7 +81,7 @@ public final class MaintenancePlanCreatorTest {
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) LEFT sch.item)"
         );
         assertEquals("plan description", expected, plan.plan().describePlan());
-        //assertEquals("plan placeholder ancestor", "☃", plan.flattenedParentRowType().toString());
+        checkFlattenedAncestorType(plan, "customer", "order");
     }
 
     @Test
@@ -98,7 +99,7 @@ public final class MaintenancePlanCreatorTest {
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) LEFT sch.item)"
         );
         assertEquals("plan description", expected, plan.plan().describePlan());
-        //assertEquals("plan placeholder ancestor", "☃", plan.flattenedParentRowType().toString());
+        checkFlattenedAncestorType(plan, NULL_FLATTENED_ROW);
     }
 
     @Test
@@ -117,7 +118,7 @@ public final class MaintenancePlanCreatorTest {
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) LEFT sch.item)"
         );
         assertEquals("plan description", expected, plan.plan().describePlan());
-        //assertEquals("plan placeholder ancestor", "☃", plan.flattenedParentRowType().toString());
+        checkFlattenedAncestorType(plan, "customer");
     }
 
     @Test
@@ -136,7 +137,7 @@ public final class MaintenancePlanCreatorTest {
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) LEFT sch.item)"
         );
         assertEquals("plan description", expected, plan.plan().describePlan());
-        //assertEquals("plan placeholder ancestor", "☃", plan.flattenedParentRowType().toString());
+        checkFlattenedAncestorType(plan, "customer", "order");
     }
 
     @Test
@@ -155,7 +156,7 @@ public final class MaintenancePlanCreatorTest {
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) LEFT sch.item)"
         );
         assertEquals("plan description", expected, plan.plan().describePlan());
-        //assertEquals("plan placeholder ancestor", "☃", plan.flattenedParentRowType().toString());
+        checkFlattenedAncestorType(plan, "customer", "order");
     }
 
     @Test
@@ -174,7 +175,7 @@ public final class MaintenancePlanCreatorTest {
             "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) LEFT sch.item)"
         );
         assertEquals("plan description", expected, plan.plan().describePlan());
-        //assertEquals("plan placeholder ancestor", "☃", plan.flattenedParentRowType().toString());
+        checkFlattenedAncestorType(plan, "customer");
     }
 
     @Test
@@ -192,7 +193,7 @@ public final class MaintenancePlanCreatorTest {
                 "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) LEFT sch.item)"
         );
         assertEquals("plan description", expected, plan.plan().describePlan());
-        //assertEquals("plan placeholder ancestor", "☃", plan.flattenedParentRowType().toString());
+        checkFlattenedAncestorType(plan, NULL_FLATTENED_ROW);
     }
 
     @Test
@@ -209,7 +210,7 @@ public final class MaintenancePlanCreatorTest {
             "Flatten_HKeyOrdered(sch.customer LEFT sch.address)"
         );
         assertEquals("plan description", expected, plan.plan().describePlan());
-        //assertEquals("plan placeholder ancestor", "☃", plan.flattenedParentRowType().toString());
+        checkFlattenedAncestorType(plan, NULL_FLATTENED_ROW);
     }
 
     @Test
@@ -227,7 +228,7 @@ public final class MaintenancePlanCreatorTest {
             "Flatten_HKeyOrdered(sch.customer LEFT sch.address)"
         );
         assertEquals("plan description", expected, plan.plan().describePlan());
-        //assertEquals("plan placeholder ancestor", "☃", plan.flattenedParentRowType().toString());
+        checkFlattenedAncestorType(plan, "customer");
     }
 
     @Test
@@ -245,7 +246,7 @@ public final class MaintenancePlanCreatorTest {
             "Flatten_HKeyOrdered(sch.customer RIGHT sch.address)"
         );
         assertEquals("plan description", expected, plan.plan().describePlan());
-        //assertEquals("plan placeholder ancestor", "☃", plan.flattenedParentRowType().toString());
+        checkFlattenedAncestorType(plan, "customer");
     }
 
     // private static methods
@@ -274,6 +275,26 @@ public final class MaintenancePlanCreatorTest {
 
     private static Schema schema(AkibanInformationSchema ais) {
         return new SchemaAISBased(ais);
+    }
+
+    private static void checkFlattenedAncestorType(MaintenancePlan plan, String... flattenedTables) {
+        if (flattenedTables == NULL_FLATTENED_ROW) {
+            assertNull(String.valueOf(plan.flattenedParentRowType()), plan.flattenedParentRowType());
+        }
+        else if (flattenedTables.length == 1) {
+            String userTableRowType = String.format("%s.%s", SCHEMA_NAME, flattenedTables[0]);
+            assertEquals("non-flattened row", userTableRowType, plan.flattenedParentRowType().toString());
+        }
+        else {
+            String root = flattenedTables[0];
+            String firstChild = flattenedTables[1];
+            // This loop is inefficient, but less verbose than a StringBuilder, and not a critical path
+            String flattenedString = String.format("flatten(%s.%s, %s.%s)", SCHEMA_NAME, root, SCHEMA_NAME, firstChild);
+            for (int i=3; i < flattenedTables.length; ++i) {
+                flattenedString = String.format("flatten(%s, %s.%s)", flattenedString, SCHEMA_NAME, flattenedTables[i]);
+            }
+            assertEquals("flattened row", flattenedString, plan.flattenedParentRowType().toString());
+        }
     }
 
     private AkibanInformationSchema coia() {
@@ -319,4 +340,5 @@ public final class MaintenancePlanCreatorTest {
 
     private static final String SCHEMA_NAME = "sch";
     private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory();
+    private static final String[] NULL_FLATTENED_ROW = new String[0];
 }
