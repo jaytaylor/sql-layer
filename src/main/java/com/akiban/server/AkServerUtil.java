@@ -16,7 +16,6 @@
 package com.akiban.server;
 
 import com.akiban.util.AkibanAppender;
-import sun.security.util.BigInt;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -31,7 +30,8 @@ public class AkServerUtil {
 
     public final static String NEW_LINE = System.getProperty("line.separator");
 
-    private static String UNEXPECTED_WIDTH_MSG = "Width must be 0,1,2,3,4 or 8 but was: ";
+    private static String UNEXPECTED_SIGNED_WIDTH_MSG = "Width must be 0,1,2,3,4 or 8 but was: ";
+    private static String UNEXPECTED_UNSIGNED_WIDTH_MSG = "Width must be 0,1,2,3, or 4 but was: ";
 
 
     public static long getSignedIntegerByWidth(final byte[] bytes, final int index, final int width) {
@@ -44,7 +44,7 @@ public class AkServerUtil {
             case 8: return getLong(bytes, index);
         }
 
-        throw new IllegalArgumentException(UNEXPECTED_WIDTH_MSG + width);
+        throw new IllegalArgumentException(UNEXPECTED_SIGNED_WIDTH_MSG + width);
     }
 
     public static long getUnsignedIntegerByWidth(final byte[] bytes, final int index, final int width) {
@@ -54,12 +54,10 @@ public class AkServerUtil {
             case 2: return getUShort(bytes, index);
             case 3: return getUMediumInt(bytes, index);
             case 4: return getUInt(bytes, index);
-
-            // TODO: Requires getULong(), would need to return a BigInteger
-            case 8: return getLong(bytes, index);
+            //case 8: return getULong(bytes, index); // Returns BigInteger, must call directly
         }
         
-        throw new IllegalArgumentException(UNEXPECTED_WIDTH_MSG + width);
+        throw new IllegalArgumentException(UNEXPECTED_UNSIGNED_WIDTH_MSG + width);
     }
 
     /**
@@ -79,7 +77,7 @@ public class AkServerUtil {
             case 4: putInt(destination, destinationIndex, (int)value);       break;
             case 8: putLong(destination, destinationIndex, value);           break;
             default:
-                throw new IllegalArgumentException(UNEXPECTED_WIDTH_MSG + width);
+                throw new IllegalArgumentException(UNEXPECTED_SIGNED_WIDTH_MSG + width);
         }
         return width;
     }
