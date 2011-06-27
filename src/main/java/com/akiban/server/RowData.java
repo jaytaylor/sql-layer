@@ -16,6 +16,7 @@
 package com.akiban.server;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
@@ -293,6 +294,14 @@ public class RowData {
                     offset, width, rowStart, rowEnd));
         }
         return AkServerUtil.getUnsignedIntegerByWidth(bytes, offset, width);
+    }
+
+    public BigInteger getUnsignedLongValue(final int offset, final int width) {
+        if (offset < rowStart || offset + width >= rowEnd) {
+            throw new IllegalArgumentException(String.format("Bad location: {offset=%d width=%d start=%d end=%d}",
+                    offset, width, rowStart, rowEnd));
+        }
+        return AkServerUtil.getULong(bytes, offset);
     }
 
     public String getStringValue(final int offset, final int width,

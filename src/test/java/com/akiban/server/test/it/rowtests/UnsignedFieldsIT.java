@@ -22,6 +22,7 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -101,10 +102,14 @@ public class UnsignedFieldsIT extends ITBase {
         writeRowsAndCompareValues(tid, values);
     }
 
-    @Test(expected=UnsupportedDataTypeException.class)
+    @Test
     public void bigIntUnsigned() {
         int tid = createTable("test", "t", "id int key, c1 bigint unsigned");
-        Object[] values = getTestValues(64);
+        Object[] values = {new BigInteger("0"), new BigInteger("1"),
+                           new BigInteger("9223372036854775805"), new BigInteger("9223372036854775806"),
+                           new BigInteger("9223372036854775807"),
+                           new BigInteger("9223372036854775808"), new BigInteger("9223372036854775809"),
+                           new BigInteger("18446744073709551615")};
         writeRowsAndCompareValues(tid, values);
     }
 
