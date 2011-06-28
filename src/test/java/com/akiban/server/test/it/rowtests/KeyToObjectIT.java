@@ -117,6 +117,14 @@ public class KeyToObjectIT extends ITBase {
         createAndWriteRows(tid, values);
         testKeyToObject(tid, values.length, "c2");
     }
+
+    @Test
+    public void bigintUnsignedField() throws Exception {
+        final int tid = createTable("test", "t", "id int key", "c2 int unsigned, key(c2)");
+        Long values[] = {null, 0L, 1L, 255L, 400L, 674532L, 16777215L, 2147483647L, 9223372036854775806L};
+        createAndWriteRows(tid, values);
+        testKeyToObject(tid, values.length, "c2");
+    }
     
     @Test
     public void floatField() throws Exception {

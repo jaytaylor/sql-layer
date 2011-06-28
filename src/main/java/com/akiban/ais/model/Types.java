@@ -67,7 +67,7 @@ public class Types {
 	// (except bigint unsigned fails for numbers larger than Long.MAX_VALUE).
 	//
 	public static Type BIGINT =       new Type("bigint", 0, true, 8L, "INT");
-	public static Type U_BIGINT = 	  new Type("bigint unsigned", 0, true, 8L, "U_INT");
+	public static Type U_BIGINT = 	  new Type("bigint unsigned", 0, true, 8L, "U_BIGINT");
 	public static Type DOUBLE =       new Type("double", 0, true, 8L, "DOUBLE");
 	public static Type U_DOUBLE =     new Type("double unsigned", 0, true, 8L, "U_DOUBLE");
 	public static Type FLOAT =        new Type("float", 0, true, 4L, "FLOAT");
