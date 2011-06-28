@@ -619,16 +619,19 @@ public class OperatorCompiler
                     }
                     else if ((userTable == indexLeafTable) ||
                              (userTable == indexRootTable))
-                        // The root must be used or else this index
-                        // won't match any condition or ordering. The
-                        // leaf must be used or else we'll get
+                        // The leaf must be used or else we'll get
                         // duplicates from a scan (the indexed columns
-                        // need not be root to leaf, making them hard
-                        // to eliminate). Ones in the middle need not
-                        // appear in either the index or the query.
+                        // need not be root to leaf, making ancestors
+                        // discontiguous and duplicates hard to
+                        // eliminate). The root must be present, since
+                        // the index does not contain orphans.
                         return false;
-                    if (userTable == indexRootTable)
+                    if (userTable == indexRootTable) {
+                        if (leafMostInner == null)
+                            // Root-most is always in index.
+                            return false;
                         break;
+                    }
                     userTable = userTable.parentTable();
                 }
             }
