@@ -123,6 +123,8 @@ public class BranchLookup_Default extends PhysicalOperator
         // a child of the common ancestor. Then compare these ordinals to determine whether input precedes branch.
         if (this.branchRootOrdinal == -1) {
             this.inputPrecedesBranch = false;
+        } else if (inputTable == commonAncestor) {
+            this.inputPrecedesBranch = true;
         } else {
             UserTable ancestorOfInputAndChildOfCommon = inputTable;
             while (ancestorOfInputAndChildOfCommon.parentTable() != commonAncestor) {
@@ -169,7 +171,7 @@ public class BranchLookup_Default extends PhysicalOperator
     private final int branchRootOrdinal;
     private final Limit limit;
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // Cursor interface
 
@@ -181,7 +183,7 @@ public class BranchLookup_Default extends PhysicalOperator
         }
 
         @Override
-        public boolean next()
+        public Row next()
         {
             Row nextRow = null;
             while (nextRow == null && inputRow.isNotNull()) {
@@ -206,17 +208,15 @@ public class BranchLookup_Default extends PhysicalOperator
                         break;
                 }
             }
-            outputRow(nextRow);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Lookup: {}", lookupRow.isNull() ? null : lookupRow.get());
             }
-            return nextRow != null;
+            return nextRow;
         }
 
         @Override
         public void close()
         {
-            outputRow(null);
             inputCursor.close();
             inputRow.set(null);
             lookupCursor.close();
@@ -236,20 +236,15 @@ public class BranchLookup_Default extends PhysicalOperator
 
         private void advanceLookup()
         {
-            if (lookupCursor.next()) {
-                Row currentLookupRow = lookupCursor.currentRow();
-                if (currentLookupRow == null) {
+            Row currentLookupRow;
+            if ((currentLookupRow = lookupCursor.next()) != null) {
+                if (limit.limitReached(currentLookupRow)) {
                     lookupState = LookupState.AFTER;
                     lookupRow.set(null);
+                    close();
                 } else {
-                    if (limit.limitReached(currentLookupRow)) {
-                        lookupState = LookupState.AFTER;
-                        lookupRow.set(null);
-                        close();
-                    } else {
-                        currentLookupRow.runId(inputRow.get().runId());
-                        lookupRow.set(currentLookupRow);
-                    }
+                    currentLookupRow.runId(inputRow.get().runId());
+                    lookupRow.set(currentLookupRow);
                 }
             } else {
                 lookupState = LookupState.AFTER;
@@ -262,8 +257,8 @@ public class BranchLookup_Default extends PhysicalOperator
             lookupState = LookupState.BEFORE;
             lookupRow.set(null);
             lookupCursor.close();
-            if (inputCursor.next()) {
-                Row currentInputRow = inputCursor.currentRow();
+            Row currentInputRow = inputCursor.next();
+            if (currentInputRow != null) {
                 if (currentInputRow.rowType() == inputRowType) {
                     lookupRow.set(null);
                     computeLookupRowHKey(currentInputRow.hKey());

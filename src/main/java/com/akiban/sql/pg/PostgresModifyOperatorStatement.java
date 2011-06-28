@@ -19,7 +19,6 @@ import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.sql.StandardException;
 
-import com.akiban.qp.physicaloperator.ArrayBindings;
 import com.akiban.qp.physicaloperator.BindingNotSetException;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.IncompatibleRowException;
@@ -40,7 +39,9 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
     private UpdatePlannable resultOperator;
         
     public PostgresModifyOperatorStatement(String statementType,
-                                           UpdatePlannable resultOperator) {
+                                           UpdatePlannable resultOperator,
+                                           PostgresType[] parameterTypes) {
+        super(parameterTypes);
         this.statementType = statementType;
         this.resultOperator = resultOperator;
     }
@@ -84,7 +85,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         public BoundStatement(String statementType,
                               UpdatePlannable resultOperator,
                               Bindings bindings) {
-            super(statementType, resultOperator);
+            super(statementType, resultOperator, null);
             this.bindings = bindings;
         }
 
@@ -98,14 +99,13 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
     @Override
     public PostgresStatement getBoundStatement(String[] parameters,
                                                boolean[] columnBinary, 
-                                               boolean defaultColumnBinary) {
+                                               boolean defaultColumnBinary) 
+            throws StandardException {
         if (parameters == null)
             return this;        // Can be reused.
 
-        ArrayBindings bindings = new ArrayBindings(parameters.length);
-        for (int i = 0; i < parameters.length; i++)
-            bindings.set(i, parameters[i]);
-        return new BoundStatement(statementType, resultOperator, bindings);
+        return new BoundStatement(statementType, resultOperator, 
+                                  getParameterBindings(parameters));
     }
 
 }

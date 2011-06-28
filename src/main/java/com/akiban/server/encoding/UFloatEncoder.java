@@ -15,6 +15,7 @@
 
 package com.akiban.server.encoding;
 
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.FieldDef;
 
 public class UFloatEncoder extends FloatEncoder {
@@ -24,6 +25,6 @@ public class UFloatEncoder extends FloatEncoder {
     @Override
     public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
         final int intBits = Math.max(encodeFromObject(value), 0);
-        return EncodingUtils.putInt(dest, offset, intBits, STORAGE_SIZE);
+        return AkServerUtil.putIntegerByWidth(dest, offset, STORAGE_SIZE, intBits);
     }
 }

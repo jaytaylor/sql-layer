@@ -135,7 +135,7 @@ class AncestorLookup_Default extends PhysicalOperator
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // Cursor interface
 
@@ -147,23 +147,21 @@ class AncestorLookup_Default extends PhysicalOperator
         }
 
         @Override
-        public boolean next()
+        public Row next()
         {
             while (pending.isEmpty() && inputRow.isNotNull()) {
                 advance();
             }
             Row row = pending.take();
-            outputRow(row);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("AncestorLookup: {}", row == null ? null : row);
             }
-            return row != null;
+            return row;
         }
 
         @Override
         public void close()
         {
-            outputRow(null);
             input.close();
             ancestorRow.set(null);
             pending.clear();
@@ -173,8 +171,8 @@ class AncestorLookup_Default extends PhysicalOperator
 
         private void advance()
         {
-            if (input.next()) {
-                Row currentRow = input.currentRow();
+            Row currentRow = input.next();
+            if (currentRow != null) {
                 if (currentRow.rowType() == rowType) {
                     findAncestors(currentRow);
                 }
@@ -222,13 +220,13 @@ class AncestorLookup_Default extends PhysicalOperator
             try {
                 ancestorCursor.rebind(hKey, false);
                 ancestorCursor.open(UndefBindings.only());
-                if (ancestorCursor.next()) {
-                    Row retrievedRow = ancestorCursor.currentRow();
+                Row retrievedRow = ancestorCursor.next();
+                if (retrievedRow == null) {
+                    ancestorRow.set(null);
+                } else {
                     // Retrieved row might not actually be what we were looking for -- not all ancestors are present,
                     // (there are orphan rows).
                     ancestorRow.set(hKey.equals(retrievedRow.hKey()) ? retrievedRow : null);
-                } else {
-                    ancestorRow.set(null);
                 }
             } finally {
                 ancestorCursor.close();

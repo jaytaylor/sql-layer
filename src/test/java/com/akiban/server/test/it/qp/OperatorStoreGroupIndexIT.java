@@ -60,13 +60,17 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         testMaintainedRows(
                 actionString,
                 createNewRow(c, 1L, "alpha"),
+                // date_sku
+                actionString + "date_sku [02-02-2002, 1111, 1, 11, 100]" + DATE_SKU_COLS,
+                actionString + "date_sku [02-02-2002, 2222, 1, 11, 101]" + DATE_SKU_COLS,
+                actionString + "date_sku [02-02-2002, 3333, 1, 11, 102]" + DATE_SKU_COLS,
                 // sku_name
                 actionString + "sku_name [1111, alpha, 1, 11, 100]" + SKU_NAME_COLS,
                 actionString + "sku_name [2222, alpha, 1, 11, 101]" + SKU_NAME_COLS,
                 actionString + "sku_name [3333, alpha, 1, 11, 102]" + SKU_NAME_COLS,
                 // street_aid_cid
-                actionString + "street_aid_cid [Harrington, 20, 1, 1]" + STREET_AID_CID_COLS,
-                actionString + "street_aid_cid [Causeway, 21, 1, 1]" + STREET_AID_CID_COLS
+                actionString + "street_aid_cid [Harrington, 20, 1]" + STREET_AID_CID_COLS,
+                actionString + "street_aid_cid [Causeway, 21, 1]" + STREET_AID_CID_COLS
         );
     }
 
@@ -176,9 +180,9 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     // const
 
     private final static String SCHEMA = "sch";
-    private static final String DATE_SKU_COLS = " cols[orders.odate, items.sku, orders.c_id, items.o_id, items.iid]";
-    private static final String SKU_NAME_COLS = " cols[items.sku, customers.name, orders.c_id, items.o_id, items.iid]";
-    private static final String STREET_AID_CID_COLS = " cols[addresses.street, addresses.aid, customers.cid, addresses.c_id]";
+    private static final String DATE_SKU_COLS = " cols[orders.odate, items.sku, orders.c_id, orders.oid, items.iid]";
+    private static final String SKU_NAME_COLS = " cols[items.sku, customers.name, customers.cid, orders.oid, items.iid]";
+    private static final String STREET_AID_CID_COLS = " cols[addresses.street, addresses.aid, customers.cid]";
 
     // nested classes
 

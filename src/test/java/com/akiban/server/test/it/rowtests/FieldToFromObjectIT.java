@@ -25,6 +25,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertNotNull;
@@ -74,9 +75,9 @@ public class FieldToFromObjectIT extends ITBase {
         final int tid = createTable("test", "t", "id int key", "c2 tinyint unsigned, c3 smallint unsigned",
                                     "c4 mediumint unsigned, c5 int unsigned, c6 bigint unsigned");
         final RowDef def = rowDefCache().getRowDef(tid);
-        testRow(def, 1, 0, 0, 0, 0, 0);                                           // zero/min
-        testRow(def, 2, 255, 65535, 16777215, 4294967295L, 9223372036854775807L); // max
-        testRow(def, 3, 42, 9848, 2427090, 290174268L, 73957261119487228L);       // other
+        testRow(def, 1, 0, 0, 0, 0, 0);                                                             // zero/min
+        testRow(def, 2, 255, 65535, 16777215, 4294967295L, new BigInteger("18446744073709551615")); // max
+        testRow(def, 3, 42, 9848, 2427090, 290174268L, 73957261119487228L);                         // other
     }
 
     @Test

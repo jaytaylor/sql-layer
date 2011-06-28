@@ -27,6 +27,8 @@ import com.akiban.sql.optimizer.ExpressionRow;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
+import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.sql.views.ViewDefinition;
 
@@ -68,7 +70,9 @@ public class PostgresOperatorCompiler extends OperatorCompiler
                                    String sql, int[] paramTypes) 
             throws StandardException {
         // This very inefficient reparsing by every generator is actually avoided.
-        return generate(server, server.getParser().parseStatement(sql), paramTypes);
+        SQLParser parser = server.getParser();
+        return generate(server, parser.parseStatement(sql), 
+                        parser.getParameterList(), paramTypes);
     }
 
     @Override
@@ -110,7 +114,8 @@ public class PostgresOperatorCompiler extends OperatorCompiler
 
     @Override
     public PostgresStatement generate(PostgresServerSession session,
-                                      StatementNode stmt, int[] paramTypes)
+                                      StatementNode stmt, 
+                                      List<ParameterNode> params, int[] paramTypes)
             throws StandardException {
         if (!(stmt instanceof DMLStatementNode))
             return null;
@@ -118,16 +123,29 @@ public class PostgresOperatorCompiler extends OperatorCompiler
         Result result = null;
         try {
             session.getSessionTracer().beginEvent(EventTypes.COMPILE);
-            result = compile(session.getSessionTracer(), dmlStmt);
+            result = compile(session.getSessionTracer(), dmlStmt, params);
         } finally {
             session.getSessionTracer().endEvent();
         }
 
         logger.debug("Operator:\n{}", result);
 
+        PostgresType[] parameterTypes = null;
+        if (result.getParameterTypes() != null) {
+            DataTypeDescriptor[] sqlTypes = result.getParameterTypes();
+            int nparams = sqlTypes.length;
+            parameterTypes = new PostgresType[nparams];
+            for (int i = 0; i < nparams; i++) {
+                DataTypeDescriptor sqlType = sqlTypes[i];
+                if (sqlType != null)
+                    parameterTypes[i] = PostgresType.fromDerby(sqlType);
+            }
+        }
+
         if (result.isModify())
             return new PostgresModifyOperatorStatement(stmt.statementToString(),
-                                                       (UpdatePlannable) result.getResultOperator());
+                                                       (UpdatePlannable) result.getResultOperator(),
+                                                       parameterTypes);
         else {
             int ncols = result.getResultColumns().size();
             List<String> columnNames = new ArrayList<String>(ncols);
@@ -139,6 +157,7 @@ public class PostgresOperatorCompiler extends OperatorCompiler
             }
             return new PostgresOperatorStatement((PhysicalOperator)result.getResultOperator(),
                                                  columnNames, columnTypes,
+                                                 parameterTypes,
                                                  result.getOffset(),
                                                  result.getLimit());
         }

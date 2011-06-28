@@ -18,6 +18,7 @@ package com.akiban.sql.pg;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
+import com.akiban.sql.parser.ParameterNode;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
@@ -372,7 +373,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 sessionTracer.endEvent();
             }
             for (StatementNode stmt : stmts) {
-                pstmt = generateStatement(stmt, null);
+                pstmt = generateStatement(stmt, null, null);
                 if ((statementCache != null) && (stmts.size() == 1))
                     statementCache.put(sql, pstmt);
                 pstmt.sendDescription(this, false);
@@ -405,14 +406,16 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             pstmt = statementCache.get(sql);
         if (pstmt == null) {
             StatementNode stmt;
+            List<ParameterNode> params;
             try {
                 sessionTracer.beginEvent(EventTypes.PARSE);
                 stmt = parser.parseStatement(sql);
+                params = parser.getParameterList();
             }
             finally {
                 sessionTracer.endEvent();
             }
-            pstmt = generateStatement(stmt, paramTypes);
+            pstmt = generateStatement(stmt, params, paramTypes);
             if (statementCache != null)
                 statementCache.put(sql, pstmt);
         }
@@ -583,12 +586,15 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
     }
 
-    protected PostgresStatement generateStatement(StatementNode stmt, int[] paramTypes)
+    protected PostgresStatement generateStatement(StatementNode stmt, 
+                                                  List<ParameterNode> params,
+                                                  int[] paramTypes)
             throws StandardException {
         try {
             sessionTracer.beginEvent(EventTypes.OPTIMIZE);
             for (PostgresStatementGenerator generator : parsedGenerators) {
-                PostgresStatement pstmt = generator.generate(this, stmt, paramTypes);
+                PostgresStatement pstmt = generator.generate(this, stmt, 
+                                                             params, paramTypes);
                 if (pstmt != null) return pstmt;
             }
         }

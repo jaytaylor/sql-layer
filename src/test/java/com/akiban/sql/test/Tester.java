@@ -167,7 +167,8 @@ public class Tester
             case OPERATORS:
                 {
                     Object compiled = operatorCompiler.compile(new PostgresSessionTracer(1, false),
-                                                               (DMLStatementNode)stmt);
+                                                               (DMLStatementNode)stmt,
+                                                               parser.getParameterList());
                     if (!silent)
                         System.out.println(compiled);
                 }
