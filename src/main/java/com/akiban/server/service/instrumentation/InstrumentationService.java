@@ -1,0 +1,40 @@
+/**
+ * Copyright (C) 2011 Akiban Technologies Inc.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses.
+ */
+
+package com.akiban.server.service.instrumentation;
+
+import com.akiban.sql.pg.PostgresSessionTracer;
+
+public interface InstrumentationService {
+
+    public PostgresSessionTracer createSqlSessionTracer(int sessionId);
+        
+    public PostgresSessionTracer getSqlSessionTracer(int sessionId);
+    
+    /*
+     * whether instrumentation is enabled for all sessions
+     */
+    boolean isEnabled();
+    void enable();
+    void disable();
+    
+    /*
+     * whether instrumentation is enabled for a specific session
+     */
+    boolean isEnabled(int sessionId);
+    void enable(int sessionId);
+    void disable(int sessionId);
+    
+}

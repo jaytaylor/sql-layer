@@ -54,7 +54,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         this.limit = limit;
     }
     
-    public void execute(PostgresServerSession server, int maxrows)
+    public int execute(PostgresServerSession server, int maxrows)
         throws IOException, StandardException {
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
@@ -116,6 +116,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             messenger.writeString("SELECT " + nrows);
             messenger.sendMessage();
         }
+        return nrows;
     }
 
     protected Bindings getBindings() {

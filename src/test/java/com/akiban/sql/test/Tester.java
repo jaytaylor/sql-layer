@@ -40,6 +40,7 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.UpdateNode;
 import com.akiban.sql.parser.ValueNode;
+import com.akiban.sql.pg.PostgresSessionTracer;
 import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.ddl.SchemaDef;
@@ -165,7 +166,8 @@ public class Tester
                 break;
             case OPERATORS:
                 {
-                    Object compiled = operatorCompiler.compile((DMLStatementNode)stmt,
+                    Object compiled = operatorCompiler.compile(new PostgresSessionTracer(1, false),
+                                                               (DMLStatementNode)stmt,
                                                                parser.getParameterList());
                     if (!silent)
                         System.out.println(compiled);

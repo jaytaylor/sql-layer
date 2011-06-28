@@ -49,7 +49,8 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
             throw new StandardException("Optimizer does not support EXPLAIN");
         if (!(innerStmt instanceof DMLStatementNode))
             throw new StandardException("Cannot EXPLAIN this statement");
-        OperatorCompiler.Result result = compiler.compile((DMLStatementNode)innerStmt,
+        OperatorCompiler.Result result = compiler.compile(server.getSessionTracer(),
+                                                          (DMLStatementNode)innerStmt,
                                                           params);
         return new PostgresExplainStatement(result.explainPlan());
     }

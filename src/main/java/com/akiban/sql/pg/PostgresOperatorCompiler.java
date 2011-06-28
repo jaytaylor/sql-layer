@@ -43,6 +43,8 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 
+import com.akiban.server.service.EventTypes;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,7 +120,13 @@ public class PostgresOperatorCompiler extends OperatorCompiler
         if (!(stmt instanceof DMLStatementNode))
             return null;
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
-        Result result = compile(dmlStmt, params);
+        Result result = null;
+        try {
+            session.getSessionTracer().beginEvent(EventTypes.COMPILE);
+            result = compile(session.getSessionTracer(), dmlStmt, params);
+        } finally {
+            session.getSessionTracer().endEvent();
+        }
 
         logger.debug("Operator:\n{}", result);
 
