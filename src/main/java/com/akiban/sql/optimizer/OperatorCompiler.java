@@ -600,8 +600,9 @@ public class OperatorCompiler
                 // A group index is for a left join, so we can use it
                 // for joins that are inner from the root for a while
                 // and then left from there to the leaf.
-                UserTable limitTable = (UserTable)index.rootMostTable();
-                UserTable userTable = (UserTable)index.leafMostTable();
+                UserTable indexRootTable = (UserTable)index.rootMostTable();
+                UserTable indexLeafTable = (UserTable)index.leafMostTable();
+                UserTable userTable = indexLeafTable;
                 while (true) {
                     TableNode table = squery.getTables().getNode(userTable);
                     if ((table != null) && table.isUsed()) {
@@ -616,12 +617,20 @@ public class OperatorCompiler
                         else if (leafMostInner == null)
                             leafMostInner = table;
                     }
-                    if (userTable == limitTable)
+                    else if ((userTable == indexLeafTable) ||
+                             (userTable == indexRootTable))
+                        // The root must be used or else this index
+                        // won't match any condition or ordering. The
+                        // leaf must be used or else we'll get
+                        // duplicates from a scan (the indexed columns
+                        // need not be root to leaf, making them hard
+                        // to eliminate). Ones in the middle need not
+                        // appear in either the index or the query.
+                        return false;
+                    if (userTable == indexRootTable)
                         break;
                     userTable = userTable.parentTable();
                 }
-                if (leafMostTable == null)
-                    return false; // Didn't involve any of our tables.
             }
             int ncols = indexColumns.size();
             int nequals = 0;
