@@ -97,15 +97,15 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<Persisti
 
     // class interface
 
-    public static OperatorStoreGIHandler forInserting(PersistitAdapter adapter, UserTable userTable) {
+    public static OperatorStore.GroupIndexHandler<PersistitException> forInserting(PersistitAdapter adapter, UserTable userTable) {
         return new OperatorStoreGIHandler(adapter, userTable, Action.STORE);
     }
 
-    public static OperatorStoreGIHandler forRemoving(PersistitAdapter adapter, UserTable userTable) {
+    public static OperatorStore.GroupIndexHandler<PersistitException> forRemoving(PersistitAdapter adapter, UserTable userTable) {
         return new OperatorStoreGIHandler(adapter, userTable, Action.DELETE);
     }
 
-    public static OperatorStoreGIHandler forBuilding(PersistitAdapter adapter) {
+    public static OperatorStore.GroupIndexHandler<PersistitException> forBuilding(PersistitAdapter adapter) {
         return new OperatorStoreGIHandler(adapter, null, Action.BULK_ADD);
     }
 
