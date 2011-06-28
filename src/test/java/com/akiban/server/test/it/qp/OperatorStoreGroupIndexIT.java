@@ -150,9 +150,9 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
 
     void testMaintainedRows(String action, NewRow targetRow, String... expectedActions) {
         RowData rowData = targetRow.toRowData();
-        StringsGIHandler handler = new StringsGIHandler();
+        StringsGIHandler handler = new StringsGIHandler(action);
         try {
-            opStore().testMaintainGroupIndexes(session(), rowData, handler, action);
+            opStore().testMaintainGroupIndexes(session(), rowData, handler);
         } catch (PersistitException e) {
             throw new RuntimeException(e);
         }
@@ -197,12 +197,12 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         }
     }
 
-    private static class StringsGIHandler implements TestOperatorStore.GroupIndexHandler<String, RuntimeException> {
+    private static class StringsGIHandler implements TestOperatorStore.GroupIndexHandler<RuntimeException> {
 
         // GroupIndexHandler interface
 
         @Override
-        public void handleRow(String action, GroupIndex groupIndex, Row row) {
+        public void handleRow(GroupIndex groupIndex, Row row) {
             String giName = groupIndex.getIndexName().getName();
             List<Object> fields = new ArrayList<Object>();
             List<Column> columns = new ArrayList<Column>();
@@ -223,8 +223,13 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
             return strings;
         }
 
+        private StringsGIHandler(String action) {
+            this.action = action;
+        }
+
         // object state
 
         private final List<String> strings = new ArrayList<String>();
+        private final String action;
     }
 }

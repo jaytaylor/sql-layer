@@ -118,14 +118,14 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
                 maintainGroupIndexes(
                         session, ais, adapter,
-                        oldRowData, new OperatorStoreGIHandler(adapter), new OperatorStoreGIHandler.RowAction(userTable, OperatorStoreGIHandler.Action.DELETE)
+                        oldRowData, new OperatorStoreGIHandler(adapter, new OperatorStoreGIHandler.RowAction(userTable, OperatorStoreGIHandler.Action.DELETE))
                 );
 
                 runCursor(oldRowData, rowDef, updateOp, adapter);
 
                 maintainGroupIndexes(
                         session, ais, adapter,
-                        newRowData, new OperatorStoreGIHandler(adapter), new OperatorStoreGIHandler.RowAction(userTable, OperatorStoreGIHandler.Action.STORE)
+                        newRowData, new OperatorStoreGIHandler(adapter, new OperatorStoreGIHandler.RowAction(userTable, OperatorStoreGIHandler.Action.STORE))
                 );
 
                 transaction.commit();
@@ -153,7 +153,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 UserTable uTable = ais.getUserTable(rowData.getRowDefId());
                 maintainGroupIndexes(
                         session, ais, adapter,
-                        rowData, new OperatorStoreGIHandler(adapter), new OperatorStoreGIHandler.RowAction(uTable, OperatorStoreGIHandler.Action.STORE)
+                        rowData, new OperatorStoreGIHandler(adapter, new OperatorStoreGIHandler.RowAction(uTable, OperatorStoreGIHandler.Action.STORE))
                 );
 
                 transaction.commit();
@@ -179,7 +179,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 UserTable uTable = ais.getUserTable(rowData.getRowDefId());
                 maintainGroupIndexes(
                         session, ais, adapter,
-                        rowData, new OperatorStoreGIHandler(adapter), new OperatorStoreGIHandler.RowAction(uTable, OperatorStoreGIHandler.Action.DELETE)
+                        rowData, new OperatorStoreGIHandler(adapter, new OperatorStoreGIHandler.RowAction(uTable, OperatorStoreGIHandler.Action.DELETE))
                 );
                 super.deleteRow(session, rowData);
                 transaction.commit();
@@ -219,7 +219,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         for(GroupIndex groupIndex : groupIndexes) {
             PhysicalOperator plan = MaintenancePlanCreator.groupIndexCreationPlan(adapter.schema(), groupIndex);
             runMaintenancePlan(adapter, groupIndex, plan, UndefBindings.only(),
-                    new OperatorStoreGIHandler(adapter), OperatorStoreGIHandler.RowAction.FOR_BULK);
+                    new OperatorStoreGIHandler(adapter, OperatorStoreGIHandler.RowAction.FOR_BULK));
         }
     }
 
@@ -235,16 +235,16 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // for use by subclasses
 
-    protected final <A,T extends Throwable> void maintainGroupIndexes(
+    protected final <T extends Throwable> void maintainGroupIndexes(
             Session session,
             RowData rowData,
-            GroupIndexHandler<A,T> handler, A action
+            GroupIndexHandler<T> handler
     )
     throws PersistitException, T
     {
         AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
-        maintainGroupIndexes(session, ais, adapter, rowData, handler, action);
+        maintainGroupIndexes(session, ais, adapter, rowData, handler);
     }
 
     protected Collection<GroupIndex> optionallyOrderGroupIndexes(Collection<GroupIndex> groupIndexes) {
@@ -253,11 +253,11 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // private methods
 
-    private <A,T extends Throwable> void maintainGroupIndexes(
+    private <T extends Throwable> void maintainGroupIndexes(
             Session session,
             AkibanInformationSchema ais, PersistitAdapter adapter,
             RowData rowData,
-            GroupIndexHandler<A,T> handler, A action
+            GroupIndexHandler<T> handler
     )
     throws PersistitException, T
     {
@@ -291,19 +291,19 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                         groupIndex,
                         adapter.schema().userTableRowType(userTable)
                 );
-                runMaintenancePlan(adapter, groupIndex, plan, bindings, handler, action);
+                runMaintenancePlan(adapter, groupIndex, plan, bindings, handler);
             }
         } finally {
             adapter.returnExchange(hEx);
         }
     }
 
-    private <A,T extends Throwable> void runMaintenancePlan(
+    private <T extends Throwable> void runMaintenancePlan(
             PersistitAdapter adapter,
             GroupIndex groupIndex,
             PhysicalOperator rootOperator,
             Bindings bindings,
-            GroupIndexHandler<A, T> handler, A action
+            GroupIndexHandler<T> handler
     )
     throws T
     {
@@ -313,7 +313,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             Row row;
             while ((row = cursor.next()) != null) {
                 if (row.rowType().equals(rootOperator.rowType())) {
-                    handler.handleRow(action, groupIndex, row);
+                    handler.handleRow(groupIndex, row);
                 }
             }
         } finally {
@@ -435,8 +435,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
     
-    protected interface GroupIndexHandler<A, T extends Throwable> {
-        void handleRow(A action, GroupIndex groupIndex, Row row) throws T;
+    protected interface GroupIndexHandler<T extends Throwable> {
+        void handleRow(GroupIndex groupIndex, Row row) throws T;
     }
 
     public class UniqueIndexUnsupportedException extends UnsupportedOperationException {

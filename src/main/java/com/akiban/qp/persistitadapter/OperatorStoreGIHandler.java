@@ -27,12 +27,12 @@ import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
-class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<OperatorStoreGIHandler.RowAction,PersistitException> {
+class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<PersistitException> {
 
     // GroupIndexHandler interface
 
     @Override
-    public void handleRow(RowAction action, GroupIndex groupIndex, Row row)
+    public void handleRow(GroupIndex groupIndex, Row row)
     throws PersistitException
     {
         assert Action.BULK_ADD.equals(action.action()) == (action.sourceTable()==null) : null;
@@ -156,13 +156,15 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<Operator
         return true;
     }
 
-    public OperatorStoreGIHandler(PersistitAdapter adapter) {
+    public OperatorStoreGIHandler(PersistitAdapter adapter, RowAction action) {
         this.adapter = adapter;
+        this.action = action;
     }
 
     // object state
 
     private final PersistitAdapter adapter;
+    private final RowAction action;
 
     // nested classes
     enum GroupIndexPosition {
