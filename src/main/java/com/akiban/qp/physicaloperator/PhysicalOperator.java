@@ -48,12 +48,14 @@ public abstract class PhysicalOperator implements Plannable
         return toString();
     }
 
+    protected static final String NL = System.getProperty("line.separator");
+
     @Override
     public final String describePlan(PhysicalOperator inputOperator)
     {
         StringBuilder buffer = new StringBuilder();
         buffer.append(inputOperator.describePlan());
-        buffer.append('\n');
+        buffer.append(NL);
         buffer.append(toString());
         return buffer.toString();
     }

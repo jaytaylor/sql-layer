@@ -11,6 +11,7 @@
         <BZR_REVISION></BZR_REVISION>
         <akiban.test.extraJvmArgs></akiban.test.extraJvmArgs>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
     <distributionManagement>
         <snapshotRepository>
@@ -158,11 +159,6 @@
             <version>0.9.1</version>
         </dependency>
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>5.1.6</version>
-        </dependency>
-        <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-sql-parser</artifactId>
             <version>0.0.4-SNAPSHOT</version>
@@ -235,6 +231,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
                 <configuration>
                     <source>1.6</source>
                     <target>1.6</target>
@@ -243,6 +240,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
+                <version>2.1.2</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -355,6 +353,7 @@
         <plugin>
             <groupId>com.mycila.maven-license-plugin</groupId>
             <artifactId>maven-license-plugin</artifactId>
+            <version>1.9.0</version>
             <configuration>
                 <header>src/etc/header.txt</header>
                 <failIfMissing>true</failIfMissing>

@@ -24,7 +24,6 @@ import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,6 +43,7 @@ import com.akiban.ais.io.Reader;
 import com.akiban.ais.io.TableSubsetWriter;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeyColumn;
@@ -138,6 +138,32 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
     private ByteBuffer aisByteBuffer;
+    
+    @Override
+    public TableName createTableDefinition(Session session, final UserTable newTable) throws Exception
+    {
+        // We assume/assert the newAIS contains exactly one new user table. 
+        //assert newAIS.getUserTables().values().size() == 1;
+        //final UserTable newTable = newAIS.getUserTables().values().iterator().next();
+        
+        AISMerge merge = new AISMerge (ais, newTable);
+        merge.validate().merge();
+        
+        final String schemaName = newTable.getName().getSchemaName();
+        final String originalDDL =  new DDLGenerator().createTable(newTable);
+        
+        commitAISChange(session, merge.getAIS(), schemaName, new AISChangeCallback() {
+            @Override
+            public void beforeCommit(Exchange schemaExchange, TreeService treeService) throws Exception {
+                schemaExchange.clear().append(BY_NAME).append(schemaName).append(newTable.getName().getTableName());
+                schemaExchange.append(newTable.getTableId().intValue());
+                schemaExchange.getValue().put(originalDDL);
+                schemaExchange.store();
+            }
+        });
+        return newTable.getName();
+    }
+    
     
     @Override
     public TableName createTableDefinition(final Session session, final String defaultSchemaName,

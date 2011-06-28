@@ -15,8 +15,8 @@
 
 package com.akiban.server.test.it.keyupdate;
 
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.*;
+import com.akiban.ais.model.HKey;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.store.IndexRecordVisitor;
 import com.akiban.server.test.it.ITBase;
@@ -28,6 +28,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
