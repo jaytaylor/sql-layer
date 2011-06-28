@@ -96,6 +96,22 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<Persisti
         }
     }
 
+    // class interface
+
+    public static OperatorStoreGIHandler forInserting(PersistitAdapter adapter, UserTable userTable) {
+        return new OperatorStoreGIHandler(adapter, new RowAction(userTable, Action.STORE));
+    }
+
+    public static OperatorStoreGIHandler forRemoving(PersistitAdapter adapter, UserTable userTable) {
+        return new OperatorStoreGIHandler(adapter, new RowAction(userTable, Action.DELETE));
+    }
+
+    public static OperatorStoreGIHandler forBuilding(PersistitAdapter adapter) {
+        return new OperatorStoreGIHandler(adapter, RowAction.FOR_BULK);
+    }
+
+    // for use in this class
+
     private static int depthFromHKey(GroupIndex groupIndex, Row row) {
         final int targetSegments = row.hKey().segments();
         for(UserTable table=groupIndex.leafMostTable(), END=groupIndex.rootMostTable().parentTable();
@@ -178,7 +194,7 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<Persisti
         }
     }
 
-    static class RowAction {
+    private static class RowAction {
 
         public UserTable sourceTable() {
             return sourceTable;
@@ -204,7 +220,7 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<Persisti
         private final UserTable sourceTable;
         private final Action action;
 
-        static RowAction FOR_BULK = new RowAction(null, Action.BULK_ADD);
+        private static RowAction FOR_BULK = new RowAction(null, Action.BULK_ADD);
     }
 
     public enum Action {STORE, DELETE, BULK_ADD }
