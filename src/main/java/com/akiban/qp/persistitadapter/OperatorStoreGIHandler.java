@@ -35,8 +35,7 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<Persisti
     public void handleRow(GroupIndex groupIndex, Row row)
     throws PersistitException
     {
-        assert Action.BULK_ADD.equals(action.action()) == (action.sourceTable()==null) : null;
-        UserTable sourceTable = action.sourceTable();
+        assert Action.BULK_ADD.equals(action) == (sourceTable==null) : null;
         GroupIndexPosition sourceRowPosition = positionWithinBranch(groupIndex, sourceTable);
         if (sourceRowPosition.equals(GroupIndexPosition.BELOW_SEGMENT)) { // asserts sourceRowPosition != null :-)
             return; // nothing to do
@@ -66,7 +65,7 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<Persisti
             }
         }
 
-        if (!Action.BULK_ADD.equals(action.action()) && sourceRowPosition.isAboveSegment() && nullPoint < 0) {
+        if (!Action.BULK_ADD.equals(action) && sourceRowPosition.isAboveSegment() && nullPoint < 0) {
             return;
         }
 
@@ -74,7 +73,7 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<Persisti
         exchange.getValue().clear();
         exchange.getValue().put(rightmostTableDepth);
 
-        switch (action.action()) {
+        switch (action) {
         case BULK_ADD:
             assert nullPoint < 0 : nullPoint;
             exchange.store();
@@ -92,22 +91,22 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<Persisti
             }
             break;
         default:
-            throw new UnsupportedOperationException(action.action().name());
+            throw new UnsupportedOperationException(action.name());
         }
     }
 
     // class interface
 
     public static OperatorStoreGIHandler forInserting(PersistitAdapter adapter, UserTable userTable) {
-        return new OperatorStoreGIHandler(adapter, new RowAction(userTable, Action.STORE));
+        return new OperatorStoreGIHandler(adapter, userTable, Action.STORE);
     }
 
     public static OperatorStoreGIHandler forRemoving(PersistitAdapter adapter, UserTable userTable) {
-        return new OperatorStoreGIHandler(adapter, new RowAction(userTable, Action.DELETE));
+        return new OperatorStoreGIHandler(adapter, userTable, Action.DELETE);
     }
 
     public static OperatorStoreGIHandler forBuilding(PersistitAdapter adapter) {
-        return new OperatorStoreGIHandler(adapter, RowAction.FOR_BULK);
+        return new OperatorStoreGIHandler(adapter, null, Action.BULK_ADD);
     }
 
     // for use in this class
@@ -172,15 +171,17 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<Persisti
         return true;
     }
 
-    public OperatorStoreGIHandler(PersistitAdapter adapter, RowAction action) {
+    public OperatorStoreGIHandler(PersistitAdapter adapter, UserTable sourceTable, Action action) {
         this.adapter = adapter;
+        this.sourceTable = sourceTable;
         this.action = action;
     }
 
     // object state
 
     private final PersistitAdapter adapter;
-    private final RowAction action;
+    private final UserTable sourceTable;
+    private final Action action;
 
     // nested classes
     enum GroupIndexPosition {
@@ -192,35 +193,6 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<Persisti
         public boolean isAboveSegment() { // more readable shorthand
             return this == ABOVE_SEGMENT;
         }
-    }
-
-    private static class RowAction {
-
-        public UserTable sourceTable() {
-            return sourceTable;
-        }
-
-        public Action action() {
-            return action;
-        }
-
-        public RowAction(UserTable sourceTable, Action action) {
-            assert action != null : "action is null";
-            assert Action.BULK_ADD.equals(action) == (sourceTable == null)
-                    : String.format("(sourceTable=null)==%s but action=%s", sourceTable==null, action);
-            this.sourceTable = sourceTable;
-            this.action = action;
-        }
-
-        @Override
-        public String toString() {
-            return action().name() + ' ' + sourceTable();
-        }
-
-        private final UserTable sourceTable;
-        private final Action action;
-
-        private static RowAction FOR_BULK = new RowAction(null, Action.BULK_ADD);
     }
 
     public enum Action {STORE, DELETE, BULK_ADD }
