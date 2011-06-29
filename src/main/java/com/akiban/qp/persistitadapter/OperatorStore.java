@@ -277,7 +277,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             persistitHKey.copyFrom(hEx.getKey());
 
             ArrayBindings bindings = new ArrayBindings(1);
-            bindings.set(MaintenancePlanCreator.HKEY_BINDING_POSITION, persistitHKey);
+            bindings.set(OperatorStoreMaintenancePlan.HKEY_BINDING_POSITION, persistitHKey);
 
             Collection<GroupIndex> branchIndexes = new ArrayList<GroupIndex>();
             for (GroupIndex groupIndex : userTable.getGroup().getIndexes()) {
@@ -329,7 +329,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             AkibanInformationSchema ais, GroupIndex groupIndex, UserTableRowType rowType
     ) {
 
-        return maintenancePlans.get(ais).forRowType(groupIndex, rowType);
+        return OperatorStoreMaintenancePlans.forAis(ais).forRowType(groupIndex, rowType);
     }
 
     // private static methods
@@ -372,11 +372,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
         return rowDescription;
     }
-
-    // object state
-
-    private final CachePair<AkibanInformationSchema, OperatorStoreMaintenancePlans> maintenancePlans
-            = CachePair.using(new MaintenancePlanCreator());
 
     // consts
     private static final int MAX_RETRIES = 10;

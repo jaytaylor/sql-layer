@@ -74,7 +74,7 @@ final class OperatorStoreMaintenancePlan {
         PhysicalOperator plan = API.groupScan_Default(
                 groupIndex.getGroup().getGroupTable(),
                 NoLimit.instance(),
-                com.akiban.qp.expression.API.variable(MaintenancePlanCreator.HKEY_BINDING_POSITION),
+                com.akiban.qp.expression.API.variable(HKEY_BINDING_POSITION),
                 deep
         );
         if (branchTables.fromRoot().size() == 1) {
@@ -117,6 +117,10 @@ final class OperatorStoreMaintenancePlan {
         }
         throw new RuntimeException(rowType + "not found in " + branchTables);
     }
+
+    // package consts
+
+    static final int HKEY_BINDING_POSITION = 0;
 
     // nested classes
 

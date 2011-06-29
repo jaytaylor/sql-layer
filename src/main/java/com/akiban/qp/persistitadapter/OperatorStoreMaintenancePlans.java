@@ -15,6 +15,7 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.UserTable;
@@ -24,6 +25,8 @@ import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.qp.util.SchemaCache;
+import com.akiban.util.CachePair;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -46,6 +49,10 @@ final class OperatorStoreMaintenancePlans {
 
     public OperatorStoreMaintenancePlans(Schema schema, Collection<Group> groups) {
         indexToTypesToOperators = Collections.unmodifiableMap(generateGiPlans(schema, groups));
+    }
+
+    static OperatorStoreMaintenancePlans forAis(AkibanInformationSchema ais) {
+        return CACHE_PER_AIS.get(ais);
     }
 
     /**
@@ -114,4 +121,17 @@ final class OperatorStoreMaintenancePlans {
     // object state
 
     private Map<GroupIndex,Map<UserTableRowType, OperatorStoreMaintenancePlan>> indexToTypesToOperators;
+
+    // consts
+
+    private static final CachePair<AkibanInformationSchema, OperatorStoreMaintenancePlans> CACHE_PER_AIS
+            = CachePair.using(
+            new CachePair.CachedValueProvider<AkibanInformationSchema, OperatorStoreMaintenancePlans>() {
+                @Override
+                public OperatorStoreMaintenancePlans valueFor(AkibanInformationSchema ais) {
+                    Schema schema = SchemaCache.globalSchema(ais);
+                    return new OperatorStoreMaintenancePlans(schema, ais.getGroups().values());
+                }
+            }
+    );
 }
