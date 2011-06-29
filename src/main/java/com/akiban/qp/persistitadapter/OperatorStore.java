@@ -64,7 +64,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static com.akiban.qp.physicaloperator.API.ancestorLookup_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
@@ -329,12 +328,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     private OperatorStoreMaintenancePlan groupIndexCreationPlan(
             AkibanInformationSchema ais, GroupIndex groupIndex, UserTableRowType rowType
     ) {
-        Map<GroupIndex, OperatorStoreMaintenancePlans> gisToPlansMap = maintenancePlans.get(ais);
-        OperatorStoreMaintenancePlans plans = gisToPlansMap.get(groupIndex);
-        if (plans == null) {
-            throw new RuntimeException("no plan found for group index " + groupIndex);
-        }
-        return plans.forRowType(rowType);
+
+        return maintenancePlans.get(ais).forRowType(groupIndex, rowType);
     }
 
     // private static methods
@@ -380,7 +375,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // object state
 
-    private final CachePair<AkibanInformationSchema, Map<GroupIndex, OperatorStoreMaintenancePlans>> maintenancePlans
+    private final CachePair<AkibanInformationSchema, OperatorStoreMaintenancePlans> maintenancePlans
             = CachePair.using(new MaintenancePlanCreator());
 
     // consts

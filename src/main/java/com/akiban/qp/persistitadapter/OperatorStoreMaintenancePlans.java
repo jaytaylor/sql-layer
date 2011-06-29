@@ -15,6 +15,7 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.physicaloperator.API;
@@ -24,23 +25,27 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 final class OperatorStoreMaintenancePlans {
 
-    OperatorStoreMaintenancePlan forRowType(UserTableRowType rowType) {
-        OperatorStoreMaintenancePlan plan = typesToOperators.get(rowType);
+    OperatorStoreMaintenancePlan forRowType(GroupIndex groupIndex, UserTableRowType rowType) {
+        Map<UserTableRowType,OperatorStoreMaintenancePlan> typesToPlans = indexToTypesToOperators.get(groupIndex);
+        if (typesToPlans == null) {
+            throw new RuntimeException("no update plans found for group index " + groupIndex);
+        }
+        OperatorStoreMaintenancePlan plan = typesToPlans.get(rowType);
         if (plan == null) {
             throw new RuntimeException("no plan found for row type " + rowType + " in GI " + groupIndex);
         }
         return plan;
     }
 
-    public OperatorStoreMaintenancePlans(Schema schema, GroupIndex groupIndex) {
-        this.groupIndex = groupIndex;
-        typesToOperators = Collections.unmodifiableMap(generateGiPlans(schema, this.groupIndex));
+    public OperatorStoreMaintenancePlans(Schema schema, Collection<Group> groups) {
+        indexToTypesToOperators = Collections.unmodifiableMap(generateGiPlans(schema, groups));
     }
 
     /**
@@ -79,7 +84,22 @@ final class OperatorStoreMaintenancePlans {
         return new OperatorStoreMaintenancePlan.BranchTables(schema, groupIndex);
     }
 
-    private static Map<UserTableRowType, OperatorStoreMaintenancePlan> generateGiPlans(Schema schema, GroupIndex groupIndex) {
+    private static Map<GroupIndex, Map<UserTableRowType, OperatorStoreMaintenancePlan>> generateGiPlans(
+            Schema schema,
+            Collection<Group> groups)
+    {
+        Map<GroupIndex,Map<UserTableRowType, OperatorStoreMaintenancePlan>> giToMap
+                 = new HashMap<GroupIndex, Map<UserTableRowType, OperatorStoreMaintenancePlan>>();
+        for (Group group : groups) {
+            for (GroupIndex groupIndex : group.getIndexes()) {
+                Map<UserTableRowType, OperatorStoreMaintenancePlan> map = generateGIPlans(schema, groupIndex);
+                giToMap.put(groupIndex, map);
+            }
+        }
+        return Collections.unmodifiableMap(giToMap);
+    }
+
+    private static Map<UserTableRowType, OperatorStoreMaintenancePlan> generateGIPlans(Schema schema, GroupIndex groupIndex) {
         OperatorStoreMaintenancePlan.BranchTables branchTables = new OperatorStoreMaintenancePlan.BranchTables(schema, groupIndex);
         Map<UserTableRowType, OperatorStoreMaintenancePlan> plansPerType
                 = new HashMap<UserTableRowType, OperatorStoreMaintenancePlan>();
@@ -93,6 +113,5 @@ final class OperatorStoreMaintenancePlans {
 
     // object state
 
-    private Map<UserTableRowType, OperatorStoreMaintenancePlan> typesToOperators;
-    private final GroupIndex groupIndex;
+    private Map<GroupIndex,Map<UserTableRowType, OperatorStoreMaintenancePlan>> indexToTypesToOperators;
 }

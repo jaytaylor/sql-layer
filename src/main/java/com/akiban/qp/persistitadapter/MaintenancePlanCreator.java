@@ -27,22 +27,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 class MaintenancePlanCreator
-        implements CachePair.CachedValueProvider<AkibanInformationSchema, Map<GroupIndex, OperatorStoreMaintenancePlans>>
+        implements CachePair.CachedValueProvider<AkibanInformationSchema, OperatorStoreMaintenancePlans>
 {
 
     // CachedValueProvider interface
 
     @Override
-    public Map<GroupIndex, OperatorStoreMaintenancePlans> valueFor(AkibanInformationSchema ais) {
+    public OperatorStoreMaintenancePlans valueFor(AkibanInformationSchema ais) {
         Schema schema = SchemaCache.globalSchema(ais);
-        Map<GroupIndex, OperatorStoreMaintenancePlans> giToMapMap
-                = new HashMap<GroupIndex, OperatorStoreMaintenancePlans>();
-        for (Group group : ais.getGroups().values()) {
-            for (GroupIndex groupIndex : group.getIndexes()) {
-                giToMapMap.put(groupIndex, new OperatorStoreMaintenancePlans(schema, groupIndex));
-            }
-        }
-        return Collections.unmodifiableMap(giToMapMap);
+        return new OperatorStoreMaintenancePlans(schema, ais.getGroups().values());
     }
 
     // for use by this package (in production)
