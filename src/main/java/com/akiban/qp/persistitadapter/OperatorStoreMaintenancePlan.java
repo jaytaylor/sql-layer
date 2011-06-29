@@ -16,6 +16,7 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.NoLimit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
@@ -24,6 +25,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 final class OperatorStoreMaintenancePlan {
@@ -32,7 +34,7 @@ final class OperatorStoreMaintenancePlan {
         return rootOperator;
     }
 
-    public OperatorStoreMaintenancePlan(OperatorStoreMaintenancePlans.BranchTables branchTables,
+    public OperatorStoreMaintenancePlan(BranchTables branchTables,
                                         GroupIndex groupIndex,
                                         UserTableRowType rowType)
     {
@@ -48,7 +50,7 @@ final class OperatorStoreMaintenancePlan {
             UserTableRowType rowType)
     {
         return createGroupIndexMaintenancePlan(
-                new OperatorStoreMaintenancePlans.BranchTables(schema, groupIndex),
+                new BranchTables(schema, groupIndex),
                 groupIndex,
                 rowType
         );
@@ -57,7 +59,7 @@ final class OperatorStoreMaintenancePlan {
     // for use in this class
 
     private static PhysicalOperator createGroupIndexMaintenancePlan(
-            OperatorStoreMaintenancePlans.BranchTables branchTables,
+            BranchTables branchTables,
             GroupIndex groupIndex,
             UserTableRowType rowType)
     {
@@ -114,5 +116,57 @@ final class OperatorStoreMaintenancePlan {
             ancestors.add(ancestor);
         }
         throw new RuntimeException(rowType + "not found in " + branchTables);
+    }
+
+    // nested classes
+
+    static class BranchTables {
+
+        // BranchTables interface
+
+        public List<UserTableRowType> fromRoot() {
+            return allTablesForBranch;
+        }
+
+        public List<UserTableRowType> fromRootMost() {
+            return onlyBranch;
+        }
+
+        public boolean isEmpty() {
+            return fromRootMost().isEmpty();
+        }
+
+        public UserTableRowType leafMost() {
+            return onlyBranch.get(onlyBranch.size()-1);
+        }
+
+        public UserTableRowType rootMost() {
+            return onlyBranch.get(0);
+        }
+
+        public BranchTables(Schema schema, GroupIndex groupIndex) {
+            List<UserTableRowType> localTables = new ArrayList<UserTableRowType>();
+            UserTable rootmost = groupIndex.rootMostTable();
+            int branchRootmostIndex = -1;
+            for (UserTable table = groupIndex.leafMostTable(); table != null; table = table.parentTable()) {
+                if (table.equals(rootmost)) {
+                    assert branchRootmostIndex == -1 : branchRootmostIndex;
+                    branchRootmostIndex = table.getDepth();
+                }
+                localTables.add(schema.userTableRowType(table));
+            }
+            if (branchRootmostIndex < 0) {
+                throw new RuntimeException("branch root not found! " + rootmost + " within " + localTables);
+            }
+            Collections.reverse(localTables);
+            this.allTablesForBranch = Collections.unmodifiableList(localTables);
+            this.onlyBranch = branchRootmostIndex == 0
+                    ? allTablesForBranch
+                    : allTablesForBranch.subList(branchRootmostIndex, allTablesForBranch.size());
+        }
+
+        // object state
+        private final List<UserTableRowType> allTablesForBranch;
+        private final List<UserTableRowType> onlyBranch;
     }
 }

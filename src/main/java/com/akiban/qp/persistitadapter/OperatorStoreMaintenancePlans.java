@@ -24,10 +24,8 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 final class OperatorStoreMaintenancePlans {
@@ -53,7 +51,7 @@ final class OperatorStoreMaintenancePlans {
      * @return PhysicalOperator
      */
     static PhysicalOperator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex) {
-        BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
+        OperatorStoreMaintenancePlan.BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
 
         PhysicalOperator plan = API.groupScan_Default(groupIndex.getGroup().getGroupTable(), NoLimit.instance());
 
@@ -77,12 +75,12 @@ final class OperatorStoreMaintenancePlans {
 
     // for use in this class
 
-    private static BranchTables branchTablesRootToLeaf(Schema schema, GroupIndex groupIndex) {
-        return new BranchTables(schema, groupIndex);
+    private static OperatorStoreMaintenancePlan.BranchTables branchTablesRootToLeaf(Schema schema, GroupIndex groupIndex) {
+        return new OperatorStoreMaintenancePlan.BranchTables(schema, groupIndex);
     }
 
     private static Map<UserTableRowType, OperatorStoreMaintenancePlan> generateGiPlans(Schema schema, GroupIndex groupIndex) {
-        BranchTables branchTables = new BranchTables(schema, groupIndex);
+        OperatorStoreMaintenancePlan.BranchTables branchTables = new OperatorStoreMaintenancePlan.BranchTables(schema, groupIndex);
         Map<UserTableRowType, OperatorStoreMaintenancePlan> plansPerType
                 = new HashMap<UserTableRowType, OperatorStoreMaintenancePlan>();
         for(UserTable table = groupIndex.leafMostTable(); table != null; table = table.parentTable()) {
@@ -97,56 +95,4 @@ final class OperatorStoreMaintenancePlans {
 
     private Map<UserTableRowType, OperatorStoreMaintenancePlan> typesToOperators;
     private final GroupIndex groupIndex;
-
-    // nested classes
-
-    static class BranchTables {
-
-        // BranchTables interface
-
-        public List<UserTableRowType> fromRoot() {
-            return allTablesForBranch;
-        }
-
-        public List<UserTableRowType> fromRootMost() {
-            return onlyBranch;
-        }
-
-        public boolean isEmpty() {
-            return fromRootMost().isEmpty();
-        }
-
-        public UserTableRowType leafMost() {
-            return onlyBranch.get(onlyBranch.size()-1);
-        }
-
-        public UserTableRowType rootMost() {
-            return onlyBranch.get(0);
-        }
-
-        public BranchTables(Schema schema, GroupIndex groupIndex) {
-            List<UserTableRowType> localTables = new ArrayList<UserTableRowType>();
-            UserTable rootmost = groupIndex.rootMostTable();
-            int branchRootmostIndex = -1;
-            for (UserTable table = groupIndex.leafMostTable(); table != null; table = table.parentTable()) {
-                if (table.equals(rootmost)) {
-                    assert branchRootmostIndex == -1 : branchRootmostIndex;
-                    branchRootmostIndex = table.getDepth();
-                }
-                localTables.add(schema.userTableRowType(table));
-            }
-            if (branchRootmostIndex < 0) {
-                throw new RuntimeException("branch root not found! " + rootmost + " within " + localTables);
-            }
-            Collections.reverse(localTables);
-            this.allTablesForBranch = Collections.unmodifiableList(localTables);
-            this.onlyBranch = branchRootmostIndex == 0
-                    ? allTablesForBranch
-                    : allTablesForBranch.subList(branchRootmostIndex, allTablesForBranch.size());
-        }
-
-        // object state
-        private final List<UserTableRowType> allTablesForBranch;
-        private final List<UserTableRowType> onlyBranch;
-    }
 }
