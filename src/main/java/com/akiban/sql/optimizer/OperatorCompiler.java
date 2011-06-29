@@ -243,7 +243,7 @@ public class OperatorCompiler
             squery.getTables().setLeftBranch(indexTable);
             UserTableRowType tableType = tableRowType(indexTable);
             IndexRowType indexType = schema.indexRowType(iindex);
-            // TODO: Pass tableRowType(index.getLeafMostInner()).
+            // TODO: Pass tableRowType(index.getLeafMostRequired()).
             resultOperator = indexScan_Default(indexType, 
                                                index.isReverse(),
                                                index.getIndexKeyRange());
@@ -504,14 +504,14 @@ public class OperatorCompiler
     // A possible index.
     class IndexUsage implements Comparable<IndexUsage> {
         private Index index;
-        private TableNode rootMostTable, leafMostTable, leafMostInner;
+        private TableNode rootMostTable, leafMostTable, leafMostRequired;
         private List<ColumnCondition> equalityConditions;
         private ColumnCondition lowCondition, highCondition;
         private boolean sorting, reverse;
         
         public IndexUsage(TableIndex index, TableNode table) {
             this.index = index;
-            rootMostTable = leafMostTable = leafMostInner = table;
+            rootMostTable = leafMostTable = leafMostRequired = table;
         }
 
         public IndexUsage(GroupIndex index) {
@@ -524,8 +524,8 @@ public class OperatorCompiler
         public TableNode getLeafMostTable() {
             return leafMostTable;
         }
-        public TableNode getLeafMostInner() {
-            return leafMostInner;
+        public TableNode getLeafMostRequired() {
+            return leafMostRequired;
         }
 
         public Index getIndex() {
@@ -609,13 +609,8 @@ public class OperatorCompiler
                         rootMostTable = table;
                         if (leafMostTable == null)
                             leafMostTable = table;
-                        if (table.isOuter()) {
-                            if (leafMostInner != null)
-                                // Already begun inner joins; can't go back.
-                                return false;
-                        }
-                        else if (leafMostInner == null)
-                            leafMostInner = table;
+                        if ((leafMostRequired == null) && table.isRequired())
+                            leafMostRequired = table;
                     }
                     else if ((userTable == indexLeafTable) ||
                              (userTable == indexRootTable))
@@ -627,7 +622,7 @@ public class OperatorCompiler
                         // the index does not contain orphans.
                         return false;
                     if (userTable == indexRootTable) {
-                        if (leafMostInner == null)
+                        if (leafMostRequired == null)
                             // Root-most is always in index.
                             return false;
                         break;
@@ -745,7 +740,7 @@ public class OperatorCompiler
 
         IndexUsage bestIndex = null;
         for (TableNode table : squery.getTables()) {
-            if (table.isUsed() && !table.isOuter()) {
+            if (table.isUsed() && !table.isOptional()) {
                 for (TableIndex index : table.getTable().getIndexes()) {
                     IndexUsage candidate = new IndexUsage(index, table);
                     bestIndex = betterIndex(squery, bestIndex, candidate);

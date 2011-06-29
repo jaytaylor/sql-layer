@@ -108,7 +108,7 @@ public class SimplifiedQuery
     }
 
     public static class TableNode extends TableTreeBase.TableNodeBase<TableNode> {
-        private boolean used, outer;
+        private boolean used, optional;
         private List<ColumnCondition> conditions;
         private List<SimpleSelectColumn> selectColumns;
         private int branches;
@@ -125,11 +125,14 @@ public class SimplifiedQuery
         }
 
         /** Is this table on the optional end of an outer join? */
-        public boolean isOuter() {
-            return outer;
+        public boolean isOptional() {
+            return optional;
         }
-        public void setOuter(boolean outer) {
-            this.outer = outer;
+        public boolean isRequired() {
+            return !optional;
+        }
+        public void setOptional(boolean optional) {
+            this.optional = optional;
         }
 
         public boolean hasConditions() {
@@ -226,7 +229,7 @@ public class SimplifiedQuery
         }
 
         public void promotedOuterJoin() {
-            table.setOuter(false);
+            table.setOptional(false);
         }
 
         public String toString() {
@@ -794,7 +797,7 @@ public class SimplifiedQuery
         limit = getIntegerConstant(limitClause, "Unsupported LIMIT");
     }
 
-    protected BaseJoinNode getJoinNode(FromTable fromTable, boolean outer)
+    protected BaseJoinNode getJoinNode(FromTable fromTable, boolean optional)
             throws StandardException {
         if (fromTable instanceof FromBaseTable) {
             TableBinding tb = (TableBinding)fromTable.getUserData();
@@ -813,7 +816,7 @@ public class SimplifiedQuery
             if (table.isUsed())
                 throw new UnsupportedSQLException("Unsupported self join");
             table.setUsed(true);
-            table.setOuter(outer);
+            table.setOptional(optional);
             return new TableJoinNode(table);
         }
         else if (fromTable instanceof JoinNode) {
@@ -833,10 +836,10 @@ public class SimplifiedQuery
                 throw new UnsupportedSQLException("Unsupported join type", joinNode);
             }
             return joinNodes(getJoinNode((FromTable)joinNode.getLeftResultSet(),
-                                         outer || ((joinType == JoinType.RIGHT_JOIN) ||
+                                         optional || ((joinType == JoinType.RIGHT_JOIN) ||
                                                    (joinType == JoinType.FULL_JOIN))),
                              getJoinNode((FromTable)joinNode.getRightResultSet(),
-                                         outer || ((joinType == JoinType.LEFT_JOIN) ||
+                                         optional || ((joinType == JoinType.LEFT_JOIN) ||
                                                    (joinType == JoinType.FULL_JOIN))),
                              joinType);
         }
