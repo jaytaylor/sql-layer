@@ -54,7 +54,6 @@ import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.util.CachePair;
 import com.persistit.Exchange;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
