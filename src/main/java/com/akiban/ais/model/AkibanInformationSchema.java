@@ -217,6 +217,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
         }
         for (Group group : groups.values()) {
             visitor.visitGroup(group);
+            group.traversePreOrder(visitor);
         }
     }
 
@@ -239,6 +240,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
             visitor.visitGroupTable(groupTable);
         }
         for (Group group : groups.values()) {
+            group.traversePostOrder(visitor);
             visitor.visitGroup(group);
         }
     }
