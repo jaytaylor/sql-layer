@@ -228,7 +228,7 @@ public class OperatorCompiler
         }
         SimplifiedSelectQuery squery = 
             new SimplifiedSelectQuery(cursor, grouper.getJoinConditions());
-        squery.reorderJoins();
+        squery.promoteImpossibleOuterJoins();
         GroupBinding group = squery.getGroup();
         GroupTable groupTable = group.getGroup().getGroupTable();
         
@@ -361,7 +361,7 @@ public class OperatorCompiler
         FlattenState[] fls = null;
         try {
             tracer.beginEvent(EventTypes.FLATTEN);
-            fls = fl.flatten(squery.getJoins());
+            fls = fl.flatten(squery);
         } finally {
             tracer.endEvent();
         }
@@ -851,10 +851,19 @@ public class OperatorCompiler
             return resultOperator;
         }
 
-        public FlattenState[] flatten(BaseJoinNode join) {
+        public FlattenState[] flatten(SimplifiedQuery squery) {
             FlattenState[] result = new FlattenState[nbranches];
-            for (int i = 0; i < nbranches; i++)
-                result[i] = flatten(join, i);
+            for (int i = 0; i < nbranches; i++) {
+                BaseJoinNode joins = squery.getJoins();
+                if (nbranches > 1)
+                    // Get just one branch so that reordering is only
+                    // within that and not confused by joins to
+                    // another branch, which aren't flattened here.
+                    joins = squery.isolateJoinNodeBranch(joins, (1 << i));
+                joins = squery.reorderJoinNode(joins);
+                // TODO: branch argument is now redundant, but kept for now.
+                result[i] = flatten(joins, i);
+            }
             if (nbranches > 1)
                 Arrays.sort(result, this);
             return result;
