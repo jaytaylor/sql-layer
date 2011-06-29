@@ -54,7 +54,6 @@ import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.util.CachePair;
 import com.persistit.Exchange;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
@@ -64,7 +63,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static com.akiban.qp.physicaloperator.API.ancestorLookup_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
@@ -217,7 +215,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
         for(GroupIndex groupIndex : groupIndexes) {
-            PhysicalOperator plan = MaintenancePlanCreator.groupIndexCreationPlan(adapter.schema(), groupIndex);
+            PhysicalOperator plan = OperatorStoreMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
             runMaintenancePlan(
                     adapter,
                     groupIndex,
@@ -278,7 +276,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             persistitHKey.copyFrom(hEx.getKey());
 
             ArrayBindings bindings = new ArrayBindings(1);
-            bindings.set(MaintenancePlanCreator.HKEY_BINDING_POSITION, persistitHKey);
+            bindings.set(OperatorStoreMaintenancePlan.HKEY_BINDING_POSITION, persistitHKey);
 
             Collection<GroupIndex> branchIndexes = new ArrayList<GroupIndex>();
             for (GroupIndex groupIndex : userTable.getGroup().getIndexes()) {
@@ -291,12 +289,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 if (groupIndex.isUnique()) {
                     throw new UniqueIndexUnsupportedException();
                 }
-                PhysicalOperator plan = groupIndexCreationPlan(
+                OperatorStoreMaintenancePlan plan = groupIndexCreationPlan(
                         ais,
                         groupIndex,
                         adapter.schema().userTableRowType(userTable)
                 );
-                runMaintenancePlan(adapter, groupIndex, plan, bindings, handler);
+                runMaintenancePlan(adapter, groupIndex, plan.rootOperator(), bindings, handler);
             }
         } finally {
             adapter.returnExchange(hEx);
@@ -326,19 +324,11 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
 
-    private PhysicalOperator groupIndexCreationPlan(
+    private OperatorStoreMaintenancePlan groupIndexCreationPlan(
             AkibanInformationSchema ais, GroupIndex groupIndex, UserTableRowType rowType
     ) {
-        Map<GroupIndex, Map<UserTableRowType,PhysicalOperator>> gisToPlansMapMap = maintenancePlans.get(ais);
-        Map<UserTableRowType,PhysicalOperator> plansMap = gisToPlansMapMap.get(groupIndex);
-        if (plansMap == null) {
-            throw new RuntimeException("no plan found for group index " + groupIndex);
-        }
-        PhysicalOperator plan = plansMap.get(rowType);
-        if (plan == null) {
-            throw new RuntimeException("no plan for row type " + rowType + " in group index " + groupIndex);
-        }
-        return plan;
+
+        return OperatorStoreMaintenancePlans.forAis(ais).forRowType(groupIndex, rowType);
     }
 
     // private static methods
@@ -381,11 +371,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
         return rowDescription;
     }
-
-    // object state
-
-    private final CachePair<AkibanInformationSchema, Map<GroupIndex, Map<UserTableRowType,PhysicalOperator>>> maintenancePlans
-            = CachePair.using(new MaintenancePlanCreator());
 
     // consts
     private static final int MAX_RETRIES = 10;

@@ -15,8 +15,6 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.physicaloperator.API;
@@ -25,72 +23,46 @@ import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.qp.util.SchemaCache;
-import com.akiban.util.CachePair;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-class MaintenancePlanCreator
-        implements CachePair.CachedValueProvider<AkibanInformationSchema, Map<GroupIndex, Map<UserTableRowType,PhysicalOperator>>>
-{
+final class OperatorStoreMaintenancePlan {
 
-    // CachedValueProvider interface
-
-    @Override
-    public Map<GroupIndex, Map<UserTableRowType, PhysicalOperator>> valueFor(AkibanInformationSchema ais) {
-        Schema schema = SchemaCache.globalSchema(ais);
-        Map<GroupIndex, Map<UserTableRowType, PhysicalOperator>> giToMapMap
-                = new HashMap<GroupIndex, Map<UserTableRowType, PhysicalOperator>>();
-        for (Group group : ais.getGroups().values()) {
-            for (GroupIndex groupIndex : group.getIndexes()) {
-                Map<UserTableRowType, PhysicalOperator> plansPerType = generateGiPlans(schema, groupIndex);
-                giToMapMap.put(groupIndex, plansPerType);
-            }
-        }
-        return Collections.unmodifiableMap(giToMapMap);
+    public PhysicalOperator rootOperator() {
+        return rootOperator;
     }
 
-    // for use by this package (in production)
-
-    /**
-     * Create plan for the complete selection of all rows of the given GroupIndex (e.g. creating an
-     * index on existing date).
-     * @param schema Schema
-     * @param groupIndex GroupIndex
-     * @return PhysicalOperator
-     */
-    static PhysicalOperator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex) {
-        BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
-
-        PhysicalOperator plan = API.groupScan_Default(groupIndex.getGroup().getGroupTable(), NoLimit.instance());
-
-        RowType parentRowType = null;
-        API.JoinType joinType = API.JoinType.RIGHT_JOIN;
-        for (RowType branchRowType : branchTables.fromRoot()) {
-            if (parentRowType == null) {
-                parentRowType = branchRowType;
-            }
-            else {
-                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType);
-                parentRowType = plan.rowType();
-            }
-            if (branchRowType.equals(branchTables.rootMost())) {
-                joinType = API.JoinType.INNER_JOIN;
-            }
-        }
-
-        return plan;
+    public OperatorStoreMaintenancePlan(BranchTables branchTables,
+                                        GroupIndex groupIndex,
+                                        UserTableRowType rowType)
+    {
+        this.rootOperator = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType);
     }
+
+    private final PhysicalOperator rootOperator;
 
     // for use by unit tests
-    
-    static PhysicalOperator createGroupIndexMaintenancePlan(Schema schema, GroupIndex groupIndex,
-                                                            UserTableRowType rowType) {
-        BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
+    static PhysicalOperator createGroupIndexMaintenancePlan(
+            Schema schema,
+            GroupIndex groupIndex,
+            UserTableRowType rowType)
+    {
+        return createGroupIndexMaintenancePlan(
+                new BranchTables(schema, groupIndex),
+                groupIndex,
+                rowType
+        );
+    }
+
+    // for use in this class
+
+    private static PhysicalOperator createGroupIndexMaintenancePlan(
+            BranchTables branchTables,
+            GroupIndex groupIndex,
+            UserTableRowType rowType)
+    {
         if (branchTables.isEmpty()) {
             throw new RuntimeException("group index has empty branch: " + groupIndex);
         }
@@ -135,22 +107,6 @@ class MaintenancePlanCreator
         return plan;
     }
 
-    // static helpers for use in this class
-
-    private static BranchTables branchTablesRootToLeaf(Schema schema, GroupIndex groupIndex) {
-        return new BranchTables(schema, groupIndex);
-    }
-
-    private static Map<UserTableRowType, PhysicalOperator> generateGiPlans(Schema schema, GroupIndex groupIndex) {
-        Map<UserTableRowType, PhysicalOperator> plansPerType = new HashMap<UserTableRowType, PhysicalOperator>();
-        for(UserTable table = groupIndex.leafMostTable(); table != null; table = table.parentTable()) {
-            UserTableRowType rowType = schema.userTableRowType(table);
-            PhysicalOperator plan = createGroupIndexMaintenancePlan(schema, groupIndex, rowType);
-            plansPerType.put(rowType, plan);
-        }
-        return Collections.unmodifiableMap(plansPerType);
-    }
-
     private static List<RowType> ancestors(RowType rowType, List<? extends RowType> branchTables) {
         List<RowType> ancestors = new ArrayList<RowType>();
         for(RowType ancestor : branchTables) {
@@ -168,7 +124,7 @@ class MaintenancePlanCreator
 
     // nested classes
 
-    private static class BranchTables {
+    static class BranchTables {
 
         // BranchTables interface
 
