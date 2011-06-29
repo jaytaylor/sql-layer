@@ -305,18 +305,18 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     private <A,T extends Throwable> void runMaintenancePlan(
             PersistitAdapter adapter,
             GroupIndex groupIndex,
-            PhysicalOperator plan,
+            PhysicalOperator rootOperator,
             Bindings bindings,
             GroupIndexHandler<A, T> handler, A action
     )
     throws T
     {
-        Cursor cursor = API.cursor(plan, adapter);
+        Cursor cursor = API.cursor(rootOperator, adapter);
         cursor.open(bindings);
         try {
             Row row;
             while ((row = cursor.next()) != null) {
-                if (row.rowType().equals(plan.rowType())) {
+                if (row.rowType().equals(rootOperator.rowType())) {
                     handler.handleRow(action, groupIndex, row);
                 }
             }
@@ -399,30 +399,17 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         public void handleRow(RowAction action, GroupIndex groupIndex, Row row)
         throws PersistitException
         {
+            assert Action.BULK_ADD.equals(action.action()) == (action.sourceTable()==null) : null;
+            UserTable sourceTable = action.sourceTable();
+            GroupIndexPosition sourceRowPosition = positionWithinBranch(groupIndex, sourceTable);
+            if (sourceRowPosition.equals(GroupIndexPosition.BELOW_SEGMENT)) { // asserts sourceRowPosition != null :-)
+                return; // nothing to do
+            }
+
             Exchange exchange = adapter.takeExchange(groupIndex);
             Key key = exchange.getKey();
             key.clear();
             IndexRowComposition irc = groupIndex.indexRowComposition();
-
-            UserTable sourceTable = action.sourceTable();
-            final boolean sourceRowAboveIndex;
-            final UserTable leafMost = groupIndex.leafMostTable();
-            if (sourceTable == null) {
-                assert Action.BULK_ADD.equals(action.action) : action;
-                sourceRowAboveIndex = true;
-            }
-            else if (sourceTable.equals(leafMost)) {
-                sourceRowAboveIndex = false;
-            }
-            else if (sourceTable.isDescendantOf(leafMost)) {
-                return; // nothing to do
-            }
-            else if (groupIndex.rootMostTable().equals(sourceTable)) {
-                sourceRowAboveIndex = false;
-            }
-            else {
-                sourceRowAboveIndex = groupIndex.rootMostTable().isDescendantOf(sourceTable);
-            }
 
             // nullPoint is the point at which we should stop nulling hkey values; needs a better name.
             // This is the last index of the hkey component that should be nulled.
@@ -438,14 +425,18 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 FieldDef fieldDef = rowDef.getFieldDef(column.getPosition());
                 fieldDef.getEncoding().toKey(fieldDef, value, key);
                 boolean isHKeyComponent = i+1 > groupIndex.getColumns().size();
-                if (sourceRowAboveIndex && isHKeyComponent && column.getTable().equals(sourceTable)) {
+                if (sourceRowPosition.isAboveSegment() && isHKeyComponent && column.getTable().equals(sourceTable)) {
                     nullPoint = i;
                 }
             }
 
-            if (!Action.BULK_ADD.equals(action.action()) && sourceRowAboveIndex && nullPoint < 0) {
+            if (!Action.BULK_ADD.equals(action.action()) && sourceRowPosition.isAboveSegment() && nullPoint < 0) {
                 return;
             }
+
+            int rightmostTableDepth = depthFromHKey(groupIndex, row);
+            exchange.getValue().clear();
+            exchange.getValue().put(rightmostTableDepth);
 
             switch (action.action()) {
             case BULK_ADD:
@@ -469,7 +460,45 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
         }
 
-        private boolean nullOutHKey(int nullPoint, GroupIndex groupIndex, Row row, Key key) {
+        private static int depthFromHKey(GroupIndex groupIndex, Row row) {
+            final int targetSegments = row.hKey().segments();
+            for(UserTable table=groupIndex.leafMostTable(), END=groupIndex.rootMostTable().parentTable();
+                    !(table == null || table.equals(END));
+                    table = table.parentTable()
+            ){
+                if (table.hKey().segments().size() == targetSegments) {
+                    return table.getDepth();
+                }
+            }
+            throw new AssertionError(
+                    String.format("couldn't find a table with %d segments for row %s (hkey=%s) in group index %s",
+                            targetSegments, row, row.hKey(), groupIndex
+                    )
+            );
+        }
+
+        private static GroupIndexPosition positionWithinBranch(GroupIndex groupIndex, UserTable table) {
+            final UserTable leafMost = groupIndex.leafMostTable();
+            if (table == null) {
+                return GroupIndexPosition.ABOVE_SEGMENT;
+            }
+            else if (table.equals(leafMost)) {
+                return GroupIndexPosition.WITHIN_SEGMENT;
+            }
+            else if (table.isDescendantOf(leafMost)) {
+                return GroupIndexPosition.BELOW_SEGMENT;
+            }
+            else if (groupIndex.rootMostTable().equals(table)) {
+                return GroupIndexPosition.WITHIN_SEGMENT;
+            }
+            else {
+                return groupIndex.rootMostTable().isDescendantOf(table)
+                        ? GroupIndexPosition.ABOVE_SEGMENT
+                        : GroupIndexPosition.WITHIN_SEGMENT;
+            }
+        }
+
+        private static boolean nullOutHKey(int nullPoint, GroupIndex groupIndex, Row row, Key key) {
             if (nullPoint < 0) {
                 return false;
             }
@@ -500,7 +529,16 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         private final PersistitAdapter adapter;
 
         // nested classes
+        enum GroupIndexPosition {
+            ABOVE_SEGMENT,
+            BELOW_SEGMENT,
+            WITHIN_SEGMENT
+            ;
 
+            public boolean isAboveSegment() { // more readable shorthand
+                return this == ABOVE_SEGMENT;
+            }
+        }
     }
 
     private static class RowAction {

@@ -13,18 +13,26 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.encoding;
+package com.akiban.server.service.instrumentation;
 
-import com.akiban.server.AkServerUtil;
-import com.akiban.server.FieldDef;
+public interface Event {
+    
+    public void start();
+    
+    public void stop();
+    
+    public void reset();
+    
+    public long getLastDuration();
+    
+    public long getTotalTime();
+    
+    public String getName();
+    
+    public void enable();
+    
+    public void disable();
+    
+    public boolean isEnabled();
 
-public class UFloatEncoder extends FloatEncoder {
-    UFloatEncoder() {
-    }
-
-    @Override
-    public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
-        final int intBits = Math.max(encodeFromObject(value), 0);
-        return AkServerUtil.putIntegerByWidth(dest, offset, STORAGE_SIZE, intBits);
-    }
 }

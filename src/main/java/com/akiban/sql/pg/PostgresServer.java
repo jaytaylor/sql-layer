@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.net.*;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /** The PostgreSQL server.
  * Listens of a given port and spawns <code>PostgresServerConnection</code> threads
@@ -36,6 +37,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private Map<Integer,PostgresServerConnection> connections =
         new HashMap<Integer,PostgresServerConnection>();
     private Thread thread;
+    private AtomicBoolean instrumentationEnabled;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
@@ -43,6 +45,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         this.port = port;
         if (statementCacheCapacity > 0)
             statementCache = new PostgresStatementCache(statementCacheCapacity);
+        instrumentationEnabled = new AtomicBoolean(false);
     }
 
     /** Called from the (AkServer's) main thread to start a server
@@ -139,26 +142,6 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     public synchronized void removeConnection(int pid) {
         connections.remove(pid);
     }
-
-    @Override
-    public synchronized Set<Integer> getCurrentConnections() {
-        return new HashSet<Integer>(connections.keySet());
-    }
-
-    @Override
-    public boolean isInstrumentationEnabled(int pid) {
-        return getConnection(pid).isInstrumentationEnabled();
-    }
-
-    @Override
-    public void enableInstrumentation(int pid) {
-        getConnection(pid).enableInstrumentation();
-    }
-    
-    @Override
-    public void disableInstrumentation(int pid) {
-        getConnection(pid).disableInstrumentation();
-    }
     
     @Override
     public String getSqlString(int pid) {
@@ -215,6 +198,68 @@ public class PostgresServer implements Runnable, PostgresMXBean {
             return 0;
         else
             return statementCache.getMisses();
+    }
+    
+    @Override
+    public Set<Integer> getCurrentSessions() {
+        return new HashSet<Integer>(connections.keySet());
+
+    }
+
+    @Override
+    public boolean isInstrumentationEnabled() {
+        return instrumentationEnabled.get();
+    }
+
+    @Override
+    public void enableInstrumentation() {
+        for (PostgresServerConnection conn : connections.values()) {
+            conn.getSessionTracer().enable();
+        }
+        instrumentationEnabled.set(true);
+    }
+
+    @Override
+    public void disableInstrumentation() {
+        for (PostgresServerConnection conn : connections.values()) {
+            conn.getSessionTracer().disable();
+        }
+        instrumentationEnabled.set(false);
+    }
+
+    @Override
+    public boolean isInstrumentationEnabled(int sessionId) {
+        return getConnection(sessionId).isInstrumentationEnabled();
+    }
+
+    @Override
+    public void enableInstrumentation(int sessionId) {
+        getConnection(sessionId).enableInstrumentation();
+    }
+
+    @Override
+    public void disableInstrumentation(int sessionId) {
+        getConnection(sessionId).disableInstrumentation();
+    }
+
+    @Override
+    public Date getStartTime(int sessionId) {
+        return getConnection(sessionId).getSessionTracer().getStartTime();
+    }
+
+    @Override
+    public long getProcessingTime(int sessionId) {
+        return getConnection(sessionId).getSessionTracer().getProcessingTime();
+    }
+
+    @Override
+    public long getEventTime(int sessionId, String eventName) {
+        return getConnection(sessionId).getSessionTracer().getEventTime(eventName);
+    }
+
+    @Override
+    public long getTotalEventTime(int sessionId, String eventName) {
+        return getConnection(sessionId).getSessionTracer().getTotalEventTime(eventName);
     }
     
 }

@@ -37,6 +37,8 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.service.EventTypes;
+import com.akiban.server.service.instrumentation.SessionTracer;
 
 import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;
@@ -187,11 +189,10 @@ public class OperatorCompiler
         }
     }
 
-    public Result compile(DMLStatementNode stmt, List<ParameterNode> params)
-            throws StandardException {
+    public Result compile(SessionTracer tracer, DMLStatementNode stmt, List<ParameterNode> params) throws StandardException {
         switch (stmt.getNodeType()) {
         case NodeTypes.CURSOR_NODE:
-            return compileSelect((CursorNode)stmt, params);
+            return compileSelect(tracer, (CursorNode)stmt, params);
         case NodeTypes.UPDATE_NODE:
             return compileUpdate((UpdateNode)stmt, params);
         case NodeTypes.INSERT_NODE:
@@ -216,10 +217,15 @@ public class OperatorCompiler
 
     enum ProductMethod { HKEY_ORDERED, BY_RUN };
 
-    public Result compileSelect(CursorNode cursor, List<ParameterNode> params) 
+    public Result compileSelect(SessionTracer tracer, CursorNode cursor, List<ParameterNode> params) 
             throws StandardException {
-        // Get into standard form.
-        cursor = (CursorNode)bindAndGroup(cursor);
+        try {
+            // Get into standard form.
+            tracer.beginEvent(EventTypes.BIND_AND_GROUP);
+            cursor = (CursorNode)bindAndGroup(cursor);
+        } finally {
+            tracer.endEvent();
+        }
         SimplifiedSelectQuery squery = 
             new SimplifiedSelectQuery(cursor, grouper.getJoinConditions());
         squery.reorderJoins();
@@ -227,7 +233,13 @@ public class OperatorCompiler
         GroupTable groupTable = group.getGroup().getGroupTable();
         
         // Try to use an index.
-        IndexUsage index = pickBestIndex(squery);
+        IndexUsage index = null;
+        try {
+            tracer.beginEvent(EventTypes.PICK_BEST_INDEX);
+            index = pickBestIndex(squery);
+        } finally {
+            tracer.endEvent();
+        }
         if ((squery.getSortColumns() != null) &&
             !((index != null) && index.isSorting()))
             throw new UnsupportedSQLException("Unsupported ORDER BY: no suitable index on " + squery.getSortColumns());
@@ -346,7 +358,13 @@ public class OperatorCompiler
 
         int nbranches = squery.getTables().colorBranches();
         Flattener fl = new Flattener(resultOperator, nbranches);
-        FlattenState[] fls = fl.flatten(squery.getJoins());
+        FlattenState[] fls = null;
+        try {
+            tracer.beginEvent(EventTypes.FLATTEN);
+            fls = fl.flatten(squery.getJoins());
+        } finally {
+            tracer.endEvent();
+        }
         resultOperator = fl.getResultOperator();
 
         FlattenState fll = fls[0];

@@ -28,6 +28,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     public abstract HKey hKey();
     public abstract boolean isTableIndex();
     public abstract void computeFieldAssociations(Map<Table,Integer> ordinalMap);
+    protected abstract Column indexRowCompositionColumn(HKeyColumn hKeyColumn);
     public abstract Table leafMostTable();
     public abstract Table rootMostTable();
     
@@ -289,7 +290,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
             toHKeyBuilder.toHKeyEntry(ordinal, -1, -1);
 
             for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
-                Column column = hKeyColumn.column();
+                Column column = indexRowCompositionColumn(hKeyColumn);
 
                 if (!indexColumns.contains(column)) {
                     if (indexTable == null) {

@@ -13,18 +13,28 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.encoding;
+package com.akiban.server.service.instrumentation;
 
-import com.akiban.server.AkServerUtil;
-import com.akiban.server.FieldDef;
+import com.akiban.sql.pg.PostgresSessionTracer;
 
-public class UFloatEncoder extends FloatEncoder {
-    UFloatEncoder() {
-    }
+public interface InstrumentationService {
 
-    @Override
-    public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
-        final int intBits = Math.max(encodeFromObject(value), 0);
-        return AkServerUtil.putIntegerByWidth(dest, offset, STORAGE_SIZE, intBits);
-    }
+    public PostgresSessionTracer createSqlSessionTracer(int sessionId);
+        
+    public PostgresSessionTracer getSqlSessionTracer(int sessionId);
+    
+    /*
+     * whether instrumentation is enabled for all sessions
+     */
+    boolean isEnabled();
+    void enable();
+    void disable();
+    
+    /*
+     * whether instrumentation is enabled for a specific session
+     */
+    boolean isEnabled(int sessionId);
+    void enable(int sessionId);
+    void disable(int sessionId);
+    
 }

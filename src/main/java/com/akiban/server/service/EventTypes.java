@@ -13,18 +13,24 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.encoding;
+package com.akiban.server.service;
 
-import com.akiban.server.AkServerUtil;
-import com.akiban.server.FieldDef;
+public class EventTypes {
+    
+    public static final String PROCESS = "sql: process";
+    
+    public static final String PARSE = "sql: parse";
+    
+    public static final String OPTIMIZE = "sql: optimize";
+    
+    public static final String COMPILE = "sql: optimize: compile";
+    
+    public static final String BIND_AND_GROUP = "sql: optimize: bindandgroup";
+    
+    public static final String PICK_BEST_INDEX = "sql: optimize: pickbestindex";
+    
+    public static final String FLATTEN = "sql: optimize: flatten";
+    
+    public static final String EXECUTE = "sql: execute";
 
-public class UFloatEncoder extends FloatEncoder {
-    UFloatEncoder() {
-    }
-
-    @Override
-    public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
-        final int intBits = Math.max(encodeFromObject(value), 0);
-        return AkServerUtil.putIntegerByWidth(dest, offset, STORAGE_SIZE, intBits);
-    }
 }

@@ -80,6 +80,32 @@ public class GroupIndex extends Index
         }
     }
 
+    @Override
+    protected Column indexRowCompositionColumn(HKeyColumn hKeyColumn) {
+        // If we're within the branch segment, we want the root-most equivalent column, bound at the segment.
+        // Otherwise (ie, rootward of the segment), we want the usual, leafward column.
+
+        final int rootMostDepth = rootMostTable().getDepth();
+        final int forTableDepth = hKeyColumn.segment().table().getDepth();
+
+        if (forTableDepth < rootMostDepth) {
+            // table is root of the branch segment; use the standard hkey column
+            return hKeyColumn.column();
+        }
+
+        // table is within the branch segment; use a rootward bias, but no more rootward than the rootmost table
+        for (Column equivalentColumn : hKeyColumn.equivalentColumns()) {
+            int equivalentColumnDepth = equivalentColumn.getUserTable().getDepth();
+            if (equivalentColumnDepth >= rootMostDepth) {
+                return equivalentColumn;
+            }
+        }
+        throw new AssertionError(
+                "no suitable column found for table " + hKeyColumn.segment().table()
+                        + " in " + hKeyColumn.equivalentColumns()
+        );
+    }
+
     private void checkIndexTableInBranch(IndexColumn indexColumn, UserTable indexTable, int indexTableDepth,
             Map.Entry<Integer, UserTable> entry, boolean entryIsRootward)
     {

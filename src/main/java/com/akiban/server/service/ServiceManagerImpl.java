@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.akiban.server.AkServer;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.instrumentation.InstrumentationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.log4jconfig.Log4JConfigurationServiceImpl;
@@ -141,6 +142,11 @@ public class ServiceManagerImpl implements ServiceManager
     public SessionService getSessionService() {
         return getService(SessionService.class);
     }
+    
+    @Override
+    public InstrumentationService getInstrumentationService() {
+        return getService(InstrumentationService.class);
+    }
 
     /**
      * <p>
@@ -224,6 +230,7 @@ public class ServiceManagerImpl implements ServiceManager
         startAndPut(factory.memcacheService(), jmxRegistry);
         startAndPut(factory.networkService(), jmxRegistry);
         startAndPut(factory.postgresService(), jmxRegistry);
+        startAndPut(factory.instrumentationService(), jmxRegistry);
         afterStart();
     }
 
