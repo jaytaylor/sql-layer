@@ -15,6 +15,8 @@
 
 package com.akiban.server.service.dxl;
 
+import com.akiban.ais.io.AISTarget;
+import com.akiban.ais.io.TableSubsetWriter;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
@@ -24,6 +26,7 @@ import com.akiban.ais.model.staticgrouping.Group;
 import com.akiban.ais.model.staticgrouping.Grouping;
 import com.akiban.ais.model.staticgrouping.GroupingVisitorStub;
 import com.akiban.ais.model.staticgrouping.GroupsBuilder;
+import com.akiban.ais.util.AISPrinter;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -87,6 +90,10 @@ class DXLMXBeanImpl implements DXLMXBean {
             ddlFunctions.createIndexes(session, Collections.singleton(index));
         }
         catch(GroupIndex.GroupIndexCreationException e) {
+            LOG.debug(String.format(CREATE_GROUP_INDEX_LOG_FORMAT, groupName, indexName, tableColumnList), e);
+            throw new RuntimeException(e.getMessage());
+        }
+        catch(GroupIndexCreator.GroupIndexCreatorException e) {
             LOG.debug(String.format(CREATE_GROUP_INDEX_LOG_FORMAT, groupName, indexName, tableColumnList), e);
             throw new RuntimeException(e.getMessage());
         }
@@ -194,6 +201,21 @@ class DXLMXBeanImpl implements DXLMXBean {
             }
         }
         return null;
+    }
+
+    @Override
+    public String printAIS() {
+        Session session = ServiceManagerImpl.newSession();
+        try {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            return AISPrinter.toString(ais);
+        }
+        catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+        finally {
+            session.close();
+        }
     }
 
     public List<String> getGrouping(String schema) {
