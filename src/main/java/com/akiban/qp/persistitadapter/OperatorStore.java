@@ -217,7 +217,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
         for(GroupIndex groupIndex : groupIndexes) {
-            PhysicalOperator plan = MaintenancePlanCreator.groupIndexCreationPlan(adapter.schema(), groupIndex);
+            PhysicalOperator plan = OperatorStoreMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
             runMaintenancePlan(
                     adapter,
                     groupIndex,
@@ -291,12 +291,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 if (groupIndex.isUnique()) {
                     throw new UniqueIndexUnsupportedException();
                 }
-                PhysicalOperator plan = groupIndexCreationPlan(
+                OperatorStoreMaintenancePlan plan = groupIndexCreationPlan(
                         ais,
                         groupIndex,
                         adapter.schema().userTableRowType(userTable)
                 );
-                runMaintenancePlan(adapter, groupIndex, plan, bindings, handler);
+                runMaintenancePlan(adapter, groupIndex, plan.rootOperator(), bindings, handler);
             }
         } finally {
             adapter.returnExchange(hEx);
@@ -326,19 +326,15 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
 
-    private PhysicalOperator groupIndexCreationPlan(
+    private OperatorStoreMaintenancePlan groupIndexCreationPlan(
             AkibanInformationSchema ais, GroupIndex groupIndex, UserTableRowType rowType
     ) {
-        Map<GroupIndex, Map<UserTableRowType,PhysicalOperator>> gisToPlansMapMap = maintenancePlans.get(ais);
-        Map<UserTableRowType,PhysicalOperator> plansMap = gisToPlansMapMap.get(groupIndex);
-        if (plansMap == null) {
+        Map<GroupIndex, OperatorStoreMaintenancePlans> gisToPlansMap = maintenancePlans.get(ais);
+        OperatorStoreMaintenancePlans plans = gisToPlansMap.get(groupIndex);
+        if (plans == null) {
             throw new RuntimeException("no plan found for group index " + groupIndex);
         }
-        PhysicalOperator plan = plansMap.get(rowType);
-        if (plan == null) {
-            throw new RuntimeException("no plan for row type " + rowType + " in group index " + groupIndex);
-        }
-        return plan;
+        return plans.forRowType(rowType);
     }
 
     // private static methods
@@ -384,7 +380,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // object state
 
-    private final CachePair<AkibanInformationSchema, Map<GroupIndex, Map<UserTableRowType,PhysicalOperator>>> maintenancePlans
+    private final CachePair<AkibanInformationSchema, Map<GroupIndex, OperatorStoreMaintenancePlans>> maintenancePlans
             = CachePair.using(new MaintenancePlanCreator());
 
     // consts
