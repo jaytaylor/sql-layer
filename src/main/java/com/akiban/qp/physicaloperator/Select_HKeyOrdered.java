@@ -19,6 +19,7 @@ import com.akiban.qp.expression.Expression;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.util.ArgumentValidation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +60,8 @@ class Select_HKeyOrdered extends PhysicalOperator
 
     public Select_HKeyOrdered(PhysicalOperator inputOperator, RowType predicateRowType, Expression predicate)
     {
+        ArgumentValidation.notNull("predicateRowType", predicateRowType);
+        ArgumentValidation.notNull("predicate", predicate);
         this.inputOperator = inputOperator;
         this.predicateRowType = predicateRowType;
         this.predicate = predicate;
@@ -93,7 +96,7 @@ class Select_HKeyOrdered extends PhysicalOperator
                     // New row of predicateRowType
                     if ((Boolean) predicate.evaluate(inputRow, bindings)) {
                         selectedRow.set(inputRow);
-                        row = selectedRow.get();
+                        row = inputRow;
                     }
                 } else if (predicateRowType.ancestorOf(inputRow.rowType())) {
                     // Row's type is a descendent of predicateRowType.
