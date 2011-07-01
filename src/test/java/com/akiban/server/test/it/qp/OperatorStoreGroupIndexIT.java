@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import static com.akiban.qp.persistitadapter.TestOperatorStore.Action.*;
 import static org.junit.Assert.assertEquals;
 
 public final class OperatorStoreGroupIndexIT extends ITBase {
@@ -55,22 +56,21 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 createNewRow(a, 21L, 1L, "Causeway"),
                 createNewRow(c, 2L, "beta")
         );
-        String actionString = "testing! ";
 
         testMaintainedRows(
-                actionString,
+                STORE,
                 createNewRow(c, 1L, "alpha"),
                 // date_sku
-                actionString + "date_sku [02-02-2002, 1111, 1, 11, 100]" + DATE_SKU_COLS,
-                actionString + "date_sku [02-02-2002, 2222, 1, 11, 101]" + DATE_SKU_COLS,
-                actionString + "date_sku [02-02-2002, 3333, 1, 11, 102]" + DATE_SKU_COLS,
+                STORE + "date_sku [02-02-2002, 1111, 1, 11, 100]" + DATE_SKU_COLS,
+                STORE + "date_sku [02-02-2002, 2222, 1, 11, 101]" + DATE_SKU_COLS,
+                STORE + "date_sku [02-02-2002, 3333, 1, 11, 102]" + DATE_SKU_COLS,
                 // sku_name
-                actionString + "sku_name [1111, alpha, 1, 11, 100]" + SKU_NAME_COLS,
-                actionString + "sku_name [2222, alpha, 1, 11, 101]" + SKU_NAME_COLS,
-                actionString + "sku_name [3333, alpha, 1, 11, 102]" + SKU_NAME_COLS,
+                STORE + "sku_name [1111, alpha, 1, 11, 100]" + SKU_NAME_COLS,
+                STORE + "sku_name [2222, alpha, 1, 11, 101]" + SKU_NAME_COLS,
+                STORE + "sku_name [3333, alpha, 1, 11, 102]" + SKU_NAME_COLS,
                 // street_aid_cid
-                actionString + "street_aid_cid [Harrington, 20, 1]" + STREET_AID_CID_COLS,
-                actionString + "street_aid_cid [Causeway, 21, 1]" + STREET_AID_CID_COLS
+                STORE + "street_aid_cid [Harrington, 20, 1]" + STREET_AID_CID_COLS,
+                STORE + "street_aid_cid [Causeway, 21, 1]" + STREET_AID_CID_COLS
         );
     }
 
@@ -82,15 +82,14 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 createNewRow(i, 101L, 11L, 2222),
                 createNewRow(i, 102L, 11L, 3333)
         );
-        String actionString = "orphan test: ";
 
         testMaintainedRows(
-                actionString,
+                STORE,
                 createNewRow(o, 11L, 1L, "02-02-2002"),
                 // date sku
-                actionString + "date_sku [02-02-2002, 1111, 1, 11, 100]" + DATE_SKU_COLS,
-                actionString + "date_sku [02-02-2002, 2222, 1, 11, 101]" + DATE_SKU_COLS,
-                actionString + "date_sku [02-02-2002, 3333, 1, 11, 102]" + DATE_SKU_COLS
+                STORE + "date_sku [02-02-2002, 1111, 1, 11, 100]" + DATE_SKU_COLS,
+                STORE + "date_sku [02-02-2002, 2222, 1, 11, 101]" + DATE_SKU_COLS,
+                STORE + "date_sku [02-02-2002, 3333, 1, 11, 102]" + DATE_SKU_COLS
         );
     }
 
@@ -148,11 +147,11 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
 
     // private methods
 
-    void testMaintainedRows(String action, NewRow targetRow, String... expectedActions) {
+    void testMaintainedRows(TestOperatorStore.Action action, NewRow targetRow, String... expectedActions) {
         RowData rowData = targetRow.toRowData();
-        StringsGIHandler handler = new StringsGIHandler(action);
+        StringsGIHandler handler = new StringsGIHandler();
         try {
-            opStore().testMaintainGroupIndexes(session(), rowData, handler);
+            opStore().testMaintainGroupIndexes(session(), rowData, handler, action);
         } catch (PersistitException e) {
             throw new RuntimeException(e);
         }
@@ -202,7 +201,7 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         // GroupIndexHandler interface
 
         @Override
-        public void handleRow(GroupIndex groupIndex, Row row) {
+        public void handleRow(GroupIndex groupIndex, Row row, Action action) {
             String giName = groupIndex.getIndexName().getName();
             List<Object> fields = new ArrayList<Object>();
             List<Column> columns = new ArrayList<Column>();
@@ -223,13 +222,8 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
             return strings;
         }
 
-        private StringsGIHandler(String action) {
-            this.action = action;
-        }
-
         // object state
 
         private final List<String> strings = new ArrayList<String>();
-        private final String action;
     }
 }

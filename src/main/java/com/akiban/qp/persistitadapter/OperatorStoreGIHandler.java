@@ -23,6 +23,7 @@ import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.FieldDef;
 import com.akiban.server.RowDef;
+import com.akiban.util.ArgumentValidation;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
@@ -32,7 +33,7 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<Persisti
     // GroupIndexHandler interface
 
     @Override
-    public void handleRow(GroupIndex groupIndex, Row row)
+    public void handleRow(GroupIndex groupIndex, Row row, Action action)
     throws PersistitException
     {
         assert Action.BULK_ADD.equals(action) == (sourceTable==null) : null;
@@ -97,16 +98,13 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<Persisti
 
     // class interface
 
-    public static OperatorStore.GroupIndexHandler<PersistitException> forInserting(PersistitAdapter adapter, UserTable userTable) {
-        return new OperatorStoreGIHandler(adapter, userTable, Action.STORE);
-    }
-
-    public static OperatorStore.GroupIndexHandler<PersistitException> forRemoving(PersistitAdapter adapter, UserTable userTable) {
-        return new OperatorStoreGIHandler(adapter, userTable, Action.DELETE);
+    public static OperatorStore.GroupIndexHandler<PersistitException> forTable(PersistitAdapter adapter, UserTable userTable) {
+        ArgumentValidation.notNull("userTable", userTable);
+        return new OperatorStoreGIHandler(adapter, userTable);
     }
 
     public static OperatorStore.GroupIndexHandler<PersistitException> forBuilding(PersistitAdapter adapter) {
-        return new OperatorStoreGIHandler(adapter, null, Action.BULK_ADD);
+        return new OperatorStoreGIHandler(adapter, null);
     }
 
     // for use in this class
@@ -171,17 +169,15 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<Persisti
         return true;
     }
 
-    public OperatorStoreGIHandler(PersistitAdapter adapter, UserTable sourceTable, Action action) {
+    public OperatorStoreGIHandler(PersistitAdapter adapter, UserTable sourceTable) {
         this.adapter = adapter;
         this.sourceTable = sourceTable;
-        this.action = action;
     }
 
     // object state
 
     private final PersistitAdapter adapter;
     private final UserTable sourceTable;
-    private final Action action;
 
     // nested classes
     enum GroupIndexPosition {
@@ -194,6 +190,4 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<Persisti
             return this == ABOVE_SEGMENT;
         }
     }
-
-    public enum Action {STORE, DELETE, BULK_ADD }
 }
