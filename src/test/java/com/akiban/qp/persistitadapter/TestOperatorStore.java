@@ -30,10 +30,10 @@ public class TestOperatorStore extends OperatorStore {
     // TestOperatorStore interface
 
     public <T extends Throwable>
-    void testMaintainGroupIndexes(Session session, RowData rowData, GroupIndexHandler<T> handler, Action action)
+    void testMaintainGroupIndexes(Session session, RowData rowData, GroupIndexHandler<T> handler, Action action, boolean alsoNullKeys)
             throws PersistitException, T
     {
-        super.maintainGroupIndexes(session, rowData, handler, action.equivalentAction);
+        super.maintainGroupIndexes(session, rowData, handler, action.equivalentAction, alsoNullKeys);
     }
 
     // OperatorStore overrides

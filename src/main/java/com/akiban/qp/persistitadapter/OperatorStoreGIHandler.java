@@ -33,7 +33,7 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<Persisti
     // GroupIndexHandler interface
 
     @Override
-    public void handleRow(GroupIndex groupIndex, Row row, Action action)
+    public void handleRow(GroupIndex groupIndex, Row row, Action action, boolean alsoNullHKeys)
     throws PersistitException
     {
         assert Action.BULK_ADD.equals(action) == (sourceTable==null) : null;
