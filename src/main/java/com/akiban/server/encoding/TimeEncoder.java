@@ -24,7 +24,7 @@ import com.akiban.util.AkibanAppender;
 
 /**
  * Encoder for working with time when stored as a 3 byte int encoded as
- * HH*3600 + MM*60 + SS. This is how MySQL stores the SQL TIME type.
+ * HH*10000 + MM*100 + SS. This is how MySQL stores the SQL TIME type.
  * See: http://dev.mysql.com/doc/refman/5.5/en/time.html
  * and  http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
  */
@@ -43,21 +43,24 @@ public final class TimeEncoder extends LongEncoderBase {
                 mul = -1;
                 str = str.substring(1);
             }
+            int hours = 0;
+            int minutes = 0;
+            int seconds = 0;
+            int offset = 0;
             final String values[] = str.split(":");
-            final int scaleArray[] = {3600, 60, 1};
-            int offset;
             switch(values.length) {
-                case 3: offset = 0; break;
-                case 2: offset = 1; break;
-                case 1: offset = 2; break;
+                case 3: hours   = Integer.parseInt(values[offset++]); // fall
+                case 2: minutes = Integer.parseInt(values[offset++]); // fall
+                case 1: seconds = Integer.parseInt(values[offset]);   break;
                 default:
                     throw new IllegalArgumentException("Invalid TIME string");
             }
-            for(int i = 0; i < values.length; ++i, ++offset) {
-                value += Integer.parseInt(values[i]) * scaleArray[offset];
-            }
-            value *= mul;
-        } else if(obj instanceof Number) {
+            minutes += seconds/60;
+            seconds %= 60;
+            hours += minutes/60;
+            minutes %= 60;
+            value = mul * (hours*HOURS_SCALE + minutes*MINUTES_SCALE + seconds);
+        }else if(obj instanceof Number) {
             value = ((Number)obj).intValue();
         } else if(obj != null) {
             throw new IllegalArgumentException("Requires String or Number");
@@ -68,9 +71,9 @@ public final class TimeEncoder extends LongEncoderBase {
     @Override
     public String decodeToString(long value) {
         final int abs = Math.abs((int)value);
-        final int hour = abs / 3600;
-        final int minute = (abs - hour*3600) / 60;
-        final int second = abs - minute*60 - hour*3600;
+        final int hour = abs / HOURS_SCALE;
+        final int minute = (abs - hour*HOURS_SCALE) / MINUTES_SCALE;
+        final int second = abs - hour*HOURS_SCALE - minute*MINUTES_SCALE;
         return String.format("%s%02d:%02d:%02d", abs != value ? "-" : "", hour, minute, second);
     }
 
@@ -83,4 +86,8 @@ public final class TimeEncoder extends LongEncoderBase {
     public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
         toStringQuoted(fieldDef, rowData, sb, quote);
     }
+
+    
+    final static int HOURS_SCALE = 10000;
+    final static int MINUTES_SCALE = 100;
 }
