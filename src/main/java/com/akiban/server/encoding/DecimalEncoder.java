@@ -107,7 +107,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
     private static BigDecimal fromObject(Object obj) {
         final BigDecimal value;
         if(obj == null) {
-            value = new BigDecimal(0);
+            value = BigDecimal.ZERO;
         }
         else if(obj instanceof BigDecimal) {
             value = (BigDecimal)obj;
