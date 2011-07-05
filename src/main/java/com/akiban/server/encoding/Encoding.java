@@ -138,4 +138,10 @@ public interface Encoding<T> {
      * @return The maximum storage size.
      */
     long getMaxKeyStorageSize(final Column column);
+
+    /**
+     * Internal helper for getting the Class of the object returned by toObject.
+     * @return Class expected to be returned.
+     */
+    Class<T> getToObjectClass();
 }

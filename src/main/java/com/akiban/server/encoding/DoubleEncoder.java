@@ -27,7 +27,7 @@ public class DoubleEncoder extends EncodingBase<Double> {
     }
 
     @Override
-    protected Class<Double> getToObjectClass() {
+    public Class<Double> getToObjectClass() {
         return Double.class;
     }
 

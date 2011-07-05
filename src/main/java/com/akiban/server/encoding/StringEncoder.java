@@ -30,7 +30,7 @@ public class StringEncoder extends EncodingBase<String> {
     }
 
     @Override
-    protected Class<String> getToObjectClass() {
+    public Class<String> getToObjectClass() {
         return String.class;
     }
 

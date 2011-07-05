@@ -31,7 +31,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
     }
     
     @Override
-    protected Class<BigDecimal> getToObjectClass() {
+    public Class<BigDecimal> getToObjectClass() {
         return BigDecimal.class;
     }
 

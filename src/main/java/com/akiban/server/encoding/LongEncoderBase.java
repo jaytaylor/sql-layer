@@ -29,7 +29,7 @@ public abstract class LongEncoderBase extends EncodingBase<Long> {
     }
     
     @Override
-    protected Class<Long> getToObjectClass() {
+    public Class<Long> getToObjectClass() {
         return Long.class;
     }
 

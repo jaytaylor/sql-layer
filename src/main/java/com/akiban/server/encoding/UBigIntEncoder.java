@@ -45,7 +45,7 @@ public class UBigIntEncoder extends EncodingBase<BigInteger> {
     }
 
     @Override
-    protected Class<BigInteger> getToObjectClass() {
+    public Class<BigInteger> getToObjectClass() {
         return BigInteger.class;
     }
     

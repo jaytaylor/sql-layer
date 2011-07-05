@@ -31,7 +31,7 @@ public final class VarBinaryEncoder extends EncodingBase<ByteBuffer>{
     }
 
     @Override
-    protected Class<ByteBuffer> getToObjectClass() {
+    public Class<ByteBuffer> getToObjectClass() {
         return ByteBuffer.class;
     }
 

@@ -25,12 +25,6 @@ abstract class EncodingBase<T> implements Encoding<T> {
     EncodingBase() {
     }
 
-    /**
-     * Internal helper for getting the Class of the object returned by toObject.
-     * @return Class expected to be returned.
-     */
-    protected abstract Class<T> getToObjectClass();
-
     protected static long getOffsetAndWidth(FieldDef fieldDef, RowData rowData) {
         return fieldDef.getRowDef().fieldLocation(rowData, fieldDef.getFieldIndex());
     }
