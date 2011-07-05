@@ -30,7 +30,6 @@ import com.akiban.util.Strings;
 import com.persistit.exception.PersistitException;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -40,7 +39,6 @@ import java.util.List;
 
 import static com.akiban.qp.persistitadapter.TestOperatorStore.Action.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 /**
  * <p>A test of the group index maintenance scaffolding. The scaffolding needs to send different rows to the
@@ -72,7 +70,7 @@ import static org.junit.Assert.fail;
  *  <tr>
  *      <th>I</th>
  *      <td>tested</td> <td>tested</td> <td>tested</td> <td>tested</td>
- *      <td>tested</td> <td>tested</td> <td>tested</td> <td>tested</td>
+ *      <td>tested</td> <td>&nbsp;</td> <td>tested</td> <td>tested</td>
  *  </tr>
  * </table>
  *
@@ -118,7 +116,27 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
 
     @Test
     public void basic_existingOI_incomingC() {
-        fail("not yet implemented");
+        createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
+
+        final NewRow target;
+        writeRows(
+                createNewRow(o, 10L, 1L, "04-04-2004"),
+                createNewRow(i, 100L, 10L, 4444),
+                target = createNewRow(c, 1L, "Alpha")
+        );
+
+        testMaintainedRows(
+                STORE,
+                true,
+                target,
+                see(STORE, true, "date_sku", "[04-04-2004, 4444, 1, 10, 100]", DATE_SKU_COLS)
+        );
+        testMaintainedRows(
+                DELETE,
+                true,
+                target,
+                see(DELETE, true, "date_sku", "[04-04-2004, 4444, 1, 10, 100]", DATE_SKU_COLS)
+        );
     }
 
     // Incoming O
@@ -145,17 +163,73 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
 
     @Test
     public void basic_existingCI_incomingO() {
-        fail("not yet implemented");
+        createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
+
+        final NewRow target;
+        writeRows(
+                createNewRow(c, 1L, "alpha"),
+                createNewRow(i, 100, 10L, 1111),
+                target = createNewRow(o, 10L, 1L, "01-01-2001")
+        );
+
+        testMaintainedRows(
+                STORE,
+                true,
+                target,
+                see(STORE, true, "date_sku", "[01-01-2001, 1111, 1, 10, 100]", DATE_SKU_COLS)
+        );
+        testMaintainedRows(
+                DELETE,
+                true,
+                target,
+                see(DELETE, true, "date_sku", "[01-01-2001, 1111, 1, 10, 100]", DATE_SKU_COLS)
+        );
     }
 
     @Test
     public void basic_existingO_incomingO() {
-        fail("not yet implemented");
+        createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
+
+        final NewRow target;
+        writeRows(
+                createNewRow(o, 10L, 1L, "01-01-2001"),
+                target = createNewRow(o, 11L, 1L, "02-02-2002")
+        );
+
+        testMaintainedRows(
+                STORE,
+                true,
+                target
+        );
+        testMaintainedRows(
+                DELETE,
+                true,
+                target
+        );
     }
 
     @Test
     public void basic_existingI_incomingO() {
-        fail("not yet implemented");
+        createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
+
+        final NewRow target;
+        writeRows(
+                createNewRow(i, 100L, 10L, 1111),
+                target = createNewRow(o, 10L, 1L, "03-03-2003")
+        );
+
+        testMaintainedRows(
+                STORE,
+                true,
+                target,
+                see(STORE, true, "date_sku", "[03-03-2003, 1111, 1, 10, 100]", DATE_SKU_COLS)
+        );
+        testMaintainedRows(
+                DELETE,
+                true,
+                target,
+                see(DELETE, true, "date_sku", "[03-03-2003, 1111, 1, 10, 100]", DATE_SKU_COLS)
+        );
     }
 
     // Incoming I
@@ -182,37 +256,145 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
 
     @Test
     public void basic_existingC_incomingI() {
-        fail("not yet implemented");
+        createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
+
+        final NewRow target;
+        writeRows(
+                createNewRow(c, 1L, "one"),
+                target = createNewRow(i, 100L, 10L, 1111)
+        );
+
+        testMaintainedRows(
+                STORE,
+                true,
+                target
+        );
+        testMaintainedRows(
+                DELETE,
+                true,
+                target
+        );
     }
 
     @Test
     public void basic_existingCO_incomingI() {
-        fail("not yet implemented");
+        createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
+
+        final NewRow target;
+        writeRows(
+                createNewRow(c, 1L, "one"),
+                createNewRow(o, 10L, 1L, "1-1-01"),
+                target = createNewRow(i, 100L, 10L, 11111)
+        );
+
+        testMaintainedRows(
+                STORE,
+                true,
+                target,
+                see(STORE, true, "date_sku", "[1-1-01, 11111, 1, 10, 100]", DATE_SKU_COLS)
+        );
+        testMaintainedRows(
+                DELETE,
+                true,
+                target,
+                see(DELETE, true, "date_sku", "[1-1-01, 11111, 1, 10, 100]", DATE_SKU_COLS)
+        );
     }
 
     @Test
     public void basic_existingCI_incomingI() {
-        fail("not yet implemented");
+        createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
+
+        final NewRow target;
+        writeRows(
+                createNewRow(c, 1L, "alpha"),
+                createNewRow(i, 100L, 10L, 1111),
+                target = createNewRow(i, 101L, 10L, 2222)
+        );
+
+        testMaintainedRows(
+                STORE,
+                true,
+                target
+        );
+        testMaintainedRows(
+                DELETE,
+                true,
+                target
+        );
     }
 
     @Test
     public void basic_existingCOI_incomingI() {
-        fail("not yet implemented");
-    }
+        createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
 
-    @Test
-    public void basic_existingO_incomingI() {
-        fail("not yet implemented");
+        final NewRow target;
+        writeRows(
+                createNewRow(c, 1L, "customer one"),
+                createNewRow(o, 10L, 1L, "01-01-2001"),
+                createNewRow(i, 100L, 10L, 1111),
+                target = createNewRow(i, 101L, 10L, 2222)
+        );
+
+        testMaintainedRows(
+                STORE,
+                true,
+                target,
+                see(STORE, true, "date_sku", "[01-01-2001, 2222, 1, 10, 101]", DATE_SKU_COLS)
+        );
+        testMaintainedRows(
+                DELETE,
+                true,
+                target,
+                see(DELETE, true, "date_sku", "[01-01-2001, 2222, 1, 10, 101]", DATE_SKU_COLS)
+        );
     }
 
     @Test
     public void basic_existingOI_incomingI() {
-        fail("not yet implemented");
+        createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
+
+        final NewRow target;
+        writeRows(
+                createNewRow(o, 10L, 1L, "2001-01-01"),
+                createNewRow(i, 100L, 10L, 1234),
+                target = createNewRow(i, 101L, 10L, 5678)
+        );
+
+        testMaintainedRows(
+                STORE,
+                true,
+                target,
+                see(STORE, true, "date_sku", "[2001-01-01, 5678, 1, 10, 101]", DATE_SKU_COLS)
+        );
+        testMaintainedRows(
+                DELETE,
+                true,
+                target,
+                see(DELETE, true, "date_sku", "[2001-01-01, 5678, 1, 10, 101]", DATE_SKU_COLS)
+        );
     }
 
     @Test
     public void basic_existingI_incomingI() {
-        fail("not yet implemented");
+        createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
+
+        final NewRow target;
+        writeRows(
+                createNewRow(i, 100L, 10L, 1234),
+                target = createNewRow(i, 101L, 10L, 5678)
+        );
+
+        testMaintainedRows(
+                STORE,
+                true,
+                target
+        );
+        testMaintainedRows(
+                DELETE,
+                true,
+                target
+        );
     }
 
     // Before and After
