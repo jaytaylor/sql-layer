@@ -38,13 +38,14 @@ final class OperatorStoreMaintenancePlan {
                                         GroupIndex groupIndex,
                                         UserTableRowType rowType)
     {
-        this.rootOperator = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType);
+        PlanCreationStruct struct = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType);
+        this.rootOperator = struct.rootOperator;
     }
 
     private final PhysicalOperator rootOperator;
 
     // for use by unit tests
-    static PhysicalOperator createGroupIndexMaintenancePlan(
+    static PlanCreationStruct createGroupIndexMaintenancePlan(
             Schema schema,
             GroupIndex groupIndex,
             UserTableRowType rowType)
@@ -58,7 +59,7 @@ final class OperatorStoreMaintenancePlan {
 
     // for use in this class
 
-    private static PhysicalOperator createGroupIndexMaintenancePlan(
+    private static PlanCreationStruct createGroupIndexMaintenancePlan(
             BranchTables branchTables,
             GroupIndex groupIndex,
             UserTableRowType rowType)
@@ -70,6 +71,8 @@ final class OperatorStoreMaintenancePlan {
             throw new RuntimeException(rowType + " not in branch for " + groupIndex + ": " + branchTables);
         }
 
+        PlanCreationStruct result = new PlanCreationStruct();
+
         boolean deep = !branchTables.leafMost().equals(rowType);
         PhysicalOperator plan = API.groupScan_Default(
                 groupIndex.getGroup().getGroupTable(),
@@ -78,7 +81,8 @@ final class OperatorStoreMaintenancePlan {
                 deep
         );
         if (branchTables.fromRoot().size() == 1) {
-            return plan;
+            result.rootOperator = plan;
+            return result;
         }
         if (!branchTables.fromRoot().get(0).equals(rowType)) {
             plan = API.ancestorLookup_Default(
@@ -104,7 +108,8 @@ final class OperatorStoreMaintenancePlan {
                 joinType = API.JoinType.INNER_JOIN;
             }
         }
-        return plan;
+        result.rootOperator = plan;
+        return result;
     }
 
     private static List<RowType> ancestors(RowType rowType, List<? extends RowType> branchTables) {
@@ -172,5 +177,10 @@ final class OperatorStoreMaintenancePlan {
         // object state
         private final List<UserTableRowType> allTablesForBranch;
         private final List<UserTableRowType> onlyBranch;
+    }
+
+    static class PlanCreationStruct {
+        public PhysicalOperator rootOperator;
+        public RowType flattenedParentRowType;
     }
 }
