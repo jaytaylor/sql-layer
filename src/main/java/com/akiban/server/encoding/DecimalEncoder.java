@@ -115,6 +115,23 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
         return (full * DECIMAL_TYPE_SIZE) + DECIMAL_BYTE_DIGITS[partial];
     }
 
+    private static BigDecimal fromObject(Object obj) {
+        final BigDecimal value;
+        if(obj == null) {
+            value = new BigDecimal(0);
+        }
+        else if(obj instanceof BigDecimal) {
+            value = (BigDecimal)obj;
+        }
+        else if(obj instanceof Number || obj instanceof String) {
+            value = new BigDecimal(obj.toString());
+        }
+        else {
+            throw new IllegalArgumentException("Must be a Number or String: " + obj);
+        }
+        return value;
+    }
+    
     @Override
     public void toKey(FieldDef fieldDef, RowData rowData, Key key) {
         final long location = fieldDef.getRowDef().fieldLocation(rowData,
@@ -132,7 +149,13 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
 
     @Override
     public void toKey(FieldDef fieldDef, Object value, Key key) {
-        key.append(value);
+        if(value == null) {
+            key.append(null);
+        }
+        else {
+            BigDecimal dec = fromObject(value);
+            key.append(dec);
+        }
     }
 
     /**
@@ -145,23 +168,8 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
     }
 
     @Override
-    public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
-                          int offset) {
-        final String from;
-
-        if (value instanceof BigDecimal) {
-            from = ((BigDecimal) value).toPlainString();
-        } else if (value instanceof Number) {
-            from = ((Number) value).toString();
-        } else if (value instanceof String) {
-            from = (String) value;
-        } else if (value == null) {
-            from = new String();
-        } else {
-            throw new IllegalArgumentException(value
-                    + " must be a Number or a String");
-        }
-
+    public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
+        final String from = fromObject(value).toPlainString();
         final int mask = (from.charAt(0) == '-') ? -1 : 0;
         int fromOff = 0;
 
