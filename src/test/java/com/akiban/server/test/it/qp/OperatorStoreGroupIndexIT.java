@@ -154,13 +154,13 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 STORE,
                 true,
                 target,
-                see(STORE, false, "date_sku", "[01-01-2001, null, 1, 10, null]", DATE_SKU_COLS)
+                see(STORE, true, "date_sku", "[01-01-2001, null, 1, 10, null]", DATE_SKU_COLS)
         );
         testMaintainedRows(
                 DELETE,
                 true,
                 target,
-                see(DELETE, false, "date_sku", "[01-01-2001, null, 1, 10, null]", DATE_SKU_COLS)
+                see(DELETE, true, "date_sku", "[01-01-2001, null, 1, 10, null]", DATE_SKU_COLS)
         );
     }
 
@@ -203,13 +203,13 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 STORE,
                 true,
                 target,
-                see(STORE, true, "date_sku", "[02-02-2002, null, 1, 10, null]", DATE_SKU_COLS)
+                see(STORE, true, "date_sku", "[02-02-2002, null, 1, 11, null]", DATE_SKU_COLS)
         );
         testMaintainedRows(
                 DELETE,
                 true,
                 target,
-                see(DELETE, true, "date_sku", "[02-02-2002, null, 1, 10, null]", DATE_SKU_COLS)
+                see(DELETE, true, "date_sku", "[02-02-2002, null, 1, 11, null]", DATE_SKU_COLS)
         );
     }
 
