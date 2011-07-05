@@ -43,7 +43,7 @@ import static org.junit.Assert.assertEquals;
 public final class OperatorStoreGroupIndexIT extends ITBase {
 
     @Test
-    public void basic() {
+    public void complex() {
         writeRows(
                 createNewRow(c, 1L, "alpha"),
                 createNewRow(o, 10L, 1L, "01-01-2001"),
@@ -122,13 +122,12 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 "street varchar(64)",
                 "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o(c_id) REFERENCES customers(cid)"
         );
+
         final String groupName = getUserTable(SCHEMA,"customers").getGroup().getName();
+
         createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
         createGroupIndex(groupName, "sku_name", "items.sku, customers.name");
-        createGroupIndex(
-                groupName,
-                "street_aid_cid", "addresses.street, addresses.aid, customers.cid"
-        );
+        createGroupIndex(groupName, "street_aid_cid", "addresses.street, addresses.aid, customers.cid");
     }
 
     @After
