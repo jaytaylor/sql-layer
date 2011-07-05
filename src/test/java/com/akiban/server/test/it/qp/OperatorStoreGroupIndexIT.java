@@ -35,6 +35,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import static com.akiban.qp.persistitadapter.TestOperatorStore.Action.*;
@@ -152,12 +153,14 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         testMaintainedRows(
                 STORE,
                 true,
-                target
+                target,
+                see(STORE, false, "date_sku", "[01-01-2001, null, 1, 10, null]", DATE_SKU_COLS)
         );
         testMaintainedRows(
                 DELETE,
                 true,
-                target
+                target,
+                see(DELETE, false, "date_sku", "[01-01-2001, null, 1, 10, null]", DATE_SKU_COLS)
         );
     }
 
@@ -199,12 +202,14 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         testMaintainedRows(
                 STORE,
                 true,
-                target
+                target,
+                see(STORE, true, "date_sku", "[02-02-2002, null, 1, 10, null]", DATE_SKU_COLS)
         );
         testMaintainedRows(
                 DELETE,
                 true,
-                target
+                target,
+                see(DELETE, true, "date_sku", "[02-02-2002, null, 1, 10, null]", DATE_SKU_COLS)
         );
     }
 
@@ -222,13 +227,15 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 STORE,
                 true,
                 target,
-                see(STORE, true, "date_sku", "[03-03-2003, 1111, 1, 10, 100]", DATE_SKU_COLS)
+                see(STORE, true, "date_sku", "[03-03-2003, 1111, 1, 10, 100]", DATE_SKU_COLS),
+                see(DELETE, false, "date_sku", "[03-03-2003, null, 1, 10, null]", DATE_SKU_COLS)
         );
         testMaintainedRows(
                 DELETE,
                 true,
                 target,
-                see(DELETE, true, "date_sku", "[03-03-2003, 1111, 1, 10, 100]", DATE_SKU_COLS)
+                see(DELETE, true, "date_sku", "[03-03-2003, 1111, 1, 10, 100]", DATE_SKU_COLS),
+                see(STORE, false, "date_sku", "[03-03-2003, null, 1, 10, null]", DATE_SKU_COLS)
         );
     }
 
@@ -291,13 +298,15 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 STORE,
                 true,
                 target,
-                see(STORE, true, "date_sku", "[1-1-01, 11111, 1, 10, 100]", DATE_SKU_COLS)
+                see(STORE, true, "date_sku", "[1-1-01, 11111, 1, 10, 100]", DATE_SKU_COLS),
+                see(DELETE, false, "date_sku", "[1-1-01, null, 1, 10, null]", DATE_SKU_COLS)
         );
         testMaintainedRows(
                 DELETE,
                 true,
                 target,
-                see(DELETE, true, "date_sku", "[1-1-01, 11111, 1, 10, 100]", DATE_SKU_COLS)
+                see(DELETE, true, "date_sku", "[1-1-01, 11111, 1, 10, 100]", DATE_SKU_COLS),
+                see(STORE, false, "date_sku", "[1-1-01, null, 1, 10, null]", DATE_SKU_COLS)
         );
     }
 
@@ -457,6 +466,9 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         }
         List<String> actual = Arrays.asList(expectedActions);
         List<String> expected = handler.strings();
+        // the actual order doesn't matter, so sort both lists according to natural order
+        Collections.sort(actual);
+        Collections.sort(expected);
         if (!expected.equals(actual)) {
             assertEquals("updates for " + targetRow, Strings.join(actual), Strings.join(expected));
             // and just in case...
