@@ -103,9 +103,15 @@ final class OperatorStoreMaintenancePlan {
                 parentRowType = branchRowType;
             }
             else {
+                // when we hit the left join of <previous stuff> to <the incoming row>, keep the <previous stuff>
+                // row, and record its type.
+                // For instance, in a COIH schema, with a GI on OIH:
+                // * an incoming O should not keep/record anything
+                // * an incoming I should keep/record CO left join rows
+                // * an incoming H should keep/record COI left join rows
                 if (branchRowType.equals(rowType)) {
                     result.flattenedParentRowType = parentRowType;
-//                    options.add(API.FlattenOption.KEEP_PARENT); // TODO needed for deletes (?)
+                    options.add(API.FlattenOption.KEEP_PARENT);
                 }
                 plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType, options);
                 parentRowType = plan.rowType();
