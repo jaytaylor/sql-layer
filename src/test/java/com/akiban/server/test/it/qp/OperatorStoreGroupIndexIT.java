@@ -30,6 +30,7 @@ import com.akiban.util.Strings;
 import com.persistit.exception.PersistitException;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -39,60 +40,179 @@ import java.util.List;
 
 import static com.akiban.qp.persistitadapter.TestOperatorStore.Action.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
+/**
+ * <p>A test of the group index maintenance scaffolding. The scaffolding needs to send different rows to the
+ * maintenance handler in different situations, summarized by the following table. We won't be testing each
+ * situation, because some of them are very similar. The table will note which situation is being tested.</p>
+ *
+ * <table border=1>
+ *  <tr>
+ *      <th colspan=9>Index on (order.date, item.sku)</th>
+ *  </tr>
+ *  <tr>
+ *      <th rowspan=2>Incoming row</th>
+ *      <th colspan=8>Existing rows</th>
+ *  </tr>
+ *  <tr>
+ *      <th>∅</th>    <th>C</th>   <th>CO</th>   <th>CI</th>
+ *      <th>COI</th>  <th>O</th>   <th>OI</th>   <th>I</th>
+ *  </tr>
+ *  <tr>
+ *      <th>C</th>
+ *      <td>tested</td> <td>&nbsp;</td> <td>&nbsp;</td> <td>&nbsp;</td>
+ *      <td>&nbsp;</td> <td>&nbsp;</td> <td>tested</td> <td>&nbsp;</td>
+ *  </tr>
+ *  <tr>
+ *      <th>O</th>
+ *      <td>tested</td> <td>&nbsp;</td> <td>&nbsp;</td> <td>tested</td>
+ *      <td>&nbsp;</td> <td>tested</td> <td>&nbsp;</td> <td>tested</td>
+ *  </tr>
+ *  <tr>
+ *      <th>I</th>
+ *      <td>tested</td> <td>tested</td> <td>tested</td> <td>tested</td>
+ *      <td>tested</td> <td>tested</td> <td>tested</td> <td>tested</td>
+ *  </tr>
+ * </table>
+ *
+ * <p>The above tests will all have the same format:
+ * <ul>
+ *     <li>name: {@code basic_existingAAA_incomingBBB}</li>
+ *     <li>create the group index</li>
+ *     <li>write the rows, including the incoming row (which will be assigned to a local var)</li>
+ *     <li>test what happens when the incoming row is stored and then deleted</li>
+ * </ul>
+ * </p>
+ *
+ * <p>This works because group index maintenance is handled after normal (not-including-GIs) maintenance for storage,
+ * and after it for deletion. Similarly, updates are handled by deleting the old GI entry, performing the normal update,
+ * then storing the new GI entry.</p>
+ *
+ * <p>In addition to the above "unit-style" tests, we'll also perform some smoke tests of more complex functionality,
+ * like maintenance of multiple indexes.</p>
+ */
 public final class OperatorStoreGroupIndexIT extends ITBase {
 
-    @Test
-    public void complex() {
-        writeRows(
-                createNewRow(c, 1L, "alpha"),
-                createNewRow(o, 10L, 1L, "01-01-2001"),
-                createNewRow(o, 11L, 1L, "02-02-2002"),
-                createNewRow(i, 100L, 11L, 1111),
-                createNewRow(i, 101L, 11L, 2222),
-                createNewRow(i, 102L, 11L, 3333),
-                createNewRow(o, 12L, 1L, "03-03-2003"),
-                createNewRow(a, 20L, 1L, "Harrington"),
-                createNewRow(a, 21L, 1L, "Causeway"),
-                createNewRow(c, 2L, "beta")
-        );
+    // Incoming C
 
+    @Test
+    public void basic_existingNone_incomingC() {
+        createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
+
+        final NewRow target;
+        writeRows(
+                target = createNewRow(c, 1L, "name")
+        );
         testMaintainedRows(
                 STORE,
                 true,
-                createNewRow(c, 1L, "alpha"),
-                // date_sku
-                see(STORE, true, "date_sku", "[02-02-2002, 1111, 1, 11, 100]", DATE_SKU_COLS) ,
-                see(STORE, true, "date_sku", "[02-02-2002, 2222, 1, 11, 101]", DATE_SKU_COLS) ,
-                see(STORE, true, "date_sku", "[02-02-2002, 3333, 1, 11, 102]", DATE_SKU_COLS) ,
-                // sku_name
-                see(STORE, true, "sku_name", "[1111, alpha, 1, 11, 100]", SKU_NAME_COLS) ,
-                see(STORE, true, "sku_name", "[2222, alpha, 1, 11, 101]", SKU_NAME_COLS) ,
-                see(STORE, true, "sku_name", "[3333, alpha, 1, 11, 102]", SKU_NAME_COLS) ,
-                // street_aid_cid
-                see(STORE, true, "street_aid_cid", "[Harrington, 20, 1]", STREET_AID_CID_COLS) ,
-                see(STORE, true, "street_aid_cid", "[Causeway, 21, 1]", STREET_AID_CID_COLS) 
+                target
+        );
+        testMaintainedRows(
+                DELETE,
+                true,
+                target
         );
     }
 
     @Test
-    public void oiIndexOrphanedO() {
-        writeRows(
-                createNewRow(o, 11L, 1L, "02-02-2002"),
-                createNewRow(i, 100L, 11L, 1111),
-                createNewRow(i, 101L, 11L, 2222),
-                createNewRow(i, 102L, 11L, 3333)
-        );
+    public void basic_existingOI_incomingC() {
+        fail("not yet implemented");
+    }
 
+    // Incoming O
+
+    @Test
+    public void basic_existingNone_incomingO() {
+        createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
+
+        final NewRow target;
+        writeRows(
+                target = createNewRow(o, 10L, 1L, "01-01-2001")
+        );
         testMaintainedRows(
                 STORE,
                 true,
-                createNewRow(o, 11L, 1L, "02-02-2002"),
-                // date sku
-                see(STORE, true, "date_sku", "[02-02-2002, 1111, 1, 11, 100]", DATE_SKU_COLS) ,
-                see(STORE, true, "date_sku", "[02-02-2002, 2222, 1, 11, 101]", DATE_SKU_COLS) ,
-                see(STORE, true, "date_sku", "[02-02-2002, 3333, 1, 11, 102]", DATE_SKU_COLS) 
+                target
         );
+        testMaintainedRows(
+                DELETE,
+                true,
+                target
+        );
+    }
+
+    @Test
+    public void basic_existingCI_incomingO() {
+        fail("not yet implemented");
+    }
+
+    @Test
+    public void basic_existingO_incomingO() {
+        fail("not yet implemented");
+    }
+
+    @Test
+    public void basic_existingI_incomingO() {
+        fail("not yet implemented");
+    }
+
+    // Incoming I
+
+    @Test
+    public void basic_existingNone_incomingI() {
+        createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
+
+        final NewRow target;
+        writeRows(
+                target = createNewRow(i, 100L, 10L, 1111)
+        );
+        testMaintainedRows(
+                STORE,
+                true,
+                target
+        );
+        testMaintainedRows(
+                DELETE,
+                true,
+                target
+        );
+    }
+
+    @Test
+    public void basic_existingC_incomingI() {
+        fail("not yet implemented");
+    }
+
+    @Test
+    public void basic_existingCO_incomingI() {
+        fail("not yet implemented");
+    }
+
+    @Test
+    public void basic_existingCI_incomingI() {
+        fail("not yet implemented");
+    }
+
+    @Test
+    public void basic_existingCOI_incomingI() {
+        fail("not yet implemented");
+    }
+
+    @Test
+    public void basic_existingO_incomingI() {
+        fail("not yet implemented");
+    }
+
+    @Test
+    public void basic_existingOI_incomingI() {
+        fail("not yet implemented");
+    }
+
+    @Test
+    public void basic_existingI_incomingI() {
+        fail("not yet implemented");
     }
 
     // Before and After
@@ -123,11 +243,7 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o(c_id) REFERENCES customers(cid)"
         );
 
-        final String groupName = getUserTable(SCHEMA,"customers").getGroup().getName();
-
-        createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
-        createGroupIndex(groupName, "sku_name", "items.sku, customers.name");
-        createGroupIndex(groupName, "street_aid_cid", "addresses.street, addresses.aid, customers.cid");
+        groupName = getUserTable(SCHEMA,"customers").getGroup().getName();
     }
 
     @After
@@ -136,6 +252,7 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         o = null;
         i = null;
         a = null;
+        groupName = null;
         testOperatorStore = null;
     }
 
@@ -179,6 +296,7 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     private Integer o;
     private Integer i;
     private Integer a;
+    private String groupName;
     private TestOperatorStore testOperatorStore;
 
     // const
