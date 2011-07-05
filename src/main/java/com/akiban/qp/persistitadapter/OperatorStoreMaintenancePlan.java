@@ -26,6 +26,7 @@ import com.akiban.qp.rowtype.UserTableRowType;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 
 final class OperatorStoreMaintenancePlan {
@@ -96,16 +97,22 @@ final class OperatorStoreMaintenancePlan {
 
         RowType parentRowType = null;
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;
+        EnumSet<API.FlattenOption> options = EnumSet.noneOf(API.FlattenOption.class);
         for (RowType branchRowType : branchTables.fromRoot()) {
             if (parentRowType == null) {
                 parentRowType = branchRowType;
             }
             else {
-                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType);
+                if (branchRowType.equals(rowType)) {
+                    result.flattenedParentRowType = parentRowType;
+//                    options.add(API.FlattenOption.KEEP_PARENT); // TODO needed for deletes (?)
+                }
+                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType, options);
                 parentRowType = plan.rowType();
+                options.clear();
             }
             if (branchRowType.equals(branchTables.rootMost())) {
-                joinType = API.JoinType.INNER_JOIN;
+                joinType = API.JoinType.LEFT_JOIN;
             }
         }
         result.rootOperator = plan;
