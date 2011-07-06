@@ -44,7 +44,7 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         checkIndex(
                 "name_when",
-                "Bergy, null, 1, null => " + depthOf(o)
+                "Bergy, null, 1, null => " + depthOf(c)
         );
         writeRows(
                 createNewRow(o, 10L, 1L, "01-01-2001")
@@ -77,11 +77,13 @@ public final class GroupIndexUpdateIT extends ITBase {
         // write write write
         writeRows(createNewRow(c, 1L, "Horton"));
         checkIndex(
-                "name_when_sku"
+                "name_when_sku",
+                "Horton, null, null, 1, null, null => " + depthOf(c)
         );
         writeRows(createNewRow(o, 11L, 1L, "01-01-2001"));
         checkIndex(
-                "name_when_sku"
+                "name_when_sku",
+                "Horton, 01-01-2001, null, 1, 11, null => " + depthOf(o)
         );
         writeRows(createNewRow(i, 101L, 11L, 1111));
         checkIndex(
@@ -141,13 +143,14 @@ public final class GroupIndexUpdateIT extends ITBase {
                 "Horton, 01-01-1999, 1111, 1, 11, 101 => " + depthOf(i),
                 "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthOf(i)
         );
-        // delete parent
+        // delete grandparent
         dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
-        checkIndex("name_when_sku");
+        checkIndex("name_when_sku",
+                "Horton, null, null, 1, null, null => " + depthOf(c));
     }
 
     @Test
-    public void createGIOnPopulatedTables() {
+    public void createGIOnFullyPopulatedTables() {
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -156,6 +159,18 @@ public final class GroupIndexUpdateIT extends ITBase {
         createGroupIndex(groupName, "name_when_sku", "c.name, o.when, i.sku");
         checkIndex("name_when_sku",
                 "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i)
+        );
+    }
+
+    @Test
+    public void createGIOnPartiallyPopulatedTables() {
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(o, 11L, 1L, "01-01-2001")
+        );
+        createGroupIndex(groupName, "name_when_sku", "c.name, o.when, i.sku");
+        checkIndex("name_when_sku",
+                "Horton, 01-01-2001, null, 1, 11, null => " + depthOf(o)
         );
     }
 
@@ -462,7 +477,8 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h)
+                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h),
+                "2222, null, 2, 12, 102, null => " + depthOf(i)
         );
 
         dml().updateRow(
@@ -472,7 +488,10 @@ public final class GroupIndexUpdateIT extends ITBase {
                 null
         );
 
-        checkIndex("sku_handling");
+        checkIndex("sku_handling",
+                "1111, don't break, null, 11, 666, 1001 => " + depthOf(h),
+                "2222, null, 2, 12, 102, null => " + depthOf(i)
+        );
     }
 
     @Test
@@ -493,7 +512,9 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h)
+                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h),
+                "2222, null, 2, 12, 102, null => " + depthOf(i),
+                "6666, null, 6, 66, 666, null => " + depthOf(i)
         );
 
         dml().updateRow(
@@ -505,10 +526,12 @@ public final class GroupIndexUpdateIT extends ITBase {
 
         checkIndex(
                 "sku_handling",
+                "1111, null, 1, 11, 101, null => " + depthOf(i),
+                "2222, null, 2, 12, 102, null => " + depthOf(i),
                 "6666, don't break, 6, 66, 666, 1001 => " + depthOf(h)
         );
     }
-
+// TODO I have updated up to here
     @Test
     public void updateOrphansHKeyDirectlyAboveBranch() {
         // branch is I-H, we're modifying the hkey of an I

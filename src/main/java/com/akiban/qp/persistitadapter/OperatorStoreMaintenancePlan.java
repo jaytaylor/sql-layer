@@ -153,10 +153,11 @@ final class OperatorStoreMaintenancePlan {
                     FlattenedRowType flattenedRowType = (FlattenedRowType) parentRowType;
                     result.flatteningRowTypes.add(flattenedRowType);
                 }
-                options.clear();
+                options.remove(API.FlattenOption.KEEP_PARENT);
             }
             if (branchRowType.equals(branchTables.rootMost())) {
                 joinType = API.JoinType.LEFT_JOIN;
+                options.add(API.FlattenOption.LEFT_JOIN_SHORTENS_HKEY);
             }
         }
         result.rootOperator = plan;
