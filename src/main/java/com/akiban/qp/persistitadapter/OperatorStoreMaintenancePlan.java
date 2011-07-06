@@ -183,7 +183,13 @@ final class OperatorStoreMaintenancePlan {
                 options.remove(API.FlattenOption.KEEP_PARENT);
             }
             if (branchRowType.equals(branchTables.rootMost())) {
-                joinType = API.JoinType.INNER_JOIN;
+                // special case if GI starts at group root
+                if (groupIndex.rootMostTable().getDepth() == 0) {
+                    joinType = API.JoinType.LEFT_JOIN;
+                    options.add(API.FlattenOption.LEFT_JOIN_SHORTENS_HKEY);
+                } else {
+                    joinType = API.JoinType.INNER_JOIN;
+                }
             } else if (API.JoinType.INNER_JOIN.equals(joinType)) {
                 joinType = API.JoinType.LEFT_JOIN;
                 options.add(API.FlattenOption.LEFT_JOIN_SHORTENS_HKEY);
