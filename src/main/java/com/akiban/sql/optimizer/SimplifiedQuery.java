@@ -999,7 +999,7 @@ public class SimplifiedQuery
     // allows more reordering.
     // Such outer joins usually arise from programmatically generated
     // queries, such as views.
-    protected void promoteImpossibleOuterJoins() throws StandardException {
+    public void promoteImpossibleOuterJoins() throws StandardException {
         Collection<TableNode> conditionTables = new HashSet<TableNode>();
         for (ColumnCondition condition : conditions) {
             conditionTables.add(condition.getTable());
@@ -1032,7 +1032,7 @@ public class SimplifiedQuery
     // Reorder this join node.
     // A subtree of inner nodes can be completely reordered.
     // An outer join (or a lone inner join) can still commute (changing chirality).
-    protected BaseJoinNode reorderJoinNode(BaseJoinNode join) {
+    public BaseJoinNode reorderJoinNode(BaseJoinNode join) {
         if (countInnerJoins(join) > 1) {
             List<BaseJoinNode> joins = new ArrayList<BaseJoinNode>();
             getInnerJoins(join, joins);
@@ -1058,10 +1058,35 @@ public class SimplifiedQuery
             BaseJoinNode right = jjoin.getRight();
             right = reorderJoinNode(right);
             jjoin.setRight(right);
-            if (left.getMinOrdinal().compareTo(right.getMinOrdinal()) > 0)
+            if (left.getMaxOrdinal().compareTo(right.getMaxOrdinal()) > 0)
                 jjoin.reverse();
         }
         return join;
+    }
+
+    // Isolate this join node to a single branch.
+    public BaseJoinNode isolateJoinNodeBranch(BaseJoinNode join, int mask) {
+        if (join.isTable()) {
+            TableJoinNode tjoin = (TableJoinNode)join;
+            TableNode table = tjoin.getTable();
+            if ((table.getBranches() & mask) != 0)
+                return tjoin;
+            else
+                return null;
+        }
+        else {
+            JoinJoinNode jjoin = (JoinJoinNode)join;
+            BaseJoinNode left = jjoin.getLeft();
+            left = isolateJoinNodeBranch(left, mask);
+            BaseJoinNode right = jjoin.getRight();
+            right = isolateJoinNodeBranch(right, mask);
+            if (left == null)
+                return right;
+            else if (right == null)
+                return left;
+            else
+                return new JoinJoinNode(left, right, jjoin.getJoinType());
+        }
     }
 
     // Find a boolean condition of the given [in]equality type between
