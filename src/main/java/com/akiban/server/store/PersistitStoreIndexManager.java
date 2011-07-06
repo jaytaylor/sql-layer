@@ -150,6 +150,7 @@ public class PersistitStoreIndexManager implements IndexManager {
                     throw new RuntimeException(e);
                 }
                 treeService.getTableStatusCache().truncate(indexAnalysisRowDef.getRowDefId());
+                transaction.commit();
                 break;
 
             } catch (RollbackException re) {
