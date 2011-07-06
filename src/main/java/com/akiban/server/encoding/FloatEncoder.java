@@ -27,7 +27,7 @@ public class FloatEncoder extends EncodingBase<Float> {
     }
 
     @Override
-    protected Class<Float> getToObjectClass() {
+    public Class<Float> getToObjectClass() {
         return Float.class;
     }
 

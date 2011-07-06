@@ -31,7 +31,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
     }
     
     @Override
-    protected Class<BigDecimal> getToObjectClass() {
+    public Class<BigDecimal> getToObjectClass() {
         return BigDecimal.class;
     }
 
@@ -42,79 +42,85 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
     //
     private static final int DECIMAL_TYPE_SIZE = 4;
     private static final int DECIMAL_DIGIT_PER = 9;
-    private static final int DECIMAL_BYTE_DIGITS[] = { 0, 1, 1, 2, 2, 3, 3, 4,
-            4, 4 };
-
+    private static final int DECIMAL_BYTE_DIGITS[] = { 0, 1, 1, 2, 2, 3, 3, 4, 4, 4 };
 
     /**
-     * Unpack an int from a byte buffer when stored high bytes first.
-     * Corresponds to the defines in found in MySQL's myisampack.h
-     *
-     * @param len
-     *            length to pull out of buffer
-     * @param buf
-     *            source array to get bytes from
-     * @param off
-     *            offset to start at in buf
+     * Unpack a big endian integer, of a given length, from a byte array.
+     * @param len length of integer to pull out of buffer
+     * @param buf source array to get bytes from
+     * @param offset position to start at in buf
+     * @return The unpacked integer
      */
-    private static int miUnpack(int len, byte[] buf, int off) {
-        int val = 0;
-
+    private static int unpackIntegerByWidth(int len, byte[] buf, int offset) {
         if (len == 1) {
-            val = buf[off];
+            return buf[offset];
         } else if (len == 2) {
-            val = (buf[off + 0] << 8) | (buf[off + 1] & 0xFF);
+            return (buf[offset] << 24
+                    | (buf[offset+1] & 0xFF) << 16) >> 16;
         } else if (len == 3) {
-            val = (buf[off + 0] << 16) | ((buf[off + 1] & 0xFF) << 8)
-                    | (buf[off + 2] & 0xFF);
-
-            if ((buf[off] & 128) != 0)
-                val |= (255 << 24);
+            return (buf[offset] << 24
+                    | (buf[offset+1] & 0xFF) << 16
+                    | (buf[offset+2] & 0xFF) << 8) >> 8;
         } else if (len == 4) {
-            val = (buf[off + 0] << 24) | ((buf[off + 1] & 0xFF) << 16)
-                    | ((buf[off + 2] & 0xFF) << 8) | (buf[off + 3] & 0xFF);
+            return buf[offset] << 24
+                   | (buf[offset+1] & 0xFF) << 16
+                   | (buf[offset+2] & 0xFF) << 8
+                   | (buf[offset+3] & 0xFF);
         }
 
-        return val;
+        throw new IllegalArgumentException("Unexpected length " + len);
     }
 
     /**
-     * Pack an int into a byte buffer stored with high bytes first.
-     * Corresponds to the defines in found in MySQL's myisampack.h
-     *
-     * @param len
-     *            length to put into buffer
-     * @param val
-     *            value to store in the buffer
-     * @param buf
-     *            destination array to put bytes in
-     * @param offset
-     *            offset to start at in buf
+     * Pack an integer, of a given length, in big endian order into a byte array.
+     * @param len length of integer
+     * @param val value to store in the buffer
+     * @param buf destination array to put bytes in
+     * @param offset position to start at in buf
      */
-    private void miPack(int len, int val, byte[] buf, int offset) {
+    private static void packIntegerByWidth(int len, int val, byte[] buf, int offset) {
         if (len == 1) {
             buf[offset] = (byte) (val);
         } else if (len == 2) {
             buf[offset + 1] = (byte) (val);
-            buf[offset + 0] = (byte) (val >> 8);
+            buf[offset]     = (byte) (val >> 8);
         } else if (len == 3) {
             buf[offset + 2] = (byte) (val);
             buf[offset + 1] = (byte) (val >> 8);
-            buf[offset + 0] = (byte) (val >> 16);
+            buf[offset]     = (byte) (val >> 16);
         } else if (len == 4) {
             buf[offset + 3] = (byte) (val);
             buf[offset + 2] = (byte) (val >> 8);
             buf[offset + 1] = (byte) (val >> 16);
-            buf[offset + 0] = (byte) (val >> 24);
+            buf[offset]     = (byte) (val >> 24);
+        } else {
+            throw new IllegalArgumentException("Unexpected length " + len);
         }
     }
 
-    private int calcBinSize(int digits) {
+    private static int calcBinSize(int digits) {
         int full = digits / DECIMAL_DIGIT_PER;
         int partial = digits % DECIMAL_DIGIT_PER;
         return (full * DECIMAL_TYPE_SIZE) + DECIMAL_BYTE_DIGITS[partial];
     }
 
+    private static BigDecimal fromObject(Object obj) {
+        final BigDecimal value;
+        if(obj == null) {
+            value = BigDecimal.ZERO;
+        }
+        else if(obj instanceof BigDecimal) {
+            value = (BigDecimal)obj;
+        }
+        else if(obj instanceof Number || obj instanceof String) {
+            value = new BigDecimal(obj.toString());
+        }
+        else {
+            throw new IllegalArgumentException("Must be a Number or String: " + obj);
+        }
+        return value;
+    }
+    
     @Override
     public void toKey(FieldDef fieldDef, RowData rowData, Key key) {
         final long location = fieldDef.getRowDef().fieldLocation(rowData,
@@ -132,7 +138,13 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
 
     @Override
     public void toKey(FieldDef fieldDef, Object value, Key key) {
-        key.append(value);
+        if(value == null) {
+            key.append(null);
+        }
+        else {
+            BigDecimal dec = fromObject(value);
+            key.append(dec);
+        }
     }
 
     /**
@@ -145,23 +157,8 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
     }
 
     @Override
-    public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
-                          int offset) {
-        final String from;
-
-        if (value instanceof BigDecimal) {
-            from = ((BigDecimal) value).toPlainString();
-        } else if (value instanceof Number) {
-            from = ((Number) value).toString();
-        } else if (value instanceof String) {
-            from = (String) value;
-        } else if (value == null) {
-            from = new String();
-        } else {
-            throw new IllegalArgumentException(value
-                    + " must be a Number or a String");
-        }
-
+    public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
+        final String from = fromObject(value).toPlainString();
         final int mask = (from.charAt(0) == '-') ? -1 : 0;
         int fromOff = 0;
 
@@ -209,7 +206,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
             }
 
             int count = DECIMAL_BYTE_DIGITS[intPart];
-            miPack(count, sum ^ mask, dest, toItOff);
+            packIntegerByWidth(count, sum ^ mask, dest, toItOff);
 
             toItOff += count;
             fromOff += intPart;
@@ -225,7 +222,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
             }
 
             int count = DECIMAL_TYPE_SIZE;
-            miPack(count, sum ^ mask, dest, toItOff);
+            packIntegerByWidth(count, sum ^ mask, dest, toItOff);
 
             toItOff += count;
             fromOff += DECIMAL_DIGIT_PER;
@@ -244,7 +241,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
             }
 
             int count = DECIMAL_TYPE_SIZE;
-            miPack(count, sum ^ mask, dest, toItOff);
+            packIntegerByWidth(count, sum ^ mask, dest, toItOff);
 
             toItOff += count;
             fromOff += DECIMAL_DIGIT_PER;
@@ -260,7 +257,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
             }
 
             int count = DECIMAL_BYTE_DIGITS[fracPart];
-            miPack(count, sum ^ mask, dest, toItOff);
+            packIntegerByWidth(count, sum ^ mask, dest, toItOff);
 
             toItOff += count;
         }
@@ -276,21 +273,18 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
     @Override
     public void toString(FieldDef fieldDef, RowData rowData,
                          AkibanAppender sb, final Quote quote) {
-        decodeAndParse(fieldDef, rowData, sb);
+        decodeToString(fieldDef, rowData, sb);
     }
 
     /**
-     * Decodes the field into the given StringBuilder and then returns the parsed BigDecimal.
-     * (Always parsing the BigDecimal lets us fail fast if there was a decoding error.)
+     * Decodes the field from the given RowData into the given AkibanAppender.
      * @param fieldDef the field to decode
-     * @param rowData the rowdata taht contains the field
-     * @param sb the stringbuilder to use
-     * @return the parsed BigDecimal
+     * @param rowData the RowData that contains the field
+     * @param sb the appender to use
      * @throws NullPointerException if any arguments are null
      * @throws EncodingException if the string can't be parsed to a BigDecimal; the exception's cause will be a
-     * NumberFormatException
      */
-    private static void decodeAndParse(FieldDef fieldDef, RowData rowData, AkibanAppender sb) {
+    private static void decodeToString(FieldDef fieldDef, RowData rowData, AkibanAppender sb) {
         final int precision = fieldDef.getTypeParameter1().intValue();
         final int scale = fieldDef.getTypeParameter2().intValue();
         final long locationAndOffset = fieldDef.getRowDef().fieldLocation(rowData, fieldDef.getFieldIndex());
@@ -298,7 +292,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
         final byte[] from = rowData.getBytes();
 
         try {
-            decodeAndParse(from, location, precision, scale, sb);
+            decodeToString(from, location, precision, scale, sb);
         } catch (NumberFormatException e) {
             StringBuilder errSb = new StringBuilder();
             errSb.append("in field[");
@@ -314,18 +308,17 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
     }
 
     /**
-     * Decodes bytes into the given StringBuilder and returns the parsed BigDecimal.
+     * Decodes bytes representing the decimal value into the given AkibanAppender.
      * @param from the bytes to parse
      * @param location the starting offset within the "from" array
      * @param precision the decimal's precision
      * @param scale the decimal's scale
      * @param sb the StringBuilder to write to
-     * @return the parsed BigDecimal
      * @throws NullPointerException if from or sb are null
      * @throws NumberFormatException if the parse failed; the exception's message will be the String that we
      * tried to parse
      */
-    static void decodeAndParse(byte[] from, int location, int precision, int scale, AkibanAppender sb) {
+    static void decodeToString(byte[] from, int location, int precision, int scale, AkibanAppender sb) {
         final int intCount = precision - scale;
         final int intFull = intCount / DECIMAL_DIGIT_PER;
         final int intPartial = intCount % DECIMAL_DIGIT_PER;
@@ -345,7 +338,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
         boolean hadOutput = false;
         if (intPartial != 0) {
             int count = DECIMAL_BYTE_DIGITS[intPartial];
-            int x = miUnpack(count, from, curOff) ^ mask;
+            int x = unpackIntegerByWidth(count, from, curOff) ^ mask;
             curOff += count;
             if (x != 0) {
                 hadOutput = true;
@@ -354,7 +347,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
         }
 
         for (int i = 0; i < intFull; ++i) {
-            int x = miUnpack(DECIMAL_TYPE_SIZE, from, curOff) ^ mask;
+            int x = unpackIntegerByWidth(DECIMAL_TYPE_SIZE, from, curOff) ^ mask;
             curOff += DECIMAL_TYPE_SIZE;
 
             if (hadOutput) {
@@ -377,14 +370,14 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
             sb.append('0');
 
         for (int i = 0; i < fracFull; ++i) {
-            int x = miUnpack(DECIMAL_TYPE_SIZE, from, curOff) ^ mask;
+            int x = unpackIntegerByWidth(DECIMAL_TYPE_SIZE, from, curOff) ^ mask;
             curOff += DECIMAL_TYPE_SIZE;
             sb.append(String.format("%09d", x));
         }
 
         if (fracPartial != 0) {
             int count = DECIMAL_BYTE_DIGITS[fracPartial];
-            int x = miUnpack(count, from, curOff) ^ mask;
+            int x = unpackIntegerByWidth(count, from, curOff) ^ mask;
             int width = scale - (fracFull * DECIMAL_DIGIT_PER);
             sb.append(String.format("%0" + width + "d", x));
         }
@@ -396,7 +389,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
     @Override
     public BigDecimal toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
         StringBuilder sb = new StringBuilder(fieldDef.getMaxStorageSize());
-        decodeAndParse(fieldDef, rowData, AkibanAppender.of(sb));
+        decodeToString(fieldDef, rowData, AkibanAppender.of(sb));
         final String createdStr = sb.toString();
         try {
             assert createdStr.isEmpty() == false;
