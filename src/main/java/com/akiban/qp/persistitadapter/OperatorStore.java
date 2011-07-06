@@ -317,7 +317,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                         handler,
                         action,
                         alsoNullKeys,
-                        plan.flattenedAncestorRowType()
+                        plan
                 );
             }
         } finally {
@@ -333,10 +333,11 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             GroupIndexHandler<T> handler,
             GroupIndexHandler.Action action,
             boolean alsoNullKeys,
-            RowType invertActionRowType
+            OperatorStoreMaintenancePlan maintenancePlan
     )
     throws T
     {
+        RowType invertActionRowType = maintenancePlan == null ? null : maintenancePlan.flattenedAncestorRowType();
         Cursor cursor = API.cursor(rootOperator, adapter);
         cursor.open(bindings);
         try {
@@ -344,12 +345,14 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             while ((row = cursor.next()) != null) {
                 if (row.rowType().equals(rootOperator.rowType())) {
                     handler.handleRow(groupIndex, row, action, alsoNullKeys);
+                } else if (row.rowType().equals(invertActionRowType)) {
+                    assert maintenancePlan != null;
+                    handler.handleRow(groupIndex, maintenancePlan.flattenLeft(row), invert(action), false);
                 }
             }
         } finally {
             cursor.close();
         }
-        int $foo = 3;
     }
 
     private OperatorStoreMaintenancePlan groupIndexCreationPlan(
@@ -360,6 +363,14 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     // private static methods
+
+    private static GroupIndexHandler.Action invert(GroupIndexHandler.Action action) {
+        switch (action) {
+        case DELETE: return GroupIndexHandler.Action.STORE;
+        case STORE: return GroupIndexHandler.Action.DELETE;
+        default: throw new UnsupportedOperationException(action.name());
+        }
+    }
 
     private static void runCursor(RowData oldRowData, RowDef rowDef, UpdatePlannable plannable, PersistitAdapter adapter)
             throws DuplicateKeyException, NoSuchRowException

@@ -821,13 +821,11 @@ public class PersistitStore implements Store {
                 //
                 for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
                     for (Index index : userRowDef.getIndexes()) {
-                        if (!index.isHKeyEquivalent()) {
-                            Exchange iEx = getExchange(session, index);
-                            iEx.removeAll();
-                            releaseExchange(session, iEx);
-                        }
-                        indexManager.deleteIndexAnalysis(session, index);
+                        removeIndexTree(session, index);
                     }
+                }
+                for (Index index : groupRowDef.getGroupIndexes()) {
+                    removeIndexTree(session, index);
                 }
                 //
                 // remove the htable tree
@@ -851,6 +849,15 @@ public class PersistitStore implements Store {
                 transaction.end();
             }
         }
+    }
+
+    protected final void removeIndexTree(Session session, Index index) throws PersistitException {
+        if (!index.isHKeyEquivalent()) {
+            Exchange iEx = getExchange(session, index);
+            iEx.removeAll();
+            releaseExchange(session, iEx);
+        }
+        indexManager.deleteIndexAnalysis(session, index);
     }
 
     @Override

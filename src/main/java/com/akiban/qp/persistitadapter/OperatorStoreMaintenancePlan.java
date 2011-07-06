@@ -20,6 +20,9 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.NoLimit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.row.FlattenedRow;
+import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
@@ -39,6 +42,28 @@ final class OperatorStoreMaintenancePlan {
         return flattenedAncestorRowType;
     }
 
+    public Row flattenLeft(Row row) {
+        // validations, validations...
+        assert (flattenedAncestorRowType==null) == (flatteningTypes==null)
+                : flattenedAncestorRowType + ", " + flatteningTypes;
+        if (flattenedAncestorRowType == null) {
+            throw new IllegalStateException("no flattened row defined");
+        }
+        assert !flatteningTypes.isEmpty() : "flatteningTypes is empty";
+        if (!row.rowType().equals(flattenedAncestorRowType)) {
+            throw new IllegalArgumentException(String.format(
+                    "row(%s) is of type %s; required %s", row, row.rowType(), flattenedAncestorRowType()
+            ));
+        }
+
+        // finally :-)
+        Row result = row;
+        for (FlattenedRowType flattenedRowType : flatteningTypes) {
+            result = new FlattenedRow(flattenedRowType, row, null, row.hKey());
+        }
+        return result;
+    }
+
     public OperatorStoreMaintenancePlan(BranchTables branchTables,
                                         GroupIndex groupIndex,
                                         UserTableRowType rowType)
@@ -46,10 +71,12 @@ final class OperatorStoreMaintenancePlan {
         PlanCreationStruct struct = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType);
         this.rootOperator = struct.rootOperator;
         this.flattenedAncestorRowType = struct.flattenedParentRowType;
+        this.flatteningTypes = struct.flatteningRowTypes;
     }
 
     private final PhysicalOperator rootOperator;
     private final RowType flattenedAncestorRowType;
+    private final List<FlattenedRowType> flatteningTypes;
 
     // for use by unit tests
     static PlanCreationStruct createGroupIndexMaintenancePlan(
@@ -118,9 +145,14 @@ final class OperatorStoreMaintenancePlan {
                 if (branchRowType.equals(rowType)) {
                     result.flattenedParentRowType = parentRowType;
                     options.add(API.FlattenOption.KEEP_PARENT);
+                    result.flatteningRowTypes = new ArrayList<FlattenedRowType>();
                 }
                 plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType, options);
                 parentRowType = plan.rowType();
+                if (result.flatteningRowTypes != null) {
+                    FlattenedRowType flattenedRowType = (FlattenedRowType) parentRowType;
+                    result.flatteningRowTypes.add(flattenedRowType);
+                }
                 options.clear();
             }
             if (branchRowType.equals(branchTables.rootMost())) {
@@ -201,5 +233,6 @@ final class OperatorStoreMaintenancePlan {
     static class PlanCreationStruct {
         public PhysicalOperator rootOperator;
         public RowType flattenedParentRowType;
+        public List<FlattenedRowType> flatteningRowTypes;
     }
 }
