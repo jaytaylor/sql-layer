@@ -43,7 +43,8 @@ public final class GroupIndexUpdateIT extends ITBase {
                 createNewRow(c, 1L, "Bergy")
         );
         checkIndex(
-                "name_when"
+                "name_when",
+                "Bergy, null, 1, null => " + depthOf(o)
         );
         writeRows(
                 createNewRow(o, 10L, 1L, "01-01-2001")

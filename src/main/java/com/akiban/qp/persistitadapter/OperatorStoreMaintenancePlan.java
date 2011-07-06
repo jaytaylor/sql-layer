@@ -35,15 +35,21 @@ final class OperatorStoreMaintenancePlan {
         return rootOperator;
     }
 
+    public RowType flattenedAncestorRowType() {
+        return flattenedAncestorRowType;
+    }
+
     public OperatorStoreMaintenancePlan(BranchTables branchTables,
                                         GroupIndex groupIndex,
                                         UserTableRowType rowType)
     {
         PlanCreationStruct struct = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType);
         this.rootOperator = struct.rootOperator;
+        this.flattenedAncestorRowType = struct.flattenedParentRowType;
     }
 
     private final PhysicalOperator rootOperator;
+    private final RowType flattenedAncestorRowType;
 
     // for use by unit tests
     static PlanCreationStruct createGroupIndexMaintenancePlan(

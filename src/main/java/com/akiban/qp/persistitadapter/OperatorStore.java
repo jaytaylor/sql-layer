@@ -37,6 +37,7 @@ import com.akiban.qp.physicaloperator.UpdateFunction;
 import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
@@ -231,7 +232,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     UndefBindings.only(),
                     OperatorStoreGIHandler.forBuilding(adapter),
                     GroupIndexHandler.Action.BULK_ADD,
-                    false
+                    false,
+                    null
             );
         }
     }
@@ -308,7 +310,15 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                         groupIndex,
                         adapter.schema().userTableRowType(userTable)
                 );
-                runMaintenancePlan(adapter, groupIndex, plan.rootOperator(), bindings, handler, action, alsoNullKeys);
+                runMaintenancePlan(adapter,
+                        groupIndex,
+                        plan.rootOperator(),
+                        bindings,
+                        handler,
+                        action,
+                        alsoNullKeys,
+                        plan.flattenedAncestorRowType()
+                );
             }
         } finally {
             adapter.returnExchange(hEx);
@@ -322,7 +332,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             Bindings bindings,
             GroupIndexHandler<T> handler,
             GroupIndexHandler.Action action,
-            boolean alsoNullKeys
+            boolean alsoNullKeys,
+            RowType invertActionRowType
     )
     throws T
     {
@@ -338,6 +349,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         } finally {
             cursor.close();
         }
+        int $foo = 3;
     }
 
     private OperatorStoreMaintenancePlan groupIndexCreationPlan(
