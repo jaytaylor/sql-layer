@@ -169,20 +169,22 @@ final class OperatorStoreMaintenancePlan {
                 // * an incoming O should not keep/record anything
                 // * an incoming I should keep/record CO left join rows
                 // * an incoming H should keep/record COI left join rows
-                if (branchRowType.equals(rowType)) {
+                if (branchRowType.equals(rowType) && API.JoinType.LEFT_JOIN.equals(joinType)) {
                     result.flattenedParentRowType = parentRowType;
                     options.add(API.FlattenOption.KEEP_PARENT);
 //                    result.flatteningRowTypes = new ArrayList<FlattenedRowType>(); // TODO remove?
                 }
                 plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType, options);
                 parentRowType = plan.rowType();
-                if (result.flatteningRowTypes != null) {
-                    FlattenedRowType flattenedRowType = (FlattenedRowType) parentRowType;
-                    result.flatteningRowTypes.add(flattenedRowType);
-                }
+//                if (result.flatteningRowTypes != null) { TODO remove?
+//                    FlattenedRowType flattenedRowType = (FlattenedRowType) parentRowType;
+//                    result.flatteningRowTypes.add(flattenedRowType);
+//                }
                 options.remove(API.FlattenOption.KEEP_PARENT);
             }
             if (branchRowType.equals(branchTables.rootMost())) {
+                joinType = API.JoinType.INNER_JOIN;
+            } else if (API.JoinType.INNER_JOIN.equals(joinType)) {
                 joinType = API.JoinType.LEFT_JOIN;
                 options.add(API.FlattenOption.LEFT_JOIN_SHORTENS_HKEY);
             }
