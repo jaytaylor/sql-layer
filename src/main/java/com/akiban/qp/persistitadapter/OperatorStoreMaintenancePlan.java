@@ -59,7 +59,7 @@ final class OperatorStoreMaintenancePlan {
         // finally :-)
         Row result = row;
         for (FlattenedRowType flattenedRowType : flatteningTypes) {
-            result = new FlattenedRow(flattenedRowType, row, null, row.hKey());
+            result = new FlattenedRow(flattenedRowType, result, null, row.hKey());
         }
         return result;
     }
@@ -69,9 +69,36 @@ final class OperatorStoreMaintenancePlan {
                                         UserTableRowType rowType)
     {
         PlanCreationStruct struct = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType);
+        struct.flatteningRowTypes = flatteningRowTypes(struct);
         this.rootOperator = struct.rootOperator;
         this.flattenedAncestorRowType = struct.flattenedParentRowType;
         this.flatteningTypes = struct.flatteningRowTypes;
+    }
+
+    private List<FlattenedRowType> flatteningRowTypes(PlanCreationStruct struct) {
+        if (struct.flattenedParentRowType == null) {
+            return null;
+        }
+        List<FlattenedRowType> result = new ArrayList<FlattenedRowType>();
+
+        for(RowType rowType = struct.rootOperator.rowType();
+            rowType instanceof FlattenedRowType;
+            rowType = ((FlattenedRowType)rowType).parentType())
+        {
+            result.add((FlattenedRowType)rowType);
+        }
+        Collections.reverse(result);
+
+        RowType ancestorType = struct.flattenedParentRowType;
+        if (ancestorType instanceof FlattenedRowType) {
+            FlattenedRowType asFlattened = (FlattenedRowType) ancestorType;
+            int ancestorTypeIndex = result.indexOf(asFlattened);
+            assert ancestorTypeIndex >= 0 : String.format("%s not found in %s", ancestorType, result);
+            while (ancestorTypeIndex-- >= 0) {
+                result.remove(0);
+            }
+        }
+        return result;
     }
 
     private final PhysicalOperator rootOperator;
@@ -145,7 +172,7 @@ final class OperatorStoreMaintenancePlan {
                 if (branchRowType.equals(rowType)) {
                     result.flattenedParentRowType = parentRowType;
                     options.add(API.FlattenOption.KEEP_PARENT);
-                    result.flatteningRowTypes = new ArrayList<FlattenedRowType>();
+//                    result.flatteningRowTypes = new ArrayList<FlattenedRowType>(); // TODO remove?
                 }
                 plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType, options);
                 parentRowType = plan.rowType();

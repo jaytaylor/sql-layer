@@ -109,7 +109,8 @@ public final class GroupIndexUpdateIT extends ITBase {
         checkIndex("name_when_sku",
                 "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i),
                 "Horton, 01-01-2001, 2222, 1, 11, 102 => " + depthOf(i),
-                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + depthOf(i)
+                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + depthOf(i),
+                "Horton, 02-02-2002, null, 1, 12, null => " + depthOf(o)
         );
 
         // update parent
@@ -122,7 +123,8 @@ public final class GroupIndexUpdateIT extends ITBase {
         checkIndex("name_when_sku",
                 "Horton, 01-01-1999, 1111, 1, 11, 101 => " + depthOf(i),
                 "Horton, 01-01-1999, 2222, 1, 11, 102 => " + depthOf(i),
-                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthOf(i)
+                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthOf(i),
+                "Horton, 02-02-2002, null, 1, 12, null => " + depthOf(o)
         );
         // update child
         dml().updateRow(
@@ -134,19 +136,23 @@ public final class GroupIndexUpdateIT extends ITBase {
         checkIndex("name_when_sku",
                 "Horton, 01-01-1999, 1111, 1, 11, 101 => " + depthOf(i),
                 "Horton, 01-01-1999, 2442, 1, 11, 102 => " + depthOf(i),
-                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthOf(i)
+                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthOf(i),
+                "Horton, 02-02-2002, null, 1, 12, null => " + depthOf(o)
         );
 
         // delete child
         dml().deleteRow(session(), createNewRow(i, 102L, 11L, 222211));
         checkIndex("name_when_sku",
                 "Horton, 01-01-1999, 1111, 1, 11, 101 => " + depthOf(i),
-                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthOf(i)
+                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthOf(i),
+                "Horton, 02-02-2002, null, 1, 12, null => " + depthOf(o)
         );
         // delete grandparent
         dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
         checkIndex("name_when_sku",
-                "Horton, null, null, 1, null, null => " + depthOf(c));
+                "Horton, null, null, 1, null, null => " + depthOf(c),
+                "Horton, 02-02-2002, null, 1, 12, null => " + depthOf(o)
+        );
     }
 
     @Test
