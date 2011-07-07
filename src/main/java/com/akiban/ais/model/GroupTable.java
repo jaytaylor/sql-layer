@@ -15,9 +15,8 @@
 
 package com.akiban.ais.model;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
+
 
 public class GroupTable extends Table
 {
@@ -110,6 +109,7 @@ public class GroupTable extends Table
         super.dropColumns();
     }
 
+    @SuppressWarnings("unused")
     private GroupTable()
     {
         super();

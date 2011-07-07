@@ -71,7 +71,6 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         return !isTableIndex();
     }
 
-    @SuppressWarnings("unused")
     protected Index()
     {
         // GWT

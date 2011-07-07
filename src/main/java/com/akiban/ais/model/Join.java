@@ -81,7 +81,6 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
         return map;
     }
 
-    @SuppressWarnings("unused")
     private Join()
     {
         // GWT requires empty constructor

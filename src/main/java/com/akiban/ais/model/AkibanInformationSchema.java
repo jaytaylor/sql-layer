@@ -451,6 +451,20 @@ public class AkibanInformationSchema implements Serializable, Traversable
         checkTypesNames(out);
     }
 
+    /**
+     * Validates this AIS against the given validations. All validations will run, even if one fails (unless any
+     * throw an unchecked exception).
+     * @param validations the validations to run
+     * @return the result of the validations
+     */
+   public AISValidationResults validate(Collection<? extends AISValidation> validations) {
+       validationFailures = new AISFailureList();
+       for (AISValidation v : validations) {
+           v.validate(this, validationFailures);
+       }
+       return validationFailures; 
+   }
+
     synchronized void invalidateTableIdMap()
     {
         userTablesById = null;
@@ -485,4 +499,18 @@ public class AkibanInformationSchema implements Serializable, Traversable
     private Map<String, Join> joins = new TreeMap<String, Join>();
     private Map<String, Type> types = new TreeMap<String, Type>();
     private CharsetAndCollation charsetAndCollation;
+    private AISFailureList validationFailures; 
+
+    private class AISFailureList extends AISValidationResults implements AISValidationOutput {
+
+        @Override
+        public void reportFailure(AISValidationFailure failure) {
+            if (failure != null) {
+                failureList.add(failure);
+            }
+        }
+        public AISFailureList() {
+            failureList = new LinkedList<AISValidationFailure>();
+        }
+    }
 }
