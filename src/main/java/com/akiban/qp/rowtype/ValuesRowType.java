@@ -15,27 +15,36 @@
 
 package com.akiban.qp.rowtype;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.Expression;
 
-import java.util.Iterator;
-import java.util.List;
-
-public interface Schema
+public class ValuesRowType extends DerivedRowType
 {
-    UserTableRowType userTableRowType(UserTable table);
+    // Object interface
 
-    IndexRowType indexRowType(Index index);
+    @Override
+    public String toString()
+    {
+        return String.format("values(%d)", nfields);
+    }
 
-    FlattenedRowType newFlattenType(RowType parent, RowType child);
 
-    ProjectedRowType newProjectType(List<Expression> columns);
+    // RowType interface
 
-    ProductRowType newProductType(RowType left, RowType right);
+    @Override
+    public int nFields()
+    {
+        return nfields;
+    }
 
-    ValuesRowType newValuesType(int nfields);
+    // ValuesRowType interface
 
-    Iterator<RowType> rowTypes();
+    public ValuesRowType(Schema schema, int typeId, int nfields)
+    {
+        super(schema, typeId);
+        this.nfields = nfields;
+    }
+
+    // Object state
+
+    private final int nfields;
 }

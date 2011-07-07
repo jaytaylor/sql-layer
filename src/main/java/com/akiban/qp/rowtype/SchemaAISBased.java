@@ -67,6 +67,12 @@ public class SchemaAISBased implements Schema
     }
 
     @Override
+    public synchronized ValuesRowType newValuesType(int nfields)
+    {
+        return new ValuesRowType(this, nextTypeId(), nfields);
+    }
+
+    @Override
     public synchronized Iterator<RowType> rowTypes()
     {
         return rowTypes.values().iterator();

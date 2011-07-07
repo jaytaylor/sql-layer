@@ -72,6 +72,14 @@ public class SchemaPerSession implements Schema
     }
 
     @Override
+    public synchronized ValuesRowType newValuesType(int nfields)
+    {
+        ValuesRowType rowType = aisSchema.newValuesType(nfields);
+        rowTypes.put(rowType.typeId(), rowType);
+        return rowType;
+    }
+
+    @Override
     public synchronized Iterator<RowType> rowTypes()
     {
         return new MultiIterator<RowType>(aisSchema.rowTypes(), rowTypes.values().iterator());
