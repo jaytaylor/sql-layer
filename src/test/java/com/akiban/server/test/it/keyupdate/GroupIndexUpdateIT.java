@@ -19,6 +19,7 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.OperatorStore;
+import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.store.IndexRecordVisitor;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.Strings;
@@ -69,6 +70,34 @@ public final class GroupIndexUpdateIT extends ITBase {
                 "name_when",
                 "Bergy, 01-01-2001, 1, 10 => " + depthOf(o)
         );
+    }
+
+    @Test
+    public void deleteSecondOinCO() {
+        createGroupIndex(groupName, "name_when", "c.name, o.when");
+        final NewRow customer, firstOrder, secondOrder;
+        writeRows(
+                customer = createNewRow(c, 1L, "Joe"),
+                firstOrder = createNewRow(o, 11L, 1L, "01-01-01"),
+                secondOrder = createNewRow(o, 12L, 1L, "02-02-02")
+        );
+        checkIndex(
+                "name_when",
+                "Joe, 01-01-01, 1, 11 => " + depthOf(o),
+                "Joe, 02-02-02, 1, 12 => " + depthOf(o)
+        );
+        dml().deleteRow(session(), secondOrder);
+        checkIndex(
+                "name_when",
+                "Joe, 01-01-01, 1, 11 => " + depthOf(o)
+        );
+        dml().deleteRow(session(), firstOrder);
+        checkIndex(
+                "name_when",
+                "Joe, null, 1, null => " + depthOf(c)
+        );
+        dml().deleteRow(session(), customer);
+        checkIndex("name_when");
     }
 
     @Test
