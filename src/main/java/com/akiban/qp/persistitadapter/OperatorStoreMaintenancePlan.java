@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.ThreadPoolExecutor;
 
 final class OperatorStoreMaintenancePlan {
 
@@ -158,7 +159,9 @@ final class OperatorStoreMaintenancePlan {
         RowType parentRowType = null;
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;
         EnumSet<API.FlattenOption> options = EnumSet.noneOf(API.FlattenOption.class);
-        for (RowType branchRowType : branchTables.fromRoot()) {
+        int innerAtDepth = branchTables.rootMost().userTable().getDepth() - 1;
+        boolean useLeft = branchTables.rootMost().userTable().getDepth() == 0;
+        for (UserTableRowType branchRowType : branchTables.fromRoot()) {
             if (parentRowType == null) {
                 parentRowType = branchRowType;
             }
@@ -169,7 +172,7 @@ final class OperatorStoreMaintenancePlan {
                 // * an incoming O should not keep/record anything
                 // * an incoming I should keep/record CO left join rows
                 // * an incoming H should keep/record COI left join rows
-                if (branchRowType.equals(rowType) && API.JoinType.LEFT_JOIN.equals(joinType)) {
+                if (branchRowType.equals(rowType) && API.JoinType.LEFT_JOIN.equals(joinType) ) {
                     result.flattenedParentRowType = parentRowType;
                     options.add(API.FlattenOption.KEEP_PARENT);
 //                    result.flatteningRowTypes = new ArrayList<FlattenedRowType>(); // TODO remove?
@@ -182,15 +185,9 @@ final class OperatorStoreMaintenancePlan {
 //                }
                 options.remove(API.FlattenOption.KEEP_PARENT);
             }
-            if (branchRowType.equals(branchTables.rootMost())) {
-                // special case if GI starts at group root
-                if (groupIndex.rootMostTable().getDepth() == 0) {
-                    joinType = API.JoinType.LEFT_JOIN;
-                    options.add(API.FlattenOption.LEFT_JOIN_SHORTENS_HKEY);
-                } else {
-                    joinType = API.JoinType.INNER_JOIN;
-                }
-            } else if (API.JoinType.INNER_JOIN.equals(joinType)) {
+            if (branchRowType.userTable().getDepth() == innerAtDepth) {
+                useLeft = true;
+            } else if (useLeft) {
                 joinType = API.JoinType.LEFT_JOIN;
                 options.add(API.FlattenOption.LEFT_JOIN_SHORTENS_HKEY);
             }
