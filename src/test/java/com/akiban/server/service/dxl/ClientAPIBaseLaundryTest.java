@@ -52,6 +52,8 @@ public final class ClientAPIBaseLaundryTest {
             ErrorCode.TABLE_DEFINITION_CHANGED, // DMLFunctions will throw this directly
 
             ErrorCode.NO_REFERENCED_ROW, // TODO: not sure what this means!
+            
+            ErrorCode.VALIDATION_FAILURE, // TODO: Validation failures still in testing. 
     };
 
     @Parameterized.Parameters
