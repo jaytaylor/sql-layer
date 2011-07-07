@@ -425,16 +425,24 @@ public class OperatorCompiler
 
         int ncols = squery.getSelectColumns().size();
         List<ResultColumnBase> resultColumns = new ArrayList<ResultColumnBase>(ncols);
-        List<Expression> resultExpressions = new ArrayList<Expression>(ncols);
-        for (SimpleSelectColumn selectColumn : squery.getSelectColumns()) {
-            ResultColumnBase resultColumn = getResultColumn(selectColumn);
-            resultColumns.add(resultColumn);
-            Expression resultExpression = 
-                selectColumn.getExpression().generateExpression(fieldOffsets);
-            resultExpressions.add(resultExpression);
+        if ((ncols == 1) &&
+            (squery.getSelectColumns().get(0).getExpression() instanceof 
+             SimplifiedQuery.CountStarExpression)) {
+            resultColumns.add(getResultColumn(squery.getSelectColumns().get(0)));
+            resultOperator = count_Default(resultOperator, resultRowType);
         }
-        resultOperator = project_Default(resultOperator, resultRowType, 
-                                         resultExpressions);
+        else {
+            List<Expression> resultExpressions = new ArrayList<Expression>(ncols);
+            for (SimpleSelectColumn selectColumn : squery.getSelectColumns()) {
+                ResultColumnBase resultColumn = getResultColumn(selectColumn);
+                resultColumns.add(resultColumn);
+                Expression resultExpression = 
+                    selectColumn.getExpression().generateExpression(fieldOffsets);
+                resultExpressions.add(resultExpression);
+            }
+            resultOperator = project_Default(resultOperator, resultRowType, 
+                                             resultExpressions);
+        }
         resultRowType = resultOperator.rowType();
 
         int offset = squery.getOffset();
@@ -701,7 +709,7 @@ public class OperatorCompiler
         }
 
         // Generate key range bounds.
-        public IndexKeyRange getIndexKeyRange() {
+        public IndexKeyRange getIndexKeyRange() throws StandardException {
             if ((equalityConditions == null) &&
                 (lowCondition == null) && (highCondition == null))
                 return new IndexKeyRange(null, false, null, false);
