@@ -25,6 +25,7 @@ public class GroupTable extends Table
                                         String tableName,
                                         Integer tableId)
     {
+        ais.checkMutability();
         GroupTable groupTable = new GroupTable(ais, schemaName, tableName, tableId);
         ais.addGroupTable(groupTable);
         return groupTable;

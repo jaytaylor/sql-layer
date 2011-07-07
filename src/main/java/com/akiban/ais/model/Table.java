@@ -30,6 +30,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 
     public static Table create(AkibanInformationSchema ais, Map<String, Object> map)
     {
+        ais.checkMutability();
         String tableType = (String) map.get(table_tableType);
         String schemaName = (String) map.get(table_schemaName);
         String tableName = (String) map.get(table_tableName);
@@ -65,6 +66,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     protected Table(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
         this();
+        ais.checkMutability();
         this.ais = ais;
         this.tableName = new TableName(schemaName, tableName);
         this.tableId = tableId;
@@ -276,9 +278,15 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         {
             return this == AKIBAN_STANDARD;
         }
-
     }
 
+    void checkMutability() {
+        ais.checkMutability();
+    }
+    /**
+     * @deprecated - use AkibanInfomationSchema#validate() instead
+     * @param out
+     */
     public void checkIntegrity(List<String> out)
     {
         if (tableName == null) {

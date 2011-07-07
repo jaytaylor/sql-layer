@@ -71,6 +71,7 @@ public class IndexColumn implements Serializable, ModelNames
     
     public static IndexColumn create(AkibanInformationSchema ais, Map<String, Object> map)
     {
+        ais.checkMutability();
         IndexColumn indexColumn = null;
         String schemaName = (String) map.get(indexColumn_schemaName);
         String tableName = (String) map.get(indexColumn_tableName);

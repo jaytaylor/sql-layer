@@ -23,6 +23,7 @@ public class Column implements Serializable, ModelNames
 {
     public static Column create(AkibanInformationSchema ais, Map<String, Object> map)
     {
+        ais.checkMutability();
         Column column = null;
         String schemaName = (String) map.get(column_schemaName);
         String tableName = (String) map.get(column_tableName);
@@ -399,6 +400,7 @@ public class Column implements Serializable, ModelNames
                    Integer position,
                    Type type)
     {
+        table.checkMutability();
         this.table = table;
         this.columnName = columnName;
         this.position = position;

@@ -12,13 +12,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package com.akiban.ais.model;
+package com.akiban.ais.model.validation;
 
-public interface AISValidation {
-    /**
-     * Validates the given AIS.
-     * @param ais the ais to validate
-     * @return a AISValidationFailure if there was a problem, or null if the validation checked out
-     */
-    void validate(AkibanInformationSchema ais, AISValidationOutput output);
+
+public interface AISValidationOutput {
+    public void reportFailure(AISValidationFailure failure);
 }

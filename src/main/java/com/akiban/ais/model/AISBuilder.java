@@ -36,7 +36,7 @@ public class
     // API for creating capturing basic schema information
 
     public AISBuilder() {
-        this(new DefaultNameGenerator());
+        this(new AkibanInformationSchema(), new DefaultNameGenerator());
     }
 
     public AISBuilder(NameGenerator nameGenerator) {

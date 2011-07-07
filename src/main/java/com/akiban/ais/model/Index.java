@@ -34,6 +34,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     
     public static Index create(AkibanInformationSchema ais, Map<String, Object> map)
     {
+        ais.checkMutability();
         Index index = null;
         String schemaName = (String) map.get(index_schemaName);
         String tableName = (String) map.get(index_tableName);

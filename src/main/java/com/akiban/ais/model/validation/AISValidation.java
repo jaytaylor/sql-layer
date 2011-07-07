@@ -12,30 +12,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package com.akiban.ais.model;
+package com.akiban.ais.model.validation;
 
-import com.akiban.message.ErrorCode;
+import com.akiban.ais.model.AkibanInformationSchema;
 
-public class AISValidationFailure {
-    public AISValidationFailure(ErrorCode errorCode, String message) {
-        error = errorCode;
-        this.message = message;
-    }
-    public ErrorCode errorCode() {
-        return error;
-    }
-    public String message() {
-        return message;
-    }
-    public int hashCode() {              // uses errorCode, message
-        return 1;
-    }
-    public boolean equals(Object other) { // uses errorCode, message
-        return false; 
-    }
-    
-    private ErrorCode error;
-    private String message;
-
+public interface AISValidation {
+    /**
+     * Validates the given AIS.
+     * @param ais the ais to validate
+     * @return a AISValidationFailure if there was a problem, or null if the validation checked out
+     */
+    void validate(AkibanInformationSchema ais, AISValidationOutput output);
 }
-

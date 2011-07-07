@@ -242,6 +242,7 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
 
     private Join(AkibanInformationSchema ais, String joinName, UserTable parent, UserTable child)
     {
+        ais.checkMutability();
         this.ais = ais;
         this.joinName = joinName;
         this.parent = parent;

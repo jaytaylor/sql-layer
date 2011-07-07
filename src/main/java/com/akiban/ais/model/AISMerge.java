@@ -14,13 +14,8 @@
  */
 package com.akiban.ais.model;
 
-import java.util.LinkedList;
-import java.util.List;
-
 import com.akiban.ais.io.AISTarget;
 import com.akiban.ais.io.Writer;
-import com.akiban.message.ErrorCode;
-import com.akiban.server.InvalidOperationException;
 
 /**
  * AISMerge is designed to merge a single UserTable definition into an existing AIS. The merge process 
