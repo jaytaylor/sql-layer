@@ -53,7 +53,7 @@ public class AISMergeTest {
         assertNotNull(s.getUserTable(SCHEMA, TABLE).getAIS());
         
         AISMerge merge = new AISMerge (t, s.getUserTable(TABLENAME));
-        t = merge.validate().merge().getAIS();
+        t = merge.merge().getAIS();
         UserTable targetTable = t.getUserTable(TABLENAME);
         UserTable sourceTable = s.getUserTable(TABLENAME);
 
@@ -87,7 +87,7 @@ public class AISMergeTest {
         b.indexColumn(SCHEMA, TABLE, "PRIMARY", "c1", 0, true, 0);
         b.basicSchemaIsComplete();
         AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
-        t = merge.validate().merge().getAIS();
+        t = merge.merge().getAIS();
         
         UserTable targetTable = t.getUserTable(TABLENAME);
         UserTable sourceTable = s.getUserTable(TABLENAME);
@@ -110,7 +110,7 @@ public class AISMergeTest {
         b.indexColumn(SCHEMA, TABLE, "c1", "c1", 0, true, 0);
         
         AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
-        t = merge.validate().merge().getAIS();
+        t = merge.merge().getAIS();
         
         UserTable targetTable = t.getUserTable(TABLENAME);
         UserTable sourceTable = s.getUserTable(TABLENAME);

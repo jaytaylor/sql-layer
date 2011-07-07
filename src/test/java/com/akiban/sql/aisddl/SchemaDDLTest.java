@@ -16,7 +16,6 @@ package com.akiban.sql.aisddl;
 
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.fail;
 import org.junit.Test;
 import org.junit.Before;
 
@@ -28,7 +27,6 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.CreateSchemaNode;
 import com.akiban.sql.parser.DropSchemaNode;
-import com.akiban.sql.StandardException;
 
 
 public class SchemaDDLTest {

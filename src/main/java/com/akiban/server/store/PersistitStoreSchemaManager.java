@@ -147,7 +147,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         //final UserTable newTable = newAIS.getUserTables().values().iterator().next();
         
         AISMerge merge = new AISMerge (ais, newTable);
-        merge.validate().merge();
+        merge.merge();
         
         final String schemaName = newTable.getName().getSchemaName();
         final String originalDDL =  new DDLGenerator().createTable(newTable);

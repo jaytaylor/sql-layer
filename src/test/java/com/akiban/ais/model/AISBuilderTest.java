@@ -21,8 +21,6 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
-import com.akiban.ais.metamodel.MetaModel;
-
 public class AISBuilderTest
 {
     @Test

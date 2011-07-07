@@ -15,9 +15,6 @@
 
 package com.akiban.sql.aisddl;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -175,35 +172,6 @@ public class TableDDL
         }
     }
 
-    private static final class IndexNameGenerator {
-        private final Set<String> indexNames;
-
-        public IndexNameGenerator() {
-            indexNames = new HashSet<String>();
-        }
-        
-        public String generateName(String indexName, String columnName, String constraint) throws StandardException {
-            if (constraint.equals(Index.PRIMARY_KEY_CONSTRAINT)) {
-                if (indexNames.contains(Index.PRIMARY_KEY_CONSTRAINT)) {
-                    throw new StandardException ("Table already has a Primary key, not allowed to define a second one");
-                }
-                indexNames.add(Index.PRIMARY_KEY_CONSTRAINT);
-                return Index.PRIMARY_KEY_CONSTRAINT;
-            }
-            
-            if (indexName != null && !indexNames.contains(indexName)) {
-                indexNames.add(indexName);
-                return indexName;
-            }
-            
-            String name = columnName;
-            for (int suffixNum=2; indexNames.contains(name); ++suffixNum) {
-                name = String.format("%s_%d", columnName, suffixNum);
-            }
-            indexNames.add(name);
-            return name;
-        }
-    }
 
     private int computeTableIdOffset(AkibanInformationSchema ais) {
         // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
