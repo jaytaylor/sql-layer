@@ -347,12 +347,41 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     handler.handleRow(groupIndex, row, action, alsoNullKeys);
                 } else if (row.rowType().equals(invertActionRowType)) {
                     assert maintenancePlan != null;
-                    handler.handleRow(groupIndex, maintenancePlan.flattenLeft(row), invert(action), false);
+                    int siblings = countSiblings(maintenancePlan, adapter, bindings);
+                    assert siblings >= 1 : siblings;
+                    final boolean handleRow;
+                    switch (action) {
+                    case STORE:
+                        handleRow = true;
+                        break;
+                    case DELETE:
+                        handleRow = (siblings == 1);
+                        break;
+                    default:
+                        throw new AssertionError(action.name());
+                    }
+                    if (handleRow) {
+                        handler.handleRow(groupIndex, maintenancePlan.flattenLeft(row), invert(action), false);
+                    }
                 }
             }
         } finally {
             cursor.close();
         }
+    }
+
+    private int countSiblings(OperatorStoreMaintenancePlan plan, PersistitAdapter adapter, Bindings bindings) {
+        Cursor cursor = API.cursor(plan.siblingsLookup(), adapter);
+        cursor.open(bindings);
+        int count = 0;
+        try {
+            while (cursor.next() != null) {
+                ++count;
+            }
+        } finally {
+            cursor.close();
+        }
+        return count;
     }
 
     private OperatorStoreMaintenancePlan groupIndexCreationPlan(
