@@ -179,7 +179,6 @@ public final class GroupIndexUpdateIT extends ITBase {
         // delete grandparent
         dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
         checkIndex("name_when_sku",
-                "Horton, null, null, 1, null, null => " + depthOf(c),
                 "Horton, 02-02-2002, null, 1, 12, null => " + depthOf(o)
         );
     }
