@@ -347,14 +347,15 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     handler.handleRow(groupIndex, row, action, alsoNullKeys);
                 } else if (row.rowType().equals(invertActionRowType)) {
                     assert maintenancePlan != null;
-                    int siblings = countSiblings(maintenancePlan, adapter, bindings);
-                    assert siblings >= 1 : siblings;
                     final boolean handleRow;
                     switch (action) {
                     case STORE:
+                        // for removing the placeholder, it's cheaper to just assume it's there and try to remove it
                         handleRow = true;
                         break;
                     case DELETE:
+                        int siblings = countSiblings(maintenancePlan, adapter, bindings);
+                        assert siblings >= 1 : siblings;
                         handleRow = (siblings == 1);
                         break;
                     default:
