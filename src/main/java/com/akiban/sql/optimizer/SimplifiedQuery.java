@@ -1135,6 +1135,7 @@ public class SimplifiedQuery
      * just those tables needed in output results.
      * Navigation through intermediate tables is implicit in the group
      * structure.
+     * (Not currently used; see IndexUsage replacement.)
      */
     public void recomputeUsed() {
         for (TableNode table : tables) {
