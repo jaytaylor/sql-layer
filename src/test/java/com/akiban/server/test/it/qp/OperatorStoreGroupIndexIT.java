@@ -30,6 +30,7 @@ import com.akiban.util.Strings;
 import com.persistit.exception.PersistitException;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -91,6 +92,7 @@ import static org.junit.Assert.assertEquals;
  * <p>In addition to the above "unit-style" tests, we'll also perform some smoke tests of more complex functionality,
  * like maintenance of multiple indexes.</p>
  */
+@Ignore("while this test's unit-like approach is laudable, it mixes too much of internals and visible effects")
 public final class OperatorStoreGroupIndexIT extends ITBase {
 
     // Incoming C
