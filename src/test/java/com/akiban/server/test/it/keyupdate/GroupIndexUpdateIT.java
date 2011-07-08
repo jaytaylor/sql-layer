@@ -197,7 +197,7 @@ public final class GroupIndexUpdateIT extends ITBase {
     }
 
     @Test
-    public void createGIOnPartiallyPopulatedTables() {
+    public void createGIOnPartiallyPopulatedTablesFromRoot() {
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001")
@@ -205,6 +205,18 @@ public final class GroupIndexUpdateIT extends ITBase {
         createGroupIndex(groupName, "name_when_sku", "c.name, o.when, i.sku");
         checkIndex("name_when_sku",
                 "Horton, 01-01-2001, null, 1, 11, null => " + depthOf(o)
+        );
+    }
+    
+    @Test
+    public void createGIOnPartiallyPopulatedTablesFromMiddle() {
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(o, 11L, 1L, "01-01-2001")
+        );
+        createGroupIndex(groupName, "when_sku", "o.when, i.sku");
+        checkIndex("when_sku",
+                "01-01-2001, null, 1, 11, null => " + depthOf(o)
         );
     }
 
