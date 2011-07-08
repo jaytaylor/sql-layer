@@ -1,0 +1,3 @@
+project([Literal(1), Literal(hello)])
+  IndexScan_Default(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]) (>ExpressionRow[Literal(1234), Literal(2011-01-01)],))
+[_SQL_COL_1:INTEGER NOT NULL, _SQL_COL_2:CHAR(5) NOT NULL]

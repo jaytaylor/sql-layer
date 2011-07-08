@@ -244,6 +244,7 @@ public class OperatorCompiler
             !((index != null) && index.isSorting()))
             throw new UnsupportedSQLException("Unsupported ORDER BY: no suitable index on " + squery.getSortColumns());
         
+        IndexRowType indexRowType = null;
         PhysicalOperator resultOperator;
         boolean needExtract = false;
         ProductMethod productMethod;
@@ -251,12 +252,12 @@ public class OperatorCompiler
             squery.removeConditions(index.getIndexConditions());
             index.recomputeUsed();
             Index iindex = index.getIndex();
+            indexRowType = schema.indexRowType(iindex);
             TableNode indexTable = index.getLeafMostTable();
             squery.getTables().setLeftBranch(indexTable);
             UserTableRowType tableType = tableRowType(indexTable);
-            IndexRowType indexType = schema.indexRowType(iindex);
             // TODO: Pass tableRowType(index.getLeafMostRequired()).
-            resultOperator = indexScan_Default(indexType, 
+            resultOperator = indexScan_Default(indexRowType, 
                                                index.isReverse(),
                                                index.getIndexKeyRange());
             // Decide whether to use BranchLookup, which gets all
@@ -273,11 +274,11 @@ public class OperatorCompiler
                     break;
                 }
             }
-            RowType ancestorInputType = indexType;
+            RowType ancestorInputType = indexRowType;
             boolean ancestorInputKept = false;
             if (descendantUsed) {
                 resultOperator = branchLookup_Default(resultOperator, groupTable,
-                                                      indexType, tableType, false);
+                                                      indexRowType, tableType, false);
                 ancestorInputType = tableType; // Index no longer in stream.
                 ancestorInputKept = tableUsed;
                 needExtract = true; // Might be other descendants, too.
@@ -319,7 +320,7 @@ public class OperatorCompiler
                                     // TODO: Better might be to set
                                     // ancestorInputKept and use
                                     // ancestorInputType (i.e.,
-                                    // indexType), but that is not
+                                    // indexRowType), but that is not
                                     // currently supported by either
                                     // operator.
                                     addAncestors.add(0, tableType);
@@ -357,47 +358,58 @@ public class OperatorCompiler
         // containing the condition).
 
         int nbranches = squery.getTables().colorBranches();
-        Flattener fl = new Flattener(resultOperator, nbranches);
-        FlattenState[] fls = null;
-        try {
-            tracer.beginEvent(EventTypes.FLATTEN);
-            fls = fl.flatten(squery);
-        } finally {
-            tracer.endEvent();
-        }
-        resultOperator = fl.getResultOperator();
-
-        FlattenState fll = fls[0];
-        RowType resultRowType = fll.getResultRowType();
-        if (nbranches > 1) {
-            // Product does not work if there are stray rows. Extract
-            // their inputs (the flattened types) before attempting.
-            Collection<RowType> extractTypes = new ArrayList<RowType>(nbranches);
-            for (int i = 0; i < nbranches; i++) {
-                extractTypes.add(fls[i].getResultRowType());
+        RowType resultRowType;
+        Map<TableNode,Integer> fieldOffsets;
+        if (nbranches > 0) {
+            Flattener fl = new Flattener(resultOperator, nbranches);
+            FlattenState[] fls;
+            try {
+                tracer.beginEvent(EventTypes.FLATTEN);
+                fls = fl.flatten(squery);
+            } 
+            finally {
+                tracer.endEvent();
             }
-            resultOperator = extract_Default(resultOperator, extractTypes);
-            needExtract = false;
+            resultOperator = fl.getResultOperator();
 
-            for (int i = 1; i < nbranches; i++) {
-                FlattenState flr = fls[i];
-                switch (productMethod) {
-                case BY_RUN:
-                    resultOperator = product_ByRun(resultOperator,
-                                                   resultRowType,
-                                                   flr.getResultRowType());
-                    break;
-                default:
-                    throw new UnsupportedSQLException("Need " + productMethod + 
-                                                      " product of " +
-                                                      resultRowType + " and " +
-                                                      flr.getResultRowType());
+            FlattenState fll = fls[0];
+            resultRowType = fll.getResultRowType();
+            if (nbranches > 1) {
+                // Product does not work if there are stray rows. Extract
+                // their inputs (the flattened types) before attempting.
+                Collection<RowType> extractTypes = new ArrayList<RowType>(nbranches);
+                for (int i = 0; i < nbranches; i++) {
+                    extractTypes.add(fls[i].getResultRowType());
                 }
-                resultRowType = resultOperator.rowType();
-                fll.mergeTables(flr);
+                resultOperator = extract_Default(resultOperator, extractTypes);
+                needExtract = false;
+
+                for (int i = 1; i < nbranches; i++) {
+                    FlattenState flr = fls[i];
+                    switch (productMethod) {
+                    case BY_RUN:
+                        resultOperator = product_ByRun(resultOperator,
+                                                       resultRowType,
+                                                       flr.getResultRowType());
+                        break;
+                    default:
+                        throw new UnsupportedSQLException("Need " + productMethod + 
+                                                          " product of " +
+                                                          resultRowType + " and " +
+                                                          flr.getResultRowType());
+                    }
+                    resultRowType = resultOperator.rowType();
+                    fll.mergeTables(flr);
+                }
             }
+            fieldOffsets = fll.getFieldOffsets();
         }
-        Map<TableNode,Integer> fieldOffsets = fll.getFieldOffsets();
+        else {
+            // No branches happens when only constants are selected from a index scan.
+            // We just output them as many times are there are index rows.
+            resultRowType = indexRowType;
+            fieldOffsets = Collections.emptyMap();
+        }
 
         if (needExtract) {
             // Now that we are done flattening, there is only one row type
@@ -467,13 +479,13 @@ public class OperatorCompiler
             assert (targetTable == index.getLeafMostTable());
             supdate.removeConditions(index.getIndexConditions());
             Index iindex = index.getIndex();
-            IndexRowType indexType = targetRowType.indexRowType(iindex);
-            resultOperator = indexScan_Default(indexType, 
+            IndexRowType indexRowType = targetRowType.indexRowType(iindex);
+            resultOperator = indexScan_Default(indexRowType, 
                                                index.isReverse(),
                                                index.getIndexKeyRange());
             List<RowType> ancestors = Collections.<RowType>singletonList(targetRowType);
             resultOperator = ancestorLookup_Default(resultOperator, groupTable,
-                                                    indexType, ancestors, false);
+                                                    indexRowType, ancestors, false);
         }
         else {
             resultOperator = groupScan_Default(groupTable);
