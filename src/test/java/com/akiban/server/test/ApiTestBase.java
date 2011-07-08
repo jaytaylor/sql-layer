@@ -439,7 +439,13 @@ public class ApiTestBase {
         return new HashSet<T>(Arrays.asList(items));
     }
 
-    protected static <T> T[] array(@SuppressWarnings("unused" /* compile check only */ )Class<T> ofClass, T... items) {
+    protected static <T> T[] array(Class<T> ofClass, T... items) {
+        if (ofClass == null) {
+            throw new IllegalArgumentException(
+                    "T[] of null class; you probably meant the array(Object...) overload "
+                            +"with a null for the first element. Use array(Object.class, null, ...) instead"
+            );
+        }
         return items;
     }
 
