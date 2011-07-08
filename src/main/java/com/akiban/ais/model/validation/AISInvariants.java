@@ -15,7 +15,9 @@
 package com.akiban.ais.model.validation;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
@@ -46,6 +48,14 @@ public class AISInvariants {
         }
     }
     
+    public static void checkDuplicateColumnsInIndex(Index index, String columnName)
+    {
+        if (index.getColumns().contains(columnName)) {
+            throw new InvalidOperationException (ErrorCode.DUPLICATE_COLUMN, 
+                    "Index %s already has column %s", 
+                    index.getIndexName().toString(), columnName);
+        }
+    }
     
     public static void checkDuplicateIndexesInTable(Table table, String indexName) 
     {

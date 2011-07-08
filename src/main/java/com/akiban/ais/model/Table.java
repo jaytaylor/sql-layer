@@ -18,6 +18,8 @@ package com.akiban.ais.model;
 import java.io.Serializable;
 import java.util.*;
 
+import com.akiban.ais.model.validation.AISInvariants;
+
 public abstract class Table implements Serializable, ModelNames, Traversable, HasGroup
 {
     public abstract boolean isUserTable();
@@ -67,6 +69,10 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     {
         this();
         ais.checkMutability();
+        AISInvariants.checkNullName(schemaName, "Table", "schema name");
+        AISInvariants.checkNullName(tableName, "Table", "table name");
+        AISInvariants.checkDuplicateTables(ais, schemaName, tableName);
+
         this.ais = ais;
         this.tableName = new TableName(schemaName, tableName);
         this.tableId = tableId;
@@ -280,6 +286,10 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         }
     }
 
+    /**
+     * check if this table belongs to a frozen AIS, 
+     * throw exception if ais is frozen 
+     */
     void checkMutability() {
         ais.checkMutability();
     }

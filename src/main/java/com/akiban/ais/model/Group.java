@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.akiban.ais.model.validation.AISInvariants;
+
 public class Group implements Serializable, ModelNames, Traversable
 {
     public static Group create(AkibanInformationSchema ais, Map<String, Object> map)
@@ -32,6 +34,7 @@ public class Group implements Serializable, ModelNames, Traversable
     public static Group create(AkibanInformationSchema ais, String groupName)
     {
         Group group = new Group(groupName);
+        AISInvariants.checkDuplicateGroups(ais, groupName);
         ais.addGroup(group);
         return group;
     }
@@ -52,6 +55,7 @@ public class Group implements Serializable, ModelNames, Traversable
 
     public Group(final String name)
     {
+        AISInvariants.checkNullName(name, "Group", "group name");
         this.name = name;
         this.indexMap = new HashMap<String, GroupIndex>();
     }
@@ -154,6 +158,13 @@ public class Group implements Serializable, ModelNames, Traversable
             index.traversePostOrder(visitor);
             visitor.visitIndex(index);
         }
+    }
+    /**
+     * check if this group belongs to a frozen AIS, 
+     * throw exception if ais is frozen 
+     */
+    void checkMutability() {
+        groupTable.checkMutability();
     }
 
     private Map<String, GroupIndex> internalGetIndexMap() {

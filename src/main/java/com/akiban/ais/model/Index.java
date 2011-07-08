@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.akiban.ais.model.validation.AISInvariants;
+
 public abstract class Index implements Serializable, ModelNames, Traversable
 {
     public abstract HKey hKey();
@@ -60,6 +62,9 @@ public abstract class Index implements Serializable, ModelNames, Traversable
 
     protected Index(TableName tableName, String indexName, Integer indexId, Boolean isUnique, String constraint)
     {
+        
+        AISInvariants.checkNullName(indexName, "index", "index name");
+        
         this.indexName = new IndexName(tableName, indexName);
         this.indexId = indexId;
         this.isUnique = isUnique;

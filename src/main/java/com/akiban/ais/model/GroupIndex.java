@@ -36,7 +36,10 @@ public class GroupIndex extends Index
 
     public GroupIndex(Group group, String indexName, Integer indexId, Boolean isUnique, String constraint)
     {
+        // index checks index name. 
         super(new TableName("", group.getName()), indexName, indexId, isUnique, constraint);
+        group.checkMutability();
+
         this.group = group;
     }
 

@@ -23,6 +23,7 @@ public class JoinColumn implements Serializable, ModelNames
 {
     public static void create(AkibanInformationSchema ais, Map<String, Object> map)
     {
+        ais.checkMutability();
         String parentSchemaName = (String) map.get(joinColumn_parentSchemaName);
         String parentTableName = (String) map.get(joinColumn_parentTableName);
         String parentColumnName = (String) map.get(joinColumn_parentColumnName);
@@ -74,6 +75,7 @@ public class JoinColumn implements Serializable, ModelNames
 
     public JoinColumn(Join join, Column parent, Column child)
     {
+        join.checkMutability();
         this.join = join;
         this.parent = parent;
         this.child = child;

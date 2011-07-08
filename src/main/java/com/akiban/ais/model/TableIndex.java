@@ -17,6 +17,8 @@ package com.akiban.ais.model;
 
 import java.util.Map;
 
+import com.akiban.ais.model.validation.AISInvariants;
+
 public class TableIndex extends Index
 {
     public static TableIndex create(AkibanInformationSchema ais, Table table, String indexName, Integer indexId,
@@ -30,7 +32,10 @@ public class TableIndex extends Index
 
     public TableIndex(Table table, String indexName, Integer indexId, Boolean isUnique, String constraint)
     {
+        // Index check indexName for null state. 
         super(table.getName(), indexName, indexId, isUnique, constraint);
+        table.checkMutability();
+        AISInvariants.checkDuplicateIndexesInTable(table, indexName);
         this.table = table;
     }
 
