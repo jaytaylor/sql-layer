@@ -15,7 +15,7 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.qp.rowtype.SchemaOBSOLETE;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 
@@ -25,7 +25,7 @@ public final class HookablePersistitAdapter extends PersistitAdapter {
         // empty interface; just promoting visibility
     }
 
-    public HookablePersistitAdapter(SchemaOBSOLETE schema, PersistitStore persistit, Session session, FilterFactoryHook hook) {
+    public HookablePersistitAdapter(Schema schema, PersistitStore persistit, Session session, FilterFactoryHook hook) {
         super(schema, persistit, session, hook);
     }
 }

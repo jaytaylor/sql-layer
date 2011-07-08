@@ -51,7 +51,7 @@ public class ProductRowType extends DerivedRowType
         return right;
     }
 
-    public ProductRowType(SchemaOBSOLETE schema, int typeId, RowType left, RowType right)
+    public ProductRowType(Schema schema, int typeId, RowType left, RowType right)
     {
         super(schema, typeId);
         assert left.schema() == schema : left;

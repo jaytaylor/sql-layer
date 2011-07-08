@@ -40,7 +40,7 @@ public class ProjectedRowType extends DerivedRowType
 
     // ProjectedRowType interface
 
-    public ProjectedRowType(SchemaOBSOLETE schema, int typeId, List<Expression> projections)
+    public ProjectedRowType(Schema schema, int typeId, List<Expression> projections)
     {
         super(schema, typeId);
         this.projections = projections;

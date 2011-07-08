@@ -21,7 +21,7 @@ import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.NoLimit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.SchemaOBSOLETE;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ final class OperatorStoreMaintenancePlan {
 
     // for use by unit tests
     static PhysicalOperator createGroupIndexMaintenancePlan(
-            SchemaOBSOLETE schema,
+            Schema schema,
             GroupIndex groupIndex,
             UserTableRowType rowType)
     {
@@ -148,7 +148,7 @@ final class OperatorStoreMaintenancePlan {
             return onlyBranch.get(0);
         }
 
-        public BranchTables(SchemaOBSOLETE schema, GroupIndex groupIndex) {
+        public BranchTables(Schema schema, GroupIndex groupIndex) {
             List<UserTableRowType> localTables = new ArrayList<UserTableRowType>();
             UserTable rootmost = groupIndex.rootMostTable();
             int branchRootmostIndex = -1;

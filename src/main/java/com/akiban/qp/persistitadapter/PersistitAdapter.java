@@ -28,7 +28,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.SchemaOBSOLETE;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
@@ -178,12 +178,12 @@ public class PersistitAdapter extends StoreAdapter
         persistit.releaseExchange(session, exchange);
     }
 
-    public PersistitAdapter(SchemaOBSOLETE schema, PersistitStore persistit, Session session)
+    public PersistitAdapter(Schema schema, PersistitStore persistit, Session session)
     {
         this(schema, persistit, session, null);
     }
 
-    PersistitAdapter(SchemaOBSOLETE schema, PersistitStore persistit, Session session, PersistitFilterFactory.InternalHook hook)
+    PersistitAdapter(Schema schema, PersistitStore persistit, Session session, PersistitFilterFactory.InternalHook hook)
     {
         super(schema);
         this.persistit = persistit;

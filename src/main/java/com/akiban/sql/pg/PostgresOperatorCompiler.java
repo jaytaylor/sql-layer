@@ -17,7 +17,7 @@ package com.akiban.sql.pg;
 
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.rowtype.SchemaOBSOLETE;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.sql.StandardException;
 
 import com.akiban.sql.optimizer.OperatorCompiler;
@@ -151,7 +151,7 @@ public class PostgresOperatorCompiler extends OperatorCompiler
         }
     }
 
-    protected SchemaOBSOLETE getSchema() {
+    protected Schema getSchema() {
         return schema;
     }
 

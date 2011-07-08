@@ -24,17 +24,13 @@ import static java.lang.Math.max;
 
 // UserTable RowTypes are indexed by the UserTable's RowDef's ordinal. Derived RowTypes get higher values.
 
-public class SchemaAISBased implements SchemaOBSOLETE
+public class Schema
 {
-    // SchemaOBSOLETE interface
-
-    @Override
     public synchronized UserTableRowType userTableRowType(UserTable table)
     {
         return (UserTableRowType) rowTypes.get(table.getTableId());
     }
 
-    @Override
     public synchronized IndexRowType indexRowType(Index index)
     {
         // TODO: Group index schema is always ""; need another way to
@@ -48,33 +44,27 @@ public class SchemaAISBased implements SchemaOBSOLETE
             : groupIndexRowType((GroupIndex) index);
     }
 
-    @Override
     public synchronized FlattenedRowType newFlattenType(RowType parent, RowType child)
     {
         return new FlattenedRowType(this, nextTypeId(), parent, child);
     }
 
-    @Override
     public synchronized ProjectedRowType newProjectType(List<Expression> columns)
     {
         return new ProjectedRowType(this, nextTypeId(), columns);
     }
 
-    @Override
     public ProductRowType newProductType(RowType left, RowType right)
     {
         return new ProductRowType(this, nextTypeId(), left, right);
     }
 
-    @Override
     public synchronized Iterator<RowType> rowTypes()
     {
         return rowTypes.values().iterator();
     }
 
-    // SchemaAISBased interface
-
-    public SchemaAISBased(AkibanInformationSchema ais)
+    public Schema(AkibanInformationSchema ais)
     {
         this.ais = ais;
         this.typeIdCounter = -1;

@@ -16,24 +16,24 @@
 package com.akiban.qp.util;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.qp.rowtype.SchemaAISBased;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.util.CachePair;
 
 public final class SchemaCache {
 
     // static SchemaCache interface
 
-    public static SchemaAISBased globalSchema(AkibanInformationSchema ais) {
+    public static Schema globalSchema(AkibanInformationSchema ais) {
         return GLOBAL.get(ais);
     }
 
     // class state
 
-    private static final CachePair<AkibanInformationSchema, SchemaAISBased> GLOBAL = CachePair.using(
-            new CachePair.CachedValueProvider<AkibanInformationSchema, SchemaAISBased>() {
+    private static final CachePair<AkibanInformationSchema, Schema> GLOBAL = CachePair.using(
+            new CachePair.CachedValueProvider<AkibanInformationSchema, Schema>() {
                 @Override
-                public SchemaAISBased valueFor(AkibanInformationSchema ais) {
-                    return new SchemaAISBased(ais);
+                public Schema valueFor(AkibanInformationSchema ais) {
+                    return new Schema(ais);
                 }
             }
     );

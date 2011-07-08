@@ -24,7 +24,7 @@ import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.SchemaOBSOLETE;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.IndexDef;
@@ -362,7 +362,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     // Object state
 
     private long rowCollectorId;
-    protected final SchemaOBSOLETE schema;
+    protected final Schema schema;
     protected PersistitAdapter adapter;
     protected UserTable queryRootTable;
     protected UserTableRowType queryRootType;

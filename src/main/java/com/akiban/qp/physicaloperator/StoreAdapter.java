@@ -23,7 +23,7 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.SchemaOBSOLETE;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 
@@ -40,7 +40,7 @@ public abstract class StoreAdapter
 
     public abstract HKey newHKey(RowType rowType);
 
-    public final SchemaOBSOLETE schema()
+    public final Schema schema()
     {
         return schema;
     }
@@ -51,12 +51,12 @@ public abstract class StoreAdapter
 
     // For use by subclasses
 
-    protected StoreAdapter(SchemaOBSOLETE schema)
+    protected StoreAdapter(Schema schema)
     {
         this.schema = schema;
     }
 
     // Object state
 
-    protected final SchemaOBSOLETE schema;
+    protected final Schema schema;
 }

@@ -53,7 +53,7 @@ public class FlattenedRowType extends DerivedRowType
         return parent;
     }
 
-    public FlattenedRowType(SchemaOBSOLETE schema, int typeId, RowType parent, RowType child)
+    public FlattenedRowType(Schema schema, int typeId, RowType parent, RowType child)
     {
         super(schema, typeId);
         assert parent.schema() == schema : parent;
