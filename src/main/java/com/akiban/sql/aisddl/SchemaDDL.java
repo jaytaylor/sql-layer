@@ -40,13 +40,13 @@ public class SchemaDDL {
         
         for (TableName t : ais.getUserTables().keySet()) {
             if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
-                throw new StandardException ("Schema " + schemaName + " already exists");
+                throw new StandardException ("SchemaOBSOLETE " + schemaName + " already exists");
             }
         }
         
         for (TableName t : ais.getGroupTables().keySet()) {
             if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
-                throw new StandardException ("Schema " + schemaName + " already exists");
+                throw new StandardException ("SchemaOBSOLETE " + schemaName + " already exists");
             }
         }
         
@@ -68,12 +68,12 @@ public class SchemaDDL {
             dropSchema.getDropBehavior() == StatementType.DROP_DEFAULT) {
             for (TableName t : ais.getUserTables().keySet()) {
                 if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
-                    throw new StandardException ("Schema " + schemaName + " is in use");
+                    throw new StandardException ("SchemaOBSOLETE " + schemaName + " is in use");
                 }
             }
             for (TableName t : ais.getGroupTables().keySet()) {
                 if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
-                    throw new StandardException ("Schema " + schemaName + " is in use");
+                    throw new StandardException ("SchemaOBSOLETE " + schemaName + " is in use");
                 }
             }
             // If the schema isn't used by any existing tables, it has effectively 

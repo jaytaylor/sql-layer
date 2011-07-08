@@ -24,9 +24,9 @@ import static java.lang.Math.max;
 
 // UserTable RowTypes are indexed by the UserTable's RowDef's ordinal. Derived RowTypes get higher values.
 
-public class SchemaAISBased implements Schema
+public class SchemaAISBased implements SchemaOBSOLETE
 {
-    // Schema interface
+    // SchemaOBSOLETE interface
 
     @Override
     public synchronized UserTableRowType userTableRowType(UserTable table)

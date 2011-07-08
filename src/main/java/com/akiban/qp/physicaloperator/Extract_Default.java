@@ -19,7 +19,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.SchemaOBSOLETE;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 
@@ -65,7 +65,7 @@ class Extract_Default extends PhysicalOperator
     {
         ArgumentValidation.notEmpty("keepTypes", extractTypes);
         this.inputOperator = inputOperator;
-        Schema schema = null;
+        SchemaOBSOLETE schema = null;
         for (RowType type : extractTypes) {
             if (schema == null) {
                 schema = type.schema();
@@ -82,7 +82,7 @@ class Extract_Default extends PhysicalOperator
 
     // For use by this class
 
-    private static void addDescendentTypes(Schema schema, UserTable table, Set<RowType> rowTypes)
+    private static void addDescendentTypes(SchemaOBSOLETE schema, UserTable table, Set<RowType> rowTypes)
     {
         rowTypes.add(schema.userTableRowType(table));
         for (Join join : table.getChildJoins()) {

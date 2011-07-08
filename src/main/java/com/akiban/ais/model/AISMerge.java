@@ -171,7 +171,7 @@ public class AISMerge {
             if (targetSchema.getUserTables().containsKey(sourceTable.getName()) ||
                 targetSchema.getGroupTables().containsKey(sourceTable.getName())) {
                 throw new InvalidOperationException (ErrorCode.DUPLICATE_TABLE,
-                        "Merge Schema already contains a user table: %s",
+                        "Merge SchemaOBSOLETE already contains a user table: %s",
                         sourceTable.getName().toString());
             }
         }
@@ -184,7 +184,7 @@ public class AISMerge {
                 if (targetSchema.getUserTables().containsKey(table.getName()) ||
                     targetSchema.getGroupTables().containsKey(table.getName())) {
                     throw new InvalidOperationException (ErrorCode.DUPLICATE_TABLE, 
-                            "Merge Schema already contains a group table: %s.%s",
+                            "Merge SchemaOBSOLETE already contains a group table: %s.%s",
                             table.getName().getSchemaName(), table.getName().getTableName());
                 }
             }

@@ -23,7 +23,7 @@ import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.NoLimit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.SchemaOBSOLETE;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.util.CachePair;
@@ -47,7 +47,7 @@ final class OperatorStoreMaintenancePlans {
         return plan;
     }
 
-    public OperatorStoreMaintenancePlans(Schema schema, Collection<Group> groups) {
+    public OperatorStoreMaintenancePlans(SchemaOBSOLETE schema, Collection<Group> groups) {
         indexToTypesToOperators = Collections.unmodifiableMap(generateGiPlans(schema, groups));
     }
 
@@ -58,11 +58,11 @@ final class OperatorStoreMaintenancePlans {
     /**
      * Create plan for the complete selection of all rows of the given GroupIndex (e.g. creating an
      * index on existing date).
-     * @param schema Schema
+     * @param schema SchemaOBSOLETE
      * @param groupIndex GroupIndex
      * @return PhysicalOperator
      */
-    static PhysicalOperator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex) {
+    static PhysicalOperator groupIndexCreationPlan(SchemaOBSOLETE schema, GroupIndex groupIndex) {
         OperatorStoreMaintenancePlan.BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
 
         PhysicalOperator plan = API.groupScan_Default(groupIndex.getGroup().getGroupTable(), NoLimit.instance());
@@ -87,12 +87,12 @@ final class OperatorStoreMaintenancePlans {
 
     // for use in this class
 
-    private static OperatorStoreMaintenancePlan.BranchTables branchTablesRootToLeaf(Schema schema, GroupIndex groupIndex) {
+    private static OperatorStoreMaintenancePlan.BranchTables branchTablesRootToLeaf(SchemaOBSOLETE schema, GroupIndex groupIndex) {
         return new OperatorStoreMaintenancePlan.BranchTables(schema, groupIndex);
     }
 
     private static Map<GroupIndex, Map<UserTableRowType, OperatorStoreMaintenancePlan>> generateGiPlans(
-            Schema schema,
+            SchemaOBSOLETE schema,
             Collection<Group> groups)
     {
         Map<GroupIndex,Map<UserTableRowType, OperatorStoreMaintenancePlan>> giToMap
@@ -106,7 +106,7 @@ final class OperatorStoreMaintenancePlans {
         return Collections.unmodifiableMap(giToMap);
     }
 
-    private static Map<UserTableRowType, OperatorStoreMaintenancePlan> generateGIPlans(Schema schema, GroupIndex groupIndex) {
+    private static Map<UserTableRowType, OperatorStoreMaintenancePlan> generateGIPlans(SchemaOBSOLETE schema, GroupIndex groupIndex) {
         OperatorStoreMaintenancePlan.BranchTables branchTables = new OperatorStoreMaintenancePlan.BranchTables(schema, groupIndex);
         Map<UserTableRowType, OperatorStoreMaintenancePlan> plansPerType
                 = new HashMap<UserTableRowType, OperatorStoreMaintenancePlan>();
@@ -129,7 +129,7 @@ final class OperatorStoreMaintenancePlans {
             new CachePair.CachedValueProvider<AkibanInformationSchema, OperatorStoreMaintenancePlans>() {
                 @Override
                 public OperatorStoreMaintenancePlans valueFor(AkibanInformationSchema ais) {
-                    Schema schema = SchemaCache.globalSchema(ais);
+                    SchemaOBSOLETE schema = SchemaCache.globalSchema(ais);
                     return new OperatorStoreMaintenancePlans(schema, ais.getGroups().values());
                 }
             }

@@ -20,7 +20,7 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.SchemaOBSOLETE;
 import com.akiban.qp.rowtype.SchemaAISBased;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.SchemaFactory;
@@ -34,7 +34,7 @@ public final class MaintenancePlanCreatorTest {
     @Test
     public void giUpdatePlan_C_fromC() {
         AkibanInformationSchema ais = coia();
-        Schema schema = schema(ais);
+        SchemaOBSOLETE schema = schema(ais);
         PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_name"),
@@ -49,7 +49,7 @@ public final class MaintenancePlanCreatorTest {
     @Test
     public void giUpdatePlan_CI_fromC() {
         AkibanInformationSchema ais = coia();
-        Schema schema = schema(ais);
+        SchemaOBSOLETE schema = schema(ais);
         PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_name_sku"),
@@ -66,7 +66,7 @@ public final class MaintenancePlanCreatorTest {
     @Test
     public void giUpdatePlan_CI_fromI() {
         AkibanInformationSchema ais = coia();
-        Schema schema = schema(ais);
+        SchemaOBSOLETE schema = schema(ais);
         PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_name_sku"),
@@ -84,7 +84,7 @@ public final class MaintenancePlanCreatorTest {
     @Test
     public void giUpdatePlan_OCI_fromC() {
         AkibanInformationSchema ais = coia();
-        Schema schema = schema(ais);
+        SchemaOBSOLETE schema = schema(ais);
         PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_date_name_sku"),
@@ -101,7 +101,7 @@ public final class MaintenancePlanCreatorTest {
     @Test
     public void giUpdatePlan_OCI_fromO() {
         AkibanInformationSchema ais = coia();
-        Schema schema = schema(ais);
+        SchemaOBSOLETE schema = schema(ais);
         PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_date_name_sku"),
@@ -119,7 +119,7 @@ public final class MaintenancePlanCreatorTest {
     @Test
     public void giUpdatePlan_OCI_fromI() {
         AkibanInformationSchema ais = coia();
-        Schema schema = schema(ais);
+        SchemaOBSOLETE schema = schema(ais);
         PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_date_name_sku"),
@@ -137,7 +137,7 @@ public final class MaintenancePlanCreatorTest {
     @Test
     public void giUpdatePlan_OI_fromI() {
         AkibanInformationSchema ais = coia();
-        Schema schema = schema(ais);
+        SchemaOBSOLETE schema = schema(ais);
         PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_sku_date"),
@@ -155,7 +155,7 @@ public final class MaintenancePlanCreatorTest {
     @Test
     public void giUpdatePlan_OI_fromO() {
         AkibanInformationSchema ais = coia();
-        Schema schema = schema(ais);
+        SchemaOBSOLETE schema = schema(ais);
         PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_sku_date"),
@@ -173,7 +173,7 @@ public final class MaintenancePlanCreatorTest {
     @Test
     public void giUpdatePlan_OI_fromC() {
         AkibanInformationSchema ais = coia();
-        Schema schema = schema(ais);
+        SchemaOBSOLETE schema = schema(ais);
         PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_sku_date"),
@@ -190,7 +190,7 @@ public final class MaintenancePlanCreatorTest {
     @Test
     public void giUpdatePlan_AC_fromC() {
         AkibanInformationSchema ais = coia();
-        Schema schema = schema(ais);
+        SchemaOBSOLETE schema = schema(ais);
         PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_street_name"),
@@ -206,7 +206,7 @@ public final class MaintenancePlanCreatorTest {
     @Test
     public void giUpdatePlan_AC_fromA() {
         AkibanInformationSchema ais = coia();
-        Schema schema = schema(ais);
+        SchemaOBSOLETE schema = schema(ais);
         PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_street_name"),
@@ -223,7 +223,7 @@ public final class MaintenancePlanCreatorTest {
     @Test
     public void giUpdatePlan_A_fromA() {
         AkibanInformationSchema ais = coia();
-        Schema schema = schema(ais);
+        SchemaOBSOLETE schema = schema(ais);
         PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_street"),
@@ -239,7 +239,7 @@ public final class MaintenancePlanCreatorTest {
 
     // private static methods
 
-    private static UserTableRowType rowType(AkibanInformationSchema ais, Schema schema, String tableName) {
+    private static UserTableRowType rowType(AkibanInformationSchema ais, SchemaOBSOLETE schema, String tableName) {
         return schema.userTableRowType(ais.getUserTable(SCHEMA_NAME, tableName));
     }
 
@@ -261,7 +261,7 @@ public final class MaintenancePlanCreatorTest {
         return result;
     }
 
-    private static Schema schema(AkibanInformationSchema ais) {
+    private static SchemaOBSOLETE schema(AkibanInformationSchema ais) {
         return new SchemaAISBased(ais);
     }
 

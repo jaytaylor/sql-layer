@@ -23,7 +23,7 @@ import com.akiban.server.service.session.Session;
 
 @SuppressWarnings("unused")
 public interface SchemaMXBean {
-    static final String SCHEMA_BEAN_NAME = "com.akiban:type=Schema";
+    static final String SCHEMA_BEAN_NAME = "com.akiban:type=SchemaOBSOLETE";
 
     /**
      * Gets the schema's generation ID. Each revision of the schema has a unique

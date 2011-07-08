@@ -87,7 +87,7 @@ public interface SchemaManager {
     /**
      * Generate a 'create table' DDL statement for each table in the given schema.
      * @param session Session to operate under.
-     * @param schemaName Schema to to query.
+     * @param schemaName SchemaOBSOLETE to to query.
      * @return Map, keyed by table name, of all TableDefinitions.
      * @throws Exception For an internal error.
      */

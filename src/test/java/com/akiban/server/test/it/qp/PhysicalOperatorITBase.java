@@ -27,7 +27,7 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.SchemaOBSOLETE;
 import com.akiban.qp.rowtype.SchemaAISBased;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
@@ -320,7 +320,7 @@ public class PhysicalOperatorITBase extends ITBase
     protected IndexRowType itemIidIndexRowType;
     protected IndexRowType addressAddressIndexRowType;
     protected GroupTable coi;
-    protected Schema schema;
+    protected SchemaOBSOLETE schema;
     protected NewRow[] db;
     protected NewRow[] emptyDB = new NewRow[0];
     PersistitAdapter adapter;

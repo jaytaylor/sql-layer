@@ -27,7 +27,7 @@ import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.SchemaOBSOLETE;
 import com.akiban.qp.rowtype.SchemaAISBased;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
@@ -258,6 +258,6 @@ public class QPProfileITBase extends ITBase
     protected IndexRowType itemIidIndexRowType;
     protected IndexRowType addressAddressIndexRowType;
     protected GroupTable coi;
-    protected Schema schema;
+    protected SchemaOBSOLETE schema;
     PersistitAdapter adapter;
 }

@@ -19,7 +19,7 @@ public abstract class DerivedRowType extends RowType
 {
     // For use by subclasses
 
-    protected DerivedRowType(Schema schema, int typeId)
+    protected DerivedRowType(SchemaOBSOLETE schema, int typeId)
     {
         super(schema, typeId);
     }
