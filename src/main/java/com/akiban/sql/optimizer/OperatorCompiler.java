@@ -249,7 +249,7 @@ public class OperatorCompiler
         ProductMethod productMethod;
         if (index != null) {
             squery.removeConditions(index.getIndexConditions());
-            squery.recomputeUsed();
+            index.recomputeUsed();
             Index iindex = index.getIndex();
             TableNode indexTable = index.getLeafMostTable();
             squery.getTables().setLeftBranch(indexTable);
@@ -698,6 +698,27 @@ public class OperatorCompiler
                     (lowCondition != null) ||
                     (highCondition != null) ||
                     sorting);
+        }
+
+        /** Clear used flags for tables all of whose conditions are
+         * now taken care of by the index.
+         * @see SimplifiedQuery#recomputeUsed */
+        public void recomputeUsed() {
+            TableNode table = leafMostTable;
+            while (true) {
+                boolean used = table.hasSelectColumns() || table.hasConditions();
+                table.setUsed(used);
+                if (table == rootMostTable)
+                    break;
+                if (used && table.isOptional())
+                    // If there are select columns on an optional
+                    // table (it can't be used due to conditions and
+                    // optional), they need to come from an outer join
+                    // row. So we still need an ancestor to join with.
+                    // For now, just stop clearing entirely.
+                    break;
+                table = table.getParent();
+            }
         }
 
         // Generate key range bounds.
