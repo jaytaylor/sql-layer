@@ -25,7 +25,6 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.SchemaPerSession;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.IndexDef;
@@ -228,7 +227,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     
     protected OperatorBasedRowCollector(PersistitStore store, Session session)
     {
-        this.schema = new SchemaPerSession(SchemaCache.globalSchema(store.getRowDefCache().ais()));
+        this.schema = SchemaCache.globalSchema(store.getRowDefCache().ais());
         this.adapter = new PersistitAdapter(schema, store, session);
         this.rowCollectorId = idCounter.getAndIncrement();
     }

@@ -29,7 +29,6 @@ import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
@@ -64,7 +63,7 @@ public class OperatorCompiler
     protected BooleanNormalizer booleanNormalizer;
     protected SubqueryFlattener subqueryFlattener;
     protected Grouper grouper;
-    protected SchemaAISBased schema;
+    protected Schema schema;
 
     public OperatorCompiler(SQLParser parser, 
                             AkibanInformationSchema ais, String defaultSchemaName) {
@@ -76,7 +75,7 @@ public class OperatorCompiler
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
         grouper = new Grouper(parser);
-        schema = new SchemaAISBased(ais);
+        schema = new Schema(ais);
     }
 
     public void addView(ViewDefinition view) throws StandardException {
