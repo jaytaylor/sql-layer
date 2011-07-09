@@ -22,6 +22,7 @@ import com.akiban.sql.types.TypeId;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
+import com.akiban.ais.model.Types;
 
 import com.akiban.server.encoding.EncoderFactory;
 import com.akiban.server.encoding.Encoding;
@@ -163,11 +164,15 @@ public class PostgresType
     }
 
     public static PostgresType fromAIS(Column aisColumn) throws StandardException {
+        return fromAIS(aisColumn.getType(), aisColumn);
+    }
+        
+    public static PostgresType fromAIS(Type aisType, Column aisColumn) 
+            throws StandardException {
         int oid;
         short length = -1;
         int modifier = -1;
 
-        Type aisType = aisColumn.getType();
         String encoding = aisType.encoding();
 
         if ("VARCHAR".equals(encoding))
@@ -218,10 +223,12 @@ public class PostgresType
         if (aisType.fixedSize())
             length = aisType.maxSizeBytes().shortValue();
 
-        switch (aisType.nTypeParameters()) {
-        case 1:
-            modifier = aisColumn.getTypeParameter1().intValue();
-            break;
+        if (aisColumn != null) {
+            switch (aisType.nTypeParameters()) {
+            case 1:
+                modifier = aisColumn.getTypeParameter1().intValue();
+                break;
+            }
         }
 
         PostgresType result = new PostgresType(oid, length, modifier);
@@ -314,6 +321,18 @@ public class PostgresType
         case TypeId.FormatIds.XML_TYPE_ID:
             oid = XML_TYPE_OID;
             break;
+        case TypeId.FormatIds.USERDEFINED_TYPE_ID:
+            {
+                // Might be a type known to AIS but not to Derby.
+                // TODO: Need to reconcile.
+                String name = typeId.getSQLTypeName();
+                for (Type aisType : Types.types()) {
+                    if (aisType.name().equals(name)) {
+                        return fromAIS(aisType, null);
+                    }
+                }
+            }
+            /* falls through */
         default:
             throw new StandardException("Don't know type for " + type);
         }
