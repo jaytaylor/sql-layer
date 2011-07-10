@@ -716,6 +716,9 @@ public class SimplifiedQuery
         case NodeTypes.BINARY_LESS_EQUALS_OPERATOR_NODE:
             addBinaryCondition((BinaryOperatorNode)condition, Comparison.LE);
             break;
+        case NodeTypes.BINARY_NOT_EQUALS_OPERATOR_NODE:
+            addBinaryCondition((BinaryOperatorNode)condition, Comparison.NE);
+            break;
         case NodeTypes.BETWEEN_OPERATOR_NODE:
             addBetweenCondition((BetweenOperatorNode)condition);
             break;
