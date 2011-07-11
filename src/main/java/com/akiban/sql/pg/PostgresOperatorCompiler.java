@@ -15,14 +15,13 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.sql.StandardException;
 
 import com.akiban.sql.optimizer.OperatorCompiler;
 import static com.akiban.sql.optimizer.SimplifiedQuery.*;
-import com.akiban.sql.optimizer.ExpressionRow;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.SQLParser;
@@ -30,18 +29,7 @@ import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.types.DataTypeDescriptor;
 
-import com.akiban.sql.views.ViewDefinition;
-
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
-
-import com.akiban.qp.expression.Expression;
-
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
 
 import com.akiban.server.service.EventTypes;
 

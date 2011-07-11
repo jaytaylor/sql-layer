@@ -21,7 +21,7 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.SchemaAISBased;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.SchemaFactory;
 import com.akiban.util.Strings;
@@ -262,7 +262,7 @@ public final class MaintenancePlanCreatorTest {
     }
 
     private static Schema schema(AkibanInformationSchema ais) {
-        return new SchemaAISBased(ais);
+        return new Schema(ais);
     }
 
     private AkibanInformationSchema coia() {

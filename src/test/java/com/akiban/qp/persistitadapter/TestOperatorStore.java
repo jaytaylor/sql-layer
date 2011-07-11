@@ -30,10 +30,10 @@ public class TestOperatorStore extends OperatorStore {
     // TestOperatorStore interface
 
     public <T extends Throwable>
-    void testMaintainGroupIndexes(Session session, RowData rowData, GroupIndexHandler<T> handler)
+    void testMaintainGroupIndexes(Session session, RowData rowData, GroupIndexHandler<T> handler, Action action, boolean alsoNullKeys)
             throws PersistitException, T
     {
-        super.maintainGroupIndexes(session, rowData, handler);
+        super.maintainGroupIndexes(session, rowData, handler, action.equivalentAction, alsoNullKeys);
     }
 
     // OperatorStore overrides
@@ -49,6 +49,19 @@ public class TestOperatorStore extends OperatorStore {
     // nested classes
     public static interface GroupIndexHandler<T extends Throwable> extends OperatorStore.GroupIndexHandler<T> {
         // promoting visibility
+    }
+
+    public enum Action {
+        STORE(GroupIndexHandler.Action.STORE),
+        DELETE(GroupIndexHandler.Action.DELETE),
+        BULK_ADD(GroupIndexHandler.Action.BULK_ADD)
+        ;
+
+        Action(OperatorStore.GroupIndexHandler.Action equivalentAction) {
+            this.equivalentAction = equivalentAction;
+        }
+
+        private final GroupIndexHandler.Action equivalentAction;
     }
 
     // consts
