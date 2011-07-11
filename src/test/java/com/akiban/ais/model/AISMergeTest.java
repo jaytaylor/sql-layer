@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
@@ -57,6 +58,7 @@ public class AISMergeTest {
         UserTable targetTable = t.getUserTable(TABLENAME);
         UserTable sourceTable = s.getUserTable(TABLENAME);
 
+        assertTrue (t.isFrozen());
         assertNotSame (targetTable, sourceTable);
         assertEquals (targetTable.getName(), sourceTable.getName());
         checkColumns (targetTable.getColumns(), "c1", "c2");
@@ -72,7 +74,6 @@ public class AISMergeTest {
         assertEquals (targetTable.getColumn(Column.AKIBAN_PK_NAME).getPosition(), 
                 sourceTable.getColumn(Column.AKIBAN_PK_NAME).getPosition());
         
-        t.checkIntegrity();
         // merge will have created a group table for the user table we merged.
         assertEquals (t.getGroups().keySet().size(), 1);
         assertNotNull(t.getGroup(TABLE));
@@ -97,7 +98,6 @@ public class AISMergeTest {
         assertNotNull (targetTable.getPrimaryKey());
         checkColumns(targetTable.getPrimaryKey().getColumns(), "c1");
         
-        t.checkIntegrity();
         assertNotNull(t.getGroup(TABLE));
         assertNotNull(t.getGroup(TABLE).getGroupTable().getIndex("t1$PRIMARY"));
     }
@@ -115,6 +115,7 @@ public class AISMergeTest {
         UserTable targetTable = t.getUserTable(TABLENAME);
         UserTable sourceTable = s.getUserTable(TABLENAME);
         
+        assertTrue (t.isFrozen());
         assertEquals (targetTable.getIndexes().size(),1);
         assertEquals (targetTable.getIndexes().size(), sourceTable.getIndexes().size());
         assertNotNull (targetTable.getIndex("c1"));

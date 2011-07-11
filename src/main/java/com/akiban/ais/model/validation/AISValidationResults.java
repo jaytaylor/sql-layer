@@ -37,7 +37,8 @@ public abstract class AISValidationResults {
      */
     public void throwIfNecessary() {
         if (!failureList.isEmpty()) {
-            throw new InvalidOperationException(ErrorCode.VALIDATION_FAILURE, "TODO: failureList to String");
+            String firstFailure = failureList.iterator().next().message(); 
+            throw new InvalidOperationException(ErrorCode.VALIDATION_FAILURE, firstFailure);
         }
     }
  

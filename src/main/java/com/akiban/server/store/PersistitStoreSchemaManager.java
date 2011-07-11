@@ -985,6 +985,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     private void commitAISChange(final Session session, final AkibanInformationSchema newAIS, final String schemaName,
                                  AISChangeCallback callback) throws Exception {
+
+        //TODO: Verify the newAIS.isFrozen(), if not throw an exception. 
         ByteBuffer buffer = trySerializeAIS(newAIS, getVolumeForSchemaTree(schemaName));
         final TreeService treeService = serviceManager.getTreeService();
         final Transaction transaction = treeService.getTransaction(session);

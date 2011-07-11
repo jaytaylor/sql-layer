@@ -405,6 +405,7 @@ public class Column implements Serializable, ModelNames
         table.checkMutability();
         AISInvariants.checkNullName(columnName, "column", "column name");
         AISInvariants.checkDuplicateColumnsInTable(table, columnName);
+        AISInvariants.checkDuplicateColumnPositions(table, position);
         
         this.table = table;
         this.columnName = columnName;

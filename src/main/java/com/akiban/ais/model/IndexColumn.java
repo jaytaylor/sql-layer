@@ -65,6 +65,7 @@ public class IndexColumn implements Serializable, ModelNames
     public IndexColumn(Index index, Column column, Integer position, Boolean ascending, Integer indexedLength)
     {
         AISInvariants.checkDuplicateColumnsInIndex(index, column.getName());
+        //AISInvariants.checkDuplicateIndexColumnPosition(index, position);
         
         this.index = index;
         this.column = column;

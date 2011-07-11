@@ -18,6 +18,8 @@ import java.util.Collections;
 import java.util.LinkedList;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.DefaultNameGenerator;
+import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.TableName;
 import com.akiban.message.ErrorCode;
 
@@ -57,16 +59,29 @@ class ProtectedTables implements AISValidation {
      * @return
      */
     private static Collection<String> createProtectList() {
+        
+        NameGenerator names = new DefaultNameGenerator();
         LinkedList<String> list = new LinkedList<String>();
         list.add("groups");
+        list.add(names.generateGroupTableName("groups"));
         list.add("tables");
+        list.add(names.generateGroupTableName("tables"));
         list.add("columns");
+        list.add(names.generateGroupTableName("columns"));
         list.add("joins");
+        list.add(names.generateGroupTableName("joins"));
         list.add("join_columns");
+        list.add(names.generateGroupTableName("join_columns"));
         list.add("indexes");
+        list.add(names.generateGroupTableName("indexes"));
         list.add("index_columns");
+        list.add(names.generateGroupTableName("index_columns"));
         list.add("types");
+        list.add(names.generateGroupTableName("types"));
         list.add("index_analysis");
+        list.add(names.generateGroupTableName("index_analysis"));
+        
+        
         
         return Collections.unmodifiableList(list);
     }

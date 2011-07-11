@@ -45,6 +45,17 @@ public class AISInvariants {
                     "Table %s already has column %s", table.getName().toString(), columnName);
         }
     }
+    public static void checkDuplicateColumnPositions(Table table, Integer position) {
+        /* TODO: fix AkServerAisSourceTargetIT throwing this exception: 
+         * Table akiban_information_schema._akiban_columns already has a column in position 7
+         * 
+        if (position < table.getColumnsIncludingInternal().size() && 
+                table.getColumn(position) != null) {
+            throw new InvalidOperationException (ErrorCode.DUPLICATE_COLUMN,
+                    "Table %s already has a column in position %d", table.getName().toString(), position);
+        }
+        */
+    }
     
     public static void checkDuplicateColumnsInIndex(Index index, String columnName)
     {
@@ -67,7 +78,12 @@ public class AISInvariants {
     {
         return table.getIndex(indexName) != null;
     }
-    
+ 
+    public static void checkDuplicateIndexColumnPosition (Index index, Integer position) {
+        if (position < index.getColumns().size()) {
+            // TODO: Index uses position for a relative ordering, not an absolute position. 
+        }
+    }
     public static void checkDuplicateGroups (AkibanInformationSchema ais, String groupName)
     {
         if (ais.getGroup(groupName) != null) {

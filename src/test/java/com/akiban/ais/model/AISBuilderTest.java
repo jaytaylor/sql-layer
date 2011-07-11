@@ -787,7 +787,7 @@ public class AISBuilderTest
         // p(k, qk -> q(k))
         builder.userTable("s", "p");
         builder.column("s", "p", "k", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("s", "p", "qk", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("s", "p", "qk", 1, "int", 0L, 0L, false, false, null, null);
         builder.index("s", "p", "p_pk", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("s", "p", "p_pk", "k", 0, true, null);
         builder.joinTables("pq", "s", "q", "s", "p");

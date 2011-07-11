@@ -22,13 +22,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import org.slf4j.Logger;

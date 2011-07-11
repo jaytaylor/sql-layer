@@ -16,6 +16,7 @@ package com.akiban.ais.model;
 
 import com.akiban.ais.io.AISTarget;
 import com.akiban.ais.io.Writer;
+import com.akiban.ais.model.validation.AISValidations;
 
 /**
  * AISMerge is designed to merge a single UserTable definition into an existing AIS. The merge process 
@@ -81,6 +82,9 @@ public class AISMerge {
             ; // TODO : currently not yet complete, There is a parent join, perform the join.  
         }
         builder.groupingIsComplete();
+        
+        builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).throwIfNecessary();
+        builder.akibanInformationSchema().freeze();
         return this;
     }
 

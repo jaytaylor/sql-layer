@@ -108,7 +108,7 @@ public class GroupsBuilderTest {
 
         aisBuilder.userTable("s", "order");
         aisBuilder.column("s", "order", "id", 0, "INT", 4L, null, false, true, null, null);
-        aisBuilder.column("s", "order", "cid", 0, "INT", 4L, null, false, false, null, null);
+        aisBuilder.column("s", "order", "cid", 1, "INT", 4L, null, false, false, null, null);
         aisBuilder.index("s", "order", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         aisBuilder.indexColumn("s", "order", Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
         aisBuilder.joinTables("join3", "s", "customer", "s", "order");
@@ -116,7 +116,7 @@ public class GroupsBuilderTest {
 
         aisBuilder.userTable("s", "item");
         aisBuilder.column("s", "item", "id", 0, "INT", 4L, null, false, true, null, null);
-        aisBuilder.column("s", "item", "oid", 0, "INT", 4L, null, false, false, null, null);
+        aisBuilder.column("s", "item", "oid", 1, "INT", 4L, null, false, false, null, null);
         aisBuilder.index("s", "item", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         aisBuilder.indexColumn("s", "item", Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
         aisBuilder.joinTables("join2", "s", "order", "s", "item");
