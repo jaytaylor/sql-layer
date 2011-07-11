@@ -77,18 +77,18 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler {
         switch (action) {
         case BULK_ADD:
             assert nullPoint < 0 : nullPoint;
-            exchange.store();
+            storeExchange(exchange);
             break;
         case STORE:
-            exchange.store();
+            storeExchange(exchange);
             if (nullOutHKey(nullPoint, groupIndex, row, key)) {
-                exchange.remove();
+                removeExchange(exchange);
             }
             break;
         case DELETE:
-            exchange.remove();
+            removeExchange(exchange);
             if (nullOutHKey(nullPoint, groupIndex, row, key)) {
-                exchange.store();
+                storeExchange(exchange);
             }
             break;
         default:
@@ -100,14 +100,34 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler {
 
     public static OperatorStore.GroupIndexHandler forTable(PersistitAdapter adapter, UserTable userTable) {
         ArgumentValidation.notNull("userTable", userTable);
-        return new OperatorStoreGIHandler(adapter, userTable);
+        return new OperatorStoreGIHandler(adapter, userTable, null);
     }
 
     public static OperatorStore.GroupIndexHandler forBuilding(PersistitAdapter adapter) {
-        return new OperatorStoreGIHandler(adapter, null);
+        return new OperatorStoreGIHandler(adapter, null, null);
+    }
+
+    // For use within the package
+    interface GIHandlerHook {
+        void storeHook(Key key, Object value);
+        void removeHook(Key key);
     }
 
     // for use in this class
+
+    private void storeExchange(Exchange exchange) throws PersistitException {
+        exchange.store();
+        if (giHandlerHook != null) {
+            giHandlerHook.storeHook(exchange.getKey(), exchange.getValue().get());
+        }
+    }
+
+    private void removeExchange(Exchange exchange) throws PersistitException {
+        exchange.remove();
+        if (giHandlerHook != null) {
+            giHandlerHook.removeHook(exchange.getKey());
+        }
+    }
 
     private static int depthFromHKey(GroupIndex groupIndex, Row row) {
         final int targetSegments = row.hKey().segments();
@@ -169,15 +189,17 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler {
         return true;
     }
 
-    public OperatorStoreGIHandler(PersistitAdapter adapter, UserTable sourceTable) {
+    private OperatorStoreGIHandler(PersistitAdapter adapter, UserTable sourceTable, GIHandlerHook hook) {
         this.adapter = adapter;
         this.sourceTable = sourceTable;
+        this.giHandlerHook = hook;
     }
 
     // object state
 
     private final PersistitAdapter adapter;
     private final UserTable sourceTable;
+    private final GIHandlerHook giHandlerHook;
 
     // nested classes
     enum GroupIndexPosition {
