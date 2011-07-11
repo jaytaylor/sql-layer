@@ -15,9 +15,7 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.server.RowData;
-import com.akiban.server.service.session.Session;
-import com.persistit.exception.PersistitException;
+import com.persistit.Key;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,15 +27,30 @@ public class TestOperatorStore extends OperatorStore {
 
     // TestOperatorStore interface
 
-    public <T extends Throwable>
-    void testMaintainGroupIndexes(Session session, RowData rowData, GroupIndexHandler<T> handler, Action action, boolean alsoNullKeys)
-            throws PersistitException, T
-    {
-        super.maintainGroupIndexes(session, rowData, handler, action.equivalentAction, alsoNullKeys);
+    public List<String> getAndClearHookStrings() {
+        return hook.getAndClear();
+    }
+
+    public void clearHookStrings() {
+        hook.getAndClear();
+    }
+
+    // service overrides
+
+    @Override
+    public void start() throws Exception {
+        super.start();
+        OperatorStoreGIHandler.setGiHandlerHook(hook);
+    }
+
+    @Override
+    public void stop() throws Exception {
+        OperatorStoreGIHandler.setGiHandlerHook(null);
+        clearHookStrings();
+        super.stop();
     }
 
     // OperatorStore overrides
-
 
     @Override
     protected Collection<GroupIndex> optionallyOrderGroupIndexes(Collection<GroupIndex> groupIndexes) {
@@ -46,23 +59,9 @@ public class TestOperatorStore extends OperatorStore {
         return ordered;
     }
 
-    // nested classes
-    public static interface GroupIndexHandler<T extends Throwable> extends OperatorStore.GroupIndexHandler<T> {
-        // promoting visibility
-    }
+    // object state
 
-    public enum Action {
-        STORE(GroupIndexHandler.Action.STORE),
-        DELETE(GroupIndexHandler.Action.DELETE),
-        BULK_ADD(GroupIndexHandler.Action.BULK_ADD)
-        ;
-
-        Action(OperatorStore.GroupIndexHandler.Action equivalentAction) {
-            this.equivalentAction = equivalentAction;
-        }
-
-        private final GroupIndexHandler.Action equivalentAction;
-    }
+    private final OperatorStoreGIHandlerHook hook = new OperatorStoreGIHandlerHook();
 
     // consts
 
@@ -74,4 +73,32 @@ public class TestOperatorStore extends OperatorStore {
             return o1Name.compareTo(o2Name);
         }
     };
+
+    // nested classes
+    private static class OperatorStoreGIHandlerHook implements OperatorStoreGIHandler.GIHandlerHook {
+
+        public List<String> getAndClear() {
+            synchronized (strings) {
+                List<String> ret = new ArrayList<String>(strings);
+                strings.clear();
+                return ret;
+            }
+        }
+
+        @Override
+        public void storeHook(GroupIndex groupIndex, Key key, Object value) {
+            see("STORE to %s %s => %s", groupIndex.getIndexName().getName(), key, value);
+        }
+
+        @Override
+        public void removeHook(GroupIndex groupIndex, Key key) {
+            see("REMOVE from %s %s", groupIndex.getIndexName().getName(), key);
+        }
+
+        private void see(String format, Object... args) {
+            strings.add(String.format(format, args));
+        }
+
+        private final List<String> strings = Collections.synchronizedList(new ArrayList<String>());
+    }
 }
