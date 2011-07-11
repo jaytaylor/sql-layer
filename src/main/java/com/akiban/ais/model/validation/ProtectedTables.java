@@ -27,7 +27,7 @@ import com.akiban.message.ErrorCode;
  * @author tjoneslo
  *
  */
-public class ProtectedTables implements AISValidation {
+class ProtectedTables implements AISValidation {
 
     private static final Collection<String> PROTECT_LIST = createProtectList();
     @Override

@@ -31,8 +31,9 @@ public class ProtectedTablesTest {
     @Before 
     public void createValidations() {
         validations = new LinkedList<AISValidation>();
-        validations.add(new ProtectedTables());
+        validations.add(AISValidations.PROTECTED_TABLES);
     }
+    
     @Test
     public void validTablesInAIS () {
         AISBuilder builder = new AISBuilder();

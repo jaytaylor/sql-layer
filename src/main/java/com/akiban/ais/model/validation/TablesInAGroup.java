@@ -14,40 +14,32 @@
  */
 package com.akiban.ais.model.validation;
 
-import java.util.Map;
-import java.util.TreeMap;
-
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.message.ErrorCode;
+/**
+ * Validates that all tables belong to a group, 
+ * All user tables should be in a group.
+ * All group tables should belong to a group. 
+ * @author tjoneslo
+ *
+ */
+public class TablesInAGroup implements AISValidation {
 
-class TableIDsUnique implements AISValidation {
-
-    private Map<Integer, Table> tableIDList;
-    private AISValidationOutput failures; 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        tableIDList = new TreeMap<Integer, Table>();
-        this.failures = output;
-        
         for (UserTable table : ais.getUserTables().values()) {
-            checkTableID (table);
+            if (table.getGroup() == null) {
+                output.reportFailure(new AISValidationFailure (ErrorCode.INTERNAL_REFERENCES_BROKEN,
+                        "Table %s does not connect to a group", table.getName().toString()));
+            }
         }
         for (GroupTable table : ais.getGroupTables().values()) {
-            checkTableID (table);
-        }
-    }
-    
-    private void checkTableID (Table table) {
-        if (tableIDList.containsKey(table.getTableId())) {
-            failures.reportFailure(new AISValidationFailure (ErrorCode.DUPLICATE_TABLE, 
-                    "Table %s has a duplicate tableID to table %s",
-                    table.getName().toString(), 
-                    tableIDList.get(table.getTableId()).getName().toString()));
-        } else {
-            tableIDList.put(table.getTableId(), table);
+            if (table.getGroup() == null) {
+                output.reportFailure(new AISValidationFailure (ErrorCode.INTERNAL_REFERENCES_BROKEN,
+                        "Table %s does not connect to a group", table.getName().toString()));
+            }
         }
     }
 }

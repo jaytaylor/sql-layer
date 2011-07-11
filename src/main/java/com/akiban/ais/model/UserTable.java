@@ -225,7 +225,7 @@ public class UserTable extends Table
     }
 
     @Override
-    public void traversePreOrder(Visitor visitor) throws Exception
+    public void traversePreOrder(Visitor visitor)
     {
         for (Column column : getColumns()) {
             visitor.visitColumn(column);
@@ -237,7 +237,7 @@ public class UserTable extends Table
     }
 
     @Override
-    public void traversePostOrder(Visitor visitor) throws Exception
+    public void traversePostOrder(Visitor visitor)
     {
         for (Column column : getColumns()) {
             visitor.visitColumn(column);

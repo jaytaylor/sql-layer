@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Set;
 
 import com.akiban.ais.gwtutils.SerializableEnumSet;
-import com.akiban.ais.model.validation.AISInvariants;
 
 public class Join implements Serializable, ModelNames, Traversable, HasGroup
 {
@@ -38,9 +37,6 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
         String joinName = (String) map.get(join_joinName);
         Integer joinWeight = (Integer) map.get(join_joinWeight);
         String groupName = (String) map.get(join_groupName);
-        
-        AISInvariants.checkFKParentTable(ais, TableName.create(parentSchemaName, parentTableName));
-        AISInvariants.checkFKChildTable(ais, TableName.create(childSchemaName, childTableName));
         
         UserTable parent = ais.getUserTable(parentSchemaName, parentTableName);
         UserTable child = ais.getUserTable(childSchemaName, childTableName);
@@ -232,7 +228,7 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
     }
 
     @Override
-    public void traversePreOrder(Visitor visitor) throws Exception
+    public void traversePreOrder(Visitor visitor)
     {
         for (JoinColumn joinColumn : joinColumns) {
             visitor.visitJoinColumn(joinColumn);
@@ -240,7 +236,7 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
     }
 
     @Override
-    public void traversePostOrder(Visitor visitor) throws Exception
+    public void traversePostOrder(Visitor visitor)
     {
         traversePreOrder(visitor);
     }

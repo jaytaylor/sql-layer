@@ -203,7 +203,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
     }
 
     @Override
-    public void traversePreOrder(Visitor visitor) throws Exception
+    public void traversePreOrder(Visitor visitor)
     {
         for (Type type : types.values()) {
             visitor.visitType(type);
@@ -227,7 +227,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
     }
 
     @Override
-    public void traversePostOrder(Visitor visitor) throws Exception
+    public void traversePostOrder(Visitor visitor)
     {
         for (Type type : types.values()) {
             visitor.visitType(type);
@@ -480,7 +480,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
      * @param validations the validations to run
      * @return the result of the validations
      */
-   public AISValidationResults validate(Collection<? extends AISValidation> validations) {
+   public AISValidationResults validate(Collection<AISValidation> validations) {
        validationFailures = new AISFailureList();
        for (AISValidation v : validations) {
            v.validate(this, validationFailures);
@@ -545,7 +545,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
     private AISFailureList validationFailures;
     private boolean isFrozen = false;
 
-    private class AISFailureList extends AISValidationResults implements AISValidationOutput {
+    public static class AISFailureList extends AISValidationResults implements AISValidationOutput {
 
         @Override
         public void reportFailure(AISValidationFailure failure) {

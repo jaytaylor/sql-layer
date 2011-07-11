@@ -38,8 +38,6 @@ public class GroupIndex extends Index
     {
         // index checks index name. 
         super(new TableName("", group.getName()), indexName, indexId, isUnique, constraint);
-        group.checkMutability();
-
         this.group = group;
     }
 

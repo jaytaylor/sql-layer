@@ -33,8 +33,9 @@ public class Group implements Serializable, ModelNames, Traversable
 
     public static Group create(AkibanInformationSchema ais, String groupName)
     {
-        Group group = new Group(groupName);
+        ais.checkMutability();
         AISInvariants.checkDuplicateGroups(ais, groupName);
+        Group group = new Group(groupName);
         ais.addGroup(group);
         return group;
     }
@@ -144,7 +145,7 @@ public class Group implements Serializable, ModelNames, Traversable
         }
     }
 
-    public void traversePreOrder(Visitor visitor) throws Exception
+    public void traversePreOrder(Visitor visitor)
     {
         for (Index index : getIndexes()) {
             visitor.visitIndex(index);
@@ -152,7 +153,7 @@ public class Group implements Serializable, ModelNames, Traversable
         }
     }
 
-    public void traversePostOrder(Visitor visitor) throws Exception
+    public void traversePostOrder(Visitor visitor)
     {
         for (Index index : getIndexes()) {
             index.traversePostOrder(visitor);

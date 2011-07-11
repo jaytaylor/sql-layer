@@ -12,11 +12,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+package com.akiban.ais.model.validation;
 
-package com.akiban.ais.model;
+import com.akiban.ais.model.AkibanInformationSchema;
 
-public interface Traversable
-{
-    void traversePreOrder(Visitor visitor);
-    void traversePostOrder(Visitor visitor);
+/**
+ * This validates a current limitation of the system which expects all of the 
+ * UserTable indexes are also reflected in the group table. 
+ */
+public class TableIndexesMatchGroupIndexes implements AISValidation {
+
+    @Override
+    public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
+        // TODO Auto-generated method stub
+
+    }
+
 }

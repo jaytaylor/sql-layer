@@ -172,7 +172,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     }
 
     @Override
-    public void traversePreOrder(Visitor visitor) throws Exception
+    public void traversePreOrder(Visitor visitor)
     {
         for (IndexColumn indexColumn : getColumns()) {
             visitor.visitIndexColumn(indexColumn);
@@ -180,7 +180,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     }
 
     @Override
-    public void traversePostOrder(Visitor visitor) throws Exception
+    public void traversePostOrder(Visitor visitor)
     {
         traversePreOrder(visitor);
     }

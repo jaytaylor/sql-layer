@@ -24,6 +24,7 @@ import com.akiban.ais.gwtutils.GwtLogger;
 import com.akiban.ais.gwtutils.GwtLogging;
 import com.akiban.ais.model.Join.GroupingUsage;
 import com.akiban.ais.model.Join.SourceType;
+import com.akiban.ais.model.validation.AISInvariants;
 
 // AISBuilder can be used to create an AIS. The API is designed to sify the creation of an AIS during a scan
 // of a dump. The user need not search the AIS and hold on to AIS objects (UserTable, Column, etc.). Instead,
@@ -553,10 +554,10 @@ public class
             UserTable userTable) {
         LOG.debug("generating group table indexes for group table "
                 + groupTable + " and user table " + userTable);
-        for (TableIndex userIndex : userTable.getIndexes()) {
+        for (TableIndex userIndex : userTable.getIndexesIncludingInternal()) {
             TableIndex groupIndex = TableIndex.create(ais, groupTable,
                     nameGenerator.generateGroupIndexName(userIndex),
-                    userIndex.getIndexId(), false, "key");
+                    userIndex.getIndexId(), false, Index.KEY_CONSTRAINT);
             int position = 0;
             for (IndexColumn userIndexColumn : userIndex.getColumns()) {
                 IndexColumn groupIndexColumn = new IndexColumn(groupIndex,
@@ -574,20 +575,39 @@ public class
 
     public void groupingIsComplete() {
         LOG.info("groupingIsComplete");
+        
+        // make sure the groups have all the correct columns
+        // including the hidden PK columns. 
+        for (Group group : ais.getGroups().values()) {
+            generateGroupTableColumns(group);
+        }
         // Create group table indexes for each user table index
         for (UserTable userTable : ais.getUserTables().values()) {
             Group group = userTable.getGroup();
             if (group != null) {
                 GroupTable groupTable = group.getGroupTable();
                 for (TableIndex userIndex : userTable.getIndexesIncludingInternal()) {
+                    String indexName = nameGenerator.generateGroupIndexName(userIndex);
+                    
+                    // Check if the index we're about to add is already in the table.
+                    // This can happen if the user alters one or more groups, then 
+                    // calls groupingIsComplete again (or just calls it twice in a row)
+                    // but this assumes that indexName == index Definition
+                    // TODO: Need to check definition, not just name. 
+                    if (AISInvariants.isIndexInTable(groupTable, indexName)) {
+                        continue;
+                    }
                     TableIndex groupIndex = TableIndex.create(ais, groupTable,
-                            nameGenerator.generateGroupIndexName(userIndex),
-                            userIndex.getIndexId(), false, "key");
+                            indexName, userIndex.getIndexId(), false, Index.KEY_CONSTRAINT);
                     int position = 0;
+
                     for (IndexColumn userIndexColumn : userIndex.getColumns()) {
+                        this.checkFound(userIndexColumn, "building group indexes", "userIndexColumn", "NONE");
+                        this.checkFound(userIndexColumn.getColumn().getGroupColumn(), "building group indexes", "group column", userIndexColumn.getColumn().getName());
                         IndexColumn groupIndexColumn = new IndexColumn(
-                                groupIndex, userIndexColumn.getColumn()
-                                        .getGroupColumn(), position++,
+                                groupIndex, 
+                                userIndexColumn.getColumn().getGroupColumn(), 
+                                position++,
                                 userIndexColumn.isAscending(),
                                 userIndexColumn.getIndexedLength());
                         groupIndex.addColumn(groupIndexColumn);
@@ -624,8 +644,8 @@ public class
         // Only generate columns if the group is connected, i.e., there is only
         // one root. Multiple roots means
         // that there are disconnected pieces, which is not a valid final state.
-        UserTable root = null;
         boolean multipleRoots = false;
+        UserTable root = null;
         for (UserTable userTable : ais.getUserTables().values()) {
             if (userTable.getGroup() == group) {
                 if (userTable.getParentJoin() == null) {

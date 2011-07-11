@@ -17,8 +17,6 @@ package com.akiban.ais.model.validation;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.TableName;
 import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
 
@@ -59,10 +57,15 @@ public class AISInvariants {
     
     public static void checkDuplicateIndexesInTable(Table table, String indexName) 
     {
-        if (table.getIndex(indexName) != null) {
+        if (isIndexInTable(table, indexName)) {
             throw new InvalidOperationException (ErrorCode.DUPLICATE_KEY,
                     "Table %s already has index %s", table.getName().toString(), indexName);
         }
+    }
+    
+    public static boolean isIndexInTable (Table table, String indexName)
+    {
+        return table.getIndex(indexName) != null;
     }
     
     public static void checkDuplicateGroups (AkibanInformationSchema ais, String groupName)
@@ -73,24 +76,4 @@ public class AISInvariants {
                     groupName);
         }
     }
-    
-    
-    public static void checkFKParentTable (AkibanInformationSchema ais, TableName parentTable)
-    {
-        if (ais.getTable(parentTable) == null) {
-            throw new InvalidOperationException (ErrorCode.NO_SUCH_TABLE, 
-                    "Parent Join Table %s not found in the system", 
-                    parentTable.toString());
-        }
-    }
-    
-    public static void checkFKChildTable  (AkibanInformationSchema ais, TableName childTable) 
-    {
-        if (ais.getTable(childTable) == null) {
-            throw new InvalidOperationException (ErrorCode.NO_SUCH_TABLE,
-                    "Child join table %s not found in the system", 
-                    childTable.toString());
-        }
-    }
-
 }
