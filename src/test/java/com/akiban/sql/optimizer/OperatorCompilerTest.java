@@ -148,7 +148,7 @@ public class OperatorCompilerTest extends TestBase
         @Override
         public ResultColumnBase getResultColumn(SimplifiedQuery.SimpleSelectColumn selectColumn) {
             String name = selectColumn.getName();
-            String type = selectColumn.getType().toString();
+            String type = String.valueOf(selectColumn.getType());
             if (selectColumn.getExpression().isColumn()) {
                 Column column = ((SimplifiedQuery.ColumnExpression)
                                  selectColumn.getExpression()).getColumn();
