@@ -86,13 +86,13 @@ public class TestOperatorStore extends OperatorStore {
         }
 
         @Override
-        public void storeHook(Key key, Object value) {
-            see("STORE %s => %s", key, value);
+        public void storeHook(GroupIndex groupIndex, Key key, Object value) {
+            see("STORE to %s %s => %s", groupIndex.getIndexName().getName(), key, value);
         }
 
         @Override
-        public void removeHook(Key key) {
-            see("REMOVE %s", key);
+        public void removeHook(GroupIndex groupIndex, Key key) {
+            see("REMOVE from %s %s", groupIndex.getIndexName().getName(), key);
         }
 
         private void see(String format, Object... args) {

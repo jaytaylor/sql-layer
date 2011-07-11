@@ -113,13 +113,11 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
 
         testMaintainedRows(
                 Action.STORE,
-                target,
-                see(Action.STORE, "date_sku", "[04-04-2004, 4444, 1, 10, 100]", DATE_SKU_COLS)
+                target
         );
         testMaintainedRows(
                 Action.DELETE,
-                target,
-                see(Action.DELETE, "date_sku", "[04-04-2004, 4444, 1, 10, 100]", DATE_SKU_COLS)
+                target
         );
     }
 
@@ -134,12 +132,12 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         testMaintainedRows(
                 Action.STORE,
                 target,
-                see(Action.STORE, "date_sku", "[01-01-2001, null, 1, 10, null]", DATE_SKU_COLS)
+                seeStore("date_sku", depth(o), "01-01-2001", null, 1L, 10L, null)
         );
         testMaintainedRows(
                 Action.DELETE,
                 target,
-                see(Action.DELETE, "date_sku", "[01-01-2001, null, 1, 10, null]", DATE_SKU_COLS)
+                seeRemove("date_sku", "01-01-2001", null, 1L, 10L, null)
         );
     }
 
@@ -403,6 +401,14 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
 
     // private methods
 
+    private int depth(int tableId) {
+        Integer asInteger = ddl().getAIS(session()).getUserTable(tableId).getDepth();
+        if (asInteger == null) {
+            throw new NullPointerException("no table with tableId = " + tableId);
+        }
+        return asInteger;
+    }
+
     private void testMaintainedRows(Action action, NewRow targetRow, String... expectedActions) {
         opStore().clearHookStrings();
 
@@ -430,8 +436,43 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         return testOperatorStore;
     }
 
-    private static String see(Action action, String indexName, String fields, String columns) {
+    private static String seeStore(String indexName, int depth, Object... key) {
+        return String.format("STORE to %s %s => %s", indexName, keyString(key), depth);
+    }
+
+    private static String seeRemove(String indexName, Object... key) {
+        return String.format("REMOVE from %s %s", indexName, keyString(key));
+    }
+
+    @Deprecated
+    private static String see(Object ... ignored) {
         throw new AssertionError();
+    }
+
+    private static String keyString(Object... key) {
+        StringBuilder builder = new StringBuilder();
+        builder.append('{');
+        for(int i=0; i < key.length; ++i) {
+            Object elem = key[i];
+            if (elem == null) {
+                builder.append("null");
+            }
+            else if (elem instanceof Long) {
+                builder.append("(long)").append(elem);
+            }
+            else if (elem instanceof String) {
+                builder.append('"').append(elem).append('"');
+            }
+            else {
+                throw new UnsupportedOperationException(elem + " is of class " + elem.getClass());
+            }
+
+            if (i < key.length-1) {
+                builder.append(',');
+            }
+        }
+        builder.append('}');
+        return builder.toString();
     }
 
     // object state
