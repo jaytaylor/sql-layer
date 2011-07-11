@@ -31,6 +31,10 @@ public class TestOperatorStore extends OperatorStore {
         return hook.getAndClear();
     }
 
+    public void clearHookStrings() {
+        hook.getAndClear();
+    }
+
     // service overrides
 
     @Override
@@ -42,7 +46,7 @@ public class TestOperatorStore extends OperatorStore {
     @Override
     public void stop() throws Exception {
         OperatorStoreGIHandler.setGiHandlerHook(null);
-        hook.getAndClear();
+        clearHookStrings();
         super.start();
     }
 
@@ -83,12 +87,12 @@ public class TestOperatorStore extends OperatorStore {
 
         @Override
         public void storeHook(Key key, Object value) {
-            see("STORE: %s => %s", key, value);
+            see("STORE %s => %s", key, value);
         }
 
         @Override
         public void removeHook(Key key) {
-            see("REMOVE: %s");
+            see("REMOVE %s", key);
         }
 
         private void see(String format, Object... args) {

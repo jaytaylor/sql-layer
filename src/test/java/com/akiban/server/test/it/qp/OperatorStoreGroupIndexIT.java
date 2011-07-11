@@ -20,14 +20,14 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.config.Property;
 import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.util.Strings;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -89,10 +89,8 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     public void basic_existingNone_incomingC() {
         createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
 
-        final NewRow target;
-        writeRows(
-                target = createNewRow(c, 1L, "name")
-        );
+        final NewRow target = createNewRow(c, 1L, "name");
+
         testMaintainedRows(
                 Action.STORE,
                 target
@@ -107,22 +105,21 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     public void basic_existingOI_incomingC() {
         createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
 
-        final NewRow target;
         writeRows(
                 createNewRow(o, 10L, 1L, "04-04-2004"),
-                createNewRow(i, 100L, 10L, 4444),
-                target = createNewRow(c, 1L, "Alpha")
+                createNewRow(i, 100L, 10L, 4444)
         );
+        final NewRow target = createNewRow(c, 1L, "Alpha");
 
         testMaintainedRows(
                 Action.STORE,
                 target,
-                see(Action.STORE, true, "date_sku", "[04-04-2004, 4444, 1, 10, 100]", DATE_SKU_COLS)
+                see(Action.STORE, "date_sku", "[04-04-2004, 4444, 1, 10, 100]", DATE_SKU_COLS)
         );
         testMaintainedRows(
                 Action.DELETE,
                 target,
-                see(Action.DELETE, true, "date_sku", "[04-04-2004, 4444, 1, 10, 100]", DATE_SKU_COLS)
+                see(Action.DELETE, "date_sku", "[04-04-2004, 4444, 1, 10, 100]", DATE_SKU_COLS)
         );
     }
 
@@ -132,19 +129,17 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     public void basic_existingNone_incomingO() {
         createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
 
-        final NewRow target;
-        writeRows(
-                target = createNewRow(o, 10L, 1L, "01-01-2001")
-        );
+        final NewRow target = createNewRow(o, 10L, 1L, "01-01-2001");
+
         testMaintainedRows(
                 Action.STORE,
                 target,
-                see(Action.STORE, true, "date_sku", "[01-01-2001, null, 1, 10, null]", DATE_SKU_COLS)
+                see(Action.STORE, "date_sku", "[01-01-2001, null, 1, 10, null]", DATE_SKU_COLS)
         );
         testMaintainedRows(
                 Action.DELETE,
                 target,
-                see(Action.DELETE, true, "date_sku", "[01-01-2001, null, 1, 10, null]", DATE_SKU_COLS)
+                see(Action.DELETE, "date_sku", "[01-01-2001, null, 1, 10, null]", DATE_SKU_COLS)
         );
     }
 
@@ -152,22 +147,21 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     public void basic_existingCI_incomingO() {
         createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
 
-        final NewRow target;
         writeRows(
                 createNewRow(c, 1L, "alpha"),
-                createNewRow(i, 100, 10L, 1111),
-                target = createNewRow(o, 10L, 1L, "01-01-2001")
+                createNewRow(i, 100, 10L, 1111)
         );
+        final NewRow target = createNewRow(o, 10L, 1L, "01-01-2001");
 
-        testMaintainedRows(
+                testMaintainedRows(
                 Action.STORE,
                 target,
-                see(Action.STORE, true, "date_sku", "[01-01-2001, 1111, 1, 10, 100]", DATE_SKU_COLS)
+                see(Action.STORE, "date_sku", "[01-01-2001, 1111, 1, 10, 100]", DATE_SKU_COLS)
         );
         testMaintainedRows(
                 Action.DELETE,
                 target,
-                see(Action.DELETE, true, "date_sku", "[01-01-2001, 1111, 1, 10, 100]", DATE_SKU_COLS)
+                see(Action.DELETE, "date_sku", "[01-01-2001, 1111, 1, 10, 100]", DATE_SKU_COLS)
         );
     }
 
@@ -175,21 +169,20 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     public void basic_existingO_incomingO() {
         createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
 
-        final NewRow target;
         writeRows(
-                createNewRow(o, 10L, 1L, "01-01-2001"),
-                target = createNewRow(o, 11L, 1L, "02-02-2002")
+                createNewRow(o, 10L, 1L, "01-01-2001")
         );
+        final NewRow target = createNewRow(o, 11L, 1L, "02-02-2002");
 
         testMaintainedRows(
                 Action.STORE,
                 target,
-                see(Action.STORE, true, "date_sku", "[02-02-2002, null, 1, 11, null]", DATE_SKU_COLS)
+                see(Action.STORE, "date_sku", "[02-02-2002, null, 1, 11, null]", DATE_SKU_COLS)
         );
         testMaintainedRows(
                 Action.DELETE,
                 target,
-                see(Action.DELETE, true, "date_sku", "[02-02-2002, null, 1, 11, null]", DATE_SKU_COLS)
+                see(Action.DELETE, "date_sku", "[02-02-2002, null, 1, 11, null]", DATE_SKU_COLS)
         );
     }
 
@@ -197,23 +190,22 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     public void basic_existingI_incomingO() {
         createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
 
-        final NewRow target;
         writeRows(
-                createNewRow(i, 100L, 10L, 1111),
-                target = createNewRow(o, 10L, 1L, "03-03-2003")
+                createNewRow(i, 100L, 10L, 1111)
         );
+        final NewRow target = createNewRow(o, 10L, 1L, "03-03-2003");
 
         testMaintainedRows(
                 Action.STORE,
                 target,
-                see(Action.STORE, true, "date_sku", "[03-03-2003, 1111, 1, 10, 100]", DATE_SKU_COLS),
-                see(Action.DELETE, false, "date_sku", "[03-03-2003, null, 1, 10, null]", DATE_SKU_COLS)
+                see(Action.STORE, "date_sku", "[03-03-2003, 1111, 1, 10, 100]", DATE_SKU_COLS),
+                see(Action.DELETE, "date_sku", "[03-03-2003, null, 1, 10, null]", DATE_SKU_COLS)
         );
         testMaintainedRows(
                 Action.DELETE,
                 target,
-                see(Action.DELETE, true, "date_sku", "[03-03-2003, 1111, 1, 10, 100]", DATE_SKU_COLS),
-                see(Action.STORE, false, "date_sku", "[03-03-2003, null, 1, 10, null]", DATE_SKU_COLS)
+                see(Action.DELETE, "date_sku", "[03-03-2003, 1111, 1, 10, 100]", DATE_SKU_COLS),
+                see(Action.STORE, "date_sku", "[03-03-2003, null, 1, 10, null]", DATE_SKU_COLS)
         );
     }
 
@@ -223,10 +215,7 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     public void basic_existingNone_incomingI() {
         createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
 
-        final NewRow target;
-        writeRows(
-                target = createNewRow(i, 100L, 10L, 1111)
-        );
+        final NewRow target = createNewRow(i, 100L, 10L, 1111);
         testMaintainedRows(
                 Action.STORE,
                 target
@@ -241,11 +230,10 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     public void basic_existingC_incomingI() {
         createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
 
-        final NewRow target;
         writeRows(
-                createNewRow(c, 1L, "one"),
-                target = createNewRow(i, 100L, 10L, 1111)
+                createNewRow(c, 1L, "one")
         );
+        final NewRow target = createNewRow(i, 100L, 10L, 1111);
 
         testMaintainedRows(
                 Action.STORE,
@@ -261,24 +249,23 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     public void basic_existingCO_incomingI() {
         createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
 
-        final NewRow target;
         writeRows(
                 createNewRow(c, 1L, "one"),
-                createNewRow(o, 10L, 1L, "1-1-01"),
-                target = createNewRow(i, 100L, 10L, 11111)
+                createNewRow(o, 10L, 1L, "1-1-01")
         );
+        final NewRow target = createNewRow(i, 100L, 10L, 11111);
 
         testMaintainedRows(
                 Action.STORE,
                 target,
-                see(Action.STORE, true, "date_sku", "[1-1-01, 11111, 1, 10, 100]", DATE_SKU_COLS),
-                see(Action.DELETE, false, "date_sku", "[1-1-01, null, 1, 10, null]", DATE_SKU_COLS)
+                see(Action.STORE, "date_sku", "[1-1-01, 11111, 1, 10, 100]", DATE_SKU_COLS),
+                see(Action.DELETE, "date_sku", "[1-1-01, null, 1, 10, null]", DATE_SKU_COLS)
         );
         testMaintainedRows(
                 Action.DELETE,
                 target,
-                see(Action.DELETE, true, "date_sku", "[1-1-01, 11111, 1, 10, 100]", DATE_SKU_COLS),
-                see(Action.STORE, false, "date_sku", "[1-1-01, null, 1, 10, null]", DATE_SKU_COLS)
+                see(Action.DELETE, "date_sku", "[1-1-01, 11111, 1, 10, 100]", DATE_SKU_COLS),
+                see(Action.STORE, "date_sku", "[1-1-01, null, 1, 10, null]", DATE_SKU_COLS)
         );
     }
 
@@ -286,12 +273,11 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     public void basic_existingCI_incomingI() {
         createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
 
-        final NewRow target;
         writeRows(
                 createNewRow(c, 1L, "alpha"),
-                createNewRow(i, 100L, 10L, 1111),
-                target = createNewRow(i, 101L, 10L, 2222)
+                createNewRow(i, 100L, 10L, 1111)
         );
+        final NewRow target = createNewRow(i, 101L, 10L, 2222);
 
         testMaintainedRows(
                 Action.STORE,
@@ -307,23 +293,22 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     public void basic_existingCOI_incomingI() {
         createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
 
-        final NewRow target;
         writeRows(
                 createNewRow(c, 1L, "customer one"),
                 createNewRow(o, 10L, 1L, "01-01-2001"),
-                createNewRow(i, 100L, 10L, 1111),
-                target = createNewRow(i, 101L, 10L, 2222)
+                createNewRow(i, 100L, 10L, 1111)
         );
+        final NewRow target = createNewRow(i, 101L, 10L, 2222);
 
         testMaintainedRows(
                 Action.STORE,
                 target,
-                see(Action.STORE, true, "date_sku", "[01-01-2001, 2222, 1, 10, 101]", DATE_SKU_COLS)
+                see(Action.STORE, "date_sku", "[01-01-2001, 2222, 1, 10, 101]", DATE_SKU_COLS)
         );
         testMaintainedRows(
                 Action.DELETE,
                 target,
-                see(Action.DELETE, true, "date_sku", "[01-01-2001, 2222, 1, 10, 101]", DATE_SKU_COLS)
+                see(Action.DELETE, "date_sku", "[01-01-2001, 2222, 1, 10, 101]", DATE_SKU_COLS)
         );
     }
 
@@ -331,22 +316,21 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     public void basic_existingOI_incomingI() {
         createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
 
-        final NewRow target;
         writeRows(
                 createNewRow(o, 10L, 1L, "2001-01-01"),
-                createNewRow(i, 100L, 10L, 1234),
-                target = createNewRow(i, 101L, 10L, 5678)
+                createNewRow(i, 100L, 10L, 1234)
         );
+        final NewRow target = createNewRow(i, 101L, 10L, 5678);
 
         testMaintainedRows(
                 Action.STORE,
                 target,
-                see(Action.STORE, true, "date_sku", "[2001-01-01, 5678, 1, 10, 101]", DATE_SKU_COLS)
+                see(Action.STORE, "date_sku", "[2001-01-01, 5678, 1, 10, 101]", DATE_SKU_COLS)
         );
         testMaintainedRows(
                 Action.DELETE,
                 target,
-                see(Action.DELETE, true, "date_sku", "[2001-01-01, 5678, 1, 10, 101]", DATE_SKU_COLS)
+                see(Action.DELETE, "date_sku", "[2001-01-01, 5678, 1, 10, 101]", DATE_SKU_COLS)
         );
     }
 
@@ -354,11 +338,10 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     public void basic_existingI_incomingI() {
         createGroupIndex(groupName, "date_sku", "orders.odate, items.sku");
 
-        final NewRow target;
         writeRows(
-                createNewRow(i, 100L, 10L, 1234),
-                target = createNewRow(i, 101L, 10L, 5678)
+                createNewRow(i, 100L, 10L, 1234)
         );
+        final NewRow target = createNewRow(i, 101L, 10L, 5678);
 
         testMaintainedRows(
                 Action.STORE,
@@ -421,7 +404,7 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     // private methods
 
     private void testMaintainedRows(Action action, NewRow targetRow, String... expectedActions) {
-        assertEquals("hook strings before test", Collections.<String>emptyList(), opStore().getAndClearHookStrings());
+        opStore().clearHookStrings();
 
         switch (action) {
         case DELETE:
@@ -434,15 +417,21 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
             throw new AssertionError(action.name());
         }
 
-        assertEquals("hook strings", Arrays.asList(expectedActions), opStore().getAndClearHookStrings());
+        List<String> expected = Arrays.asList(expectedActions);
+        List<String> actual = opStore().getAndClearHookStrings();
+        if (!expected.equals(actual)) {
+            assertEquals("hook strings", Strings.join(expected), Strings.join(actual));
+            // just in case...
+            assertEquals("hook strings", expected, actual);
+        }
     }
 
     private TestOperatorStore opStore() {
         return testOperatorStore;
     }
 
-    private static String see(Enum<?> action, boolean alsoNullFields, String indexName, String fields, String columns) {
-        return String.format("%s (%s) on %s: fields=%s cols=%s", action, alsoNullFields, indexName, fields, columns);
+    private static String see(Action action, String indexName, String fields, String columns) {
+        throw new AssertionError();
     }
 
     // object state
