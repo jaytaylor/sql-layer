@@ -358,7 +358,7 @@ public class OperatorCompiler
 
         int nbranches = squery.getTables().colorBranches();
         RowType resultRowType;
-        Map<TableNode,Integer> fieldOffsets;
+        ColumnExpressionToIndex fieldOffsets;
         if (nbranches > 0) {
             Flattener fl = new Flattener(resultOperator, nbranches);
             FlattenState[] fls;
@@ -401,13 +401,13 @@ public class OperatorCompiler
                     fll.mergeTables(flr);
                 }
             }
-            fieldOffsets = fll.getFieldOffsets();
+            fieldOffsets = new TableNodeOffsets(fll.getFieldOffsets());
         }
         else {
             // No branches happens when only constants are selected from a index scan.
             // We just output them as many times are there are index rows.
             resultRowType = indexRowType;
-            fieldOffsets = Collections.emptyMap();
+            fieldOffsets = new ColumnIndexMap(Collections.<Column,Integer>emptyMap());
         }
 
         if (needExtract) {
@@ -498,8 +498,9 @@ public class OperatorCompiler
             resultOperator = groupScan_Default(groupTable);
         }
         
-        Map<TableNode,Integer> fieldOffsets = new HashMap<TableNode,Integer>(1);
-        fieldOffsets.put(targetTable, 0);
+        Map<TableNode,Integer> tableOffsets = new HashMap<TableNode,Integer>(1);
+        tableOffsets.put(targetTable, 0);
+        ColumnExpressionToIndex fieldOffsets = new TableNodeOffsets(tableOffsets);
         for (ColumnCondition condition : supdate.getConditions()) {
             Expression predicate = condition.generateExpression(fieldOffsets);
             resultOperator = select_HKeyOrdered(resultOperator,
