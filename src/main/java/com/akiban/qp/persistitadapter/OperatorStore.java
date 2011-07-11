@@ -250,20 +250,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // for use by subclasses
 
-    protected final void maintainGroupIndexes(
-            Session session,
-            RowData rowData,
-            GroupIndexHandler handler,
-            OperatorStoreGIHandler.Action action,
-            boolean alsoNullKeys
-    )
-    throws PersistitException
-    {
-        AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
-        PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
-        maintainGroupIndexes(session, ais, adapter, rowData, handler, action, alsoNullKeys);
-    }
-
     protected Collection<GroupIndex> optionallyOrderGroupIndexes(Collection<GroupIndex> groupIndexes) {
         return groupIndexes;
     }
@@ -274,7 +260,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             Session session,
             AkibanInformationSchema ais, PersistitAdapter adapter,
             RowData rowData,
-            GroupIndexHandler handler,
+            OperatorStoreGIHandler handler,
             OperatorStoreGIHandler.Action action,
             boolean alsoNullKeys
     )
@@ -330,7 +316,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             GroupIndex groupIndex,
             PhysicalOperator rootOperator,
             Bindings bindings,
-            GroupIndexHandler handler,
+            OperatorStoreGIHandler handler,
             OperatorStoreGIHandler.Action action,
             boolean alsoNullKeys,
             OperatorStoreMaintenancePlan maintenancePlan
@@ -492,11 +478,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
             return PersistitGroupRow.newPersistitGroupRow(adapter, newRow.toRowData());
         }
-    }
-    
-    protected interface GroupIndexHandler {
-        void handleRow(GroupIndex groupIndex, Row row, OperatorStoreGIHandler.Action action, boolean alsoNullHKeys) throws PersistitException;
-
     }
 
     public class UniqueIndexUnsupportedException extends UnsupportedOperationException {

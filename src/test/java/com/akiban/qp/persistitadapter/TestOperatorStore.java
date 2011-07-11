@@ -27,16 +27,7 @@ import java.util.List;
 
 public class TestOperatorStore extends OperatorStore {
 
-    // TestOperatorStore interface
-
-    public void testMaintainGroupIndexes(Session session, RowData rowData, GroupIndexHandler handler, Action action, boolean alsoNullKeys)
-            throws PersistitException
-    {
-        super.maintainGroupIndexes(session, rowData, handler, action.equivalentAction, alsoNullKeys);
-    }
-
     // OperatorStore overrides
-
 
     @Override
     protected Collection<GroupIndex> optionallyOrderGroupIndexes(Collection<GroupIndex> groupIndexes) {
@@ -45,22 +36,10 @@ public class TestOperatorStore extends OperatorStore {
         return ordered;
     }
 
-    // nested classes
-    public static interface GroupIndexHandler extends OperatorStore.GroupIndexHandler {
-        // promoting visibility
-    }
-
+    @Deprecated
     public enum Action {
-        STORE(OperatorStoreGIHandler.Action.STORE),
-        DELETE(OperatorStoreGIHandler.Action.DELETE),
-        BULK_ADD(OperatorStoreGIHandler.Action.BULK_ADD)
-        ;
-
-        Action(OperatorStoreGIHandler.Action equivalentAction) {
-            this.equivalentAction = equivalentAction;
-        }
-
-        private final OperatorStoreGIHandler.Action equivalentAction;
+        STORE,
+        DELETE
     }
 
     // consts
