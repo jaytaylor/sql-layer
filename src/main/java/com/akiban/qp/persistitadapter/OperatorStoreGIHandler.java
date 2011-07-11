@@ -28,7 +28,7 @@ import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
-class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<PersistitException> {
+class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler {
 
     // GroupIndexHandler interface
 
@@ -98,12 +98,12 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler<Persisti
 
     // class interface
 
-    public static OperatorStore.GroupIndexHandler<PersistitException> forTable(PersistitAdapter adapter, UserTable userTable) {
+    public static OperatorStore.GroupIndexHandler forTable(PersistitAdapter adapter, UserTable userTable) {
         ArgumentValidation.notNull("userTable", userTable);
         return new OperatorStoreGIHandler(adapter, userTable);
     }
 
-    public static OperatorStore.GroupIndexHandler<PersistitException> forBuilding(PersistitAdapter adapter) {
+    public static OperatorStore.GroupIndexHandler forBuilding(PersistitAdapter adapter) {
         return new OperatorStoreGIHandler(adapter, null);
     }
 

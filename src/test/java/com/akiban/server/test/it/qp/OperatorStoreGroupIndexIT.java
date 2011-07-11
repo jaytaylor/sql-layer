@@ -515,7 +515,7 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         }
     }
 
-    private static class StringsGIHandler implements TestOperatorStore.GroupIndexHandler<RuntimeException> {
+    private static class StringsGIHandler implements TestOperatorStore.GroupIndexHandler {
 
         // GroupIndexHandler interface
 

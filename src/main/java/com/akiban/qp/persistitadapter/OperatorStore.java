@@ -250,14 +250,14 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // for use by subclasses
 
-    protected final <T extends Throwable> void maintainGroupIndexes(
+    protected final void maintainGroupIndexes(
             Session session,
             RowData rowData,
-            GroupIndexHandler<T> handler,
+            GroupIndexHandler handler,
             GroupIndexHandler.Action action,
             boolean alsoNullKeys
     )
-    throws PersistitException, T
+    throws PersistitException
     {
         AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
@@ -270,15 +270,15 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // private methods
 
-    private <T extends Throwable> void maintainGroupIndexes(
+    private void maintainGroupIndexes(
             Session session,
             AkibanInformationSchema ais, PersistitAdapter adapter,
             RowData rowData,
-            GroupIndexHandler<T> handler,
+            GroupIndexHandler handler,
             GroupIndexHandler.Action action,
             boolean alsoNullKeys
     )
-    throws PersistitException, T
+    throws PersistitException
     {
         UserTable userTable = ais.getUserTable(rowData.getRowDefId());
 
@@ -325,17 +325,17 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
 
-    private <T extends Throwable> void runMaintenancePlan(
+    private void runMaintenancePlan(
             PersistitAdapter adapter,
             GroupIndex groupIndex,
             PhysicalOperator rootOperator,
             Bindings bindings,
-            GroupIndexHandler<T> handler,
+            GroupIndexHandler handler,
             GroupIndexHandler.Action action,
             boolean alsoNullKeys,
             OperatorStoreMaintenancePlan maintenancePlan
     )
-    throws T
+    throws PersistitException
     {
         RowType invertActionRowType = maintenancePlan == null ? null : maintenancePlan.flattenedAncestorRowType();
         Cursor cursor = API.cursor(rootOperator, adapter);
@@ -494,8 +494,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
     
-    protected interface GroupIndexHandler<T extends Throwable> {
-        void handleRow(GroupIndex groupIndex, Row row, Action action, boolean alsoNullHKeys) throws T;
+    protected interface GroupIndexHandler {
+        void handleRow(GroupIndex groupIndex, Row row, Action action, boolean alsoNullHKeys) throws PersistitException;
 
         public enum Action {STORE, DELETE, BULK_ADD }
     }

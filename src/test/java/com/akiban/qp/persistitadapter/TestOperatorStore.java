@@ -29,9 +29,8 @@ public class TestOperatorStore extends OperatorStore {
 
     // TestOperatorStore interface
 
-    public <T extends Throwable>
-    void testMaintainGroupIndexes(Session session, RowData rowData, GroupIndexHandler<T> handler, Action action, boolean alsoNullKeys)
-            throws PersistitException, T
+    public void testMaintainGroupIndexes(Session session, RowData rowData, GroupIndexHandler handler, Action action, boolean alsoNullKeys)
+            throws PersistitException
     {
         super.maintainGroupIndexes(session, rowData, handler, action.equivalentAction, alsoNullKeys);
     }
@@ -47,7 +46,7 @@ public class TestOperatorStore extends OperatorStore {
     }
 
     // nested classes
-    public static interface GroupIndexHandler<T extends Throwable> extends OperatorStore.GroupIndexHandler<T> {
+    public static interface GroupIndexHandler extends OperatorStore.GroupIndexHandler {
         // promoting visibility
     }
 
