@@ -73,10 +73,9 @@ final class OperatorStoreMaintenancePlan {
                                         UserTableRowType rowType)
     {
         PlanCreationStruct struct = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType);
-        struct.flatteningRowTypes = flatteningRowTypes(struct);
         this.rootOperator = struct.rootOperator;
         this.flattenedAncestorRowType = struct.flattenedParentRowType;
-        this.flatteningTypes = struct.flatteningRowTypes;
+        this.flatteningTypes = flatteningRowTypes(struct);
         this.siblingsFinder = createSiblingsFinder(groupIndex, branchTables, rowType);
     }
 
@@ -299,6 +298,5 @@ final class OperatorStoreMaintenancePlan {
     static class PlanCreationStruct {
         public PhysicalOperator rootOperator;
         public RowType flattenedParentRowType;
-        public List<FlattenedRowType> flatteningRowTypes;
     }
 }
