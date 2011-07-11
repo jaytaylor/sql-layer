@@ -645,8 +645,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         InputStream aisFileStream = null;
         try {
             for (;;) {
+                transaction.begin();
                 try {
-                    transaction.begin();
 
                     // Create AIS tables
                     aisFileStream = AkServer.class.getClassLoader().getResourceAsStream(AIS_DDL_NAME);
