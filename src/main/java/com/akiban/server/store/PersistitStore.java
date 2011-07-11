@@ -858,7 +858,11 @@ public class PersistitStore implements Store {
             iEx.removeAll();
             releaseExchange(session, iEx);
         }
-        indexManager.deleteIndexAnalysis(session, index);
+
+        // index analysis only exists on table indexes for now; if/when we analyze GIs, the if should be removed
+        if (index.isTableIndex()) {
+            indexManager.deleteIndexAnalysis(session, index);
+        }
     }
 
     @Override
