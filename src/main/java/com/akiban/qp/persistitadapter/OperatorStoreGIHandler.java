@@ -76,18 +76,18 @@ class OperatorStoreGIHandler {
         switch (action) {
         case BULK_ADD:
             assert nullPoint < 0 : nullPoint;
-            storeExchange(exchange);
+            storeExchange(groupIndex, exchange);
             break;
         case STORE:
-            storeExchange(exchange);
+            storeExchange(groupIndex, exchange);
             if (nullOutHKey(nullPoint, groupIndex, row, key)) {
-                removeExchange(exchange);
+                removeExchange(groupIndex, exchange);
             }
             break;
         case DELETE:
-            removeExchange(exchange);
+            removeExchange(groupIndex, exchange);
             if (nullOutHKey(nullPoint, groupIndex, row, key)) {
-                storeExchange(exchange);
+                storeExchange(groupIndex, exchange);
             }
             break;
         default:
@@ -114,17 +114,17 @@ class OperatorStoreGIHandler {
 
     // for use in this class
 
-    private void storeExchange(Exchange exchange) throws PersistitException {
+    private void storeExchange(GroupIndex groupIndex, Exchange exchange) throws PersistitException {
         exchange.store();
         if (giHandlerHook != null) {
-            giHandlerHook.storeHook(exchange.getKey(), exchange.getValue().get());
+            giHandlerHook.storeHook(groupIndex, exchange.getKey(), exchange.getValue().get());
         }
     }
 
-    private void removeExchange(Exchange exchange) throws PersistitException {
+    private void removeExchange(GroupIndex groupIndex, Exchange exchange) throws PersistitException {
         exchange.remove();
         if (giHandlerHook != null) {
-            giHandlerHook.removeHook(exchange.getKey());
+            giHandlerHook.removeHook(groupIndex, exchange.getKey());
         }
     }
 
@@ -202,8 +202,8 @@ class OperatorStoreGIHandler {
     // nested classes
 
     interface GIHandlerHook {
-        void storeHook(Key key, Object value);
-        void removeHook(Key key);
+        void storeHook(GroupIndex groupIndex, Key key, Object value);
+        void removeHook(GroupIndex groupIndex, Key key);
     }
 
     enum GroupIndexPosition {
