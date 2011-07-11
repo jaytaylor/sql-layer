@@ -49,12 +49,11 @@ final class OperatorStoreMaintenancePlan {
 
     public Row flattenLeft(Row row) {
         // validations, validations...
-        assert (flattenedAncestorRowType==null) == (flatteningTypes==null)
-                : flattenedAncestorRowType + ", " + flatteningTypes;
         if (flattenedAncestorRowType == null) {
+            assert flatteningTypes == null : flatteningTypes;
             throw new IllegalStateException("no flattened row defined");
         }
-        assert !flatteningTypes.isEmpty() : "flatteningTypes is empty";
+        assert (flatteningTypes != null) && !flatteningTypes.isEmpty() : "flatteningTypes: " + flatteningTypes;
         if (!row.rowType().equals(flattenedAncestorRowType)) {
             throw new IllegalArgumentException(String.format(
                     "row(%s) is of type %s; required %s", row, row.rowType(), flattenedAncestorRowType()
@@ -188,7 +187,7 @@ final class OperatorStoreMaintenancePlan {
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;
         EnumSet<API.FlattenOption> options = EnumSet.noneOf(API.FlattenOption.class);
         int innerAtDepth = branchTables.rootMost().userTable().getDepth() - 1;
-        boolean useLeft = branchTables.rootMost().userTable().getDepth() == 0;
+        boolean useLeft = innerAtDepth == -1; // if the branch segment's root is the group root, use LEFT from the start
         for (UserTableRowType branchRowType : branchTables.fromRoot()) {
             if (parentRowType == null) {
                 parentRowType = branchRowType;
@@ -203,14 +202,9 @@ final class OperatorStoreMaintenancePlan {
                 if (branchRowType.equals(rowType) && API.JoinType.LEFT_JOIN.equals(joinType) ) {
                     result.flattenedParentRowType = parentRowType;
                     options.add(API.FlattenOption.KEEP_PARENT);
-//                    result.flatteningRowTypes = new ArrayList<FlattenedRowType>(); // TODO remove?
                 }
                 plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType, options);
                 parentRowType = plan.rowType();
-//                if (result.flatteningRowTypes != null) { TODO remove?
-//                    FlattenedRowType flattenedRowType = (FlattenedRowType) parentRowType;
-//                    result.flatteningRowTypes.add(flattenedRowType);
-//                }
                 options.remove(API.FlattenOption.KEEP_PARENT);
             }
             if (branchRowType.userTable().getDepth() == innerAtDepth) {

@@ -824,9 +824,8 @@ public class PersistitStore implements Store {
                         removeIndexTree(session, index);
                     }
                 }
-                for (Index index : groupRowDef.getGroupIndexes()) {
-                    removeIndexTree(session, index);
-                }
+                // if we start analyzing group indexes, we should removeIndexTree each group index in the group
+                
                 //
                 // remove the htable tree
                 //
