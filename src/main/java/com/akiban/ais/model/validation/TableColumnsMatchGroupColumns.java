@@ -33,6 +33,8 @@ public class TableColumnsMatchGroupColumns implements AISValidation {
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         for (UserTable table : ais.getUserTables().values()) {
+            // table doesn't have a group, this is caught by TablesInAGroup
+            if (table.getGroup() == null) { continue; }
             GroupTable groupTable = table.getGroup().getGroupTable();
             
             for (Column column : table.getColumnsIncludingInternal()) {
