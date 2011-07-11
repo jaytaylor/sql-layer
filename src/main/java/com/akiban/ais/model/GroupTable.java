@@ -110,55 +110,6 @@ public class GroupTable extends Table
         super.dropColumns();
     }
 
-    // Returns the columns in this table that are constrained to match the given column, e.g.
-    // customer$cid and order$cid.
-    public List<Column> matchingColumns(Column column)
-    {
-        assert column.getTable() == this;
-        List<Column> matchingColumns = new ArrayList<Column>();
-        matchingColumns.add(column);
-        findMatchingAncestorColumns(column.getUserColumn(), matchingColumns);
-        findMatchingDescendentColumns(column.getUserColumn(), matchingColumns);
-        return matchingColumns;
-    }
-
-    private void findMatchingAncestorColumns(Column ancestorColumn, List<Column> matchingColumns)
-    {
-        Join join = ((UserTable)ancestorColumn.getTable()).getParentJoin();
-        if (join != null) {
-            JoinColumn ancestorJoinColumn = null;
-            for (JoinColumn joinColumn : join.getJoinColumns()) {
-                if (joinColumn.getChild() == ancestorColumn) {
-                    ancestorJoinColumn = joinColumn;
-                }
-            }
-            if (ancestorJoinColumn != null) {
-                Column groupColumn = ancestorJoinColumn.getParent().getGroupColumn();
-                assert groupColumn.getTable() == this;
-                matchingColumns.add(groupColumn);
-                findMatchingAncestorColumns(ancestorJoinColumn.getParent(), matchingColumns);
-            }
-        }
-    }
-
-    private void findMatchingDescendentColumns(Column descendentColumn, List<Column> matchingColumns)
-    {
-        for (Join join : ((UserTable)descendentColumn.getTable()).getChildJoins()) {
-            JoinColumn descendentJoinColumn = null;
-            for (JoinColumn joinColumn : join.getJoinColumns()) {
-                if (joinColumn.getParent() == descendentColumn) {
-                    descendentJoinColumn = joinColumn;
-                }
-            }
-            if (descendentJoinColumn != null) {
-                Column groupColumn = descendentJoinColumn.getChild().getGroupColumn();
-                assert groupColumn.getTable() == this;
-                matchingColumns.add(groupColumn);
-                findMatchingDescendentColumns(descendentJoinColumn.getChild(), matchingColumns);
-            }
-        }
-    }
-
     private GroupTable()
     {
         super();

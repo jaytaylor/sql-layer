@@ -43,7 +43,6 @@ public class AISBinder implements Visitor
         this.ais = ais;
         this.defaultSchemaName = defaultSchemaName;
         this.views = new HashMap<TableName,ViewDefinition>();
-        this.bindingContexts = new Stack<BindingContext>();
     }
 
     public String getDefaultSchemaName() {
@@ -72,8 +71,14 @@ public class AISBinder implements Visitor
 
     public void bind(StatementNode stmt) throws StandardException {
         visited = new HashSet<QueryTreeNode>();
-        stmt.accept(this);
-        visited = null;
+        bindingContexts = new Stack<BindingContext>();
+        try {
+            stmt.accept(this);
+        }
+        finally {
+            visited = null;
+            bindingContexts = null;
+        }
     }
     
     /* Hierarchical Visitor */

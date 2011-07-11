@@ -25,7 +25,6 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.SchemaPerSession;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.IndexDef;
@@ -155,7 +154,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     @Override
     public IndexDef getIndexDef()
     {
-        return (IndexDef) predicateIndex.indexDef();
+        return predicateIndex == null ? null : (IndexDef) predicateIndex.indexDef();
     }
 
     @Override
@@ -228,7 +227,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     
     protected OperatorBasedRowCollector(PersistitStore store, Session session)
     {
-        this.schema = new SchemaPerSession(SchemaCache.globalSchema(store.getRowDefCache().ais()));
+        this.schema = SchemaCache.globalSchema(store.getRowDefCache().ais());
         this.adapter = new PersistitAdapter(schema, store, session);
         this.rowCollectorId = idCounter.getAndIncrement();
     }
@@ -262,8 +261,8 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                     false,
                     limit);
         } else {
-            // assert !descending;
-            rootOperator = groupScan_Default(groupTable, limit, indexKeyRange);
+            assert !descending;
+            rootOperator = groupScan_Default(groupTable, limit);
         }
         // Fill in ancestors above predicate
         if (queryRootType != predicateType) {

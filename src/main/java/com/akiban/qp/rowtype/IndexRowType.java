@@ -48,7 +48,7 @@ public class IndexRowType extends RowType
         return index;
     }
 
-    public IndexRowType(SchemaAISBased schema, UserTableRowType tableType, Index index)
+    public IndexRowType(Schema schema, UserTableRowType tableType, Index index)
     {
         super(schema, schema.nextTypeId());
         if (index.isGroupIndex()) {

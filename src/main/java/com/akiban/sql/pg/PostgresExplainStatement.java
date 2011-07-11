@@ -66,7 +66,7 @@ public class PostgresExplainStatement implements PostgresStatement
     }
 
     @Override
-    public void execute(PostgresServerSession server, int maxrows)
+    public int execute(PostgresServerSession server, int maxrows)
             throws IOException, StandardException {
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
@@ -86,6 +86,7 @@ public class PostgresExplainStatement implements PostgresStatement
             messenger.writeString("EXPLAIN " + nrows);
             messenger.sendMessage();
         }
+        return nrows;
     }
 
 }

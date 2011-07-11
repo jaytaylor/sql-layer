@@ -123,6 +123,8 @@ public class BranchLookup_Default extends PhysicalOperator
         // a child of the common ancestor. Then compare these ordinals to determine whether input precedes branch.
         if (this.branchRootOrdinal == -1) {
             this.inputPrecedesBranch = false;
+        } else if (inputTable == commonAncestor) {
+            this.inputPrecedesBranch = true;
         } else {
             UserTable ancestorOfInputAndChildOfCommon = inputTable;
             while (ancestorOfInputAndChildOfCommon.parentTable() != commonAncestor) {

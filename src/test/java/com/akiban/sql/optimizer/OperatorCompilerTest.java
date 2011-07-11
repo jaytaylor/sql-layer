@@ -19,6 +19,7 @@ import com.akiban.sql.TestBase;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.SQLParser;
+import com.akiban.sql.pg.PostgresSessionTracer;
 
 import org.junit.Test;
 import org.junit.runners.Parameterized;
@@ -147,7 +148,7 @@ public class OperatorCompilerTest extends TestBase
         @Override
         public ResultColumnBase getResultColumn(SimplifiedQuery.SimpleSelectColumn selectColumn) {
             String name = selectColumn.getName();
-            String type = selectColumn.getType().toString();
+            String type = String.valueOf(selectColumn.getType());
             if (selectColumn.getExpression().isColumn()) {
                 Column column = ((SimplifiedQuery.ColumnExpression)
                                  selectColumn.getExpression()).getColumn();
@@ -197,7 +198,9 @@ public class OperatorCompilerTest extends TestBase
     @Test
     public void testOperator() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
-        OperatorCompiler.Result result = compiler.compile((DMLStatementNode)stmt);
+        OperatorCompiler.Result result = compiler.compile(new PostgresSessionTracer(1, false),
+                                                          (DMLStatementNode)stmt,
+                                                          parser.getParameterList());
         assertEqualsWithoutHashes(caseName, expected, result.toString());
     }
 

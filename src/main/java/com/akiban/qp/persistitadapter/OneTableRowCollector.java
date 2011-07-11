@@ -44,29 +44,34 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
         requiredUserTables.add(queryRootTable);
         // predicateIndex and predicateType
         predicateIndex = null;
-        for (TableIndex userTableIndex : queryRootTable.getIndexesIncludingInternal()) {
-            if (userTableIndex.getIndexId() == indexId) {
-                predicateIndex = userTableIndex;
+        if (indexId > 0) {
+            for (TableIndex userTableIndex : queryRootTable.getIndexesIncludingInternal()) {
+                if (userTableIndex.getIndexId() == indexId) {
+                    predicateIndex = userTableIndex;
+                }
             }
+            assert predicateIndex != null : String.format("rowDef: %s, indexId: %s", rowDef, indexId);
         }
         predicateType = queryRootType;
-        // Index bounds
-        assert start == null || start.getRowDefId() == queryRootTable.getTableId();
-        assert end == null || end.getRowDefId() == queryRootTable.getTableId();
-        IndexBound lo =
-            start == null
-            ? null
-            : new IndexBound(new NewRowBackedIndexRow(queryRootType, new LegacyRowWrapper(start), predicateIndex),
-                             indexSelectorFromTableSelector(predicateIndex, startColumns));
-        IndexBound hi =
-            end == null
-            ? null
-            : new IndexBound(new NewRowBackedIndexRow(queryRootType, new LegacyRowWrapper(end), predicateIndex),
-                             indexSelectorFromTableSelector(predicateIndex, endColumns));
-        indexKeyRange = new IndexKeyRange
-            (lo,
-             lo != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0,
-             hi,
-             hi != null && (scanFlags & (SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_END_EXCLUSIVE)) == 0);
+        if (predicateIndex != null) {
+            // Index bounds
+            assert start == null || start.getRowDefId() == queryRootTable.getTableId();
+            assert end == null || end.getRowDefId() == queryRootTable.getTableId();
+            IndexBound lo =
+                start == null
+                ? null
+                : new IndexBound(new NewRowBackedIndexRow(queryRootType, new LegacyRowWrapper(start), predicateIndex),
+                                 indexSelectorFromTableSelector(predicateIndex, startColumns));
+            IndexBound hi =
+                end == null
+                ? null
+                : new IndexBound(new NewRowBackedIndexRow(queryRootType, new LegacyRowWrapper(end), predicateIndex),
+                                 indexSelectorFromTableSelector(predicateIndex, endColumns));
+            indexKeyRange = new IndexKeyRange
+                (lo,
+                 lo != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0,
+                 hi,
+                 hi != null && (scanFlags & (SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_END_EXCLUSIVE)) == 0);
+        }
     }
 }

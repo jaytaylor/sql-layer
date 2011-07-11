@@ -59,6 +59,8 @@ public class AISPrinter
     {
         return new Visitor()
         {
+            private static final String INDENT = "  ";
+            
             @Override
             public void visitType(Type type) throws Exception
             {
@@ -74,49 +76,47 @@ public class AISPrinter
             @Override
             public void visitUserTable(UserTable userTable) throws Exception
             {
-                output.print("    ");
                 output.println(userTable);
             }
 
             @Override
             public void visitGroupTable(GroupTable groupTable) throws Exception
             {
-                output.print("    ");
                 output.println(groupTable);
             }
 
             @Override
             public void visitColumn(Column column) throws Exception
             {
-                output.print("        ");
+                output.print(INDENT);
                 output.println(column);
             }
 
             @Override
             public void visitJoin(Join join) throws Exception
             {
-                output.print("    ");
                 output.println(join);
             }
 
             @Override
             public void visitJoinColumn(JoinColumn joinColumn) throws Exception
             {
-                output.print("        ");
+                output.print(INDENT);
                 output.println(joinColumn);
             }
 
             @Override
             public void visitIndex(Index index) throws Exception
             {
-                output.print("        ");
+                output.print(INDENT);
                 output.println(index);
             }
 
             @Override
             public void visitIndexColumn(IndexColumn indexColumn) throws Exception
             {
-                output.print("            ");
+                output.print(INDENT);
+                output.print(INDENT);
                 output.println(indexColumn);
             }
         };

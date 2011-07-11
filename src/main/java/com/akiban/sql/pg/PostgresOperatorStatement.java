@@ -45,15 +45,16 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     public PostgresOperatorStatement(PhysicalOperator resultOperator,
                                      List<String> columnNames,
                                      List<PostgresType> columnTypes,
+                                     PostgresType[] parameterTypes,
                                      int offset,
                                      int limit) {
-        super(columnNames, columnTypes);
+        super(columnNames, columnTypes, parameterTypes);
         this.resultOperator = resultOperator;
         this.offset = offset;
         this.limit = limit;
     }
     
-    public void execute(PostgresServerSession server, int maxrows)
+    public int execute(PostgresServerSession server, int maxrows)
         throws IOException, StandardException {
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
@@ -115,6 +116,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             messenger.writeString("SELECT " + nrows);
             messenger.sendMessage();
         }
+        return nrows;
     }
 
     protected Bindings getBindings() {
@@ -135,7 +137,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                               Bindings bindings,
                               boolean[] columnBinary, boolean defaultColumnBinary) {
             super(resultOperator, columnNames, columnTypes, 
-                  offset, limit);
+                  null, offset, limit);
             this.bindings = bindings;
             this.columnBinary = columnBinary;
             this.defaultColumnBinary = defaultColumnBinary;
@@ -167,14 +169,10 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             return this;        // Can be reused.
 
         Bindings bindings = getBindings();
-        if (parameters != null) {
-            ArrayBindings ab = new ArrayBindings(parameters.length);
-            for (int i = 0; i < parameters.length; i++)
-                ab.set(i, parameters[i]);
-            bindings = ab;
-        }
+        if (parameters != null)
+            bindings = getParameterBindings(parameters);
         return new BoundStatement(resultOperator,
-                                  getColumnNames(), getColumnTypes(), 
+                                  getColumnNames(), getColumnTypes(),
                                   offset, limit, bindings, 
                                   columnBinary, defaultColumnBinary);
     }

@@ -30,7 +30,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.ScanLimit;
@@ -1247,11 +1246,11 @@ public class PersistitStore implements Store {
         // elision
         //
         AkServerUtil.putInt(rowDataBytes, RowData.O_LENGTH_A, rowDataSize);
-        AkServerUtil.putChar(rowDataBytes, RowData.O_SIGNATURE_A,
+        AkServerUtil.putShort(rowDataBytes, RowData.O_SIGNATURE_A,
                 RowData.SIGNATURE_A);
         System.arraycopy(valueBytes, 0, rowDataBytes, RowData.O_FIELD_COUNT,
                 size);
-        AkServerUtil.putChar(rowDataBytes, RowData.O_SIGNATURE_B + rowDataSize,
+        AkServerUtil.putShort(rowDataBytes, RowData.O_SIGNATURE_B + rowDataSize,
                 RowData.SIGNATURE_B);
         AkServerUtil.putInt(rowDataBytes, RowData.O_LENGTH_B + rowDataSize,
                 rowDataSize);
@@ -1463,7 +1462,7 @@ public class PersistitStore implements Store {
         }
     }
 
-    public <V extends IndexRecordVisitor> V traverse(Session session, Index index, V visitor)
+    public <V extends IndexVisitor> V traverse(Session session, Index index, V visitor)
             throws PersistitException, InvalidOperationException {
         if (index.isHKeyEquivalent()) {
             throw new IllegalArgumentException("HKeyEquivalent not allowed: " + index);

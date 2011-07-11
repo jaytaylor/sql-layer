@@ -16,11 +16,9 @@
 package com.akiban.ais.model;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -219,6 +217,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
         }
         for (Group group : groups.values()) {
             visitor.visitGroup(group);
+            group.traversePreOrder(visitor);
         }
     }
 
@@ -241,6 +240,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
             visitor.visitGroupTable(groupTable);
         }
         for (Group group : groups.values()) {
+            group.traversePostOrder(visitor);
             visitor.visitGroup(group);
         }
     }

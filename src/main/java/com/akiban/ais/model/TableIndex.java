@@ -45,6 +45,11 @@ public class TableIndex extends Index
     }
 
     @Override
+    protected Column indexRowCompositionColumn(HKeyColumn hKeyColumn) {
+        return hKeyColumn.column();
+    }
+
+    @Override
     public Table leafMostTable() {
         return getTable();
     }

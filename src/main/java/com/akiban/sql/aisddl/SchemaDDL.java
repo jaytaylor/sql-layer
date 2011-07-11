@@ -15,16 +15,16 @@
 
 package com.akiban.sql.aisddl;
 
-import java.util.Map;
-
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
 
+import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.service.session.Session;
 import com.akiban.sql.StandardException;
 
 import com.akiban.sql.parser.CreateSchemaNode;
 import com.akiban.sql.parser.DropSchemaNode;
+import com.akiban.sql.parser.StatementType;
 
 
 public class SchemaDDL {
@@ -55,26 +55,31 @@ public class SchemaDDL {
         // TODO: update the AIS to store the new schema. 
     }
     
-    public static void dropSchema (AkibanInformationSchema ais,
-                                    String defaultSchemaName,
-                                    DropSchemaNode dropSchema)
+    public static void dropSchema (DDLFunctions ddlFunctions,
+            Session session,
+            DropSchemaNode dropSchema)
     throws StandardException
     {
+        AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         final String schemaName = dropSchema.getSchemaName();
-        // dropSchema.getDropBehavior() == 1
-        // This is the default, 1 == RESTRICT, meaning no drop if schema isn't empty
-        for (TableName t : ais.getUserTables().keySet()) {
-            if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
-                throw new StandardException ("Schema " + schemaName + " is in use");
+
+        // 1 == RESTRICT, meaning no drop if the schema isn't empty 
+        if (dropSchema.getDropBehavior() == StatementType.DROP_RESTRICT ||
+            dropSchema.getDropBehavior() == StatementType.DROP_DEFAULT) {
+            for (TableName t : ais.getUserTables().keySet()) {
+                if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
+                    throw new StandardException ("Schema " + schemaName + " is in use");
+                }
             }
-        }
-        for (TableName t : ais.getGroupTables().keySet()) {
-            if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
-                throw new StandardException ("Schema " + schemaName + " is in use");
+            for (TableName t : ais.getGroupTables().keySet()) {
+                if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
+                    throw new StandardException ("Schema " + schemaName + " is in use");
+                }
             }
+            // If the schema isn't used by any existing tables, it has effectively 
+            // been dropped, so the drop "succeeds".
+        } else if (dropSchema.getDropBehavior() == StatementType.DROP_CASCADE) {
+            ddlFunctions.dropSchema(session, schemaName);
         }
-        // If you get to this point the schema name isn't used by any user or group table
-        // therefore it is a valid schema to drop
-        // TODO: Update the AIS to remove the unused schema. 
     }
 }

@@ -20,6 +20,8 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.config.ConfigurationServiceImpl;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLServiceImpl;
+import com.akiban.server.service.instrumentation.InstrumentationService;
+import com.akiban.server.service.instrumentation.InstrumentationServiceImpl;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.jmx.JmxRegistryServiceImpl;
 import com.akiban.server.service.memcache.MemcacheService;
@@ -52,6 +54,7 @@ public class DefaultServiceFactory implements ServiceFactory {
     private Service<PostgresService> postgresService;
     private Service<DXLService> dxlService;
     private Service<SessionService> sessionService;
+    private Service<InstrumentationService> instrumentationService;
     
     @Override
     public Service<ConfigurationService> configurationService() {
@@ -148,5 +151,13 @@ public class DefaultServiceFactory implements ServiceFactory {
             sessionService = new SessionServiceImpl();
         }
         return sessionService;
+    }
+    
+    @Override
+    public Service<InstrumentationService> instrumentationService() {
+        if (instrumentationService == null ) {
+            instrumentationService = new InstrumentationServiceImpl();
+        }
+        return instrumentationService;
     }
 }

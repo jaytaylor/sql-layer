@@ -92,7 +92,9 @@ public final class DDLViewerGUITest
                 ");";
 
         assertTrue("append returned false", viewer.appendSqlText(new StringReader(SQL)));
-        assertEquals("grouping", GROUPING, viewer.getGrouping().toString());
+        assertEquals("grouping", 
+                     GROUPING.replace("\n", System.getProperty("line.separator")), 
+                     viewer.getGrouping().toString());
     }
 
     private static class DummyViewer extends DDLViewerGUI {

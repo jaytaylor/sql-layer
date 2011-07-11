@@ -108,7 +108,7 @@ public class SimplifiedQuery
     }
 
     public static class TableNode extends TableTreeBase.TableNodeBase<TableNode> {
-        private boolean used, outer;
+        private boolean used, optional;
         private List<ColumnCondition> conditions;
         private List<SimpleSelectColumn> selectColumns;
         private int branches;
@@ -125,11 +125,14 @@ public class SimplifiedQuery
         }
 
         /** Is this table on the optional end of an outer join? */
-        public boolean isOuter() {
-            return outer;
+        public boolean isOptional() {
+            return optional;
         }
-        public void setOuter(boolean outer) {
-            this.outer = outer;
+        public boolean isRequired() {
+            return !optional;
+        }
+        public void setOptional(boolean optional) {
+            this.optional = optional;
         }
 
         public boolean hasConditions() {
@@ -226,7 +229,7 @@ public class SimplifiedQuery
         }
 
         public void promotedOuterJoin() {
-            table.setOuter(false);
+            table.setOptional(false);
         }
 
         public String toString() {
@@ -371,7 +374,7 @@ public class SimplifiedQuery
         public boolean isColumn() {
             return false;
         }
-        public abstract Expression generateExpression(Map<TableNode,Integer> fieldOffsets);
+        public abstract Expression generateExpression(Map<TableNode,Integer> fieldOffsets) throws StandardException;
     }
 
     // An operand from a table column.
@@ -446,6 +449,21 @@ public class SimplifiedQuery
 
         public Expression generateExpression(Map<TableNode,Integer> fieldOffsets) {
             return variable(position);
+        }
+    }
+
+    // The aggregate COUNT(*)
+    public static class CountStarExpression extends SimpleExpression {
+        public CountStarExpression() {
+        }
+
+        public String toString() {
+            return "COUNT(*)";
+        }
+
+        public Expression generateExpression(Map<TableNode,Integer> fieldOffsets) 
+                throws StandardException {
+            throw new UnsupportedSQLException("Unsupported use of COUNT(*)");
         }
     }
 
@@ -547,7 +565,8 @@ public class SimplifiedQuery
         }
 
         // Turn this condition into an operator Expression.
-        public Expression generateExpression(Map<TableNode,Integer> fieldOffsets) {
+        public Expression generateExpression(Map<TableNode,Integer> fieldOffsets) 
+                throws StandardException {
             return compare(left.generateExpression(fieldOffsets),
                            operation,
                            right.generateExpression(fieldOffsets));
@@ -794,7 +813,7 @@ public class SimplifiedQuery
         limit = getIntegerConstant(limitClause, "Unsupported LIMIT");
     }
 
-    protected BaseJoinNode getJoinNode(FromTable fromTable, boolean outer)
+    protected BaseJoinNode getJoinNode(FromTable fromTable, boolean optional)
             throws StandardException {
         if (fromTable instanceof FromBaseTable) {
             TableBinding tb = (TableBinding)fromTable.getUserData();
@@ -813,7 +832,7 @@ public class SimplifiedQuery
             if (table.isUsed())
                 throw new UnsupportedSQLException("Unsupported self join");
             table.setUsed(true);
-            table.setOuter(outer);
+            table.setOptional(optional);
             return new TableJoinNode(table);
         }
         else if (fromTable instanceof JoinNode) {
@@ -833,10 +852,10 @@ public class SimplifiedQuery
                 throw new UnsupportedSQLException("Unsupported join type", joinNode);
             }
             return joinNodes(getJoinNode((FromTable)joinNode.getLeftResultSet(),
-                                         outer || ((joinType == JoinType.RIGHT_JOIN) ||
+                                         optional || ((joinType == JoinType.RIGHT_JOIN) ||
                                                    (joinType == JoinType.FULL_JOIN))),
                              getJoinNode((FromTable)joinNode.getRightResultSet(),
-                                         outer || ((joinType == JoinType.LEFT_JOIN) ||
+                                         optional || ((joinType == JoinType.LEFT_JOIN) ||
                                                    (joinType == JoinType.FULL_JOIN))),
                              joinType);
         }
@@ -876,6 +895,9 @@ public class SimplifiedQuery
             // onto the Expression / IndexKey. It might be better to
             // attempt to do some here.
             return getSimpleExpression(((CastNode)operand).getCastOperand());
+        else if ((operand instanceof AggregateNode) &&
+                 "COUNT(*)".equals(((AggregateNode)operand).getAggregateName()))
+            return new CountStarExpression();
         else
             throw new UnsupportedSQLException("Unsupported operand", operand);
     }
@@ -996,7 +1018,7 @@ public class SimplifiedQuery
     // allows more reordering.
     // Such outer joins usually arise from programmatically generated
     // queries, such as views.
-    protected void promoteImpossibleOuterJoins() throws StandardException {
+    public void promoteImpossibleOuterJoins() throws StandardException {
         Collection<TableNode> conditionTables = new HashSet<TableNode>();
         for (ColumnCondition condition : conditions) {
             conditionTables.add(condition.getTable());
@@ -1029,7 +1051,7 @@ public class SimplifiedQuery
     // Reorder this join node.
     // A subtree of inner nodes can be completely reordered.
     // An outer join (or a lone inner join) can still commute (changing chirality).
-    protected BaseJoinNode reorderJoinNode(BaseJoinNode join) {
+    public BaseJoinNode reorderJoinNode(BaseJoinNode join) {
         if (countInnerJoins(join) > 1) {
             List<BaseJoinNode> joins = new ArrayList<BaseJoinNode>();
             getInnerJoins(join, joins);
@@ -1061,6 +1083,31 @@ public class SimplifiedQuery
         return join;
     }
 
+    // Isolate this join node to a single branch.
+    public BaseJoinNode isolateJoinNodeBranch(BaseJoinNode join, int mask) {
+        if (join.isTable()) {
+            TableJoinNode tjoin = (TableJoinNode)join;
+            TableNode table = tjoin.getTable();
+            if ((table.getBranches() & mask) != 0)
+                return tjoin;
+            else
+                return null;
+        }
+        else {
+            JoinJoinNode jjoin = (JoinJoinNode)join;
+            BaseJoinNode left = jjoin.getLeft();
+            left = isolateJoinNodeBranch(left, mask);
+            BaseJoinNode right = jjoin.getRight();
+            right = isolateJoinNodeBranch(right, mask);
+            if (left == null)
+                return right;
+            else if (right == null)
+                return left;
+            else
+                return new JoinJoinNode(left, right, jjoin.getJoinType());
+        }
+    }
+
     // Find a boolean condition of the given [in]equality type between
     // the given column and a constant.
     public ColumnCondition findColumnConstantCondition(Column column, 
@@ -1088,6 +1135,7 @@ public class SimplifiedQuery
      * just those tables needed in output results.
      * Navigation through intermediate tables is implicit in the group
      * structure.
+     * (Not currently used; see IndexUsage replacement.)
      */
     public void recomputeUsed() {
         for (TableNode table : tables) {

@@ -36,8 +36,8 @@ public interface PostgresStatement
     public void sendDescription(PostgresServerSession server, boolean always) 
             throws IOException, StandardException;
 
-    /** Execute statement and output results. */
-    public void execute(PostgresServerSession server, int maxrows)
+    /** Execute statement and output results. Return number of rows processed. */
+    public int execute(PostgresServerSession server, int maxrows)
             throws IOException, StandardException;
 
 }

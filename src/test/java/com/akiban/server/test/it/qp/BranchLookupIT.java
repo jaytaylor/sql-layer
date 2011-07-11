@@ -59,7 +59,7 @@ public class BranchLookupIT extends PhysicalOperatorITBase
             createNewRow(item, 221L, 22L),
             createNewRow(item, 222L, 22L),
             // orphans
-            createNewRow(address, 5001, 5L, "555 1111 st"),
+            createNewRow(address, 5001L, 5L, "555 1111 st"),
             createNewRow(item, 311L, 31L),
             createNewRow(item, 312L, 31L)};
         use(dbWithOrphans);

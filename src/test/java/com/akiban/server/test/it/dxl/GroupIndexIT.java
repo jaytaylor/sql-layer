@@ -19,7 +19,7 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Table;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.store.IndexRecordVisitor;
+import com.akiban.server.store.IndexKeyVisitor;
 import com.akiban.server.test.it.ITBase;
 import junit.framework.Assert;
 import org.junit.After;
@@ -201,7 +201,7 @@ public class GroupIndexIT extends ITBase {
 
     private void expectIndexContents(GroupIndex groupIndex, Object[]... keys) throws Exception {
         final Iterator<Object[]> keyIt = Arrays.asList(keys).iterator();
-        final List<List<Object>> extraKeys = new ArrayList<List<Object>>();
+        final List<List<?>> extraKeys = new ArrayList<List<?>>();
 
         final int declaredColumns = groupIndex.getColumns().size();
         for(Object[] key : keys) {
@@ -210,15 +210,15 @@ public class GroupIndexIT extends ITBase {
 
         final int[] curKey = {0};
         final String indexName = groupIndex.getIndexName().getName();
-        persistitStore().traverse(session(), groupIndex, new IndexRecordVisitor() {
+        persistitStore().traverse(session(), groupIndex, new IndexKeyVisitor() {
             @Override
-            public void visit(List<Object> actual) {
+            protected void visit(List<?> actual) {
                 if(!keyIt.hasNext()) {
                     extraKeys.add(actual);
                 }
                 else {
                     List<Object> expected = Arrays.asList(keyIt.next());
-                    List<Object> actualOfDeclared = actual.subList(0, declaredColumns);
+                    List<?> actualOfDeclared = actual.subList(0, declaredColumns);
                     assertEquals(String.format("Key entry %d of index %s", curKey[0], indexName),
                                  expected.toString(), actualOfDeclared.toString());
                     curKey[0]++;

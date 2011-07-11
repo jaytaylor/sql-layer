@@ -17,7 +17,6 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
@@ -31,18 +30,14 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.GenericInvalidOperationException;
-import com.akiban.server.api.dml.ConstantColumnSelector;
-import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Exchange;
-import com.persistit.Key;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
@@ -54,11 +49,11 @@ public class PersistitAdapter extends StoreAdapter
     // StoreAdapter interface
 
     @Override
-    public GroupCursor newGroupCursor(GroupTable groupTable, IndexKeyRange indexKeyRange)
+    public GroupCursor newGroupCursor(GroupTable groupTable)
     {
         GroupCursor cursor;
         try {
-            cursor = new PersistitGroupCursor(this, groupTable, indexKeyRange);
+            cursor = new PersistitGroupCursor(this, groupTable);
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }

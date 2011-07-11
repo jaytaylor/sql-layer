@@ -1,5 +1,5 @@
 SELECT customers.name,order_date,sku,quan
-FROM customers,orders,items
-WHERE customers.cid = orders.cid
-AND orders.oid = items.oid
+FROM customers
+INNER JOIN orders ON customers.cid = orders.cid
+INNER JOIN items ON orders.oid = items.oid
 ORDER BY sku, order_date

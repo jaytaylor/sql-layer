@@ -13,25 +13,28 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.test.it.keyupdate;
+package com.akiban.server.service.instrumentation;
 
-import com.akiban.server.store.IndexRecordVisitor;
+import com.akiban.sql.pg.PostgresSessionTracer;
 
-import java.util.ArrayList;
-import java.util.List;
+public interface InstrumentationService {
 
-public class RecordCollectingIndexRecordVisistor extends IndexRecordVisitor
-{
-    @Override
-    public void visit(List<Object> key)
-    {
-        records.add(key);
-    }
-
-    public List<List<Object>> records()
-    {
-        return records;
-    }
-
-    private final List<List<Object>> records = new ArrayList<List<Object>>();
+    public PostgresSessionTracer createSqlSessionTracer(int sessionId);
+        
+    public PostgresSessionTracer getSqlSessionTracer(int sessionId);
+    
+    /*
+     * whether instrumentation is enabled for all sessions
+     */
+    boolean isEnabled();
+    void enable();
+    void disable();
+    
+    /*
+     * whether instrumentation is enabled for a specific session
+     */
+    boolean isEnabled(int sessionId);
+    void enable(int sessionId);
+    void disable(int sessionId);
+    
 }

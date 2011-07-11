@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class Group implements Serializable, ModelNames
+public class Group implements Serializable, ModelNames, Traversable
 {
     public static Group create(AkibanInformationSchema ais, Map<String, Object> map)
     {
@@ -139,6 +139,22 @@ public class Group implements Serializable, ModelNames
         for (GroupIndex groupIndex : indexesToDrop) {
             groupTable.removeGroupIndex(groupIndex);
             GroupIndexHelper.actOnGroupIndexTables(groupIndex, GroupIndexHelper.REMOVE);
+        }
+    }
+
+    public void traversePreOrder(Visitor visitor) throws Exception
+    {
+        for (Index index : getIndexes()) {
+            visitor.visitIndex(index);
+            index.traversePreOrder(visitor);
+        }
+    }
+
+    public void traversePostOrder(Visitor visitor) throws Exception
+    {
+        for (Index index : getIndexes()) {
+            index.traversePostOrder(visitor);
+            visitor.visitIndex(index);
         }
     }
 

@@ -17,9 +17,7 @@ package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.RowDef;
 import com.akiban.util.FilteringIterator;
 
 import java.util.ArrayList;
@@ -85,7 +83,7 @@ public class UserTableRowType extends RowType
         };
     }
 
-    public UserTableRowType(SchemaAISBased schema, UserTable table)
+    public UserTableRowType(Schema schema, UserTable table)
     {
         super(schema, table.getTableId());
         this.table = table;
