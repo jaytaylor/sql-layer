@@ -118,8 +118,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 maintainGroupIndexes(
                         session, ais, adapter,
                         oldRowData, OperatorStoreGIHandler.forTable(adapter, userTable),
-                        OperatorStoreGIHandler.Action.DELETE,
-                        true
+                        OperatorStoreGIHandler.Action.DELETE
                 );
 
                 runCursor(oldRowData, rowDef, updateOp, adapter);
@@ -127,8 +126,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 maintainGroupIndexes(
                         session, ais, adapter,
                         newRowData, OperatorStoreGIHandler.forTable(adapter, userTable),
-                        OperatorStoreGIHandler.Action.STORE,
-                        true
+                        OperatorStoreGIHandler.Action.STORE
                 );
 
                 transaction.commit();
@@ -157,8 +155,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 maintainGroupIndexes(
                         session, ais, adapter,
                         rowData, OperatorStoreGIHandler.forTable(adapter, uTable),
-                        OperatorStoreGIHandler.Action.STORE,
-                        true
+                        OperatorStoreGIHandler.Action.STORE
                 );
 
                 transaction.commit();
@@ -185,8 +182,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 maintainGroupIndexes(
                         session, ais, adapter,
                         rowData, OperatorStoreGIHandler.forTable(adapter, uTable),
-                        OperatorStoreGIHandler.Action.DELETE,
-                        true
+                        OperatorStoreGIHandler.Action.DELETE
                 );
                 super.deleteRow(session, rowData);
                 transaction.commit();
@@ -232,7 +228,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     UndefBindings.only(),
                     OperatorStoreGIHandler.forBuilding(adapter),
                     OperatorStoreGIHandler.Action.BULK_ADD,
-                    false,
                     null
             );
         }
@@ -261,8 +256,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             AkibanInformationSchema ais, PersistitAdapter adapter,
             RowData rowData,
             OperatorStoreGIHandler handler,
-            OperatorStoreGIHandler.Action action,
-            boolean alsoNullKeys
+            OperatorStoreGIHandler.Action action
     )
     throws PersistitException
     {
@@ -302,7 +296,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                         bindings,
                         handler,
                         action,
-                        alsoNullKeys,
                         plan
                 );
             }
@@ -318,7 +311,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             Bindings bindings,
             OperatorStoreGIHandler handler,
             OperatorStoreGIHandler.Action action,
-            boolean alsoNullKeys,
             OperatorStoreMaintenancePlan maintenancePlan
     )
     throws PersistitException
@@ -330,7 +322,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             Row row;
             while ((row = cursor.next()) != null) {
                 if (row.rowType().equals(rootOperator.rowType())) {
-                    handler.handleRow(groupIndex, row, action, alsoNullKeys);
+                    handler.handleRow(groupIndex, row, action);
                 } else if (row.rowType().equals(invertActionRowType)) {
                     assert maintenancePlan != null;
                     final boolean handleRow;
@@ -348,7 +340,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                         throw new AssertionError(action.name());
                     }
                     if (handleRow) {
-                        handler.handleRow(groupIndex, maintenancePlan.flattenLeft(row), invert(action), false);
+                        handler.handleRow(groupIndex, maintenancePlan.flattenLeft(row), invert(action));
                     }
                 }
             }
