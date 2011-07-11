@@ -99,17 +99,17 @@ class OperatorStoreGIHandler {
 
     public static OperatorStoreGIHandler forTable(PersistitAdapter adapter, UserTable userTable) {
         ArgumentValidation.notNull("userTable", userTable);
-        return new OperatorStoreGIHandler(adapter, userTable, null);
+        return new OperatorStoreGIHandler(adapter, userTable);
     }
 
     public static OperatorStoreGIHandler forBuilding(PersistitAdapter adapter) {
-        return new OperatorStoreGIHandler(adapter, null, null);
+        return new OperatorStoreGIHandler(adapter, null);
     }
 
     // For use within the package
-    interface GIHandlerHook {
-        void storeHook(Key key, Object value);
-        void removeHook(Key key);
+
+    static void setGiHandlerHook(GIHandlerHook newHook) {
+        OperatorStoreGIHandler.giHandlerHook = newHook;
     }
 
     // for use in this class
@@ -188,19 +188,24 @@ class OperatorStoreGIHandler {
         return true;
     }
 
-    private OperatorStoreGIHandler(PersistitAdapter adapter, UserTable sourceTable, GIHandlerHook hook) {
+    private OperatorStoreGIHandler(PersistitAdapter adapter, UserTable sourceTable) {
         this.adapter = adapter;
         this.sourceTable = sourceTable;
-        this.giHandlerHook = hook;
     }
 
     // object state
 
     private final PersistitAdapter adapter;
     private final UserTable sourceTable;
-    private final GIHandlerHook giHandlerHook;
+    private static volatile GIHandlerHook giHandlerHook;
 
     // nested classes
+
+    interface GIHandlerHook {
+        void storeHook(Key key, Object value);
+        void removeHook(Key key);
+    }
+
     enum GroupIndexPosition {
         ABOVE_SEGMENT,
         BELOW_SEGMENT,

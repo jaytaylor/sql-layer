@@ -15,9 +15,7 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.server.RowData;
-import com.akiban.server.service.session.Session;
-import com.persistit.exception.PersistitException;
+import com.persistit.Key;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,6 +24,27 @@ import java.util.Comparator;
 import java.util.List;
 
 public class TestOperatorStore extends OperatorStore {
+
+    // TestOperatorStore interface
+
+    public List<String> getAndClearHookStrings() {
+        return hook.getAndClear();
+    }
+
+    // service overrides
+
+    @Override
+    public void start() throws Exception {
+        super.start();
+        OperatorStoreGIHandler.setGiHandlerHook(hook);
+    }
+
+    @Override
+    public void stop() throws Exception {
+        OperatorStoreGIHandler.setGiHandlerHook(null);
+        hook.getAndClear();
+        super.start();
+    }
 
     // OperatorStore overrides
 
@@ -42,6 +61,10 @@ public class TestOperatorStore extends OperatorStore {
         DELETE
     }
 
+    // object state
+
+    private final OperatorStoreGIHandlerHook hook = new OperatorStoreGIHandlerHook();
+
     // consts
 
     private static final Comparator<GroupIndex> GI_COMPARATOR = new Comparator<GroupIndex>() {
@@ -52,4 +75,32 @@ public class TestOperatorStore extends OperatorStore {
             return o1Name.compareTo(o2Name);
         }
     };
+
+    // nested classes
+    private static class OperatorStoreGIHandlerHook implements OperatorStoreGIHandler.GIHandlerHook {
+
+        public List<String> getAndClear() {
+            synchronized (strings) {
+                List<String> ret = new ArrayList<String>(strings);
+                strings.clear();
+                return ret;
+            }
+        }
+
+        @Override
+        public void storeHook(Key key, Object value) {
+            see("STORE: %s => %s", key, value);
+        }
+
+        @Override
+        public void removeHook(Key key) {
+            see("REMOVE: %s");
+        }
+
+        private void see(String format, Object... args) {
+            strings.add(String.format(format, args));
+        }
+
+        private final List<String> strings = Collections.synchronizedList(new ArrayList<String>());
+    }
 }
