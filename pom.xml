@@ -368,6 +368,7 @@
                     <exclude>**/*.params</exclude>
                     <exclude>**/group.idx</exclude>
                     <exclude>src/test/bin/*.sh</exclude>
+                    <exclude>src/test/bin/*.cmd</exclude>
                     <exclude>.idea/**</exclude>
                     <exclude>.bzrignore</exclude>
                     <exclude>velocity.log</exclude>

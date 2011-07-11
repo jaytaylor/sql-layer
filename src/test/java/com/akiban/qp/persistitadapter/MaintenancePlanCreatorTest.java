@@ -19,15 +19,16 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.SchemaAISBased;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.SchemaFactory;
 import com.akiban.util.Strings;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 public final class MaintenancePlanCreatorTest {
 
@@ -35,7 +36,7 @@ public final class MaintenancePlanCreatorTest {
     public void giUpdatePlan_C_fromC() {
         AkibanInformationSchema ais = coia();
         Schema schema = schema(ais);
-        PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
+        OperatorStoreMaintenancePlan.PlanCreationStruct struct = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_name"),
                 rowType(ais, schema, "customer")
@@ -43,31 +44,33 @@ public final class MaintenancePlanCreatorTest {
         String expected = Strings.join(
                 "GroupScan_Default(shallow hkey-bound scan on _akiban_sch_customer NO_LIMIT)"
         );
-        assertEquals("plan description", expected, plan.describePlan());
+        assertEquals("plan description", expected, struct.rootOperator.describePlan());
+        assertFlattenedAncestors(struct.flattenedParentRowType, NO_FLATTENING);
     }
 
     @Test
     public void giUpdatePlan_CI_fromC() {
         AkibanInformationSchema ais = coia();
         Schema schema = schema(ais);
-        PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
+        OperatorStoreMaintenancePlan.PlanCreationStruct struct = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_name_sku"),
                 rowType(ais, schema, "customer")
         );
         String expected = Strings.join(
             "GroupScan_Default(deep hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
-            "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
-            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
+            "Flatten_HKeyOrdered(sch.customer LEFT sch.order)",
+            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) LEFT sch.item)"
         );
-        assertEquals("plan description", expected, plan.describePlan());
+        assertEquals("plan description", expected, struct.rootOperator.describePlan());
+        assertFlattenedAncestors(struct.flattenedParentRowType, NO_FLATTENING);
     }
 
     @Test
     public void giUpdatePlan_CI_fromI() {
         AkibanInformationSchema ais = coia();
         Schema schema = schema(ais);
-        PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
+        OperatorStoreMaintenancePlan.PlanCreationStruct struct = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_name_sku"),
                 rowType(ais, schema, "item")
@@ -75,34 +78,36 @@ public final class MaintenancePlanCreatorTest {
         String expected = Strings.join(
             "GroupScan_Default(shallow hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "AncestorLookup_Default(sch.item -> [sch.customer, sch.order])",
-            "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
-            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
+            "Flatten_HKeyOrdered(sch.customer LEFT sch.order)",
+            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) KEEP LEFT sch.item)"
         );
-        assertEquals("plan description", expected, plan.describePlan());
+        assertEquals("plan description", expected, struct.rootOperator.describePlan());
+        assertFlattenedAncestors(struct.flattenedParentRowType, "customer", "order");
     }
 
     @Test
     public void giUpdatePlan_OCI_fromC() {
         AkibanInformationSchema ais = coia();
         Schema schema = schema(ais);
-        PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
+        OperatorStoreMaintenancePlan.PlanCreationStruct struct = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_date_name_sku"),
                 rowType(ais, schema, "customer")
         );
         String expected = Strings.join(
             "GroupScan_Default(deep hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
-            "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
-            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
+            "Flatten_HKeyOrdered(sch.customer LEFT sch.order)",
+            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) LEFT sch.item)"
         );
-        assertEquals("plan description", expected, plan.describePlan());
+        assertEquals("plan description", expected, struct.rootOperator.describePlan());
+        assertFlattenedAncestors(struct.flattenedParentRowType, NO_FLATTENING);
     }
 
     @Test
     public void giUpdatePlan_OCI_fromO() {
         AkibanInformationSchema ais = coia();
         Schema schema = schema(ais);
-        PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
+        OperatorStoreMaintenancePlan.PlanCreationStruct struct = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_date_name_sku"),
                 rowType(ais, schema, "order")
@@ -110,17 +115,18 @@ public final class MaintenancePlanCreatorTest {
         String expected = Strings.join(
             "GroupScan_Default(deep hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "AncestorLookup_Default(sch.order -> [sch.customer])",
-            "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
-            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
+            "Flatten_HKeyOrdered(sch.customer KEEP LEFT sch.order)",
+            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) LEFT sch.item)"
         );
-        assertEquals("plan description", expected, plan.describePlan());
+        assertEquals("plan description", expected, struct.rootOperator.describePlan());
+        assertFlattenedAncestors(struct.flattenedParentRowType, "customer");
     }
 
     @Test
     public void giUpdatePlan_OCI_fromI() {
         AkibanInformationSchema ais = coia();
         Schema schema = schema(ais);
-        PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
+        OperatorStoreMaintenancePlan.PlanCreationStruct struct = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_date_name_sku"),
                 rowType(ais, schema, "item")
@@ -128,17 +134,18 @@ public final class MaintenancePlanCreatorTest {
         String expected = Strings.join(
             "GroupScan_Default(shallow hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "AncestorLookup_Default(sch.item -> [sch.customer, sch.order])",
-            "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
-            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
+            "Flatten_HKeyOrdered(sch.customer LEFT sch.order)",
+            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) KEEP LEFT sch.item)"
         );
-        assertEquals("plan description", expected, plan.describePlan());
+        assertEquals("plan description", expected, struct.rootOperator.describePlan());
+        assertFlattenedAncestors(struct.flattenedParentRowType, "customer", "order");
     }
 
     @Test
     public void giUpdatePlan_OI_fromI() {
         AkibanInformationSchema ais = coia();
         Schema schema = schema(ais);
-        PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
+        OperatorStoreMaintenancePlan.PlanCreationStruct struct = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_sku_date"),
                 rowType(ais, schema, "item")
@@ -147,16 +154,17 @@ public final class MaintenancePlanCreatorTest {
             "GroupScan_Default(shallow hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "AncestorLookup_Default(sch.item -> [sch.customer, sch.order])",
             "Flatten_HKeyOrdered(sch.customer RIGHT sch.order)",
-            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
+            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) KEEP LEFT sch.item)"
         );
-        assertEquals("plan description", expected, plan.describePlan());
+        assertEquals("plan description", expected, struct.rootOperator.describePlan());
+        assertFlattenedAncestors(struct.flattenedParentRowType, "customer", "order");
     }
 
     @Test
     public void giUpdatePlan_OI_fromO() {
         AkibanInformationSchema ais = coia();
         Schema schema = schema(ais);
-        PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
+        OperatorStoreMaintenancePlan.PlanCreationStruct struct = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_sku_date"),
                 rowType(ais, schema, "order")
@@ -165,16 +173,17 @@ public final class MaintenancePlanCreatorTest {
             "GroupScan_Default(deep hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "AncestorLookup_Default(sch.order -> [sch.customer])",
             "Flatten_HKeyOrdered(sch.customer RIGHT sch.order)",
-            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
+            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) LEFT sch.item)"
         );
-        assertEquals("plan description", expected, plan.describePlan());
+        assertEquals("plan description", expected, struct.rootOperator.describePlan());
+        assertFlattenedAncestors(struct.flattenedParentRowType, NO_FLATTENING);
     }
 
     @Test
     public void giUpdatePlan_OI_fromC() {
         AkibanInformationSchema ais = coia();
         Schema schema = schema(ais);
-        PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
+        OperatorStoreMaintenancePlan.PlanCreationStruct struct = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_sku_date"),
                 rowType(ais, schema, "customer")
@@ -182,32 +191,34 @@ public final class MaintenancePlanCreatorTest {
         String expected = Strings.join(
                 "GroupScan_Default(deep hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
                 "Flatten_HKeyOrdered(sch.customer RIGHT sch.order)",
-                "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
+                "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) LEFT sch.item)"
         );
-        assertEquals("plan description", expected, plan.describePlan());
+        assertEquals("plan description", expected, struct.rootOperator.describePlan());
+        assertFlattenedAncestors(struct.flattenedParentRowType, NO_FLATTENING);
     }
 
     @Test
     public void giUpdatePlan_AC_fromC() {
         AkibanInformationSchema ais = coia();
         Schema schema = schema(ais);
-        PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
+        OperatorStoreMaintenancePlan.PlanCreationStruct struct = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_street_name"),
                 rowType(ais, schema, "customer")
         );
         String expected = Strings.join(
             "GroupScan_Default(deep hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
-            "Flatten_HKeyOrdered(sch.customer INNER sch.address)"
+            "Flatten_HKeyOrdered(sch.customer LEFT sch.address)"
         );
-        assertEquals("plan description", expected, plan.describePlan());
+        assertEquals("plan description", expected, struct.rootOperator.describePlan());
+        assertFlattenedAncestors(struct.flattenedParentRowType, NO_FLATTENING);
     }
 
     @Test
     public void giUpdatePlan_AC_fromA() {
         AkibanInformationSchema ais = coia();
         Schema schema = schema(ais);
-        PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
+        OperatorStoreMaintenancePlan.PlanCreationStruct struct = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_street_name"),
                 rowType(ais, schema, "address")
@@ -215,16 +226,17 @@ public final class MaintenancePlanCreatorTest {
         String expected = Strings.join(
             "GroupScan_Default(shallow hkey-bound scan on _akiban_sch_customer NO_LIMIT)",
             "AncestorLookup_Default(sch.address -> [sch.customer])",
-            "Flatten_HKeyOrdered(sch.customer INNER sch.address)"
+            "Flatten_HKeyOrdered(sch.customer KEEP LEFT sch.address)"
         );
-        assertEquals("plan description", expected, plan.describePlan());
+        assertEquals("plan description", expected, struct.rootOperator.describePlan());
+        assertFlattenedAncestors(struct.flattenedParentRowType, "customer");
     }
 
     @Test
     public void giUpdatePlan_A_fromA() {
         AkibanInformationSchema ais = coia();
         Schema schema = schema(ais);
-        PhysicalOperator plan = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
+        OperatorStoreMaintenancePlan.PlanCreationStruct struct = OperatorStoreMaintenancePlan.createGroupIndexMaintenancePlan(
                 schema,
                 gi(ais, "gi_street"),
                 rowType(ais, schema, "address")
@@ -234,10 +246,30 @@ public final class MaintenancePlanCreatorTest {
             "AncestorLookup_Default(sch.address -> [sch.customer])",
             "Flatten_HKeyOrdered(sch.customer RIGHT sch.address)"
         );
-        assertEquals("plan description", expected, plan.describePlan());
+        assertEquals("plan description", expected, struct.rootOperator.describePlan());
+        assertFlattenedAncestors(struct.flattenedParentRowType, NO_FLATTENING);
     }
 
     // private static methods
+
+    private static void assertFlattenedAncestors(RowType rowType, String... expecteds) {
+        String actual = rowType == null ? null : rowType.toString();
+        String expected = null;
+        if (expecteds.length > 0) {
+            if (expecteds.length == 1) {
+                expected = String.format("%s.%s", SCHEMA_NAME, expecteds[0]);
+            }
+            else {
+                expected = String.format("flatten(%s.%s, %s.%s)", SCHEMA_NAME, expecteds[0], SCHEMA_NAME, expecteds[1]);
+                for (int i=2; i < expecteds.length; ++i) {
+                    expected = String.format("flatten(%s.%s, %s)", SCHEMA_NAME, expecteds[i], expected);
+                }
+            }
+        } else {
+            assertSame("must use NO_FLATTENING (to protect against careless mistakes", NO_FLATTENING, expecteds);
+        }
+        assertEquals("flattened row type", expected, actual);
+    }
 
     private static UserTableRowType rowType(AkibanInformationSchema ais, Schema schema, String tableName) {
         return schema.userTableRowType(ais.getUserTable(SCHEMA_NAME, tableName));
@@ -262,7 +294,7 @@ public final class MaintenancePlanCreatorTest {
     }
 
     private static Schema schema(AkibanInformationSchema ais) {
-        return new SchemaAISBased(ais);
+        return new Schema(ais);
     }
 
     private AkibanInformationSchema coia() {
@@ -308,4 +340,5 @@ public final class MaintenancePlanCreatorTest {
 
     private static final String SCHEMA_NAME = "sch";
     private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory();
+    private static final String[] NO_FLATTENING = new String[0];
 }

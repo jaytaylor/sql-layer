@@ -1,0 +1,3 @@
+Count_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]))
+  IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) (>=ExpressionRow[Literal(Smith), Literal(1234)],<=ExpressionRow[Literal(Smith), Literal(1234)]))
+[_SQL_COL_1:INTEGER NOT NULL]

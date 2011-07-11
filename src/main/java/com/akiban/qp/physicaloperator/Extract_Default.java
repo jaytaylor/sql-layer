@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 class Extract_Default extends PhysicalOperator
 {
@@ -36,7 +37,11 @@ class Extract_Default extends PhysicalOperator
     @Override
     public String toString()
     {
-        return String.format("%s(%s)", getClass().getSimpleName(), keepTypes);
+        TreeSet<String> keepTypesStrings = new TreeSet<String>();
+        for (RowType keepType : keepTypes) {
+            keepTypesStrings.add(String.valueOf(keepType));
+        }
+        return String.format("%s(%s)", getClass().getSimpleName(), keepTypesStrings);
     }
 
     // PhysicalOperator interface

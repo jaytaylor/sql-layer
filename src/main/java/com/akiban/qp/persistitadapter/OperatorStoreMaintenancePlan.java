@@ -16,16 +16,21 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.NoLimit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.row.FlattenedRow;
+import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 
 final class OperatorStoreMaintenancePlan {
@@ -34,17 +39,101 @@ final class OperatorStoreMaintenancePlan {
         return rootOperator;
     }
 
+    public RowType flattenedAncestorRowType() {
+        return flattenedAncestorRowType;
+    }
+
+    public PhysicalOperator siblingsLookup() {
+        return siblingsFinder;
+    }
+
+    public Row flattenLeft(Row row) {
+        // validations, validations...
+        if (flattenedAncestorRowType == null) {
+            assert flatteningTypes == null : flatteningTypes;
+            throw new IllegalStateException("no flattened row defined");
+        }
+        assert (flatteningTypes != null) && !flatteningTypes.isEmpty() : "flatteningTypes: " + flatteningTypes;
+        if (!row.rowType().equals(flattenedAncestorRowType)) {
+            throw new IllegalArgumentException(String.format(
+                    "row(%s) is of type %s; required %s", row, row.rowType(), flattenedAncestorRowType()
+            ));
+        }
+
+        // finally :-)
+        Row result = row;
+        for (FlattenedRowType flattenedRowType : flatteningTypes) {
+            result = new FlattenedRow(flattenedRowType, result, null, row.hKey());
+        }
+        return result;
+    }
+
     public OperatorStoreMaintenancePlan(BranchTables branchTables,
                                         GroupIndex groupIndex,
                                         UserTableRowType rowType)
     {
-        this.rootOperator = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType);
+        PlanCreationStruct struct = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType);
+        this.rootOperator = struct.rootOperator;
+        this.flattenedAncestorRowType = struct.flattenedParentRowType;
+        this.flatteningTypes = flatteningRowTypes(struct);
+        this.siblingsFinder = createSiblingsFinder(groupIndex, branchTables, rowType);
+    }
+
+    private PhysicalOperator createSiblingsFinder(GroupIndex groupIndex, BranchTables branchTables, UserTableRowType rowType) {
+        UserTable parentUserTable = rowType.userTable().parentTable();
+        if (parentUserTable == null) {
+            return null;
+        }
+        final GroupTable groupTable = groupIndex.getGroup().getGroupTable();
+        final RowType parentRowType = branchTables.parentRowType(rowType);
+        assert parentRowType != null;
+
+        PhysicalOperator plan = API.groupScan_Default(
+                groupTable,
+                NoLimit.instance(),
+                com.akiban.qp.expression.API.variable(HKEY_BINDING_POSITION),
+                false
+        );
+        plan = API.ancestorLookup_Default(plan, groupTable, rowType, Collections.singleton(parentRowType), false);
+        plan = API.branchLookup_Default(plan, groupTable, parentRowType, rowType, false);
+        plan = API.cut_Default(plan, rowType);
+        plan = API.limit_Default(plan, 2);
+        return plan;
+    }
+
+    private List<FlattenedRowType> flatteningRowTypes(PlanCreationStruct struct) {
+        if (struct.flattenedParentRowType == null) {
+            return null;
+        }
+        List<FlattenedRowType> result = new ArrayList<FlattenedRowType>();
+
+        for(RowType rowType = struct.rootOperator.rowType();
+            rowType instanceof FlattenedRowType;
+            rowType = ((FlattenedRowType)rowType).parentType())
+        {
+            result.add((FlattenedRowType)rowType);
+        }
+        Collections.reverse(result);
+
+        RowType ancestorType = struct.flattenedParentRowType;
+        if (ancestorType instanceof FlattenedRowType) {
+            FlattenedRowType asFlattened = (FlattenedRowType) ancestorType;
+            int ancestorTypeIndex = result.indexOf(asFlattened);
+            assert ancestorTypeIndex >= 0 : String.format("%s not found in %s", ancestorType, result);
+            while (ancestorTypeIndex-- >= 0) {
+                result.remove(0);
+            }
+        }
+        return result;
     }
 
     private final PhysicalOperator rootOperator;
+    private final RowType flattenedAncestorRowType;
+    private final List<FlattenedRowType> flatteningTypes;
+    private final PhysicalOperator siblingsFinder;
 
     // for use by unit tests
-    static PhysicalOperator createGroupIndexMaintenancePlan(
+    static PlanCreationStruct createGroupIndexMaintenancePlan(
             Schema schema,
             GroupIndex groupIndex,
             UserTableRowType rowType)
@@ -58,7 +147,7 @@ final class OperatorStoreMaintenancePlan {
 
     // for use in this class
 
-    private static PhysicalOperator createGroupIndexMaintenancePlan(
+    private static PlanCreationStruct createGroupIndexMaintenancePlan(
             BranchTables branchTables,
             GroupIndex groupIndex,
             UserTableRowType rowType)
@@ -70,6 +159,8 @@ final class OperatorStoreMaintenancePlan {
             throw new RuntimeException(rowType + " not in branch for " + groupIndex + ": " + branchTables);
         }
 
+        PlanCreationStruct result = new PlanCreationStruct();
+
         boolean deep = !branchTables.leafMost().equals(rowType);
         PhysicalOperator plan = API.groupScan_Default(
                 groupIndex.getGroup().getGroupTable(),
@@ -78,7 +169,8 @@ final class OperatorStoreMaintenancePlan {
                 deep
         );
         if (branchTables.fromRoot().size() == 1) {
-            return plan;
+            result.rootOperator = plan;
+            return result;
         }
         if (!branchTables.fromRoot().get(0).equals(rowType)) {
             plan = API.ancestorLookup_Default(
@@ -92,19 +184,37 @@ final class OperatorStoreMaintenancePlan {
 
         RowType parentRowType = null;
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;
-        for (RowType branchRowType : branchTables.fromRoot()) {
+        EnumSet<API.FlattenOption> options = EnumSet.noneOf(API.FlattenOption.class);
+        int innerAtDepth = branchTables.rootMost().userTable().getDepth() - 1;
+        boolean useLeft = innerAtDepth == -1; // if the branch segment's root is the group root, use LEFT from the start
+        for (UserTableRowType branchRowType : branchTables.fromRoot()) {
             if (parentRowType == null) {
                 parentRowType = branchRowType;
             }
             else {
-                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType);
+                // when we hit the left join of <previous stuff> to <the incoming row>, keep the <previous stuff>
+                // row, and record its type.
+                // For instance, in a COIH schema, with a GI on OIH:
+                // * an incoming O should not keep/record anything
+                // * an incoming I should keep/record CO left join rows
+                // * an incoming H should keep/record COI left join rows
+                if (branchRowType.equals(rowType) && API.JoinType.LEFT_JOIN.equals(joinType) ) {
+                    result.flattenedParentRowType = parentRowType;
+                    options.add(API.FlattenOption.KEEP_PARENT);
+                }
+                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType, options);
                 parentRowType = plan.rowType();
+                options.remove(API.FlattenOption.KEEP_PARENT);
             }
-            if (branchRowType.equals(branchTables.rootMost())) {
-                joinType = API.JoinType.INNER_JOIN;
+            if (branchRowType.userTable().getDepth() == innerAtDepth) {
+                useLeft = true;
+            } else if (useLeft) {
+                joinType = API.JoinType.LEFT_JOIN;
+                options.add(API.FlattenOption.LEFT_JOIN_SHORTENS_HKEY);
             }
         }
-        return plan;
+        result.rootOperator = plan;
+        return result;
     }
 
     private static List<RowType> ancestors(RowType rowType, List<? extends RowType> branchTables) {
@@ -141,11 +251,22 @@ final class OperatorStoreMaintenancePlan {
         }
 
         public UserTableRowType leafMost() {
-            return onlyBranch.get(onlyBranch.size()-1);
+            return onlyBranch.get(onlyBranch.size() - 1);
         }
 
         public UserTableRowType rootMost() {
             return onlyBranch.get(0);
+        }
+
+        public UserTableRowType parentRowType(UserTableRowType rowType) {
+            UserTableRowType parentType = null;
+            for (UserTableRowType type : allTablesForBranch) {
+                if (type.equals(rowType)) {
+                    return parentType;
+                }
+                parentType = type;
+            }
+            throw new IllegalArgumentException(rowType + " not in branch: " + allTablesForBranch);
         }
 
         public BranchTables(Schema schema, GroupIndex groupIndex) {
@@ -172,5 +293,10 @@ final class OperatorStoreMaintenancePlan {
         // object state
         private final List<UserTableRowType> allTablesForBranch;
         private final List<UserTableRowType> onlyBranch;
+    }
+
+    static class PlanCreationStruct {
+        public PhysicalOperator rootOperator;
+        public RowType flattenedParentRowType;
     }
 }

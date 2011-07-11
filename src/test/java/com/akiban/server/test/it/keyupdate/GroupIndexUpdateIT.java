@@ -19,6 +19,7 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.OperatorStore;
+import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.store.IndexRecordVisitor;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.Strings;
@@ -43,7 +44,8 @@ public final class GroupIndexUpdateIT extends ITBase {
                 createNewRow(c, 1L, "Bergy")
         );
         checkIndex(
-                "name_when"
+                "name_when",
+                "Bergy, null, 1, null => " + depthOf(c)
         );
         writeRows(
                 createNewRow(o, 10L, 1L, "01-01-2001")
@@ -71,16 +73,46 @@ public final class GroupIndexUpdateIT extends ITBase {
     }
 
     @Test
+    public void deleteSecondOinCO() {
+        createGroupIndex(groupName, "name_when", "c.name, o.when");
+        final NewRow customer, firstOrder, secondOrder;
+        writeRows(
+                customer = createNewRow(c, 1L, "Joe"),
+                firstOrder = createNewRow(o, 11L, 1L, "01-01-01"),
+                secondOrder = createNewRow(o, 12L, 1L, "02-02-02")
+        );
+        checkIndex(
+                "name_when",
+                "Joe, 01-01-01, 1, 11 => " + depthOf(o),
+                "Joe, 02-02-02, 1, 12 => " + depthOf(o)
+        );
+        dml().deleteRow(session(), secondOrder);
+        checkIndex(
+                "name_when",
+                "Joe, 01-01-01, 1, 11 => " + depthOf(o)
+        );
+        dml().deleteRow(session(), firstOrder);
+        checkIndex(
+                "name_when",
+                "Joe, null, 1, null => " + depthOf(c)
+        );
+        dml().deleteRow(session(), customer);
+        checkIndex("name_when");
+    }
+
+    @Test
     public void coiGIsNoOrphan() {
         createGroupIndex(groupName, "name_when_sku", "c.name, o.when, i.sku");
         // write write write
         writeRows(createNewRow(c, 1L, "Horton"));
         checkIndex(
-                "name_when_sku"
+                "name_when_sku",
+                "Horton, null, null, 1, null, null => " + depthOf(c)
         );
         writeRows(createNewRow(o, 11L, 1L, "01-01-2001"));
         checkIndex(
-                "name_when_sku"
+                "name_when_sku",
+                "Horton, 01-01-2001, null, 1, 11, null => " + depthOf(o)
         );
         writeRows(createNewRow(i, 101L, 11L, 1111));
         checkIndex(
@@ -106,7 +138,8 @@ public final class GroupIndexUpdateIT extends ITBase {
         checkIndex("name_when_sku",
                 "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i),
                 "Horton, 01-01-2001, 2222, 1, 11, 102 => " + depthOf(i),
-                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + depthOf(i)
+                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + depthOf(i),
+                "Horton, 02-02-2002, null, 1, 12, null => " + depthOf(o)
         );
 
         // update parent
@@ -119,7 +152,8 @@ public final class GroupIndexUpdateIT extends ITBase {
         checkIndex("name_when_sku",
                 "Horton, 01-01-1999, 1111, 1, 11, 101 => " + depthOf(i),
                 "Horton, 01-01-1999, 2222, 1, 11, 102 => " + depthOf(i),
-                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthOf(i)
+                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthOf(i),
+                "Horton, 02-02-2002, null, 1, 12, null => " + depthOf(o)
         );
         // update child
         dml().updateRow(
@@ -131,22 +165,26 @@ public final class GroupIndexUpdateIT extends ITBase {
         checkIndex("name_when_sku",
                 "Horton, 01-01-1999, 1111, 1, 11, 101 => " + depthOf(i),
                 "Horton, 01-01-1999, 2442, 1, 11, 102 => " + depthOf(i),
-                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthOf(i)
+                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthOf(i),
+                "Horton, 02-02-2002, null, 1, 12, null => " + depthOf(o)
         );
 
         // delete child
         dml().deleteRow(session(), createNewRow(i, 102L, 11L, 222211));
         checkIndex("name_when_sku",
                 "Horton, 01-01-1999, 1111, 1, 11, 101 => " + depthOf(i),
-                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthOf(i)
+                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthOf(i),
+                "Horton, 02-02-2002, null, 1, 12, null => " + depthOf(o)
         );
-        // delete parent
+        // delete grandparent
         dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
-        checkIndex("name_when_sku");
+        checkIndex("name_when_sku",
+                "Horton, 02-02-2002, null, 1, 12, null => " + depthOf(o)
+        );
     }
 
     @Test
-    public void createGIOnPopulatedTables() {
+    public void createGIOnFullyPopulatedTables() {
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -155,6 +193,30 @@ public final class GroupIndexUpdateIT extends ITBase {
         createGroupIndex(groupName, "name_when_sku", "c.name, o.when, i.sku");
         checkIndex("name_when_sku",
                 "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i)
+        );
+    }
+
+    @Test
+    public void createGIOnPartiallyPopulatedTablesFromRoot() {
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(o, 11L, 1L, "01-01-2001")
+        );
+        createGroupIndex(groupName, "name_when_sku", "c.name, o.when, i.sku");
+        checkIndex("name_when_sku",
+                "Horton, 01-01-2001, null, 1, 11, null => " + depthOf(o)
+        );
+    }
+    
+    @Test
+    public void createGIOnPartiallyPopulatedTablesFromMiddle() {
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(o, 11L, 1L, "01-01-2001")
+        );
+        createGroupIndex(groupName, "when_sku", "o.when, i.sku");
+        checkIndex("when_sku",
+                "01-01-2001, null, 1, 11, null => " + depthOf(o)
         );
     }
 
@@ -357,18 +419,29 @@ public final class GroupIndexUpdateIT extends ITBase {
     public void updateModifiesHKeyWithinBranch() {
         // branch is I-H, we're modifying the hkey of an H
         createGroupIndex(groupName, "sku_handling", "i.sku, h.handling_instructions");
-        writeRows(
-                createNewRow(c, 1L, "Horton"),
-                createNewRow(o, 11L, 1L, "01-01-2001"),
-                createNewRow(i, 101L, 11L, "1111"),
-                createNewRow(h, 1001L, 101L, "don't break"),
-                createNewRow(c, 2L, "David"),
-                createNewRow(o, 12L, 2L, "02-02-2002"),
-                createNewRow(i, 102L, 12L, "2222")
-        );
+        writeRows(createNewRow(c, 1L, "Horton"));
+        checkIndex("sku_handling");
+
+        writeRows(createNewRow(o, 11L, 1L, "01-01-2001"));
+        checkIndex("sku_handling");
+
+        writeRows(createNewRow(i, 101L, 11L, "1111"));
+        checkIndex("sku_handling", "1111, null, 1, 11, 101, null => " + depthOf(i));
+
+        writeRows(createNewRow(h, 1001L, 101L, "don't break"));
+        checkIndex("sku_handling", "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h));
+
+        writeRows(createNewRow(c, 2L, "David"));
+        checkIndex("sku_handling", "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h));
+
+        writeRows(createNewRow(o, 12L, 2L, "02-02-2002"));
+        checkIndex("sku_handling", "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h));
+
+        writeRows(createNewRow(i, 102L, 12L, "2222"));
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h)
+                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h),
+                "2222, null, 2, 12, 102, null => " + depthOf(i)
         );
 
         dml().updateRow(
@@ -380,6 +453,7 @@ public final class GroupIndexUpdateIT extends ITBase {
 
         checkIndex(
                 "sku_handling",
+                "1111, null, 1, 11, 101, null => " + depthOf(i),
                 "2222, don't break, 2, 12, 102, 1001 => " + depthOf(h)
         );
     }
@@ -399,7 +473,8 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h)
+                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h),
+                "2222, null, 2, 12, 102, null => " + depthOf(i)
         );
 
         dml().updateRow(
@@ -411,7 +486,8 @@ public final class GroupIndexUpdateIT extends ITBase {
 
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 2, 12, 101, 1001 => " + depthOf(h)
+                "1111, don't break, 2, 12, 101, 1001 => " + depthOf(h),
+                "2222, null, 2, 12, 102, null => " + depthOf(i)
         );
     }
 
@@ -430,7 +506,8 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h)
+                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h),
+                "2222, null, 2, 12, 102, null => " + depthOf(i)
         );
 
         dml().updateRow(
@@ -442,7 +519,8 @@ public final class GroupIndexUpdateIT extends ITBase {
 
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 2, 11, 101, 1001 => " + depthOf(h)
+                "1111, don't break, 2, 11, 101, 1001 => " + depthOf(h),
+                "2222, null, 2, 12, 102, null => " + depthOf(i)
         );
     }
 
@@ -461,7 +539,8 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h)
+                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h),
+                "2222, null, 2, 12, 102, null => " + depthOf(i)
         );
 
         dml().updateRow(
@@ -471,7 +550,10 @@ public final class GroupIndexUpdateIT extends ITBase {
                 null
         );
 
-        checkIndex("sku_handling");
+        checkIndex("sku_handling",
+                "1111, null, 1, 11, 101, null => " + depthOf(i),
+                "2222, null, 2, 12, 102, null => " + depthOf(i)
+        );
     }
 
     @Test
@@ -492,7 +574,9 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h)
+                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h),
+                "2222, null, 2, 12, 102, null => " + depthOf(i),
+                "6666, null, 6, 66, 666, null => " + depthOf(i)
         );
 
         dml().updateRow(
@@ -504,10 +588,12 @@ public final class GroupIndexUpdateIT extends ITBase {
 
         checkIndex(
                 "sku_handling",
+                "1111, null, 1, 11, 101, null => " + depthOf(i),
+                "2222, null, 2, 12, 102, null => " + depthOf(i),
                 "6666, don't break, 6, 66, 666, 1001 => " + depthOf(h)
         );
     }
-
+// TODO I have updated up to here
     @Test
     public void updateOrphansHKeyDirectlyAboveBranch() {
         // branch is I-H, we're modifying the hkey of an I
@@ -523,7 +609,8 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h)
+                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h),
+                "2222, null, 2, 12, 102, null => " + depthOf(i)
         );
 
         dml().updateRow(
@@ -535,7 +622,8 @@ public final class GroupIndexUpdateIT extends ITBase {
 
         checkIndex(
                 "sku_handling",
-                "1111, don't break, null, 66, 101, 1001 => " + depthOf(h)
+                "1111, don't break, null, 66, 101, 1001 => " + depthOf(h),
+                "2222, null, 2, 12, 102, null => " + depthOf(i)
         );
     }
 
@@ -554,7 +642,8 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h)
+                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h),
+                "2222, null, 2, 12, 102, null => " + depthOf(i)
         );
 
         dml().updateRow(
@@ -566,7 +655,8 @@ public final class GroupIndexUpdateIT extends ITBase {
 
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 6, 11, 101, 1001 => " + depthOf(h)
+                "1111, don't break, 6, 11, 101, 1001 => " + depthOf(h),
+                "2222, null, 2, 12, 102, null => " + depthOf(i)
         );
     }
 
@@ -587,7 +677,8 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
         checkIndex(
                 "sku_handling",
-                "1111, don't break, 6, 11, 101, 1001 => " + depthOf(h)
+                "1111, don't break, 6, 11, 101, 1001 => " + depthOf(h),
+                "2222, null, 2, 12, 102, null => " + depthOf(i)
         );
     }
 

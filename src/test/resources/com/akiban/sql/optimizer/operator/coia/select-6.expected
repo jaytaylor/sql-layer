@@ -1,6 +1,6 @@
 project([Field(7), Field(10), Field(4)])
   Product_ByRun(flatten(user.customers, user.addresses) x flatten(user.customers, user.orders))
-    Extract_Default([flatten(user.customers, user.orders), flatten(user.customers, user.addresses)])
+    Extract_Default([flatten(user.customers, user.addresses), flatten(user.customers, user.orders)])
       Flatten_HKeyOrdered(user.customers INNER user.addresses)
         Flatten_HKeyOrdered(user.customers KEEP INNER user.orders)
           BranchLookup_Default(_akiban_customers user.orders -> user.addresses limit NO LIMIT)
