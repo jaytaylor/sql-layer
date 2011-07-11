@@ -459,23 +459,25 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     // private methods
 
     private void testMaintainedRows(TestOperatorStore.Action action, boolean alsoNullKeys, NewRow targetRow, String... expectedActions) {
-        RowData rowData = targetRow.toRowData();
-        StringsGIHandler handler = new StringsGIHandler();
-        try {
-            opStore().testMaintainGroupIndexes(session(), rowData, handler, action, alsoNullKeys);
-        } catch (PersistitException e) {
-            throw new RuntimeException(e);
-        }
-        List<String> actual = Arrays.asList(expectedActions);
-        List<String> expected = handler.strings();
-        // the actual order doesn't matter, so sort both lists according to natural order
-        Collections.sort(actual);
-        Collections.sort(expected);
-        if (!expected.equals(actual)) {
-            assertEquals("updates for " + targetRow, Strings.join(actual), Strings.join(expected));
-            // and just in case...
-            assertEquals("updates for " + targetRow, actual, expected);
-        }
+        throw new AssertionError("not completed!");
+
+//        RowData rowData = targetRow.toRowData();
+//        StringsGIHandler handler = new StringsGIHandler();
+//        try {
+//            opStore().testMaintainGroupIndexes(session(), rowData, handler, action, alsoNullKeys);
+//        } catch (PersistitException e) {
+//            throw new RuntimeException(e);
+//        }
+//        List<String> actual = Arrays.asList(expectedActions);
+//        List<String> expected = handler.strings();
+//        // the actual order doesn't matter, so sort both lists according to natural order
+//        Collections.sort(actual);
+//        Collections.sort(expected);
+//        if (!expected.equals(actual)) {
+//            assertEquals("updates for " + targetRow, Strings.join(actual), Strings.join(expected));
+//            // and just in case...
+//            assertEquals("updates for " + targetRow, actual, expected);
+//        }
     }
 
     private TestOperatorStore opStore() {
@@ -515,40 +517,39 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         }
     }
 
-    private static class StringsGIHandler implements TestOperatorStore.GroupIndexHandler {
-
-        // GroupIndexHandler interface
-
-        @Override
-        public void handleRow(GroupIndex groupIndex, Row row, Action action, boolean alsoNullKeys) {
-            List<Object> fields = new ArrayList<Object>();
-            List<Column> columns = new ArrayList<Column>();
-            IndexRowComposition irc = groupIndex.indexRowComposition();
-            for (int i=0; i < irc.getLength(); ++i ) {
-                assert irc.isInRowData(i);
-                assert ! irc.isInHKey(i);
-                final int rowIndex = irc.getFieldPosition(i);
-                fields.add(row.field(rowIndex, UndefBindings.only()));
-                columns.add(groupIndex.getColumnForFlattenedRow(rowIndex));
-            }
-            String s = see(
-                    action,
-                    alsoNullKeys,
-                    groupIndex.getIndexName().getName(),
-                    fields.toString(),
-                    columns.toString()
-            );
-            strings.add(s);
-        }
-
-        // StringsGIHandler interface
-
-        public List<String> strings() {
-            return strings;
-        }
-
-        // object state
-
-        private final List<String> strings = new ArrayList<String>();
-    }
+//    private static class StringsGIHandler implements TestOperatorStore.GroupIndexHandler {
+// GroupIndexHandler interface
+//
+//        @Override
+//        public void handleRow(GroupIndex groupIndex, Row row, OperatorStoreGIHandler.Action action, boolean alsoNullKeys) {
+//            List<Object> fields = new ArrayList<Object>();
+//            List<Column> columns = new ArrayList<Column>();
+//            IndexRowComposition irc = groupIndex.indexRowComposition();
+//            for (int i=0; i < irc.getLength(); ++i ) {
+//                assert irc.isInRowData(i);
+//                assert ! irc.isInHKey(i);
+//                final int rowIndex = irc.getFieldPosition(i);
+//                fields.add(row.field(rowIndex, UndefBindings.only()));
+//                columns.add(groupIndex.getColumnForFlattenedRow(rowIndex));
+//            }
+//            String s = see(
+//                    action,
+//                    alsoNullKeys,
+//                    groupIndex.getIndexName().getName(),
+//                    fields.toString(),
+//                    columns.toString()
+//            );
+//            strings.add(s);
+//        }
+//
+//        // StringsGIHandler interface
+//
+//        public List<String> strings() {
+//            return strings;
+//        }
+//
+//        // object state
+//
+//        private final List<String> strings = new ArrayList<String>();
+//    }
 }

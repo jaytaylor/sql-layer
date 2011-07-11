@@ -118,7 +118,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 maintainGroupIndexes(
                         session, ais, adapter,
                         oldRowData, OperatorStoreGIHandler.forTable(adapter, userTable),
-                        GroupIndexHandler.Action.DELETE,
+                        OperatorStoreGIHandler.Action.DELETE,
                         true
                 );
 
@@ -127,7 +127,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 maintainGroupIndexes(
                         session, ais, adapter,
                         newRowData, OperatorStoreGIHandler.forTable(adapter, userTable),
-                        GroupIndexHandler.Action.STORE,
+                        OperatorStoreGIHandler.Action.STORE,
                         true
                 );
 
@@ -157,7 +157,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 maintainGroupIndexes(
                         session, ais, adapter,
                         rowData, OperatorStoreGIHandler.forTable(adapter, uTable),
-                        GroupIndexHandler.Action.STORE,
+                        OperatorStoreGIHandler.Action.STORE,
                         true
                 );
 
@@ -185,7 +185,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 maintainGroupIndexes(
                         session, ais, adapter,
                         rowData, OperatorStoreGIHandler.forTable(adapter, uTable),
-                        GroupIndexHandler.Action.DELETE,
+                        OperatorStoreGIHandler.Action.DELETE,
                         true
                 );
                 super.deleteRow(session, rowData);
@@ -231,7 +231,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     plan,
                     UndefBindings.only(),
                     OperatorStoreGIHandler.forBuilding(adapter),
-                    GroupIndexHandler.Action.BULK_ADD,
+                    OperatorStoreGIHandler.Action.BULK_ADD,
                     false,
                     null
             );
@@ -254,7 +254,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             Session session,
             RowData rowData,
             GroupIndexHandler handler,
-            GroupIndexHandler.Action action,
+            OperatorStoreGIHandler.Action action,
             boolean alsoNullKeys
     )
     throws PersistitException
@@ -275,7 +275,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             AkibanInformationSchema ais, PersistitAdapter adapter,
             RowData rowData,
             GroupIndexHandler handler,
-            GroupIndexHandler.Action action,
+            OperatorStoreGIHandler.Action action,
             boolean alsoNullKeys
     )
     throws PersistitException
@@ -331,7 +331,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             PhysicalOperator rootOperator,
             Bindings bindings,
             GroupIndexHandler handler,
-            GroupIndexHandler.Action action,
+            OperatorStoreGIHandler.Action action,
             boolean alsoNullKeys,
             OperatorStoreMaintenancePlan maintenancePlan
     )
@@ -394,10 +394,10 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // private static methods
 
-    private static GroupIndexHandler.Action invert(GroupIndexHandler.Action action) {
+    private static OperatorStoreGIHandler.Action invert(OperatorStoreGIHandler.Action action) {
         switch (action) {
-        case DELETE: return GroupIndexHandler.Action.STORE;
-        case STORE: return GroupIndexHandler.Action.DELETE;
+        case DELETE: return OperatorStoreGIHandler.Action.STORE;
+        case STORE: return OperatorStoreGIHandler.Action.DELETE;
         default: throw new UnsupportedOperationException(action.name());
         }
     }
@@ -495,9 +495,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
     
     protected interface GroupIndexHandler {
-        void handleRow(GroupIndex groupIndex, Row row, Action action, boolean alsoNullHKeys) throws PersistitException;
+        void handleRow(GroupIndex groupIndex, Row row, OperatorStoreGIHandler.Action action, boolean alsoNullHKeys) throws PersistitException;
 
-        public enum Action {STORE, DELETE, BULK_ADD }
     }
 
     public class UniqueIndexUnsupportedException extends UnsupportedOperationException {

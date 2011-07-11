@@ -212,4 +212,6 @@ class OperatorStoreGIHandler implements OperatorStore.GroupIndexHandler {
             return this == ABOVE_SEGMENT;
         }
     }
+
+    static enum Action {STORE, DELETE, BULK_ADD }
 }

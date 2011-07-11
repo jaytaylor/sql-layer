@@ -51,16 +51,16 @@ public class TestOperatorStore extends OperatorStore {
     }
 
     public enum Action {
-        STORE(GroupIndexHandler.Action.STORE),
-        DELETE(GroupIndexHandler.Action.DELETE),
-        BULK_ADD(GroupIndexHandler.Action.BULK_ADD)
+        STORE(OperatorStoreGIHandler.Action.STORE),
+        DELETE(OperatorStoreGIHandler.Action.DELETE),
+        BULK_ADD(OperatorStoreGIHandler.Action.BULK_ADD)
         ;
 
-        Action(OperatorStore.GroupIndexHandler.Action equivalentAction) {
+        Action(OperatorStoreGIHandler.Action equivalentAction) {
             this.equivalentAction = equivalentAction;
         }
 
-        private final GroupIndexHandler.Action equivalentAction;
+        private final OperatorStoreGIHandler.Action equivalentAction;
     }
 
     // consts
