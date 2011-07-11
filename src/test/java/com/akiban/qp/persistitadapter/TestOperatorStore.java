@@ -55,12 +55,6 @@ public class TestOperatorStore extends OperatorStore {
         return ordered;
     }
 
-    @Deprecated
-    public enum Action {
-        STORE,
-        DELETE
-    }
-
     // object state
 
     private final OperatorStoreGIHandlerHook hook = new OperatorStoreGIHandlerHook();

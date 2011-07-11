@@ -14,32 +14,21 @@
  */
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.qp.persistitadapter.TestOperatorStore;
-import com.akiban.qp.physicaloperator.UndefBindings;
-import com.akiban.qp.row.Row;
-import com.akiban.server.RowData;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.Property;
 import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.util.Strings;
-import com.persistit.exception.PersistitException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
-import static com.akiban.qp.persistitadapter.TestOperatorStore.Action.*;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -92,7 +81,6 @@ import static org.junit.Assert.assertEquals;
  * <p>In addition to the above "unit-style" tests, we'll also perform some smoke tests of more complex functionality,
  * like maintenance of multiple indexes.</p>
  */
-@Ignore("while this test's unit-like approach is laudable, it mixes too much of internals and visible effects")
 public final class OperatorStoreGroupIndexIT extends ITBase {
 
     // Incoming C
@@ -106,13 +94,11 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 target = createNewRow(c, 1L, "name")
         );
         testMaintainedRows(
-                STORE,
-                true,
+                Action.STORE,
                 target
         );
         testMaintainedRows(
-                DELETE,
-                true,
+                Action.DELETE,
                 target
         );
     }
@@ -129,16 +115,14 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         );
 
         testMaintainedRows(
-                STORE,
-                true,
+                Action.STORE,
                 target,
-                see(STORE, true, "date_sku", "[04-04-2004, 4444, 1, 10, 100]", DATE_SKU_COLS)
+                see(Action.STORE, true, "date_sku", "[04-04-2004, 4444, 1, 10, 100]", DATE_SKU_COLS)
         );
         testMaintainedRows(
-                DELETE,
-                true,
+                Action.DELETE,
                 target,
-                see(DELETE, true, "date_sku", "[04-04-2004, 4444, 1, 10, 100]", DATE_SKU_COLS)
+                see(Action.DELETE, true, "date_sku", "[04-04-2004, 4444, 1, 10, 100]", DATE_SKU_COLS)
         );
     }
 
@@ -153,16 +137,14 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 target = createNewRow(o, 10L, 1L, "01-01-2001")
         );
         testMaintainedRows(
-                STORE,
-                true,
+                Action.STORE,
                 target,
-                see(STORE, true, "date_sku", "[01-01-2001, null, 1, 10, null]", DATE_SKU_COLS)
+                see(Action.STORE, true, "date_sku", "[01-01-2001, null, 1, 10, null]", DATE_SKU_COLS)
         );
         testMaintainedRows(
-                DELETE,
-                true,
+                Action.DELETE,
                 target,
-                see(DELETE, true, "date_sku", "[01-01-2001, null, 1, 10, null]", DATE_SKU_COLS)
+                see(Action.DELETE, true, "date_sku", "[01-01-2001, null, 1, 10, null]", DATE_SKU_COLS)
         );
     }
 
@@ -178,16 +160,14 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         );
 
         testMaintainedRows(
-                STORE,
-                true,
+                Action.STORE,
                 target,
-                see(STORE, true, "date_sku", "[01-01-2001, 1111, 1, 10, 100]", DATE_SKU_COLS)
+                see(Action.STORE, true, "date_sku", "[01-01-2001, 1111, 1, 10, 100]", DATE_SKU_COLS)
         );
         testMaintainedRows(
-                DELETE,
-                true,
+                Action.DELETE,
                 target,
-                see(DELETE, true, "date_sku", "[01-01-2001, 1111, 1, 10, 100]", DATE_SKU_COLS)
+                see(Action.DELETE, true, "date_sku", "[01-01-2001, 1111, 1, 10, 100]", DATE_SKU_COLS)
         );
     }
 
@@ -202,16 +182,14 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         );
 
         testMaintainedRows(
-                STORE,
-                true,
+                Action.STORE,
                 target,
-                see(STORE, true, "date_sku", "[02-02-2002, null, 1, 11, null]", DATE_SKU_COLS)
+                see(Action.STORE, true, "date_sku", "[02-02-2002, null, 1, 11, null]", DATE_SKU_COLS)
         );
         testMaintainedRows(
-                DELETE,
-                true,
+                Action.DELETE,
                 target,
-                see(DELETE, true, "date_sku", "[02-02-2002, null, 1, 11, null]", DATE_SKU_COLS)
+                see(Action.DELETE, true, "date_sku", "[02-02-2002, null, 1, 11, null]", DATE_SKU_COLS)
         );
     }
 
@@ -226,18 +204,16 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         );
 
         testMaintainedRows(
-                STORE,
-                true,
+                Action.STORE,
                 target,
-                see(STORE, true, "date_sku", "[03-03-2003, 1111, 1, 10, 100]", DATE_SKU_COLS),
-                see(DELETE, false, "date_sku", "[03-03-2003, null, 1, 10, null]", DATE_SKU_COLS)
+                see(Action.STORE, true, "date_sku", "[03-03-2003, 1111, 1, 10, 100]", DATE_SKU_COLS),
+                see(Action.DELETE, false, "date_sku", "[03-03-2003, null, 1, 10, null]", DATE_SKU_COLS)
         );
         testMaintainedRows(
-                DELETE,
-                true,
+                Action.DELETE,
                 target,
-                see(DELETE, true, "date_sku", "[03-03-2003, 1111, 1, 10, 100]", DATE_SKU_COLS),
-                see(STORE, false, "date_sku", "[03-03-2003, null, 1, 10, null]", DATE_SKU_COLS)
+                see(Action.DELETE, true, "date_sku", "[03-03-2003, 1111, 1, 10, 100]", DATE_SKU_COLS),
+                see(Action.STORE, false, "date_sku", "[03-03-2003, null, 1, 10, null]", DATE_SKU_COLS)
         );
     }
 
@@ -252,13 +228,11 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
                 target = createNewRow(i, 100L, 10L, 1111)
         );
         testMaintainedRows(
-                STORE,
-                true,
+                Action.STORE,
                 target
         );
         testMaintainedRows(
-                DELETE,
-                true,
+                Action.DELETE,
                 target
         );
     }
@@ -274,13 +248,11 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         );
 
         testMaintainedRows(
-                STORE,
-                true,
+                Action.STORE,
                 target
         );
         testMaintainedRows(
-                DELETE,
-                true,
+                Action.DELETE,
                 target
         );
     }
@@ -297,18 +269,16 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         );
 
         testMaintainedRows(
-                STORE,
-                true,
+                Action.STORE,
                 target,
-                see(STORE, true, "date_sku", "[1-1-01, 11111, 1, 10, 100]", DATE_SKU_COLS),
-                see(DELETE, false, "date_sku", "[1-1-01, null, 1, 10, null]", DATE_SKU_COLS)
+                see(Action.STORE, true, "date_sku", "[1-1-01, 11111, 1, 10, 100]", DATE_SKU_COLS),
+                see(Action.DELETE, false, "date_sku", "[1-1-01, null, 1, 10, null]", DATE_SKU_COLS)
         );
         testMaintainedRows(
-                DELETE,
-                true,
+                Action.DELETE,
                 target,
-                see(DELETE, true, "date_sku", "[1-1-01, 11111, 1, 10, 100]", DATE_SKU_COLS),
-                see(STORE, false, "date_sku", "[1-1-01, null, 1, 10, null]", DATE_SKU_COLS)
+                see(Action.DELETE, true, "date_sku", "[1-1-01, 11111, 1, 10, 100]", DATE_SKU_COLS),
+                see(Action.STORE, false, "date_sku", "[1-1-01, null, 1, 10, null]", DATE_SKU_COLS)
         );
     }
 
@@ -324,13 +294,11 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         );
 
         testMaintainedRows(
-                STORE,
-                true,
+                Action.STORE,
                 target
         );
         testMaintainedRows(
-                DELETE,
-                true,
+                Action.DELETE,
                 target
         );
     }
@@ -348,16 +316,14 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         );
 
         testMaintainedRows(
-                STORE,
-                true,
+                Action.STORE,
                 target,
-                see(STORE, true, "date_sku", "[01-01-2001, 2222, 1, 10, 101]", DATE_SKU_COLS)
+                see(Action.STORE, true, "date_sku", "[01-01-2001, 2222, 1, 10, 101]", DATE_SKU_COLS)
         );
         testMaintainedRows(
-                DELETE,
-                true,
+                Action.DELETE,
                 target,
-                see(DELETE, true, "date_sku", "[01-01-2001, 2222, 1, 10, 101]", DATE_SKU_COLS)
+                see(Action.DELETE, true, "date_sku", "[01-01-2001, 2222, 1, 10, 101]", DATE_SKU_COLS)
         );
     }
 
@@ -373,16 +339,14 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         );
 
         testMaintainedRows(
-                STORE,
-                true,
+                Action.STORE,
                 target,
-                see(STORE, true, "date_sku", "[2001-01-01, 5678, 1, 10, 101]", DATE_SKU_COLS)
+                see(Action.STORE, true, "date_sku", "[2001-01-01, 5678, 1, 10, 101]", DATE_SKU_COLS)
         );
         testMaintainedRows(
-                DELETE,
-                true,
+                Action.DELETE,
                 target,
-                see(DELETE, true, "date_sku", "[2001-01-01, 5678, 1, 10, 101]", DATE_SKU_COLS)
+                see(Action.DELETE, true, "date_sku", "[2001-01-01, 5678, 1, 10, 101]", DATE_SKU_COLS)
         );
     }
 
@@ -397,13 +361,11 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         );
 
         testMaintainedRows(
-                STORE,
-                true,
+                Action.STORE,
                 target
         );
         testMaintainedRows(
-                DELETE,
-                true,
+                Action.DELETE,
                 target
         );
     }
@@ -458,26 +420,21 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
 
     // private methods
 
-    private void testMaintainedRows(TestOperatorStore.Action action, boolean alsoNullKeys, NewRow targetRow, String... expectedActions) {
-        throw new AssertionError("not completed!");
+    private void testMaintainedRows(Action action, NewRow targetRow, String... expectedActions) {
+        assertEquals("hook strings before test", Collections.<String>emptyList(), opStore().getAndClearHookStrings());
 
-//        RowData rowData = targetRow.toRowData();
-//        StringsGIHandler handler = new StringsGIHandler();
-//        try {
-//            opStore().testMaintainGroupIndexes(session(), rowData, handler, action, alsoNullKeys);
-//        } catch (PersistitException e) {
-//            throw new RuntimeException(e);
-//        }
-//        List<String> actual = Arrays.asList(expectedActions);
-//        List<String> expected = handler.strings();
-//        // the actual order doesn't matter, so sort both lists according to natural order
-//        Collections.sort(actual);
-//        Collections.sort(expected);
-//        if (!expected.equals(actual)) {
-//            assertEquals("updates for " + targetRow, Strings.join(actual), Strings.join(expected));
-//            // and just in case...
-//            assertEquals("updates for " + targetRow, actual, expected);
-//        }
+        switch (action) {
+        case DELETE:
+            dml().deleteRow(session(), targetRow);
+            break;
+        case STORE:
+            dml().writeRow(session(), targetRow);
+            break;
+        default:
+            throw new AssertionError(action.name());
+        }
+
+        assertEquals("hook strings", Arrays.asList(expectedActions), opStore().getAndClearHookStrings());
     }
 
     private TestOperatorStore opStore() {
@@ -517,39 +474,8 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
         }
     }
 
-//    private static class StringsGIHandler implements TestOperatorStore.GroupIndexHandler {
-// GroupIndexHandler interface
-//
-//        @Override
-//        public void handleRow(GroupIndex groupIndex, Row row, OperatorStoreGIHandler.Action action, boolean alsoNullKeys) {
-//            List<Object> fields = new ArrayList<Object>();
-//            List<Column> columns = new ArrayList<Column>();
-//            IndexRowComposition irc = groupIndex.indexRowComposition();
-//            for (int i=0; i < irc.getLength(); ++i ) {
-//                assert irc.isInRowData(i);
-//                assert ! irc.isInHKey(i);
-//                final int rowIndex = irc.getFieldPosition(i);
-//                fields.add(row.field(rowIndex, UndefBindings.only()));
-//                columns.add(groupIndex.getColumnForFlattenedRow(rowIndex));
-//            }
-//            String s = see(
-//                    action,
-//                    alsoNullKeys,
-//                    groupIndex.getIndexName().getName(),
-//                    fields.toString(),
-//                    columns.toString()
-//            );
-//            strings.add(s);
-//        }
-//
-//        // StringsGIHandler interface
-//
-//        public List<String> strings() {
-//            return strings;
-//        }
-//
-//        // object state
-//
-//        private final List<String> strings = new ArrayList<String>();
-//    }
+    private enum Action {
+        STORE,
+        DELETE
+    }
 }
