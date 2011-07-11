@@ -47,7 +47,7 @@ public class TestOperatorStore extends OperatorStore {
     public void stop() throws Exception {
         OperatorStoreGIHandler.setGiHandlerHook(null);
         clearHookStrings();
-        super.start();
+        super.stop();
     }
 
     // OperatorStore overrides

@@ -403,11 +403,7 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     // private methods
 
     private int depth(int tableId) {
-        Integer asInteger = ddl().getAIS(session()).getUserTable(tableId).getDepth();
-        if (asInteger == null) {
-            throw new NullPointerException("no table with tableId = " + tableId);
-        }
-        return asInteger;
+        return ddl().getAIS(session()).getUserTable(tableId).getDepth();
     }
 
     private void testMaintainedRows(Action action, NewRow targetRow, String... expectedActions) {
