@@ -247,7 +247,7 @@ public class OperatorCompiler
         RowType resultRowType;
         ColumnExpressionToIndex fieldOffsets;
         boolean needExtract = false;
-        convering: {
+        covering: {
             IndexRowType indexRowType = null;
             ProductMethod productMethod;
             if (index != null) {
@@ -265,6 +265,7 @@ public class OperatorCompiler
                 if (index.isCovering(squery)) {
                     resultRowType = indexRowType;
                     fieldOffsets = new ColumnIndexMap(index.getCoveringMap());
+                    break covering;
                 }
                 // Decide whether to use BranchLookup, which gets all
                 // descendants, or AncestorLookup, which gets just the
@@ -758,7 +759,47 @@ public class OperatorCompiler
         }
 
         public boolean isCovering(SimplifiedQuery squery) {
-            return false;
+            // For now, don't allow any more conditions.
+            if (!squery.getConditions().isEmpty())
+                return false;
+
+            // No other tables can be joined in (they might be joined
+            // to check against orphans, etc. without having select
+            // columns).
+            Set<TableNode> tables = new HashSet<TableNode>();
+            {
+                TableNode table = leafMostTable;
+                while (true) {
+                    tables.add(table);
+                    if (table == rootMostTable)
+                        break;
+                    table = table.getParent();
+                }
+            }
+            for (TableNode table : squery.getTables()) {
+                if (table.isUsed() && !tables.contains(table))
+                    return false;
+            }
+            
+            Map<Column,Integer> columnOffsets = new HashMap<Column,Integer>();
+            int nindexCols = index.getColumns().size();
+            for (SimpleSelectColumn selectColumn : squery.getSelectColumns()) {
+                SimpleExpression selectExpression = selectColumn.getExpression();
+                if (selectExpression.isColumn()) {
+                    Column column = ((ColumnExpression)selectExpression).getColumn();
+                    found: {
+                        for (int i = 0; i < nindexCols; i++) {
+                            if (column == index.getColumns().get(i).getColumn()) {
+                                columnOffsets.put(column, i);
+                                break found;
+                            }
+                        }
+                        return false;
+                    }
+                }
+            }
+            coveringMap = columnOffsets;
+            return true;
         }
 
         // Generate key range bounds.
