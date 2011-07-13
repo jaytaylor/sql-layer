@@ -51,15 +51,29 @@ class PersistitIndexCursor implements Cursor
     @Override
     public Row next()
     {
+        final boolean isGroupIndex = index().isGroupIndex();
         try {
-            if (exchange != null &&
-                (indexFilter == null
-                 ? exchange.traverse(direction, true)
-                 : exchange.traverse(direction, indexFilter, 0))) {
-                unsharedRow().get().copyFromExchange(exchange);
-            } else {
-                close();
-            }
+            boolean needAnother;
+            do {
+                if (exchange != null &&
+                    (indexFilter == null
+                     ? exchange.traverse(direction, true)
+                     : exchange.traverse(direction, indexFilter, 0))) {
+                    if (isGroupIndex) {
+                        if (exchange.getValue().getInt() < minimumDepth) {
+                            needAnother = true;
+                        } else {
+                            unsharedRow().get().copyFromExchange(exchange);
+                            needAnother = false;
+                        }
+                    } else {
+                        needAnother = false;
+                    }
+                } else {
+                    close();
+                    needAnother = false;
+                }
+            } while (needAnother);
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }
@@ -90,6 +104,7 @@ class PersistitIndexCursor implements Cursor
         this.adapter = adapter;
         this.indexRowType = indexRowType;
         this.row = new RowHolder<PersistitIndexRow>(adapter.newIndexRow(indexRowType));
+        this.minimumDepth = innerJoinUntil.getDepth();
         if (reverse) {
             boundary = Key.AFTER;
             direction = Key.LT;
@@ -130,6 +145,7 @@ class PersistitIndexCursor implements Cursor
     private final Key.EdgeValue boundary;
     private final Key.Direction direction;
     private final IndexKeyRange keyRange;
+    private final int minimumDepth;
     private Exchange exchange;
     private KeyFilter indexFilter;
 }

@@ -61,7 +61,7 @@ public final class GroupIndexScanIT extends ITBase {
 
     @Test
     public void defaultDepth() {
-        PhysicalOperator explicit = API.indexScan_Default(giRowType, false, null, uTableRowType(o));
+        PhysicalOperator explicit = API.indexScan_Default(giRowType, false, null, uTableRowType(i));
         PhysicalOperator defaulted = API.indexScan_Default(giRowType, false, null);
 
         List<List<?>> explicitList = planToList(explicit);
