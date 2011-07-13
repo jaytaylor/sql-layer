@@ -22,6 +22,7 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.UserTableRowType;
 
 import java.util.Collection;
 import java.util.EnumSet;
@@ -127,12 +128,20 @@ public class API
 
     public static PhysicalOperator indexScan_Default(IndexRowType indexType)
     {
-        return indexScan_Default(indexType, false, null);
+        return indexScan_Default(indexType, false, null, indexType.tableType());
     }
 
     public static PhysicalOperator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
     {
-        return new IndexScan_Default(indexType, reverse, indexKeyRange);
+        return indexScan_Default(indexType, reverse, indexKeyRange, indexType.tableType());
+    }
+
+    public static PhysicalOperator indexScan_Default(IndexRowType indexType,
+                                                     boolean reverse,
+                                                     IndexKeyRange indexKeyRange,
+                                                     UserTableRowType rootmostExistingRowType)
+    {
+        return new IndexScan_Default(indexType, reverse, indexKeyRange, rootmostExistingRowType);
     }
 
     public static PhysicalOperator select_HKeyOrdered(PhysicalOperator inputOperator,

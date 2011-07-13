@@ -15,11 +15,13 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,12 +46,39 @@ class IndexScan_Default extends PhysicalOperator
 
     // IndexScan_Default interface
 
-    public IndexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
+    public IndexScan_Default(IndexRowType indexType,
+                             boolean reverse,
+                             IndexKeyRange indexKeyRange,
+                             UserTableRowType rootmostExistingRowType)
     {
         ArgumentValidation.notNull("indexType", indexType);
         this.index = indexType.index();
         this.reverse = reverse;
         this.indexKeyRange = indexKeyRange;
+        if (index.isTableIndex()) {
+            ArgumentValidation.isEQ(
+                    "group index table", this.index.leafMostTable(),
+                    "rootmost existing row type", rootmostExistingRowType.userTable()
+            );
+        }
+        else {
+            GroupIndex tableIndex = (GroupIndex)this.index;
+            boolean rootmostRowTypeInSegment = false;
+            for (
+                    UserTable branchTable=tableIndex.leafMostTable();
+                    branchTable!= null && !branchTable.equals(tableIndex.rootMostTable());
+                    branchTable = branchTable.parentTable()
+            ) {
+                if (branchTable.equals(rootmostExistingRowType.userTable())) {
+                    rootmostRowTypeInSegment = true;
+                    break;
+                }
+            }
+            if (!rootmostRowTypeInSegment) {
+                throw new IllegalArgumentException(rootmostExistingRowType + " not in branch for " + tableIndex);
+            }
+        }
+        this.rootmostExistingDepth = rootmostExistingRowType.userTable().getDepth();
     }
 
     // Class state
@@ -61,6 +90,7 @@ class IndexScan_Default extends PhysicalOperator
     private final Index index;
     private final boolean reverse;
     private final IndexKeyRange indexKeyRange;
+    private final long rootmostExistingDepth;
 
     // Inner classes
 
