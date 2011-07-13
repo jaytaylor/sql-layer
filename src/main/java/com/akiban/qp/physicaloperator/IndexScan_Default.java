@@ -66,7 +66,7 @@ class IndexScan_Default extends PhysicalOperator
             boolean rootmostRowTypeInSegment = false;
             for (
                     UserTable branchTable=tableIndex.leafMostTable();
-                    branchTable!= null && !branchTable.equals(tableIndex.rootMostTable());
+                    branchTable!= null && !branchTable.equals(tableIndex.rootMostTable().parentTable());
                     branchTable = branchTable.parentTable()
             ) {
                 if (branchTable.equals(rootmostExistingRowType.userTable())) {
