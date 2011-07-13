@@ -46,6 +46,7 @@ import com.persistit.Volume;
 import com.persistit.VolumeSpecification;
 import com.persistit.exception.InvalidVolumeSpecificationException;
 import com.persistit.exception.PersistitException;
+import com.persistit.logging.Slf4jAdapter;
 
 public class TreeServiceImpl implements TreeService, Service<TreeService>,
         JmxManageable {
@@ -141,7 +142,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         tableStatusCache = new TableStatusCache(db, this);
         tableStatusCache.register();
 
-        db.setPersistitLogger(new PersistitSlf4jAdapter(LOG));
+        db.setPersistitLogger(new Slf4jAdapter(LOG));
         db.initialize(properties);
         buildSchemaMap();
 
@@ -333,7 +334,11 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
                 final Tree tree = volume.getTree(treeName, false);
                 if (tree != null) {
                     final Exchange exchange = getExchange(session, tree);
-                    visitor.visit(exchange);
+                    try {
+                        visitor.visit(exchange);
+                    } finally {
+                        releaseExchange(session, exchange);
+                    }
                 }
             }
         }
