@@ -49,7 +49,7 @@ class IndexScan_Default extends PhysicalOperator
     public IndexScan_Default(IndexRowType indexType,
                              boolean reverse,
                              IndexKeyRange indexKeyRange,
-                             UserTableRowType rootmostExistingRowType)
+                             UserTableRowType innerJoinUntilRowType)
     {
         ArgumentValidation.notNull("indexType", indexType);
         this.index = indexType.index();
@@ -58,7 +58,7 @@ class IndexScan_Default extends PhysicalOperator
         if (index.isTableIndex()) {
             ArgumentValidation.isEQ(
                     "group index table", this.index.leafMostTable(),
-                    "rootmost existing row type", rootmostExistingRowType.userTable()
+                    "rootmost existing row type", innerJoinUntilRowType.userTable()
             );
         }
         else {
@@ -69,16 +69,16 @@ class IndexScan_Default extends PhysicalOperator
                     branchTable!= null && !branchTable.equals(tableIndex.rootMostTable().parentTable());
                     branchTable = branchTable.parentTable()
             ) {
-                if (branchTable.equals(rootmostExistingRowType.userTable())) {
+                if (branchTable.equals(innerJoinUntilRowType.userTable())) {
                     rootmostRowTypeInSegment = true;
                     break;
                 }
             }
             if (!rootmostRowTypeInSegment) {
-                throw new IllegalArgumentException(rootmostExistingRowType + " not in branch for " + tableIndex);
+                throw new IllegalArgumentException(innerJoinUntilRowType + " not in branch for " + tableIndex);
             }
         }
-        this.rootmostExistingDepth = rootmostExistingRowType.userTable().getDepth();
+        this.innerJoinUntilRowType = innerJoinUntilRowType;
     }
 
     // Class state
@@ -90,7 +90,7 @@ class IndexScan_Default extends PhysicalOperator
     private final Index index;
     private final boolean reverse;
     private final IndexKeyRange indexKeyRange;
-    private final long rootmostExistingDepth;
+    private final UserTableRowType innerJoinUntilRowType;
 
     // Inner classes
 

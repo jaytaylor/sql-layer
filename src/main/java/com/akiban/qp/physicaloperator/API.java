@@ -139,9 +139,9 @@ public class API
     public static PhysicalOperator indexScan_Default(IndexRowType indexType,
                                                      boolean reverse,
                                                      IndexKeyRange indexKeyRange,
-                                                     UserTableRowType rootmostExistingRowType)
+                                                     UserTableRowType innerJoinUntilRowType)
     {
-        return new IndexScan_Default(indexType, reverse, indexKeyRange, rootmostExistingRowType);
+        return new IndexScan_Default(indexType, reverse, indexKeyRange, innerJoinUntilRowType);
     }
 
     public static PhysicalOperator select_HKeyOrdered(PhysicalOperator inputOperator,

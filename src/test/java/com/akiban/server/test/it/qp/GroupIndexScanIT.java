@@ -36,8 +36,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-
 public final class GroupIndexScanIT extends ITBase {
 
     @Test
@@ -53,12 +51,23 @@ public final class GroupIndexScanIT extends ITBase {
 
     @Test
     public void scanAtLeastI () {
-        PhysicalOperator plan = API.indexScan_Default(giRowType, false, null, uTableRowType(o));
+        PhysicalOperator plan = API.indexScan_Default(giRowType, false, null, uTableRowType(i));
         compareResults(plan,
                 array("02-02-2002", "1111"),
                 array("03-03-2003", null),
                 array("03-03-2003", "3333")
         );
+    }
+
+    @Test
+    public void defaultDepth() {
+        PhysicalOperator explicit = API.indexScan_Default(giRowType, false, null, uTableRowType(o));
+        PhysicalOperator defaulted = API.indexScan_Default(giRowType, false, null);
+
+        List<List<?>> explicitList = planToList(explicit);
+        List<List<?>> defaultedList = planToList(defaulted);
+
+        assertEqualLists("results", explicitList, defaultedList);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -113,10 +122,14 @@ public final class GroupIndexScanIT extends ITBase {
     }
 
     private void compareResults(PhysicalOperator plan, Object[]... expectedResults) {
+        assertEqualLists("rows scanned", nestedList(expectedResults), planToList(plan));
+    }
+
+    private List<List<?>> planToList(PhysicalOperator plan) {
         List<List<?>> actualResults = new ArrayList<List<?>>();
         Cursor cursor =  API.cursor(plan, adapter);
+        cursor.open(UndefBindings.only());
         try {
-            cursor.open(UndefBindings.only());
             for (Row row = cursor.next(); row != null; row = cursor.next()) {
                 Object[] rowArray = new Object[row.rowType().nFields()];
                 for (int i=0; i < rowArray.length; ++i) {
@@ -127,7 +140,7 @@ public final class GroupIndexScanIT extends ITBase {
         } finally {
             cursor.close();
         }
-        assertEqualLists("rows scanned", nestedList(expectedResults), actualResults);
+        return actualResults;
     }
 
     private List<List<?>> nestedList(Object[][] input) {
