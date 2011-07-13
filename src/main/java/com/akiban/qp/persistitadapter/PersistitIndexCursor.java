@@ -60,13 +60,14 @@ class PersistitIndexCursor implements Cursor
                      ? exchange.traverse(direction, true)
                      : exchange.traverse(direction, indexFilter, 0))) {
                     if (isGroupIndex) {
-                        if (exchange.getValue().getInt() < minimumDepth) {
+                        if (exchange.fetch().getValue().getInt() < minimumDepth) {
                             needAnother = true;
                         } else {
                             unsharedRow().get().copyFromExchange(exchange);
                             needAnother = false;
                         }
                     } else {
+                        unsharedRow().get().copyFromExchange(exchange);
                         needAnother = false;
                     }
                 } else {
