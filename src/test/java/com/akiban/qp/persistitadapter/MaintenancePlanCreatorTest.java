@@ -59,8 +59,8 @@ public final class MaintenancePlanCreatorTest {
         );
         String expected = Strings.join(
             "GroupScan_Default(deep hkey-bound scan on _akiban_customer NO_LIMIT)",
-            "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
-            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
+            "Flatten_HKeyOrdered(sch.customer LEFT sch.order)",
+            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) LEFT sch.item)"
         );
         assertEquals("plan description", expected, struct.rootOperator.describePlan());
         assertFlattenedAncestors(struct.flattenedParentRowType, NO_FLATTENING);
@@ -96,8 +96,8 @@ public final class MaintenancePlanCreatorTest {
         );
         String expected = Strings.join(
             "GroupScan_Default(deep hkey-bound scan on _akiban_customer NO_LIMIT)",
-            "Flatten_HKeyOrdered(sch.customer INNER sch.order)",
-            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) INNER sch.item)"
+            "Flatten_HKeyOrdered(sch.customer LEFT sch.order)",
+            "Flatten_HKeyOrdered(flatten(sch.customer, sch.order) LEFT sch.item)"
         );
         assertEquals("plan description", expected, struct.rootOperator.describePlan());
         assertFlattenedAncestors(struct.flattenedParentRowType, NO_FLATTENING);
@@ -208,7 +208,7 @@ public final class MaintenancePlanCreatorTest {
         );
         String expected = Strings.join(
             "GroupScan_Default(deep hkey-bound scan on _akiban_customer NO_LIMIT)",
-            "Flatten_HKeyOrdered(sch.customer INNER sch.address)"
+            "Flatten_HKeyOrdered(sch.customer LEFT sch.address)"
         );
         assertEquals("plan description", expected, struct.rootOperator.describePlan());
         assertFlattenedAncestors(struct.flattenedParentRowType, NO_FLATTENING);
