@@ -374,7 +374,7 @@ public class SimplifiedQuery
         public boolean isColumn() {
             return false;
         }
-        public abstract Expression generateExpression(Map<TableNode,Integer> fieldOffsets);
+        public abstract Expression generateExpression(Map<TableNode,Integer> fieldOffsets) throws StandardException;
     }
 
     // An operand from a table column.
@@ -449,6 +449,21 @@ public class SimplifiedQuery
 
         public Expression generateExpression(Map<TableNode,Integer> fieldOffsets) {
             return variable(position);
+        }
+    }
+
+    // The aggregate COUNT(*)
+    public static class CountStarExpression extends SimpleExpression {
+        public CountStarExpression() {
+        }
+
+        public String toString() {
+            return "COUNT(*)";
+        }
+
+        public Expression generateExpression(Map<TableNode,Integer> fieldOffsets) 
+                throws StandardException {
+            throw new UnsupportedSQLException("Unsupported use of COUNT(*)");
         }
     }
 
@@ -550,7 +565,8 @@ public class SimplifiedQuery
         }
 
         // Turn this condition into an operator Expression.
-        public Expression generateExpression(Map<TableNode,Integer> fieldOffsets) {
+        public Expression generateExpression(Map<TableNode,Integer> fieldOffsets) 
+                throws StandardException {
             return compare(left.generateExpression(fieldOffsets),
                            operation,
                            right.generateExpression(fieldOffsets));
@@ -716,6 +732,9 @@ public class SimplifiedQuery
         case NodeTypes.BINARY_LESS_EQUALS_OPERATOR_NODE:
             addBinaryCondition((BinaryOperatorNode)condition, Comparison.LE);
             break;
+        case NodeTypes.BINARY_NOT_EQUALS_OPERATOR_NODE:
+            addBinaryCondition((BinaryOperatorNode)condition, Comparison.NE);
+            break;
         case NodeTypes.BETWEEN_OPERATOR_NODE:
             addBetweenCondition((BetweenOperatorNode)condition);
             break;
@@ -879,6 +898,9 @@ public class SimplifiedQuery
             // onto the Expression / IndexKey. It might be better to
             // attempt to do some here.
             return getSimpleExpression(((CastNode)operand).getCastOperand());
+        else if ((operand instanceof AggregateNode) &&
+                 "COUNT(*)".equals(((AggregateNode)operand).getAggregateName()))
+            return new CountStarExpression();
         else
             throw new UnsupportedSQLException("Unsupported operand", operand);
     }

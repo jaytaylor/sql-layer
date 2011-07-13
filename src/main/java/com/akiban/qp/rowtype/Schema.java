@@ -58,6 +58,11 @@ public class Schema
     {
         return new ProductRowType(this, nextTypeId(), left, right);
     }
+    
+    public synchronized ValuesRowType newValuesType(int nfields)
+    {
+        return new ValuesRowType(this, nextTypeId(), nfields);
+    }
 
     public synchronized Iterator<RowType> rowTypes()
     {

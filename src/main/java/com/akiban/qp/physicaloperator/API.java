@@ -160,6 +160,12 @@ public class API
         return new Product_ByRun(input, leftType, rightType);
     }
 
+    public static PhysicalOperator count_Default(PhysicalOperator input,
+                                                 RowType countType)
+    {
+        return new Count_Default(input, countType);
+    }
+
     private static final Limit NO_LIMIT = new Limit()
     {
 

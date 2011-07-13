@@ -37,6 +37,7 @@ import com.akiban.qp.physicaloperator.UpdateFunction;
 import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
@@ -117,8 +118,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 maintainGroupIndexes(
                         session, ais, adapter,
                         oldRowData, OperatorStoreGIHandler.forTable(adapter, userTable),
-                        GroupIndexHandler.Action.DELETE,
-                        true
+                        OperatorStoreGIHandler.Action.DELETE
                 );
 
                 runCursor(oldRowData, rowDef, updateOp, adapter);
@@ -126,8 +126,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 maintainGroupIndexes(
                         session, ais, adapter,
                         newRowData, OperatorStoreGIHandler.forTable(adapter, userTable),
-                        GroupIndexHandler.Action.STORE,
-                        true
+                        OperatorStoreGIHandler.Action.STORE
                 );
 
                 transaction.commit();
@@ -156,8 +155,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 maintainGroupIndexes(
                         session, ais, adapter,
                         rowData, OperatorStoreGIHandler.forTable(adapter, uTable),
-                        GroupIndexHandler.Action.STORE,
-                        true
+                        OperatorStoreGIHandler.Action.STORE
                 );
 
                 transaction.commit();
@@ -184,8 +182,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 maintainGroupIndexes(
                         session, ais, adapter,
                         rowData, OperatorStoreGIHandler.forTable(adapter, uTable),
-                        GroupIndexHandler.Action.DELETE,
-                        true
+                        OperatorStoreGIHandler.Action.DELETE
                 );
                 super.deleteRow(session, rowData);
                 transaction.commit();
@@ -230,8 +227,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     plan,
                     UndefBindings.only(),
                     OperatorStoreGIHandler.forBuilding(adapter),
-                    GroupIndexHandler.Action.BULK_ADD,
-                    false
+                    OperatorStoreGIHandler.Action.BULK_ADD,
+                    null
             );
         }
     }
@@ -248,35 +245,20 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // for use by subclasses
 
-    protected final <T extends Throwable> void maintainGroupIndexes(
-            Session session,
-            RowData rowData,
-            GroupIndexHandler<T> handler,
-            GroupIndexHandler.Action action,
-            boolean alsoNullKeys
-    )
-    throws PersistitException, T
-    {
-        AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
-        PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
-        maintainGroupIndexes(session, ais, adapter, rowData, handler, action, alsoNullKeys);
-    }
-
     protected Collection<GroupIndex> optionallyOrderGroupIndexes(Collection<GroupIndex> groupIndexes) {
         return groupIndexes;
     }
 
     // private methods
 
-    private <T extends Throwable> void maintainGroupIndexes(
+    private void maintainGroupIndexes(
             Session session,
             AkibanInformationSchema ais, PersistitAdapter adapter,
             RowData rowData,
-            GroupIndexHandler<T> handler,
-            GroupIndexHandler.Action action,
-            boolean alsoNullKeys
+            OperatorStoreGIHandler handler,
+            OperatorStoreGIHandler.Action action
     )
-    throws PersistitException, T
+    throws PersistitException
     {
         UserTable userTable = ais.getUserTable(rowData.getRowDefId());
 
@@ -308,36 +290,77 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                         groupIndex,
                         adapter.schema().userTableRowType(userTable)
                 );
-                runMaintenancePlan(adapter, groupIndex, plan.rootOperator(), bindings, handler, action, alsoNullKeys);
+                runMaintenancePlan(adapter,
+                        groupIndex,
+                        plan.rootOperator(),
+                        bindings,
+                        handler,
+                        action,
+                        plan
+                );
             }
         } finally {
             adapter.returnExchange(hEx);
         }
     }
 
-    private <T extends Throwable> void runMaintenancePlan(
+    private void runMaintenancePlan(
             PersistitAdapter adapter,
             GroupIndex groupIndex,
             PhysicalOperator rootOperator,
             Bindings bindings,
-            GroupIndexHandler<T> handler,
-            GroupIndexHandler.Action action,
-            boolean alsoNullKeys
+            OperatorStoreGIHandler handler,
+            OperatorStoreGIHandler.Action action,
+            OperatorStoreMaintenancePlan maintenancePlan
     )
-    throws T
+    throws PersistitException
     {
+        RowType invertActionRowType = maintenancePlan == null ? null : maintenancePlan.flattenedAncestorRowType();
         Cursor cursor = API.cursor(rootOperator, adapter);
         cursor.open(bindings);
         try {
             Row row;
             while ((row = cursor.next()) != null) {
                 if (row.rowType().equals(rootOperator.rowType())) {
-                    handler.handleRow(groupIndex, row, action, alsoNullKeys);
+                    handler.handleRow(groupIndex, row, action);
+                } else if (row.rowType().equals(invertActionRowType)) {
+                    assert maintenancePlan != null;
+                    final boolean handleRow;
+                    switch (action) {
+                    case STORE:
+                        // for removing the placeholder, it's cheaper to just assume it's there and try to remove it
+                        handleRow = true;
+                        break;
+                    case DELETE:
+                        int siblings = countSiblings(maintenancePlan, adapter, bindings);
+                        assert siblings >= 1 : siblings;
+                        handleRow = (siblings == 1);
+                        break;
+                    default:
+                        throw new AssertionError(action.name());
+                    }
+                    if (handleRow) {
+                        handler.handleRow(groupIndex, maintenancePlan.flattenLeft(row), invert(action));
+                    }
                 }
             }
         } finally {
             cursor.close();
         }
+    }
+
+    private int countSiblings(OperatorStoreMaintenancePlan plan, PersistitAdapter adapter, Bindings bindings) {
+        Cursor cursor = API.cursor(plan.siblingsLookup(), adapter);
+        cursor.open(bindings);
+        int count = 0;
+        try {
+            while (cursor.next() != null) {
+                ++count;
+            }
+        } finally {
+            cursor.close();
+        }
+        return count;
     }
 
     private OperatorStoreMaintenancePlan groupIndexCreationPlan(
@@ -348,6 +371,14 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     // private static methods
+
+    private static OperatorStoreGIHandler.Action invert(OperatorStoreGIHandler.Action action) {
+        switch (action) {
+        case DELETE: return OperatorStoreGIHandler.Action.STORE;
+        case STORE: return OperatorStoreGIHandler.Action.DELETE;
+        default: throw new UnsupportedOperationException(action.name());
+        }
+    }
 
     private static void runCursor(RowData oldRowData, RowDef rowDef, UpdatePlannable plannable, PersistitAdapter adapter)
             throws DuplicateKeyException, NoSuchRowException
@@ -439,12 +470,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
             return PersistitGroupRow.newPersistitGroupRow(adapter, newRow.toRowData());
         }
-    }
-    
-    protected interface GroupIndexHandler<T extends Throwable> {
-        void handleRow(GroupIndex groupIndex, Row row, Action action, boolean alsoNullHKeys) throws T;
-
-        public enum Action {STORE, DELETE, BULK_ADD }
     }
 
     public class UniqueIndexUnsupportedException extends UnsupportedOperationException {

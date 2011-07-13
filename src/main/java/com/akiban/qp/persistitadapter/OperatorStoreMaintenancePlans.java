@@ -30,6 +30,7 @@ import com.akiban.util.CachePair;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -69,16 +70,18 @@ final class OperatorStoreMaintenancePlans {
 
         RowType parentRowType = null;
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;
+        EnumSet<API.FlattenOption> flattenOptions = EnumSet.noneOf(API.FlattenOption.class);
         for (RowType branchRowType : branchTables.fromRoot()) {
             if (parentRowType == null) {
                 parentRowType = branchRowType;
             }
             else {
-                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType);
+                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType, flattenOptions);
                 parentRowType = plan.rowType();
             }
             if (branchRowType.equals(branchTables.rootMost())) {
-                joinType = API.JoinType.INNER_JOIN;
+                joinType = API.JoinType.LEFT_JOIN;
+                flattenOptions.add(API.FlattenOption.LEFT_JOIN_SHORTENS_HKEY);
             }
         }
 

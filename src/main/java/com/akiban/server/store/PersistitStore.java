@@ -423,10 +423,9 @@ public class PersistitStore implements Store {
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         checkNoGroupIndexes(rowDef.table());
         final Transaction transaction = treeService.getTransaction(session);
-        Exchange hEx = null;
+        Exchange hEx = getExchange(session, rowDef);
         try {
             long uniqueId = -1;
-            hEx = getExchange(session, rowDef);
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
                 transaction.begin();
@@ -821,14 +820,13 @@ public class PersistitStore implements Store {
                 //
                 for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
                     for (Index index : userRowDef.getIndexes()) {
-                        if (!index.isHKeyEquivalent()) {
-                            Exchange iEx = getExchange(session, index);
-                            iEx.removeAll();
-                            releaseExchange(session, iEx);
-                        }
-                        indexManager.deleteIndexAnalysis(session, index);
+                        removeIndexTree(session, index);
                     }
                 }
+                for (Index index : groupRowDef.getGroupIndexes()) {
+                    removeIndexTree(session, index);
+                }
+
                 //
                 // remove the htable tree
                 //
@@ -850,6 +848,19 @@ public class PersistitStore implements Store {
             } finally {
                 transaction.end();
             }
+        }
+    }
+
+    protected final void removeIndexTree(Session session, Index index) throws PersistitException {
+        if (!index.isHKeyEquivalent()) {
+            Exchange iEx = getExchange(session, index);
+            iEx.removeAll();
+            releaseExchange(session, iEx);
+        }
+
+        // index analysis only exists on table indexes for now; if/when we analyze GIs, the if should be removed
+        if (index.isTableIndex()) {
+            indexManager.deleteIndexAnalysis(session, index);
         }
     }
 
@@ -1127,10 +1138,13 @@ public class PersistitStore implements Store {
         synchronized (deferredIndexKeys) {
             for (final Map.Entry<Tree, SortedSet<KeyState>> entry : deferredIndexKeys
                     .entrySet()) {
-                final Exchange iEx = treeService.getExchange(session,
-                        entry.getKey());
-                buildIndexAddKeys(entry.getValue(), iEx);
-                entry.getValue().clear();
+                final Exchange iEx = treeService.getExchange(session, entry.getKey());
+                try {
+                    buildIndexAddKeys(entry.getValue(), iEx);
+                    entry.getValue().clear();
+                } finally {
+                    treeService.releaseExchange(session, iEx);
+                }
             }
             deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
         }

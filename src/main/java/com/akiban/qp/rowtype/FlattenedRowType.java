@@ -31,6 +31,27 @@ public class FlattenedRowType extends DerivedRowType
         return String.format("flatten(%s, %s)", parent, child);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        FlattenedRowType that = (FlattenedRowType) o;
+
+        if (child != null ? !child.equals(that.child) : that.child != null) return false;
+        if (parent != null ? !parent.equals(that.parent) : that.parent != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (parent != null ? parent.hashCode() : 0);
+        result = 31 * result + (child != null ? child.hashCode() : 0);
+        return result;
+    }
 
     // RowType interface
 
