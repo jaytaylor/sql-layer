@@ -14,8 +14,9 @@
  */
 package com.akiban.ais.model.validation;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 public final class AISValidations {
     //public static final AISValidation NO_NULL_IDENTIFIERS;
@@ -31,15 +32,15 @@ public final class AISValidations {
     public static final Collection<AISValidation> ALL_VALIDATIONS;
     
     static {
-        ALL_VALIDATIONS = new ArrayList<AISValidation> (10);
-        ALL_VALIDATIONS.add(PROTECTED_TABLES);
-        ALL_VALIDATIONS.add(SUPPORTED_COLUMN_TYPES);
-        ALL_VALIDATIONS.add(TABLEID_UNIQUE);
-        ALL_VALIDATIONS.add(REFERENCES_CORRECT);
-        ALL_VALIDATIONS.add(TABLE_COLUMNS_MATCH_GROUP);
-        ALL_VALIDATIONS.add(TABLE_INDEXES_MATCH_GROUP);
-        ALL_VALIDATIONS.add(TABLES_IN_A_GROUP);
-        ALL_VALIDATIONS.add(GROUP_TABLE_SINGLE_ROOT);
+        ALL_VALIDATIONS = Collections.unmodifiableList(Arrays.asList(
+                PROTECTED_TABLES,
+                SUPPORTED_COLUMN_TYPES,
+                TABLEID_UNIQUE,
+                REFERENCES_CORRECT,
+                TABLE_COLUMNS_MATCH_GROUP,
+                TABLE_INDEXES_MATCH_GROUP,
+                TABLES_IN_A_GROUP, 
+                GROUP_TABLE_SINGLE_ROOT));
     }
     
     private AISValidations () {}

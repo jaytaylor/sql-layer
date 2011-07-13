@@ -137,19 +137,12 @@ class ReferencesCorrect implements AISValidation,Visitor {
     }
 
     @Override
-    public void visitJoin(Join join) {
-        // TODO Auto-generated method stub
-        
-    }
+    public void visitJoin(Join join) {}
 
     @Override
-    public void visitJoinColumn(JoinColumn joinColumn) {
-        // TODO Auto-generated method stub
-        
-    }
+    public void visitJoinColumn(JoinColumn joinColumn) {}
 
     @Override
-    public void visitType(Type type) {
-    }
+    public void visitType(Type type) {}
 
 }

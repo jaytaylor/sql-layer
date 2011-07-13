@@ -19,8 +19,9 @@ import com.akiban.ais.model.AkibanInformationSchema;
 public interface AISValidation {
     /**
      * Validates the given AIS.
-     * @param ais the ais to validate
-     * @return a AISValidationFailure if there was a problem, or null if the validation checked out
+     * @param ais   the AkibanInformationSchema to validate
+     * @param output the AISValidationFailure collection holder, where
+     *          any validations failures are registered. 
      */
     void validate(AkibanInformationSchema ais, AISValidationOutput output);
 }

@@ -380,7 +380,10 @@ public class AkibanInformationSchema implements Serializable, Traversable
             }
         }
     }
-
+    /**
+     * @deprecated - use {@link #validate(Collection)} 
+     * @param out
+     */
     private void checkJoins(List<String> out)
     {
         for (Map.Entry<String,Join> entry : joins.entrySet())
@@ -481,7 +484,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
      * @return the result of the validations
      */
    public AISValidationResults validate(Collection<AISValidation> validations) {
-       validationFailures = new AISFailureList();
+       AISFailureList validationFailures = new AISFailureList();
        for (AISValidation v : validations) {
            v.validate(this, validationFailures);
        }
@@ -542,10 +545,10 @@ public class AkibanInformationSchema implements Serializable, Traversable
     private Map<String, Join> joins = new TreeMap<String, Join>();
     private Map<String, Type> types = new TreeMap<String, Type>();
     private CharsetAndCollation charsetAndCollation;
-    private AISFailureList validationFailures;
+    
     private boolean isFrozen = false;
 
-    public static class AISFailureList extends AISValidationResults implements AISValidationOutput {
+    private static class AISFailureList extends AISValidationResults implements AISValidationOutput {
 
         @Override
         public void reportFailure(AISValidationFailure failure) {

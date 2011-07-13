@@ -32,12 +32,6 @@ public class AISValidationFailure {
     public String message() {
         return message;
     }
-    public int hashCode() {              // uses errorCode, message
-        return 1;
-    }
-    public boolean equals(Object other) { // uses errorCode, message
-        return false; 
-    }
     
     private ErrorCode error;
     private String message;

@@ -160,13 +160,6 @@ public class Group implements Serializable, ModelNames, Traversable
             visitor.visitIndex(index);
         }
     }
-    /**
-     * check if this group belongs to a frozen AIS, 
-     * throw exception if ais is frozen 
-     */
-    void checkMutability() {
-        groupTable.checkMutability();
-    }
 
     private Map<String, GroupIndex> internalGetIndexMap() {
         return indexMap;

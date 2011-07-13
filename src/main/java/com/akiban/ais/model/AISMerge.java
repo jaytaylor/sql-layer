@@ -21,7 +21,11 @@ import com.akiban.ais.model.validation.AISValidations;
 /**
  * AISMerge is designed to merge a single UserTable definition into an existing AIS. The merge process 
  * does not assume that UserTable.getAIS() returns a validated and complete 
- * AkibanInformationSchema object.
+ * AkibanInformationSchema object. 
+ * 
+ * AISMerge makes a copy of the primaryAIS (from the constructor) before performing the merge process. 
+ * The final results is this copies AIS, plus new table, with the full AISValidations suite run, and 
+ * frozen. If you pass a frozen AIS into the merge, the copy process unfreeze the copy.
  * 
  * @See UserTable
  * @See AkibanInformationSchema
@@ -49,7 +53,9 @@ public class AISMerge {
     }
 
     /**
-     * 
+     * Returns the final, updated AkibanInformationSchema. This AIS has been fully 
+     * validated and is frozen (no more changes), hence ready for update into the
+     * server. 
      * @return - the primaryAIS, after merge() with the UserTable added.
      */
     public AkibanInformationSchema getAIS () {

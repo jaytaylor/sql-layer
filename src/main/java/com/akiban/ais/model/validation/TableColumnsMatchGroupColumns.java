@@ -27,7 +27,7 @@ import com.akiban.message.ErrorCode;
  * @author tjoneslo
  *
  */
-public class TableColumnsMatchGroupColumns implements AISValidation {
+class TableColumnsMatchGroupColumns implements AISValidation {
 
     NameGenerator name = new DefaultNameGenerator();
     @Override

@@ -25,7 +25,7 @@ import com.akiban.message.ErrorCode;
  * @author tjoneslo
  *
  */
-public class TablesInAGroup implements AISValidation {
+class TablesInAGroup implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {

@@ -20,7 +20,7 @@ import java.util.Collections;
 import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
 
-public abstract class AISValidationResults {
+public class AISValidationResults {
     /**
      * Gets all failures, if there were any.
      *

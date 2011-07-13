@@ -59,38 +59,17 @@ class SupportedColumnTypes implements AISValidation, Visitor {
             
     }
     @Override
-    public void visitGroup(Group group) {
-        // TODO Auto-generated method stub
-        
-    }
+    public void visitGroup(Group group) {}
     @Override
-    public void visitGroupTable(GroupTable groupTable) {
-        // TODO Auto-generated method stub
-        
-    }
+    public void visitGroupTable(GroupTable groupTable) {}
     @Override
-    public void visitIndex(Index index) {
-        // TODO Auto-generated method stub
-        
-    }
+    public void visitIndex(Index index) {}
     @Override
-    public void visitJoin(Join join) {
-        // TODO Auto-generated method stub
-        
-    }
+    public void visitJoin(Join join) {}
     @Override
-    public void visitJoinColumn(JoinColumn joinColumn) {
-        // TODO Auto-generated method stub
-        
-    }
+    public void visitJoinColumn(JoinColumn joinColumn) {}
     @Override
-    public void visitType(Type type) {
-        // TODO Auto-generated method stub
-        
-    }
+    public void visitType(Type type) {}
     @Override
-    public void visitUserTable(UserTable userTable) {
-        // TODO Auto-generated method stub
-        
-    }
+    public void visitUserTable(UserTable userTable) {}
 }

@@ -19,7 +19,7 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 import com.akiban.message.ErrorCode;
 
-public class GroupTableSingleRoot implements AISValidation {
+class GroupTableSingleRoot implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {

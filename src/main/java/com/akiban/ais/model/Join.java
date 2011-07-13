@@ -62,6 +62,7 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
                               UserTable parent,
                               UserTable child)
     {
+        ais.checkMutability();
         Join join = new Join(ais, joinName, parent, child);
         ais.addJoin(join);
         return join;
@@ -98,6 +99,7 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
 
     public void addJoinColumn(Column parent, Column child)
     {
+        ais.checkMutability();
         JoinColumn joinColumn = new JoinColumn(this, parent, child);
         joinColumns.add(joinColumn);
         joinColumnsStale = true;
@@ -241,11 +243,6 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
         traversePreOrder(visitor);
     }
 
-    void checkMutability()
-    {
-        ais.checkMutability();
-    }
-    
     private Join(AkibanInformationSchema ais, String joinName, UserTable parent, UserTable child)
     {
         ais.checkMutability();
@@ -269,6 +266,11 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
         FK, COLUMN_NAME, QUERY, USER
     }
 
+    /**
+     * @deprecated - use {@link AkibanInformationSchema#validate(java.util.Collection)}
+     * @param out
+     * @return
+     */
     public boolean checkIntegrity(List<String> out)
     {
         int initialSize = out.size();

@@ -72,6 +72,7 @@ public class AISBuilderTest
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "groupschema", "coi");
         builder.addTableToGroup("group", "schema", "customer");
+        builder.groupingIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(1, ais.getUserTables().size());
         Assert.assertEquals(1, ais.getGroupTables().size());
@@ -114,6 +115,7 @@ public class AISBuilderTest
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "groupschema", "coi");
         builder.addTableToGroup("group", "schema", "customer");
+        builder.groupingIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(1, ais.getUserTables().size());
         Assert.assertEquals(1, ais.getGroupTables().size());
@@ -161,6 +163,7 @@ public class AISBuilderTest
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "groupschema", "coi");
         builder.addJoinToGroup("group", "co", 0);
+        builder.groupingIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(2, ais.getUserTables().size());
         Assert.assertEquals(1, ais.getGroupTables().size());
@@ -193,6 +196,7 @@ public class AISBuilderTest
         builder.createGroup("group", "groupschema", "coi");
         builder.addTableToGroup("group", "schema", "customer");
         builder.addJoinToGroup("group", "co", 0);
+        builder.groupingIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(2, ais.getUserTables().size());
         Assert.assertEquals(1, ais.getGroupTables().size());
@@ -234,6 +238,7 @@ public class AISBuilderTest
         builder.createGroup("group", "groupschema", "coi");
         builder.addJoinToGroup("group", "co", 0);
         builder.addJoinToGroup("group", "oi", 0);
+        builder.groupingIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(3, ais.getUserTables().size());
         Assert.assertEquals(1, ais.getGroupTables().size());
@@ -319,6 +324,7 @@ public class AISBuilderTest
         builder.addJoinToGroup("group2", "co", 0);
         builder.addJoinToGroup("group2", "oi", 0);
         {
+            builder.groupingIsComplete();
             AkibanInformationSchema ais = builder.akibanInformationSchema();
             Assert.assertEquals(3, ais.getUserTables().size());
             Assert.assertEquals(1, ais.getGroupTables().size());
@@ -444,6 +450,7 @@ public class AISBuilderTest
         builder.createGroup("group", "groupschema", "coi");
         builder.addTableToGroup("group", "schema", "customer");
         builder.addJoinToGroup("group", "co", 0);
+        builder.groupingIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(2, ais.getUserTables().size());
         Assert.assertEquals(1, ais.getGroupTables().size());
