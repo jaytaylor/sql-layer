@@ -31,11 +31,6 @@ public abstract class StoreAdapter
 {
     public abstract GroupCursor newGroupCursor(GroupTable groupTable);
 
-    public final Cursor newIndexCursor(TableIndex index)
-    {
-        return newIndexCursor(index, false, null);
-    }
-
     public abstract Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange);
 
     public abstract HKey newHKey(RowType rowType);
