@@ -1073,7 +1073,7 @@ public class OperatorCompiler
                     // Condition must not require another table.
                     // (Don't bother yet trying to test those as soon
                     // as the flatten that has them both is done.)
-                    if (condition.isConstant()) {
+                    if (condition.isSingleTable()) {
                         Expression predicate = condition.generateExpression(fieldOffsets);
                         resultOperator = select_HKeyOrdered(resultOperator,
                                                             tableRowType,
