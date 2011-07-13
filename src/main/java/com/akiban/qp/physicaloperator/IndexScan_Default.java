@@ -131,7 +131,7 @@ class IndexScan_Default extends PhysicalOperator
 
         Execution(StoreAdapter adapter)
         {
-            this.cursor = adapter.newIndexCursor(index, reverse, indexKeyRange);
+            this.cursor = adapter.newIndexCursor(index, reverse, indexKeyRange, innerJoinUntilRowType.userTable());
         }
 
         // Object state

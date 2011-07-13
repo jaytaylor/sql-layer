@@ -16,6 +16,7 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
@@ -78,7 +79,11 @@ class PersistitIndexCursor implements Cursor
 
     // For use by this package
 
-    PersistitIndexCursor(PersistitAdapter adapter, IndexRowType indexRowType, boolean reverse, IndexKeyRange keyRange)
+    PersistitIndexCursor(PersistitAdapter adapter,
+                         IndexRowType indexRowType,
+                         boolean reverse,
+                         IndexKeyRange keyRange,
+                         UserTable innerJoinUntil)
         throws PersistitException
     {
         this.keyRange = keyRange;
