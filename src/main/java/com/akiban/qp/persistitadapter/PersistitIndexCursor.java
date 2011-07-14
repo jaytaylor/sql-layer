@@ -51,7 +51,7 @@ class PersistitIndexCursor implements Cursor
     @Override
     public Row next()
     {
-        final boolean isGroupIndex = index().isGroupIndex();
+        final boolean isTableIndex = index().isTableIndex();
         try {
             boolean needAnother;
             do {
@@ -59,16 +59,12 @@ class PersistitIndexCursor implements Cursor
                     (indexFilter == null
                      ? exchange.traverse(direction, true)
                      : exchange.traverse(direction, indexFilter, 0))) {
-                    if (isGroupIndex) {
-                        if (exchange.fetch().getValue().getInt() < minimumDepth) {
-                            needAnother = true;
-                        } else {
-                            unsharedRow().get().copyFromExchange(exchange);
-                            needAnother = false;
-                        }
-                    } else {
+                    if (isTableIndex || exchange.getValue().getInt() >= minimumDepth) {
                         unsharedRow().get().copyFromExchange(exchange);
                         needAnother = false;
+                    }
+                    else {
+                        needAnother = true;
                     }
                 } else {
                     close();
