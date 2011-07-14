@@ -24,7 +24,6 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.server.IndexDef;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
@@ -52,13 +51,14 @@ class PersistitIndexCursor implements Cursor
     public Row next()
     {
         final boolean isTableIndex = index().isTableIndex();
+        final int bytesToFetch = isTableIndex ? TABLE_INDEX_BYTES_TO_FETCH : GROUP_INDEX_BYTES_TO_FETCH;
         try {
             boolean needAnother;
             do {
                 if (exchange != null &&
                     (indexFilter == null
                      ? exchange.traverse(direction, true)
-                     : exchange.traverse(direction, indexFilter, 0))) {
+                     : exchange.traverse(direction, indexFilter, bytesToFetch))) {
                     if (isTableIndex || exchange.getValue().getInt() >= minimumDepth) {
                         // t=The value of a group index is the depth at which it's defined, as an int.
                         // See OperatorStoreGIHandler, search for "Description of group index entry values"
@@ -147,4 +147,8 @@ class PersistitIndexCursor implements Cursor
     private final int minimumDepth;
     private Exchange exchange;
     private KeyFilter indexFilter;
+
+    // consts
+    private static final int GROUP_INDEX_BYTES_TO_FETCH = (Integer.SIZE / 8);
+    private static final int TABLE_INDEX_BYTES_TO_FETCH = 0;
 }
