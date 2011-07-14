@@ -368,13 +368,45 @@ public class SimplifiedQuery
         }
     }
 
+    public interface ColumnExpressionToIndex {
+        public int getIndex(ColumnExpression column) throws StandardException;
+    }
+
+    public static class TableNodeOffsets implements ColumnExpressionToIndex {
+        private Map<TableNode,Integer> tableOffsets;
+
+        public TableNodeOffsets(Map<TableNode,Integer> tableOffsets) {
+            this.tableOffsets = tableOffsets;
+        }
+
+        public int getIndex(ColumnExpression column) throws StandardException {
+            Integer offset = tableOffsets.get(column.getTable());
+            assert offset != null;
+            return offset + column.getColumn().getPosition();
+        }
+    }
+
+    public static class ColumnIndexMap implements ColumnExpressionToIndex {
+        private Map<Column,Integer> columnOffsets;
+
+        public ColumnIndexMap(Map<Column,Integer> columnOffsets) {
+            this.columnOffsets = columnOffsets;
+        }
+
+        public int getIndex(ColumnExpression column) throws StandardException {
+            Integer offset = columnOffsets.get(column.getColumn());
+            assert offset != null;
+            return offset;
+        }
+    }
+
     // One of the operands to a boolean equality / inequality
     // condition, the only kind currently supported.
     public static abstract class SimpleExpression {
         public boolean isColumn() {
             return false;
         }
-        public abstract Expression generateExpression(Map<TableNode,Integer> fieldOffsets) throws StandardException;
+        public abstract Expression generateExpression(ColumnExpressionToIndex fieldOffsets) throws StandardException;
     }
 
     // An operand from a table column.
@@ -403,8 +435,9 @@ public class SimplifiedQuery
             return true;
         }
 
-        public Expression generateExpression(Map<TableNode,Integer> fieldOffsets) {
-            return field(fieldOffsets.get(table) + column.getPosition());
+        public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) 
+                throws StandardException {
+            return field(fieldOffsets.getIndex(this));
         }
     }
 
@@ -426,7 +459,7 @@ public class SimplifiedQuery
             return value.toString();
         }
 
-        public Expression generateExpression(Map<TableNode,Integer> fieldOffsets) {
+        public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
             return literal(value);
         }
     }
@@ -447,7 +480,7 @@ public class SimplifiedQuery
             return "$" + position;
         }
 
-        public Expression generateExpression(Map<TableNode,Integer> fieldOffsets) {
+        public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
             return variable(position);
         }
     }
@@ -461,7 +494,7 @@ public class SimplifiedQuery
             return "COUNT(*)";
         }
 
-        public Expression generateExpression(Map<TableNode,Integer> fieldOffsets) 
+        public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) 
                 throws StandardException {
             throw new UnsupportedSQLException("Unsupported use of COUNT(*)");
         }
@@ -565,7 +598,7 @@ public class SimplifiedQuery
         }
 
         // Turn this condition into an operator Expression.
-        public Expression generateExpression(Map<TableNode,Integer> fieldOffsets) 
+        public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) 
                 throws StandardException {
             return compare(left.generateExpression(fieldOffsets),
                            operation,
