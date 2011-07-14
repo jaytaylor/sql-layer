@@ -79,14 +79,11 @@ public class TreeServiceImplVolumeIT extends ITBase {
     public void testCreateVolume() throws Exception {
         final TreeService treeService = serviceManager().getTreeService();
         final TestLink link0 = new TestLink("not_drupal", "_schema_");
-        final Exchange ex0 = treeService.getExchange(session(), link0);
-        assertEquals("akiban_data", ex0.getVolume().getName());
+        checkExchangeName(treeService, link0, "akiban_data");
         final TestLink link1 = new TestLink("drupal_large", "_schema_");
-        final Exchange ex1 = treeService.getExchange(session(), link1);
-        assertEquals("drupal_large", ex1.getVolume().getName());
+        checkExchangeName(treeService, link1, "drupal_large");
         final TestLink link2 = new TestLink("drupal.org", "_schema_");
-        final Exchange ex2 = treeService.getExchange(session(), link2);
-        assertEquals("drupal.org", ex2.getVolume().getName());
+        checkExchangeName(treeService, link2, "drupal.org");
         final Set<Tree> trees = new HashSet<Tree>();
         treeService.visitStorage(session(), new TreeVisitor() {
             @Override
@@ -101,6 +98,16 @@ public class TreeServiceImplVolumeIT extends ITBase {
         assertEquals(0, d0);
         assertTrue(d1 > d0);
         assertTrue(d2 > d1);
+    }
+
+    private void checkExchangeName(TreeService treeService, TestLink link, String expectedName) throws
+    PersistitException {
+        final Exchange exchange = treeService.getExchange(session(), link);
+        try {
+            assertEquals(expectedName, exchange.getVolume().getName());
+        } finally {
+            treeService.releaseExchange(session(), exchange);
+        }
     }
 
     private int verifyTableId(final TreeService treeService, final int aisId, TreeLink link)

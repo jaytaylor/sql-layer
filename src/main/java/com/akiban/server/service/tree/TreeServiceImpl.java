@@ -333,7 +333,11 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
                 final Tree tree = volume.getTree(treeName, false);
                 if (tree != null) {
                     final Exchange exchange = getExchange(session, tree);
-                    visitor.visit(exchange);
+                    try {
+                        visitor.visit(exchange);
+                    } finally {
+                        releaseExchange(session, exchange);
+                    }
                 }
             }
         }
