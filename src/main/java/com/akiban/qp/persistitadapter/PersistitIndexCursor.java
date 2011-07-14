@@ -60,6 +60,8 @@ class PersistitIndexCursor implements Cursor
                      ? exchange.traverse(direction, true)
                      : exchange.traverse(direction, indexFilter, 0))) {
                     if (isTableIndex || exchange.getValue().getInt() >= minimumDepth) {
+                        // t=The value of a group index is the depth at which it's defined, as an int.
+                        // See OperatorStoreGIHandler, search for "Description of group index entry values"
                         unsharedRow().get().copyFromExchange(exchange);
                         needAnother = false;
                     }

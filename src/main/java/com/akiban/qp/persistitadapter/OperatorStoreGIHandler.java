@@ -69,6 +69,13 @@ class OperatorStoreGIHandler {
             return;
         }
 
+        // Description of group index entry values:
+        // The value of each index key is the depth of the leafmost table for which there is an actual row.
+        // For instance, if you have a COI group and a group index on (i.sku, o.date), LEFT JOIN semantics mean
+        // that an order with no items will have an index key of (null, <date>, <hkey>) with value = depth(o) == 1.
+        // If you then give that order an item with a null sku, the index key will still be
+        // (null, <date>, <hkey) but its value will be depth(i) == 2.
+        // This depth is stored as an int (we don't anticipate any group branches with depth > 2^31-1).
         int rightmostTableDepth = depthFromHKey(groupIndex, row);
         exchange.getValue().clear();
         exchange.getValue().put(rightmostTableDepth);
