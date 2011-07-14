@@ -72,7 +72,7 @@ public class SortIT extends PhysicalOperatorITBase
     }
 
     @Test
-    public void testOrderSalesman()
+    public void testOrderSalesmanCid()
     {
         List<Expression> sortExpressions = new ArrayList<Expression>(2);
         List<Boolean> sortDescendings = new ArrayList<Boolean>(2);
@@ -91,6 +91,42 @@ public class SortIT extends PhysicalOperatorITBase
             row(orderRowType, 21L, 2L, "david"),
             row(orderRowType, 12L, 1L, "david"),
             row(orderRowType, 22L, 2L, "jack"),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testOrderSalesman()
+    {
+        PhysicalOperator plan = sort_InsertionLimited(groupScan_Default(coi),
+                                                      orderRowType,
+                                                      Collections.singletonList(field(2)),
+                                                      Collections.singletonList(Boolean.FALSE),
+                                                      4);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+            // Order among equals is group.
+            row(orderRowType, 12L, 1L, "david"),
+            row(orderRowType, 21L, 2L, "david"),
+            row(orderRowType, 31L, 3L, "david"),
+            row(orderRowType, 22L, 2L, "jack"),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testOrderSalesman2()
+    {
+        PhysicalOperator plan = sort_InsertionLimited(groupScan_Default(coi),
+                                                      orderRowType,
+                                                      Collections.singletonList(field(2)),
+                                                      Collections.singletonList(Boolean.FALSE),
+                                                      2);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+            // Kept earlier ones in group (fewer inserts).
+            row(orderRowType, 12L, 1L, "david"),
+            row(orderRowType, 21L, 2L, "david"),
         };
         compareRows(expected, cursor);
     }

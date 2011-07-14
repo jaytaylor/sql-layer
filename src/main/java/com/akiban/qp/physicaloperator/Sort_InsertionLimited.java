@@ -24,8 +24,10 @@ import com.akiban.util.ArgumentValidation;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
-import java.util.PriorityQueue;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 class Sort_InsertionLimited extends PhysicalOperator
 {
@@ -106,7 +108,7 @@ class Sort_InsertionLimited extends PhysicalOperator
             input.open(bindings);
             state = State.FILLING;
             this.bindings = bindings;
-            queue = new PriorityQueue<Holder>();
+            sorted = new TreeSet<Holder>();
         }
 
         @Override
@@ -115,25 +117,26 @@ class Sort_InsertionLimited extends PhysicalOperator
             switch (state) {
             case FILLING:
                 {
+                    int count = 0;
                     Row row;
                     while ((row = input.next()) != null) {
                         if (row.rowType() == sortType) {
-                            Holder holder = new Holder(row, bindings);
-                            if (queue.size() < limit) {
+                            Holder holder = new Holder(count++, row, bindings);
+                            if (sorted.size() < limit) {
                                 // Still room: add it in.
-                                queue.add(holder);
+                                boolean added = sorted.add(holder);
+                                assert added;
                             }
                             else {
-                                // The least element according to Holder's
-                                // ordering, which would be the last in
-                                // the sort order.
-                                Holder last = queue.peek();
-                                if (last.compareTo(holder) < 0) {
-                                    // New row is less (later in sort
-                                    // order), so keep it instead.
-                                    last = queue.poll();
+                                // Current greatest element.
+                                Holder last = sorted.last();
+                                if (last.compareTo(holder) > 0) {
+                                    // New row is less, so keep it
+                                    // instead.
+                                    sorted.remove(last);
                                     last.empty();
-                                    queue.add(holder);
+                                    boolean added = sorted.add(holder);
+                                    assert added;
                                 }
                                 else {
                                     // Will not be using new row.
@@ -142,18 +145,13 @@ class Sort_InsertionLimited extends PhysicalOperator
                             }
                         }
                     }
-                    count = queue.size();
-                    sorted = queue.toArray(new Holder[count]);
-                    queue = null;
-                    Arrays.sort(sorted);
+                    iterator = sorted.iterator();
                     state = State.EMPTYING;
                 }
                 /* falls through */
             case EMPTYING:
-                if (count > 0) {
-                    count--;
-                    Holder holder = sorted[count];
-                    sorted[count] = null;
+                if (iterator.hasNext()) {
+                    Holder holder = iterator.next();
                     return holder.empty();
                 }
                 else {
@@ -170,22 +168,14 @@ class Sort_InsertionLimited extends PhysicalOperator
         public void close()
         {
             input.close();
-            switch (state) {
-            case FILLING:
-                {
-                    Holder holder;
-                    while ((holder = queue.poll()) != null) {
-                        holder.empty();
-                    }
-                    queue = null;
+            if (sorted != null) {
+                if (iterator == null)
+                    iterator = sorted.iterator();
+                while (iterator.hasNext()) {
+                    iterator.next().empty();
                 }
-                break;
-            case EMPTYING:
-                for (int i = 0; i < count; i++) {
-                    sorted[i].empty();
-                }
+                iterator = null;
                 sorted = null;
-                break;
             }
             state = State.CLOSED;
         }
@@ -202,21 +192,24 @@ class Sort_InsertionLimited extends PhysicalOperator
         private final Cursor input;
         private State state;
         private Bindings bindings;
-        private PriorityQueue<Holder> queue;
-        private Holder[] sorted;
-        private int count;
+        private SortedSet<Holder> sorted;
+        private Iterator<Holder> iterator;
     }
 
     // Sortable row holder.
 
-    // In order to keep the first n according to the sort order, we
-    // need the priority queue to give up the greatest so far, so the
-    // holder's ordering is the reverse of the sort's.
+    // Since a SortedSet cannot have two elements that compare as 0,
+    // we never return that, instead ordering things that sort the
+    // same based on their arrival order. For the same reason, we do
+    // not need to overload equals().
     private class Holder implements Comparable<Holder> {
+        private int index;
         private RowHolder row;
         private Comparable[] values;
 
-        public Holder(Row arow, Bindings bindings) {
+        public Holder(int index, Row arow, Bindings bindings) {
+            this.index = index;
+
             row = new RowHolder();
             row.set(arow);
 
@@ -238,12 +231,12 @@ class Sort_InsertionLimited extends PhysicalOperator
                 Comparable v2 = other.values[i];
                 int less, greater;
                 if (sortDescendings.get(i).booleanValue()) {
-                    less = -1;
-                    greater = +1;
-                }
-                else {
                     less = +1;
                     greater = -1;
+                }
+                else {
+                    less = -1;
+                    greater = +1;
                 }
                 if (v1 == null) {
                     if (v2 == null) {
@@ -264,7 +257,7 @@ class Sort_InsertionLimited extends PhysicalOperator
                         return greater;
                 }
             }
-            return 0;
+            return index - other.index;
         }
 
         public String toString() {
