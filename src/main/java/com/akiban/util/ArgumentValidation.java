@@ -75,8 +75,20 @@ public final class ArgumentValidation {
         }
     }
 
+    public static void isGT(String argName, long i, long min) {
+        if (i <= min) {
+            throw new IllegalArgumentException(String.format("%s must be > %d; was %d", argName, min, i));
+        }
+    }
+
     public static void isNotNegative(String argName, int i) {
         isGTE(argName, i, 0);
+    }
+
+    public static void isLTE(String argName, int i, int max) {
+        if (i > max) {
+            throw new IllegalArgumentException(String.format("%s must be <= %d; was %d", argName, max, i));
+        }
     }
 
     public static void isLT(String argName, int i, int max) {
