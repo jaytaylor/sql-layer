@@ -90,4 +90,10 @@ public final class ArgumentValidation {
             throw new IllegalArgumentException(String.format("%s(%d) != %s(%d)", oneName, one, twoName, two));
         }
     }
+
+    public static void isEQ(String oneName, Object one, String twoName, Object two) {
+        if (!one.equals(two)) {
+            throw new IllegalArgumentException(String.format("%s(%s) != %s(%s)", oneName, one, twoName, two));
+        }
+    }
 }

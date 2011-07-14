@@ -44,6 +44,7 @@ import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
 import com.akiban.server.util.GroupIndexCreator;
+import com.akiban.util.Strings;
 import com.akiban.util.Undef;
 import junit.framework.Assert;
 
@@ -512,6 +513,12 @@ public class ApiTestBase {
             }
         }
         Assert.assertEquals("user tables", Collections.<TableName>emptySet(), uTables);
+    }
+
+    protected static <T> void assertEqualLists(String message, List<T> expected, List<T> actual) {
+        if (!expected.equals(actual)) {
+            assertEquals(message, Strings.join(expected), Strings.join(actual));
+        }
     }
 
     protected static class TestException extends RuntimeException {
