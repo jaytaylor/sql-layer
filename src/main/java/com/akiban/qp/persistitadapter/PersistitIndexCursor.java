@@ -51,15 +51,14 @@ class PersistitIndexCursor implements Cursor
     public Row next()
     {
         final boolean isTableIndex = index().isTableIndex();
-        final int bytesToFetch = isTableIndex ? TABLE_INDEX_BYTES_TO_FETCH : GROUP_INDEX_BYTES_TO_FETCH;
         try {
             boolean needAnother;
             do {
                 if (exchange != null &&
                     (indexFilter == null
                      ? exchange.traverse(direction, true)
-                     : exchange.traverse(direction, indexFilter, bytesToFetch))) {
-                    if (isTableIndex || exchange.getValue().getInt() >= minimumDepth) {
+                     : exchange.traverse(direction, indexFilter, FETCH_NO_BYTES))) {
+                    if (isTableIndex || exchange.fetch().getValue().getInt() >= minimumDepth) {
                         // t=The value of a group index is the depth at which it's defined, as an int.
                         // See OperatorStoreGIHandler, search for "Description of group index entry values"
                         unsharedRow().get().copyFromExchange(exchange);
@@ -149,6 +148,5 @@ class PersistitIndexCursor implements Cursor
     private KeyFilter indexFilter;
 
     // consts
-    private static final int GROUP_INDEX_BYTES_TO_FETCH = (Integer.SIZE / 8);
-    private static final int TABLE_INDEX_BYTES_TO_FETCH = 0;
+    private static final int FETCH_NO_BYTES = 0;
 }
