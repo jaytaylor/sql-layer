@@ -258,10 +258,10 @@ public class OperatorCompiler
                 TableNode indexTable = index.getLeafMostTable();
                 squery.getTables().setLeftBranch(indexTable);
                 UserTableRowType tableType = tableRowType(indexTable);
-                // TODO: Pass tableRowType(index.getLeafMostRequired()).
                 resultOperator = indexScan_Default(indexRowType, 
                                                    index.isReverse(),
-                                                   index.getIndexKeyRange());
+                                                   index.getIndexKeyRange(),
+                                                   tableRowType(index.getLeafMostRequired()));
                 if (index.isCovering(squery)) {
                     resultRowType = indexRowType;
                     fieldOffsets = new ColumnIndexMap(index.getCoveringMap());
