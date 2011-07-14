@@ -292,7 +292,8 @@ public class OperatorCompiler
                     needExtract = true; // Might be other descendants, too.
                 }
                 // Tables above this that also need to be output.
-                List<RowType> addAncestors = new ArrayList<RowType>();
+                List<TableNode> addAncestors = new ArrayList<TableNode>();
+                List<RowType> addAncestorTypes = new ArrayList<RowType>();
                 // Any other branches need to be added beside the main one.
                 List<TableNode> addBranches = new ArrayList<TableNode>();
                 // Can use index's table if gotten from branch lookup or
@@ -306,7 +307,8 @@ public class OperatorCompiler
                         (!descendantUsed && tableUsed) :
                         left.isUsed()) {
                         RowType atype = tableRowType(left);
-                        addAncestors.add(atype);
+                        addAncestors.add(left);
+                        addAncestorTypes.add(atype);
                         if (branchInputType == null)
                             branchInputType = atype;
                     }
@@ -332,7 +334,8 @@ public class OperatorCompiler
                                         // indexRowType), but that is not
                                         // currently supported by either
                                         // operator.
-                                        addAncestors.add(0, tableType);
+                                        addAncestors.add(0, indexTable);
+                                        addAncestorTypes.add(0, tableType);
                                         branchInputType = tableType;
                                     }
                                 }
@@ -343,30 +346,30 @@ public class OperatorCompiler
                 if (!addAncestors.isEmpty()) {
                     resultOperator = ancestorLookup_Default(resultOperator, groupTable,
                                                             ancestorInputType, 
-                                                            addAncestors, 
+                                                            addAncestorTypes, 
                                                             ancestorInputKept);
+                    resultOperator = maybeAddTableConditions(resultOperator,
+                                                             squery, addAncestors);
                 }
                 for (TableNode branchTable : addBranches) {
                     resultOperator = branchLookup_Default(resultOperator, groupTable,
                                                           branchInputType, 
                                                           tableRowType(branchTable), 
                                                           true);
+                    resultOperator = maybeAddTableConditions(resultOperator,
+                                                             squery, 
+                                                             branchTable.subtree());
                     needExtract = true; // Might bring in things not joined.
                 }
                 productMethod = ProductMethod.BY_RUN;
             }
             else {
                 resultOperator = groupScan_Default(groupTable);
+                resultOperator = maybeAddTableConditions(resultOperator,
+                                                         squery, squery.getTables());
                 needExtract = true; // Brings in the whole tree.
                 productMethod = ProductMethod.HKEY_ORDERED;
             }
-        
-            // TODO: Can apply most Select conditions before flattening.
-            // In addition to conditions between fields of different
-            // tables, a left join should not be satisfied if the right
-            // table has a failing condition, since the WHERE is on the
-            // whole (as opposed to the outer join with a subquery
-            // containing the condition).
 
             int nbranches = squery.getTables().colorBranches();
             if (nbranches > 0) {
@@ -1051,6 +1054,38 @@ public class OperatorCompiler
         }
     }
     
+    protected PhysicalOperator maybeAddTableConditions(PhysicalOperator resultOperator,
+                                                       SimplifiedQuery squery, 
+                                                       Iterable<TableNode> tables)
+            throws StandardException {
+        for (TableNode table : tables) {
+            // isRequired() because a WHERE condition (as opposed to
+            // an JOIN ON condition) is for the whole flattened
+            // row. Cutting half off before an OUTER join flatten
+            // could output a row with nulls instead.
+            // As it happens, conditions other than IS NULL imply required.
+            if (table.isUsed() && table.hasConditions() && table.isRequired()) {
+                RowType tableRowType = tableRowType(table);
+                Map<TableNode,Integer> tableOffsets = new HashMap<TableNode,Integer>(1);
+                tableOffsets.put(table, 0);
+                ColumnExpressionToIndex fieldOffsets = new TableNodeOffsets(tableOffsets);
+                for (ColumnCondition condition : table.getConditions()) {
+                    // Condition must not require another table.
+                    // (Don't bother yet trying to test those as soon
+                    // as the flatten that has them both is done.)
+                    if (condition.isSingleTable()) {
+                        Expression predicate = condition.generateExpression(fieldOffsets);
+                        resultOperator = select_HKeyOrdered(resultOperator,
+                                                            tableRowType,
+                                                            predicate);
+                        squery.getConditions().remove(condition);
+                    }
+                }
+            }
+        }
+        return resultOperator;
+    }
+
     protected UserTableRowType tableRowType(TableNode table) {
         return schema.userTableRowType(table.getTable());
     }

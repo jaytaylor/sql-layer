@@ -536,6 +536,13 @@ public class SimplifiedQuery
             return !right.isColumn();
         }
 
+        public boolean isSingleTable() {
+            if (!right.isColumn())
+                return true;
+            else
+                return (left.getTable() == ((ColumnExpression)right).getTable());
+        }
+
         // Does this condition match the given column?
         // Handles the case where it matches the RHS by returning a mirror image.
         public ColumnCondition matches(Column column) {
