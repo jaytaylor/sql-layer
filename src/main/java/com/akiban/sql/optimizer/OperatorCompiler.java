@@ -216,6 +216,8 @@ public class OperatorCompiler
 
     enum ProductMethod { HKEY_ORDERED, BY_RUN };
 
+    static final int INSERTION_SORT_MAX_LIMIT = 100;
+
     public Result compileSelect(SessionTracer tracer, CursorNode cursor, List<ParameterNode> params) 
             throws StandardException {
         try {
@@ -239,9 +241,6 @@ public class OperatorCompiler
         } finally {
             tracer.endEvent();
         }
-        if ((squery.getSortColumns() != null) &&
-            !((index != null) && index.isSorting()))
-            throw new UnsupportedSQLException("Unsupported ORDER BY: no suitable index on " + squery.getSortColumns());
         
         PhysicalOperator resultOperator;
         RowType resultRowType;
@@ -447,6 +446,27 @@ public class OperatorCompiler
             resultOperator = select_HKeyOrdered(resultOperator,
                                                 resultRowType,
                                                 predicate);
+        }
+
+        if ((squery.getSortColumns() != null) &&
+            !((index != null) && index.isSorting())) {
+            int limit = squery.getLimit();
+            if ((limit < 0) || (limit > INSERTION_SORT_MAX_LIMIT))
+                throw new UnsupportedSQLException("Unsupported ORDER BY: no suitable index on " + squery.getSortColumns());
+            int nsorts = squery.getSortColumns().size();
+            List<Expression> sortExpressions = new ArrayList<Expression>(nsorts);
+            List<Boolean> sortDescendings = new ArrayList<Boolean>(nsorts);
+            for (SortColumn sortColumn : squery.getSortColumns()) {
+                ColumnExpression columnExpression = 
+                    squery.getColumnExpression(sortColumn.getColumn());
+                Expression sortExpression = 
+                    columnExpression.generateExpression(fieldOffsets);
+                sortExpressions.add(sortExpression);
+                sortDescendings.add(Boolean.valueOf(!sortColumn.isAscending()));
+            }
+            resultOperator = sort_InsertionLimited(resultOperator, resultRowType,
+                                                   sortExpressions, sortDescendings,
+                                                   limit);
         }
 
         int ncols = squery.getSelectColumns().size();
