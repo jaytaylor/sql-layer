@@ -49,8 +49,12 @@ public class TestConfigService extends ConfigurationServiceImpl {
         Property.Key datapathKey = Property.parseKey("akserver.datapath");
         ret.put(datapathKey,
                 new Property(datapathKey, tmpDir.getAbsolutePath()));
-        Property.Key fixedKey = Property.parseKey("akserver.fixed");
-        ret.put(fixedKey, new Property(fixedKey, "true"));
+        final int bufferSize = Integer.parseInt(ret.get(
+                Property.parseKey("persistit.buffersize")).getValue());
+        Property.Key memoryKey = Property.parseKey("persistit.buffer.memory."
+                + bufferSize);
+        ret.put(memoryKey, new Property(memoryKey,
+                UNIT_TEST_PERSISTIT_MEMORY));
         if (extraProperties != null) {
             for (final Property property : extraProperties) {
                 ret.put(property.getKey(), property);
@@ -104,4 +108,5 @@ public class TestConfigService extends ConfigurationServiceImpl {
     }
 
     private static final AtomicReference<Collection<Property>> startupConfigPropertiesRef = new AtomicReference<Collection<Property>>();
+    private final static String UNIT_TEST_PERSISTIT_MEMORY = "20M";
 }
