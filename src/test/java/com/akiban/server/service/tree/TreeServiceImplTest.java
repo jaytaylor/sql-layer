@@ -18,12 +18,12 @@ import static org.junit.Assert.assertNotNull;
 
 import java.util.Properties;
 
+import com.akiban.server.service.config.TestConfigService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.akiban.server.service.Service;
-import com.akiban.server.service.UnitTestServiceFactory.TestConfigService;
 import com.akiban.server.service.config.ConfigurationService;
 
 public class TreeServiceImplTest {
@@ -31,9 +31,6 @@ public class TreeServiceImplTest {
     private final static int MEGA = 1024 * 1024;
 
     private static class MyConfigService extends TestConfigService {
-        private MyConfigService() {
-            super(null);
-        }
     }
 
     private Service<ConfigurationService> configService;

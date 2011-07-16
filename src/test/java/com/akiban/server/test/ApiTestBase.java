@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.api.dml.scan.ScanFlag;
@@ -132,12 +133,15 @@ public class ApiTestBase {
     private Session session;
     private int aisGeneration;
     private int akibanFKCount;
+    private boolean testServicesStarted;
 
     @Before
     public final void startTestServices() throws Exception {
+        testServicesStarted = false;
         sm = createServiceManager( startupConfigProperties() );
         sm.startServices();
         session = ServiceManagerImpl.newSession();
+        testServicesStarted = true;
     }
 
     protected ServiceManager createServiceManager(Collection<Property> startupConfigProperties) {
@@ -151,6 +155,9 @@ public class ApiTestBase {
 
     @After
     public final void stopTestServices() throws Exception {
+        if (!testServicesStarted) {
+            return;
+        }
         String openCursorsMessage = null;
         if (sm.serviceIsStarted(DXLService.class)) {
             DXLTestHooks dxlTestHooks = DXLTestHookRegistry.get();
@@ -167,6 +174,7 @@ public class ApiTestBase {
         if (openCursorsMessage != null) {
             fail(openCursorsMessage);
         }
+        testServicesStarted = false;
     }
     
     public final void crashTestServices() throws Exception {

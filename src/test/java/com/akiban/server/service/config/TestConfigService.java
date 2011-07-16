@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class TestConfigService extends ConfigurationServiceImpl {
     private final static File TESTDIR = new File("/tmp/akserver-junit");
@@ -31,8 +32,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
     File tmpDir;
 
     public TestConfigService() {
-        this.extraProperties = TestConfigService.startupConfigProperties;
-        TestConfigService.startupConfigProperties = null;
+        this.extraProperties = getAndClearOverrides();
     }
 
     @Override
@@ -94,11 +94,14 @@ public class TestConfigService extends ConfigurationServiceImpl {
     }
 
     public static void setOverrides(Collection<Property> startupConfigProperties) {
-        if (TestConfigService.startupConfigProperties != null) {
+        if (!startupConfigPropertiesRef.compareAndSet(null, startupConfigProperties)) {
             throw new IllegalStateException("already set"); // sanity check; feel free to remove if it gets in your way
         }
-        TestConfigService.startupConfigProperties = startupConfigProperties;
     }
 
-    private static Collection<Property> startupConfigProperties;
+    private static Collection<Property> getAndClearOverrides() {
+        return startupConfigPropertiesRef.getAndSet(null);
+    }
+
+    private static final AtomicReference<Collection<Property>> startupConfigPropertiesRef = new AtomicReference<Collection<Property>>();
 }
