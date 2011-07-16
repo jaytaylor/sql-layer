@@ -22,6 +22,7 @@ import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.instrumentation.InstrumentationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.memcache.MemcacheService;
@@ -145,6 +146,11 @@ public final class GuicedServiceManager implements ServiceManager {
     @Override
     public DXLService getDXL() {
         return getServiceByClass(DXLService.class);
+    }
+
+    @Override
+    public InstrumentationService getInstrumentationService() {
+        return getServiceByClass(InstrumentationService.class);
     }
 
     @Override
