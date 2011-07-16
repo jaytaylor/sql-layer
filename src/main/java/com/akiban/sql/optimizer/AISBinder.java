@@ -43,7 +43,6 @@ public class AISBinder implements Visitor
         this.ais = ais;
         this.defaultSchemaName = defaultSchemaName;
         this.views = new HashMap<TableName,ViewDefinition>();
-        this.bindingContexts = new Stack<BindingContext>();
     }
 
     public String getDefaultSchemaName() {
@@ -72,8 +71,14 @@ public class AISBinder implements Visitor
 
     public void bind(StatementNode stmt) throws StandardException {
         visited = new HashSet<QueryTreeNode>();
-        stmt.accept(this);
-        visited = null;
+        bindingContexts = new Stack<BindingContext>();
+        try {
+            stmt.accept(this);
+        }
+        finally {
+            visited = null;
+            bindingContexts = null;
+        }
     }
     
     /* Hierarchical Visitor */
@@ -461,9 +466,7 @@ public class AISBinder implements Visitor
         String schemaName = tableName.getSchemaName();
         if (schemaName == null)
             schemaName = defaultSchemaName;
-        Table result = ais.getUserTable(schemaName, 
-                                        // TODO: Akiban DB thinks it's case sensitive.
-                                        tableName.getTableName().toLowerCase());
+        Table result = ais.getUserTable(schemaName, tableName.getTableName());
         if (result == null)
             throw new StandardException("Table " + tableName.getFullTableName() +
                                         " not found");
@@ -672,7 +675,7 @@ public class AISBinder implements Visitor
         TableBinding tableBinding = (TableBinding)fromTable.getUserData();
         Table table = tableBinding.getTable();
         for (Column column : table.getColumns()) {
-            String columnName = column.getName().toUpperCase();
+            String columnName = column.getName();
             ValueNode valueNode = (ValueNode)
                 nodeFactory.getNode(NodeTypes.COLUMN_REFERENCE,
                                     columnName,

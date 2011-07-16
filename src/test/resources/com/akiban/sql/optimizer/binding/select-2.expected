@@ -10,27 +10,27 @@ resultSet:
 
 		[0]:		
 		com.akiban.sql.parser.ResultColumn@4ce2cb55
-		exposedName: X
-		name: X
+		exposedName: x
+		name: x
 		tableName: null
 		isDefaultColumn: false
 		type: null
 		expression: 			
 			com.akiban.sql.parser.ColumnReference@3d9360e2
-			columnName: X
+			columnName: x
 			tableName: null
 			type: null
 			userData: t1.x from com.akiban.sql.parser.FromBaseTable@52c05d3b
 		[1]:		
 		com.akiban.sql.parser.ResultColumn@16bdb503
-		exposedName: Y
-		name: Y
+		exposedName: y
+		name: y
 		tableName: null
 		isDefaultColumn: false
 		type: null
 		expression: 			
 			com.akiban.sql.parser.ColumnReference@b6e39f
-			columnName: Y
+			columnName: y
 			tableName: null
 			type: null
 			userData: t1.y from com.akiban.sql.parser.FromBaseTable@52c05d3b
@@ -39,7 +39,7 @@ resultSet:
 
 		[0]:		
 		com.akiban.sql.parser.FromBaseTable@52c05d3b
-		tableName: T1
+		tableName: t1
 		updateOrDelete: null
 		null
 		correlation Name: null
@@ -47,11 +47,11 @@ resultSet:
 		userData: user.t1
 		[1]:		
 		com.akiban.sql.parser.FromBaseTable@5328f6ee
-		tableName: T2
+		tableName: t2
 		updateOrDelete: null
 		null
-		correlation Name: TT
-		TT
+		correlation Name: tt
+		tt
 		userData: user.t2
 	whereClause: 		
 		com.akiban.sql.parser.BinaryRelationalOperatorNode@266bade9
@@ -60,13 +60,13 @@ resultSet:
 		type: null
 		leftOperand: 			
 			com.akiban.sql.parser.ColumnReference@6766afb3
-			columnName: Y
-			tableName: T1
+			columnName: y
+			tableName: t1
 			type: null
 			userData: t1.y from com.akiban.sql.parser.FromBaseTable@52c05d3b
 		rightOperand: 			
 			com.akiban.sql.parser.ColumnReference@69945ce
-			columnName: W
-			tableName: TT
+			columnName: w
+			tableName: tt
 			type: null
 			userData: t2.w from com.akiban.sql.parser.FromBaseTable@5328f6ee

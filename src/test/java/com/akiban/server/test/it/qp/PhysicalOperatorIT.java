@@ -37,6 +37,7 @@ import java.util.Arrays;
 
 import static com.akiban.qp.expression.API.*;
 import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.physicaloperator.API.JoinType.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -136,7 +137,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     public void testFlatten()
     {
         PhysicalOperator groupScan = groupScan_Default(coi);
-        PhysicalOperator flatten = flatten_HKeyOrdered(groupScan, customerRowType, orderRowType);
+        PhysicalOperator flatten = flatten_HKeyOrdered(groupScan, customerRowType, orderRowType, INNER_JOIN);
         RowType flattenType = flatten.rowType();
         RowBase[] expected = new RowBase[]{row(flattenType, 1L, "xyz", 11L, 1L, "ori"),
                                            row(itemRowType, 111L, 11L),
@@ -157,8 +158,8 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     public void testTwoFlattens()
     {
         PhysicalOperator groupScan = groupScan_Default(coi);
-        PhysicalOperator flattenCO = flatten_HKeyOrdered(groupScan, customerRowType, orderRowType);
-        PhysicalOperator flattenCOI = flatten_HKeyOrdered(flattenCO, flattenCO.rowType(), itemRowType);
+        PhysicalOperator flattenCO = flatten_HKeyOrdered(groupScan, customerRowType, orderRowType, INNER_JOIN);
+        PhysicalOperator flattenCOI = flatten_HKeyOrdered(flattenCO, flattenCO.rowType(), itemRowType, INNER_JOIN);
         RowType flattenCOIType = flattenCOI.rowType();
         RowBase[] expected = new RowBase[]{row(flattenCOIType, 1L, "xyz", 11L, 1L, "ori", 111L, 11L),
                                            row(flattenCOIType, 1L, "xyz", 11L, 1L, "ori", 112L, 11L),
@@ -197,7 +198,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     public void testIndexLookup()
     {
         PhysicalOperator indexScan = indexScan_Default(indexType(order, "salesman"));
-        PhysicalOperator lookup = lookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, false);
+        PhysicalOperator lookup = branchLookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, false);
         RowBase[] expected = new RowBase[]{row(orderRowType, 12L, 1L, "david"),
                                            row(itemRowType, 121L, 12L),
                                            row(itemRowType, 122L, 12L),
@@ -217,7 +218,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     public void testIndexLookupWithOneAncestor()
     {
         PhysicalOperator indexScan = indexScan_Default(indexType(order, "salesman"));
-        PhysicalOperator lookup = lookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, false);
+        PhysicalOperator lookup = branchLookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, false);
         PhysicalOperator ancestorLookup = ancestorLookup_Default(lookup,
                                                                  coi,
                                                                  orderRowType,
@@ -246,7 +247,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     public void testIndexLookupWithTwoAncestors()
     {
         PhysicalOperator indexScan = indexScan_Default(indexType(item, "oid"));
-        PhysicalOperator lookup = lookup_Default(indexScan, coi, itemOidIndexRowType, itemRowType, false);
+        PhysicalOperator lookup = branchLookup_Default(indexScan, coi, itemOidIndexRowType, itemRowType, false);
         PhysicalOperator ancestorLookup = ancestorLookup_Default(lookup,
                                                                  coi,
                                                                  itemRowType,
@@ -283,8 +284,8 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     public void testRestrictedIndexScan()
     {
         Index idxOrderSalesman = orderSalesmanIndexRowType.index();
-        IndexBound lo = indexBound(userTable(order), row(order, 2, "jack"), columnSelector(idxOrderSalesman));
-        IndexBound hi = indexBound(userTable(order), row(order, 2, "tom"), columnSelector(idxOrderSalesman));
+        IndexBound lo = indexBound(row(orderSalesmanIndexRowType, "jack"), columnSelector(idxOrderSalesman));
+        IndexBound hi = indexBound(row(orderSalesmanIndexRowType, "tom"), columnSelector(idxOrderSalesman));
         IndexKeyRange range = indexKeyRange(lo, true, hi, false);
         PhysicalOperator indexScan = indexScan_Default(orderSalesmanIndexRowType, false, range);
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
@@ -297,10 +298,10 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     public void testRestrictedIndexLookup()
     {
         Index idxOrderSalesman = orderSalesmanIndexRowType.index();
-        IndexBound tom = indexBound(userTable(order), row(order, 2, "tom"), columnSelector(idxOrderSalesman));
+        IndexBound tom = indexBound(row(orderSalesmanIndexRowType, "tom"), columnSelector(idxOrderSalesman));
         IndexKeyRange matchTom = indexKeyRange(tom, true, tom, true);
         PhysicalOperator indexScan = indexScan_Default(orderSalesmanIndexRowType, false, matchTom);
-        PhysicalOperator lookup = lookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, false);
+        PhysicalOperator lookup = branchLookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, false);
         RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
                                            row(itemRowType, 211L, 21L),
                                            row(itemRowType, 212L, 21L)};
@@ -313,7 +314,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     {
         // Find customers associated with salesman tom
         Index idxOrderSalesman = orderSalesmanIndexRowType.index();
-        IndexBound tom = indexBound(userTable(order), row(order, 2, "tom"), columnSelector(idxOrderSalesman));
+        IndexBound tom = indexBound(row(orderSalesmanIndexRowType, "tom"), columnSelector(idxOrderSalesman));
         IndexKeyRange matchTom = indexKeyRange(tom, true, tom, true);
         PhysicalOperator indexScan = indexScan_Default(orderSalesmanIndexRowType, false, matchTom);
         PhysicalOperator ancestorLookup = ancestorLookup_Default(indexScan,

@@ -384,6 +384,16 @@ public class Column implements Serializable, ModelNames
         this.initialAutoIncrementValue = initialAutoIncrementValue;
     }
 
+    public void setFieldDef(Object fieldDef)
+    {
+        this.fieldDef = fieldDef;
+    }
+
+    public Object getFieldDef()
+    {
+        return fieldDef;
+    }
+
     private Column(Table table,
                    String columnName,
                    Integer position,
@@ -433,4 +443,5 @@ public class Column implements Serializable, ModelNames
     private Column userColumn; // Non-null iff this is a group table column
     private Long initialAutoIncrementValue;
     private CharsetAndCollation charsetAndCollation;
+    private transient /*FieldDef*/ Object fieldDef;
 }

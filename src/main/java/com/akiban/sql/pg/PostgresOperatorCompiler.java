@@ -15,35 +15,23 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.sql.StandardException;
 
 import com.akiban.sql.optimizer.OperatorCompiler;
-import com.akiban.sql.optimizer.ExpressionRow;
+import static com.akiban.sql.optimizer.SimplifiedQuery.*;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
+import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.types.DataTypeDescriptor;
 
-import com.akiban.sql.views.ViewDefinition;
+import com.akiban.ais.model.Column;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
-
-import com.akiban.qp.expression.Expression;
-
-import com.akiban.qp.persistitadapter.OperatorStore;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.PersistitGroupRow;
-
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.RowType;
-
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.Store;
+import com.akiban.server.service.EventTypes;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,17 +46,8 @@ public class PostgresOperatorCompiler extends OperatorCompiler
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorCompiler.class);
 
-    private PersistitAdapter adapter;
-
     public PostgresOperatorCompiler(PostgresServerSession server) {
         super(server.getParser(), server.getAIS(), server.getDefaultSchemaName());
-        Store store = server.getServiceManager().getStore();
-        PersistitStore persistitStore;
-        if (store instanceof OperatorStore)
-            persistitStore = ((OperatorStore)store).getPersistitStore();
-        else
-            persistitStore = (PersistitStore)store;
-        adapter = new PersistitAdapter(schema, persistitStore, server.getSession());
 
         server.setAttribute("aisBinder", binder);
         server.setAttribute("compiler", this);
@@ -79,7 +58,9 @@ public class PostgresOperatorCompiler extends OperatorCompiler
                                    String sql, int[] paramTypes) 
             throws StandardException {
         // This very inefficient reparsing by every generator is actually avoided.
-        return generate(server, server.getParser().parseStatement(sql), paramTypes);
+        SQLParser parser = server.getParser();
+        return generate(server, parser.parseStatement(sql), 
+                        parser.getParameterList(), paramTypes);
     }
 
     @Override
@@ -87,42 +68,91 @@ public class PostgresOperatorCompiler extends OperatorCompiler
         binder.setDefaultSchemaName(server.getDefaultSchemaName());
     }
 
+    static class PostgresResultColumn extends ResultColumnBase {
+        private PostgresType type;
+        
+        public PostgresResultColumn(String name, PostgresType type) {
+            super(name);
+            this.type = type;
+        }
+
+        public PostgresType getType() {
+            return type;
+        }
+    }
+
+    @Override
+    public ResultColumnBase getResultColumn(SimpleSelectColumn selectColumn) 
+            throws StandardException {
+        String name = selectColumn.getName();
+        PostgresType type = null;
+        SimpleExpression selectExpr = selectColumn.getExpression();
+        if (selectExpr.isColumn()) {
+            ColumnExpression columnExpression = (ColumnExpression)selectExpr;
+            Column column = columnExpression.getColumn();
+            if (selectColumn.isNameDefaulted())
+                name = column.getName(); // User-preferred case.
+            type = PostgresType.fromAIS(column);
+        }
+        else {
+            type = PostgresType.fromDerby(selectColumn.getType());
+        }
+        return new PostgresResultColumn(name, type);
+    }
+
     @Override
     public PostgresStatement generate(PostgresServerSession session,
-                                      StatementNode stmt, int[] paramTypes)
+                                      StatementNode stmt, 
+                                      List<ParameterNode> params, int[] paramTypes)
             throws StandardException {
         if (!(stmt instanceof DMLStatementNode))
             return null;
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
-        Result result = compile(dmlStmt);
+        Result result = null;
+        try {
+            session.getSessionTracer().beginEvent(EventTypes.COMPILE);
+            result = compile(session.getSessionTracer(), dmlStmt, params);
+        } finally {
+            session.getSessionTracer().endEvent();
+        }
 
         logger.debug("Operator:\n{}", result);
 
+        PostgresType[] parameterTypes = null;
+        if (result.getParameterTypes() != null) {
+            DataTypeDescriptor[] sqlTypes = result.getParameterTypes();
+            int nparams = sqlTypes.length;
+            parameterTypes = new PostgresType[nparams];
+            for (int i = 0; i < nparams; i++) {
+                DataTypeDescriptor sqlType = sqlTypes[i];
+                if (sqlType != null)
+                    parameterTypes[i] = PostgresType.fromDerby(sqlType);
+            }
+        }
+
         if (result.isModify())
             return new PostgresModifyOperatorStatement(stmt.statementToString(),
-                                                       adapter,
-                                                       (UpdatePlannable) result.getResultOperator());
-        else
-            return new PostgresOperatorStatement(adapter,
-                                                 (PhysicalOperator) result.getResultOperator(),
-                                                 result.getResultRowType(),
-                                                 result.getResultColumns(),
-                                                 result.getResultColumnOffsets(),
+                                                       (UpdatePlannable) result.getResultOperator(),
+                                                       parameterTypes);
+        else {
+            int ncols = result.getResultColumns().size();
+            List<String> columnNames = new ArrayList<String>(ncols);
+            List<PostgresType> columnTypes = new ArrayList<PostgresType>(ncols);
+            for (ResultColumnBase rcBase : result.getResultColumns()) {
+                PostgresResultColumn resultColumn = (PostgresResultColumn)rcBase;
+                columnNames.add(resultColumn.getName());
+                columnTypes.add(resultColumn.getType());
+            }
+            return new PostgresOperatorStatement((PhysicalOperator)result.getResultOperator(),
+                                                 columnNames, columnTypes,
+                                                 parameterTypes,
                                                  result.getOffset(),
                                                  result.getLimit());
+        }
     }
 
-    // The current implementation of index cursors expects that the
-    // key bounds' rows are in the shape of the indexed table, not the
-    // index itself.
-    protected Row getIndexExpressionRow(TableIndex index, Expression[] keys) {
-        UserTable userTable = (UserTable)index.getTable();
-        RowType rowType = schema.userTableRowType(userTable);
-        Expression[] userKeys = new Expression[rowType.nFields()];
-        for (int i = 0; i < keys.length; i++) {
-            userKeys[index.getColumns().get(i).getColumn().getPosition()] = keys[i];
-        }
-        return new ExpressionRow(rowType, userKeys);
+    protected Schema getSchema() {
+        return schema;
     }
 
 }

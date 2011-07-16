@@ -38,6 +38,18 @@ public abstract class AbstractRow implements Row
         return this.hKey().prefixOf(that.hKey());
     }
 
+    @Override
+    public final int runId()
+    {
+        return runId;
+    }
+
+    @Override
+    public void runId(int runId)
+    {
+        this.runId = runId;
+    }
+
     // ManagedRow interface
 
     @Override
@@ -81,4 +93,8 @@ public abstract class AbstractRow implements Row
     // Object state
 
     private int references = 0;
+    // runId is set for rows coming out of an IndexScan and then propagated through rows created by other operators.
+    // For a row from a GroupScan, rowId is left at -1, indicating that run boundaries have to be determined by
+    // hkey comparisons.
+    private int runId = -1;
 }

@@ -15,7 +15,10 @@
 
 package com.akiban.server.service.dxl;
 
+import com.akiban.ais.io.AISTarget;
+import com.akiban.ais.io.TableSubsetWriter;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -23,6 +26,7 @@ import com.akiban.ais.model.staticgrouping.Group;
 import com.akiban.ais.model.staticgrouping.Grouping;
 import com.akiban.ais.model.staticgrouping.GroupingVisitorStub;
 import com.akiban.ais.model.staticgrouping.GroupsBuilder;
+import com.akiban.ais.util.AISPrinter;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -30,6 +34,8 @@ import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.util.GroupIndexCreator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -41,6 +47,8 @@ import java.util.concurrent.atomic.AtomicReference;
 class DXLMXBeanImpl implements DXLMXBean {
     private DXLServiceImpl dxlService;
     private final AtomicReference<String> usingSchema = new AtomicReference<String>("test");
+    private static final Logger LOG = LoggerFactory.getLogger(DXLMXBeanImpl.class);
+    private static final String CREATE_GROUP_INDEX_LOG_FORMAT = "createGroupIndex failed: %s %s %s";
 
     public DXLMXBeanImpl(DXLServiceImpl dxlService) {
         this.dxlService = dxlService;
@@ -81,8 +89,17 @@ class DXLMXBeanImpl implements DXLMXBean {
             Index index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnList);
             ddlFunctions.createIndexes(session, Collections.singleton(index));
         }
+        catch(GroupIndex.GroupIndexCreationException e) {
+            LOG.debug(String.format(CREATE_GROUP_INDEX_LOG_FORMAT, groupName, indexName, tableColumnList), e);
+            throw new RuntimeException(e.getMessage());
+        }
+        catch(GroupIndexCreator.GroupIndexCreatorException e) {
+            LOG.debug(String.format(CREATE_GROUP_INDEX_LOG_FORMAT, groupName, indexName, tableColumnList), e);
+            throw new RuntimeException(e.getMessage());
+        }
         catch(Exception e) {
-            throw new RuntimeException(e);
+            LOG.error(String.format(CREATE_GROUP_INDEX_LOG_FORMAT, groupName, indexName, tableColumnList), e);
+            throw new RuntimeException(e.getMessage());
         }
         finally {
             session.close();
@@ -184,6 +201,21 @@ class DXLMXBeanImpl implements DXLMXBean {
             }
         }
         return null;
+    }
+
+    @Override
+    public String printAIS() {
+        Session session = ServiceManagerImpl.newSession();
+        try {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            return AISPrinter.toString(ais);
+        }
+        catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+        finally {
+            session.close();
+        }
     }
 
     public List<String> getGrouping(String schema) {

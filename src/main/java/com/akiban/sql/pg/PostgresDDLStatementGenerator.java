@@ -17,8 +17,11 @@ package com.akiban.sql.pg;
 
 import com.akiban.sql.parser.DDLStatementNode;
 import com.akiban.sql.parser.StatementNode;
+import com.akiban.sql.parser.ParameterNode;
 
 import com.akiban.sql.StandardException;
+
+import java.util.List;
 
 /** DDL statements executed against AIS. */
 public class PostgresDDLStatementGenerator extends PostgresBaseStatementGenerator
@@ -28,10 +31,14 @@ public class PostgresDDLStatementGenerator extends PostgresBaseStatementGenerato
 
     @Override
     public PostgresStatement generate(PostgresServerSession server,
-                                      StatementNode stmt, int[] paramTypes) 
+                                      StatementNode stmt, 
+                                      List<ParameterNode> params,
+                                      int[] paramTypes) 
             throws StandardException {
         if (!(stmt instanceof DDLStatementNode))
             return null;
+        if ((params != null) && !params.isEmpty())
+            throw new StandardException("No parameters to DDL");
         return new PostgresDDLStatement((DDLStatementNode)stmt);
     }
 

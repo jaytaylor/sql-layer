@@ -49,8 +49,18 @@ public abstract class Strings {
      * @param strings the strings
      * @return the String
      */
-    public static String join(List<String> strings) {
+    public static String join(List<?> strings) {
         return join(strings, nl());
+    }
+
+    /**
+     * Joins the given Strings into a single, newline-delimited String. Newline is the system-dependent one as
+     * defined by the system property <tt>line.separator</tt>.
+     * @param strings the strings
+     * @return the String
+     */
+    public static String join(String... strings) {
+        return join(Arrays.asList(strings));
     }
 
     /**
@@ -61,12 +71,12 @@ public abstract class Strings {
      * May not be null.
      * @return the joined string
      */
-    public static String join(List<String> strings, String delimiter) {
+    public static String join(List<?> strings, String delimiter) {
         if (strings.size() == 0) {
             return "";
         }
         StringBuilder builder = new StringBuilder(30 * strings.size()); // rough guess for capacity!
-        for (String string : strings) {
+        for (Object string : strings) {
             builder.append(string).append(delimiter);
         }
         builder.setLength(builder.length() - delimiter.length());

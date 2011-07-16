@@ -87,6 +87,17 @@ public class AkibanInformationSchema implements Serializable, Traversable
         return groupTables;
     }
 
+    public void removeGroup(Group group) {
+        groups.remove(group.getName());
+        GroupTable groupTable = group.getGroupTable();
+        GroupTable removed = groupTables.remove(groupTable.getName());
+        assert removed == groupTable : removed + " != " + groupTable;
+        if (groupTablesById != null && groupTable.getTableId() != null) {
+            removed = groupTablesById.remove(groupTable.getTableId());
+        }
+        assert removed == groupTable : removed + " != " + groupTable;
+    }
+
     public Table getTable(String schemaName, String tableName)
     {
         Table table = getUserTable(schemaName, tableName);
@@ -206,6 +217,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
         }
         for (Group group : groups.values()) {
             visitor.visitGroup(group);
+            group.traversePreOrder(visitor);
         }
     }
 
@@ -228,6 +240,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
             visitor.visitGroupTable(groupTable);
         }
         for (Group group : groups.values()) {
+            group.traversePostOrder(visitor);
             visitor.visitGroup(group);
         }
     }

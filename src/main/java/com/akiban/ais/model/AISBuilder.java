@@ -16,7 +16,6 @@
 package com.akiban.ais.model;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -157,6 +156,12 @@ public class
         Index index = group.getIndex(indexName);
         checkFound(index, "creating group index column", "index", concat(groupName, indexName));
         Table table = ais.getTable(schemaName, tableName);
+        if (table.getGroup() == null) {
+            throw new IllegalArgumentException("table is ungrouped: " + table);
+        }
+        if (!table.getGroup().getName().equals(groupName)) {
+            throw new IllegalArgumentException("group name mismatch: " + groupName + " != " + table.getGroup());
+        }
         checkFound(table, "creating group index column", "table", concat(schemaName, tableName));
         Column column = table.getColumn(columnName);
         checkFound(column, "creating group index column", "column", concat(schemaName, tableName, columnName));
@@ -720,22 +725,6 @@ public class
     }
 
     // State
-
-    /**
-     * Counts the number of digits in the int
-     * 
-     * @param number
-     *            {@code >= 0}
-     * @return number of digits
-     */
-    private static int countDigits(int number) {
-        int ret = 1;
-        while ((number /= 10) > 0) {
-            ++ret;
-        }
-        return ret;
-    }
-
     static final class ColumnName {
         private final TableName table;
         private final String columnName;
@@ -772,62 +761,6 @@ public class
     }
 
     public final static int MAX_COLUMN_NAME_LENGTH = 64;
-
-    private final static class DefaultNameGenerator implements NameGenerator {
-
-        /**
-         * For truncated columns [only], we record a mapping of the original
-         * column to truncated name. This lets us ensure that unique columns
-         * have unique truncated names. We use HashMap instead of Map to make
-         * life easier for GWT.
-         */
-        private HashMap<ColumnName, String> generatedColumnNames = new HashMap<ColumnName, String>();
-
-        @Override
-        public String generateColumnName(Column column) {
-            UserTable table = (UserTable) column.getTable();
-
-            StringBuilder ret = new StringBuilder(table.getName()
-                    .getTableName()).append("$").append(column.getName());
-
-            if (ret.length() <= MAX_COLUMN_NAME_LENGTH) {
-                return ret.toString();
-            }
-            final ColumnName id = new ColumnName(table.getName(),
-                    column.getName());
-            {
-                String possible = generatedColumnNames.get(id);
-                if (possible != null) {
-                    return possible;
-                }
-            }
-
-            // We need to truncate, but first see if this column name is already
-            // known
-            ret.delete(0, ret.length() - MAX_COLUMN_NAME_LENGTH);
-            int anonId = 0;
-            String retValue;
-            while (generatedColumnNames.containsValue((retValue = ret
-                    .toString()))) {
-                int digits = countDigits(++anonId);
-                int len = ret.length();
-                ret.delete(len - (digits + 1), len);
-                ret.append('$').append(anonId);
-            }
-
-            generatedColumnNames.put(id, retValue);
-
-            return retValue;
-        }
-
-        @Override
-        public String generateGroupIndexName(TableIndex userTableIndex) {
-            return userTableIndex.getTable().getName().getTableName() + "$"
-                    + userTableIndex.getIndexName().getName();
-        }
-
-    }
-
     private static int tableGeneratorBase = 25000;
 
     private final AkibanInformationSchema ais;

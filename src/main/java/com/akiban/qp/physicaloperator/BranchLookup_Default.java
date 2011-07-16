@@ -23,6 +23,7 @@ import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,11 +78,13 @@ public class BranchLookup_Default extends PhysicalOperator
                                 boolean keepInput,
                                 Limit limit)
     {
-        checkArgument(inputRowType != null);
-        checkArgument(outputRowType != null);
-        checkArgument(limit != null);
-        checkArgument(inputRowType instanceof IndexRowType || outputRowType != inputRowType);
-        checkArgument(inputRowType instanceof UserTableRowType || !keepInput);
+        ArgumentValidation.notNull("inputRowType", inputRowType);
+        ArgumentValidation.notNull("outputRowType", outputRowType);
+        ArgumentValidation.notNull("limit", limit);
+        ArgumentValidation.isTrue("inputRowType instanceof IndexRowType || outputRowType != inputRowType",
+                                  inputRowType instanceof IndexRowType || outputRowType != inputRowType);
+        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || !keepInput",
+                                  inputRowType instanceof UserTableRowType || !keepInput);
         UserTableRowType inputTableType = null;
         if (inputRowType instanceof UserTableRowType) {
             inputTableType = (UserTableRowType) inputRowType;
@@ -91,27 +94,44 @@ public class BranchLookup_Default extends PhysicalOperator
         assert inputTableType != null : inputRowType;
         UserTable inputTable = inputTableType.userTable();
         UserTable outputTable = outputRowType.userTable();
-        checkArgument(inputTable.getGroup() == outputTable.getGroup());
+        ArgumentValidation.isSame("inputTable.getGroup()",
+                                  inputTable.getGroup(),
+                                  "outputTable.getGroup()",
+                                  outputTable.getGroup());
         this.keepInput = keepInput;
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
         this.inputRowType = inputRowType;
         this.outputRowType = outputRowType;
-        this.commonSegments = inputTableType.ancestry().commonSegments(outputRowType.ancestry());
         this.limit = limit;
         UserTable commonAncestor = commonAncestor(inputTable, outputTable);
+        this.commonSegments = commonAncestor.getDepth() + 1;
         switch (outputTable.getDepth() - commonAncestor.getDepth()) {
             case 0:
-                branchRoot = null;
+                branchRootOrdinal = -1;
                 break;
             case 1:
-                branchRoot = outputTable;
+                branchRootOrdinal = ordinal(outputTable);
                 break;
             default:
-                branchRoot = null;
-                checkArgument(false);
+                branchRootOrdinal = -1;
+                ArgumentValidation.isTrue("false", false);
+                break;
         }
-
+        // branchRootOrdinal = -1 means that outputTable is an ancestor of inputTable. In this case, inputPrecedesBranch
+        // is false. Otherwise, branchRoot's parent is the common ancestor. Find inputTable's ancestor that is also
+        // a child of the common ancestor. Then compare these ordinals to determine whether input precedes branch.
+        if (this.branchRootOrdinal == -1) {
+            this.inputPrecedesBranch = false;
+        } else if (inputTable == commonAncestor) {
+            this.inputPrecedesBranch = true;
+        } else {
+            UserTable ancestorOfInputAndChildOfCommon = inputTable;
+            while (ancestorOfInputAndChildOfCommon.parentTable() != commonAncestor) {
+                ancestorOfInputAndChildOfCommon = ancestorOfInputAndChildOfCommon.parentTable();
+            }
+            this.inputPrecedesBranch = ordinal(ancestorOfInputAndChildOfCommon) < branchRootOrdinal;
+        }
     }
 
     // For use by this class
@@ -145,11 +165,13 @@ public class BranchLookup_Default extends PhysicalOperator
     private final RowType inputRowType;
     private final RowType outputRowType;
     private final boolean keepInput;
+    // If keepInput is true, inputPrecedesBranch controls whether input row appears before the retrieved branch.
+    private final boolean inputPrecedesBranch;
     private final int commonSegments;
-    private final UserTable branchRoot;
+    private final int branchRootOrdinal;
     private final Limit limit;
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // Cursor interface
 
@@ -161,15 +183,13 @@ public class BranchLookup_Default extends PhysicalOperator
         }
 
         @Override
-        public boolean next()
+        public Row next()
         {
             Row nextRow = null;
             while (nextRow == null && inputRow.isNotNull()) {
                 switch (lookupState) {
                     case BEFORE:
-                        // Input row shows up before lookup rows. That might not be strictly in hkey order, but it
-                        // shouldn't matter because outputRowType is not an ancestor of inputRowType.
-                        if (keepInput) {
+                        if (keepInput && inputPrecedesBranch) {
                             nextRow = inputRow.get();
                         }
                         lookupState = LookupState.SCANNING;
@@ -181,21 +201,22 @@ public class BranchLookup_Default extends PhysicalOperator
                         }
                         break;
                     case AFTER:
+                        if (keepInput && !inputPrecedesBranch) {
+                            nextRow = inputRow.get();
+                        }
                         advanceInput();
                         break;
                 }
             }
-            outputRow(nextRow);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Lookup: {}", lookupRow.isNull() ? null : lookupRow.get());
             }
-            return nextRow != null;
+            return nextRow;
         }
 
         @Override
         public void close()
         {
-            outputRow(null);
             inputCursor.close();
             inputRow.set(null);
             lookupCursor.close();
@@ -215,19 +236,15 @@ public class BranchLookup_Default extends PhysicalOperator
 
         private void advanceLookup()
         {
-            if (lookupCursor.next()) {
-                Row currentRow = lookupCursor.currentRow();
-                if (currentRow == null) {
+            Row currentLookupRow;
+            if ((currentLookupRow = lookupCursor.next()) != null) {
+                if (limit.limitReached(currentLookupRow)) {
                     lookupState = LookupState.AFTER;
                     lookupRow.set(null);
+                    close();
                 } else {
-                    if (limit.limitReached(currentRow)) {
-                        lookupState = LookupState.AFTER;
-                        lookupRow.set(null);
-                        close();
-                    } else {
-                        lookupRow.set(currentRow);
-                    }
+                    currentLookupRow.runId(inputRow.get().runId());
+                    lookupRow.set(currentLookupRow);
                 }
             } else {
                 lookupState = LookupState.AFTER;
@@ -240,8 +257,8 @@ public class BranchLookup_Default extends PhysicalOperator
             lookupState = LookupState.BEFORE;
             lookupRow.set(null);
             lookupCursor.close();
-            if (inputCursor.next()) {
-                Row currentInputRow = inputCursor.currentRow();
+            Row currentInputRow = inputCursor.next();
+            if (currentInputRow != null) {
                 if (currentInputRow.rowType() == inputRowType) {
                     lookupRow.set(null);
                     computeLookupRowHKey(currentInputRow.hKey());
@@ -258,8 +275,8 @@ public class BranchLookup_Default extends PhysicalOperator
         {
             inputRowHKey.copyTo(lookupRowHKey);
             lookupRowHKey.useSegments(commonSegments);
-            if (branchRoot != null) {
-                lookupRowHKey.extend(branchRoot);
+            if (branchRootOrdinal != -1) {
+                lookupRowHKey.extendWithOrdinal(branchRootOrdinal);
             }
         }
 

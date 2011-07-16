@@ -15,14 +15,21 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.ais.model.HKeySegment;
 import com.akiban.qp.row.FlattenedRow;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.RowDef;
+import com.akiban.util.ArgumentValidation;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+
+import static com.akiban.qp.physicaloperator.API.FlattenOption.*;
 
 class Flatten_HKeyOrdered extends PhysicalOperator
 {
@@ -83,32 +90,37 @@ class Flatten_HKeyOrdered extends PhysicalOperator
 
     // Flatten_HKeyOrdered interface
 
-    public Flatten_HKeyOrdered(PhysicalOperator inputOperator, RowType parentType, RowType childType, int flags)
+    public Flatten_HKeyOrdered(PhysicalOperator inputOperator, RowType parentType, RowType childType,
+                               API.JoinType joinType, EnumSet<API.FlattenOption> options)
     {
-        checkArgument(parentType != null);
-        checkArgument(childType != null);
-        checkArgument((flags & (INNER_JOIN | LEFT_JOIN)) != (INNER_JOIN | LEFT_JOIN));
-        checkArgument((flags & (INNER_JOIN | RIGHT_JOIN)) != (INNER_JOIN | RIGHT_JOIN));
+        ArgumentValidation.notNull("parentType", parentType);
+        ArgumentValidation.notNull("childType", childType);
+        ArgumentValidation.notNull("flattenType", joinType);
         assert parentType != null;
         assert childType != null;
         this.inputOperator = inputOperator;
         this.parentType = parentType;
         this.childType = childType;
-        flattenType = parentType.schema().newFlattenType(parentType, childType);
-        leftJoin = (flags & LEFT_JOIN) != 0;
-        rightJoin = (flags & RIGHT_JOIN) != 0;
-        keepParent = (flags & KEEP_PARENT) != 0;
-        keepChild = (flags & KEEP_CHILD) != 0;
+        this.flattenType = parentType.schema().newFlattenType(parentType, childType);
+        boolean fullJoin = joinType.equals(API.JoinType.FULL_JOIN);
+        this.leftJoin = fullJoin || joinType.equals(API.JoinType.LEFT_JOIN) ;
+        this.rightJoin = fullJoin || joinType.equals(API.JoinType.RIGHT_JOIN);
+        this.keepParent = options.contains(KEEP_PARENT);
+        this.keepChild = options.contains(KEEP_CHILD);
+        this.leftJoinShortensHKey = options.contains(LEFT_JOIN_SHORTENS_HKEY);
+        if (this.leftJoinShortensHKey) {
+            ArgumentValidation.isTrue("flags contains LEFT_JOIN_SHORTENS_HKEY but not LEFT_JOIN", leftJoin);
+        }
+        List<HKeySegment> childHKeySegments = childType.hKey().segments();
+        HKeySegment lastChildHKeySegment = childHKeySegments.get(childHKeySegments.size() - 1);
+        RowDef childRowDef = (RowDef) lastChildHKeySegment.table().rowDef();
+        this.childOrdinal = childRowDef.getOrdinal();
+        this.nChildHKeySegmentFields = lastChildHKeySegment.columns().size();
+        this.parentHKeySegments = parentType.hKey().segments().size();
     }
 
     // Class state
 
-    public static final int DEFAULT = 0x00;
-    public static final int KEEP_PARENT = 0x01;
-    public static final int KEEP_CHILD = 0x02;
-    public static final int INNER_JOIN = 0x04;
-    public static final int LEFT_JOIN = 0x08;
-    public static final int RIGHT_JOIN = 0x10;
     private static final int MAX_PENDING = 2;
 
     // Object state
@@ -121,10 +133,15 @@ class Flatten_HKeyOrdered extends PhysicalOperator
     private final boolean rightJoin;
     private final boolean keepParent;
     private final boolean keepChild;
+    private final boolean leftJoinShortensHKey;
+    // For constructing a left-join hkey
+    private final int childOrdinal;
+    private final int nChildHKeySegmentFields;
+    private final int parentHKeySegments;
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // Cursor interface
 
@@ -135,36 +152,37 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         }
 
         @Override
-        public boolean next()
+        public Row next()
         {
-            outputRow(pending.take());
-            boolean moreInput;
-            while (outputRow() == null && ((moreInput = input.next()) || parent.isNotNull())) {
-                if (!moreInput) {
+            Row outputRow = pending.take();
+            Row inputRow;
+            while (outputRow == null && (((inputRow = input.next()) != null) || parent.isNotNull())) {
+                if (inputRow == null) {
                     // child rows are processed immediately. parent rows are not,
                     // because when seen, we don't know if the next row will be another
                     // parent, a child, a row of child type that is not actually a child,
                     // a row of type other than parent or child, or end of stream. If we get
                     // here, then input is exhausted, and the only possibly remaining row would
                     // be due to a childless parent waiting to be processed.
-                    generateLeftJoinRow(parent.get());
+                    if (childlessParent) {
+                        generateLeftJoinRow(parent.get());
+                    }
                     parent.set(null);
                 } else {
-                    Row inputRow = input.currentRow();
                     RowType inputRowType = inputRow.rowType();
                     if (inputRowType == parentType) {
-                        if (keepParent) {
-                            addToPending();
-                        }
                         if (parent.isNotNull() && childlessParent) {
                             // current parent row is childless, so it is left-join fodder.
                             generateLeftJoinRow(parent.get());
+                        }
+                        if (keepParent) {
+                            addToPending(inputRow);
                         }
                         parent.set(inputRow);
                         childlessParent = true;
                     } else if (inputRowType == childType) {
                         if (keepChild) {
-                            addToPending();
+                            addToPending(inputRow);
                         }
                         if (parent.isNotNull() && parent.get().ancestorOf(inputRow)) {
                             // child is not an orphan
@@ -176,16 +194,19 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                             generateRightJoinRow(inputRow);
                         }
                     } else {
-                        addToPending();
+                        addToPending(inputRow);
                         if (parent.isNotNull() && !parent.get().ancestorOf(inputRow)) {
-                            // We're past all descendents of the current parent
+                            // We're past all descendants of the current parent
+                            if (childlessParent) {
+                                generateLeftJoinRow(parent.get());
+                            }
                             parent.set(null);
                         }
                     }
                 }
-                outputRow(pending.take());
+                outputRow = pending.take();
             }
-            return outputRow() != null;
+            return outputRow;
         }
 
         @Override
@@ -200,6 +221,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
+            this.adapter = adapter;
             this.input = input;
         }
 
@@ -209,14 +231,15 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         {
             assert parent != null;
             assert child != null;
-            pending.add(new FlattenedRow(flattenType, parent, child));
+            pending.add(new FlattenedRow(flattenType, parent, child, child.hKey()));
         }
 
         private void generateLeftJoinRow(Row parent)
         {
             assert parent != null;
             if (leftJoin) {
-                pending.add(new FlattenedRow(flattenType, parent, null));
+                HKey hKey = leftJoinShortensHKey ? parent.hKey() : leftJoinHKey(parent.hKey());
+                pending.add(new FlattenedRow(flattenType, parent, null, hKey));
             }
         }
 
@@ -224,17 +247,35 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         {
             assert child != null;
             if (rightJoin) {
-                pending.add(new FlattenedRow(flattenType, null, child));
+                pending.add(new FlattenedRow(flattenType, null, child, child.hKey()));
             }
         }
 
-        private void addToPending()
+        private void addToPending(Row row)
         {
-            pending.add(input.currentRow());
+            pending.add(row);
+        }
+
+        private HKey leftJoinHKey(HKey parentHKey)
+        {
+            if (parentHKey.segments() < parentHKeySegments) {
+                throw new IncompatibleRowException(
+                    String.format("%s: parent hkey %s has been shortened by an earlier Flatten, " +
+                                  "so this Flatten should specify LEFT_JOIN_SHORTENS_HKEY also",
+                                  this, parentHKey));
+            }
+            HKey childHKey = adapter.newHKey(childType);
+            parentHKey.copyTo(childHKey);
+            childHKey.extendWithOrdinal(childOrdinal);
+            for (int i = 0; i < nChildHKeySegmentFields; i++) {
+                childHKey.extendWithNull();
+            }
+            return childHKey;
         }
 
         // Object state
 
+        private final StoreAdapter adapter;
         private final Cursor input;
         private final RowHolder<Row> parent = new RowHolder<Row>();
         private final PendingRows pending = new PendingRows(MAX_PENDING);

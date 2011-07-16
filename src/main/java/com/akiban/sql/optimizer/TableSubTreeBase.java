@@ -20,6 +20,7 @@ import com.akiban.sql.StandardException;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
+import com.akiban.server.RowDef;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -54,6 +55,10 @@ public class TableSubTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
 
         public int getDepth() {
             return table.getDepth();
+        }
+
+        public int getOrdinal() {
+            return ((RowDef)table.rowDef()).getOrdinal();
         }
 
         /** Is <code>this</code> an ancestor of <code>other</code>? */
@@ -103,10 +108,10 @@ public class TableSubTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
     }
 
     static class NodeIterator<T extends TableNodeBase<T>> implements Iterator<T> {
-        private T next;
+        private T root, next;
 
         NodeIterator(T root) {
-            next = root;
+            this.next = this.root = root;
         }
 
         public boolean hasNext() {
@@ -118,11 +123,10 @@ public class TableSubTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
             next = onext.getFirstChild();
             if (next == null) {
                 T node = onext;
-                while (true) {
+                while (node != root) {
                     next = node.getNextSibling();
                     if (next != null) break;
                     node = node.getParent();
-                    if (node == null) break;
                 }
             }
             return onext;

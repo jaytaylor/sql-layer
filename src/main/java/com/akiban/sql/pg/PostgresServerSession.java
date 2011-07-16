@@ -15,10 +15,14 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.StandardException;
+
 import com.akiban.sql.parser.SQLParser;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.qp.physicaloperator.StoreAdapter;
 import com.akiban.server.service.ServiceManager;
+import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
 
 import java.util.Properties;
@@ -69,5 +73,20 @@ public interface PostgresServerSession
     
     /** Return a parser for SQL statements. */
     public SQLParser getParser();
+    
+    /** Return the object used to trace pg sessions. */
+    public SessionTracer getSessionTracer();
+
+    /** Return an adapter for the session's store. */
+    public StoreAdapter getStore();
+
+    /** Begin a new transaction. */
+    public void beginTransaction() throws StandardException;
+
+    /** Commit the current transaction. */
+    public void commitTransaction() throws StandardException;
+
+    /** Rollback the current transaction. */
+    public void rollbackTransaction() throws StandardException;
 
 }

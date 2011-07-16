@@ -15,6 +15,8 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.util.Tap;
+
 import java.io.*;
 import java.util.*;
 
@@ -75,6 +77,10 @@ public class PostgresMessenger implements DataInput, DataOutput
     public static final int AUTHENTICATION_SSPI = 9;
     public static final int AUTHENTICATION_GSS_CONTINUE = 8;
 
+    private final static Tap waitTap = Tap.add(new Tap.PerThread("sql: msg: wait", Tap.TimeAndCount.class));
+    private final static Tap recvTap = Tap.add(new Tap.PerThread("sql: msg: recv", Tap.TimeAndCount.class));
+    private final static Tap xmitTap = Tap.add(new Tap.PerThread("sql: msg: xmit", Tap.TimeAndCount.class));
+
     private InputStream inputStream;
     private OutputStream outputStream;
     private DataInputStream dataInput;
@@ -123,20 +129,33 @@ public class PostgresMessenger implements DataInput, DataOutput
     /** Read the next message from the stream, starting with the message type opcode. */
     protected int readMessage(boolean hasType) throws IOException {
         int type;
-        if (hasType)
-            type = dataInput.read();
+        if (hasType) {
+            try {
+                waitTap.in();
+                type = dataInput.read();
+            }
+            finally {
+                waitTap.out();
+            }
+        }
         else
             type = STARTUP_MESSAGE_TYPE;
         if (type < 0) 
             return type;                            // EOF
-        int len = dataInput.readInt();
-        len -= 4;
-        if ((len < 0) || (len > 0x8000))
-            throw new IOException(String.format("Implausible message length (%d) received.", len));
-        byte[] msg = new byte[len];
-        dataInput.readFully(msg, 0, len);
-        messageInput = new DataInputStream(new ByteArrayInputStream(msg));
-        return type;
+        try {
+            recvTap.in();
+            int len = dataInput.readInt();
+            len -= 4;
+            if ((len < 0) || (len > 0x8000))
+                throw new IOException(String.format("Implausible message length (%d) received.", len));
+            byte[] msg = new byte[len];
+            dataInput.readFully(msg, 0, len);
+            messageInput = new DataInputStream(new ByteArrayInputStream(msg));
+            return type;
+        }
+        finally {
+            recvTap.out();
+        }
     }
 
     /** Begin outgoing message of given type. */
@@ -161,7 +180,15 @@ public class PostgresMessenger implements DataInput, DataOutput
         msg[3] = (byte)(len >> 8);
         msg[4] = (byte)len;
         outputStream.write(msg);
-        if (flush) outputStream.flush();
+        if (flush) {
+            try {
+                xmitTap.in();
+                outputStream.flush();
+            }
+            finally {
+                xmitTap.out();
+            }
+        }
     }
 
     /** Read null-terminated string. */

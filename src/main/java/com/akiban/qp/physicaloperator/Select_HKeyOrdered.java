@@ -19,6 +19,7 @@ import com.akiban.qp.expression.Expression;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.util.ArgumentValidation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,10 +56,12 @@ class Select_HKeyOrdered extends PhysicalOperator
         return describePlan(inputOperator);
     }
 
-    // GroupScan_Default interface
+    // Select_HKeyOrdered interface
 
     public Select_HKeyOrdered(PhysicalOperator inputOperator, RowType predicateRowType, Expression predicate)
     {
+        ArgumentValidation.notNull("predicateRowType", predicateRowType);
+        ArgumentValidation.notNull("predicate", predicate);
         this.inputOperator = inputOperator;
         this.predicateRowType = predicateRowType;
         this.predicate = predicate;
@@ -72,7 +75,7 @@ class Select_HKeyOrdered extends PhysicalOperator
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // Cursor interface
 
@@ -84,33 +87,32 @@ class Select_HKeyOrdered extends PhysicalOperator
         }
 
         @Override
-        public boolean next()
+        public Row next()
         {
-            outputRow(null);
-            boolean moreInput = input.next();
-            while (outputRow() == null && moreInput) {
-                Row inputRow = input.currentRow();
+            Row row = null;
+            Row inputRow = input.next();
+            while (row == null && inputRow != null) {
                 if (inputRow.rowType() == predicateRowType) {
                     // New row of predicateRowType
                     if ((Boolean) predicate.evaluate(inputRow, bindings)) {
                         selectedRow.set(inputRow);
-                        outputRow(selectedRow.get());
+                        row = inputRow;
                     }
                 } else if (predicateRowType.ancestorOf(inputRow.rowType())) {
                     // Row's type is a descendent of predicateRowType.
                     if (selectedRow.isNotNull() && selectedRow.get().ancestorOf(inputRow)) {
-                        outputRow(inputRow);
+                        row = inputRow;
                     } else {
                         selectedRow.set(null);
                     }
                 } else {
-                    outputRow(inputRow);
+                    row = inputRow;
                 }
-                if (outputRow() == null) {
-                    moreInput = input.next();
+                if (row == null) {
+                    inputRow = input.next();
                 }
             }
-            return outputRow() != null;
+            return row;
         }
 
         @Override

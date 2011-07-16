@@ -17,7 +17,7 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
@@ -31,18 +31,14 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.GenericInvalidOperationException;
-import com.akiban.server.api.dml.ConstantColumnSelector;
-import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Exchange;
-import com.persistit.Key;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
@@ -54,11 +50,11 @@ public class PersistitAdapter extends StoreAdapter
     // StoreAdapter interface
 
     @Override
-    public GroupCursor newGroupCursor(GroupTable groupTable, IndexKeyRange indexKeyRange)
+    public GroupCursor newGroupCursor(GroupTable groupTable)
     {
         GroupCursor cursor;
         try {
-            cursor = new PersistitGroupCursor(this, groupTable, indexKeyRange);
+            cursor = new PersistitGroupCursor(this, groupTable);
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }
@@ -66,11 +62,11 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public Cursor newIndexCursor(TableIndex index, boolean reverse, IndexKeyRange keyRange)
+    public Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange, UserTable innerJoinUntil)
     {
         Cursor cursor;
         try {
-            cursor = new PersistitIndexCursor(this, schema.indexRowType(index), reverse, keyRange);
+            cursor = new PersistitIndexCursor(this, schema.indexRowType(index), reverse, keyRange, innerJoinUntil);
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }
@@ -121,12 +117,12 @@ public class PersistitAdapter extends StoreAdapter
 
     public Exchange takeExchange(GroupTable table) throws PersistitException
     {
-        return transact(persistit.getExchange(session, (RowDef) table.rowDef(), null));
+        return transact(persistit.getExchange(session, (RowDef) table.rowDef()));
     }
 
     public Exchange takeExchange(Index index) throws PersistitException
     {
-        return transact(persistit.getExchange(session, null, (IndexDef) index.indexDef()));
+        return transact(persistit.getExchange(session, index));
     }
 
     @Override

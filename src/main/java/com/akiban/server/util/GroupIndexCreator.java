@@ -31,7 +31,7 @@ public class GroupIndexCreator {
 
     /**
      * Helper function for converting a simple group index specification into an
-     * actual GroupIndex. This can then be passed to DDLFunctions.createGroupIndex().
+     * actual, non-unique GroupIndex. This can then be passed to DDLFunctions.createGroupIndex().
      *
      * @param ais AIS that contains referenced group and tables.
      * @param groupName Name of the group to add index too
@@ -42,6 +42,23 @@ public class GroupIndexCreator {
      */
     public static GroupIndex createIndex(AkibanInformationSchema ais, String groupName, String indexName,
                                          String tableColumnList) throws GroupIndexCreatorException {
+        return createIndex(ais, groupName, indexName, false, tableColumnList);
+    }
+
+    /**
+     * Helper function for converting a simple group index specification into an
+     * actual GroupIndex. This can then be passed to DDLFunctions.createGroupIndex().
+     *
+     * @param ais AIS that contains referenced group and tables.
+     * @param groupName Name of the group to add index too
+     * @param indexName Name of the new index to create
+     * @param unique whether the group index is UNIQUE
+     * @param tableColumnList Comma separated list of tableName.columnName pairs.
+     * @return GroupIndex representation of the requested
+     * @throws GroupIndexCreatorException For any error
+     */
+    public static GroupIndex createIndex(AkibanInformationSchema ais, String groupName, String indexName,
+                                         boolean unique, String tableColumnList) throws GroupIndexCreatorException {
         final Group group = ais.getGroup(groupName);
         if(group == null) {
             throw new GroupIndexCreatorException("Unknown group: " + groupName);
@@ -53,7 +70,7 @@ public class GroupIndexCreator {
         final String tableColPairs[] = tableColumnList.split(",");
 
         int pos = 0;
-        final GroupIndex tmpIndex = new GroupIndex(group, indexName, 0, false, "KEY");
+        final GroupIndex tmpIndex = new GroupIndex(group, indexName, 0, unique, "KEY");
         for(String tableCol : tableColPairs) {
             int period = tableCol.indexOf('.');
             if(period == -1) {

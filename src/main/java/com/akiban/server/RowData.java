@@ -16,6 +16,7 @@
 package com.akiban.server;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
@@ -177,7 +178,7 @@ public class RowData {
                 throw new CorruptRowDataException("Invalid record length: "
                         + recordLength + " at offset: " + offset);
             }
-            if (AkServerUtil.getChar(bytes, O_SIGNATURE_A + offset) != SIGNATURE_A) {
+            if (AkServerUtil.getUShort(bytes, O_SIGNATURE_A + offset) != SIGNATURE_A) {
                 throw new CorruptRowDataException(
                         "Invalid signature at offset: " + offset);
             }
@@ -188,7 +189,7 @@ public class RowData {
                         "Invalid trailing record length " + trailingLength
                                 + " in record at offset: " + offset);
             }
-            if (AkServerUtil.getChar(bytes, offset + recordLength
+            if (AkServerUtil.getUShort(bytes, offset + recordLength
                     + O_SIGNATURE_B) != SIGNATURE_B) {
                 throw new CorruptRowDataException(
                         "Invalid signature at offset: " + offset);
@@ -246,7 +247,7 @@ public class RowData {
     }
 
     public int getFieldCount() {
-        return AkServerUtil.getChar(bytes, rowStart + O_FIELD_COUNT);
+        return AkServerUtil.getUShort(bytes, rowStart + O_FIELD_COUNT);
     }
 
     public int getRowDefId() {
@@ -281,22 +282,25 @@ public class RowData {
     }
 
     public long getIntegerValue(final int offset, final int width) {
-        if (offset < rowStart || offset + width >= rowEnd) {
-            throw new IllegalArgumentException(String.format("Bad location: {offset=%d width=%d start=%d end=%d}",
-                    offset, width, rowStart, rowEnd));
-        }
+        checkOffsetAndWidth(offset, width);
+        return AkServerUtil.getSignedIntegerByWidth(bytes, offset, width);
+    }
+
+    public long getUnsignedIntegerValue(final int offset, final int width) {
+        checkOffsetAndWidth(offset, width);
         return AkServerUtil.getUnsignedIntegerByWidth(bytes, offset, width);
     }
 
-    public String getStringValue(final int offset, final int width,
-            final FieldDef fieldDef) {
+    public BigInteger getUnsignedLongValue(final int offset, final int width) {
+        checkOffsetAndWidth(offset, width);
+        return AkServerUtil.getULong(bytes, offset);
+    }
+
+    public String getStringValue(final int offset, final int width, final FieldDef fieldDef) {
         if (offset == 0 && width == 0) {
             return null;
         }
-        if (offset < rowStart || offset + width >= rowEnd) {
-            throw new IllegalArgumentException("Bad location: " + offset + ":"
-                    + width);
-        }
+        checkOffsetAndWidth(offset, width);
         return AkServerUtil.decodeMySQLString(bytes, offset, width, fieldDef);
     }
 
@@ -304,11 +308,15 @@ public class RowData {
         if (offset == 0 && width == 0) {
             return null;
         }
-        if (offset < rowStart || offset + width >= rowEnd) {
-            throw new IllegalArgumentException("Bad location: " + offset + ":"
-                    + width);
-        }
+        checkOffsetAndWidth(offset, width);
         return AkServerUtil.byteBufferForMySQLString(bytes, offset, width, fieldDef);
+    }
+
+    private void checkOffsetAndWidth(int offset, int width) {
+        if (offset < rowStart || offset + width >= rowEnd) {
+            throw new IllegalArgumentException(String.format("Bad location: {offset=%d width=%d start=%d end=%d}",
+                    offset, width, rowStart, rowEnd));
+        }
     }
 
     public int setupNullMap(BitSet nullMap, int nullMapOffset,
@@ -336,9 +344,9 @@ public class RowData {
         final int fieldCount = rowDef.getFieldCount();
         int offset = rowStart;
 
-        AkServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
+        AkServerUtil.putShort(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
         AkServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
-        AkServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
+        AkServerUtil.putShort(bytes, offset + O_FIELD_COUNT, fieldCount);
 
         offset = setupNullMap(nullMap, nullMapOffset, offset, fieldCount);
         // If the row is a projection, then the field array list is less than
@@ -358,7 +366,7 @@ public class RowData {
             }
         }
 
-        AkServerUtil.putChar(bytes, offset, SIGNATURE_B);
+        AkServerUtil.putShort(bytes, offset, SIGNATURE_B);
         offset += 6;
         final int length = offset - rowStart;
         AkServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);
@@ -416,9 +424,9 @@ public class RowData {
             throw new IllegalArgumentException("Too many values.");
         }
         int offset = rowStart;
-        AkServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
+        AkServerUtil.putShort(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
         AkServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
-        AkServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
+        AkServerUtil.putShort(bytes, offset + O_FIELD_COUNT, fieldCount);
         offset = offset + O_NULL_MAP;
         for (int index = 0; index < fieldCount; index += 8) {
             int b = 0;
@@ -467,7 +475,7 @@ public class RowData {
                         AkServerUtil.putByte(bytes, offset, (byte) vlength);
                         break;
                     case 2:
-                        AkServerUtil.putChar(bytes, offset, (char) vlength);
+                        AkServerUtil.putShort(bytes, offset, (char) vlength);
                         break;
                     case 3:
                         AkServerUtil.putMediumInt(bytes, offset, (int) vlength);
@@ -488,7 +496,7 @@ public class RowData {
                 }
             }
         }
-        AkServerUtil.putChar(bytes, offset, SIGNATURE_B);
+        AkServerUtil.putShort(bytes, offset, SIGNATURE_B);
         offset += 6;
         final int length = offset - rowStart;
         AkServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);

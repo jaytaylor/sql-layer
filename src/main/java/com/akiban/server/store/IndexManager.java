@@ -15,7 +15,7 @@
 
 package com.akiban.server.store;
 
-import com.akiban.server.IndexDef;
+import com.akiban.ais.model.Index;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.TableStatistics;
@@ -24,20 +24,18 @@ import com.persistit.exception.PersistitException;
 
 public interface IndexManager {
 
-    public abstract void analyzeTable(final Session session, final RowDef rowDef)
+    public void analyzeTable(final Session session, final RowDef rowDef)
             throws Exception;
 
-    public abstract void analyzeTable(final Session session,
-            final RowDef rowDef, final int sampleSize) throws Exception;
+    public void analyzeTable(final Session session, final RowDef rowDef, final int sampleSize)
+            throws Exception;
 
-    public abstract void deleteIndexAnalysis(final Session session,
-            final IndexDef indexDef) throws PersistitException;
+    public void deleteIndexAnalysis(final Session session, final Index index)
+            throws PersistitException;
 
-    public abstract void analyzeIndex(final Session session,
-            final IndexDef indexDef, final int sampleSize)
+    public void analyzeIndex(final Session session, final Index index, final int sampleSize)
             throws InvalidOperationException, PersistitException;
 
-    public abstract void populateTableStatistics(final Session session,
-            final TableStatistics tableStatistics) throws Exception;
-
+    public void populateTableStatistics(final Session session, final TableStatistics tableStatistics)
+            throws Exception;
 }

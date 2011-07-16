@@ -19,6 +19,7 @@ import com.akiban.server.FieldDef;
 import com.akiban.server.Quote;
 import com.akiban.server.RowData;
 import com.akiban.util.AkibanAppender;
+import com.persistit.Key;
 
 abstract class EncodingBase<T> implements Encoding<T> {
     EncodingBase() {
@@ -43,6 +44,12 @@ abstract class EncodingBase<T> implements Encoding<T> {
         } catch (EncodingException e) {
             sb.append("null");
         }
+    }
+
+    @Override
+    public T toObject(Key key) {
+        Object o = key.decode();
+        return getToObjectClass().cast(o);
     }
 
     @Override

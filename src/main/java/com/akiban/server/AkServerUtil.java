@@ -19,259 +19,162 @@ import com.akiban.util.AkibanAppender;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryUsage;
 import java.lang.management.RuntimeMXBean;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
 public class AkServerUtil {
-
-    private final static boolean BIG_ENDIAN = false;
 
     private final static char[] HEX_DIGITS = { '0', '1', '2', '3', '4', '5',
             '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
     public final static String NEW_LINE = System.getProperty("line.separator");
 
-    public static long getSignedIntegerByWidth(final byte[] bytes,
-            final int index, final int width) {
+    private static String UNEXPECTED_SIGNED_WIDTH_MSG = "Width must be 0,1,2,3,4 or 8 but was: ";
+    private static String UNEXPECTED_UNSIGNED_WIDTH_MSG = "Width must be 0,1,2,3, or 4 but was: ";
+
+
+    public static long getSignedIntegerByWidth(final byte[] bytes, final int index, final int width) {
         switch (width) {
-        case 0:
-            return 0;
-        case 1:
-            return (byte) bytes[index];
-        case 2:
-            return (short) getShort(bytes, index);
-        case 3:
-            return getMediumInt(bytes, index);
-        case 4:
-            return (int) getInt(bytes, index);
-        case 8:
-            return getLong(bytes, index);
-        default:
-            throw new IllegalArgumentException(
-                    "Width must be 0,2,3,4 or 8 but is: " + width);
+            case 0: return 0;
+            case 1: return bytes[index];
+            case 2: return getShort(bytes, index);
+            case 3: return getMediumInt(bytes, index);
+            case 4: return getInt(bytes, index);
+            case 8: return getLong(bytes, index);
         }
+
+        throw new IllegalArgumentException(UNEXPECTED_SIGNED_WIDTH_MSG + width);
     }
 
-    public static long getUnsignedIntegerByWidth(final byte[] bytes,
-            final int index, final int width) {
+    public static long getUnsignedIntegerByWidth(final byte[] bytes, final int index, final int width) {
         switch (width) {
-        case 0:
-            return 0;
-        case 1:
-            return getByte(bytes, index) & 0xFF;
-        case 2:
-            return getChar(bytes, index) & 0xFFFF;
-        case 3:
-            return getMediumInt(bytes, index) & 0xFFFFFF;
-        case 4:
-            return getInt(bytes, index) & 0xFFFFFFFF;
-        case 8:
-            return getLong(bytes, index); // TODO
-            // throw new UnsupportedOperationException(
-            // "Currently can't handle unsigned 64-bit integers");
-        default:
-            throw new IllegalArgumentException(
-                    "Width must be 0,1,2,3,4 or 8 but is: " + width);
+            case 0: return 0;
+            case 1: return getUByte(bytes, index);
+            case 2: return getUShort(bytes, index);
+            case 3: return getUMediumInt(bytes, index);
+            case 4: return getUInt(bytes, index);
+            //case 8: return getULong(bytes, index); // Returns BigInteger, must call directly
         }
+        
+        throw new IllegalArgumentException(UNEXPECTED_UNSIGNED_WIDTH_MSG + width);
     }
 
-    public static int getByte(byte[] bytes, int index) {
-        return (bytes[index + 0] & 0xFF);
+    /**
+     * Write an integer into a byte array.
+     * @param destination Byte buffer to write into
+     * @param destinationIndex Position in destination to write at
+     * @param width Width of integer (= number of bytes to write)
+     * @param value Value to write
+     * @return The number of bytes written
+     */
+    public static int putIntegerByWidth(byte[] destination, int destinationIndex, int width, long value) {
+        switch (width) {
+            case 0: break;
+            case 1: putByte(destination, destinationIndex, (byte)value);     break;
+            case 2: putShort(destination, destinationIndex, (short)value);   break;
+            case 3: putMediumInt(destination, destinationIndex, (int)value); break;
+            case 4: putInt(destination, destinationIndex, (int)value);       break;
+            case 8: putLong(destination, destinationIndex, value);           break;
+            default:
+                throw new IllegalArgumentException(UNEXPECTED_SIGNED_WIDTH_MSG + width);
+        }
+        return width;
     }
 
-    public static int getShort(byte[] bytes, int index) {
-        if (BIG_ENDIAN) {
-            return (short) ((bytes[index + 1] & 0xFF) | (bytes[index + 0]) << 8);
-        } else {
-            return (short) ((bytes[index + 0] & 0xFF) | (bytes[index + 1]) << 8);
-        }
+    public static byte getByte(byte[] bytes, int index) {
+        return bytes[index];
     }
 
-    public static int getChar(byte[] bytes, int index) {
-        if (BIG_ENDIAN) {
-            return (bytes[index + 1] & 0xFF) | (bytes[index + 0] & 0xFF) << 8;
-        } else {
-            return (bytes[index + 0] & 0xFF) | (bytes[index + 1] & 0xFF) << 8;
-        }
+    public static short getUByte(byte[] bytes, int index) {
+        return (short) (bytes[index] & 0xFF);
+    }
+
+    public static short getShort(byte[] bytes, int index) {
+        return (short) ((bytes[index] & 0xFF) | (bytes[index+1] & 0xFF) << 8);
+    }
+
+    public static int getUShort(byte[] bytes, int index) {
+        return getShort(bytes, index) & 0xFFFF;
     }
 
     public static int getMediumInt(byte[] bytes, int index) {
-        if (BIG_ENDIAN) {
-            return (bytes[index + 2] & 0xFF) | (bytes[index + 1] & 0xFF) << 8
-                    | (bytes[index + 0] & 0xFF) << 16;
-        } else {
-            return (bytes[index + 0] & 0xFF) | (bytes[index + 1] & 0xFF) << 8
-                    | (bytes[index + 2] & 0xFF) << 16;
-        }
+        final int value = getUMediumInt(bytes, index);
+        // Negative values have bit 23 set so the sign extension promotes to 32bit representation
+        return (value << 8) >> 8;
+    }
+
+    public static int getUMediumInt(byte[] bytes, int index) {
+        return (bytes[index] & 0xFF)
+                | (bytes[index + 1] & 0xFF) << 8
+                | (bytes[index + 2] & 0xFF) << 16;
     }
 
     public static int getInt(byte[] bytes, int index) {
-        if (BIG_ENDIAN) {
-            return (bytes[index + 3] & 0xFF) | (bytes[index + 2] & 0xFF) << 8
-                    | (bytes[index + 1] & 0xFF) << 16
-                    | (bytes[index + 0] & 0xFF) << 24;
-        } else {
-            return (bytes[index + 0] & 0xFF) | (bytes[index + 1] & 0xFF) << 8
-                    | (bytes[index + 2] & 0xFF) << 16
-                    | (bytes[index + 3] & 0xFF) << 24;
-        }
+        return (bytes[index] & 0xFF)
+                | (bytes[index + 1] & 0xFF) << 8
+                | (bytes[index + 2] & 0xFF) << 16
+                | (bytes[index + 3] & 0xFF) << 24;
+    }
+
+    public static long getUInt(byte[] bytes, int index) {
+        return getInt(bytes, index) & 0xFFFFFFFFL;
     }
 
     public static long getLong(byte[] bytes, int index) {
-        if (BIG_ENDIAN) {
-            return (long) (bytes[index + 7] & 0xFF)
-                    | (long) (bytes[index + 6] & 0xFF) << 8
-                    | (long) (bytes[index + 5] & 0xFF) << 16
-                    | (long) (bytes[index + 4] & 0xFF) << 24
-                    | (long) (bytes[index + 3] & 0xFF) << 32
-                    | (long) (bytes[index + 2] & 0xFF) << 40
-                    | (long) (bytes[index + 1] & 0xFF) << 48
-                    | (long) (bytes[index + 0] & 0xFF) << 56;
-        } else {
-            return (long) (bytes[index + 0] & 0xFF)
-                    | (long) (bytes[index + 1] & 0xFF) << 8
-                    | (long) (bytes[index + 2] & 0xFF) << 16
-                    | (long) (bytes[index + 3] & 0xFF) << 24
-                    | (long) (bytes[index + 4] & 0xFF) << 32
-                    | (long) (bytes[index + 5] & 0xFF) << 40
-                    | (long) (bytes[index + 6] & 0xFF) << 48
-                    | (long) (bytes[index + 7] & 0xFF) << 56;
-        }
+        return (bytes[index] & 0xFFL)
+                | (bytes[index + 1] & 0xFFL) << 8
+                | (bytes[index + 2] & 0xFFL) << 16
+                | (bytes[index + 3] & 0xFFL) << 24
+                | (bytes[index + 4] & 0xFFL) << 32
+                | (bytes[index + 5] & 0xFFL) << 40
+                | (bytes[index + 6] & 0xFFL) << 48
+                | (bytes[index + 7] & 0xFFL) << 56;
     }
 
-    public static float getFloat(byte[] bytes, int index) {
-        return Float.intBitsToFloat(getInt(bytes, index));
+    public static BigInteger getULong(byte[] bytes, int index) {
+        byte longBytes[] = {bytes[index+7],
+                            bytes[index+6], 
+                            bytes[index+5],
+                            bytes[index+4],
+                            bytes[index+3],
+                            bytes[index+2],
+                            bytes[index+1],
+                            bytes[index]};
+        return new BigInteger(1, longBytes);
     }
 
-    public static double getDouble(byte[] bytes, int index) {
-        return Double.longBitsToDouble(getLong(bytes, index));
-    }
-
-    public static int putByte(byte[] bytes, int index, int value) {
+    public static void putByte(byte[] bytes, int index, int value) {
         bytes[index] = (byte) (value);
-        return index + 1;
     }
 
-    public static int putShort(byte[] bytes, int index, int value) {
-        if (BIG_ENDIAN) {
-            bytes[index + 1] = (byte) (value);
-            bytes[index + 0] = (byte) (value >>> 8);
-        } else {
-            bytes[index + 0] = (byte) (value);
-            bytes[index + 1] = (byte) (value >>> 8);
-        }
-        return index + 2;
+    public static void putShort(byte[] bytes, int index, int value) {
+        bytes[index]     = (byte) (value);
+        bytes[index + 1] = (byte) (value >>> 8);
     }
 
-    public static int putChar(byte[] bytes, int index, int value) {
-        if (BIG_ENDIAN) {
-            bytes[index + 1] = (byte) (value);
-            bytes[index + 0] = (byte) (value >>> 8);
-        } else {
-            bytes[index + 0] = (byte) (value);
-            bytes[index + 1] = (byte) (value >>> 8);
-        }
-        return index + 2;
+    public static void putMediumInt(byte[] bytes, int index, int value) {
+        bytes[index]     = (byte) (value);
+        bytes[index + 1] = (byte) (value >>> 8);
+        bytes[index + 2] = (byte) (value >>> 16);
     }
 
-    public static int putMediumInt(byte[] bytes, int index, int value) {
-        if (BIG_ENDIAN) {
-            bytes[index + 2] = (byte) (value);
-            bytes[index + 1] = (byte) (value >>> 8);
-            bytes[index + 0] = (byte) (value >>> 16);
-        } else {
-            bytes[index + 0] = (byte) (value);
-            bytes[index + 1] = (byte) (value >>> 8);
-            bytes[index + 2] = (byte) (value >>> 16);
-        }
-        return index + 3;
+    public static void putInt(byte[] bytes, int index, int value) {
+        bytes[index]     = (byte) (value);
+        bytes[index + 1] = (byte) (value >>> 8);
+        bytes[index + 2] = (byte) (value >>> 16);
+        bytes[index + 3] = (byte) (value >>> 24);
     }
 
-    public static int putInt(byte[] bytes, int index, int value) {
-        if (BIG_ENDIAN) {
-            bytes[index + 3] = (byte) (value);
-            bytes[index + 2] = (byte) (value >>> 8);
-            bytes[index + 1] = (byte) (value >>> 16);
-            bytes[index + 0] = (byte) (value >>> 24);
-        } else {
-            bytes[index + 0] = (byte) (value);
-            bytes[index + 1] = (byte) (value >>> 8);
-            bytes[index + 2] = (byte) (value >>> 16);
-            bytes[index + 3] = (byte) (value >>> 24);
-        }
-        return index + 4;
-    }
-
-    public static int putLong(byte[] bytes, int index, long value) {
-        if (BIG_ENDIAN) {
-            bytes[index + 7] = (byte) (value);
-            bytes[index + 6] = (byte) (value >>> 8);
-            bytes[index + 5] = (byte) (value >>> 16);
-            bytes[index + 4] = (byte) (value >>> 24);
-            bytes[index + 3] = (byte) (value >>> 32);
-            bytes[index + 2] = (byte) (value >>> 40);
-            bytes[index + 1] = (byte) (value >>> 48);
-            bytes[index + 0] = (byte) (value >>> 56);
-        } else {
-            bytes[index + 0] = (byte) (value);
-            bytes[index + 1] = (byte) (value >>> 8);
-            bytes[index + 2] = (byte) (value >>> 16);
-            bytes[index + 3] = (byte) (value >>> 24);
-            bytes[index + 4] = (byte) (value >>> 32);
-            bytes[index + 5] = (byte) (value >>> 40);
-            bytes[index + 6] = (byte) (value >>> 48);
-            bytes[index + 7] = (byte) (value >>> 56);
-        }
-        return index + 8;
-    }
-
-    public static int putFloat(byte[] bytes, int index, float value) {
-        return putInt(bytes, index, Float.floatToIntBits(value));
-    }
-
-    public static int putDouble(byte[] bytes, int index, double value) {
-        return putLong(bytes, index, Double.doubleToLongBits(value));
-    }
-
-    public static int putBytes(byte[] bytes, int index, byte[] value) {
-        System.arraycopy(value, 0, bytes, index, value.length);
-        return index + value.length;
-    }
-
-    public static int putBytes(byte[] bytes, int index, byte[] value,
-            int offset, int length) {
-        System.arraycopy(value, offset, bytes, index, length);
-        return index + length;
-    }
-
-    public static String dump(char[] c, int offset, int size) {
-        StringBuilder sb1 = new StringBuilder();
-        StringBuilder sb2 = new StringBuilder();
-        for (int m = 0; m < size - offset; m += 8) {
-            sb2.setLength(0);
-            hex(sb1, m, 4);
-            sb1.append(":");
-            for (int i = 0; i < 8; i++) {
-                sb1.append("  ");
-                if (i % 4 == 0)
-                    sb1.append(" ");
-                int j = m + i;
-                if (j < size - offset) {
-                    hex(sb1, c[j + offset], 4);
-                    if (c[j + offset] >= 32 && c[j] < 127)
-                        sb2.append(c[j]);
-                    else
-                        sb2.append(".");
-                } else
-                    sb1.append("    ");
-            }
-            sb1.append("    ");
-            sb1.append(sb2.toString());
-            sb1.append(NEW_LINE);
-        }
-        return sb1.toString();
+    public static void putLong(byte[] bytes, int index, long value) {
+        bytes[index]     = (byte) (value);
+        bytes[index + 1] = (byte) (value >>> 8);
+        bytes[index + 2] = (byte) (value >>> 16);
+        bytes[index + 3] = (byte) (value >>> 24);
+        bytes[index + 4] = (byte) (value >>> 32);
+        bytes[index + 5] = (byte) (value >>> 40);
+        bytes[index + 6] = (byte) (value >>> 48);
+        bytes[index + 7] = (byte) (value >>> 56);
     }
 
     public static String dump(byte[] b, int offset, int size) {
@@ -375,12 +278,11 @@ public class AkServerUtil {
      * bytes as a little-endian string size and constructs a string from the
      * remaining bytes.
      * 
-     * TODO: does not handle non US-ASCII character sets.
-     * 
-     * @param bytes
-     * @param offset
-     * @param width
-     * @return
+     * @param bytes Byte array to read string from
+     * @param offset Position within bytes to start at
+     * @param width Number of available bytes 
+     * @param fieldDef Corresponding field
+     * @return The decoded string.
      */
     public static String decodeMySQLString(byte[] bytes, final int offset,
             final int width, final FieldDef fieldDef) {
@@ -418,26 +320,8 @@ public class AkServerUtil {
         }
 
         final int prefixSize = fieldDef.getPrefixSize();
-        int length;
-        switch (prefixSize) {
-            case 0:
-                length = 0;
-                break;
-            case 1:
-                length = getByte(bytes, offset);
-                break;
-            case 2:
-                length = getChar(bytes, offset);
-                break;
-            case 3:
-                length = getMediumInt(bytes, offset);
-                break;
-            case 4:
-                length = getInt(bytes, offset);
-                break;
-            default:
-                throw new Error("No such case");
-        }
+        int length = (int) getUnsignedIntegerByWidth(bytes, offset, prefixSize);
+        
         if (length > width) {
             throw new IllegalArgumentException(String.format(
                     "String is wider than available bytes: %d > %d", length, width));
@@ -449,16 +333,6 @@ public class AkServerUtil {
     public static int varWidth(final int length) {
         return length == 0 ? 0 : length < 0x100 ? 1 : length < 0x10000 ? 2
                 : length < 0x1000000 ? 3 : 4;
-    }
-
-    public static long availableMemory() {
-        final MemoryUsage mu = ManagementFactory.getMemoryMXBean()
-                .getHeapMemoryUsage();
-        long max = mu.getMax();
-        if (max == -1) {
-            max = mu.getInit();
-        }
-        return max;
     }
     
     public static boolean equals(final Object a, final Object b) {

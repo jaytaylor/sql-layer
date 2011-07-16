@@ -17,17 +17,17 @@ package com.akiban.sql.pg;
 
 import com.akiban.sql.StandardException;
 
-import com.akiban.ais.model.Column;
 import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.ArrayBindings;
+import com.akiban.qp.physicaloperator.BindingNotSetException;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
+import com.akiban.qp.physicaloperator.IncompatibleRowException;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.StoreAdapter;
+import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.service.session.Session;
 
 import java.util.*;
 import java.io.IOException;
@@ -38,34 +38,28 @@ import java.io.IOException;
  */
 public class PostgresOperatorStatement extends PostgresBaseStatement
 {
-    private StoreAdapter store;
     private PhysicalOperator resultOperator;
-    private RowType resultRowType;
-    private int[] resultColumnOffsets;
     private int offset = 0;
     private int limit = -1;
         
-    public PostgresOperatorStatement(StoreAdapter store,
-                                     PhysicalOperator resultOperator,
-                                     RowType resultRowType,
-                                     List<Column> resultColumns,
-                                     int[] resultColumnOffsets,
+    public PostgresOperatorStatement(PhysicalOperator resultOperator,
+                                     List<String> columnNames,
+                                     List<PostgresType> columnTypes,
+                                     PostgresType[] parameterTypes,
                                      int offset,
                                      int limit) {
-        super(resultColumns);
-        this.store = store;
+        super(columnNames, columnTypes, parameterTypes);
         this.resultOperator = resultOperator;
-        this.resultRowType = resultRowType;
-        this.resultColumnOffsets = resultColumnOffsets;
         this.offset = offset;
         this.limit = limit;
     }
     
-    public void execute(PostgresServerSession server, int maxrows)
+    public int execute(PostgresServerSession server, int maxrows)
         throws IOException, StandardException {
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
-        Cursor cursor = API.cursor(resultOperator, store);
+        RowType resultRowType = resultOperator.rowType();
+        Cursor cursor = API.cursor(resultOperator, server.getStore());
         int nskip = offset;
         if (limit > 0) {
             if ((maxrows <= 0) || (maxrows > limit))
@@ -74,40 +68,46 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         int nrows = 0;
         try {
             cursor.open(bindings);
-            List<Column> columns = getColumns();
-            List<PostgresType> types = getTypes();
-            int ncols = columns.size();
-            while (cursor.next()) {
-                Row row = cursor.currentRow();
-                if (row.rowType() == resultRowType) {
-                    if (nskip > 0) {
-                        nskip--;
-                        continue;
-                    }
-                    messenger.beginMessage(PostgresMessenger.DATA_ROW_TYPE);
-                    messenger.writeShort(ncols);
-                    for (int i = 0; i < ncols; i++) {
-                        Column column = columns.get(i);
-                        Object field = row.field(resultColumnOffsets[i], bindings);
-                        PostgresType type = types.get(i);
-                        byte[] value = type.encodeValue(field,
-                                                        messenger.getEncoding(),
-                                                        isColumnBinary(i));
-                        if (value == null) {
-                            messenger.writeInt(-1);
-                        }
-                        else {
-                            messenger.writeInt(value.length);
-                            messenger.write(value);
-                        }
-                    }
-                    messenger.sendMessage();
-                    nrows++;
-                    if ((maxrows > 0) && (nrows >= maxrows))
-                        break;
+            List<PostgresType> columnTypes = getColumnTypes();
+            int ncols = columnTypes.size();
+            Row row;
+            while ((row = cursor.next()) != null) {
+                assert (row.rowType() == resultRowType) : row;
+                if (nskip > 0) {
+                    nskip--;
+                    continue;
                 }
+                messenger.beginMessage(PostgresMessenger.DATA_ROW_TYPE);
+                messenger.writeShort(ncols);
+                for (int i = 0; i < ncols; i++) {
+                    Object field = row.field(i, bindings);
+                    PostgresType type = columnTypes.get(i);
+                    byte[] value = type.encodeValue(field,
+                                                    messenger.getEncoding(),
+                                                    isColumnBinary(i));
+                    if (value == null) {
+                        messenger.writeInt(-1);
+                    }
+                    else {
+                        messenger.writeInt(value.length);
+                        messenger.write(value);
+                    }
+                }
+                messenger.sendMessage();
+                nrows++;
+                if ((maxrows > 0) && (nrows >= maxrows))
+                    break;
             }
-        } 
+        }
+        catch (BindingNotSetException ex) {
+            throw new StandardException(ex);
+        }
+        catch (IncompatibleRowException ex) {
+            throw new StandardException(ex);
+        }
+        catch (StoreAdapterRuntimeException ex) {
+            throw new StandardException(ex);
+        }
         finally {
             cursor.close();
         }
@@ -116,6 +116,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             messenger.writeString("SELECT " + nrows);
             messenger.sendMessage();
         }
+        return nrows;
     }
 
     protected Bindings getBindings() {
@@ -129,17 +130,14 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         private boolean[] columnBinary; // Is this column binary format?
         private boolean defaultColumnBinary;
 
-        public BoundStatement(StoreAdapter store,
-                              PhysicalOperator resultOperator,
-                              RowType resultRowType,
-                              List<Column> resultColumns,
-                              int[] resultColumnOffsets,
+        public BoundStatement(PhysicalOperator resultOperator,
+                              List<String> columnNames,
+                              List<PostgresType> columnTypes,
                               int offset, int limit,
                               Bindings bindings,
                               boolean[] columnBinary, boolean defaultColumnBinary) {
-            super(store, 
-                  resultOperator, resultRowType, resultColumns, resultColumnOffsets,
-                  offset, limit);
+            super(resultOperator, columnNames, columnTypes, 
+                  null, offset, limit);
             this.bindings = bindings;
             this.columnBinary = columnBinary;
             this.defaultColumnBinary = defaultColumnBinary;
@@ -164,20 +162,17 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     @Override
     public PostgresStatement getBoundStatement(String[] parameters,
                                                boolean[] columnBinary, 
-                                               boolean defaultColumnBinary) {
+                                               boolean defaultColumnBinary) 
+            throws StandardException {
         if ((parameters == null) && 
             (columnBinary == null) && (defaultColumnBinary == false))
             return this;        // Can be reused.
 
         Bindings bindings = getBindings();
-        if (parameters != null) {
-            ArrayBindings ab = new ArrayBindings(parameters.length);
-            for (int i = 0; i < parameters.length; i++)
-                ab.set(i, parameters[i]);
-            bindings = ab;
-        }
-        return new BoundStatement(store, resultOperator, resultRowType, 
-                                  getColumns(), resultColumnOffsets,
+        if (parameters != null)
+            bindings = getParameterBindings(parameters);
+        return new BoundStatement(resultOperator,
+                                  getColumnNames(), getColumnTypes(),
                                   offset, limit, bindings, 
                                   columnBinary, defaultColumnBinary);
     }

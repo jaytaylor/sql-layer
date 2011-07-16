@@ -33,7 +33,13 @@ class PersistitHKey implements HKey
     @Override
     public boolean equals(Object o)
     {
-        return this.hKey.equals(((PersistitHKey) o).hKey);
+        return o == this
+                || (o != null && PersistitHKey.class.equals(o.getClass()) && hKey.equals(((PersistitHKey)o).hKey));
+    }
+
+    @Override
+    public int hashCode() {
+        return hKey.hashCode();
     }
 
     // HKey interface
@@ -80,9 +86,15 @@ class PersistitHKey implements HKey
     }
 
     @Override
-    public void extend(UserTable userTable)
+    public void extendWithOrdinal(int ordinal)
     {
-        hKey.append(((RowDef)userTable.rowDef()).getOrdinal());
+        hKey.append(ordinal);
+    }
+
+    @Override
+    public void extendWithNull()
+    {
+        hKey.append(null);
     }
 
     // PersistitHKey interface

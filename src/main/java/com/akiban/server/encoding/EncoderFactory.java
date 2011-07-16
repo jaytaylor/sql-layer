@@ -30,6 +30,7 @@ public final class EncoderFactory {
 
     public static final IntEncoder INT = new IntEncoder();
     public static final UIntEncoder U_INT = new UIntEncoder();
+    public static final UBigIntEncoder U_BIGINT = new UBigIntEncoder();
     public static final FloatEncoder FLOAT = new FloatEncoder();
     public static final UFloatEncoder U_FLOAT = new UFloatEncoder();
     public static final DoubleEncoder DOUBLE = new DoubleEncoder();

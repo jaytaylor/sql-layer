@@ -19,9 +19,11 @@ import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.sql.StandardException;
 
-import com.akiban.qp.physicaloperator.ArrayBindings;
+import com.akiban.qp.physicaloperator.BindingNotSetException;
 import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.StoreAdapter;
+import com.akiban.qp.physicaloperator.IncompatibleRowException;
+import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
+import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.UndefBindings;
 
 import java.util.*;
@@ -34,27 +36,42 @@ import java.io.IOException;
 public class PostgresModifyOperatorStatement extends PostgresBaseStatement
 {
     private String statementType;
-    private StoreAdapter store;
     private UpdatePlannable resultOperator;
         
     public PostgresModifyOperatorStatement(String statementType,
-                                           StoreAdapter store,
-                                           UpdatePlannable resultOperator) {
+                                           UpdatePlannable resultOperator,
+                                           PostgresType[] parameterTypes) {
+        super(parameterTypes);
         this.statementType = statementType;
-        this.store = store;
         this.resultOperator = resultOperator;
     }
     
-    public void execute(PostgresServerSession server, int maxrows)
+    public int execute(PostgresServerSession server, int maxrows)
         throws IOException, StandardException {
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
-        UpdateResult updateResult = resultOperator.run(bindings, store);
+        UpdateResult updateResult;
+        try {
+            updateResult = resultOperator.run(bindings, server.getStore());
+        }
+        catch (BindingNotSetException ex) {
+            throw new StandardException(ex);
+        }
+        catch (IncompatibleRowException ex) {
+            throw new StandardException(ex);
+        }
+        catch (StoreAdapterRuntimeException ex) {
+            throw new StandardException(ex);
+        }
+        catch (CursorUpdateException ex) {
+            throw new StandardException(ex);
+        }
         {        
             messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
             messenger.writeString(statementType + " " + updateResult.rowsModified());
             messenger.sendMessage();
         }
+        return 0;
     }
 
     protected Bindings getBindings() {
@@ -66,10 +83,9 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         private Bindings bindings;
 
         public BoundStatement(String statementType,
-                              StoreAdapter store,
                               UpdatePlannable resultOperator,
                               Bindings bindings) {
-            super(statementType, store, resultOperator);
+            super(statementType, resultOperator, null);
             this.bindings = bindings;
         }
 
@@ -83,14 +99,13 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
     @Override
     public PostgresStatement getBoundStatement(String[] parameters,
                                                boolean[] columnBinary, 
-                                               boolean defaultColumnBinary) {
+                                               boolean defaultColumnBinary) 
+            throws StandardException {
         if (parameters == null)
             return this;        // Can be reused.
 
-        ArrayBindings bindings = new ArrayBindings(parameters.length);
-        for (int i = 0; i < parameters.length; i++)
-            bindings.set(i, parameters[i]);
-        return new BoundStatement(statementType, store, resultOperator, bindings);
+        return new BoundStatement(statementType, resultOperator, 
+                                  getParameterBindings(parameters));
     }
 
 }

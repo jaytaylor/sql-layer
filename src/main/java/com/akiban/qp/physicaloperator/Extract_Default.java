@@ -21,10 +21,14 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.util.ArgumentValidation;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 class Extract_Default extends PhysicalOperator
 {
@@ -33,10 +37,20 @@ class Extract_Default extends PhysicalOperator
     @Override
     public String toString()
     {
-        return String.format("%s(%s)", getClass().getSimpleName(), extractTypes);
+        TreeSet<String> keepTypesStrings = new TreeSet<String>();
+        for (RowType keepType : keepTypes) {
+            keepTypesStrings.add(String.valueOf(keepType));
+        }
+        return String.format("%s(%s)", getClass().getSimpleName(), keepTypesStrings);
     }
 
     // PhysicalOperator interface
+
+    @Override
+    public List<PhysicalOperator> getInputOperators()
+    {
+        return Collections.singletonList(inputOperator);
+    }
 
     @Override
     protected Cursor cursor(StoreAdapter adapter)
@@ -50,16 +64,23 @@ class Extract_Default extends PhysicalOperator
         return describePlan(inputOperator);
     }
 
-    // GroupScan_Default interface
+    // ExtractScan_Default interface
 
-    public Extract_Default(Schema schema, PhysicalOperator inputOperator, Collection<RowType> extractTypes)
+    public Extract_Default(PhysicalOperator inputOperator, Collection<RowType> extractTypes)
     {
+        ArgumentValidation.notEmpty("keepTypes", extractTypes);
         this.inputOperator = inputOperator;
-        for (RowType cutType : extractTypes) {
-            if (cutType instanceof UserTableRowType) {
-                addDescendentTypes(schema, ((UserTableRowType) cutType).userTable(), this.extractTypes);
+        Schema schema = null;
+        for (RowType type : extractTypes) {
+            if (schema == null) {
+                schema = type.schema();
             } else {
-                extractTypes.add(cutType);
+                ArgumentValidation.isSame("schema", schema, "type.schema()", type.schema());
+            }
+            if (type instanceof UserTableRowType) {
+                addDescendentTypes(schema, type.userTable(), this.keepTypes);
+            } else {
+                this.keepTypes.add(type);
             }
         }
     }
@@ -77,11 +98,11 @@ class Extract_Default extends PhysicalOperator
     // Object state
 
     private final PhysicalOperator inputOperator;
-    private final Set<RowType> extractTypes = new HashSet<RowType>();
+    private final Set<RowType> keepTypes = new HashSet<RowType>();
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // Cursor interface
 
@@ -89,32 +110,28 @@ class Extract_Default extends PhysicalOperator
         public void open(Bindings bindings)
         {
             input.open(bindings);
-            next = input.next();
         }
 
         @Override
-        public boolean next()
+        public Row next()
         {
-            Row row = null;
-            while (next && row == null) {
-                row = input.currentRow();
-                if (!extractTypes.contains(row.rowType())) {
+            Row row;
+            do {
+                row = input.next();
+                if (row == null) {
+                    close();
+                } else if (!keepTypes.contains(row.rowType())) {
                     row = null;
                 }
-                next = input.next();
-            }
-            outputRow(row);
-            if (row == null) {
-                close();
-            }
-            return row != null;
+            } while (row == null && !closed);
+            return row;
         }
 
         @Override
         public void close()
         {
-            outputRow(null);
             input.close();
+            closed = true;
         }
 
         // Execution interface
@@ -127,6 +144,6 @@ class Extract_Default extends PhysicalOperator
         // Object state
 
         private final Cursor input;
-        private boolean next;
+        private boolean closed = false;
     }
 }

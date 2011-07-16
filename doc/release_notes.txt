@@ -1,15 +1,15 @@
 Release Notes
 
-v.0.4, released May 9, 2011
+v.0.5, released June 30, 2011
 
 What's new, what you should know, and what you've been asking about the latest version of Akiban.
 
     Release Notes
         Introduction to Akiban
         The Akiban Architecture:
-        What's New in Akiban 0.4
-            What is v0.4 Intended For?
-            What is v0.4 NOT Intended For?
+        What's New in Akiban 0.5
+            What is v0.5 Intended For?
+            What is v0.5 NOT Intended For?
         System Requirements
         Dependencies
             Java
@@ -19,6 +19,8 @@ What's new, what you should know, and what you've been asking about the latest v
         Known Issues
         Troubleshooting
             Port conflicts
+            MySQL Replication is generating errors
+            I see metadata errors including 182 (Table is unknown...) and 192 (Akiban Server AIS is out of date...)
             Existing Tomcat installation
             Tomcat Crashed!
         Resources
@@ -56,7 +58,7 @@ Akiban Studio:
 An intuitive UI tool designed to analyze existing MySQL schemas and problem queries, design grouping, deploy and monitor Akiban Server.
 
 Mailing List:http://groups.google.com/group/akiban-server
-What's New in Akiban 0.4
+What's New in Akiban 0.5
 
 The Halo release is the first major product release milestone for Akiban.  With this release we have delivered:
 
@@ -67,16 +69,16 @@ The Halo release is the first major product release milestone for Akiban.  With 
         simplify adoption by providing replication slave integration
         improve application performance simply through a memcached-based access language delivering JSON output
 
-What is v0.4 Intended For?
+What is v0.5 Intended For?
 
-Akiban Server v0.4 is intended to enable design partners and early adopters to evaluate the benefits of Table-Grouping(TM) in a MySQL replication environment.
-What is v0.4 NOT Intended For?
+Akiban Server v0.5 is intended to enable design partners and early adopters to evaluate the benefits of Table-Grouping(TM) in a MySQL replication environment through SQL access.
+What is v0.5 NOT Intended For?
 
-Akiban Server v0.4 is not intended for production deployments at this time.
+Akiban Server v0.5 is not intended for general-purpose production deployments at this time.
 System Requirements
-Operating System Version 	CentOS 5.4 or higher, Ubuntu 10.04
+Operating System Version 	CentOS 5.4 or higher, Ubuntu 10.04 or 10.10
 Architecture 	x64
-MySQL Version 	5.5.8 (standalone or replicated slave) available here
+MySQL Version 	5.5.x (standalone or replicated slave) available here
 Disk Space 	1.33 x grouped table size*
 
 * TIP: See the MySQL documentation for OPTIMIZE TABLE for more information on how to determine table size
@@ -132,6 +134,12 @@ In some cases, one of the default ports assigned to an Akiban process will alrea
 netstat --tcp --listening --programs
 
 Then refer to the Akiban documentation on configuration options to adjust the ports used by Akiban processes.
+MySQL Replication is generating errors
+
+Replication errors may occur during replication runtime.  This link to the MySQL website covers errors on the MySQL slave database.
+I see metadata errors including 182 (Table is unknown...) and 192 (Akiban Server AIS is out of date...)
+
+Akiban Server and the Akiban MySQL Adapter must maintain consistent metadata. In most cases, this process is seamless and automatic - the end user need not do anything to ensure consistent operation.  When you see these messages, please consult the Akiban documentation on 'Synchronizing Metadata between Akiban and MySQL'.
 Existing Tomcat installation
 
 Akiban Studio can be installed in an existing Tomcat deployment, but in most cases you will prefer to keep it separate. See the Tomcat documentation

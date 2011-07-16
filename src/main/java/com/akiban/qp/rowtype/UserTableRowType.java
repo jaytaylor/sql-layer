@@ -15,10 +15,9 @@
 
 package com.akiban.qp.rowtype;
 
+import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.RowDef;
 import com.akiban.util.FilteringIterator;
 
 import java.util.ArrayList;
@@ -43,16 +42,9 @@ public class UserTableRowType extends RowType
     }
 
     @Override
-    public boolean ancestorOf(RowType type)
+    public HKey hKey()
     {
-        assert type instanceof UserTableRowType : type;
-        // TODO: Something faster
-        UserTable ancestor = ((UserTableRowType) type).table;
-        while (ancestor != table && ancestor != null) {
-            Join join = ancestor.getParentJoin();
-            ancestor = join == null ? null : join.getParent();
-        }
-        return ancestor != null;
+        return table.hKey();
     }
 
     // UserTableRowType interface
@@ -93,8 +85,9 @@ public class UserTableRowType extends RowType
 
     public UserTableRowType(Schema schema, UserTable table)
     {
-        super(schema, table.getTableId(), Ancestry.of(table));
+        super(schema, table.getTableId());
         this.table = table;
+        typeComposition(new TypeComposition(this, table));
     }
 
     // Object state

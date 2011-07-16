@@ -25,7 +25,12 @@ class Compare implements Expression
     @Override
     public Object evaluate(Row row, Bindings bindings)
     {
-        int c = ((Comparable) left.evaluate(row, bindings)).compareTo(right.evaluate(row, bindings));
+        Comparable leftValue = (Comparable) left.evaluate(row, bindings);
+        Comparable rightValue = (Comparable) right.evaluate(row, bindings);
+        if (leftValue == null || rightValue == null) {
+            return false;
+        }
+        int c = leftValue.compareTo(rightValue);
         switch (comparison) {
             case EQ:
                 return c == 0;

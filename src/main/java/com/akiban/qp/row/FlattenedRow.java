@@ -1,4 +1,4 @@
-/**
+/** *
  * Copyright (C) 2011 Akiban Technologies Inc.
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
@@ -52,17 +52,25 @@ public class FlattenedRow extends AbstractRow
     @Override
     public HKey hKey()
     {
-        return child.get().hKey();
+        return hKey;
     }
 
-// FlattenedRow interface
+    // FlattenedRow interface
 
-    public FlattenedRow(FlattenedRowType rowType, Row parent, Row child)
+    public FlattenedRow(FlattenedRowType rowType, Row parent, Row child, HKey hKey)
     {
         this.rowType = rowType;
         this.parent.set(parent);
         this.child.set(child);
         this.nParentFields = rowType.parentType().nFields();
+        this.hKey = hKey;
+        if (parent != null && child != null) {
+            assert parent.runId() == child.runId();
+        }
+        if (parent != null && !rowType.parentType().equals(parent.rowType())) {
+            throw new IllegalArgumentException("mismatched type between " +rowType+ " and parent " + parent.rowType());
+        }
+        super.runId(parent == null ? child.runId() : parent.runId());
     }
 
     // Object state
@@ -71,4 +79,5 @@ public class FlattenedRow extends AbstractRow
     private final RowHolder<Row> parent = new RowHolder<Row>();
     private final RowHolder<Row> child = new RowHolder<Row>();
     private final int nParentFields;
+    private final HKey hKey;
 }

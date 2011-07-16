@@ -15,6 +15,12 @@
 
 package com.akiban.qp.rowtype;
 
+import com.akiban.ais.model.HKey;
+import com.akiban.ais.model.UserTable;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class FlattenedRowType extends DerivedRowType
 {
     // Object interface
@@ -25,6 +31,27 @@ public class FlattenedRowType extends DerivedRowType
         return String.format("flatten(%s, %s)", parent, child);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        FlattenedRowType that = (FlattenedRowType) o;
+
+        if (child != null ? !child.equals(that.child) : that.child != null) return false;
+        if (parent != null ? !parent.equals(that.parent) : that.parent != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (parent != null ? parent.hashCode() : 0);
+        result = 31 * result + (child != null ? child.hashCode() : 0);
+        return result;
+    }
 
     // RowType interface
 
@@ -35,10 +62,9 @@ public class FlattenedRowType extends DerivedRowType
     }
 
     @Override
-    public boolean ancestorOf(RowType type)
+    public HKey hKey()
     {
-        assert false : "Not implemented yet";
-        return false;
+        return child.hKey();
     }
 
     // FlattenedRowType interface
@@ -48,18 +74,16 @@ public class FlattenedRowType extends DerivedRowType
         return parent;
     }
 
-    public RowType childType()
-    {
-        return child;
-    }
-
     public FlattenedRowType(Schema schema, int typeId, RowType parent, RowType child)
     {
-        super(schema, typeId, child.ancestry());
+        super(schema, typeId);
         assert parent.schema() == schema : parent;
         assert child.schema() == schema : child;
         this.parent = parent;
         this.child = child;
+        List<UserTable> parentAndChildTables = new ArrayList<UserTable>(parent.typeComposition().tables());
+        parentAndChildTables.addAll(child.typeComposition().tables());
+        typeComposition(new TypeComposition(this, parentAndChildTables));
     }
 
     // Object state

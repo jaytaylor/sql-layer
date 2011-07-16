@@ -43,6 +43,7 @@ import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.util.GroupIndexCreator;
+import com.akiban.util.Strings;
 import com.akiban.util.Undef;
 import junit.framework.Assert;
 
@@ -130,6 +131,7 @@ public class ApiTestBase {
     private ServiceManager sm;
     private Session session;
     private int aisGeneration;
+    private int akibanFKCount;
 
     @Before
     public final void startTestServices() throws Exception {
@@ -208,6 +210,13 @@ public class ApiTestBase {
         return sm.getStore();
     }
 
+    protected String akibanFK(String childCol, String parentTable, String parentCol) {
+        ++akibanFKCount;
+        return String.format("CONSTRAINT __akiban_fk_%d FOREIGN KEY __akiban_fk_%d (%s) REFERENCES %s (%s)",
+                akibanFKCount, akibanFKCount, childCol, parentTable, parentCol
+        );
+    }
+
     protected final Session session() {
         return session;
     }
@@ -257,20 +266,26 @@ public class ApiTestBase {
         for (String definition : definitions) {
             unifiedDef.append(definition).append(',');
         }
-        unifiedDef.setLength( unifiedDef.length() - 1);
+        unifiedDef.setLength(unifiedDef.length() - 1);
         return createTable(schema, table, unifiedDef.toString());
     }
 
-    protected final void createGroupIndex(String groupName, String indexName, String tableColumnPairs)
+    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs)
+            throws InvalidOperationException {
+        return createGroupIndex(groupName, indexName, false, tableColumnPairs);
+    }
+
+    protected final GroupIndex createGroupIndex(String groupName, String indexName, boolean unique, String tableColumnPairs)
             throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
         final Index index;
         try {
-            index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnPairs);
+            index = GroupIndexCreator.createIndex(ais, groupName, indexName, unique, tableColumnPairs);
         } catch(GroupIndexCreator.GroupIndexCreatorException e) {
             throw new InvalidOperationException(e);
         }
         ddl().createIndexes(session(), Collections.singleton(index));
+        return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
     }
 
     /**
@@ -375,11 +390,17 @@ public class ApiTestBase {
         return new HashSet<T>(Arrays.asList(items));
     }
 
-    protected static <T> T[] array(@SuppressWarnings("unused" /* compile check only */ )Class<T> ofClass, T... items) {
+    protected static <T> T[] array(Class<T> ofClass, T... items) {
+        if (ofClass == null) {
+            throw new IllegalArgumentException(
+                    "T[] of null class; you probably meant the array(Object...) overload "
+                            +"with a null for the first element. Use array(Object.class, null, ...) instead"
+            );
+        }
         return items;
     }
 
-    protected static Object[] objArray(Object... items) {
+    protected static Object[] array(Object... items) {
         return array(Object.class, items);
     }
 
@@ -442,6 +463,12 @@ public class ApiTestBase {
             }
         }
         Assert.assertEquals("user tables", Collections.<TableName>emptySet(), uTables);
+    }
+
+    protected static <T> void assertEqualLists(String message, List<T> expected, List<T> actual) {
+        if (!expected.equals(actual)) {
+            assertEquals(message, Strings.join(expected), Strings.join(actual));
+        }
     }
 
     protected static class TestException extends RuntimeException {

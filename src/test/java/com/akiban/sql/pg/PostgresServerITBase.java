@@ -29,6 +29,7 @@ import com.akiban.server.test.it.ITBase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
+import static junit.framework.Assert.*;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -58,6 +59,9 @@ public class PostgresServerITBase extends ITBase
 
     public void loadDatabase(File dir) throws Exception {
         loadSchemaFile(new File(dir, "schema.ddl"));
+        File groupIndex = new File(dir, "group.idx");
+        if (groupIndex.exists())
+            loadGroupIndexFile(groupIndex);
         for (File data : dir.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
             loadDataFile(data);
         }
@@ -94,6 +98,29 @@ public class PostgresServerITBase extends ITBase
                         line = line.substring(0, line.length() - 1);
                     tableDefinition.add(line);
                 }
+            }
+        }
+        finally {
+            if (rdr != null) {
+                try {
+                    rdr.close();
+                }
+                catch (IOException ex) {
+                }
+            }
+        }
+    }
+
+    protected void loadGroupIndexFile(File file) throws Exception {
+        Reader rdr = null;
+        try {
+            rdr = new FileReader(file);
+            BufferedReader brdr = new BufferedReader(rdr);
+            while (true) {
+                String line = brdr.readLine();
+                if (line == null) break;
+                String defn[] = line.split("\t");
+                createGroupIndex(defn[0], defn[1], defn[2]);
             }
         }
         finally {
@@ -184,6 +211,19 @@ public class PostgresServerITBase extends ITBase
 
     @Before
     public void openTheConnection() throws Exception {
+        for (int i = 0; i < 6; i++) {
+            if (server().isListening())
+                break;
+            if (i == 0)
+                System.err.println("Postgres server not listening. Waiting...");
+            else if (i == 5)
+                fail("Postgres server still not listening. Giving up.");
+            try {
+                Thread.sleep(200);
+            }
+            catch (InterruptedException ex) {
+            }
+        }
         connection = openConnection();
     }
 

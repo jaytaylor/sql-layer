@@ -15,6 +15,8 @@
 
 package com.akiban.ais.model;
 
+import java.util.Map;
+
 public class TableIndex extends Index
 {
     public static TableIndex create(AkibanInformationSchema ais, Table table, String indexName, Integer indexId,
@@ -35,6 +37,26 @@ public class TableIndex extends Index
     public boolean isTableIndex()
     {
         return true;
+    }
+
+    @Override
+    public void computeFieldAssociations(Map<Table, Integer> ordinalMap) {
+        computeFieldAssociations(ordinalMap, getTable(), null);
+    }
+
+    @Override
+    protected Column indexRowCompositionColumn(HKeyColumn hKeyColumn) {
+        return hKeyColumn.column();
+    }
+
+    @Override
+    public Table leafMostTable() {
+        return getTable();
+    }
+
+    @Override
+    public Table rootMostTable() {
+        return getTable();
     }
 
     public Table getTable()

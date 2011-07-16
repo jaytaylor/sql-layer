@@ -15,9 +15,14 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,13 +46,39 @@ class IndexScan_Default extends PhysicalOperator
 
     // IndexScan_Default interface
 
-    public IndexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
+    public IndexScan_Default(IndexRowType indexType,
+                             boolean reverse,
+                             IndexKeyRange indexKeyRange,
+                             UserTableRowType innerJoinUntilRowType)
     {
-        checkArgument(indexType != null);
-        assert indexType != null;
+        ArgumentValidation.notNull("indexType", indexType);
         this.index = indexType.index();
         this.reverse = reverse;
         this.indexKeyRange = indexKeyRange;
+        if (index.isTableIndex()) {
+            ArgumentValidation.isEQ(
+                    "group index table", this.index.leafMostTable(),
+                    "rootmost existing row type", innerJoinUntilRowType.userTable()
+            );
+        }
+        else {
+            GroupIndex tableIndex = (GroupIndex)this.index;
+            boolean rootmostRowTypeInSegment = false;
+            for (
+                    UserTable branchTable=tableIndex.leafMostTable();
+                    branchTable!= null && !branchTable.equals(tableIndex.rootMostTable().parentTable());
+                    branchTable = branchTable.parentTable()
+            ) {
+                if (branchTable.equals(innerJoinUntilRowType.userTable())) {
+                    rootmostRowTypeInSegment = true;
+                    break;
+                }
+            }
+            if (!rootmostRowTypeInSegment) {
+                throw new IllegalArgumentException(innerJoinUntilRowType + " not in branch for " + tableIndex);
+            }
+        }
+        this.innerJoinUntilRowType = innerJoinUntilRowType;
     }
 
     // Class state
@@ -56,13 +87,14 @@ class IndexScan_Default extends PhysicalOperator
 
     // Object state
 
-    private final TableIndex index;
+    private final Index index;
     private final boolean reverse;
     private final IndexKeyRange indexKeyRange;
+    private final UserTableRowType innerJoinUntilRowType;
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // OperatorExecution interface
 
@@ -75,24 +107,23 @@ class IndexScan_Default extends PhysicalOperator
         }
 
         @Override
-        public boolean next()
+        public Row next()
         {
-            boolean next = cursor.next();
-            if (next) {
-                outputRow(cursor.currentRow());
-            } else {
+            Row row = cursor.next();
+            if (row == null) {
                 close();
+            } else {
+                row.runId(runIdCounter++);
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("IndexScan: {}", next ? outputRow() : null);
+                LOG.debug("IndexScan: {}", row);
             }
-            return next;
+            return row;
         }
 
         @Override
         public void close()
         {
-            outputRow(null);
             cursor.close();
         }
 
@@ -100,11 +131,12 @@ class IndexScan_Default extends PhysicalOperator
 
         Execution(StoreAdapter adapter)
         {
-            this.cursor = adapter.newIndexCursor(index, reverse, indexKeyRange);
+            this.cursor = adapter.newIndexCursor(index, reverse, indexKeyRange, innerJoinUntilRowType.userTable());
         }
 
         // Object state
 
         private final Cursor cursor;
+        private int runIdCounter = 0;
     }
 }

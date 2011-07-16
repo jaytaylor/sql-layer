@@ -25,6 +25,8 @@ import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
+
 import static com.akiban.qp.physicaloperator.API.*;
 
 public class BranchLookupIT extends PhysicalOperatorITBase
@@ -57,7 +59,7 @@ public class BranchLookupIT extends PhysicalOperatorITBase
             createNewRow(item, 221L, 22L),
             createNewRow(item, 222L, 22L),
             // orphans
-            createNewRow(address, 5001, 5L, "555 1111 st"),
+            createNewRow(address, 5001L, 5L, "555 1111 st"),
             createNewRow(item, 311L, 31L),
             createNewRow(item, 312L, 31L)};
         use(dbWithOrphans);
@@ -68,71 +70,71 @@ public class BranchLookupIT extends PhysicalOperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testNullInputRowType()
     {
-        lookup_Default(groupScan_Default(coi),
-                       coi,
-                       null,
-                       customerRowType,
-                       true);
+        branchLookup_Default(groupScan_Default(coi),
+                coi,
+                null,
+                customerRowType,
+                true);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNullOutputRowType()
     {
-        lookup_Default(groupScan_Default(coi),
-                       coi,
-                       customerRowType,
-                       null,
-                       true);
+        branchLookup_Default(groupScan_Default(coi),
+                coi,
+                customerRowType,
+                null,
+                true);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testLookupSelf()
     {
-        lookup_Default(groupScan_Default(coi),
-                       coi,
-                       customerRowType,
-                       customerRowType,
-                       true);
+        branchLookup_Default(groupScan_Default(coi),
+                coi,
+                customerRowType,
+                customerRowType,
+                true);
     }
 
     @Test
     public void testLookupSelfFromIndex()
     {
-        lookup_Default(groupScan_Default(coi),
-                       coi,
-                       customerNameIndexRowType,
-                       customerRowType,
-                       false);
+        branchLookup_Default(groupScan_Default(coi),
+                coi,
+                customerNameIndexRowType,
+                customerRowType,
+                false);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testKeepIndexInput()
     {
-        lookup_Default(groupScan_Default(coi),
-                       coi,
-                       customerNameIndexRowType,
-                       customerRowType,
-                       true);
+        branchLookup_Default(groupScan_Default(coi),
+                coi,
+                customerNameIndexRowType,
+                customerRowType,
+                true);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testBranchNonRootLookup()
     {
-        lookup_Default(groupScan_Default(coi),
-                       coi,
-                       addressRowType,
-                       itemRowType,
-                       true);
+        branchLookup_Default(groupScan_Default(coi),
+                coi,
+                addressRowType,
+                itemRowType,
+                true);
     }
 
     @Test
     public void testBranchRootLookup()
     {
-        lookup_Default(groupScan_Default(coi),
-                       coi,
-                       addressRowType,
-                       orderRowType,
-                       true);
+        branchLookup_Default(groupScan_Default(coi),
+                coi,
+                addressRowType,
+                orderRowType,
+                true);
     }
 
     // customer index -> customer + descendents
@@ -247,7 +249,7 @@ public class BranchLookupIT extends PhysicalOperatorITBase
     @Test
     public void testAddressToOrder()
     {
-        PhysicalOperator plan = addressToOrderPlan("222 2222 st");
+        PhysicalOperator plan = addressToOrderPlan("222 2222 st", false);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 21L, 2L, "tom"),
@@ -260,12 +262,67 @@ public class BranchLookupIT extends PhysicalOperatorITBase
         compareRows(expected, cursor);
     }
 
+    @Test
+    public void testAddressToMissingOrder()
+    {
+        PhysicalOperator plan = addressToOrderPlan("444 2222 st", false);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+        };
+        compareRows(expected, cursor);
+    }
+
+    // Ordering of input row relative to branch
+
+    @Test
+    public void testAddressToOrderAndAddress()
+    {
+        PhysicalOperator plan = addressToOrderPlan("222 2222 st", true);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+            row(orderRowType, 21L, 2L, "tom"),
+            row(itemRowType, 211L, 21L),
+            row(itemRowType, 212L, 21L),
+            row(orderRowType, 22L, 2L, "jack"),
+            row(itemRowType, 221L, 22L),
+            row(itemRowType, 222L, 22L),
+            row(addressRowType, 2002L, 2L, "222 2222 st"),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testOrderToOrderAndAddress()
+    {
+        PhysicalOperator plan = orderToAddressPlan("tom", true);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+            row(orderRowType, 21L, 2L, "tom"),
+            row(addressRowType, 2001L, 2L, "222 1111 st"),
+            row(addressRowType, 2002L, 2L, "222 2222 st")
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testItemToItemAndAddress()
+    {
+        PhysicalOperator plan = itemToAddressPlan(111L, true);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+            row(itemRowType, 111L, 11L),
+            row(addressRowType, 1001L, 1L, "111 1111 st"),
+            row(addressRowType, 1002L, 1L, "111 2222 st"),
+        };
+        compareRows(expected, cursor);
+    }
+
     // For use by this class
 
     private PhysicalOperator customerNameToCustomerPlan(String customerName)
     {
         return
-            lookup_Default(
+            branchLookup_Default(
                 indexScan_Default(customerNameIndexRowType, false, customerNameEQ(customerName)),
                 coi,
                 customerNameIndexRowType,
@@ -276,7 +333,7 @@ public class BranchLookupIT extends PhysicalOperatorITBase
     private PhysicalOperator addressAddressToCustomerPlan(String address)
     {
         return
-            lookup_Default(
+            branchLookup_Default(
                 indexScan_Default(addressAddressIndexRowType, false, addressAddressEQ(address)),
                 coi,
                 addressAddressIndexRowType,
@@ -287,28 +344,65 @@ public class BranchLookupIT extends PhysicalOperatorITBase
     private PhysicalOperator addressToCustomerPlan(String address)
     {
         return
-            lookup_Default(
-                lookup_Default(
+            branchLookup_Default(
+                    branchLookup_Default(
+                        indexScan_Default(addressAddressIndexRowType, false, addressAddressEQ(address)),
+                        coi,
+                        addressAddressIndexRowType,
+                        addressRowType,
+                        false),
+                    coi,
+                    addressRowType,
+                    customerRowType,
+                    false);
+    }
+
+    private PhysicalOperator addressToOrderPlan(String address, boolean keepInput)
+    {
+        return
+            branchLookup_Default(
+                ancestorLookup_Default(
                     indexScan_Default(addressAddressIndexRowType, false, addressAddressEQ(address)),
                     coi,
                     addressAddressIndexRowType,
-                    addressRowType,
+                    Arrays.asList(addressRowType),
                     false),
                 coi,
                 addressRowType,
-                customerRowType,
-                false);
+                orderRowType,
+                keepInput);
     }
 
-    private PhysicalOperator addressToOrderPlan(String address)
+    private PhysicalOperator orderToAddressPlan(String salesman, boolean keepInput)
     {
         return
-            lookup_Default(
-                indexScan_Default(addressAddressIndexRowType, false, addressAddressEQ(address)),
+            branchLookup_Default(
+                ancestorLookup_Default(
+                    indexScan_Default(orderSalesmanIndexRowType, false, orderSalesmanEQ(salesman)),
+                    coi,
+                    orderSalesmanIndexRowType,
+                    Arrays.asList(orderRowType),
+                    false),
                 coi,
-                addressAddressIndexRowType,
                 orderRowType,
-                false);
+                addressRowType,
+                keepInput);
+    }
+
+    private PhysicalOperator itemToAddressPlan(long iid, boolean keepInput)
+    {
+        return
+            branchLookup_Default(
+                ancestorLookup_Default(
+                    indexScan_Default(itemIidIndexRowType, false, itemIidEQ(iid)),
+                    coi,
+                    itemIidIndexRowType,
+                    Arrays.asList(itemRowType),
+                    false),
+                coi,
+                itemRowType,
+                addressRowType,
+                keepInput);
     }
 
     private IndexKeyRange customerNameEQ(String name)
@@ -323,13 +417,35 @@ public class BranchLookupIT extends PhysicalOperatorITBase
         return new IndexKeyRange(bound, true, bound, true);
     }
 
+    private IndexKeyRange orderSalesmanEQ(String salesman)
+    {
+        IndexBound bound = orderSalesmanIndexBound(salesman);
+        return new IndexKeyRange(bound, true, bound, true);
+    }
+
+    private IndexKeyRange itemIidEQ(long iid)
+    {
+        IndexBound bound = itemIidIndexBound(iid);
+        return new IndexKeyRange(bound, true, bound, true);
+    }
+
     private IndexBound customerNameIndexBound(String name)
     {
-        return new IndexBound(userTable(customer), row(customerRowType, null, name), new SetColumnSelector(1));
+        return new IndexBound(row(customerNameIndexRowType, name), new SetColumnSelector(0));
     }
 
     private IndexBound addressAddressIndexBound(String addr)
     {
-        return new IndexBound(userTable(address), row(addressRowType, null, null, addr), new SetColumnSelector(2));
+        return new IndexBound(row(addressAddressIndexRowType, addr), new SetColumnSelector(0));
+    }
+
+    private IndexBound orderSalesmanIndexBound(String salesman)
+    {
+        return new IndexBound(row(orderSalesmanIndexRowType, salesman), new SetColumnSelector(0));
+    }
+
+    private IndexBound itemIidIndexBound(long iid)
+    {
+        return new IndexBound(row(itemIidIndexRowType, iid), new SetColumnSelector(0));
     }
 }

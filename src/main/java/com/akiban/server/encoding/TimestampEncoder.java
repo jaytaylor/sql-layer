@@ -29,7 +29,6 @@ import java.util.TimeZone;
 /**
  * Encoder for working with time when stored as a 4 byte int (standard
  * UNIX timestamp). This is how MySQL stores the SQL TIMESTAMP type.
- * <p><b>NOTE</b>: Both input and output is GMT+0 based.</p>
  * See: http://dev.mysql.com/doc/refman/5.5/en/timestamp.html
  * and  http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
  */
@@ -38,9 +37,12 @@ public final class TimestampEncoder extends LongEncoderBase {
 
     TimestampEncoder() {
         SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        SDF.setTimeZone(TimeZone.getTimeZone("GMT"));
     }
-    
+
+    void setTimezone(TimeZone timezone) {
+        SDF.setTimeZone(timezone);
+    }
+
     @Override
     public long encodeFromObject(Object obj) {
         long value;

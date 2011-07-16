@@ -15,6 +15,8 @@
 
 package com.akiban.util;
 
+import java.util.Collection;
+
 public final class ArgumentValidation {
     public static void isNull(String argName, Object arg) {
         if (arg != null) {
@@ -37,6 +39,31 @@ public final class ArgumentValidation {
         }
     }
 
+    public static void notEmpty(String argName, Collection<?> collection) {
+        notNull(argName, collection);
+        if (collection.isEmpty()) {
+            throw new IllegalArgumentException(String.format("%s may not be empty", argName));
+        }
+    }
+
+    public static void isTrue(String predicateDescription, boolean predicate) {
+        if (!predicate) {
+            throw new IllegalArgumentException(String.format("%s does not hold", predicateDescription));
+        }
+    }
+
+    public static void isSame(String oneName, Object one, String twoName, Object two) {
+        if (one != two) {
+            throw new IllegalArgumentException(String.format("%s(%d) != %s(%d)", oneName, one, twoName, two));
+        }
+    }
+
+    public static void isNotSame(String oneName, Object one, String twoName, Object two) {
+        if (one == two) {
+            throw new IllegalArgumentException(String.format("%s(%d) == %s(%d)", oneName, one, twoName, two));
+        }
+    }
+
     /**
      * Makes sure the given number is greater than or equal to the given minimum.
      * @param i the number to test
@@ -48,8 +75,20 @@ public final class ArgumentValidation {
         }
     }
 
+    public static void isGT(String argName, long i, long min) {
+        if (i <= min) {
+            throw new IllegalArgumentException(String.format("%s must be > %d; was %d", argName, min, i));
+        }
+    }
+
     public static void isNotNegative(String argName, int i) {
         isGTE(argName, i, 0);
+    }
+
+    public static void isLTE(String argName, int i, int max) {
+        if (i > max) {
+            throw new IllegalArgumentException(String.format("%s must be <= %d; was %d", argName, max, i));
+        }
     }
 
     public static void isLT(String argName, int i, int max) {
@@ -61,6 +100,12 @@ public final class ArgumentValidation {
     public static void isEQ(String oneName, int one, String twoName, int two) {
         if (one != two) {
             throw new IllegalArgumentException(String.format("%s(%d) != %s(%d)", oneName, one, twoName, two));
+        }
+    }
+
+    public static void isEQ(String oneName, Object one, String twoName, Object two) {
+        if (!one.equals(two)) {
+            throw new IllegalArgumentException(String.format("%s(%s) != %s(%s)", oneName, one, twoName, two));
         }
     }
 }

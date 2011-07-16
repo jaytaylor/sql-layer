@@ -86,7 +86,7 @@ public final class DecimalEncoderTest {
     private static void doTest(String label, String expected, int precision, int scale, String bytesHex) {
         byte[] bytes = bytes(bytesHex);
         StringBuilder sb = new StringBuilder();
-        DecimalEncoder.decodeAndParse(bytes, 0, precision, scale, AkibanAppender.of(sb));
+        DecimalEncoder.decodeToString(bytes, 0, precision, scale, AkibanAppender.of(sb));
         BigDecimal actual = new BigDecimal(sb.toString());
 
         assertEquals(label + ": BigDecimal", new BigDecimal(expected).toPlainString(), actual.toPlainString());

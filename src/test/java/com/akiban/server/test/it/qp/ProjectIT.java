@@ -1,0 +1,185 @@
+/**
+ * Copyright (C) 2011 Akiban Technologies Inc.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses.
+ */
+
+package com.akiban.server.test.it.qp;
+
+import com.akiban.qp.expression.Expression;
+import com.akiban.qp.physicaloperator.Cursor;
+import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.api.dml.scan.NewRow;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.Collections;
+
+import static com.akiban.qp.expression.API.field;
+import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.physicaloperator.API.JoinType.*;
+
+public class ProjectIT extends PhysicalOperatorITBase
+{
+    @Before
+    public void before()
+    {
+        super.before();
+        NewRow[] dbWithOrphans = new NewRow[]{
+            createNewRow(customer, 1L, "northbridge"),
+            createNewRow(customer, 2L, "foundation"),
+            createNewRow(customer, 4L, "highland"),
+            createNewRow(order, 11L, 1L, "ori"),
+            createNewRow(order, 12L, 1L, "david"),
+            createNewRow(order, 21L, 2L, "tom"),
+            createNewRow(order, 22L, 2L, "jack"),
+            createNewRow(order, 31L, 3L, "peter"),
+            createNewRow(item, 111L, 11L),
+            createNewRow(item, 112L, 11L),
+            createNewRow(item, 121L, 12L),
+            createNewRow(item, 122L, 12L),
+            createNewRow(item, 211L, 21L),
+            createNewRow(item, 212L, 21L),
+            createNewRow(item, 221L, 22L),
+            createNewRow(item, 222L, 22L),
+            // orphans
+            createNewRow(item, 311L, 31L),
+            createNewRow(item, 312L, 31L)};
+        use(dbWithOrphans);
+    }
+
+    // IllegalArumentException tests
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNullRowType()
+    {
+        project_Default(groupScan_Default(coi), null, Arrays.asList(field(0)));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNullProjections()
+    {
+        project_Default(groupScan_Default(coi), customerRowType, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testEmptyProjections()
+    {
+        project_Default(groupScan_Default(coi), customerRowType, Collections.<Expression>emptyList());
+    }
+
+    // Projection tests
+
+    @Test
+    public void testCustomerCid()
+    {
+        PhysicalOperator plan = project_Default(groupScan_Default(coi),
+                                                customerRowType,
+                                                Arrays.asList(field(0)));
+        Cursor cursor = cursor(plan, adapter);
+        RowType projectedRowType = plan.rowType();
+        RowBase[] expected = new RowBase[]{
+            row(projectedRowType, 1L),
+            row(orderRowType, 11L, 1L, "ori"),
+            row(itemRowType, 111L, 11L),
+            row(itemRowType, 112L, 11L),
+            row(orderRowType, 12L, 1L, "david"),
+            row(itemRowType, 121L, 12L),
+            row(itemRowType, 122L, 12L),
+            row(projectedRowType, 2L),
+            row(orderRowType, 21L, 2L, "tom"),
+            row(itemRowType, 211L, 21L),
+            row(itemRowType, 212L, 21L),
+            row(orderRowType, 22L, 2L, "jack"),
+            row(itemRowType, 221L, 22L),
+            row(itemRowType, 222L, 22L),
+            row(orderRowType, 31L, 3L, "peter"),
+            row(itemRowType, 311L, 31L),
+            row(itemRowType, 312L, 31L),
+            row(projectedRowType, 4L)
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testReverseCustomerColumns()
+    {
+        PhysicalOperator plan = project_Default(groupScan_Default(coi),
+                                                customerRowType,
+                                                Arrays.asList(field(1), field(0)));
+        Cursor cursor = cursor(plan, adapter);
+        RowType projectedRowType = plan.rowType();
+        RowBase[] expected = new RowBase[]{
+            row(projectedRowType, "northbridge", 1L),
+            row(orderRowType, 11L, 1L, "ori"),
+            row(itemRowType, 111L, 11L),
+            row(itemRowType, 112L, 11L),
+            row(orderRowType, 12L, 1L, "david"),
+            row(itemRowType, 121L, 12L),
+            row(itemRowType, 122L, 12L),
+            row(projectedRowType, "foundation", 2L),
+            row(orderRowType, 21L, 2L, "tom"),
+            row(itemRowType, 211L, 21L),
+            row(itemRowType, 212L, 21L),
+            row(orderRowType, 22L, 2L, "jack"),
+            row(itemRowType, 221L, 22L),
+            row(itemRowType, 222L, 22L),
+            row(orderRowType, 31L, 3L, "peter"),
+            row(itemRowType, 311L, 31L),
+            row(itemRowType, 312L, 31L),
+            row(projectedRowType, "highland", 4L)
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testProjectOfFlatten()
+    {
+        // Tests projection of null too
+        PhysicalOperator flattenCO = flatten_HKeyOrdered(groupScan_Default(coi),
+                                                         customerRowType,
+                                                         orderRowType,
+                                                         FULL_JOIN);
+        RowType coType = flattenCO.rowType();
+        PhysicalOperator flattenCOI = flatten_HKeyOrdered(flattenCO,
+                                                          coType,
+                                                          itemRowType,
+                                                          FULL_JOIN);
+        RowType coiType = flattenCOI.rowType();
+        PhysicalOperator plan =
+            project_Default(flattenCOI,
+                            coiType,
+                            Arrays.asList(
+                                field(1), // customer name
+                                field(4), // salesman
+                                field(5))); // iid
+        Cursor cursor = cursor(plan, adapter);
+        RowType projectedRowType = plan.rowType();
+        RowBase[] expected = new RowBase[]{
+            row(projectedRowType, "northbridge", "ori", 111L),
+            row(projectedRowType, "northbridge", "ori", 112L),
+            row(projectedRowType, "northbridge", "david", 121L),
+            row(projectedRowType, "northbridge", "david", 122L),
+            row(projectedRowType, "foundation", "tom", 211L),
+            row(projectedRowType, "foundation", "tom", 212L),
+            row(projectedRowType, "foundation", "jack", 221L),
+            row(projectedRowType, "foundation", "jack", 222L),
+            row(projectedRowType, null, "peter", 311L),
+            row(projectedRowType, null, "peter", 312L),
+            row(projectedRowType, "highland", null, null)
+        };
+        compareRows(expected, cursor);
+    }
+}

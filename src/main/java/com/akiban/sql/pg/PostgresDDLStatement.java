@@ -15,15 +15,19 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.service.session.Session;
 import com.akiban.sql.aisddl.*;
 
 import com.akiban.sql.StandardException;
 
 import com.akiban.sql.parser.CreateIndexNode;
 import com.akiban.sql.parser.CreateTableNode;
-import com.akiban.sql.parser.CreateViewNode;
-import com.akiban.sql.parser.DropViewNode;
+import com.akiban.sql.parser.CreateSchemaNode;
+import com.akiban.sql.parser.DropTableNode;
+import com.akiban.sql.parser.DropSchemaNode;
 import com.akiban.sql.parser.DDLStatementNode;
+import com.akiban.sql.parser.DropViewNode;
 import com.akiban.sql.parser.NodeTypes;
 
 import com.akiban.sql.optimizer.AISBinder;
@@ -33,7 +37,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 
 import java.io.IOException;
 
-/** SQL statements that affect session / environment state. */
+/** SQL DDL statements. */
 public class PostgresDDLStatement implements PostgresStatement
 {
     private DDLStatementNode ddl;
@@ -62,14 +66,25 @@ public class PostgresDDLStatement implements PostgresStatement
         }
     }
 
-    public void execute(PostgresServerSession server, int maxrows)
+    public int execute(PostgresServerSession server, int maxrows)
             throws IOException, StandardException {
         AkibanInformationSchema ais = server.getAIS();
         String schema = server.getDefaultSchemaName();
+        DDLFunctions ddlFunctions = server.getServiceManager().getDXL().ddlFunctions();
+        Session session = server.getSession();
 
         switch (ddl.getNodeType()) {
+        case NodeTypes.CREATE_SCHEMA_NODE:
+            SchemaDDL.createSchema(ais, schema, (CreateSchemaNode)ddl);
+            break;
+        case NodeTypes.DROP_SCHEMA_NODE:
+            SchemaDDL.dropSchema(ddlFunctions, session, (DropSchemaNode)ddl);
+            break;
         case NodeTypes.CREATE_TABLE_NODE:
-            TableDDL.createTable(ais, schema, (CreateTableNode)ddl);
+            TableDDL.createTable(ddlFunctions, session, schema, (CreateTableNode)ddl);
+            break;
+        case NodeTypes.DROP_TABLE_NODE:
+            TableDDL.dropTable(ddlFunctions, session, schema, (DropTableNode)ddl);
             break;
         case NodeTypes.CREATE_VIEW_NODE:
             // TODO: Need to store persistently in AIS (or its extension).
@@ -81,6 +96,9 @@ public class PostgresDDLStatement implements PostgresStatement
         case NodeTypes.CREATE_INDEX_NODE:
             IndexDDL.createIndex(ais, schema, (CreateIndexNode)ddl);
             break;
+        case NodeTypes.RENAME_NODE:
+        case NodeTypes.ALTER_TABLE_NODE:
+        case NodeTypes.REVOKE_NODE:
         default:
             throw new StandardException(ddl.statementToString() + " not supported yet");
         }
@@ -91,6 +109,6 @@ public class PostgresDDLStatement implements PostgresStatement
             messenger.writeString(ddl.statementToString());
             messenger.sendMessage();
         }
+        return 0;
     }
-
 }

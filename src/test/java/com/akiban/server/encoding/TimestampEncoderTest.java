@@ -17,6 +17,8 @@ package com.akiban.server.encoding;
 
 import org.junit.Test;
 
+import java.util.TimeZone;
+
 public class TimestampEncoderTest extends LongEncoderTestBase {
     public TimestampEncoderTest() {
         super(EncoderFactory.TIMESTAMP,
@@ -25,9 +27,12 @@ public class TimestampEncoderTest extends LongEncoderTestBase {
                 new TestElement("2009-02-13 23:31:30", 1234567890),
                 new TestElement("2009-02-13 23:31:30", 1234567890),
                 new TestElement("2038-01-19 03:14:07", 2147483647),
-                new TestElement("1986-10-28 00:00:00", new Integer(530841600)),
-                new TestElement("2011-04-10 18:34:00", new Long(1302460440))
+                new TestElement("1986-10-28 00:00:00", 530841600),
+                new TestElement("2011-04-10 18:34:00", 1302460440L)
               });
+
+        // Make expected output deterministic
+        EncoderFactory.TIMESTAMP.setTimezone(TimeZone.getTimeZone("GMT"));
     }
 
     

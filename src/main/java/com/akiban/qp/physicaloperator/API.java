@@ -21,26 +21,55 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.UserTableRowType;
 
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 
 public class API
 {
-    public static PhysicalOperator flatten_HKeyOrdered(PhysicalOperator inputOperator,
-                                                       RowType parentType,
-                                                       RowType childType)
+    public static PhysicalOperator project_Default(PhysicalOperator inputOperator,
+                                                   RowType rowType,
+                                                   List<Expression> projections)
     {
-        return flatten_HKeyOrdered(inputOperator, parentType, childType, Flatten_HKeyOrdered.DEFAULT);
+        return new Project_Default(inputOperator, rowType, projections);
     }
 
     public static PhysicalOperator flatten_HKeyOrdered(PhysicalOperator inputOperator,
                                                        RowType parentType,
                                                        RowType childType,
-                                                       int flags)
+                                                       JoinType joinType)
     {
-        return new Flatten_HKeyOrdered(inputOperator, parentType, childType, flags);
+        return flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, EnumSet.noneOf(FlattenOption.class));
+    }
+
+    public static PhysicalOperator flatten_HKeyOrdered(PhysicalOperator inputOperator,
+                                                       RowType parentType,
+                                                       RowType childType,
+                                                       JoinType joinType,
+                                                       FlattenOption flag0)
+    {
+        return new Flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, EnumSet.of(flag0));
+    }
+
+    public static PhysicalOperator flatten_HKeyOrdered(PhysicalOperator inputOperator,
+                                                       RowType parentType,
+                                                       RowType childType,
+                                                       JoinType joinType,
+                                                       FlattenOption flag0,
+                                                       FlattenOption flag1)
+    {
+        return new Flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, EnumSet.of(flag0, flag1));
+    }
+
+    public static PhysicalOperator flatten_HKeyOrdered(PhysicalOperator inputOperator,
+                                                       RowType parentType,
+                                                       RowType childType,
+                                                       JoinType joinType,
+                                                       EnumSet<FlattenOption> flags)
+    {
+        return new Flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, flags);
     }
 
     public static PhysicalOperator groupScan_Default(GroupTable groupTable)
@@ -48,33 +77,37 @@ public class API
         return groupScan_Default(groupTable, NO_LIMIT);
     }
 
-    public static PhysicalOperator groupScan_Default(GroupTable groupTable,
-                                                     Limit limit,
-                                                     IndexKeyRange indexKeyRange)
-    {
-        return new GroupScan_Default(groupTable, limit, indexKeyRange);
-    }
-
     public static PhysicalOperator groupScan_Default(GroupTable groupTable, Limit limit)
     {
-        return new GroupScan_Default(groupTable, limit, null);
+        return new GroupScan_Default(new GroupScan_Default.FullGroupCursorCreator(groupTable), limit);
     }
 
-    public static PhysicalOperator lookup_Default(PhysicalOperator inputOperator,
-                                                  GroupTable groupTable,
-                                                  RowType inputRowType,
-                                                  RowType outputRowType,
-                                                  boolean keepInput)
+    public static PhysicalOperator groupScan_Default(GroupTable groupTable,
+                                                     Limit limit,
+                                                     Expression hkeyExpression,
+                                                     boolean deep)
     {
-        return lookup_Default(inputOperator, groupTable, inputRowType, outputRowType, keepInput, NO_LIMIT);
+        return new GroupScan_Default(
+                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hkeyExpression, deep),
+                limit
+        );
     }
 
-    public static PhysicalOperator lookup_Default(PhysicalOperator inputOperator,
-                                                  GroupTable groupTable,
-                                                  RowType inputRowType,
-                                                  RowType outputRowType,
-                                                  boolean keepInput,
-                                                  Limit limit)
+    public static PhysicalOperator branchLookup_Default(PhysicalOperator inputOperator,
+                                                        GroupTable groupTable,
+                                                        RowType inputRowType,
+                                                        RowType outputRowType,
+                                                        boolean keepInput)
+    {
+        return branchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, keepInput, NO_LIMIT);
+    }
+
+    public static PhysicalOperator branchLookup_Default(PhysicalOperator inputOperator,
+                                                        GroupTable groupTable,
+                                                        RowType inputRowType,
+                                                        RowType outputRowType,
+                                                        boolean keepInput,
+                                                        Limit limit)
     {
         return new BranchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, keepInput, limit);
     }
@@ -86,7 +119,7 @@ public class API
     public static PhysicalOperator ancestorLookup_Default(PhysicalOperator inputOperator,
                                                           GroupTable groupTable,
                                                           RowType rowType,
-                                                          List<RowType> ancestorTypes,
+                                                          Collection<? extends RowType> ancestorTypes,
                                                           boolean keepInput)
     {
         return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, keepInput);
@@ -94,12 +127,20 @@ public class API
 
     public static PhysicalOperator indexScan_Default(IndexRowType indexType)
     {
-        return indexScan_Default(indexType, false, null);
+        return indexScan_Default(indexType, false, null, indexType.tableType());
     }
 
     public static PhysicalOperator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
     {
-        return new IndexScan_Default(indexType, reverse, indexKeyRange);
+        return indexScan_Default(indexType, reverse, indexKeyRange, indexType.tableType());
+    }
+
+    public static PhysicalOperator indexScan_Default(IndexRowType indexType,
+                                                     boolean reverse,
+                                                     IndexKeyRange indexKeyRange,
+                                                     UserTableRowType innerJoinUntilRowType)
+    {
+        return new IndexScan_Default(indexType, reverse, indexKeyRange, innerJoinUntilRowType);
     }
 
     public static PhysicalOperator select_HKeyOrdered(PhysicalOperator inputOperator,
@@ -109,18 +150,38 @@ public class API
         return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate);
     }
 
-    public static PhysicalOperator cut_Default(Schema schema,
-                                               PhysicalOperator inputOperator,
-                                               Collection<RowType> cutTypes)
+    public static PhysicalOperator cut_Default(PhysicalOperator inputOperator, RowType cutType)
     {
-        return new Cut_Default(schema, inputOperator, cutTypes);
+        return new Cut_Default(inputOperator, cutType);
     }
 
-    public static PhysicalOperator extract_Default(Schema schema,
-                                                   PhysicalOperator inputOperator,
+    public static PhysicalOperator extract_Default(PhysicalOperator inputOperator,
                                                    Collection<RowType> extractTypes)
     {
-        return new Extract_Default(schema, inputOperator, extractTypes);
+        return new Extract_Default(inputOperator, extractTypes);
+    }
+
+    public static PhysicalOperator product_ByRun(PhysicalOperator input,
+                                                 RowType leftType,
+                                                 RowType rightType)
+    {
+        return new Product_ByRun(input, leftType, rightType);
+    }
+
+    public static PhysicalOperator count_Default(PhysicalOperator input,
+                                                 RowType countType)
+    {
+        return new Count_Default(input, countType);
+    }
+
+    public static PhysicalOperator sort_InsertionLimited(PhysicalOperator inputOperator, 
+                                                         RowType sortType, 
+                                                         List<Expression> sortExpressions,
+                                                         List<Boolean> sortDescendings,
+                                                         int limit)
+    {
+        return new Sort_InsertionLimited(inputOperator, sortType, 
+                                         sortExpressions, sortDescendings, limit);
     }
 
     private static final Limit NO_LIMIT = new Limit()
@@ -145,12 +206,17 @@ public class API
         return new TopLevelWrappingCursor(root.cursor(adapter));
     }
 
-    // For all flags
-    public static final int DEFAULT = 0x00;
     // Flattening flags
-    public static final int KEEP_PARENT = Flatten_HKeyOrdered.KEEP_PARENT;
-    public static final int KEEP_CHILD = Flatten_HKeyOrdered.KEEP_CHILD;
-    public static final int INNER_JOIN = Flatten_HKeyOrdered.INNER_JOIN;
-    public static final int LEFT_JOIN = Flatten_HKeyOrdered.LEFT_JOIN;
-    public static final int RIGHT_JOIN = Flatten_HKeyOrdered.RIGHT_JOIN;
+    public static enum JoinType {
+        INNER_JOIN,
+        LEFT_JOIN,
+        RIGHT_JOIN,
+        FULL_JOIN
+    }
+
+    public static enum FlattenOption {
+        KEEP_PARENT,
+        KEEP_CHILD,
+        LEFT_JOIN_SHORTENS_HKEY
+    }
 }

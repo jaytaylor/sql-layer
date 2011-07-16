@@ -384,7 +384,7 @@ public class Grouper implements Visitor
                                             parserContext);
                     ColumnReference groupColumnReference = (ColumnReference)
                         nodeFactory.getNode(NodeTypes.COLUMN_REFERENCE,
-                                            columnBinding.getColumn().getGroupColumn().getName().toUpperCase(),
+                                            columnBinding.getColumn().getGroupColumn().getName(),
                                             groupTableName,
                                             parserContext);
                     groupColumnReference.setType(columnReference.getType());

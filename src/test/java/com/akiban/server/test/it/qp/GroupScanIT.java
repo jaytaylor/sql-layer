@@ -108,7 +108,7 @@ public class GroupScanIT extends PhysicalOperatorITBase
         IndexBound tom = orderSalesmanIndexBound("tom");
         IndexKeyRange indexKeyRange = new IndexKeyRange(tom, true, tom, true);
         PhysicalOperator groupScan = indexScan_Default(orderSalesmanIndexRowType, false, indexKeyRange);
-        PhysicalOperator lookup = lookup_Default(groupScan, coi, orderSalesmanIndexRowType, orderRowType, false);
+        PhysicalOperator lookup = branchLookup_Default(groupScan, coi, orderSalesmanIndexRowType, orderRowType, false);
         Cursor cursor = cursor(lookup, adapter);
         RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
                                            row(itemRowType, 211L, 21L),
@@ -124,44 +124,22 @@ public class GroupScanIT extends PhysicalOperatorITBase
         // any uses of GroupScan.
     }
 
-    @Test
-    public void testHKeyIndexRange()
-    {
-        use(db);
-        IndexBound c1 = customerCidIndexBound(1);
-        IndexKeyRange indexKeyRange = new IndexKeyRange(c1, true, c1, true);
-        PhysicalOperator groupScan = groupScan_Default(coi, NO_LIMIT, indexKeyRange);
-        Cursor cursor = cursor(groupScan, adapter);
-        RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
-                                           row(orderRowType, 11L, 1L, "ori"),
-                                           row(itemRowType, 111L, 11L),
-                                           row(itemRowType, 112L, 11L),
-                                           row(orderRowType, 12L, 1L, "david"),
-                                           row(itemRowType, 121L, 12L),
-                                           row(itemRowType, 122L, 12L)
-        };
-        compareRows(expected, cursor);
-    }
-
-    @Test
-    public void testHKeyIndexRange_EmptyDB()
-    {
-        use(emptyDB);
-        IndexBound c1 = customerCidIndexBound(1);
-        IndexKeyRange indexKeyRange = new IndexKeyRange(c1, true, c1, true);
-        PhysicalOperator groupScan = groupScan_Default(coi, NO_LIMIT, indexKeyRange);
-        Cursor cursor = cursor(groupScan, adapter);
-        compareRows(EMPTY_EXPECTED, cursor);
-    }
-
     private IndexBound orderSalesmanIndexBound(String salesman)
     {
-        return new IndexBound(userTable(order), row(orderRowType, null, null, salesman), new SetColumnSelector(2));
+        return new IndexBound(row(orderSalesmanIndexRowType, salesman), new SetColumnSelector(0));
     }
 
     private IndexBound customerCidIndexBound(int cid)
     {
-        return new IndexBound(userTable(customer), row(customerRowType, cid, null), new SetColumnSelector(0));
+        return new IndexBound(row(customerCidIndexRowType, cid), new SetColumnSelector(0));
+    }
+
+    /**
+     * For use in HKey scan (bound contains user table rows)
+     */
+    private IndexBound customerCidBound(int cid)
+    {
+        return new IndexBound(row(customerRowType, cid, null), new SetColumnSelector(0));
     }
 
     private static final RowBase[] EMPTY_EXPECTED = new RowBase[]{};

@@ -17,12 +17,18 @@ package com.akiban.server.encoding;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.FieldDef;
 import com.akiban.server.RowData;
 import com.persistit.Key;
 
 public class DoubleEncoder extends EncodingBase<Double> {
     DoubleEncoder() {
+    }
+
+    @Override
+    public Class<Double> getToObjectClass() {
+        return Double.class;
     }
 
     public static long encodeFromObject(Object obj) {
@@ -65,7 +71,7 @@ public class DoubleEncoder extends EncodingBase<Double> {
     @Override
     public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
         final long longBits = encodeFromObject(value);
-        return EncodingUtils.putInt(dest, offset, longBits, STORAGE_SIZE);
+        return AkServerUtil.putIntegerByWidth(dest, offset, STORAGE_SIZE, longBits);
     }
 
     @Override

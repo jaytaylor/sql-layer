@@ -16,6 +16,7 @@
 package com.akiban.server.encoding;
 
 import com.akiban.ais.model.Column;
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.FieldDef;
 import com.akiban.server.Quote;
 import com.akiban.server.RowData;
@@ -27,6 +28,11 @@ public abstract class LongEncoderBase extends EncodingBase<Long> {
     LongEncoderBase() {
     }
     
+    @Override
+    public Class<Long> getToObjectClass() {
+        return Long.class;
+    }
+
     /**
      * Encode an object to a long. The only strict requirement is null
      * must be handled. In general, at least String and Number should be
@@ -67,11 +73,7 @@ public abstract class LongEncoderBase extends EncodingBase<Long> {
     protected long fromRowData(RowData rowData, long offsetAndWidth) {
         final int offset = (int)offsetAndWidth;
         final int width = (int)(offsetAndWidth >>> 32);
-        final int shiftSize = 64 - width*8;
-        long v = rowData.getIntegerValue(offset, width);
-        v <<= shiftSize;
-        v >>= shiftSize;
-        return v;
+        return rowData.getIntegerValue(offset, width);
     }
 
     
@@ -85,7 +87,7 @@ public abstract class LongEncoderBase extends EncodingBase<Long> {
     public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
         final long longValue = encodeFromObject(value);
         final int width = fieldDef.getMaxStorageSize();
-        return EncodingUtils.putInt(dest, offset, longValue, width);
+        return AkServerUtil.putIntegerByWidth(dest, offset, width, longValue);
     }
 
     @Override

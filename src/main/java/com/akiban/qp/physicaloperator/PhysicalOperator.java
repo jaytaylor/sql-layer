@@ -15,8 +15,10 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.RowDef;
 
 import java.util.Collections;
 import java.util.List;
@@ -40,26 +42,28 @@ public abstract class PhysicalOperator implements Plannable
 
     protected abstract Cursor cursor(StoreAdapter adapter);
 
-    protected static void checkArgument(boolean assertion) throws IllegalArgumentException
-    {
-        if (!assertion) {
-            throw new IllegalArgumentException();
-        }
-    }
-
     @Override
     public String describePlan()
     {
         return toString();
     }
 
+    protected static final String NL = System.getProperty("line.separator");
+
     @Override
     public final String describePlan(PhysicalOperator inputOperator)
     {
         StringBuilder buffer = new StringBuilder();
         buffer.append(inputOperator.describePlan());
-        buffer.append('\n');
+        buffer.append(NL);
         buffer.append(toString());
         return buffer.toString();
+    }
+
+    // For use by subclasses
+
+    protected int ordinal(UserTable table)
+    {
+        return ((RowDef) table.rowDef()).getOrdinal();
     }
 }

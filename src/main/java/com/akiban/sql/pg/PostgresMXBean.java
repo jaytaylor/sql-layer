@@ -15,16 +15,11 @@
 
 package com.akiban.sql.pg;
 
+import java.util.Date;
 import java.util.Set;
 
 public interface PostgresMXBean {
-    
-    Set<Integer> getCurrentConnections();
-    
-    boolean isInstrumentationEnabled(int pid);
-    void enableInstrumentation(int pid);
-    void disableInstrumentation(int pid);
-    
+        
     /**
      * @param pid connection ID
      * @return text of current/last query this connection executed
@@ -41,5 +36,30 @@ public interface PostgresMXBean {
     void setStatementCacheCapacity(int capacity);
     int getStatementCacheHits();
     int getStatementCacheMisses();
+    
+    Set<Integer> getCurrentSessions();
+    
+    /*
+     * whether instrumentation is enabled for all sessions
+     */
+    boolean isInstrumentationEnabled();
+    void enableInstrumentation();
+    void disableInstrumentation();
+    
+    /*
+     * whether instrumentation is enabled for a specific session
+     */
+    boolean isInstrumentationEnabled(int sessionId);
+    void enableInstrumentation(int sessionId);
+    void disableInstrumentation(int sessionId);
+    
+    /*
+     * information on individual sessions being traced
+     */
+    Date getStartTime(int sessionId);
+    long getProcessingTime(int sessionId);
+    /* below are only for the last statement executed */
+    long getEventTime(int sessionId, String eventName);
+    long getTotalEventTime(int sessionId, String eventName);
 
 }

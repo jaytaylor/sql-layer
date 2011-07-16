@@ -15,15 +15,14 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.util.ArgumentValidation;
 
-import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 class Cut_Default extends PhysicalOperator
@@ -33,10 +32,16 @@ class Cut_Default extends PhysicalOperator
     @Override
     public String toString()
     {
-        return String.format("%s(%s)", getClass().getSimpleName(), cutTypes);
+        return String.format("%s(%s)", getClass().getSimpleName(), rejectTypes);
     }
 
     // PhysicalOperator interface
+
+    @Override
+    public List<PhysicalOperator> getInputOperators()
+    {
+        return Collections.singletonList(inputOperator);
+    }
 
     @Override
     protected Cursor cursor(StoreAdapter adapter)
@@ -50,38 +55,28 @@ class Cut_Default extends PhysicalOperator
         return describePlan(inputOperator);
     }
 
-    // GroupScan_Default interface
+    // CutScan_Default interface
 
-    public Cut_Default(Schema schema, PhysicalOperator inputOperator, Collection<RowType> cutTypes)
+    public Cut_Default(PhysicalOperator inputOperator, RowType cutType)
     {
+        ArgumentValidation.notNull("cutType", cutType);
         this.inputOperator = inputOperator;
-        for (RowType cutType : cutTypes) {
-            if (cutType instanceof UserTableRowType) {
-                addDescendentTypes(schema, ((UserTableRowType) cutType).userTable(), this.cutTypes);
-            } else {
-                cutTypes.add(cutType);
+        for (Iterator<RowType> rowTypes = cutType.schema().rowTypes(); rowTypes.hasNext();) {
+            RowType type = rowTypes.next();
+            if (cutType != type && cutType.ancestorOf(type)) {
+                this.rejectTypes.add(type);
             }
-        }
-    }
-
-    // For use by this class
-
-    private static void addDescendentTypes(Schema schema, UserTable table, Set<RowType> rowTypes)
-    {
-        rowTypes.add(schema.userTableRowType(table));
-        for (Join join : table.getChildJoins()) {
-            addDescendentTypes(schema, join.getChild(), rowTypes);
         }
     }
 
     // Object state
 
     private final PhysicalOperator inputOperator;
-    private final Set<RowType> cutTypes = new HashSet<RowType>();
+    private final Set<RowType> rejectTypes = new HashSet<RowType>();
 
     // Inner classes
 
-    private class Execution extends SingleRowCachingCursor
+    private class Execution implements Cursor
     {
         // Cursor interface
 
@@ -89,32 +84,28 @@ class Cut_Default extends PhysicalOperator
         public void open(Bindings bindings)
         {
             input.open(bindings);
-            next = input.next();
         }
 
         @Override
-        public boolean next()
+        public Row next()
         {
-            Row row = null;
-            while (next && row == null) {
-                row = input.currentRow();
-                if (cutTypes.contains(row.rowType())) {
+            Row row;
+            do {
+                row = input.next();
+                if (row == null) {
+                    close();
+                } else if (rejectTypes.contains(row.rowType())) {
                     row = null;
                 }
-                next = input.next();
-            }
-            outputRow(row);
-            if (row == null) {
-                close();
-            }
-            return row != null;
+            } while (row == null && !closed);
+            return row;
         }
 
         @Override
         public void close()
         {
-            outputRow(null);
             input.close();
+            closed = true;
         }
 
         // Execution interface
@@ -127,6 +118,6 @@ class Cut_Default extends PhysicalOperator
         // Object state
 
         private final Cursor input;
-        private boolean next;
+        private boolean closed = false;
     }
 }
