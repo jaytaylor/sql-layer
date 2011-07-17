@@ -40,7 +40,7 @@ public class AISBuilderTest
         Assert.assertEquals(0, ais.getJoins().size());
 
         Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
     @Test
@@ -58,7 +58,7 @@ public class AISBuilderTest
         Assert.assertEquals(0, ais.getJoins().size());
 
         Assert.assertEquals(1, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
        
     }
 
@@ -84,7 +84,7 @@ public class AISBuilderTest
         Assert.assertEquals("customer$customer_name", groupTable.getColumn(1).getName());
 
         Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
     @Test
@@ -142,7 +142,7 @@ public class AISBuilderTest
         Assert.assertFalse("equal names: " + groupCol1, groupCol1.equals(groupCol2));
 
         Assert.assertEquals(0,
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
     @Test
@@ -174,7 +174,7 @@ public class AISBuilderTest
         Assert.assertEquals("customer$customer_id", groupTable.getColumn(0).getName());
         Assert.assertEquals("customer$customer_name", groupTable.getColumn(1).getName());
         Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
     @Test
@@ -208,7 +208,7 @@ public class AISBuilderTest
         Assert.assertEquals("customer$customer_name", groupTable.getColumn(1).getName());
 
         Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
     @Test
@@ -257,7 +257,7 @@ public class AISBuilderTest
         Assert.assertEquals("item$quantity", groupTable.getColumn(c++).getName());
 
         Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
     @Test
@@ -344,7 +344,7 @@ public class AISBuilderTest
         }
         
         Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
 
@@ -417,7 +417,7 @@ public class AISBuilderTest
         groupTable = group.getGroupTable();
         Assert.assertEquals(0, groupTable.getColumns().size());
 
-        AISValidationResults results = builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS);
+        AISValidationResults results = builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS);
         
         Assert.assertEquals(3,results.failures().size());
         Iterator<AISValidationFailure> failures = results.failures().iterator();
@@ -462,7 +462,7 @@ public class AISBuilderTest
         Assert.assertEquals("customer$customer_name", groupTable.getColumn(1).getName());
 
         Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
     @Test
@@ -486,7 +486,7 @@ public class AISBuilderTest
         Assert.assertEquals(0, ais.getJoins().size());
 
         Assert.assertEquals(1, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
     @Test
@@ -519,7 +519,7 @@ public class AISBuilderTest
         Assert.assertEquals(1, ais.getJoins().size());
 
         Assert.assertEquals(2, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
     @Test
@@ -578,7 +578,7 @@ public class AISBuilderTest
         }
 
         Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
     @Test
@@ -610,7 +610,7 @@ public class AISBuilderTest
 
         
         Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
 
         builder.createGroup("group_02", "s", "orders");
         builder.moveTreeToEmptyGroup("s", "o", "group_02");
@@ -618,11 +618,11 @@ public class AISBuilderTest
         //Assert.assertEquals("number of joins", 0, builder.akibanInformationSchema().getJoins().size());
 
         Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
 
         builder.groupingIsComplete();
         Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
     @Test
@@ -694,7 +694,7 @@ public class AISBuilderTest
         // AISPrinter.print(ais);
 
         Assert.assertEquals(0,
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
     @Test
@@ -717,7 +717,7 @@ public class AISBuilderTest
         Assert.assertEquals(null, table.getColumn("z").getInitialAutoIncrementValue());
 
         Assert.assertEquals(1, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
     @Test
@@ -740,7 +740,7 @@ public class AISBuilderTest
         Assert.assertEquals(null, table.getColumn("z").getInitialAutoIncrementValue());
 
         Assert.assertEquals(1, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
 /*
@@ -832,7 +832,7 @@ public class AISBuilderTest
         groupTable.getColumns();
 
         Assert.assertEquals(0,
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
     @Test
@@ -892,7 +892,7 @@ public class AISBuilderTest
         // Done
         builder.groupingIsComplete();
         Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
     @Test
@@ -956,7 +956,7 @@ public class AISBuilderTest
         Assert.assertEquals(AkibanInformationSchema.DEFAULT_COLLATION, charsetAndCollation.collation());
 
         Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
     @Test
@@ -994,7 +994,7 @@ public class AISBuilderTest
         Assert.assertEquals(AkibanInformationSchema.DEFAULT_COLLATION, charsetAndCollation.collation());
 
         Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
     @Test
@@ -1022,7 +1022,7 @@ public class AISBuilderTest
         Assert.assertEquals("another_collation", charsetAndCollation.collation());
 
         Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
     @Test
@@ -1047,7 +1047,7 @@ public class AISBuilderTest
         builder.groupingIsComplete();
 
         Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
         
         final AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(2, ais.getUserTables().size());
@@ -1107,7 +1107,7 @@ public class AISBuilderTest
         builder.groupingIsComplete();
 
         Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
         
         final AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(3, ais.getUserTables().size());
@@ -1173,7 +1173,7 @@ public class AISBuilderTest
         builder.groupingIsComplete();
 
         Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).failures().size());
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
         
         final AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(3, ais.getUserTables().size());

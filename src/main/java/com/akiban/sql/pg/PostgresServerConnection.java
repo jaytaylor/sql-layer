@@ -21,11 +21,8 @@ import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.ParameterNode;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.physicaloperator.StoreAdapter;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.service.instrumentation.SessionTracer;

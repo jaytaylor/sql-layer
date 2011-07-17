@@ -50,7 +50,7 @@ public class AISBBasedBuilder
             usable = false;
             aisb.basicSchemaIsComplete();
             aisb.groupingIsComplete();
-            AISValidationResults results = aisb.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS);
+            AISValidationResults results = aisb.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS);
             results.throwIfNecessary();
             aisb.akibanInformationSchema().freeze();
             return aisb.akibanInformationSchema();

@@ -48,13 +48,17 @@ public class AISInvariants {
     public static void checkDuplicateColumnPositions(Table table, Integer position) {
         /* TODO: fix AkServerAisSourceTargetIT throwing this exception: 
          * Table akiban_information_schema._akiban_columns already has a column in position 7
-         * 
+         */ 
         if (position < table.getColumnsIncludingInternal().size() && 
-                table.getColumn(position) != null) {
+                table.getColumn(position) != null &&
+                table.getColumn(position).getPosition() == position) {
             throw new InvalidOperationException (ErrorCode.DUPLICATE_COLUMN,
-                    "Table %s already has a column in position %d", table.getName().toString(), position);
+                    "Table %s already has a column %s in position %d", 
+                    table.getName().toString(),
+                    table.getColumn(position).toString(),
+                    position);
         }
-        */
+        
     }
     
     public static void checkDuplicateColumnsInIndex(Index index, String columnName)

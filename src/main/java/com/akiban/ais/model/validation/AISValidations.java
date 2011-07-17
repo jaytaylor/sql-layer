@@ -29,10 +29,10 @@ public final class AISValidations {
     public static final AISValidation TABLE_INDEXES_MATCH_GROUP = new TableIndexesMatchGroupIndexes();
     public static final AISValidation TABLES_IN_A_GROUP = new TablesInAGroup();
     
-    public static final Collection<AISValidation> ALL_VALIDATIONS;
+    public static final Collection<AISValidation> LIVE_AIS_VALIDATIONS;
     
     static {
-        ALL_VALIDATIONS = Collections.unmodifiableList(Arrays.asList(
+        LIVE_AIS_VALIDATIONS = Collections.unmodifiableList(Arrays.asList(
                 PROTECTED_TABLES,
                 SUPPORTED_COLUMN_TYPES,
                 TABLEID_UNIQUE,

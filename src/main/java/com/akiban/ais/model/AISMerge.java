@@ -67,6 +67,8 @@ public class AISMerge {
         // but that assumes the UserTable.getAIS() is complete and valid. 
         // i.e. has a group and group table, joins are accurate, etc. 
         // this may not be true 
+        // Also the tableIDs need to be assigned correctly, which 
+        // TableSubsetWriter doesn't do. 
         
         final AISBuilder builder = new AISBuilder(targetAIS);
 
@@ -89,7 +91,7 @@ public class AISMerge {
         }
         builder.groupingIsComplete();
         
-        builder.akibanInformationSchema().validate(AISValidations.ALL_VALIDATIONS).throwIfNecessary();
+        builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
         return this;
     }
