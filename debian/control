@@ -9,7 +9,7 @@ Vcs-Browser: http://bazaar.launchpad.net/~akiban-technologies/akiban-server/trun
 Standards-Version: 3.9.1
 
 Package: akiban-server
-Architecture: any
+Architecture: all
 Depends: openjdk-6-jre-headless (>= 6b11) | java6-runtime, adduser
 Recommends: libjna-java
 Description: Akiban Server 
