@@ -35,7 +35,12 @@ public abstract class PhysicalOperator implements Plannable
         throw new UnsupportedOperationException();
     }
 
-    public void findDerivedTypes(Set<RowType> types)
+    /**
+     * Find the derived types created by this operator and its inputs. A <i>derived type</i> is a type generated
+     * by an operator, and as such, does not correspond to an AIS UserTable or Index.
+     * @param derivedTypes Derived types created by this operator or input operators are added to derivedTypes.
+     */
+    public void findDerivedTypes(Set<RowType> derivedTypes)
     {
     }
 

@@ -56,9 +56,10 @@ class Count_Default extends PhysicalOperator
     }
 
     @Override
-    public void findDerivedTypes(Set<RowType> types)
+    public void findDerivedTypes(Set<RowType> derivedTypes)
     {
-        types.add(resultType);
+        inputOperator.findDerivedTypes(derivedTypes);
+        derivedTypes.add(resultType);
     }
 
     @Override

@@ -42,6 +42,12 @@ class Filter_Default extends PhysicalOperator
     // PhysicalOperator interface
 
     @Override
+    public void findDerivedTypes(Set<RowType> derivedTypes)
+    {
+        inputOperator.findDerivedTypes(derivedTypes);
+    }
+
+    @Override
     public List<PhysicalOperator> getInputOperators()
     {
         return Collections.singletonList(inputOperator);

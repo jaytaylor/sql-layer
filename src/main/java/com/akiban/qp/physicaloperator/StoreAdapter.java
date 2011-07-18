@@ -17,7 +17,7 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
@@ -31,12 +31,7 @@ public abstract class StoreAdapter
 {
     public abstract GroupCursor newGroupCursor(GroupTable groupTable);
 
-    public final Cursor newIndexCursor(TableIndex index)
-    {
-        return newIndexCursor(index, false, null);
-    }
-
-    public abstract Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange);
+    public abstract Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange, UserTable innerJoinUntil);
 
     public abstract HKey newHKey(RowType rowType);
 

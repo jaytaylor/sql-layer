@@ -23,6 +23,7 @@ import com.akiban.util.ArgumentValidation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 class Select_HKeyOrdered extends PhysicalOperator
 {
@@ -35,6 +36,13 @@ class Select_HKeyOrdered extends PhysicalOperator
     }
 
     // PhysicalOperator interface
+
+
+    @Override
+    public void findDerivedTypes(Set<RowType> derivedTypes)
+    {
+        inputOperator.findDerivedTypes(derivedTypes);
+    }
 
     @Override
     protected Cursor cursor(StoreAdapter adapter)

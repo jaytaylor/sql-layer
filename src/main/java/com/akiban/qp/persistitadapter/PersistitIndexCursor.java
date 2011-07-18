@@ -16,6 +16,7 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
@@ -23,7 +24,6 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.server.IndexDef;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
@@ -50,15 +50,28 @@ class PersistitIndexCursor implements Cursor
     @Override
     public Row next()
     {
+        final boolean isTableIndex = index().isTableIndex();
         try {
-            if (exchange != null &&
-                (indexFilter == null
-                 ? exchange.traverse(direction, true)
-                 : exchange.traverse(direction, indexFilter, 0))) {
-                unsharedRow().get().copyFromExchange(exchange);
-            } else {
-                close();
-            }
+            boolean needAnother;
+            do {
+                if (exchange != null &&
+                    (indexFilter == null
+                     ? exchange.traverse(direction, true)
+                     : exchange.traverse(direction, indexFilter, FETCH_NO_BYTES))) {
+                    if (isTableIndex || exchange.fetch().getValue().getInt() >= minimumDepth) {
+                        // The value of a group index is the depth at which it's defined, as an int.
+                        // See OperatorStoreGIHandler, search for "Description of group index entry values"
+                        unsharedRow().get().copyFromExchange(exchange);
+                        needAnother = false;
+                    }
+                    else {
+                        needAnother = true;
+                    }
+                } else {
+                    close();
+                    needAnother = false;
+                }
+            } while (needAnother);
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }
@@ -78,13 +91,18 @@ class PersistitIndexCursor implements Cursor
 
     // For use by this package
 
-    PersistitIndexCursor(PersistitAdapter adapter, IndexRowType indexRowType, boolean reverse, IndexKeyRange keyRange)
+    PersistitIndexCursor(PersistitAdapter adapter,
+                         IndexRowType indexRowType,
+                         boolean reverse,
+                         IndexKeyRange keyRange,
+                         UserTable innerJoinUntil)
         throws PersistitException
     {
         this.keyRange = keyRange;
         this.adapter = adapter;
         this.indexRowType = indexRowType;
         this.row = new RowHolder<PersistitIndexRow>(adapter.newIndexRow(indexRowType));
+        this.minimumDepth = innerJoinUntil.getDepth();
         if (reverse) {
             boundary = Key.AFTER;
             direction = Key.LT;
@@ -125,6 +143,10 @@ class PersistitIndexCursor implements Cursor
     private final Key.EdgeValue boundary;
     private final Key.Direction direction;
     private final IndexKeyRange keyRange;
+    private final int minimumDepth;
     private Exchange exchange;
     private KeyFilter indexFilter;
+
+    // consts
+    private static final int FETCH_NO_BYTES = 0;
 }

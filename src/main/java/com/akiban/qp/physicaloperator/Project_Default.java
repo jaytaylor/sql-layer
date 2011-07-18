@@ -51,9 +51,10 @@ class Project_Default extends PhysicalOperator
     }
 
     @Override
-    public void findDerivedTypes(Set<RowType> types)
+    public void findDerivedTypes(Set<RowType> derivedTypes)
     {
-        types.add(projectType);
+        inputOperator.findDerivedTypes(derivedTypes);
+        derivedTypes.add(projectType);
     }
 
     @Override
