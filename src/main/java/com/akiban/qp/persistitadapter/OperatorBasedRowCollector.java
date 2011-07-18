@@ -249,12 +249,12 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         Limit limit = new PersistitRowLimit(scanLimit(scanLimit, singleRow));
         boolean useIndex = predicateIndex != null && !predicateIndex.isHKeyEquivalent();
         GroupTable groupTable = queryRootTable.getGroup().getGroupTable();
-        PhysicalOperator rootOperator;
+        PhysicalOperator plan;
         if (useIndex) {
             PhysicalOperator indexScan = indexScan_Default(predicateType.indexRowType(predicateIndex),
                                                            descending,
                                                            indexKeyRange);
-            rootOperator = branchLookup_Default(indexScan,
+            plan = branchLookup_Default(indexScan,
                     groupTable,
                     predicateType.indexRowType(predicateIndex),
                     predicateType,
@@ -262,28 +262,38 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                     limit);
         } else {
             assert !descending;
-            rootOperator = groupScan_Default(groupTable, limit);
+            plan = groupScan_Default(groupTable, limit);
         }
         // Fill in ancestors above predicate
         if (queryRootType != predicateType) {
             List<RowType> ancestorTypes = ancestorTypes();
             if (!ancestorTypes.isEmpty()) {
-                rootOperator = ancestorLookup_Default(rootOperator, groupTable, predicateType, ancestorTypes, true);
+                plan = ancestorLookup_Default(plan, groupTable, predicateType, ancestorTypes, true);
             }
         }
         // Get rid of everything above query root table.
         if (queryRootTable.parentTable() != null) {
-            rootOperator = extract_Default(rootOperator, Arrays.<RowType>asList(queryRootType));
+            Set<RowType> queryRootAndDescendents = Schema.descendentTypes(queryRootType, schema.userTableTypes());
+            queryRootAndDescendents.add(queryRootType);
+            plan = filter_Default(plan, queryRootAndDescendents);
         }
         // Get rid of selected types below query root table.
         Set<RowType> cutTypes = cutTypes(deep);
         for (RowType cutType : cutTypes) {
-            rootOperator = cut_Default(rootOperator, cutType);
+            plan = filter_Default(plan, removeDescendentTypes(cutType, plan));
         }
         if (LOG.isInfoEnabled()) {
-            LOG.info("Execution plan:\n{}", rootOperator.describePlan());
+            LOG.info("Execution plan:\n{}", plan.describePlan());
         }
-        this.operator = rootOperator;
+        this.operator = plan;
+    }
+
+    private Set<RowType> removeDescendentTypes(RowType type, PhysicalOperator plan)
+    {
+        Set<RowType> keepTypes = type.schema().allTableTypes();
+        plan.findDerivedTypes(keepTypes);
+        keepTypes.removeAll(Schema.descendentTypes(type, keepTypes));
+        return keepTypes;
     }
 
     private List<RowType> ancestorTypes()

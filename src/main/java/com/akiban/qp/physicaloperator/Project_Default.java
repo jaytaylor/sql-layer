@@ -24,6 +24,7 @@ import com.akiban.util.ArgumentValidation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 class Project_Default extends PhysicalOperator
 {
@@ -43,9 +44,16 @@ class Project_Default extends PhysicalOperator
         return new Execution(adapter, inputOperator.cursor(adapter));
     }
 
+    @Override
     public ProjectedRowType rowType()
     {
         return projectType;
+    }
+
+    @Override
+    public void findDerivedTypes(Set<RowType> types)
+    {
+        types.add(projectType);
     }
 
     @Override

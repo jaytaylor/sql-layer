@@ -23,14 +23,9 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
-class Extract_Default extends PhysicalOperator
+class Filter_Default extends PhysicalOperator
 {
     // Object interface
 
@@ -66,39 +61,17 @@ class Extract_Default extends PhysicalOperator
 
     // ExtractScan_Default interface
 
-    public Extract_Default(PhysicalOperator inputOperator, Collection<RowType> extractTypes)
+    public Filter_Default(PhysicalOperator inputOperator, Collection<RowType> keepTypes)
     {
-        ArgumentValidation.notEmpty("keepTypes", extractTypes);
+        ArgumentValidation.notEmpty("keepTypes", keepTypes);
         this.inputOperator = inputOperator;
-        Schema schema = null;
-        for (RowType type : extractTypes) {
-            if (schema == null) {
-                schema = type.schema();
-            } else {
-                ArgumentValidation.isSame("schema", schema, "type.schema()", type.schema());
-            }
-            if (type instanceof UserTableRowType) {
-                addDescendentTypes(schema, type.userTable(), this.keepTypes);
-            } else {
-                this.keepTypes.add(type);
-            }
-        }
-    }
-
-    // For use by this class
-
-    private static void addDescendentTypes(Schema schema, UserTable table, Set<RowType> rowTypes)
-    {
-        rowTypes.add(schema.userTableRowType(table));
-        for (Join join : table.getChildJoins()) {
-            addDescendentTypes(schema, join.getChild(), rowTypes);
-        }
+        this.keepTypes = new HashSet<RowType>(keepTypes);
     }
 
     // Object state
 
     private final PhysicalOperator inputOperator;
-    private final Set<RowType> keepTypes = new HashSet<RowType>();
+    private final Set<RowType> keepTypes;
 
     // Inner classes
 

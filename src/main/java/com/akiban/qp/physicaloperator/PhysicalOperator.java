@@ -22,6 +22,7 @@ import com.akiban.server.RowDef;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public abstract class PhysicalOperator implements Plannable
 {
@@ -32,6 +33,10 @@ public abstract class PhysicalOperator implements Plannable
     public RowType rowType()
     {
         throw new UnsupportedOperationException();
+    }
+
+    public void findDerivedTypes(Set<RowType> types)
+    {
     }
 
     @Override
@@ -47,8 +52,6 @@ public abstract class PhysicalOperator implements Plannable
     {
         return toString();
     }
-
-    protected static final String NL = System.getProperty("line.separator");
 
     @Override
     public final String describePlan(PhysicalOperator inputOperator)
@@ -66,4 +69,8 @@ public abstract class PhysicalOperator implements Plannable
     {
         return ((RowDef) table.rowDef()).getOrdinal();
     }
+
+    // Class state
+
+    protected static final String NL = System.getProperty("line.separator");
 }

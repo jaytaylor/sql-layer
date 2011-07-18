@@ -17,8 +17,11 @@ package com.akiban.server.test.it;
 
 import static org.junit.Assert.assertTrue;
 
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 
+import com.akiban.ais.ddl.SqlTextTarget;
 import com.akiban.server.AkServerAisSource;
 import com.akiban.server.AkServerAisTarget;
 import com.akiban.server.test.it.store.DataDictionaryDDL;
@@ -50,10 +53,8 @@ public class AkServerAisSourceTargetIT extends ITBase {
         final Source source = new AkServerAisSource(store());
         final AkibanInformationSchema aisCopy = new Reader(source).load();
 
-        // new Writer(new SqlTextTarget(new PrintWriter(new
-        // FileWriter("/tmp/ais1.txt")))).save(ais);
-        // new Writer(new SqlTextTarget(new PrintWriter(new
-        // FileWriter("/tmp/ais2.txt")))).save(aisCopy);
+        new Writer(new SqlTextTarget(new PrintWriter(new FileWriter("/tmp/ais1.txt")))).save(ais);
+        new Writer(new SqlTextTarget(new PrintWriter(new FileWriter("/tmp/ais2.txt")))).save(aisCopy);
 
         assertTrue(equals(ais, aisCopy));
     }

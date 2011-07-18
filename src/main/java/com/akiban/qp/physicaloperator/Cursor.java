@@ -17,6 +17,7 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.RowType;
 
 public interface Cursor
 {

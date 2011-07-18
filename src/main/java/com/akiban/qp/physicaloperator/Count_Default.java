@@ -23,6 +23,7 @@ import com.akiban.util.ArgumentValidation;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 class Count_Default extends PhysicalOperator
 {
@@ -52,6 +53,12 @@ class Count_Default extends PhysicalOperator
     public RowType rowType()
     {
         return resultType;
+    }
+
+    @Override
+    public void findDerivedTypes(Set<RowType> types)
+    {
+        types.add(resultType);
     }
 
     @Override

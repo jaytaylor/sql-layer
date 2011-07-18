@@ -380,7 +380,7 @@ public class OperatorCompiler
                 for (int i = 0; i < nbranches; i++) {
                     extractTypes.add(fls[i].getResultRowType());
                 }
-                resultOperator = extract_Default(resultOperator, extractTypes);
+                resultOperator = filter_Default(resultOperator, extractTypes);
                 needExtract = false;
 
                 for (int i = 1; i < nbranches; i++) {
@@ -413,18 +413,8 @@ public class OperatorCompiler
         if (needExtract) {
             // Now that we are done flattening, there is only one row type
             // that we need.  Extract it.
-            resultOperator = extract_Default(resultOperator,
+            resultOperator = filter_Default(resultOperator,
                                              Collections.singleton(resultRowType));
-            // When selecting from a single table, we'll have that user
-            // table type and not a flattened type.  If doing a group
-            // scan, there may be descendants that survived the
-            // extract. Cut them.
-            if (resultRowType instanceof UserTableRowType) {
-                UserTable table = ((UserTableRowType)resultRowType).userTable();
-                if (!table.getChildJoins().isEmpty()) {
-                    resultOperator = cut_Default(resultOperator, resultRowType);
-                }
-            }
         }
 
         for (ColumnCondition condition : squery.getConditions()) {

@@ -25,6 +25,7 @@ import com.akiban.util.ArgumentValidation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 class Product_ByRun extends PhysicalOperator
 {
@@ -44,9 +45,16 @@ class Product_ByRun extends PhysicalOperator
         return new Execution(adapter, inputOperator.cursor(adapter));
     }
 
+    @Override
     public ProductRowType rowType()
     {
         return productType;
+    }
+
+    @Override
+    public void findDerivedTypes(Set<RowType> types)
+    {
+        types.add(productType);
     }
 
     @Override
