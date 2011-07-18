@@ -3,4 +3,4 @@
     - com.akiban.server.service.network.NetworkService   # MySQL replication
     - com.akiban.server.service.stats.StatisticsService  # Stats gathering
     - com.akiban.server.service.jmx.JmxRegistryService   # Turns on JMX for other services
-#    - com.akiban.sql.pg.PostgresService                   # Akiban SQL
+    - com.akiban.sql.pg.PostgresService                  # Akiban SQL
