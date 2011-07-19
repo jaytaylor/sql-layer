@@ -58,7 +58,7 @@ public class FlattenedRowType extends DerivedRowType
     @Override
     public int nFields()
     {
-        return parent.nFields() + child.nFields();
+        return nFields;
     }
 
     @Override
@@ -81,6 +81,7 @@ public class FlattenedRowType extends DerivedRowType
         assert child.schema() == schema : child;
         this.parent = parent;
         this.child = child;
+        this.nFields = parent.nFields() + child.nFields();
         List<UserTable> parentAndChildTables = new ArrayList<UserTable>(parent.typeComposition().tables());
         parentAndChildTables.addAll(child.typeComposition().tables());
         typeComposition(new TypeComposition(this, parentAndChildTables));
@@ -90,4 +91,5 @@ public class FlattenedRowType extends DerivedRowType
 
     private final RowType parent;
     private final RowType child;
+    private final int nFields;
 }

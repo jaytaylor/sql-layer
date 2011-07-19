@@ -21,6 +21,7 @@ import com.akiban.util.ArgumentValidation;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 final class Limit_Default extends PhysicalOperator {
 
@@ -34,8 +35,9 @@ final class Limit_Default extends PhysicalOperator {
     // Plannable interface
 
     @Override
-    public RowType rowType() {
-        return inputOperator.rowType();
+    public void findDerivedTypes(Set<RowType> derivedTypes)
+    {
+        inputOperator.findDerivedTypes(derivedTypes);
     }
 
     @Override

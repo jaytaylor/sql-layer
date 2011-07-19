@@ -17,6 +17,7 @@ package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.*;
 import com.akiban.qp.expression.Expression;
+import com.sun.rowset.internal.Row;
 
 import java.util.*;
 
@@ -64,9 +65,39 @@ public class Schema
         return new ValuesRowType(this, nextTypeId(), nfields);
     }
 
-    public synchronized Iterator<RowType> rowTypes()
+    public synchronized Set<RowType> userTableTypes()
     {
-        return rowTypes.values().iterator();
+        Set<RowType> userTableTypes = new HashSet<RowType>();
+        for (RowType rowType : rowTypes.values()) {
+            if (rowType instanceof UserTableRowType) {
+                if (!rowType.userTable().isAISTable()) {
+                    userTableTypes.add(rowType);
+                }
+            }
+        }
+        return userTableTypes;
+    }
+
+    public synchronized Set<RowType> allTableTypes()
+    {
+        Set<RowType> userTableTypes = new HashSet<RowType>();
+        for (RowType rowType : rowTypes.values()) {
+            if (rowType instanceof UserTableRowType) {
+                userTableTypes.add(rowType);
+            }
+        }
+        return userTableTypes;
+    }
+
+    public static Set<RowType> descendentTypes(RowType ancestorType, Set<RowType> allTypes)
+    {
+        Set<RowType> descendentTypes = new HashSet<RowType>();
+        for (RowType type : allTypes) {
+            if (type != ancestorType && ancestorType.ancestorOf(type)) {
+                descendentTypes.add(type);
+            }
+        }
+        return descendentTypes;
     }
 
     public Schema(AkibanInformationSchema ais)

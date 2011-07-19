@@ -1,6 +1,6 @@
 project([Field(1), Field(4)])
   Select_HKeyOrdered(flatten(flatten(user.customers, user.orders), user.items), Field(8) > Literal(100))
-    Extract_Default([flatten(flatten(user.customers, user.orders), user.items)])
+    Filter_Default([flatten(flatten(user.customers, user.orders), user.items)])
       Flatten_HKeyOrdered(flatten(user.customers, user.orders) INNER user.items)
         Flatten_HKeyOrdered(user.customers INNER user.orders)
           AncestorLookup_Default(user.orders -> [user.customers])

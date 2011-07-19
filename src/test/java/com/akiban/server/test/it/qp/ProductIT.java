@@ -21,6 +21,7 @@ import com.akiban.qp.physicaloperator.IncompatibleRowException;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -29,6 +30,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Set;
 
 import static com.akiban.qp.physicaloperator.API.*;
 import static com.akiban.qp.physicaloperator.API.JoinType.*;
@@ -146,14 +148,14 @@ public class ProductIT extends PhysicalOperatorITBase
     {
         PhysicalOperator flattenCO =
             flatten_HKeyOrdered(
-                cut_Default(
+                filter_Default(
                     branchLookup_Default(
                         indexScan_Default(customerNameIndexRowType, false, null),
                         coi,
                         customerNameIndexRowType,
                         customerRowType,
                         false),
-                    orderRowType),
+                    removeDescendentTypes(orderRowType)),
                 customerRowType,
                 orderRowType,
                 INNER_JOIN,
@@ -184,14 +186,14 @@ public class ProductIT extends PhysicalOperatorITBase
     {
         PhysicalOperator flattenCO =
             flatten_HKeyOrdered(
-                cut_Default(
+                filter_Default(
                     branchLookup_Default(
                         indexScan_Default(orderSalesmanIndexRowType, false, null),
                         coi,
                         orderSalesmanIndexRowType,
                         customerRowType,
                         false),
-                    orderRowType),
+                    removeDescendentTypes(orderRowType)),
                 customerRowType,
                 orderRowType,
                 INNER_JOIN,
@@ -224,4 +226,11 @@ public class ProductIT extends PhysicalOperatorITBase
     }
 
     // TODO: Test handling of rows whose type is not involved in product.
+
+    private Set<RowType> removeDescendentTypes(RowType type)
+    {
+        Set<RowType> keepTypes = type.schema().userTableTypes();
+        keepTypes.removeAll(Schema.descendentTypes(type, keepTypes));
+        return keepTypes;
+    }
 }

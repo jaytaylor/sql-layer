@@ -28,6 +28,7 @@ import com.akiban.util.ArgumentValidation;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.akiban.qp.physicaloperator.API.FlattenOption.*;
 
@@ -69,9 +70,17 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         return new Execution(adapter, inputOperator.cursor(adapter));
     }
 
-    public FlattenedRowType rowType()
+    @Override
+        public FlattenedRowType rowType()
     {
         return flattenType;
+    }
+
+    @Override
+    public void findDerivedTypes(Set<RowType> derivedTypes)
+    {
+        inputOperator.findDerivedTypes(derivedTypes);
+        derivedTypes.add(flattenType);
     }
 
     @Override
@@ -90,8 +99,11 @@ class Flatten_HKeyOrdered extends PhysicalOperator
 
     // Flatten_HKeyOrdered interface
 
-    public Flatten_HKeyOrdered(PhysicalOperator inputOperator, RowType parentType, RowType childType,
-                               API.JoinType joinType, EnumSet<API.FlattenOption> options)
+    public Flatten_HKeyOrdered(PhysicalOperator inputOperator,
+                               RowType parentType,
+                               RowType childType,
+                               API.JoinType joinType,
+                               EnumSet<API.FlattenOption> options)
     {
         ArgumentValidation.notNull("parentType", parentType);
         ArgumentValidation.notNull("childType", childType);

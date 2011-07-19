@@ -15,8 +15,6 @@
 
 package com.akiban.qp.rowtype;
 
-import com.akiban.qp.expression.Expression;
-
 public class ValuesRowType extends DerivedRowType
 {
     // Object interface

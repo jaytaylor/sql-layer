@@ -1,6 +1,6 @@
 project([Field(1), Field(4)])
   Sort_InsertionLimited(flatten(flatten(user.customers, user.orders), user.items), 10)
-    Extract_Default([flatten(flatten(user.customers, user.orders), user.items)])
+    Filter_Default([flatten(flatten(user.customers, user.orders), user.items)])
       Flatten_HKeyOrdered(flatten(user.customers, user.orders) INNER user.items)
         Flatten_HKeyOrdered(user.customers INNER user.orders)
           Select_HKeyOrdered(user.items, Field(3) > Literal(100))

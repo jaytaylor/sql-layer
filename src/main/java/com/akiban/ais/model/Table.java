@@ -175,6 +175,11 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         }
     }
 
+    public boolean isAISTable()
+    {
+        return tableName.getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA);
+    }
+
     protected void addColumn(Column column)
     {
         columnMap.put(column.getName().toLowerCase(), column);

@@ -245,7 +245,7 @@ public class OperatorCompiler
         PhysicalOperator resultOperator;
         RowType resultRowType;
         ColumnExpressionToIndex fieldOffsets;
-        boolean needExtract = false;
+        boolean needFilter = false;
         covering: {
             IndexRowType indexRowType = null;
             ProductMethod productMethod;
@@ -288,7 +288,7 @@ public class OperatorCompiler
                                                           false);
                     ancestorInputType = tableType; // Index no longer in stream.
                     ancestorInputKept = tableUsed;
-                    needExtract = true; // Might be other descendants, too.
+                    needFilter = true; // Might be other descendants, too.
                 }
                 // Tables above this that also need to be output.
                 List<TableNode> addAncestors = new ArrayList<TableNode>();
@@ -358,7 +358,7 @@ public class OperatorCompiler
                     resultOperator = maybeAddTableConditions(resultOperator,
                                                              squery, 
                                                              branchTable.subtree());
-                    needExtract = true; // Might bring in things not joined.
+                    needFilter = true; // Might bring in things not joined.
                 }
                 productMethod = ProductMethod.BY_RUN;
             }
@@ -366,7 +366,7 @@ public class OperatorCompiler
                 resultOperator = groupScan_Default(groupTable);
                 resultOperator = maybeAddTableConditions(resultOperator,
                                                          squery, squery.getTables());
-                needExtract = true; // Brings in the whole tree.
+                needFilter = true; // Brings in the whole tree.
                 productMethod = ProductMethod.HKEY_ORDERED;
             }
 
@@ -392,8 +392,8 @@ public class OperatorCompiler
                     for (int i = 0; i < nbranches; i++) {
                         extractTypes.add(fls[i].getResultRowType());
                     }
-                    resultOperator = extract_Default(resultOperator, extractTypes);
-                    needExtract = false;
+                    resultOperator = filter_Default(resultOperator, extractTypes);
+                    needFilter = false;
 
                     for (int i = 1; i < nbranches; i++) {
                         FlattenState flr = fls[i];
@@ -424,21 +424,11 @@ public class OperatorCompiler
             }
         }
 
-        if (needExtract) {
+        if (needFilter) {
             // Now that we are done flattening, there is only one row type
             // that we need.  Extract it.
-            resultOperator = extract_Default(resultOperator,
+            resultOperator = filter_Default(resultOperator,
                                              Collections.singleton(resultRowType));
-            // When selecting from a single table, we'll have that user
-            // table type and not a flattened type.  If doing a group
-            // scan, there may be descendants that survived the
-            // extract. Cut them.
-            if (resultRowType instanceof UserTableRowType) {
-                UserTable table = ((UserTableRowType)resultRowType).userTable();
-                if (!table.getChildJoins().isEmpty()) {
-                    resultOperator = cut_Default(resultOperator, resultRowType);
-                }
-            }
         }
 
         for (ColumnCondition condition : squery.getConditions()) {

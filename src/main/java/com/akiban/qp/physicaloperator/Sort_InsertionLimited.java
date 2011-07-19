@@ -21,13 +21,7 @@ import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 
 class Sort_InsertionLimited extends PhysicalOperator
 {
@@ -57,6 +51,13 @@ class Sort_InsertionLimited extends PhysicalOperator
     public RowType rowType()
     {
         return sortType;
+    }
+
+    @Override
+    public void findDerivedTypes(Set<RowType> derivedTypes)
+    {
+        inputOperator.findDerivedTypes(derivedTypes);
+        derivedTypes.add(sortType);
     }
 
     @Override
