@@ -17,16 +17,19 @@ package com.akiban.ais.model.aisb2;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.ais.model.validation.AISValidationResults;
+import com.akiban.ais.model.validation.AISValidations;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
 
 public class AISBBasedBuilder
 {
@@ -47,6 +50,9 @@ public class AISBBasedBuilder
             usable = false;
             aisb.basicSchemaIsComplete();
             aisb.groupingIsComplete();
+            AISValidationResults results = aisb.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS);
+            results.throwIfNecessary();
+            aisb.akibanInformationSchema().freeze();
             return aisb.akibanInformationSchema();
         }
 
@@ -66,14 +72,13 @@ public class AISBBasedBuilder
         @Override
         public NewUserTableBuilder userTable(String schema, String table) {
             checkUsable();
-            if (aisb.akibanInformationSchema().getUserTable(schema, table) != null) {
-                throw new IllegalArgumentException("table " + schema + '.' + table + " already defined");
-            }
-            String groupName = groupName(table);
+            AISInvariants.checkDuplicateTables(aisb.akibanInformationSchema(), schema, table);
             this.schema = schema;
             this.userTable = table;
+            TableName tableName= new TableName (schema, table);
             aisb.userTable(schema, table);
-            aisb.createGroup(groupName, schema, "_akiban_"+schema+'_'+table);
+            String groupName = nameGenerator.generateGroupName(aisb.akibanInformationSchema().getUserTable(tableName));
+            aisb.createGroup(groupName, schema, nameGenerator.generateGroupTableName(groupName));
             aisb.addTableToGroup(groupName, schema, table);
             tablesToGroups.put(TableName.create(schema, table), groupName);
             uTableColumnPos = 0;
@@ -82,16 +87,7 @@ public class AISBBasedBuilder
 
         @Override
         public NewAISGroupIndexStarter groupIndex(String indexName) {
-            return new ActualGroupIndexBuilder(ais(), schema).groupIndex(indexName);
-        }
-
-        private String groupName(String table) {
-            int n = 0;
-            String groupName = table;
-            while (groupNames.contains(groupName)) {
-                groupName = table + '$' + n;
-            }
-            return groupName;
+            return new ActualGroupIndexBuilder(aisb.akibanInformationSchema(), schema).groupIndex(indexName);
         }
 
         // NewuserTableBuilder interface
@@ -141,12 +137,12 @@ public class AISBBasedBuilder
 
         @Override
         public NewUserTableBuilder uniqueKey(String indexName, String... columns) {
-            return key(indexName, columns, true, "UNIQUE KEY");
+            return key(indexName, columns, true, Index.UNIQUE_KEY_CONSTRAINT);
         }
 
         @Override
         public NewUserTableBuilder key(String indexName, String... columns) {
-            return key(indexName, columns, false, "KEY");
+            return key(indexName, columns, false, Index.KEY_CONSTRAINT);
         }
 
         private NewUserTableBuilder key(String indexName, String[] columns, boolean unique, String constraint) {
@@ -180,7 +176,7 @@ public class AISBBasedBuilder
 
             Group oldGroup = aisb.akibanInformationSchema().getUserTable(this.schema, this.userTable).getGroup();
 
-            aisb.index(this.schema, this.userTable, fkIndexName, false, "KEY");
+            aisb.index(this.schema, this.userTable, fkIndexName, false, Index.KEY_CONSTRAINT);
             aisb.joinTables(fkJoinName, schema, table, this.schema, this.userTable);
 
             String fkGroupName = tablesToGroups.get(TableName.create(referencesSchema, referencesTable));
@@ -211,8 +207,8 @@ public class AISBBasedBuilder
         public ActualBuilder() {
             aisb = new AISBuilder();
             usable = true;
-            groupNames = new HashSet<String>();
             tablesToGroups = new HashMap<TableName, String>();
+            nameGenerator = new DefaultNameGenerator();
         }
 
         // private
@@ -239,9 +235,8 @@ public class AISBBasedBuilder
 
         private boolean usable;
 
-        private final Set<String> groupNames;
         private final Map<TableName,String> tablesToGroups;
-
+        private final NameGenerator nameGenerator;
         // constants
 
         private static final boolean NULLABLE_DEFAULT = false;
@@ -330,7 +325,6 @@ public class AISBBasedBuilder
 
         private final AISBuilder aisb;
         private final String defaultSchema;
-
         private int position;
         private String indexName;
         private String groupName;

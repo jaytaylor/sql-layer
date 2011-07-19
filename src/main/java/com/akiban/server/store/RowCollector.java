@@ -17,7 +17,6 @@ package com.akiban.server.store;
 
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
-import com.akiban.server.api.dml.scan.ScanLimit;
 
 import java.nio.ByteBuffer;
 

@@ -19,6 +19,8 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.akiban.ais.model.validation.AISInvariants;
+
 public class IndexColumn implements Serializable, ModelNames
 {
     // IndexColumn interface
@@ -62,6 +64,9 @@ public class IndexColumn implements Serializable, ModelNames
     
     public IndexColumn(Index index, Column column, Integer position, Boolean ascending, Integer indexedLength)
     {
+        AISInvariants.checkDuplicateColumnsInIndex(index, column.getName());
+        //AISInvariants.checkDuplicateIndexColumnPosition(index, position);
+        
         this.index = index;
         this.column = column;
         this.position = position;
@@ -71,6 +76,7 @@ public class IndexColumn implements Serializable, ModelNames
     
     public static IndexColumn create(AkibanInformationSchema ais, Map<String, Object> map)
     {
+        ais.checkMutability();
         IndexColumn indexColumn = null;
         String schemaName = (String) map.get(indexColumn_schemaName);
         String tableName = (String) map.get(indexColumn_tableName);

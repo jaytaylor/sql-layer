@@ -27,6 +27,7 @@ public class UserTable extends Table
                                    String tableName,
                                    Integer tableId)
     {
+        
         UserTable userTable = new UserTable(ais, schemaName, tableName, tableId);
         ais.addUserTable(userTable);
         return userTable;
@@ -64,6 +65,7 @@ public class UserTable extends Table
      */
     List<Column> matchingColumns(Column column)
     {
+        // TODO: make this a AISValidation check
         ArgumentValidation.isTrue(column + " doesn't belong to " + getName(), column.getTable() == this);
         List<Column> matchingColumns = new ArrayList<Column>();
         matchingColumns.add(column);
@@ -223,7 +225,7 @@ public class UserTable extends Table
     }
 
     @Override
-    public void traversePreOrder(Visitor visitor) throws Exception
+    public void traversePreOrder(Visitor visitor)
     {
         for (Column column : getColumns()) {
             visitor.visitColumn(column);
@@ -235,7 +237,7 @@ public class UserTable extends Table
     }
 
     @Override
-    public void traversePostOrder(Visitor visitor) throws Exception
+    public void traversePostOrder(Visitor visitor)
     {
         for (Column column : getColumns()) {
             visitor.visitColumn(column);

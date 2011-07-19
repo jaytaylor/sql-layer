@@ -25,6 +25,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import com.akiban.ais.model.validation.AISValidation;
+import com.akiban.ais.model.validation.AISValidationFailure;
+import com.akiban.ais.model.validation.AISValidationOutput;
+import com.akiban.ais.model.validation.AISValidationResults;
+
 public class AkibanInformationSchema implements Serializable, Traversable
 {
     public AkibanInformationSchema()
@@ -198,7 +203,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
     }
 
     @Override
-    public void traversePreOrder(Visitor visitor) throws Exception
+    public void traversePreOrder(Visitor visitor)
     {
         for (Type type : types.values()) {
             visitor.visitType(type);
@@ -222,7 +227,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
     }
 
     @Override
-    public void traversePostOrder(Visitor visitor) throws Exception
+    public void traversePostOrder(Visitor visitor)
     {
         for (Type type : types.values()) {
             visitor.visitType(type);
@@ -303,6 +308,10 @@ public class AkibanInformationSchema implements Serializable, Traversable
         return typename.trim().replaceAll("\\s+", " ").toLowerCase();
     }
 
+    /**
+     * @deprecated - use {@link #validate(Collection)}
+     * @param out
+     */
     private void checkGroups(List<String> out)
     {
         for (Map.Entry<String,Group> entry : groups.entrySet())
@@ -331,6 +340,13 @@ public class AkibanInformationSchema implements Serializable, Traversable
         }
     }
 
+    /**
+     * @deprecated - use {@link #validate(Collection)}
+     * @param out
+     * @param tables
+     * @param isUserTable
+     * @param seenTables
+     */
     private void checkTables(List<String> out, Map<TableName, ? extends Table> tables,
                              boolean isUserTable, Set<TableName> seenTables)
     {
@@ -364,7 +380,10 @@ public class AkibanInformationSchema implements Serializable, Traversable
             }
         }
     }
-
+    /**
+     * @deprecated - use {@link #validate(Collection)} 
+     * @param out
+     */
     private void checkJoins(List<String> out)
     {
         for (Map.Entry<String,Join> entry : joins.entrySet())
@@ -397,6 +416,10 @@ public class AkibanInformationSchema implements Serializable, Traversable
         }
     }
 
+    /**
+     * @deprecated use {@link #validate(Collection)}
+     * @param out
+     */
     private void checkTypesNames(List<String> out)
     {
         for (Map.Entry<String,Type> entry : types.entrySet())
@@ -418,6 +441,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
     /**
      * Checks the AIS's integrity; that everything is internally consistent.
      * @throws IllegalStateException if anything isn't consistent
+     * @deprecated - use {@link #validate(Collection)}
      */
     public void checkIntegrity()
     {
@@ -440,6 +464,8 @@ public class AkibanInformationSchema implements Serializable, Traversable
      * Checks the AIS's integrity; that everything is internally consistent.
      * @param out the list into which error messages should go
      * @throws IllegalStateException if anything isn't consistent
+     * @deprecated use {@link #validate(Collection)}
+     *
      */
     public void checkIntegrity(List<String> out) throws IllegalStateException
     {
@@ -450,6 +476,40 @@ public class AkibanInformationSchema implements Serializable, Traversable
         checkJoins(out);
         checkTypesNames(out);
     }
+
+    /**
+     * Validates this AIS against the given validations. All validations will run, even if one fails (unless any
+     * throw an unchecked exception).
+     * @param validations the validations to run
+     * @return the result of the validations
+     */
+   public AISValidationResults validate(Collection<AISValidation> validations) {
+       AISFailureList validationFailures = new AISFailureList();
+       for (AISValidation v : validations) {
+           v.validate(this, validationFailures);
+       }
+       return validationFailures; 
+   }
+
+   /**
+    * Marks this AIS as frozen; it is now immutable, and any safe publication to another thread will guarantee
+    * that the AIS will not change from under that thread.
+    */
+   public void freeze() {
+       isFrozen = true; 
+       //TDOO: any other required code?
+   }
+   
+   public boolean isFrozen() {
+       return isFrozen;
+   }
+
+   /** For use within the AIS package; throws an exception if isFrozen is false */
+   void checkMutability() throws IllegalStateException {
+       if (isFrozen) {
+           throw new IllegalStateException ("Attempting to modify a frozen AIS");
+       }
+   }
 
     synchronized void invalidateTableIdMap()
     {
@@ -485,4 +545,19 @@ public class AkibanInformationSchema implements Serializable, Traversable
     private Map<String, Join> joins = new TreeMap<String, Join>();
     private Map<String, Type> types = new TreeMap<String, Type>();
     private CharsetAndCollation charsetAndCollation;
+    
+    private boolean isFrozen = false;
+
+    private static class AISFailureList extends AISValidationResults implements AISValidationOutput {
+
+        @Override
+        public void reportFailure(AISValidationFailure failure) {
+            if (failure != null) {
+                failureList.add(failure);
+            }
+        }
+        public AISFailureList() {
+            failureList = new LinkedList<AISValidationFailure>();
+        }
+    }
 }

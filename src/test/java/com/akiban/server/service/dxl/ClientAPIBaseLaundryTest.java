@@ -38,7 +38,7 @@ public final class ClientAPIBaseLaundryTest {
             ErrorCode.MULTIGENERATIONAL_TABLE, // shouldn't (yet!) be possible to even get to this
 
             ErrorCode.UNKNOWN, // generic case, so we should throw a generic error
-            ErrorCode.INTERNAL_ERROR, // generic case, so we should throw a generic error
+            ErrorCode.INTERNAL_ERROR, // generic casef, so we should throw a generic error
             ErrorCode.INTERNAL_CORRUPTION, // generic case, so we should throw a generic error
             ErrorCode.UNEXPECTED_EXCEPTION, // generic case, so we should throw a generic error
             ErrorCode.UNSUPPORTED_OPERATION, // generic case, so we should throw a generic error
@@ -52,6 +52,12 @@ public final class ClientAPIBaseLaundryTest {
             ErrorCode.TABLE_DEFINITION_CHANGED, // DMLFunctions will throw this directly
 
             ErrorCode.NO_REFERENCED_ROW, // TODO: not sure what this means!
+            
+            ErrorCode.VALIDATION_FAILURE,           // TODO: AISValidation failure
+            ErrorCode.INTERNAL_REFERENCES_BROKEN,   // TODO: AISValidation failure 
+            ErrorCode.DUPLICATE_COLUMN,             // TODO: AISValidation failure
+            ErrorCode.DUPLICATE_GROUP,              // TODO: AISValidation failure
+            ErrorCode.GROUP_MULTIPLE_ROOTS,         // TODO: AISValidations failure
     };
 
     @Parameterized.Parameters

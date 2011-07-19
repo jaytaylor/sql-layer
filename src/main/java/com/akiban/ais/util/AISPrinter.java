@@ -33,22 +33,22 @@ import com.akiban.ais.model.Visitor;
 
 public class AISPrinter
 {
-    public static void print(AkibanInformationSchema ais) throws Exception
+    public static void print(AkibanInformationSchema ais) 
     {
         print(ais, System.out);
     }
 
-    public static void print(AkibanInformationSchema ais, PrintStream output) throws Exception
+    public static void print(AkibanInformationSchema ais, PrintStream output) 
     {
         ais.traversePreOrder(visitor(new PrintWriter(output)));
     }
 
-    public static void print(AkibanInformationSchema ais, PrintWriter output) throws Exception
+    public static void print(AkibanInformationSchema ais, PrintWriter output) 
     {
         ais.traversePreOrder(visitor(output));
     }
 
-    public static String toString(AkibanInformationSchema ais) throws Exception
+    public static String toString(AkibanInformationSchema ais) 
     {
         StringWriter aisBuffer = new StringWriter();
         print(ais, new PrintWriter(aisBuffer));
@@ -62,58 +62,58 @@ public class AISPrinter
             private static final String INDENT = "  ";
             
             @Override
-            public void visitType(Type type) throws Exception
+            public void visitType(Type type) 
             {
                 output.println(type);
             }
 
             @Override
-            public void visitGroup(Group group) throws Exception
+            public void visitGroup(Group group) 
             {
                 output.println(group);
             }
 
             @Override
-            public void visitUserTable(UserTable userTable) throws Exception
+            public void visitUserTable(UserTable userTable) 
             {
                 output.println(userTable);
             }
 
             @Override
-            public void visitGroupTable(GroupTable groupTable) throws Exception
+            public void visitGroupTable(GroupTable groupTable) 
             {
                 output.println(groupTable);
             }
 
             @Override
-            public void visitColumn(Column column) throws Exception
+            public void visitColumn(Column column) 
             {
                 output.print(INDENT);
                 output.println(column);
             }
 
             @Override
-            public void visitJoin(Join join) throws Exception
+            public void visitJoin(Join join) 
             {
                 output.println(join);
             }
 
             @Override
-            public void visitJoinColumn(JoinColumn joinColumn) throws Exception
+            public void visitJoinColumn(JoinColumn joinColumn) 
             {
                 output.print(INDENT);
                 output.println(joinColumn);
             }
 
             @Override
-            public void visitIndex(Index index) throws Exception
+            public void visitIndex(Index index) 
             {
                 output.print(INDENT);
                 output.println(index);
             }
 
             @Override
-            public void visitIndexColumn(IndexColumn indexColumn) throws Exception
+            public void visitIndexColumn(IndexColumn indexColumn) 
             {
                 output.print(INDENT);
                 output.print(INDENT);

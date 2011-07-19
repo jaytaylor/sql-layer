@@ -59,7 +59,6 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.DropTableNode;
 import com.akiban.sql.parser.CreateTableNode;
-import com.akiban.sql.StandardException;
 
 public class TableDDLTest {
 

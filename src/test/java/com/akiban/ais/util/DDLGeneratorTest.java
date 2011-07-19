@@ -38,7 +38,7 @@ public final class DDLGeneratorTest {
         DDLGenerator generator = new DDLGenerator();
 
         assertEquals("group table",
-                "create table `some_group_schema`.`_group0`(`table$col` decimal(11, 3) unsigned, `table$__akiban_pk` bigint NOT NULL, key `table$PRIMARY`(`table$__akiban_pk`)) engine=AKIBANDB",
+                "create table `some_group_schema`.`_group0`(`table$col` decimal(11, 3) unsigned, `table$__akiban_pk` bigint NOT NULL, KEY `table$PRIMARY`(`table$__akiban_pk`)) engine=AKIBANDB",
                 generator.createTable(ais.getGroup("myGroup").getGroupTable()));
     }
 

@@ -45,23 +45,23 @@ public class AISSchemaChanger implements Visitor
     }
     
     @Override
-    public void visitColumn(Column column) throws Exception
+    public void visitColumn(Column column)
     {
         updateTableName( column.getTable() );
     }
 
     @Override
-    public void visitGroup(Group group) throws Exception
+    public void visitGroup(Group group) 
     {
     }
 
     @Override
-    public void visitGroupTable(GroupTable groupTable) throws Exception
+    public void visitGroupTable(GroupTable groupTable)
     {
     }
 
     @Override
-    public void visitIndex(Index index) throws Exception
+    public void visitIndex(Index index)
     {
         IndexName indexName = index.getIndexName();
         if (!indexName.getSchemaName().equals(from)) {
@@ -73,29 +73,29 @@ public class AISSchemaChanger implements Visitor
     }
 
     @Override
-    public void visitIndexColumn(IndexColumn indexColumn) throws Exception
+    public void visitIndexColumn(IndexColumn indexColumn)
     {
         visitColumn( indexColumn.getColumn() );
         visitIndex( indexColumn.getIndex() );
     }
 
     @Override
-    public void visitJoin(Join join) throws Exception
+    public void visitJoin(Join join)
     {
     }
 
     @Override
-    public void visitJoinColumn(JoinColumn joinColumn) throws Exception
+    public void visitJoinColumn(JoinColumn joinColumn)
     {
     }
 
     @Override
-    public void visitType(Type type) throws Exception
+    public void visitType(Type type)
     {
     }
 
     @Override
-    public void visitUserTable(UserTable userTable) throws Exception
+    public void visitUserTable(UserTable userTable)
     {
         updateTableName( userTable );
     }

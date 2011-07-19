@@ -12,11 +12,29 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+package com.akiban.ais.model.validation;
 
-package com.akiban.ais.model;
+import com.akiban.message.ErrorCode;
 
-public interface Traversable
-{
-    void traversePreOrder(Visitor visitor);
-    void traversePostOrder(Visitor visitor);
+public class AISValidationFailure {
+    public AISValidationFailure(ErrorCode errorCode, String message) {
+        error = errorCode;
+        this.message = message;
+    }
+    
+    public AISValidationFailure(ErrorCode code, String formatter, Object... args) {
+        this(code, String.format(formatter, args));
+    }
+
+    public ErrorCode errorCode() {
+        return error;
+    }
+    public String message() {
+        return message;
+    }
+    
+    private ErrorCode error;
+    private String message;
+
 }
+

@@ -88,6 +88,24 @@ public interface DDLFunctions {
             UnsupportedIndexSizeException,
             GenericInvalidOperationException;
 
+    /**
+     * 
+     * @param session the session to run the Create under
+     * @param table - new user table to add to the existing system
+     * @throws UnsupportedCharsetException
+     * @throws ProtectedTableDDLException
+     * @throws DuplicateTableNameException
+     * @throws GroupWithProtectedTableException
+     * @throws JoinToUnknownTableException
+     * @throws JoinToWrongColumnsException
+     * @throws NoPrimaryKeyException
+     * @throws DuplicateColumnNameException
+     * @throws UnsupportedDataTypeException
+     * @throws JoinToMultipleParentsException
+     * @throws UnsupportedIndexDataTypeException
+     * @throws UnsupportedIndexSizeException
+     * @throws GenericInvalidOperationException
+     */
     void createTable (Session session, UserTable table)
             throws UnsupportedCharsetException,
             ProtectedTableDDLException,

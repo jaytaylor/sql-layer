@@ -19,10 +19,13 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.akiban.ais.model.validation.AISInvariants;
+
 public class Column implements Serializable, ModelNames
 {
     public static Column create(AkibanInformationSchema ais, Map<String, Object> map)
     {
+        
         Column column = null;
         String schemaName = (String) map.get(column_schemaName);
         String tableName = (String) map.get(column_tableName);
@@ -399,6 +402,11 @@ public class Column implements Serializable, ModelNames
                    Integer position,
                    Type type)
     {
+        table.checkMutability();
+        AISInvariants.checkNullName(columnName, "column", "column name");
+        AISInvariants.checkDuplicateColumnsInTable(table, columnName);
+        AISInvariants.checkDuplicateColumnPositions(table, position);
+        
         this.table = table;
         this.columnName = columnName;
         this.position = position;

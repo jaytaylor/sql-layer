@@ -18,6 +18,8 @@ package com.akiban.ais.model;
 import java.io.Serializable;
 import java.util.*;
 
+import com.akiban.ais.model.validation.AISInvariants;
+
 public abstract class Table implements Serializable, ModelNames, Traversable, HasGroup
 {
     public abstract boolean isUserTable();
@@ -30,6 +32,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 
     public static Table create(AkibanInformationSchema ais, Map<String, Object> map)
     {
+        ais.checkMutability();
         String tableType = (String) map.get(table_tableType);
         String schemaName = (String) map.get(table_schemaName);
         String tableName = (String) map.get(table_tableName);
@@ -65,6 +68,11 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     protected Table(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
         this();
+        ais.checkMutability();
+        AISInvariants.checkNullName(schemaName, "Table", "schema name");
+        AISInvariants.checkNullName(tableName, "Table", "table name");
+        AISInvariants.checkDuplicateTables(ais, schemaName, tableName);
+
         this.ais = ais;
         this.tableName = new TableName(schemaName, tableName);
         this.tableId = tableId;
@@ -281,9 +289,19 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         {
             return this == AKIBAN_STANDARD;
         }
-
     }
 
+    /**
+     * check if this table belongs to a frozen AIS, 
+     * throw exception if ais is frozen 
+     */
+    void checkMutability() {
+        ais.checkMutability();
+    }
+    /**
+     * @deprecated - use AkibanInfomationSchema#validate() instead
+     * @param out
+     */
     public void checkIntegrity(List<String> out)
     {
         if (tableName == null) {

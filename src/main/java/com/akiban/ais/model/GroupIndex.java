@@ -28,6 +28,7 @@ public class GroupIndex extends Index
     public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
                                     Boolean isUnique, String constraint)
     {
+        ais.checkMutability();
         GroupIndex index = new GroupIndex(group, indexName, indexId, isUnique, constraint);
         group.addIndex(index);
         return index;
@@ -35,6 +36,7 @@ public class GroupIndex extends Index
 
     public GroupIndex(Group group, String indexName, Integer indexId, Boolean isUnique, String constraint)
     {
+        // index checks index name. 
         super(new TableName("", group.getName()), indexName, indexId, isUnique, constraint);
         this.group = group;
     }

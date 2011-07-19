@@ -15,9 +15,8 @@
 
 package com.akiban.ais.model;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
+
 
 public class GroupTable extends Table
 {
@@ -76,7 +75,7 @@ public class GroupTable extends Table
     }
 
     @Override
-    public void traversePreOrder(Visitor visitor) throws Exception
+    public void traversePreOrder(Visitor visitor)
     {
         for (Column column : getColumns()) {
             visitor.visitColumn(column);
@@ -88,7 +87,7 @@ public class GroupTable extends Table
     }
 
     @Override
-    public void traversePostOrder(Visitor visitor) throws Exception
+    public void traversePostOrder(Visitor visitor)
     {
         for (Column column : getColumns()) {
             visitor.visitColumn(column);
@@ -110,6 +109,7 @@ public class GroupTable extends Table
         super.dropColumns();
     }
 
+    @SuppressWarnings("unused")
     private GroupTable()
     {
         super();

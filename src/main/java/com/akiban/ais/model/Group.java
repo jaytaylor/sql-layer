@@ -19,10 +19,10 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
+import com.akiban.ais.model.validation.AISInvariants;
 
 public class Group implements Serializable, ModelNames, Traversable
 {
@@ -33,6 +33,8 @@ public class Group implements Serializable, ModelNames, Traversable
 
     public static Group create(AkibanInformationSchema ais, String groupName)
     {
+        ais.checkMutability();
+        AISInvariants.checkDuplicateGroups(ais, groupName);
         Group group = new Group(groupName);
         ais.addGroup(group);
         return group;
@@ -54,6 +56,7 @@ public class Group implements Serializable, ModelNames, Traversable
 
     public Group(final String name)
     {
+        AISInvariants.checkNullName(name, "Group", "group name");
         this.name = name;
         this.indexMap = new HashMap<String, GroupIndex>();
     }
@@ -142,7 +145,7 @@ public class Group implements Serializable, ModelNames, Traversable
         }
     }
 
-    public void traversePreOrder(Visitor visitor) throws Exception
+    public void traversePreOrder(Visitor visitor)
     {
         for (Index index : getIndexes()) {
             visitor.visitIndex(index);
@@ -150,7 +153,7 @@ public class Group implements Serializable, ModelNames, Traversable
         }
     }
 
-    public void traversePostOrder(Visitor visitor) throws Exception
+    public void traversePostOrder(Visitor visitor)
     {
         for (Index index : getIndexes()) {
             index.traversePostOrder(visitor);

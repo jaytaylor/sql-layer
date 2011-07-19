@@ -37,6 +37,7 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
         String joinName = (String) map.get(join_joinName);
         Integer joinWeight = (Integer) map.get(join_joinWeight);
         String groupName = (String) map.get(join_groupName);
+        
         UserTable parent = ais.getUserTable(parentSchemaName, parentTableName);
         UserTable child = ais.getUserTable(childSchemaName, childTableName);
         Join join = create(ais, joinName, parent, child);
@@ -61,6 +62,7 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
                               UserTable parent,
                               UserTable child)
     {
+        ais.checkMutability();
         Join join = new Join(ais, joinName, parent, child);
         ais.addJoin(join);
         return join;
@@ -81,7 +83,6 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
         return map;
     }
 
-    @SuppressWarnings("unused")
     private Join()
     {
         // GWT requires empty constructor
@@ -98,6 +99,7 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
 
     public void addJoinColumn(Column parent, Column child)
     {
+        ais.checkMutability();
         JoinColumn joinColumn = new JoinColumn(this, parent, child);
         joinColumns.add(joinColumn);
         joinColumnsStale = true;
@@ -228,7 +230,7 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
     }
 
     @Override
-    public void traversePreOrder(Visitor visitor) throws Exception
+    public void traversePreOrder(Visitor visitor)
     {
         for (JoinColumn joinColumn : joinColumns) {
             visitor.visitJoinColumn(joinColumn);
@@ -236,13 +238,15 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
     }
 
     @Override
-    public void traversePostOrder(Visitor visitor) throws Exception
+    public void traversePostOrder(Visitor visitor)
     {
         traversePreOrder(visitor);
     }
 
     private Join(AkibanInformationSchema ais, String joinName, UserTable parent, UserTable child)
     {
+        ais.checkMutability();
+        
         this.ais = ais;
         this.joinName = joinName;
         this.parent = parent;
@@ -262,6 +266,11 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
         FK, COLUMN_NAME, QUERY, USER
     }
 
+    /**
+     * @deprecated - use {@link AkibanInformationSchema#validate(java.util.Collection)}
+     * @param out
+     * @return
+     */
     public boolean checkIntegrity(List<String> out)
     {
         int initialSize = out.size();

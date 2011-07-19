@@ -12,11 +12,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+package com.akiban.ais.model.validation;
 
-package com.akiban.ais.model;
+import com.akiban.ais.model.AkibanInformationSchema;
 
-public interface Traversable
-{
-    void traversePreOrder(Visitor visitor);
-    void traversePostOrder(Visitor visitor);
+public interface AISValidation {
+    /**
+     * Validates the given AIS.
+     * @param ais   the AkibanInformationSchema to validate
+     * @param output the AISValidationFailure collection holder, where
+     *          any validations failures are registered. 
+     */
+    void validate(AkibanInformationSchema ais, AISValidationOutput output);
 }

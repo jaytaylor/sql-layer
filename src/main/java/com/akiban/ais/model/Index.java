@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.akiban.ais.model.validation.AISInvariants;
+
 public abstract class Index implements Serializable, ModelNames, Traversable
 {
     public abstract HKey hKey();
@@ -34,6 +36,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     
     public static Index create(AkibanInformationSchema ais, Map<String, Object> map)
     {
+        ais.checkMutability();
         Index index = null;
         String schemaName = (String) map.get(index_schemaName);
         String tableName = (String) map.get(index_tableName);
@@ -59,6 +62,9 @@ public abstract class Index implements Serializable, ModelNames, Traversable
 
     protected Index(TableName tableName, String indexName, Integer indexId, Boolean isUnique, String constraint)
     {
+        
+        AISInvariants.checkNullName(indexName, "index", "index name");
+        
         this.indexName = new IndexName(tableName, indexName);
         this.indexId = indexId;
         this.isUnique = isUnique;
@@ -71,7 +77,6 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         return !isTableIndex();
     }
 
-    @SuppressWarnings("unused")
     protected Index()
     {
         // GWT
@@ -167,7 +172,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     }
 
     @Override
-    public void traversePreOrder(Visitor visitor) throws Exception
+    public void traversePreOrder(Visitor visitor)
     {
         for (IndexColumn indexColumn : getColumns()) {
             visitor.visitIndexColumn(indexColumn);
@@ -175,7 +180,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     }
 
     @Override
-    public void traversePostOrder(Visitor visitor) throws Exception
+    public void traversePostOrder(Visitor visitor)
     {
         traversePreOrder(visitor);
     }

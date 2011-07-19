@@ -15,9 +15,6 @@
 
 package com.akiban.sql.aisddl;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +35,6 @@ import com.akiban.sql.types.TypeId.FormatIds;
 import com.akiban.sql.StandardException;
 
 import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.NameGenerator;
@@ -84,7 +80,6 @@ public class TableDDL
         String tableName = parserName.getTableName();
         
         AISBuilder builder = new AISBuilder();
-        builder.setTableIdOffset(1);
         NameGenerator indexNamer = new DefaultNameGenerator();
         
         builder.userTable(schemaName, tableName);
@@ -96,7 +91,11 @@ public class TableDDL
                 ColumnDefinitionNode cdn = (ColumnDefinitionNode)tableElement;
                 DataTypeDescriptor type = cdn.getType();
                 Long typeParameter1 = null, typeParameter2 = null;
+                String typeName = type.getTypeName();
                 switch (type.getTypeId().getTypeFormatId()) {
+                case FormatIds.INT_TYPE_ID:
+                    typeName = Types.INT.name();
+                    break;
                 case FormatIds.CHAR_TYPE_ID:
                 case FormatIds.VARCHAR_TYPE_ID:
                 case FormatIds.BLOB_TYPE_ID:
@@ -108,14 +107,8 @@ public class TableDDL
                     typeParameter2 = (long)type.getScale();
                     break;
                 }
-                // TODO: this is a nasty, and hopefully temporary, hack to 
-                // work around that the SQL Parser type name (INTEGER) does
-                // not match the ais type name (int) for the same type. 
-                String typeName = type.getTypeName();
-                if (type.getTypeId().getTypeFormatId() == FormatIds.INT_TYPE_ID) {
-                    typeName = Types.INT.name();
-                }
                 
+                try {
                 builder.column(schemaName, tableName, 
                         cdn.getColumnName(), 
                         Integer.valueOf(colpos++), 
@@ -124,6 +117,10 @@ public class TableDDL
                         type.isNullable(), 
                         cdn.isAutoincrementColumn(),
                         null, null);
+                } catch (InvalidOperationException ex) {
+                    logger.error(ex.getMessage(), ex.getStackTrace());
+                    throw new StandardException (ex);
+                }
                 if (cdn.isAutoincrementColumn()) {
                     builder.userTableInitialAutoIncrement(schemaName, tableName, 
                             cdn.getAutoincrementStart());
@@ -156,11 +153,21 @@ public class TableDDL
                 }
                 indexName = indexNamer.generateIndexName(cdn.getName(), cdn.getColumnList().get(0).getName(), constraint);
                 
-                builder.index(schemaName, tableName, indexName, true, constraint);
+                try {
+                    builder.index(schemaName, tableName, indexName, true, constraint);
+                } catch (InvalidOperationException ex) {
+                    logger.error(ex.getMessage(), ex.getStackTrace());
+                    throw new StandardException (ex);                    
+                }
                 
                 int colPos = 0;
                 for (ResultColumn col : cdn.getColumnList()) {
-                    builder.indexColumn(schemaName, tableName, indexName, col.getName(), colPos++, true, 0);
+                    try {
+                        builder.indexColumn(schemaName, tableName, indexName, col.getName(), colPos++, true, 0);
+                    }catch (InvalidOperationException ex) {
+                        logger.error(ex.getMessage(), ex.getStackTrace());
+                        throw new StandardException (ex);                        
+                    }
                 }
             }
         }
@@ -174,46 +181,4 @@ public class TableDDL
             throw new StandardException (ex.getMessage());
         }
     }
-
-    private static final class IndexNameGenerator {
-        private final Set<String> indexNames;
-
-        public IndexNameGenerator() {
-            indexNames = new HashSet<String>();
-        }
-        
-        public String generateName(String indexName, String columnName, String constraint) throws StandardException {
-            if (constraint.equals(Index.PRIMARY_KEY_CONSTRAINT)) {
-                if (indexNames.contains(Index.PRIMARY_KEY_CONSTRAINT)) {
-                    throw new StandardException ("Table already has a Primary key, not allowed to define a second one");
-                }
-                indexNames.add(Index.PRIMARY_KEY_CONSTRAINT);
-                return Index.PRIMARY_KEY_CONSTRAINT;
-            }
-            
-            if (indexName != null && !indexNames.contains(indexName)) {
-                indexNames.add(indexName);
-                return indexName;
-            }
-            
-            String name = columnName;
-            for (int suffixNum=2; indexNames.contains(name); ++suffixNum) {
-                name = String.format("%s_%d", columnName, suffixNum);
-            }
-            indexNames.add(name);
-            return name;
-        }
-    }
-
-    private int computeTableIdOffset(AkibanInformationSchema ais) {
-        // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
-        int offset = 1;
-        for(UserTable table : ais.getUserTables().values()) {
-            if(!table.getName().getSchemaName().equals("akiban_information_schema")) {
-                offset = Math.max(offset, table.getTableId() + 1);
-            }
-        }
-        return offset;
-    }
-
 }

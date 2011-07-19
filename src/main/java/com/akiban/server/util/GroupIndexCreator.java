@@ -19,6 +19,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 
@@ -70,7 +71,7 @@ public class GroupIndexCreator {
         final String tableColPairs[] = tableColumnList.split(",");
 
         int pos = 0;
-        final GroupIndex tmpIndex = new GroupIndex(group, indexName, 0, unique, "KEY");
+        final GroupIndex tmpIndex = new GroupIndex(group, indexName, 0, unique, Index.KEY_CONSTRAINT);
         for(String tableCol : tableColPairs) {
             int period = tableCol.indexOf('.');
             if(period == -1) {
