@@ -29,7 +29,5 @@ public class TableHasPrimaryKey implements AISValidation {
                         table.getName().toString()));
             }
         }
-
     }
-
 }

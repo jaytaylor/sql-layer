@@ -51,7 +51,7 @@ public class AISMerge {
        
         groupNames = new DefaultNameGenerator().setDefaultGroupNames(targetAIS.getGroups().keySet());
     }
-
+    
     /**
      * Returns the final, updated AkibanInformationSchema. This AIS has been fully 
      * validated and is frozen (no more changes), hence ready for update into the
@@ -96,14 +96,15 @@ public class AISMerge {
             String joinName = groupNames.generateJoinName(parentTable, sourceTable, join.getJoinColumns());
 
             builder.joinTables(joinName, 
-                    join.getParent().getName().getSchemaName(),
-                    join.getParent().getName().getTableName(),
+                    parentSchemaName,
+                    parentTableName,
                     sourceTable.getName().getSchemaName(), 
                     sourceTable.getName().getTableName());
 
             for (JoinColumn joinColumn : join.getJoinColumns()) {
                 builder.joinColumns(joinName, 
-                        parentSchemaName, parentTableName, 
+                        parentSchemaName, 
+                        parentTableName, 
                         joinColumn.getParent().getName(),
                         sourceTable.getName().getSchemaName(), 
                         sourceTable.getName().getTableName(), 
