@@ -74,12 +74,14 @@ public class AISMerge {
 
         // Add the user table to the targetAIS
         addTable (builder, sourceTable); 
-        builder.basicSchemaIsComplete();
+
+
+
         // Joins or group table?
         if (sourceTable.getParentJoin() == null) {
             String groupName = groupNames.generateGroupName(sourceTable);
             String groupTableName = groupNames.generateGroupTableName(groupName);
-            
+            builder.basicSchemaIsComplete();            
             builder.createGroup(groupName, 
                     sourceTable.getName().getSchemaName(), 
                     groupTableName);
@@ -87,7 +89,28 @@ public class AISMerge {
                     sourceTable.getName().getSchemaName(), 
                     sourceTable.getName().getTableName());
         } else {
-            ; // TODO : currently not yet complete, There is a parent join, perform the join.  
+            Join join = sourceTable.getParentJoin();
+            String parentSchemaName = join.getParent().getName().getSchemaName();
+            String parentTableName = join.getParent().getName().getTableName();
+            UserTable parentTable = targetAIS.getUserTable(parentSchemaName, parentTableName);
+            String joinName = groupNames.generateJoinName(parentTable, sourceTable, join.getJoinColumns());
+
+            builder.joinTables(joinName, 
+                    join.getParent().getName().getSchemaName(),
+                    join.getParent().getName().getTableName(),
+                    sourceTable.getName().getSchemaName(), 
+                    sourceTable.getName().getTableName());
+
+            for (JoinColumn joinColumn : join.getJoinColumns()) {
+                builder.joinColumns(joinName, 
+                        parentSchemaName, parentTableName, 
+                        joinColumn.getParent().getName(),
+                        sourceTable.getName().getSchemaName(), 
+                        sourceTable.getName().getTableName(), 
+                        joinColumn.getChild().getName());
+            }
+            builder.basicSchemaIsComplete();
+            builder.addJoinToGroup(parentTable.getGroup().getName(), joinName, 0);
         }
         builder.groupingIsComplete();
         
@@ -100,8 +123,9 @@ public class AISMerge {
         
         // I should use TableSubsetWriter(new AISTarget(targetAIS))
         // but that assumes the UserTable.getAIS() is complete and valid. 
-        // i.e. has a group and group table.
-
+        // i.e. has a group and group table, and the joins point to a valid table
+        // which, given the use of AISMerge, is not true. 
+        
         
         final String schemaName = table.getName().getSchemaName();
         final String tableName = table.getName().getTableName();
@@ -135,7 +159,6 @@ public class AISMerge {
                     indexName.getName(), 
                     index.isUnique(), 
                     index.getConstraint());
-            
             for (IndexColumn col : index.getColumns()) {
                 builder.indexColumn(schemaName, tableName, index.getIndexName().getName(), 
                         col.getColumn().getName(), 

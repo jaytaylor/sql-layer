@@ -139,7 +139,7 @@ public class
         checkFound(table, "creating index column", "table",
                 concat(schemaName, tableName));
         Column column = table.getColumn(columnName);
-        checkFound(table, "creating index column", "column",
+        checkFound(column, "creating index column", "column",
                 concat(schemaName, tableName, columnName));
         Index index = table.getIndex(indexName);
         checkFound(table, "creating index column", "index",

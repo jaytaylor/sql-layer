@@ -145,14 +145,12 @@ public class DefaultNameGenerator implements NameGenerator {
     }
     
     @Override
-    public String generateJoinName (UserTable parentTable, UserTable childTable, TableIndex joinIndex) {
+    public String generateJoinName (UserTable parentTable, UserTable childTable, List<JoinColumn> columns) {
         List<String> pkColNames = new LinkedList<String>();
-        for (Column col : parentTable.getPrimaryKey().getColumns()) {
-            pkColNames.add(col.getName());
-        }
         List<String> fkColNames = new LinkedList<String>();
-        for (IndexColumn col : joinIndex.getColumns()) {
-            fkColNames.add(col.getColumn().getName());
+        for (JoinColumn col : columns) {
+            pkColNames.add(col.getParent().getName());
+            fkColNames.add(col.getChild().getName());
         }
         String ret = String.format("%s/%s/%s/%s/%s/%s",
                 parentTable.getName().getSchemaName(),
