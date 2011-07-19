@@ -27,11 +27,7 @@ import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 import static java.lang.Math.max;
 
@@ -46,6 +42,12 @@ class AncestorLookup_Default extends PhysicalOperator
     }
 
     // PhysicalOperator interface
+
+    @Override
+    public void findDerivedTypes(Set<RowType> derivedTypes)
+    {
+        inputOperator.findDerivedTypes(derivedTypes);
+    }
 
     @Override
     protected Cursor cursor(StoreAdapter adapter)

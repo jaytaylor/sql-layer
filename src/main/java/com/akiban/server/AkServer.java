@@ -15,6 +15,7 @@
 
 package com.akiban.server;
 
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.util.OsUtils;
 import com.akiban.util.Strings;
 import org.slf4j.Logger;
@@ -22,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import com.akiban.server.manage.ManageMXBean;
 import com.akiban.server.manage.ManageMXBeanImpl;
-import com.akiban.server.service.DefaultServiceFactory;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
@@ -39,7 +39,7 @@ import java.lang.management.ManagementFactory;
 /**
  * @author peter
  */
-public class AkServer implements Service<AkServer>, JmxManageable {
+public class AkServer implements Service<AkServerEmptyInterface>, JmxManageable, AkServerEmptyInterface {
     private static final String VERSION_STRING_FILE = "version/akserver_version";
     public static final String VERSION_STRING = getVersionString();
 
@@ -88,8 +88,8 @@ public class AkServer implements Service<AkServer>, JmxManageable {
     }
 
     @Override
-    public Class<AkServer> castClass() {
-        return AkServer.class;
+    public Class<AkServerEmptyInterface> castClass() {
+        return AkServerEmptyInterface.class;
     }
 
     private static String getVersionString()
@@ -141,7 +141,8 @@ public class AkServer implements Service<AkServer>, JmxManageable {
         }, "ShutdownHook"));
 
         // Bring system up
-        final ServiceManager serviceManager = new ServiceManagerImpl(new DefaultServiceFactory());
+        GuicedServiceManager.BindingsConfigurationProvider bindingsConfigurationProvider = GuicedServiceManager.standardUrls();
+        final ServiceManager serviceManager = new GuicedServiceManager(bindingsConfigurationProvider);
         serviceManager.startServices();
         
         // JMX shutdown method

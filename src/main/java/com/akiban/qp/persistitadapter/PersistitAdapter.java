@@ -17,6 +17,7 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
@@ -61,11 +62,11 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange)
+    public Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange, UserTable innerJoinUntil)
     {
         Cursor cursor;
         try {
-            cursor = new PersistitIndexCursor(this, schema.indexRowType(index), reverse, keyRange);
+            cursor = new PersistitIndexCursor(this, schema.indexRowType(index), reverse, keyRange, innerJoinUntil);
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }

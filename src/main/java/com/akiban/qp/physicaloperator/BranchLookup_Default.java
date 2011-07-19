@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static java.lang.Math.min;
 
@@ -48,6 +49,12 @@ public class BranchLookup_Default extends PhysicalOperator
     }
 
     // PhysicalOperator interface
+
+    @Override
+    public void findDerivedTypes(Set<RowType> derivedTypes)
+    {
+        inputOperator.findDerivedTypes(derivedTypes);
+    }
 
     @Override
     public Cursor cursor(StoreAdapter adapter)

@@ -22,6 +22,7 @@ import com.akiban.server.RowDef;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public abstract class PhysicalOperator implements Plannable
 {
@@ -32,6 +33,15 @@ public abstract class PhysicalOperator implements Plannable
     public RowType rowType()
     {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Find the derived types created by this operator and its inputs. A <i>derived type</i> is a type generated
+     * by an operator, and as such, does not correspond to an AIS UserTable or Index.
+     * @param derivedTypes Derived types created by this operator or input operators are added to derivedTypes.
+     */
+    public void findDerivedTypes(Set<RowType> derivedTypes)
+    {
     }
 
     @Override
@@ -47,8 +57,6 @@ public abstract class PhysicalOperator implements Plannable
     {
         return toString();
     }
-
-    protected static final String NL = System.getProperty("line.separator");
 
     @Override
     public final String describePlan(PhysicalOperator inputOperator)
@@ -66,4 +74,8 @@ public abstract class PhysicalOperator implements Plannable
     {
         return ((RowDef) table.rowDef()).getOrdinal();
     }
+
+    // Class state
+
+    protected static final String NL = System.getProperty("line.separator");
 }

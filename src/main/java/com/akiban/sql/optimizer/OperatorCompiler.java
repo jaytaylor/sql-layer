@@ -216,6 +216,8 @@ public class OperatorCompiler
 
     enum ProductMethod { HKEY_ORDERED, BY_RUN };
 
+    static final int INSERTION_SORT_MAX_LIMIT = 100;
+
     public Result compileSelect(SessionTracer tracer, CursorNode cursor, List<ParameterNode> params) 
             throws StandardException {
         try {
@@ -239,192 +241,194 @@ public class OperatorCompiler
         } finally {
             tracer.endEvent();
         }
-        if ((squery.getSortColumns() != null) &&
-            !((index != null) && index.isSorting()))
-            throw new UnsupportedSQLException("Unsupported ORDER BY: no suitable index on " + squery.getSortColumns());
         
-        IndexRowType indexRowType = null;
         PhysicalOperator resultOperator;
-        boolean needExtract = false;
-        ProductMethod productMethod;
-        if (index != null) {
-            squery.removeConditions(index.getIndexConditions());
-            index.recomputeUsed();
-            Index iindex = index.getIndex();
-            indexRowType = schema.indexRowType(iindex);
-            TableNode indexTable = index.getLeafMostTable();
-            squery.getTables().setLeftBranch(indexTable);
-            UserTableRowType tableType = tableRowType(indexTable);
-            // TODO: Pass tableRowType(index.getLeafMostRequired()).
-            resultOperator = indexScan_Default(indexRowType, 
-                                               index.isReverse(),
-                                               index.getIndexKeyRange());
-            // Decide whether to use BranchLookup, which gets all
-            // descendants, or AncestorLookup, which gets just the
-            // given type with the same number of B-tree accesses and
-            // so is more efficient, for the index's target table.
-            boolean tableUsed = false, descendantUsed = false;
-            for (TableNode table : indexTable.subtree()) {
-                if (table == indexTable) {
-                    tableUsed = table.isUsed();
+        RowType resultRowType;
+        ColumnExpressionToIndex fieldOffsets;
+        boolean needFilter = false;
+        covering: {
+            IndexRowType indexRowType = null;
+            ProductMethod productMethod;
+            if (index != null) {
+                squery.removeConditions(index.getIndexConditions());
+                index.recomputeUsed();
+                Index iindex = index.getIndex();
+                indexRowType = schema.indexRowType(iindex);
+                TableNode indexTable = index.getLeafMostTable();
+                squery.getTables().setLeftBranch(indexTable);
+                UserTableRowType tableType = tableRowType(indexTable);
+                resultOperator = indexScan_Default(indexRowType, 
+                                                   index.isReverse(),
+                                                   index.getIndexKeyRange(),
+                                                   tableRowType(index.getLeafMostRequired()));
+                if (index.isCovering(squery)) {
+                    resultRowType = indexRowType;
+                    fieldOffsets = new ColumnIndexMap(index.getCoveringMap());
+                    break covering;
                 }
-                else if (table.isUsed()) {
-                    descendantUsed = true;
-                    break;
+                // Decide whether to use BranchLookup, which gets all
+                // descendants, or AncestorLookup, which gets just the
+                // given type with the same number of B-tree accesses and
+                // so is more efficient, for the index's target table.
+                boolean tableUsed = false, descendantUsed = false;
+                for (TableNode table : indexTable.subtree()) {
+                    if (table == indexTable) {
+                        tableUsed = table.isUsed();
+                    }
+                    else if (table.isUsed()) {
+                        descendantUsed = true;
+                        break;
+                    }
                 }
-            }
-            RowType ancestorInputType = indexRowType;
-            boolean ancestorInputKept = false;
-            if (descendantUsed) {
-                resultOperator = branchLookup_Default(resultOperator, groupTable,
-                                                      indexRowType, tableType, false);
-                ancestorInputType = tableType; // Index no longer in stream.
-                ancestorInputKept = tableUsed;
-                needExtract = true; // Might be other descendants, too.
-            }
-            // Tables above this that also need to be output.
-            List<RowType> addAncestors = new ArrayList<RowType>();
-            // Any other branches need to be added beside the main one.
-            List<TableNode> addBranches = new ArrayList<TableNode>();
-            // Can use index's table if gotten from branch lookup or
-            // needed via ancestor lookup.
-            RowType branchInputType = (tableUsed || descendantUsed) ? tableType : null;
-            for (TableNode left = indexTable; 
-                 left != null; 
-                 left = left.getParent()) {
-                if ((left == indexTable) ?
-                    (!descendantUsed && tableUsed) :
-                    left.isUsed()) {
-                    RowType atype = tableRowType(left);
-                    addAncestors.add(atype);
-                    if (branchInputType == null)
-                        branchInputType = atype;
+                RowType ancestorInputType = indexRowType;
+                boolean ancestorInputKept = false;
+                if (descendantUsed) {
+                    resultOperator = branchLookup_Default(resultOperator, groupTable,
+                                                          indexRowType, tableType, 
+                                                          false);
+                    ancestorInputType = tableType; // Index no longer in stream.
+                    ancestorInputKept = tableUsed;
+                    needFilter = true; // Might be other descendants, too.
                 }
-                {
-                    TableNode sibling = left;
-                    while (true) {
-                        sibling = sibling.getNextSibling();
-                        if (sibling == null) break;
-                        if (sibling.subtreeUsed()) {
-                            addBranches.add(sibling);
-                            if (branchInputType == null) {
-                                // Need an input type for branch lookups. 
-                                // Prefer to take one that we're already looking up,
-                                // but can't go above the branchpoint.
-                                if ((sibling.getParent() == null) ||
-                                    !sibling.getParent().isUsed()) {
-                                    // Include the index's table in
-                                    // ancestor lookup anyway so it
-                                    // can be used for branch lookup.
-                                    // TODO: Better might be to set
-                                    // ancestorInputKept and use
-                                    // ancestorInputType (i.e.,
-                                    // indexRowType), but that is not
-                                    // currently supported by either
-                                    // operator.
-                                    addAncestors.add(0, tableType);
-                                    branchInputType = tableType;
+                // Tables above this that also need to be output.
+                List<TableNode> addAncestors = new ArrayList<TableNode>();
+                List<RowType> addAncestorTypes = new ArrayList<RowType>();
+                // Any other branches need to be added beside the main one.
+                List<TableNode> addBranches = new ArrayList<TableNode>();
+                // Can use index's table if gotten from branch lookup or
+                // needed via ancestor lookup.
+                RowType branchInputType = (tableUsed || descendantUsed) ? tableType 
+                                                                        : null;
+                for (TableNode left = indexTable; 
+                     left != null; 
+                     left = left.getParent()) {
+                    if ((left == indexTable) ?
+                        (!descendantUsed && tableUsed) :
+                        left.isUsed()) {
+                        RowType atype = tableRowType(left);
+                        addAncestors.add(left);
+                        addAncestorTypes.add(atype);
+                        if (branchInputType == null)
+                            branchInputType = atype;
+                    }
+                    {
+                        TableNode sibling = left;
+                        while (true) {
+                            sibling = sibling.getNextSibling();
+                            if (sibling == null) break;
+                            if (sibling.subtreeUsed()) {
+                                addBranches.add(sibling);
+                                if (branchInputType == null) {
+                                    // Need an input type for branch lookups. 
+                                    // Prefer to take one that we're already looking up,
+                                    // but can't go above the branchpoint.
+                                    if ((sibling.getParent() == null) ||
+                                        !sibling.getParent().isUsed()) {
+                                        // Include the index's table in
+                                        // ancestor lookup anyway so it
+                                        // can be used for branch lookup.
+                                        // TODO: Better might be to set
+                                        // ancestorInputKept and use
+                                        // ancestorInputType (i.e.,
+                                        // indexRowType), but that is not
+                                        // currently supported by either
+                                        // operator.
+                                        addAncestors.add(0, indexTable);
+                                        addAncestorTypes.add(0, tableType);
+                                        branchInputType = tableType;
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-            if (!addAncestors.isEmpty()) {
-                resultOperator = ancestorLookup_Default(resultOperator, groupTable,
-                                                        ancestorInputType, addAncestors, 
-                                                        ancestorInputKept);
-            }
-            for (TableNode branchTable : addBranches) {
-                resultOperator = branchLookup_Default(resultOperator, groupTable,
-                                                      branchInputType, tableRowType(branchTable), 
-                                                      true);
-                needExtract = true; // Might bring in things not joined.
-            }
-            productMethod = ProductMethod.BY_RUN;
-        }
-        else {
-            resultOperator = groupScan_Default(groupTable);
-            needExtract = true; // Brings in the whole tree.
-            productMethod = ProductMethod.HKEY_ORDERED;
-        }
-        
-        // TODO: Can apply most Select conditions before flattening.
-        // In addition to conditions between fields of different
-        // tables, a left join should not be satisfied if the right
-        // table has a failing condition, since the WHERE is on the
-        // whole (as opposed to the outer join with a subquery
-        // containing the condition).
-
-        int nbranches = squery.getTables().colorBranches();
-        RowType resultRowType;
-        Map<TableNode,Integer> fieldOffsets;
-        if (nbranches > 0) {
-            Flattener fl = new Flattener(resultOperator, nbranches);
-            FlattenState[] fls;
-            try {
-                tracer.beginEvent(EventTypes.FLATTEN);
-                fls = fl.flatten(squery);
-            } 
-            finally {
-                tracer.endEvent();
-            }
-            resultOperator = fl.getResultOperator();
-
-            FlattenState fll = fls[0];
-            resultRowType = fll.getResultRowType();
-            if (nbranches > 1) {
-                // Product does not work if there are stray rows. Extract
-                // their inputs (the flattened types) before attempting.
-                Collection<RowType> extractTypes = new ArrayList<RowType>(nbranches);
-                for (int i = 0; i < nbranches; i++) {
-                    extractTypes.add(fls[i].getResultRowType());
+                if (!addAncestors.isEmpty()) {
+                    resultOperator = ancestorLookup_Default(resultOperator, groupTable,
+                                                            ancestorInputType, 
+                                                            addAncestorTypes, 
+                                                            ancestorInputKept);
+                    resultOperator = maybeAddTableConditions(resultOperator,
+                                                             squery, addAncestors);
                 }
-                resultOperator = extract_Default(resultOperator, extractTypes);
-                needExtract = false;
+                for (TableNode branchTable : addBranches) {
+                    resultOperator = branchLookup_Default(resultOperator, groupTable,
+                                                          branchInputType, 
+                                                          tableRowType(branchTable), 
+                                                          true);
+                    resultOperator = maybeAddTableConditions(resultOperator,
+                                                             squery, 
+                                                             branchTable.subtree());
+                    needFilter = true; // Might bring in things not joined.
+                }
+                productMethod = ProductMethod.BY_RUN;
+            }
+            else {
+                resultOperator = groupScan_Default(groupTable);
+                resultOperator = maybeAddTableConditions(resultOperator,
+                                                         squery, squery.getTables());
+                needFilter = true; // Brings in the whole tree.
+                productMethod = ProductMethod.HKEY_ORDERED;
+            }
 
-                for (int i = 1; i < nbranches; i++) {
-                    FlattenState flr = fls[i];
-                    switch (productMethod) {
-                    case BY_RUN:
-                        resultOperator = product_ByRun(resultOperator,
-                                                       resultRowType,
-                                                       flr.getResultRowType());
-                        break;
-                    default:
-                        throw new UnsupportedSQLException("Need " + productMethod + 
-                                                          " product of " +
-                                                          resultRowType + " and " +
-                                                          flr.getResultRowType());
+            int nbranches = squery.getTables().colorBranches();
+            if (nbranches > 0) {
+                Flattener fl = new Flattener(resultOperator, nbranches);
+                FlattenState[] fls;
+                try {
+                    tracer.beginEvent(EventTypes.FLATTEN);
+                    fls = fl.flatten(squery);
+                } 
+                finally {
+                    tracer.endEvent();
+                }
+                resultOperator = fl.getResultOperator();
+
+                FlattenState fll = fls[0];
+                resultRowType = fll.getResultRowType();
+                if (nbranches > 1) {
+                    // Product does not work if there are stray rows. Extract
+                    // their inputs (the flattened types) before attempting.
+                    Collection<RowType> extractTypes = new ArrayList<RowType>(nbranches);
+                    for (int i = 0; i < nbranches; i++) {
+                        extractTypes.add(fls[i].getResultRowType());
                     }
-                    resultRowType = resultOperator.rowType();
-                    fll.mergeTables(flr);
+                    resultOperator = filter_Default(resultOperator, extractTypes);
+                    needFilter = false;
+
+                    for (int i = 1; i < nbranches; i++) {
+                        FlattenState flr = fls[i];
+                        switch (productMethod) {
+                        case BY_RUN:
+                            resultOperator = product_ByRun(resultOperator,
+                                                           resultRowType,
+                                                           flr.getResultRowType());
+                            break;
+                        default:
+                            throw new UnsupportedSQLException("Need " + productMethod + 
+                                                              " product of " +
+                                                              resultRowType + " and " +
+                                                              flr.getResultRowType());
+                        }
+                        resultRowType = resultOperator.rowType();
+                        fll.mergeTables(flr);
+                    }
                 }
+                fieldOffsets = new TableNodeOffsets(fll.getFieldOffsets());
             }
-            fieldOffsets = fll.getFieldOffsets();
-        }
-        else {
-            // No branches happens when only constants are selected from a index scan.
-            // We just output them as many times are there are index rows.
-            resultRowType = indexRowType;
-            fieldOffsets = Collections.emptyMap();
+            else {
+                // No branches happens when only constants are
+                // selected from a index scan.  We just output them as
+                // many times are there are index rows.
+                resultRowType = indexRowType;
+                fieldOffsets = new ColumnIndexMap(Collections.<Column,Integer>emptyMap());
+            }
         }
 
-        if (needExtract) {
+        if (needFilter) {
             // Now that we are done flattening, there is only one row type
             // that we need.  Extract it.
-            resultOperator = extract_Default(resultOperator,
+            resultOperator = filter_Default(resultOperator,
                                              Collections.singleton(resultRowType));
-            // When selecting from a single table, we'll have that user
-            // table type and not a flattened type.  If doing a group
-            // scan, there may be descendants that survived the
-            // extract. Cut them.
-            if (resultRowType instanceof UserTableRowType) {
-                UserTable table = ((UserTableRowType)resultRowType).userTable();
-                if (!table.getChildJoins().isEmpty()) {
-                    resultOperator = cut_Default(resultOperator, resultRowType);
-                }
-            }
         }
 
         for (ColumnCondition condition : squery.getConditions()) {
@@ -432,6 +436,27 @@ public class OperatorCompiler
             resultOperator = select_HKeyOrdered(resultOperator,
                                                 resultRowType,
                                                 predicate);
+        }
+
+        if ((squery.getSortColumns() != null) &&
+            !((index != null) && index.isSorting())) {
+            int limit = squery.getLimit();
+            if ((limit < 0) || (limit > INSERTION_SORT_MAX_LIMIT))
+                throw new UnsupportedSQLException("Unsupported ORDER BY: no suitable index on " + squery.getSortColumns());
+            int nsorts = squery.getSortColumns().size();
+            List<Expression> sortExpressions = new ArrayList<Expression>(nsorts);
+            List<Boolean> sortDescendings = new ArrayList<Boolean>(nsorts);
+            for (SortColumn sortColumn : squery.getSortColumns()) {
+                ColumnExpression columnExpression = 
+                    squery.getColumnExpression(sortColumn.getColumn());
+                Expression sortExpression = 
+                    columnExpression.generateExpression(fieldOffsets);
+                sortExpressions.add(sortExpression);
+                sortDescendings.add(Boolean.valueOf(!sortColumn.isAscending()));
+            }
+            resultOperator = sort_InsertionLimited(resultOperator, resultRowType,
+                                                   sortExpressions, sortDescendings,
+                                                   limit);
         }
 
         int ncols = squery.getSelectColumns().size();
@@ -498,8 +523,9 @@ public class OperatorCompiler
             resultOperator = groupScan_Default(groupTable);
         }
         
-        Map<TableNode,Integer> fieldOffsets = new HashMap<TableNode,Integer>(1);
-        fieldOffsets.put(targetTable, 0);
+        Map<TableNode,Integer> tableOffsets = new HashMap<TableNode,Integer>(1);
+        tableOffsets.put(targetTable, 0);
+        ColumnExpressionToIndex fieldOffsets = new TableNodeOffsets(tableOffsets);
         for (ColumnCondition condition : supdate.getConditions()) {
             Expression predicate = condition.generateExpression(fieldOffsets);
             resultOperator = select_HKeyOrdered(resultOperator,
@@ -545,7 +571,8 @@ public class OperatorCompiler
         private List<ColumnCondition> equalityConditions;
         private ColumnCondition lowCondition, highCondition;
         private boolean sorting, reverse;
-        
+        private Map<Column,Integer> coveringMap;
+
         public IndexUsage(TableIndex index, TableNode table) {
             this.index = index;
             rootMostTable = leafMostTable = leafMostRequired = table;
@@ -589,6 +616,10 @@ public class OperatorCompiler
         // Should the index iteration be in reverse?
         public boolean isReverse() {
             return reverse;
+        }
+
+        public Map<Column,Integer> getCoveringMap() {
+            return coveringMap;
         }
 
         // Is this a better index?
@@ -738,6 +769,50 @@ public class OperatorCompiler
                     break;
                 table = table.getParent();
             }
+        }
+
+        public boolean isCovering(SimplifiedQuery squery) {
+            // For now, don't allow any more conditions.
+            if (!squery.getConditions().isEmpty())
+                return false;
+
+            // No other tables can be joined in (they might be joined
+            // to check against orphans, etc. without having select
+            // columns).
+            Set<TableNode> tables = new HashSet<TableNode>();
+            {
+                TableNode table = leafMostTable;
+                while (true) {
+                    tables.add(table);
+                    if (table == rootMostTable)
+                        break;
+                    table = table.getParent();
+                }
+            }
+            for (TableNode table : squery.getTables()) {
+                if (table.isUsed() && !tables.contains(table))
+                    return false;
+            }
+            
+            Map<Column,Integer> columnOffsets = new HashMap<Column,Integer>();
+            int nindexCols = index.getColumns().size();
+            for (SimpleSelectColumn selectColumn : squery.getSelectColumns()) {
+                SimpleExpression selectExpression = selectColumn.getExpression();
+                if (selectExpression.isColumn()) {
+                    Column column = ((ColumnExpression)selectExpression).getColumn();
+                    found: {
+                        for (int i = 0; i < nindexCols; i++) {
+                            if (column == index.getColumns().get(i).getColumn()) {
+                                columnOffsets.put(column, i);
+                                break found;
+                            }
+                        }
+                        return false;
+                    }
+                }
+            }
+            coveringMap = columnOffsets;
+            return true;
         }
 
         // Generate key range bounds.
@@ -989,6 +1064,38 @@ public class OperatorCompiler
         }
     }
     
+    protected PhysicalOperator maybeAddTableConditions(PhysicalOperator resultOperator,
+                                                       SimplifiedQuery squery, 
+                                                       Iterable<TableNode> tables)
+            throws StandardException {
+        for (TableNode table : tables) {
+            // isRequired() because a WHERE condition (as opposed to
+            // an JOIN ON condition) is for the whole flattened
+            // row. Cutting half off before an OUTER join flatten
+            // could output a row with nulls instead.
+            // As it happens, conditions other than IS NULL imply required.
+            if (table.isUsed() && table.hasConditions() && table.isRequired()) {
+                RowType tableRowType = tableRowType(table);
+                Map<TableNode,Integer> tableOffsets = new HashMap<TableNode,Integer>(1);
+                tableOffsets.put(table, 0);
+                ColumnExpressionToIndex fieldOffsets = new TableNodeOffsets(tableOffsets);
+                for (ColumnCondition condition : table.getConditions()) {
+                    // Condition must not require another table.
+                    // (Don't bother yet trying to test those as soon
+                    // as the flatten that has them both is done.)
+                    if (condition.isSingleTable()) {
+                        Expression predicate = condition.generateExpression(fieldOffsets);
+                        resultOperator = select_HKeyOrdered(resultOperator,
+                                                            tableRowType,
+                                                            predicate);
+                        squery.getConditions().remove(condition);
+                    }
+                }
+            }
+        }
+        return resultOperator;
+    }
+
     protected UserTableRowType tableRowType(TableNode table) {
         return schema.userTableRowType(table.getTable());
     }

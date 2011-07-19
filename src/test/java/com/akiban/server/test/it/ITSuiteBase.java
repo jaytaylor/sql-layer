@@ -19,12 +19,12 @@ import com.akiban.server.AkServer;
 import com.akiban.server.RowDefCache;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.ServiceManagerImpl;
-import com.akiban.server.service.UnitTestServiceFactory;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.TestSessionFactory;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
+import com.akiban.server.test.ApiTestBase;
 import com.akiban.util.MySqlStatementSplitter;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -50,7 +50,7 @@ public abstract class ITSuiteBase {
 
     @BeforeClass
     public static void setUpSuite() throws Exception {
-        serviceManager = UnitTestServiceFactory.createServiceManager();
+        serviceManager = new GuicedServiceManager(GuicedServiceManager.testUrls());
         serviceManager.startServices();
         store = serviceManager.getStore();
         schemaManager = serviceManager.getSchemaManager();

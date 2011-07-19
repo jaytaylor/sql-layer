@@ -16,8 +16,7 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.persistitadapter.TestOperatorStore;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.config.Property;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.Strings;
@@ -26,7 +25,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -395,9 +393,10 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
 
     // ApiTestBase interface
 
+
     @Override
-    protected TestServiceServiceFactory createServiceFactory(Collection<Property> startupConfigProperties) {
-        return new OSServiceFactory(startupConfigProperties);
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider().bind(Store.class, TestOperatorStore.class);
     }
 
     // private methods
@@ -486,17 +485,6 @@ public final class OperatorStoreGroupIndexIT extends ITBase {
     private static final String STREET_AID_CID_COLS = "[addresses.street, addresses.aid, customers.cid]";
 
     // nested classes
-
-    private static class OSServiceFactory extends TestServiceServiceFactory {
-        private OSServiceFactory(Collection<Property> startupConfigProperties) {
-            super(startupConfigProperties);
-        }
-
-        @Override
-        public Service<Store> storeService() {
-            return new TestOperatorStore();
-        }
-    }
 
     private enum Action {
         STORE,

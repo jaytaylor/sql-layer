@@ -19,11 +19,13 @@ import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Set;
 
 import static com.akiban.qp.expression.API.field;
 import static com.akiban.qp.physicaloperator.API.*;
@@ -141,14 +143,14 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
     public void testCutAfterIndexScan()
     {
         PhysicalOperator plan =
-            cut_Default(
+            filter_Default(
                 branchLookup_Default(
                     indexScan_Default(customerNameIndexRowType, false, null),
                     coi,
                     customerNameIndexRowType,
                     customerRowType,
                     false),
-                customerRowType);
+                removeDescendentTypes(customerRowType));
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);
         int expectedRunId = 0;
@@ -164,14 +166,14 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
     public void testExtractAfterIndexScan()
     {
         PhysicalOperator plan =
-            extract_Default(
+            filter_Default(
                 branchLookup_Default(
                     indexScan_Default(customerNameIndexRowType, false, null),
                     coi,
                     customerNameIndexRowType,
                     customerRowType,
                     false),
-                Arrays.asList(orderRowType));
+                Arrays.asList(orderRowType, itemRowType));
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);
         int expectedRunId = 0;
@@ -202,14 +204,14 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
     {
         PhysicalOperator plan =
             flatten_HKeyOrdered(
-                cut_Default(
+                filter_Default(
                     branchLookup_Default(
                         indexScan_Default(customerNameIndexRowType, false, null),
                         coi,
                         customerNameIndexRowType,
                         customerRowType,
                         false),
-                    orderRowType),
+                    removeDescendentTypes(orderRowType)),
                 customerRowType,
                 orderRowType,
                 JoinType.LEFT_JOIN);
@@ -238,14 +240,14 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
     {
         PhysicalOperator plan =
             project_Default(
-                cut_Default(
+                filter_Default(
                     branchLookup_Default(
                         indexScan_Default(customerNameIndexRowType, false, null),
                         coi,
                         customerNameIndexRowType,
                         customerRowType,
                         false),
-                    customerRowType),
+                    removeDescendentTypes(customerRowType)),
                 customerRowType,
                 Arrays.asList(field(1)));
         RowType customerNameRowType = plan.rowType();
@@ -281,5 +283,12 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
             count++;
         }
         assertEquals(14, count);
+    }
+
+    private Set<RowType> removeDescendentTypes(RowType type)
+    {
+        Set<RowType> keepTypes = type.schema().userTableTypes();
+        keepTypes.removeAll(Schema.descendentTypes(type, keepTypes));
+        return keepTypes;
     }
 }

@@ -28,10 +28,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
+import java.util.*;
 
 final class OperatorStoreMaintenancePlan {
 
@@ -96,9 +93,16 @@ final class OperatorStoreMaintenancePlan {
         );
         plan = API.ancestorLookup_Default(plan, groupTable, rowType, Collections.singleton(parentRowType), false);
         plan = API.branchLookup_Default(plan, groupTable, parentRowType, rowType, false);
-        plan = API.cut_Default(plan, rowType);
+        plan = API.filter_Default(plan, removeDescendentTypes(rowType));
         plan = API.limit_Default(plan, 2);
         return plan;
+    }
+
+    private Set<RowType> removeDescendentTypes(RowType type)
+    {
+        Set<RowType> keepTypes = type.schema().userTableTypes();
+        keepTypes.removeAll(Schema.descendentTypes(type, keepTypes));
+        return keepTypes;
     }
 
     private List<FlattenedRowType> flatteningRowTypes(PlanCreationStruct struct) {

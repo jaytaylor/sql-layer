@@ -1,5 +1,4 @@
 Count_Default(user.customers)
-  Cut_Default([user.items, user.orders])
-    Extract_Default([user.customers, user.items, user.orders])
-      GroupScan_Default(full scan on _akiban_customers NO LIMIT)
+  Filter_Default([user.customers])
+    GroupScan_Default(full scan on _akiban_customers NO LIMIT)
 [_SQL_COL_1:INTEGER NOT NULL]

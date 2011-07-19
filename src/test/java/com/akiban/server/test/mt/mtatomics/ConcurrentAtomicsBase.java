@@ -17,16 +17,14 @@ package com.akiban.server.test.mt.mtatomics;
 
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.mt.MTBase;
 import com.akiban.server.test.mt.mtutil.TimePointsComparison;
 import com.akiban.server.test.mt.mtutil.TimedCallable;
 import com.akiban.server.test.mt.mtutil.TimedResult;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.config.Property;
 import com.akiban.server.service.dxl.ConcurrencyAtomicsDXLService;
 import com.akiban.server.service.dxl.DXLService;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -37,6 +35,15 @@ import static org.junit.Assert.assertEquals;
 class ConcurrentAtomicsBase extends MTBase {
     protected static final String SCHEMA = "cold";
     protected static final String TABLE = "frosty";
+
+    // ApiTestBase interface
+
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider().bind(DXLService.class, ConcurrencyAtomicsDXLService.class);
+    }
+
+    // ConcurrentAtomicsBase interface
 
     protected void scanUpdateConfirm(int tableId,
                                      TimedCallable<List<NewRow>> scanCallable,
@@ -73,21 +80,5 @@ class ConcurrentAtomicsBase extends MTBase {
             createNewRow(id, 2L, "mr melty")
         );
         return id;
-    }
-
-    @Override
-    protected TestServiceServiceFactory createServiceFactory(Collection<Property> startupConfigProperties) {
-        return new ScanhooksServiceFactory(startupConfigProperties);
-    }
-
-    private static class ScanhooksServiceFactory extends TestServiceServiceFactory {
-        private ScanhooksServiceFactory(Collection<Property> startupConfigProperties) {
-            super(startupConfigProperties);
-        }
-
-        @Override
-        public Service<DXLService> dxlService() {
-            return new ConcurrencyAtomicsDXLService();
-        }
     }
 }

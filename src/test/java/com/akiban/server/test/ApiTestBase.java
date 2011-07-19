@@ -20,9 +20,6 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -41,9 +38,13 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.api.dml.scan.ScanFlag;
+import com.akiban.server.service.config.TestConfigService;
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.util.GroupIndexCreator;
+import com.akiban.util.Strings;
 import com.akiban.util.Undef;
 import junit.framework.Assert;
 
@@ -78,11 +79,8 @@ import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanRequest;
-import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
-import com.akiban.server.service.UnitTestServiceFactory;
-import com.akiban.server.service.network.NetworkService;
 import com.akiban.server.service.session.Session;
 
 /**
@@ -121,56 +119,6 @@ public class ApiTestBase {
         }
     }
 
-    protected static class TestServiceServiceFactory extends UnitTestServiceFactory {
-
-        protected TestServiceServiceFactory(Collection<Property> startupConfigProperties) {
-            super(false, startupConfigProperties);
-        }
-
-        @Override
-        public Service<NetworkService> networkService() {
-            return new Service<NetworkService>() {
-                @Override
-                public NetworkService cast() {
-                    return (NetworkService) Proxy.newProxyInstance(NetworkService.class.getClassLoader(),
-                            new Class<?>[]{NetworkService.class},
-                            new InvocationHandler() {
-                                @Override
-                                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                                    return null;
-                                }
-                            }
-                    );
-                }
-
-                @Override
-                public Class<NetworkService> castClass() {
-                    return NetworkService.class;
-                }
-
-                @Override
-                public void start() throws Exception {
-                }
-
-                @Override
-                public void stop() throws Exception {
-                }
-                
-                @Override
-                public void crash() throws Exception {
-                }
-                
-            };
-        }
-    }
-
-    protected static class TestServiceManager extends ServiceManagerImpl {
-
-        protected TestServiceManager(TestServiceServiceFactory serviceFactory) {
-            super(serviceFactory);
-        }
-    }
-
     protected ApiTestBase(String suffix)
     {
         final String name = this.getClass().getSimpleName();
@@ -185,29 +133,38 @@ public class ApiTestBase {
     private Session session;
     private int aisGeneration;
     private int akibanFKCount;
+    private boolean testServicesStarted;
 
     @Before
     public final void startTestServices() throws Exception {
-        sm = createServiceManager( createServiceFactory(startupConfigProperties()) );
+        testServicesStarted = false;
+        sm = createServiceManager( startupConfigProperties() );
         sm.startServices();
         session = ServiceManagerImpl.newSession();
+        testServicesStarted = true;
     }
 
-    protected TestServiceManager createServiceManager(TestServiceServiceFactory serviceFactory) {
-        return new TestServiceManager(serviceFactory);
+    protected ServiceManager createServiceManager(Collection<Property> startupConfigProperties) {
+        TestConfigService.setOverrides(startupConfigProperties);
+        return new GuicedServiceManager(serviceBindingsProvider());
     }
 
-    protected TestServiceServiceFactory createServiceFactory(Collection<Property> startupConfigProperties) {
-        return new TestServiceServiceFactory(startupConfigProperties);
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return GuicedServiceManager.testUrls();
     }
 
     @After
     public final void stopTestServices() throws Exception {
+        if (!testServicesStarted) {
+            return;
+        }
         String openCursorsMessage = null;
-        DXLTestHooks dxlTestHooks = DXLTestHookRegistry.get();
-        // Check for any residual open cursors
-        if (dxlTestHooks.openCursorsExist()) {
-            openCursorsMessage = "open cursors remaining:" + dxlTestHooks.describeOpenCursors();
+        if (sm.serviceIsStarted(DXLService.class)) {
+            DXLTestHooks dxlTestHooks = DXLTestHookRegistry.get();
+            // Check for any residual open cursors
+            if (dxlTestHooks.openCursorsExist()) {
+                openCursorsMessage = "open cursors remaining:" + dxlTestHooks.describeOpenCursors();
+            }
         }
 
         session.close();
@@ -217,6 +174,7 @@ public class ApiTestBase {
         if (openCursorsMessage != null) {
             fail(openCursorsMessage);
         }
+        testServicesStarted = false;
     }
     
     public final void crashTestServices() throws Exception {
@@ -226,9 +184,10 @@ public class ApiTestBase {
     }
     
     public final void restartTestServices(Collection<Property> properties) throws Exception {
-        sm = createServiceManager( createServiceFactory(properties) );
+        sm = createServiceManager( properties );
         sm.startServices();
         session = ServiceManagerImpl.newSession();
+        ddl(); // loads up the schema manager et al
     }
 
     public final void safeRestartTestServices() throws Exception {
@@ -300,7 +259,7 @@ public class ApiTestBase {
     }
 
     protected Collection<Property> startupConfigProperties() {
-        return null;
+        return Collections.emptyList();
     }
 
     protected final int createTable(String schema, String table, String definition) throws InvalidOperationException {
@@ -512,6 +471,12 @@ public class ApiTestBase {
             }
         }
         Assert.assertEquals("user tables", Collections.<TableName>emptySet(), uTables);
+    }
+
+    protected static <T> void assertEqualLists(String message, List<T> expected, List<T> actual) {
+        if (!expected.equals(actual)) {
+            assertEquals(message, Strings.join(expected), Strings.join(actual));
+        }
     }
 
     protected static class TestException extends RuntimeException {
