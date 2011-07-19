@@ -1,0 +1,19 @@
+BIND my_one -> alpha
+BIND my_two -> beta
+BIND my_three -> gamma
+LOCK delta
+LOCK delta1
+LOCK delta2
+REQUIRE epsilon
+REQUIRE epsilon 1
+REQUIRE zeta
+MUST BE LOCKED zeta
+REQUIRE zeta 1
+MUST BE LOCKED zeta 1
+REQUIRE zeta 2
+MUST BE LOCKED zeta 2
+MUST BE LOCKED eta
+MUST BE LOCKED eta 1
+MUST BE BOUND theta
+MUST BE BOUND theta 1
+SECTION END

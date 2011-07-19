@@ -77,7 +77,6 @@ import com.akiban.server.AkServer;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.RowDefCache;
-import com.akiban.server.service.AfterStart;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
@@ -93,7 +92,7 @@ import com.persistit.exception.RollbackException;
 import com.persistit.exception.TransactionFailedException;
 
 public class PersistitStoreSchemaManager implements Service<SchemaManager>,
-        SchemaManager, AfterStart {
+        SchemaManager {
 
     final static int AIS_BASE_TABLE_ID = 1000000000;
     
@@ -614,6 +613,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
         // 0 = unlimited, start off at 1MB in this case.
         aisByteBuffer = ByteBuffer.allocate(maxAISBufferSize != 0 ? maxAISBufferSize : 1<<20);
+        afterStart();
     }
 
     @Override
@@ -636,8 +636,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * in afterStart because it requires other services, TreeService and Store
      * specifically, to be up and functional
      */
-    @Override
-    public void afterStart() throws Exception {
+    private void afterStart() throws Exception {
         final TreeService treeService = serviceManager.getTreeService();
         final Session session = ServiceManagerImpl.newSession();
         final Transaction transaction = treeService.getTransaction(session);

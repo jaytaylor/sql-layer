@@ -24,6 +24,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -49,7 +50,7 @@ public abstract class Strings {
      * @param strings the strings
      * @return the String
      */
-    public static String join(List<?> strings) {
+    public static String join(Collection<?> strings) {
         return join(strings, nl());
     }
 
@@ -71,7 +72,7 @@ public abstract class Strings {
      * May not be null.
      * @return the joined string
      */
-    public static String join(List<?> strings, String delimiter) {
+    public static String join(Collection<?> strings, String delimiter) {
         if (strings.size() == 0) {
             return "";
         }
