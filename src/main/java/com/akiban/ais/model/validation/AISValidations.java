@@ -22,12 +22,14 @@ public final class AISValidations {
     //public static final AISValidation NO_NULL_IDENTIFIERS;
     public static final AISValidation COLUMN_POSITION_DENSE = new ColumnPositionDense();
     public static final AISValidation GROUP_TABLE_SINGLE_ROOT = new GroupTableSingleRoot();
+    public static final AISValidation JOIN_TO_PARENT_PK = new JoinToParentPK();
     public static final AISValidation PROTECTED_TABLES = new ProtectedTables();
     public static final AISValidation REFERENCES_CORRECT = new ReferencesCorrect();
     public static final AISValidation SUPPORTED_COLUMN_TYPES = new SupportedColumnTypes();    
     public static final AISValidation TABLE_COLUMNS_MATCH_GROUP = new TableColumnsMatchGroupColumns();
-    public static final AISValidation TABLEID_UNIQUE = new TableIDsUnique();
     public static final AISValidation TABLE_INDEXES_MATCH_GROUP = new TableIndexesMatchGroupIndexes();
+    public static final AISValidation TABLE_HAS_PRIMARY_KEY = new TableHasPrimaryKey();
+    public static final AISValidation TABLEID_UNIQUE = new TableIDsUnique();
     public static final AISValidation TABLES_IN_A_GROUP = new TablesInAGroup();
     
     public static final Collection<AISValidation> LIVE_AIS_VALIDATIONS;
@@ -42,7 +44,9 @@ public final class AISValidations {
                 TABLE_INDEXES_MATCH_GROUP,
                 TABLES_IN_A_GROUP, 
                 GROUP_TABLE_SINGLE_ROOT,
-                COLUMN_POSITION_DENSE));
+                COLUMN_POSITION_DENSE,
+                JOIN_TO_PARENT_PK,
+                TABLE_HAS_PRIMARY_KEY));
     }
     
     private AISValidations () {}

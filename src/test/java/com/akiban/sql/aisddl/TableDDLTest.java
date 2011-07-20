@@ -59,6 +59,7 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.DropTableNode;
 import com.akiban.sql.parser.CreateTableNode;
+import com.akiban.sql.StandardException;
 
 public class TableDDLTest {
 
@@ -145,7 +146,6 @@ public class TableDDLTest {
         TableDDL.createTable(ddlFunctions, null, defaultSchema, (CreateTableNode)stmt);
     }
 
-    /* Test removed because the DefaultNameGenerator no longer validates the 2 PKs as an error
     @Test (expected=StandardException.class)
     public void createTable2PKs() throws Exception {
         String sql = "CREATE TABLE test.t1 (c1 int primary key, c2 int NOT NULL, primary key (c2))";
@@ -154,7 +154,6 @@ public class TableDDLTest {
         assertTrue (stmt instanceof CreateTableNode);
         TableDDL.createTable(ddlFunctions, null, defaultSchema, (CreateTableNode)stmt);
     }
-    */
     
     public static class DDLFunctionsMock implements DDLFunctions {
         private AkibanInformationSchema internalAIS = null;

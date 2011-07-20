@@ -152,8 +152,8 @@ public class AISBuilderTest
         builder.userTable("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
-        builder.index("schema", "customer", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
+        builder.index("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, "customer_id", 0, true, null);
         builder.userTable("schema", "order");
         builder.column("schema", "order", "order_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "order", "customer_id", 1, "int", 0L, 0L, false, false, null, null);
@@ -184,8 +184,8 @@ public class AISBuilderTest
         builder.userTable("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
-        builder.index("schema", "customer", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
+        builder.index("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, "customer_id", 0, true, null);
         builder.userTable("schema", "order");
         builder.column("schema", "order", "order_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "order", "customer_id", 1, "int", 0L, 0L, false, false, null, null);
@@ -218,14 +218,14 @@ public class AISBuilderTest
         builder.userTable("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
-        builder.index("schema", "customer", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
+        builder.index("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, "customer_id", 0, true, null);
         builder.userTable("schema", "order");
         builder.column("schema", "order", "order_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "order", "customer_id", 1, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "order", "order_date", 2, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "order", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "order", "pk", "order_id", 0, true, null);
+        builder.index("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, "order_id", 0, true, null);
         builder.userTable("schema", "item");
         builder.column("schema", "item", "item_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "item", "order_id", 1, "int", 0L, 0L, false, false, null, null);
@@ -267,14 +267,14 @@ public class AISBuilderTest
         builder.userTable("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
-        builder.index("schema", "customer", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
+        builder.index("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, "customer_id", 0, true, null);
         builder.userTable("schema", "order");
         builder.column("schema", "order", "order_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "order", "customer_id", 1, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "order", "order_date", 2, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "order", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "order", "pk", "order_id", 0, true, null);
+        builder.index("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, "order_id", 0, true, null);
         builder.userTable("schema", "item");
         builder.column("schema", "item", "item_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "item", "order_id", 1, "int", 0L, 0L, false, false, null, null);
@@ -362,8 +362,8 @@ public class AISBuilderTest
         builder.column("schema", "order", "order_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "order", "customer_id", 1, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "order", "order_date", 2, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "order", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "order", "pk", "order_id", 0, true, null);
+        builder.index("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, "order_id", 0, true, null);
         builder.userTable("schema", "item");
         builder.column("schema", "item", "item_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "item", "order_id", 1, "int", 0L, 0L, false, false, null, null);
@@ -891,7 +891,7 @@ public class AISBuilderTest
 */
         // Done
         builder.groupingIsComplete();
-        Assert.assertEquals(0, 
+        Assert.assertEquals(2, 
                 builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
@@ -1032,6 +1032,8 @@ public class AISBuilderTest
         builder.userTable("test", "c");
         builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
+        builder.index("test", "c", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn("test", "c", Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, 0);
         builder.userTable("test", "o");
         builder.column("test", "o", "oid", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "o", "cid", 1, "int", 0L, 0L, false, false, null, null);
@@ -1082,11 +1084,15 @@ public class AISBuilderTest
         builder.userTable("test", "c");
         builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
-
+        builder.index("test", "c", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn("test", "c", "pk", "id", 0, true, 0);
+        
         builder.userTable("test", "o");
         builder.column("test", "o", "oid", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "o", "cid", 1, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "o", "date", 2, "int", 0L, 0L, false, false, null, null);
+        builder.index("test", "o", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn("test", "o", "pk", "oid", 0, true, 0);
         builder.joinTables("c/id/o/cid", "test", "c", "test", "o");
         builder.joinColumns("c/id/o/cid", "test", "c", "id", "test", "o", "cid");
 
@@ -1147,11 +1153,16 @@ public class AISBuilderTest
         builder.userTable("test", "c");
         builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
+        builder.index("test", "c", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn("test", "c", "pk", "id", 0, true, 0);
 
         builder.userTable("test", "o");
         builder.column("test", "o", "oid", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "o", "cid", 1, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "o", "date", 2, "int", 0L, 0L, false, false, null, null);
+        builder.index("test", "o", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn("test", "o", "pk", "oid", 0, true, 0);
+        
         builder.joinTables("c/id/o/cid", "test", "c", "test", "o");
         builder.joinColumns("c/id/o/cid", "test", "c", "id", "test", "o", "cid");
 

@@ -141,10 +141,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public TableName createTableDefinition(Session session, final UserTable newTable) throws Exception
     {
-        // We assume/assert the newAIS contains exactly one new user table. 
-        //assert newAIS.getUserTables().values().size() == 1;
-        //final UserTable newTable = newAIS.getUserTables().values().iterator().next();
-        
         AISMerge merge = new AISMerge (ais, newTable);
         merge.merge();
         

@@ -116,14 +116,98 @@ public class AISMergeTest {
         UserTable sourceTable = s.getUserTable(TABLENAME);
         
         assertTrue (t.isFrozen());
-        assertEquals (targetTable.getIndexes().size(),1);
+        assertEquals (1,targetTable.getIndexes().size());
         assertEquals (targetTable.getIndexes().size(), sourceTable.getIndexes().size());
         assertNotNull (targetTable.getIndex("c1"));
         checkIndexColumns (targetTable.getIndex("c1").getColumns(), "c1");
         assertNotNull(t.getGroup(TABLE));
         assertNotNull(t.getGroup(TABLE).getGroupTable().getIndex("t1$c1"));
+        assertNull (targetTable.getPrimaryKey());
+
+    }
+    
+    @Test
+    public void testSimpleJoin() throws Exception {
+        b.userTable(SCHEMA, TABLE);
+        b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
+        b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
+        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, 0);
+        b.basicSchemaIsComplete();
+        b.createGroup("FRED", SCHEMA, "_akiban_t1");
+        b.addTableToGroup("FRED", SCHEMA, TABLE);
+        b.groupingIsComplete();
+        AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
+        t = merge.merge().getAIS();
+        assertTrue (t.isFrozen());
+        assertEquals (TABLE, t.getUserTable(TABLENAME).getGroup().getName());
+        assertEquals ("test._akiban_t1", t.getUserTable(TABLENAME).getGroup().getGroupTable().getName().toString());
         
+        b.userTable(SCHEMA, "t2");
+        b.column(SCHEMA, "t2", "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, "t2", "c2", 1, "INT", (long)0, (long)0, true, false, null, null);
+        b.joinTables("test/t1/test/t2", SCHEMA, TABLE, SCHEMA, "t2");
+        b.joinColumns("test/t1/test/t2", SCHEMA, TABLE, "c1", SCHEMA, "t2", "c1");
+        b.basicSchemaIsComplete();
+        b.addJoinToGroup("FRED", "test/t1/test/t2", 0);
+        b.groupingIsComplete();
         
+        merge = new AISMerge (t, s.getUserTable(SCHEMA, "t2"));
+        t = merge.merge().getAIS();
+        
+        assertNotNull (t.getUserTable(SCHEMA, "t2").getParentJoin());
+        assertEquals (1, t.getUserTable(TABLENAME).getChildJoins().size());
+        assertNotNull (t.getGroup(TABLE));
+        assertEquals (TABLE, t.getUserTable(SCHEMA, "t2").getGroup().getName());
+        assertEquals (5, t.getGroupTable(SCHEMA, "_akiban_t1").getColumnsIncludingInternal().size());
+    }
+    
+    @Test
+    public void testTwoJoins() throws Exception {
+        b.userTable(SCHEMA, TABLE);
+        b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
+        b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
+        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, 0);
+        b.basicSchemaIsComplete();
+        b.createGroup("FRED", SCHEMA, "_akiban_t1");
+        b.addTableToGroup("FRED", SCHEMA, TABLE);
+        b.groupingIsComplete();
+        AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
+        t = merge.merge().getAIS();
+        assertTrue (t.isFrozen());
+
+        b.userTable(SCHEMA, "t2");
+        b.column(SCHEMA, "t2", "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, "t2", "c2", 1, "INT", (long)0, (long)0, true, false, null, null);
+        b.joinTables("test/t1/test/t2", SCHEMA, TABLE, SCHEMA, "t2");
+        b.joinColumns("test/t1/test/t2", SCHEMA, TABLE, "c1", SCHEMA, "t2", "c1");
+        b.basicSchemaIsComplete();
+        b.addJoinToGroup("FRED", "test/t1/test/t2", 0);
+        b.groupingIsComplete();
+        
+        merge = new AISMerge (t, s.getUserTable(SCHEMA, "t2"));
+        t = merge.merge().getAIS();
+        assertNotNull (t.getUserTable(SCHEMA, "t2").getParentJoin());
+        assertEquals (1, t.getUserTable(TABLENAME).getChildJoins().size());
+        assertNotNull (t.getGroup(TABLE));
+
+        b.userTable(SCHEMA, "t3");
+        b.column(SCHEMA, "t3", "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, "t3", "c2", 1, "Int", (long)0, (long)0, false, false, null, null);
+        b.joinTables("test/t1/test/t3", SCHEMA, TABLE, SCHEMA, "t3");
+        b.joinColumns("test/t1/test/t3", SCHEMA, TABLE, "c1", SCHEMA, "t3", "c1");
+        b.basicSchemaIsComplete();
+        b.addJoinToGroup("FRED", "test/t1/test/t3", 0);
+        b.groupingIsComplete();
+        
+        merge = new AISMerge (t, s.getUserTable(SCHEMA, "t3"));
+        t = merge.merge().getAIS();
+        assertNotNull (t.getUserTable(SCHEMA, "t3").getParentJoin());
+        assertEquals (2, t.getUserTable(TABLENAME).getChildJoins().size());
+        assertNotNull (t.getGroup(TABLE));
+        assertEquals (TABLE, t.getUserTable(SCHEMA, "t3").getGroup().getName());
+        assertEquals (8, t.getGroupTable(SCHEMA, "_akiban_t1").getColumnsIncludingInternal().size());
     }
     
     private void checkColumns(List<Column> actual, String ... expected)
@@ -133,6 +217,7 @@ public class AISMergeTest {
             assertEquals(expected[i], actual.get(i).getName());
         }
     }
+    
     private void checkIndexColumns(List<IndexColumn> actual, String ... expected)
     {
         assertEquals (expected.length, actual.size());

@@ -15,6 +15,8 @@
 
 package com.akiban.ais.model;
 
+import java.util.List;
+
 public interface NameGenerator
 {
     String generateColumnName(Column column);
@@ -22,5 +24,5 @@ public interface NameGenerator
     String generateGroupName (UserTable userTable);
     String generateGroupTableName (String groupName);
     String generateIndexName (String indexName, String columnName, String constraint);
-    String generateJoinName (UserTable parentTable, UserTable childTable, TableIndex joinIndex);
+    String generateJoinName (UserTable parentTable, UserTable childTable, List<JoinColumn> joinIndex);
 }
