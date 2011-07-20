@@ -1,0 +1,9 @@
+# copied from packages-common/services-config.yaml
+- require:
+    - com.akiban.server.AkServerEmptyInterface           # loads the AKSERVER jmx bean
+    - com.akiban.server.service.memcache.MemcacheService # HAPI
+    - com.akiban.server.service.network.NetworkService   # MySQL replication
+    - com.akiban.server.service.stats.StatisticsService  # Stats gathering
+    - com.akiban.server.service.jmx.JmxRegistryService   # Turns on JMX for other services
+    - com.akiban.sql.pg.PostgresService                  # Akiban SQL
+    - com.akiban.server.service.instrumentation.InstrumentationService
