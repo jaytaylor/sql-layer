@@ -1,3 +1,4 @@
+# copied from packages-common/services-config.yaml
 - require:
     - com.akiban.server.AkServerEmptyInterface           # loads the AKSERVER jmx bean
     - com.akiban.server.service.memcache.MemcacheService # HAPI
