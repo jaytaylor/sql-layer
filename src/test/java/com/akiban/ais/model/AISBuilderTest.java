@@ -25,6 +25,7 @@ import org.junit.Test;
 import com.akiban.ais.model.validation.AISValidationFailure;
 import com.akiban.ais.model.validation.AISValidationResults;
 import com.akiban.ais.model.validation.AISValidations;
+import com.akiban.message.ErrorCode;
 
 public class AISBuilderTest
 {
@@ -693,8 +694,11 @@ public class AISBuilderTest
         }
         // AISPrinter.print(ais);
 
-        Assert.assertEquals(0,
-                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
+        AISValidationResults vResults = builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS);
+        
+        Assert.assertEquals(1, vResults.failures().size());
+        AISValidationFailure fail = vResults.failures().iterator().next();
+        Assert.assertEquals(ErrorCode.DUPLICATE_TABLE, fail.errorCode());
     }
 
     @Test
@@ -831,8 +835,11 @@ public class AISBuilderTest
         Table groupTable = ais.getTable("s", "g");
         groupTable.getColumns();
 
-        Assert.assertEquals(0,
-                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
+        AISValidationResults vResults = builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS);
+        
+        Assert.assertEquals(1, vResults.failures().size());
+        AISValidationFailure fail = vResults.failures().iterator().next();
+        Assert.assertEquals(ErrorCode.DUPLICATE_TABLE, fail.errorCode());
     }
 
     @Test
@@ -865,7 +872,7 @@ public class AISBuilderTest
         builder.joinTables("ukjoin", "s", "parent", "s", "child");
         builder.joinColumns("ukjoin", "s", "parent", "uk", "s", "child", "fk_uk");
         builder.joinTables("nkjoin", "s", "parent", "s", "child");
-        builder.joinColumns("nkjoin", "s", "parent", "uk", "s", "child", "fk_nk");
+        builder.joinColumns("nkjoin", "s", "parent", "nk", "s", "child", "fk_nk");
         // Create group
         builder.basicSchemaIsComplete();
         builder.createGroup("g", "s", "g");
@@ -891,8 +898,25 @@ public class AISBuilderTest
 */
         // Done
         builder.groupingIsComplete();
-        Assert.assertEquals(2, 
-                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
+        
+        AISValidationResults vResults = builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS);
+        
+        Assert.assertEquals(4, vResults.failures().size());
+        Iterator<AISValidationFailure> fails = vResults.failures().iterator();
+        // Failure 1: join to unique key
+        AISValidationFailure fail = fails.next();
+        Assert.assertEquals(ErrorCode.INTERNAL_REFERENCES_BROKEN, fail.errorCode());
+        Assert.assertEquals("Join nkjoin has mis-matched column (nk) to parent table PK column (pk)", fail.message());
+        // Failure 2: join to non-key
+        fail = fails.next();
+        Assert.assertEquals(ErrorCode.INTERNAL_REFERENCES_BROKEN, fail.errorCode());
+        Assert.assertEquals("Join ukjoin has mis-matched column (uk) to parent table PK column (pk)", fail.message());
+        // Failure 3: 3 joins to parent
+        fail = fails.next();
+        Assert.assertEquals(ErrorCode.DUPLICATE_TABLE, fail.errorCode());
+        // Failure 4: 3 joins to parent
+        fail = fails.next();
+        Assert.assertEquals(ErrorCode.DUPLICATE_TABLE, fail.errorCode());
     }
 
     @Test
