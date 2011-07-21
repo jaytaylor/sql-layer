@@ -1,11 +1,11 @@
 create table akiban_information_schema.groups (
-    group_name varchar(64),
+    group_name varchar(64) not null,
     primary key(group_name)
 ) engine=akibandb;
 
 create table akiban_information_schema.tables (
-    schema_name       varchar(64),
-    table_name        varchar(64),
+    schema_name       varchar(64) not null,
+    table_name        varchar(64) not null,
     table_type        varchar(8),
     table_id          int,
     group_name        varchar(64),
@@ -14,9 +14,9 @@ create table akiban_information_schema.tables (
 ) engine=akibandb;
 
 create table akiban_information_schema.columns (
-    schema_name         varchar(64),
-    table_name          varchar(64),
-    column_name         varchar(64),
+    schema_name         varchar(64) not null,
+    table_name          varchar(64) not null,
+    column_name         varchar(64) not null,
     position            int, -- 0-based
     type                varchar(64),
     type_param_1        bigint,
@@ -34,7 +34,7 @@ create table akiban_information_schema.columns (
 ) engine=akibandb;
 
 create table akiban_information_schema.joins (
-    join_name               varchar(255),
+    join_name               varchar(255) not null,
     parent_schema_name      varchar(64),
     parent_table_name       varchar(64),
     child_schema_name       varchar(64),
@@ -47,20 +47,20 @@ create table akiban_information_schema.joins (
 ) engine=akibandb;
 
 create table akiban_information_schema.join_columns (
-    join_name               varchar(255),
+    join_name               varchar(255) not null,
     parent_schema_name      varchar(64),
     parent_table_name       varchar(64),
-    parent_column_name      varchar(64),
+    parent_column_name      varchar(64) not null,
     child_schema_name       varchar(64),
     child_table_name        varchar(64),
-    child_column_name       varchar(64),
+    child_column_name       varchar(64) not null,
     primary key(join_name, parent_column_name, child_column_name)
 ) engine=akibandb;
 
 create table akiban_information_schema.indexes (
-    schema_name      varchar(64),
-    table_name       varchar(64),
-    index_name       varchar(64),
+    schema_name      varchar(64) not null,
+    table_name       varchar(64) not null,
+    index_name       varchar(64) not null,
     index_type       varchar(64),
     index_id         int,
     table_constraint varchar(64),
@@ -69,11 +69,11 @@ create table akiban_information_schema.indexes (
 ) engine=akibandb;
 
 create table akiban_information_schema.index_columns (
-    schema_name       varchar(64),
-    table_name        varchar(64),
-    index_name        varchar(64),
+    schema_name       varchar(64) not null,
+    table_name        varchar(64) not null,
+    index_name        varchar(64) not null,
     index_type        varchar(64),
-    column_name       varchar(64),
+    column_name       varchar(64) not null,
     ordinal_position  int,
     is_ascending      tinyint,
     indexed_length    int,
@@ -81,7 +81,7 @@ create table akiban_information_schema.index_columns (
 ) engine=akibandb;
 
 create table akiban_information_schema.types (
-    type_name           varchar(64),
+    type_name           varchar(64) not null,
     parameters          int,
     fixed_size          tinyint,
     max_size_bytes      bigint,
@@ -89,10 +89,10 @@ create table akiban_information_schema.types (
 ) engine=akibandb;
 
 create table akiban_information_schema.index_analysis (
-    table_id            int,
-    index_id            int,
+    table_id            int not null,
+    index_id            int not null,
     analysis_timestamp  timestamp,
-    item_number         int,
+    item_number         int not null,
     key_string          varchar(2048),
     index_row_data      varbinary(4096),
     count               bigint,

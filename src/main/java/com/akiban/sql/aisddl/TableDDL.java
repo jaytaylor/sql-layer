@@ -35,6 +35,8 @@ import com.akiban.sql.types.TypeId.FormatIds;
 import com.akiban.sql.StandardException;
 
 import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.NameGenerator;
@@ -99,6 +101,7 @@ public class TableDDL
             if (tableElement instanceof FKConstraintDefinitionNode) {
                 FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)tableElement;
                 if (fkdn.isGrouping()) {
+                    addParentTable(builder, ddlFunctions.getAIS(session), fkdn, schemaName);
                     addJoin (builder, fkdn, schemaName, tableName);
                 } else {
                     throw new StandardException ("non-grouping Foreign keys not supported");
@@ -109,6 +112,7 @@ public class TableDDL
             }
         }
         builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
         UserTable table = builder.akibanInformationSchema().getUserTable(schemaName, tableName);
         
         try {
@@ -201,10 +205,55 @@ public class TableDDL
             final String schemaName, final String tableName) 
     throws StandardException {
 
+ 
+        String parentSchemaName = fkdn.getRefTableName().hasSchema() ?
+                fkdn.getRefTableName().getSchemaName() : schemaName;
+        String parentTableName = fkdn.getRefTableName().getTableName();
+        String groupName = parentTableName;
+        
+        String joinName = String.format("%s/%s/%s/%s",
+                parentSchemaName, parentTableName, 
+                schemaName, tableName);
+
+        UserTable table = builder.akibanInformationSchema().getUserTable(parentSchemaName, parentTableName);
+        
+        builder.joinTables(joinName, parentSchemaName, parentTableName, schemaName, tableName);
+        
+        int colpos = 0;
+        for (ResultColumn column : fkdn.getColumnList()) {
+            String columnName = column.getName();
+            builder.joinColumns(joinName, 
+                    parentSchemaName, parentTableName, table.getColumn(colpos).getName(), 
+                    schemaName, tableName, columnName);
+            colpos++;
+        }
+        builder.addJoinToGroup(groupName, joinName, 0);
+        //builder.groupingIsComplete();
+    }
+    
+    /**
+     * Add a minimal parent table (PK) with group to the builder based upon the AIS. 
+     * 
+     * @param builder
+     * @param ais
+     * @param fkdn
+     */
+    private static void addParentTable(final AISBuilder builder, 
+            final AkibanInformationSchema ais, final FKConstraintDefinitionNode fkdn, 
+            final String schemaName) throws StandardException {
+
         String parentSchemaName = fkdn.getRefTableName().hasSchema() ?
                 fkdn.getRefTableName().getSchemaName() : schemaName;
         String parentTableName = fkdn.getRefTableName().getTableName();
         
+
+        UserTable parentTable = ais.getUserTable(parentSchemaName, parentTableName);
+        if (parentTable == null) {
+            throw new StandardException ("Unable to find Foreign Key reference table " +
+                    parentSchemaName + "." + parentTableName + " in existing tables");
+        }
+        
+            
         try {
             builder.userTable(parentSchemaName, parentTableName);
         } catch (InvalidOperationException ex) {
@@ -213,17 +262,24 @@ public class TableDDL
             throw new StandardException (ex.getMessage());
         }
         
-        String joinName = String.format("%s/%s/%s/%s",
-                parentSchemaName, parentTableName, 
-                schemaName, tableName);
-        
-        builder.joinTables(joinName, parentSchemaName, parentTableName, schemaName, tableName);
-        
+        builder.index(parentSchemaName, parentTableName, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         int colpos = 0;
-        for (ResultColumn column : fkdn.getRefResultColumnList()) {
-            String columnName = column.getColumnName();
-            builder.column(parentSchemaName, parentTableName, columnName, colpos++, "INT", (long)0, (long)0, false, false, null, null);
-            builder.joinColumns(joinName, parentSchemaName, parentTableName, columnName, schemaName, tableName, columnName);
+        for (Column column : parentTable.getPrimaryKeyIncludingInternal().getColumns()) {
+            builder.column(parentSchemaName, parentTableName,
+                    column.getName(),
+                    colpos,
+                    column.getType().name(),
+                    column.getTypeParameter1(),
+                    column.getTypeParameter2(),
+                    column.getNullable(),
+                    false, //column.getInitialAutoIncrementValue() != 0,
+                    column.getCharsetAndCollation() != null ? column.getCharsetAndCollation().charset() : null,
+                    column.getCharsetAndCollation() != null ? column.getCharsetAndCollation().collation() : null);
+            builder.indexColumn(parentSchemaName, parentTableName, Index.PRIMARY_KEY_CONSTRAINT, 
+                    column.getName(), colpos++, true, 0);
         }
+        builder.createGroup(parentTableName, parentSchemaName, "_akiban_" + parentTableName);
+        builder.addTableToGroup(parentTableName, parentSchemaName, parentTableName);
+        //builder.groupingIsComplete();
     }
 }

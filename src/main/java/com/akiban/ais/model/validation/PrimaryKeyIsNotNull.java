@@ -22,7 +22,7 @@ public class PrimaryKeyIsNotNull implements AISValidation {
             for (Column column : index.getColumns()) {
                 if (column.getNullable()) {
                     output.reportFailure(new AISValidationFailure (ErrorCode.PK_NULL_COLUMN,
-                            "Table %s has column %s which must be not null to be part of the Primary Key",
+                            "Table %s has a nullable column %s which must be not null to be part of the Primary Key",
                             table.getName().toString(), column.getName()));
                 }
             }
