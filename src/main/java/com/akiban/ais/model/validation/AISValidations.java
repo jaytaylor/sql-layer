@@ -25,6 +25,7 @@ public final class AISValidations {
     public static final AISValidation JOIN_COLUMN_TYPES_MATCH = new JoinColumnTypesMatch();
     public static final AISValidation JOIN_TO_PARENT_PK = new JoinToParentPK();
     public static final AISValidation JOIN_TO_ONE_PARENT = new JoinToOneParent();
+    public static final AISValidation PRIMARY_KEY_IS_NOT_NULL = new PrimaryKeyIsNotNull();
     public static final AISValidation PROTECTED_TABLES = new ProtectedTables();
     public static final AISValidation REFERENCES_CORRECT = new ReferencesCorrect();
     public static final AISValidation SUPPORTED_COLUMN_TYPES = new SupportedColumnTypes();    
@@ -40,6 +41,7 @@ public final class AISValidations {
         LIVE_AIS_VALIDATIONS = Collections.unmodifiableList(Arrays.asList(
                 PROTECTED_TABLES,
                 TABLE_HAS_PRIMARY_KEY,
+                PRIMARY_KEY_IS_NOT_NULL,
                 SUPPORTED_COLUMN_TYPES,
                 TABLEID_UNIQUE,
                 REFERENCES_CORRECT,

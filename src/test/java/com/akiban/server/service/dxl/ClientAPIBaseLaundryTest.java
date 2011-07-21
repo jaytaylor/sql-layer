@@ -57,7 +57,9 @@ public final class ClientAPIBaseLaundryTest {
             ErrorCode.INTERNAL_REFERENCES_BROKEN,   // TODO: AISValidation failure 
             ErrorCode.DUPLICATE_COLUMN,             // TODO: AISValidation failure
             ErrorCode.DUPLICATE_GROUP,              // TODO: AISValidation failure
-            ErrorCode.GROUP_MULTIPLE_ROOTS,         // TODO: AISValidations failure
+            ErrorCode.GROUP_MULTIPLE_ROOTS,         // TODO: AISValidation failure
+            ErrorCode.FK_TYPE_MISMATCH,             // TODO: AISValidation failure
+            ErrorCode.PK_NULL_COLUMN,               // TODO: AISValidation failure
     };
 
     @Parameterized.Parameters
