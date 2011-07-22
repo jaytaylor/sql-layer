@@ -184,13 +184,18 @@ public class AISMerge {
                 offset = Math.max(offset, table.getTableId() + 1);
             }
         }
+        for (GroupTable table : ais.getGroupTables().values()) {
+            if (!table.getName().getSchemaName().equals("akiban_information_schema")) {
+                offset = Math.max(offset, table.getTableId() + 1);
+            }
+        }
         return offset;
     }
 
     private int computeIndexIDOffset (AkibanInformationSchema ais, String groupName) {
         int offset = 1;
         for (TableIndex index : ais.getGroup(groupName).getGroupTable().getIndexes()) {
-            offset = Math.max(offset, index.getIndexId()); 
+            offset = Math.max(offset, index.getIndexId() + 1); 
         }
         return offset;
     }
