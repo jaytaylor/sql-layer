@@ -71,11 +71,16 @@ public class AISMerge {
         // TableSubsetWriter doesn't do. 
         
         final AISBuilder builder = new AISBuilder(targetAIS);
+        builder.setTableIdOffset(computeTableIdOffset(targetAIS));
+
+        if (sourceTable.getParentJoin() != null) {
+            UserTable parentTable = targetAIS.getUserTable(sourceTable.getParentJoin().getParent().getName().getSchemaName(), 
+                    sourceTable.getParentJoin().getParent().getName().getTableName());
+            builder.setIndexIdOffset(computeIndexIDOffset(targetAIS, parentTable.getGroup().getName()));
+        }
 
         // Add the user table to the targetAIS
         addTable (builder, sourceTable); 
-
-
 
         // Joins or group table?
         if (sourceTable.getParentJoin() == null) {
@@ -130,6 +135,7 @@ public class AISMerge {
         
         final String schemaName = table.getName().getSchemaName();
         final String tableName = table.getName().getTableName();
+        
 
         builder.userTable(schemaName, tableName);
         UserTable targetTable = targetAIS.getUserTable(schemaName, tableName); 
@@ -168,5 +174,24 @@ public class AISMerge {
                         col.getIndexedLength());
             }
         }
+    }
+
+    private int computeTableIdOffset(AkibanInformationSchema ais) {
+        // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
+        int offset = 1;
+        for(UserTable table : ais.getUserTables().values()) {
+            if(!table.getName().getSchemaName().equals("akiban_information_schema")) {
+                offset = Math.max(offset, table.getTableId() + 1);
+            }
+        }
+        return offset;
+    }
+
+    private int computeIndexIDOffset (AkibanInformationSchema ais, String groupName) {
+        int offset = 1;
+        for (TableIndex index : ais.getGroup(groupName).getGroupTable().getIndexes()) {
+            offset = Math.max(offset, index.getIndexId()); 
+        }
+        return offset;
     }
 }
