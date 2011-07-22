@@ -17,10 +17,14 @@ package com.akiban.ais.model.validation;
 import java.util.Collection;
 import java.util.Collections;
 
-import com.akiban.message.ErrorCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.akiban.server.InvalidOperationException;
 
 public class AISValidationResults {
+    private static final Logger LOG = LoggerFactory.getLogger(AISValidationResults.class);
+
     /**
      * Gets all failures, if there were any.
      *
@@ -37,8 +41,11 @@ public class AISValidationResults {
      */
     public void throwIfNecessary() {
         if (!failureList.isEmpty()) {
-            String firstFailure = failureList.iterator().next().message(); 
-            throw new InvalidOperationException(ErrorCode.VALIDATION_FAILURE, firstFailure);
+            for (AISValidationFailure fail : failureList) {
+                LOG.info(String.format("Validation failure %d : %s", fail.errorCode(), fail.message()));
+            }
+            AISValidationFailure fail = failureList.iterator().next();
+            throw new InvalidOperationException(fail.errorCode(), fail.message());
         }
     }
  
