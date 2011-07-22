@@ -155,6 +155,7 @@ public class AISMergeTest {
         merge = new AISMerge (t, s.getUserTable(SCHEMA, "t2"));
         t = merge.merge().getAIS();
         
+        assertEquals (1, t.getJoins().size());
         assertNotNull (t.getUserTable(SCHEMA, "t2").getParentJoin());
         assertEquals (1, t.getUserTable(TABLENAME).getChildJoins().size());
         assertNotNull (t.getGroup(TABLE));

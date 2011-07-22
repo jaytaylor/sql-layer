@@ -34,8 +34,9 @@ public class JoinToParentPK implements AISValidation {
             
             if (parentPK.getColumns().size() != join.getJoinColumns().size()) {
                 output.reportFailure(new AISValidationFailure(ErrorCode.INTERNAL_REFERENCES_BROKEN,
-                        "Join %s join column list size does not match parent table (%s) PK list size",
-                        join.getName(), join.getParent().getName().toString()));
+                        "Join %s join column list size (%d) does not match parent table (%s) PK list size (%d)",
+                        join.getName(), join.getJoinColumns().size(), 
+                        join.getParent().getName().toString(), parentPK.getColumns().size()));
                 return;
             }
             Iterator<JoinColumn>  joinColumns = join.getJoinColumns().iterator();            
