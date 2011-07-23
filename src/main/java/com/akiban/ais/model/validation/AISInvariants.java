@@ -17,6 +17,7 @@ package com.akiban.ais.model.validation;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.UserTable;
 import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
 
@@ -94,6 +95,15 @@ public class AISInvariants {
             throw new InvalidOperationException (ErrorCode.DUPLICATE_GROUP,
                     "Group %s already exists in the system",
                     groupName);
+        }
+    }
+    
+    public static void checkMultipleParentJoins (UserTable table) {
+        if (table.getCandidateParentJoins().size() > 1) {
+            throw new InvalidOperationException (ErrorCode.JOIN_TO_MULTIPLE_PARENTS, 
+                    "Table %s has joins to two (or more) parent tables",
+                    table.getName().toString());
+            
         }
     }
 }

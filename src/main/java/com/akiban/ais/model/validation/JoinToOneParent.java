@@ -36,7 +36,7 @@ public class JoinToOneParent implements AISValidation {
         
         for (Join join : ais.getJoins().values()) {
             if (childTables.contains(join.getChild())) {
-                output.reportFailure(new AISValidationFailure (ErrorCode.DUPLICATE_TABLE,
+                output.reportFailure(new AISValidationFailure (ErrorCode.JOIN_TO_MULTIPLE_PARENTS,
                         "Table %s has joins to two parents",
                         join.getChild().getName().toString()));
             } else {

@@ -33,7 +33,7 @@ class JoinToParentPK implements AISValidation {
             TableIndex parentPK = join.getParent().getPrimaryKey().getIndex();
             
             if (parentPK.getColumns().size() != join.getJoinColumns().size()) {
-                output.reportFailure(new AISValidationFailure(ErrorCode.INTERNAL_REFERENCES_BROKEN,
+                output.reportFailure(new AISValidationFailure(ErrorCode.JOIN_TO_WRONG_COLUMNS,
                         "Join %s join column list size (%d) does not match parent table (%s) PK list size (%d)",
                         join.getName(), join.getJoinColumns().size(), 
                         join.getParent().getName().toString(), parentPK.getColumns().size()));
@@ -43,7 +43,7 @@ class JoinToParentPK implements AISValidation {
             for (IndexColumn parentPKColumn : parentPK.getColumns()) {
                 JoinColumn joinColumn = joinColumns.next();
                 if (parentPKColumn.getColumn() != joinColumn.getParent()) {
-                    output.reportFailure(new AISValidationFailure (ErrorCode.INTERNAL_REFERENCES_BROKEN,
+                    output.reportFailure(new AISValidationFailure (ErrorCode.JOIN_TO_WRONG_COLUMNS,
                             "Join %s has mis-matched column (%s) to parent table PK column (%s)",
                             join.getName(), joinColumn.getParent().getName(), parentPKColumn.getColumn().getName()));
                 }

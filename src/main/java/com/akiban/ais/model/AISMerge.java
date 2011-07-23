@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.io.AISTarget;
 import com.akiban.ais.io.Writer;
+import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.ais.model.validation.AISValidations;
 
 /**
@@ -100,6 +101,7 @@ public class AISMerge {
                     sourceTable.getName().getSchemaName(), 
                     sourceTable.getName().getTableName());
         } else {
+            AISInvariants.checkMultipleParentJoins(sourceTable);
             Join join = sourceTable.getParentJoin();
             String parentSchemaName = join.getParent().getName().getSchemaName();
             String parentTableName = join.getParent().getName().getTableName();

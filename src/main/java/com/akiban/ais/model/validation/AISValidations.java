@@ -44,15 +44,15 @@ public final class AISValidations {
                 TABLE_HAS_PRIMARY_KEY,
                 PRIMARY_KEY_IS_NOT_NULL,
                 SUPPORTED_COLUMN_TYPES,
+                COLUMN_POSITION_DENSE,
                 TABLEID_UNIQUE,
                 REFERENCES_CORRECT,
+                TABLES_IN_A_GROUP, 
                 TABLE_COLUMNS_MATCH_GROUP,
                 TABLE_INDEXES_MATCH_GROUP,
-                TABLES_IN_A_GROUP, 
                 GROUP_TABLE_SINGLE_ROOT,
-                COLUMN_POSITION_DENSE,
-                JOIN_TO_PARENT_PK,
                 JOIN_TO_ONE_PARENT,
+                JOIN_TO_PARENT_PK,
                 JOIN_COLUMN_TYPES_MATCH
                 //CHARACTER_SET_SUPPORTED
                 ));
