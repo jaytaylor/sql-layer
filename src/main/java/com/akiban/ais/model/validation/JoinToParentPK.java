@@ -23,7 +23,7 @@ import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.message.ErrorCode;
 
-public class JoinToParentPK implements AISValidation {
+class JoinToParentPK implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
