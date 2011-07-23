@@ -14,6 +14,9 @@
  */
 package com.akiban.ais.model;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.akiban.ais.io.AISTarget;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.validation.AISValidations;
@@ -35,7 +38,8 @@ public class AISMerge {
     private AkibanInformationSchema targetAIS;
     private UserTable sourceTable;
     private NameGenerator groupNames; 
-    
+    private static final Logger LOG = LoggerFactory.getLogger(AISMerge.class);
+
     /**
      * Creates an AISMerger with the starting values. 
      * 
@@ -69,6 +73,7 @@ public class AISMerge {
         // this may not be true 
         // Also the tableIDs need to be assigned correctly, which 
         // TableSubsetWriter doesn't do. 
+        LOG.info(String.format("Merging table %s into targetAIS", sourceTable.getName().toString()));
         
         final AISBuilder builder = new AISBuilder(targetAIS);
         builder.setTableIdOffset(computeTableIdOffset(targetAIS));
@@ -84,6 +89,7 @@ public class AISMerge {
 
         // Joins or group table?
         if (sourceTable.getParentJoin() == null) {
+            LOG.debug("Table is root or lone table");
             String groupName = groupNames.generateGroupName(sourceTable);
             String groupTableName = groupNames.generateGroupTableName(groupName);
             builder.basicSchemaIsComplete();            
@@ -98,6 +104,7 @@ public class AISMerge {
             String parentSchemaName = join.getParent().getName().getSchemaName();
             String parentTableName = join.getParent().getName().getTableName();
             UserTable parentTable = targetAIS.getUserTable(parentSchemaName, parentTableName);
+            LOG.debug(String.format("Table is child of table %s", parentTable.getName().toString()));
             String joinName = groupNames.generateJoinName(parentTable, sourceTable, join.getJoinColumns());
 
             builder.joinTables(joinName, 
@@ -180,12 +187,12 @@ public class AISMerge {
         // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
         int offset = 1;
         for(UserTable table : ais.getUserTables().values()) {
-            if(!table.getName().getSchemaName().equals("akiban_information_schema")) {
+            if(!table.getName().getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA)) {
                 offset = Math.max(offset, table.getTableId() + 1);
             }
         }
         for (GroupTable table : ais.getGroupTables().values()) {
-            if (!table.getName().getSchemaName().equals("akiban_information_schema")) {
+            if (!table.getName().getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA)) {
                 offset = Math.max(offset, table.getTableId() + 1);
             }
         }
