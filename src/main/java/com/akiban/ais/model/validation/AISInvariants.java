@@ -96,14 +96,5 @@ public class AISInvariants {
                     "Group %s already exists in the system",
                     groupName);
         }
-    }
-    
-    public static void checkMultipleParentJoins (UserTable table) {
-        if (table.getCandidateParentJoins().size() > 1) {
-            throw new InvalidOperationException (ErrorCode.JOIN_TO_MULTIPLE_PARENTS, 
-                    "Table %s has joins to two (or more) parent tables",
-                    table.getName().toString());
-            
-        }
-    }
+    }    
 }
