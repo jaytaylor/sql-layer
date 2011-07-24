@@ -207,7 +207,12 @@ public class AISMerge {
         }
         builder.basicSchemaIsComplete();
         
-        builder.addJoinToGroup(parentTable.getGroup().getName(), joinName, 0);
+        try {
+            builder.addJoinToGroup(parentTable.getGroup().getName(), joinName, 0);
+        } catch (AISBuilder.GroupStructureException ex) {
+            throw new InvalidOperationException (ErrorCode.JOIN_TO_MULTIPLE_PARENTS,
+                    ex.getMessage());
+        }
     }
     private int computeTableIdOffset(AkibanInformationSchema ais) {
         // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
