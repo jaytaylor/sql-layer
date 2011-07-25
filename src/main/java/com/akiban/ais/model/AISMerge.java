@@ -86,8 +86,11 @@ public class AISMerge {
             UserTable parentTable = targetAIS.getUserTable(parentSchemaName, parentTableName);
             if (parentTable == null) {
                 throw new InvalidOperationException (ErrorCode.JOIN_TO_UNKNOWN_TABLE, 
-                        "Join to unknown parent table %s.%s", 
-                        parentSchemaName, parentTableName); 
+                        "Table `%s`.`%s` joins to undefined table `%s`.`%s`",
+                        sourceTable.getName().getSchemaName(),
+                        sourceTable.getName().getTableName(),
+                        parentSchemaName, 
+                        parentTableName);
             }
             builder.setIndexIdOffset(computeIndexIDOffset(targetAIS, parentTable.getGroup().getName()));
         }
