@@ -27,7 +27,7 @@ import com.akiban.message.ErrorCode;
  * @author tjoneslo
  *
  */
-public class PrimaryKeyIsNotNull implements AISValidation {
+class PrimaryKeyIsNotNull implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {

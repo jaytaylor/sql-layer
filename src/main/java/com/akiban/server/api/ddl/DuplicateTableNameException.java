@@ -15,10 +15,15 @@
 
 package com.akiban.server.api.ddl;
 
+import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
 
 public final class DuplicateTableNameException extends DDLException {
     public DuplicateTableNameException(InvalidOperationException e) {
     super(e);
+    }
+    
+    public DuplicateTableNameException (String message) {
+        super (ErrorCode.DUPLICATE_TABLE, message);
     }
 }

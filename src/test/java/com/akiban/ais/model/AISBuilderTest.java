@@ -698,7 +698,7 @@ public class AISBuilderTest
         
         Assert.assertEquals(1, vResults.failures().size());
         AISValidationFailure fail = vResults.failures().iterator().next();
-        Assert.assertEquals(ErrorCode.DUPLICATE_TABLE, fail.errorCode());
+        Assert.assertEquals(ErrorCode.JOIN_TO_MULTIPLE_PARENTS, fail.errorCode());
     }
 
     @Test
@@ -839,7 +839,7 @@ public class AISBuilderTest
         
         Assert.assertEquals(1, vResults.failures().size());
         AISValidationFailure fail = vResults.failures().iterator().next();
-        Assert.assertEquals(ErrorCode.DUPLICATE_TABLE, fail.errorCode());
+        Assert.assertEquals(ErrorCode.JOIN_TO_MULTIPLE_PARENTS, fail.errorCode());
     }
 
     @Test
@@ -905,18 +905,18 @@ public class AISBuilderTest
         Iterator<AISValidationFailure> fails = vResults.failures().iterator();
         // Failure 1: join to unique key
         AISValidationFailure fail = fails.next();
-        Assert.assertEquals(ErrorCode.INTERNAL_REFERENCES_BROKEN, fail.errorCode());
-        Assert.assertEquals("Join nkjoin has mis-matched column (nk) to parent table PK column (pk)", fail.message());
+        Assert.assertEquals(ErrorCode.JOIN_TO_MULTIPLE_PARENTS, fail.errorCode());
         // Failure 2: join to non-key
         fail = fails.next();
-        Assert.assertEquals(ErrorCode.INTERNAL_REFERENCES_BROKEN, fail.errorCode());
-        Assert.assertEquals("Join ukjoin has mis-matched column (uk) to parent table PK column (pk)", fail.message());
+        Assert.assertEquals(ErrorCode.JOIN_TO_MULTIPLE_PARENTS, fail.errorCode());
         // Failure 3: 3 joins to parent
         fail = fails.next();
-        Assert.assertEquals(ErrorCode.DUPLICATE_TABLE, fail.errorCode());
+        Assert.assertEquals(ErrorCode.JOIN_TO_WRONG_COLUMNS, fail.errorCode());
+        Assert.assertEquals("Table `s`.`child` join reference part `nk` does not match `s`.`parent` primary key part `pk`", fail.message());
         // Failure 4: 3 joins to parent
         fail = fails.next();
-        Assert.assertEquals(ErrorCode.DUPLICATE_TABLE, fail.errorCode());
+        Assert.assertEquals(ErrorCode.JOIN_TO_WRONG_COLUMNS, fail.errorCode());
+        Assert.assertEquals("Table `s`.`child` join reference part `uk` does not match `s`.`parent` primary key part `pk`", fail.message());
     }
 
     @Test

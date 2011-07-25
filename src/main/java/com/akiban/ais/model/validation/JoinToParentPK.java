@@ -23,7 +23,7 @@ import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.message.ErrorCode;
 
-public class JoinToParentPK implements AISValidation {
+class JoinToParentPK implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
@@ -33,7 +33,7 @@ public class JoinToParentPK implements AISValidation {
             TableIndex parentPK = join.getParent().getPrimaryKey().getIndex();
             
             if (parentPK.getColumns().size() != join.getJoinColumns().size()) {
-                output.reportFailure(new AISValidationFailure(ErrorCode.INTERNAL_REFERENCES_BROKEN,
+                output.reportFailure(new AISValidationFailure(ErrorCode.JOIN_TO_WRONG_COLUMNS,
                         "Join %s join column list size (%d) does not match parent table (%s) PK list size (%d)",
                         join.getName(), join.getJoinColumns().size(), 
                         join.getParent().getName().toString(), parentPK.getColumns().size()));
@@ -43,9 +43,14 @@ public class JoinToParentPK implements AISValidation {
             for (IndexColumn parentPKColumn : parentPK.getColumns()) {
                 JoinColumn joinColumn = joinColumns.next();
                 if (parentPKColumn.getColumn() != joinColumn.getParent()) {
-                    output.reportFailure(new AISValidationFailure (ErrorCode.INTERNAL_REFERENCES_BROKEN,
-                            "Join %s has mis-matched column (%s) to parent table PK column (%s)",
-                            join.getName(), joinColumn.getParent().getName(), parentPKColumn.getColumn().getName()));
+                    output.reportFailure(new AISValidationFailure (ErrorCode.JOIN_TO_WRONG_COLUMNS,
+                            "Table `%s`.`%s` join reference part `%s` does not match `%s`.`%s` primary key part `%s`",
+                            join.getChild().getName().getSchemaName(),
+                            join.getChild().getName().getTableName(),
+                            joinColumn.getParent().getName(),
+                            parentPK.getTable().getName().getSchemaName(),
+                            parentPK.getTable().getName().getTableName(),
+                            parentPKColumn.getColumn().getName()));
                 }
             }
         }

@@ -18,7 +18,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.message.ErrorCode;
 
-public class TableHasPrimaryKey implements AISValidation {
+class TableHasPrimaryKey implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {

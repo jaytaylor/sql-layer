@@ -74,6 +74,10 @@ public class
     public void setTableIdOffset(int offset) {
         this.tableIdGenerator = offset;
     }
+    
+    public void setIndexIdOffset (int offset) {
+        this.indexIdGenerator = offset;
+    }
 
     public void userTable(String schemaName, String tableName) {
         LOG.info("userTable: " + schemaName + "." + tableName);
@@ -805,7 +809,7 @@ public class
     // This is temporary. We need unique ids generated here until the
     // chunkserver assigns them.
     private int tableIdGenerator = 0;
-    private int indexIdGenerator = 0;
+    private int indexIdGenerator = 1;
 
     // Inner classes
 
