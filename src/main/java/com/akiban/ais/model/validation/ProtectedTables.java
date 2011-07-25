@@ -18,9 +18,19 @@ import java.util.Collections;
 import java.util.LinkedList;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.DefaultNameGenerator;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.Type;
+import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.Visitor;
 import com.akiban.message.ErrorCode;
 
 /**
@@ -29,29 +39,47 @@ import com.akiban.message.ErrorCode;
  * @author tjoneslo
  *
  */
-class ProtectedTables implements AISValidation {
+class ProtectedTables implements AISValidation,Visitor {
+
+    private AISValidationOutput output = null;
 
     private static final Collection<String> PROTECT_LIST = createProtectList();
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        for (TableName tableName : ais.getUserTables().keySet()) {
-            if (tableName.getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA) &&
-                !PROTECT_LIST.contains(tableName.getTableName())) {
-                output.reportFailure(new AISValidationFailure (ErrorCode.PROTECTED_TABLE, 
-                        "Can not create user table %s.%s in akiban_information_schema",
-                        tableName.getSchemaName(), tableName.getTableName()));
-            }
-        }
-        for (TableName tableName : ais.getGroupTables().keySet()) {
-            if (tableName.getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA) &&
-                !PROTECT_LIST.contains(tableName.getTableName())) {
-                output.reportFailure(new AISValidationFailure (ErrorCode.PROTECTED_TABLE,
-                        "Can not create group table %s.%s in akiban_information_schema",
-                        tableName.getSchemaName(), tableName.getTableName()));
-            }
+        this.output = output;
+        ais.traversePostOrder(this);
+    }
+
+    @Override
+    public void visitUserTable(UserTable userTable) {
+        if (userTable.getName().getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA) &&
+            !PROTECT_LIST.contains(userTable.getName().getTableName())) {
+            output.reportFailure(new AISValidationFailure(ErrorCode.PROTECTED_TABLE,
+                    "Unsupported user table %s in %s",
+                    userTable.getName().toString(), TableName.AKIBAN_INFORMATION_SCHEMA));
         }
     }
-    
+
+    @Override
+    public void visitGroupTable(GroupTable groupTable) {
+        if (groupTable.getName().getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA) &&
+                !PROTECT_LIST.contains(groupTable.getName().getTableName())) {
+            output.reportFailure(new AISValidationFailure (ErrorCode.PROTECTED_TABLE,
+                    "Unsupported group table %s in %s",
+                    groupTable.getName().toString(), TableName.AKIBAN_INFORMATION_SCHEMA));
+        }
+    }
+
+    @Override
+    public void visitJoin(Join join) {
+        if (join.getParent().getName().getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA) &&
+            !PROTECT_LIST.contains(join.getParent().getName().getTableName())) {
+            output.reportFailure(new AISValidationFailure (ErrorCode.JOIN_TO_PROTECTED_TABLE, 
+                    "Table %s joins to protected table %s",
+                    join.getChild().getName().toString(), join.getParent().getName().toString()));
+        }
+    }
+
     /**
      * TODO: This list needs to be coordinated with the real
      * list of tables in the akiban_information_schema. The
@@ -81,9 +109,26 @@ class ProtectedTables implements AISValidation {
         list.add("index_analysis");
         list.add(names.generateGroupTableName("index_analysis"));
         
-        
-        
         return Collections.unmodifiableList(list);
     }
 
+    @Override
+    public void visitColumn(Column column) {}
+
+    @Override
+    public void visitGroup(Group group) {}
+
+
+    @Override
+    public void visitIndex(Index index) {}
+
+    @Override
+    public void visitIndexColumn(IndexColumn indexColumn) {}
+
+
+    @Override
+    public void visitJoinColumn(JoinColumn joinColumn) {}
+
+    @Override
+    public void visitType(Type type) {}
 }

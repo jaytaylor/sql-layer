@@ -26,6 +26,8 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.akiban.server.InvalidOperationException;
+
 public class AISMergeTest {
 
     private AkibanInformationSchema t;
@@ -209,6 +211,134 @@ public class AISMergeTest {
         assertNotNull (t.getGroup(TABLE));
         assertEquals (TABLE, t.getUserTable(SCHEMA, "t3").getGroup().getName());
         assertEquals (8, t.getGroupTable(SCHEMA, "_akiban_t1").getColumnsIncludingInternal().size());
+    }
+
+    
+    @Test (expected=InvalidOperationException.class)
+    public void testJoinToBadParent() throws Exception
+    {
+        // Table 1
+        b.userTable(SCHEMA, TABLE);
+        b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
+        b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
+        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, 0);
+        b.basicSchemaIsComplete();
+        b.createGroup("FRED", SCHEMA, "_akiban_t1");
+        b.addTableToGroup("FRED", SCHEMA, TABLE);
+        b.groupingIsComplete();
+        AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
+        t = merge.merge().getAIS();
+        assertTrue (t.isFrozen());
+        
+        // table 3 : the fake table
+        b.userTable(SCHEMA, "t3");
+        b.column(SCHEMA, "t3", "c1", 0, "int", 0L, 0L, false, false, null, null);
+        b.index(SCHEMA, "t3", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
+        b.indexColumn(SCHEMA, "t3", "pk", "c1", 0, true, 0);
+        b.createGroup("DOUG", SCHEMA, "_akiban_t3");
+        b.addTableToGroup("DOUG", SCHEMA, "t3");
+        // table 2 : join to wrong table. 
+        b.userTable(SCHEMA, "t2");
+        b.column(SCHEMA, "t2", "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, "t2", "c2", 1, "INT", (long)0, (long)0, true, false, null, null);
+        b.joinTables("test/t1/test/t2", SCHEMA, "t3", SCHEMA, "t2");
+        b.joinColumns("test/t1/test/t2", SCHEMA, "t3", "c1", SCHEMA, "t2", "c1");
+        b.basicSchemaIsComplete();
+        b.addJoinToGroup("DOUG", "test/t1/test/t2", 0);
+        b.groupingIsComplete();
+        
+        merge = new AISMerge (t, s.getUserTable(SCHEMA, "t2"));
+        t = merge.merge().getAIS();
+    }
+
+    @Test (expected=InvalidOperationException.class)
+    public void testBadParentJoin () throws Exception
+    {
+        // Table 1
+        b.userTable(SCHEMA, TABLE);
+        b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
+        b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
+        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, 0);
+        b.basicSchemaIsComplete();
+        b.createGroup("FRED", SCHEMA, "_akiban_t1");
+        b.addTableToGroup("FRED", SCHEMA, TABLE);
+        b.groupingIsComplete();
+        AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
+        t = merge.merge().getAIS();
+        assertTrue (t.isFrozen());
+        
+        
+        b = new AISBuilder();
+        // table 3 : the fake table
+        b.userTable(SCHEMA, "t1");
+        b.column(SCHEMA, "t1", "c5", 0, "int", 0L, 0L, false, false, null, null);
+        b.index(SCHEMA, "t1", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
+        b.indexColumn(SCHEMA, "t1", "pk", "c5", 0, true, 0);
+        b.createGroup("DOUG", SCHEMA, "_akiban_t1");
+        b.addTableToGroup("DOUG", SCHEMA, "t1");
+        // table 2 : join to wrong table. 
+        b.userTable(SCHEMA, "t2");
+        b.column(SCHEMA, "t2", "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, "t2", "c2", 1, "INT", (long)0, (long)0, true, false, null, null);
+        b.joinTables("test/t1/test/t2", SCHEMA, "t1", SCHEMA, "t2");
+        b.joinColumns("test/t1/test/t2", SCHEMA, "t1", "c5", SCHEMA, "t2", "c1");
+        b.basicSchemaIsComplete();
+        b.addJoinToGroup("DOUG", "test/t1/test/t2", 0);
+        b.groupingIsComplete();
+        
+        merge = new AISMerge (t, b.akibanInformationSchema().getUserTable(SCHEMA, "t2"));
+        t = merge.merge().getAIS();
+        
+    }
+
+    @Test
+    public void testFakeTableJoin() throws Exception
+    {
+        // Table 1
+        b.userTable(SCHEMA, TABLE);
+        b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
+        b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
+        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, 0);
+        b.basicSchemaIsComplete();
+        b.createGroup("FRED", SCHEMA, "_akiban_t1");
+        b.addTableToGroup("FRED", SCHEMA, TABLE);
+        b.groupingIsComplete();
+        AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
+        t = merge.merge().getAIS();
+        assertTrue (t.isFrozen());
+        
+        b = new AISBuilder();
+        // table 3 : the fake table
+        b.userTable(SCHEMA, "t1");
+        b.column(SCHEMA, "t1", "c1", 0, "int", 0L, 0L, false, false, null, null);
+        b.index(SCHEMA, "t1", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
+        b.indexColumn(SCHEMA, "t1", "pk", "c1", 0, true, 0);
+        b.createGroup("DOUG", SCHEMA, "_akiban_t1");
+        b.addTableToGroup("DOUG", SCHEMA, "t1");
+        // table 2 : join to wrong table. 
+        b.userTable(SCHEMA, "t2");
+        b.column(SCHEMA, "t2", "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, "t2", "c2", 1, "INT", (long)0, (long)0, true, false, null, null);
+        b.joinTables("test/t1/test/t2", SCHEMA, "t1", SCHEMA, "t2");
+        b.joinColumns("test/t1/test/t2", SCHEMA, "t1", "c1", SCHEMA, "t2", "c1");
+        b.basicSchemaIsComplete();
+        b.addJoinToGroup("DOUG", "test/t1/test/t2", 0);
+        b.groupingIsComplete();
+        
+        merge = new AISMerge (t, b.akibanInformationSchema().getUserTable(SCHEMA, "t2"));
+        t = merge.merge().getAIS();
+
+        assertNotNull (t.getUserTable(SCHEMA, "t2"));
+        assertNotNull (t.getUserTable(SCHEMA, "t2").getParentJoin());
+        assertEquals (1, t.getUserTable(TABLENAME).getChildJoins().size());
+        assertNotNull (t.getGroup(TABLE));
+        assertEquals (TABLE, t.getUserTable(SCHEMA, "t2").getGroup().getName());
+        assertNotNull (t.getUserTable(SCHEMA, TABLE));
+        assertEquals (TABLE, t.getUserTable(SCHEMA, TABLE).getGroup().getName());
+
     }
     
     private void checkColumns(List<Column> actual, String ... expected)

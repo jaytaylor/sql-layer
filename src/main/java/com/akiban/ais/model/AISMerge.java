@@ -14,9 +14,14 @@
  */
 package com.akiban.ais.model;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.akiban.ais.io.AISTarget;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.validation.AISValidations;
+import com.akiban.message.ErrorCode;
+import com.akiban.server.InvalidOperationException;
 
 /**
  * AISMerge is designed to merge a single UserTable definition into an existing AIS. The merge process 
@@ -35,7 +40,8 @@ public class AISMerge {
     private AkibanInformationSchema targetAIS;
     private UserTable sourceTable;
     private NameGenerator groupNames; 
-    
+    private static final Logger LOG = LoggerFactory.getLogger(AISMerge.class);
+
     /**
      * Creates an AISMerger with the starting values. 
      * 
@@ -69,16 +75,29 @@ public class AISMerge {
         // this may not be true 
         // Also the tableIDs need to be assigned correctly, which 
         // TableSubsetWriter doesn't do. 
+        LOG.info(String.format("Merging table %s into targetAIS", sourceTable.getName().toString()));
         
         final AISBuilder builder = new AISBuilder(targetAIS);
+        builder.setTableIdOffset(computeTableIdOffset(targetAIS));
+
+        if (sourceTable.getParentJoin() != null) {
+            String parentSchemaName = sourceTable.getParentJoin().getParent().getName().getSchemaName();
+            String parentTableName = sourceTable.getParentJoin().getParent().getName().getTableName(); 
+            UserTable parentTable = targetAIS.getUserTable(parentSchemaName, parentTableName);
+            if (parentTable == null) {
+                throw new InvalidOperationException (ErrorCode.JOIN_TO_UNKNOWN_TABLE, 
+                        "Join to unknown parent table %s.%s", 
+                        parentSchemaName, parentTableName); 
+            }
+            builder.setIndexIdOffset(computeIndexIDOffset(targetAIS, parentTable.getGroup().getName()));
+        }
 
         // Add the user table to the targetAIS
         addTable (builder, sourceTable); 
 
-
-
         // Joins or group table?
         if (sourceTable.getParentJoin() == null) {
+            LOG.debug("Table is root or lone table");
             String groupName = groupNames.generateGroupName(sourceTable);
             String groupTableName = groupNames.generateGroupTableName(groupName);
             builder.basicSchemaIsComplete();            
@@ -89,29 +108,12 @@ public class AISMerge {
                     sourceTable.getName().getSchemaName(), 
                     sourceTable.getName().getTableName());
         } else {
-            Join join = sourceTable.getParentJoin();
-            String parentSchemaName = join.getParent().getName().getSchemaName();
-            String parentTableName = join.getParent().getName().getTableName();
-            UserTable parentTable = targetAIS.getUserTable(parentSchemaName, parentTableName);
-            String joinName = groupNames.generateJoinName(parentTable, sourceTable, join.getJoinColumns());
-
-            builder.joinTables(joinName, 
-                    parentSchemaName,
-                    parentTableName,
-                    sourceTable.getName().getSchemaName(), 
-                    sourceTable.getName().getTableName());
-
-            for (JoinColumn joinColumn : join.getJoinColumns()) {
-                builder.joinColumns(joinName, 
-                        parentSchemaName, 
-                        parentTableName, 
-                        joinColumn.getParent().getName(),
-                        sourceTable.getName().getSchemaName(), 
-                        sourceTable.getName().getTableName(), 
-                        joinColumn.getChild().getName());
+            // Normally there should be only one candidate parent join.
+            // But since the AIS supports multiples, so does the merge.
+            // This gets flagged in JoinToOneParent validation. 
+            for (Join join : sourceTable.getCandidateParentJoins()) {
+                addJoin (builder, join);
             }
-            builder.basicSchemaIsComplete();
-            builder.addJoinToGroup(parentTable.getGroup().getName(), joinName, 0);
         }
         builder.groupingIsComplete();
         
@@ -130,6 +132,7 @@ public class AISMerge {
         
         final String schemaName = table.getName().getSchemaName();
         final String tableName = table.getName().getTableName();
+        
 
         builder.userTable(schemaName, tableName);
         UserTable targetTable = targetAIS.getUserTable(schemaName, tableName); 
@@ -168,5 +171,69 @@ public class AISMerge {
                         col.getIndexedLength());
             }
         }
+    }
+
+    private void addJoin (AISBuilder builder, Join join) {
+        String parentSchemaName = join.getParent().getName().getSchemaName();
+        String parentTableName = join.getParent().getName().getTableName();
+        UserTable parentTable = targetAIS.getUserTable(parentSchemaName, parentTableName);
+        if (parentTable == null) {
+            throw new InvalidOperationException (ErrorCode.JOIN_TO_UNKNOWN_TABLE, 
+                    "Join to unknown parent table %s.%s", parentSchemaName, parentTableName); 
+        }
+        LOG.debug(String.format("Table is child of table %s", parentTable.getName().toString()));
+        String joinName = groupNames.generateJoinName(parentTable, sourceTable, join.getJoinColumns());
+
+        builder.joinTables(joinName, 
+                parentSchemaName,
+                parentTableName,
+                sourceTable.getName().getSchemaName(), 
+                sourceTable.getName().getTableName());
+
+        for (JoinColumn joinColumn : join.getJoinColumns()) {
+            try {
+            builder.joinColumns(joinName, 
+                    parentSchemaName, 
+                    parentTableName, 
+                    joinColumn.getParent().getName(),
+                    sourceTable.getName().getSchemaName(), 
+                    sourceTable.getName().getTableName(), 
+                    joinColumn.getChild().getName());
+            } catch (AISBuilder.NoSuchObjectException ex) {
+                throw new InvalidOperationException (ErrorCode.JOIN_TO_WRONG_COLUMNS,
+                        ex.getMessage()); 
+            }
+        }
+        builder.basicSchemaIsComplete();
+        
+        try {
+            builder.addJoinToGroup(parentTable.getGroup().getName(), joinName, 0);
+        } catch (AISBuilder.GroupStructureException ex) {
+            throw new InvalidOperationException (ErrorCode.JOIN_TO_MULTIPLE_PARENTS,
+                    ex.getMessage());
+        }
+    }
+    private int computeTableIdOffset(AkibanInformationSchema ais) {
+        // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
+        int offset = 1;
+        for(UserTable table : ais.getUserTables().values()) {
+            if(!table.getName().getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA)) {
+                offset = Math.max(offset, table.getTableId() + 1);
+            }
+        }
+        for (GroupTable table : ais.getGroupTables().values()) {
+            if (!table.getName().getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA)) {
+                offset = Math.max(offset, table.getTableId() + 1);
+            }
+        }
+        return offset;
+    }
+
+    private int computeIndexIDOffset (AkibanInformationSchema ais, String groupName) {
+        int offset = 1;
+        for (TableIndex index : ais.getGroup(groupName).getGroupTable().getIndexes()) {
+            offset = Math.max(offset, index.getIndexId() + 1); 
+        }
+        return offset;
     }
 }
