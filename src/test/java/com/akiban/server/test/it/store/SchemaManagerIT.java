@@ -441,11 +441,24 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void treeNamesAreUnique() {
-        ddl().createTable(session(), "foo.bar", "create table `baz`(id int key)");
-        ddl().createTable(session(), "foo", "create table `bar.baz`(id int key)");
-        String treeName1 = getUserTable("foo.bar", "baz").getTreeName();
-        String treeName2 = getUserTable("foo", "bar.baz").getTreeName();
-        assertFalse("Treename: " + treeName1, treeName1.equals(treeName2));
+        TableName testNames[][] = {
+                // These broke simple concat(s,'.',t) that was in RowDefCache
+                {new TableName("foo.bar", "baz"), new TableName("foo", "bar.baz")},
+                // These broke actual tree name generation
+                {new TableName("foo$$_akiban_bar", "baz"), new TableName("foo", "bar$$_akiban_baz")}
+        };
+
+        for(TableName pair[] : testNames) {
+            ddl().createTable(session(), pair[0].getSchemaName(),
+                              "create table `" + pair[0].getTableName() + "`(id int key)");
+            ddl().createTable(session(), pair[1].getSchemaName(),
+                              "create table `" + pair[1].getTableName() + "`(id int key)");
+
+            String treeName1 = ddl().getAIS(session()).getUserTable(pair[0]).getTreeName();
+            String treeName2 = ddl().getAIS(session()).getUserTable(pair[1]).getTreeName();
+
+            assertFalse("Non unique tree name: " + treeName1, treeName1.equals(treeName2));
+        }
     }
 
     /**
