@@ -167,7 +167,7 @@ public class RowDefTest extends TestCase {
         for (int def = 0; def < TEST_CASES.length; def++) {
             String[] ddl = TEST_CASES[def];
             RowDefCache rowDefCache = schemaFactory.rowDefCache(ddl);
-            RowDef rowDef = rowDefCache.getRowDef("schema.test");
+            RowDef rowDef = rowDefCache.getRowDef("schema", "test");
             FieldDef[] fieldDefs = rowDef.getFieldDefs();
             if (VERBOSE) {
                 System.out.println(rowDef);

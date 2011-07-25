@@ -24,6 +24,7 @@ import java.util.TreeMap;
 
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.TableName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +57,7 @@ public class RowDefCache {
 
     private final Map<Integer, RowDef> cacheMap = new TreeMap<Integer, RowDef>();
 
-    private final Map<String, Integer> nameMap = new TreeMap<String, Integer>();
+    private final Map<TableName, Integer> nameMap = new TreeMap<TableName, Integer>();
     
     private TableStatusCache tableStatusCache;
 
@@ -106,7 +107,7 @@ public class RowDefCache {
         return new ArrayList<RowDef>(cacheMap.values());
     }
 
-    public synchronized RowDef getRowDef(final String tableName) throws RowDefNotFoundException {
+    public synchronized RowDef getRowDef(TableName tableName) throws RowDefNotFoundException {
         final Integer key = nameMap.get(tableName);
         if (key == null) {
             return null;
@@ -114,9 +115,22 @@ public class RowDefCache {
         return getRowDef(key.intValue());
     }
 
+    public RowDef getRowDef(String schema, String table) throws RowDefNotFoundException {
+        return getRowDef(new TableName(schema, table));
+    }
+
+    /**
+     * @deprecated Ambiguous, use {@link #getRowDef(String, String)}
+     */
+    public RowDef getRowDef(String schemaAndTable) throws RowDefNotFoundException {
+        String schemaTable[] = schemaAndTable.split("\\.");
+        assert schemaTable.length == 2 : schemaAndTable;
+        return getRowDef(schemaTable[0], schemaTable[1]);
+    }
+
     /**
      * Given a schema and table name, gets a string that uniquely identifies a
-     * table. This string can then be passed to {@link #getRowDef(String)}.
+     * table. This string can then be passed to {@link #getRowDef(TableName)}.
      * 
      * @param schema
      *            the schema
@@ -124,10 +138,10 @@ public class RowDefCache {
      *            the table name
      * @return a unique form
      */
-    public static String nameOf(String schema, String table) {
+    public static TableName nameOf(String schema, String table) {
         assert schema != null;
         assert table != null;
-        return schema + "." + table;
+        return new TableName(schema, table);
     }
 
     public synchronized void clear() {
@@ -305,7 +319,7 @@ public class RowDefCache {
     
     private synchronized void putRowDef(final RowDef rowDef) {
         final Integer key = rowDef.getRowDefId();
-        final String name = nameOf(rowDef.getSchemaName(), rowDef.getTableName());
+        final TableName name = nameOf(rowDef.getSchemaName(), rowDef.getTableName());
         if (cacheMap.containsKey(key)) {
             throw new IllegalStateException("Duplicate RowDefID (" + key + ") for RowDef: " + rowDef);
         }
@@ -326,7 +340,7 @@ public class RowDefCache {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("\n");
-        for (Map.Entry<String, Integer> entry : nameMap.entrySet()) {
+        for (Map.Entry<TableName, Integer> entry : nameMap.entrySet()) {
             final RowDef rowDef = cacheMap.get(entry.getValue());
             sb.append("   ");
             sb.append(rowDef);

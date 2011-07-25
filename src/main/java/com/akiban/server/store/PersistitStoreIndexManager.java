@@ -20,6 +20,7 @@ import java.util.List;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexToHKey;
+import com.akiban.ais.model.TableName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +49,7 @@ public class PersistitStoreIndexManager implements IndexManager {
     private static final Logger LOG = LoggerFactory
             .getLogger(PersistitStoreIndexManager.class.getName());
 
-    private final static String ANALYSIS_TABLE_NAME = "akiban_information_schema.index_analysis";
+    private final static TableName ANALYSIS_TABLE_NAME = new TableName("akiban_information_schema", "index_analysis");
 
     private final static int DEFAULT_SAMPLE_SIZE = 32;
 
@@ -390,8 +391,7 @@ public class PersistitStoreIndexManager implements IndexManager {
 
         for (Index index : rowDef.getIndexes()) {
             final Histogram histogram = new Histogram(index.getIndexId());
-            final RowDef indexAnalysisRowDef = store.getRowDefCache()
-                    .getRowDef(ANALYSIS_TABLE_NAME);
+            final RowDef indexAnalysisRowDef = store.getRowDefCache().getRowDef(ANALYSIS_TABLE_NAME);
             final Exchange exchange = store.getExchange(session, indexAnalysisRowDef);
             exchange.clear().append(indexAnalysisRowDef.getOrdinal())
                     .append((long) tableId).append((long) index.getIndexId())

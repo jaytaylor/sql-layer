@@ -54,8 +54,7 @@ public class AkServerAisTarget extends Target {
 
     private void deleteTable(final String name) throws Exception {
         final ModelObject modelObject = MetaModel.only().definition(name);
-        final RowDef rowDef = store.getRowDefCache().getRowDef(
-                modelObject.tableName());
+        final RowDef rowDef = store.getRowDefCache().getRowDef(modelObject.tableName());
         if (rowDef == null) {
             throw new IllegalStateException(
                     "Missing table definition for AIS table " + name);
@@ -87,8 +86,7 @@ public class AkServerAisTarget extends Target {
     protected final void write(String typename, Map<String, Object> map)
             throws Exception {
         ModelObject modelObject = MetaModel.only().definition(typename);
-        final RowDef rowDef = store.getRowDefCache().getRowDef(
-                modelObject.tableName());
+        final RowDef rowDef = store.getRowDefCache().getRowDef(modelObject.tableName());
         if (rowDef == null) {
             throw new IllegalStateException(
                     "Missing table definition for AIS table "

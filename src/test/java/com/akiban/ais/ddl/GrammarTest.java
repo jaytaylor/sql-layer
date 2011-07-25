@@ -76,7 +76,7 @@ public class GrammarTest
     {
         String ddl = String.format("use schema; %s", tableDeclaration);
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
-        return rowDefCache.getRowDef("schema.t1").userTable();
+        return rowDefCache.getRowDef("schema", "t1").userTable();
     }
 
     private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory();
