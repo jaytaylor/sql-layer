@@ -137,7 +137,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
     private ByteBuffer aisByteBuffer;
-    
+
+    private static void computeTreeNames(UserTable newTable) {
+        Group group = newTable.getGroup();
+        // computeTreeName() for GroupTable and its indexes is handled in AISBuilder
+        newTable.computeTreeName();
+        for(TableIndex index : newTable.getIndexesIncludingInternal()) {
+            index.computeTreeName(group.getName());
+        }
+    }
+
     @Override
     public TableName createTableDefinition(Session session, final UserTable newTable) throws Exception
     {
@@ -146,12 +155,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         
         final String schemaName = newTable.getName().getSchemaName();
         final String originalDDL =  new DDLGenerator().createTable(newTable);
+        final UserTable finalTable = merge.getAIS().getUserTable(newTable.getName());
+        computeTreeNames(finalTable);
         
         commitAISChange(session, merge.getAIS(), schemaName, new AISChangeCallback() {
             @Override
             public void beforeCommit(Exchange schemaExchange, TreeService treeService) throws Exception {
                 schemaExchange.clear().append(BY_NAME).append(schemaName).append(newTable.getName().getTableName());
-                schemaExchange.append(newTable.getTableId().intValue());
+                schemaExchange.append(finalTable.getTableId().intValue());
                 schemaExchange.getValue().put(originalDDL);
                 schemaExchange.store();
             }
@@ -195,7 +206,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         final AkibanInformationSchema newAIS = addSchemaDefToAIS(schemaDef);
         final UserTable newTable = newAIS.getUserTable(schemaName, tableName);
         validateIndexSizes(newTable);
-
+        computeTreeNames(newTable);
+        
         commitAISChange(session, newAIS, schemaName, new AISChangeCallback() {
             @Override
             public void beforeCommit(Exchange schemaExchange, TreeService treeService) throws Exception {
@@ -330,6 +342,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
 
             newIndex.freezeColumns();
+            newIndex.computeTreeName(newGroup.getName());
             newIndexes.add(newIndex);
             builder.generateGroupTableIndexes(newGroup);
         }
@@ -650,6 +663,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     int curId = AIS_BASE_TABLE_ID;
                     for(UserTable table : newAIS.getUserTables().values()) {
                         table.setTableId(curId++);
+                        computeTreeNames(table);
                     }
                     setGroupTableIds(newAIS);
 
