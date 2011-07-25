@@ -438,7 +438,16 @@ public final class SchemaManagerIT extends ITBase {
         assertTablesInSchema(SCHEMA+"2", "t2");
         assertTablesInSchema(SCHEMA+"3", "t3");
     }
-    
+
+    @Test
+    public void treeNamesAreUnique() {
+        ddl().createTable(session(), "foo.bar", "create table `baz`(id int key)");
+        ddl().createTable(session(), "foo", "create table `bar.baz`(id int key)");
+        String treeName1 = getUserTable("foo.bar", "baz").getTreeName();
+        String treeName2 = getUserTable("foo", "bar.baz").getTreeName();
+        assertFalse("Treename: " + treeName1, treeName1.equals(treeName2));
+    }
+
     /**
      * Assert that the given tables in the given schema has the, and only the, given tables. Also
      * confirm each table exists in the AIS and has a definition.
