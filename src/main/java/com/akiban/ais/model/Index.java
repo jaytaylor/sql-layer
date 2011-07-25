@@ -57,6 +57,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
                 index = GroupIndex.create(ais, group, indexName, indexId, unique, constraint);
             }
         }
+        index.treeName = (String) map.get(index_treeName);
         return index;
     }
 
@@ -98,6 +99,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         map.put(index_indexId, indexId);
         map.put(index_unique, isUnique);
         map.put(index_constraint, constraint);
+        map.put(index_treeName, treeName);
         return map;
     }
 
@@ -365,6 +367,34 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         private final String asString;
     }
 
+    public String getTreeName() {
+        return treeName;
+    }
+
+    public void computeTreeName() {
+        Column firstCol = columns.get(0).getColumn();
+        String groupName = firstCol.getTable().getGroup().getName();
+        String schemaName = indexName.getSchemaName();
+        String tableName = indexName.getTableName();
+        String name = indexName.getName();
+
+        // Tree names for identical indexes on the group and user table must match.
+        // Check if this index originally came from a user table and, if so, use their
+        // names instead.
+        if(firstCol.getUserColumn() != null) {
+            UserTable table = firstCol.getUserTable();
+            for(Index i : table.getIndexes()) {
+                if(i.getIndexId().equals(indexId)) {
+                    tableName = table.getName().getTableName();
+                    name = i.getIndexName().getName();
+                    break;
+                }
+            }
+        }
+
+        String SEP = "$$";
+        treeName = groupName + SEP + schemaName + SEP + tableName + SEP + name;
+    }
 
     private IndexName indexName;
     private Integer indexId;
@@ -373,6 +403,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     private boolean columnsStale = true;
     private List<IndexColumn> columns;
     private boolean columnsFrozen = false;
+    private String treeName;
 
     // It really is an IndexDef, but declaring it that way creates trouble for AIS. We don't want to pull in
     // all the RowDef stuff and have it visible to GWT.
