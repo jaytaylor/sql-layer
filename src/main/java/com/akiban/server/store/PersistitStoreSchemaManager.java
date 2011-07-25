@@ -54,6 +54,7 @@ import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.Type;
+import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.server.api.common.NoSuchGroupException;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.encoding.EncoderFactory;
@@ -142,7 +143,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
 
     private static String computeTreeName(GroupTable table) {
-        // Relies on group table name being unique per schema (handled elsewhere)
         return table.getName().getSchemaName() + TREE_NAME_SEPARATOR +
                table.getName().getTableName();
     }
@@ -184,10 +184,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private static void setTreeNames(UserTable newTable) {
         Group group = newTable.getGroup();
         GroupTable groupTable = group.getGroupTable();
-        String groupTableTreeName = groupTable.getTreeName();
-        if(groupTableTreeName == null) {
+        final String groupTableTreeName;
+        if(newTable.isRoot()) {
             groupTableTreeName = computeTreeName(groupTable);
             groupTable.setTreeName(groupTableTreeName);
+        }
+        else {
+            groupTableTreeName = groupTable.getTreeName();
         }
         newTable.setTreeName(groupTableTreeName);
         for(TableIndex index : newTable.getIndexesIncludingInternal()) {
@@ -258,6 +261,11 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         validateIndexSizes(newTable);
         setTreeNames(newTable);
         
+        // A dozen or two ITs need updated before can validate through this (or mostly NOT NULL
+        // primary key parts, a few modifications of frozen AIS)
+        //newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        //newAIS.freeze();
+
         commitAISChange(session, newAIS, schemaName, new AISChangeCallback() {
             @Override
             public void beforeCommit(Exchange schemaExchange, TreeService treeService) throws Exception {
