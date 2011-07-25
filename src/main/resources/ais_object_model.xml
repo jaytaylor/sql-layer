@@ -16,7 +16,7 @@
 
 -->
 
-<model version="2">
+<model version="3">
 	<object name="type" tableName="akiban_information_schema.types">
 		<attr name="name" type="String" />
 		<attr name="parameters" type="Integer" />
@@ -59,6 +59,7 @@
 		<attr name="tableId" type="Integer" />
 		<attr name="groupName" type="String" />
 		<attr name="migrationUsage" type="Integer" />
+		<attr name="treeName" type="String" />
 		<sql action="read"><![CDATA[
             select
                 schema_name,
@@ -66,7 +67,8 @@
                 table_type,
                 table_id,
                 group_name,
-                migration_usage
+                migration_usage,
+                tree_name
             from akiban_information_schema.tables
         ]]></sql>
 		<sql action="write"><![CDATA[insert into akiban_information_schema.tables(
@@ -75,8 +77,9 @@
                 table_type,
                 table_id,
                 group_name,
-                migration_usage
-            ) values (?, ?, ?, ?, ?, ?)]]></sql>
+                migration_usage,
+                tree_name
+            ) values (?, ?, ?, ?, ?, ?, ?)]]></sql>
 		<sql action="cleanup"><![CDATA[delete from akiban_information_schema.tables]]></sql>
 	</object>
 
@@ -214,6 +217,7 @@
 		<attr name="indexId" type="Integer" />
 		<attr name="constraint" type="String" />
 		<attr name="unique" type="Boolean" />
+		<attr name="treeName" type="String" />
 		<sql action="read"><![CDATA[
             select 
                 schema_name, 
@@ -222,7 +226,8 @@
                 index_type,
                 index_id, 
                 table_constraint, 
-                is_unique 
+                is_unique,
+                tree_name
             from akiban_information_schema.indexes
         ]]></sql>
 		<sql action="write"><![CDATA[insert into akiban_information_schema.indexes(
@@ -232,8 +237,9 @@
                 index_type,
                 index_id, 
                 table_constraint, 
-                is_unique 
-            ) values (?, ?, ?, ?, ?, ?, ?)]]></sql>
+                is_unique,
+                tree_name
+            ) values (?, ?, ?, ?, ?, ?, ?, ?)]]></sql>
 		<sql action="cleanup"><![CDATA[delete from akiban_information_schema.indexes]]></sql>
 	</object>
 

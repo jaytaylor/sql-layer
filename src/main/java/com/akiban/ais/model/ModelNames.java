@@ -36,6 +36,7 @@ public interface ModelNames
     String table_tableId = "tableId";
     String table_groupName = "groupName";
     String table_migrationUsage = "migrationUsage";
+    String table_treeName = "treeName";
     // column
     String column = "column";
     String column_schemaName = "schemaName";
@@ -83,6 +84,7 @@ public interface ModelNames
     String index_indexId = "indexId";
     String index_constraint = "constraint";
     String index_unique = "unique";
+    String index_treeName = "treeName";
     // indexColumn
     String indexColumn = "indexColumn";
     String indexColumn_schemaName = "schemaName";
