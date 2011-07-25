@@ -644,14 +644,6 @@ public class
         }
     }
 
-    public void renameTable(TableName currentName, TableName newName) {
-        UserTable table = ais.getUserTable(currentName);
-        checkFound(table, "rename table", "user table", currentName.toString());
-        ais.removeTable(currentName);
-        table.setTableName(newName);
-        ais.addUserTable(table);
-    }
-
     // API for getting the created AIS
 
     public AkibanInformationSchema akibanInformationSchema() {

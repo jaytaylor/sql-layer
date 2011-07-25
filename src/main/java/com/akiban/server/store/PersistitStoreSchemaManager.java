@@ -44,6 +44,7 @@ import com.akiban.ais.io.TableSubsetWriter;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AISMerge;
+import com.akiban.ais.model.AISTableNameChanger;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeyColumn;
@@ -290,18 +291,19 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
         final AkibanInformationSchema newAIS = new AkibanInformationSchema();
         new Writer(new AISTarget(newAIS)).save(ais);
-        AISBuilder builder = new AISBuilder(newAIS);
-
-        // Note: Relies on all referencing objects (column, index, etc)
-        // due so by holding a Table (*not* a tableName)
-        builder.renameTable(currentName, newName);
-
+        newTable = newAIS.getUserTable(currentName);
+        
+        AISTableNameChanger nameChanger = new AISTableNameChanger(newTable);
+        nameChanger.setSchemaName(newName.getSchemaName());
+        nameChanger.setNewTableName(newName.getTableName());
+        nameChanger.doChange();;
+        
         String vol1 = getVolumeForSchemaTree(currentName.getSchemaName());
         String vol2 = getVolumeForSchemaTree(newName.getSchemaName());
 
         commitAISChange(session, newAIS, currentName.getSchemaName(), null);
         if(!vol1.equals(vol2)) {
-            commitAISChange(session, newAIS, currentName.getSchemaName(), null);
+            commitAISChange(session, newAIS, newName.getSchemaName(), null);
         }
     }
 

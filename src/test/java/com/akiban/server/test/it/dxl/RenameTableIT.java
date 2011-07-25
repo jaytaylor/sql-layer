@@ -222,8 +222,9 @@ public class RenameTableIT extends ITBase {
 
             safeRestartTestServices();
 
-            for(TableName tn : curNames) {
-                expectStatusAndScanCount(tn.getSchemaName(), tn.getTableName(), COUNTS[i]);
+            for(int j = 0; j < curNames.length; ++j) {
+                TableName tn = curNames[j];
+                expectStatusAndScanCount(tn.getSchemaName(), tn.getTableName(), COUNTS[j]);
             }
 
         }
