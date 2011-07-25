@@ -70,6 +70,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         this.indexId = indexId;
         this.isUnique = isUnique;
         this.constraint = constraint;
+        this.treeName = this.indexName.toString();
         columns = new ArrayList<IndexColumn>();
     }
 
