@@ -371,29 +371,21 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         return treeName;
     }
 
-    public void computeTreeName() {
-        Column firstCol = columns.get(0).getColumn();
-        String groupName = firstCol.getTable().getGroup().getName();
-        String schemaName = indexName.getSchemaName();
-        String tableName = indexName.getTableName();
-        String name = indexName.getName();
-
-        // Tree names for identical indexes on the group and user table must match.
-        // Check if this index originally came from a user table and, if so, use their
-        // names instead.
-        if(firstCol.getUserColumn() != null) {
-            UserTable table = firstCol.getUserTable();
-            for(Index i : table.getIndexes()) {
-                if(i.getIndexId().equals(indexId)) {
-                    tableName = table.getName().getTableName();
-                    name = i.getIndexName().getName();
-                    break;
-                }
-            }
-        }
-
+    /**
+     * Indexes on GroupTables must have the same tree name as their matching UserTable index.
+     * This is a work around for that.
+     * @param treeName New tree name
+     */
+    public void setTreeName(String treeName) {
+        this.treeName = treeName;
+    }
+    
+    public void computeTreeName(String groupName) {
         String SEP = "$$";
-        treeName = groupName + SEP + schemaName + SEP + tableName + SEP + name;
+        treeName = groupName + SEP +
+                   indexName.getSchemaName() + SEP +
+                   indexName.getTableName() + SEP +
+                   indexName.getName();
     }
 
     private IndexName indexName;
