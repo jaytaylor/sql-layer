@@ -142,11 +142,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private ByteBuffer aisByteBuffer;
 
 
-    private static String computeTreeName(GroupTable table) {
-        return table.getName().getSchemaName() + TREE_NAME_SEPARATOR +
-               table.getName().getTableName();
-    }
-
     private static String computeTreeName(Group group, Index index) {
         IndexName iName = index.getIndexName();
         return group.getName() + TREE_NAME_SEPARATOR +
@@ -176,23 +171,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     }
                 }
                 assert found : index;
-
             }
         }
     }
 
+    // TODO: Cleanup {@link #createIndexes(Session, Collection)} so AISBuilder can set final tree name
+    // on an index and {@link #syncIndexTreeNames(GroupTable)} could go away entirely
     private static void setTreeNames(UserTable newTable) {
         Group group = newTable.getGroup();
         GroupTable groupTable = group.getGroupTable();
-        final String groupTableTreeName;
-        if(newTable.isRoot()) {
-            groupTableTreeName = computeTreeName(groupTable);
-            groupTable.setTreeName(groupTableTreeName);
-        }
-        else {
-            groupTableTreeName = groupTable.getTreeName();
-        }
-        newTable.setTreeName(groupTableTreeName);
+        newTable.setTreeName(groupTable.getTreeName());
         for(TableIndex index : newTable.getIndexesIncludingInternal()) {
             index.setTreeName(computeTreeName(group, index));
         }

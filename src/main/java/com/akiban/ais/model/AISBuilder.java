@@ -16,6 +16,7 @@
 package com.akiban.ais.model;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -264,16 +265,33 @@ public class
         forwardReferences.clear();
     }
 
+    private String computeTreeName(String groupSchemaName, String groupTableName) {
+        String proposedName = groupSchemaName + "$$" + groupTableName;
+        Collection<GroupTable> groupTables = ais.getGroupTables().values();
+        int saw = 0;
+        while(saw < groupTables.size()) {
+            saw = 0;
+            for(GroupTable table : groupTables) {
+                if(table.getTreeName().equals(proposedName)) {
+                    proposedName += "+";
+                    break;
+                }
+                ++saw;
+            }
+        }
+        return proposedName;
+    }
+
     // API for describing groups
 
     public void createGroup(String groupName, String groupSchemaName,
             String groupTableName) {
         LOG.info("createGroup: " + groupName + " -> " + groupSchemaName + "."
                 + groupTableName);
-        GroupTable groupTable = GroupTable.create(ais, groupSchemaName,
-                groupTableName, tableIdGenerator++);
+        String treeName = computeTreeName(groupSchemaName, groupTableName);
+        GroupTable groupTable = GroupTable.create(ais, groupSchemaName, groupTableName, tableIdGenerator++);
         Group group = Group.create(ais, groupName);
-        groupTable.setTreeName(groupTableName);
+        groupTable.setTreeName(treeName);
         groupTable.setGroup(group);
     }
 
