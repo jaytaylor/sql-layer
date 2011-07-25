@@ -120,6 +120,23 @@ public interface DDLFunctions {
             UnsupportedIndexDataTypeException,
             UnsupportedIndexSizeException,
             GenericInvalidOperationException;
+
+    /**
+     * Rename an existing table.
+     * @param session Session
+     * @param currentName Current name of the table
+     * @param newName Desired name of the table
+     * @throws NoSuchTableException if currentName does not exist
+     * @throws ProtectedTableDDLException if currentName is a system table
+     * @throws DuplicateTableNameException if newName already exists
+     * @throws GenericInvalidOperationException for any other error
+     */
+    void renameTable(Session session, TableName currentName, TableName newName)
+            throws NoSuchTableException,
+            ProtectedTableDDLException,
+            DuplicateTableNameException,
+            GenericInvalidOperationException;
+
     /**
      * Drops a table if it exists.
      * @param tableName the table to drop

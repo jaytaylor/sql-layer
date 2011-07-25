@@ -132,6 +132,33 @@ public final class HookableDDLFunctions implements DDLFunctions {
         }
     }
 
+
+    @Override
+    public void renameTable(Session session, TableName currentName, TableName newName)
+            throws NoSuchTableException,
+            ProtectedTableDDLException,
+            DuplicateTableNameException,
+            GenericInvalidOperationException
+    {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.RENAME_TABLE);
+            delegate.renameTable(session, currentName, newName);
+        }catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.RENAME_TABLE, t);
+            throwIfInstanceOf(t,
+                    NoSuchTableException.class,
+                    ProtectedTableDDLException.class,
+                    DuplicateTableNameException.class,
+                    GenericInvalidOperationException.class
+            );
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.RENAME_TABLE, thrown);
+        }
+    }
+
     @Override
     public void dropTable(Session session, TableName tableName) throws ProtectedTableDDLException, ForeignConstraintDDLException, UnsupportedDropException, GenericInvalidOperationException {
         Throwable thrown = null;

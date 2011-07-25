@@ -66,14 +66,14 @@ public class RenameTableIT extends ITBase {
     @Test
     public void singleTableJustName() {
         createCTable();
-        ddl().renameTable(session(), SCHEMA, C_NAME, SCHEMA, "ahh");
+        ddl().renameTable(session(), tableName(SCHEMA, C_NAME), tableName(SCHEMA, "ahh"));
         expectTablesInSchema(SCHEMA, "ahh");
     }
 
     @Test
     public void singleTableNameAndSchema() {
         createCTable();
-        ddl().renameTable(session(), SCHEMA, C_NAME, "box", "cob");
+        ddl().renameTable(session(), tableName(SCHEMA, C_NAME), tableName("box", "cob"));
         expectTablesInSchema(SCHEMA);
         expectTablesInSchema("box", "cob");
     }
@@ -82,7 +82,7 @@ public class RenameTableIT extends ITBase {
     public void leafTableJustName() {
         createCTable();
         createATable();
-        ddl().renameTable(session(), SCHEMA, A_NAME, SCHEMA, "dip");
+        ddl().renameTable(session(), tableName(SCHEMA, A_NAME), tableName(SCHEMA, "dip"));
         expectTablesInSchema(SCHEMA, C_NAME, "dip");
     }
 
@@ -90,7 +90,7 @@ public class RenameTableIT extends ITBase {
     public void leafTableNameAndSchema() {
         createCTable();
         createATable();
-        ddl().renameTable(session(), SCHEMA, A_NAME, "eep", "fee");
+        ddl().renameTable(session(), tableName(SCHEMA, A_NAME), tableName("eep", "fee"));
         expectTablesInSchema(SCHEMA, C_NAME);
         expectTablesInSchema("eep", "fee");
     }
@@ -100,7 +100,7 @@ public class RenameTableIT extends ITBase {
         createCTable();
         createOTable();
         createITable();
-        ddl().renameTable(session(), SCHEMA, I_NAME, SCHEMA, "goo");
+        ddl().renameTable(session(), tableName(SCHEMA, I_NAME), tableName(SCHEMA, "goo"));
         expectTablesInSchema(SCHEMA, C_NAME, O_NAME, "goo");
     }
 
@@ -109,7 +109,7 @@ public class RenameTableIT extends ITBase {
         createCTable();
         createOTable();
         createITable();
-        ddl().renameTable(session(), SCHEMA, I_NAME, "hat", "ice");
+        ddl().renameTable(session(), tableName(SCHEMA, I_NAME), tableName("hat", "ice"));
         expectTablesInSchema(SCHEMA, C_NAME, O_NAME);
         expectTablesInSchema(SCHEMA, "hat", "ice");
     }

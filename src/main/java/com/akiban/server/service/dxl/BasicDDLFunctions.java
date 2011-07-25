@@ -132,7 +132,17 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new GenericInvalidOperationException(ioe);
         }
     }
-    
+
+    @Override
+    public void renameTable(Session session, TableName currentName, TableName newName)
+            throws NoSuchTableException,
+            ProtectedTableDDLException,
+            DuplicateTableNameException,
+            GenericInvalidOperationException
+    {
+        throw new UnsupportedOperationException();
+    }
+
 
     @Override
     public void dropTable(Session session, TableName tableName)
