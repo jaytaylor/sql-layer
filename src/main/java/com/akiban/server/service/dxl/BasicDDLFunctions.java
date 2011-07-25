@@ -142,7 +142,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     {
         try {
             schemaManager().renameTable(session, currentName, newName);
-            checkCursorsForDDLModification(session, getAIS(session).getTable(currentName));
+            checkCursorsForDDLModification(session, getAIS(session).getTable(newName));
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ioe,
