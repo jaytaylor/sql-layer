@@ -57,6 +57,8 @@ import com.akiban.ais.model.Type;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.server.api.common.NoSuchGroupException;
 import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.api.ddl.DuplicateTableNameException;
+import com.akiban.server.api.ddl.ProtectedTableDDLException;
 import com.akiban.server.encoding.EncoderFactory;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.tree.TreeLink;
@@ -211,7 +213,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return newTable.getName();
     }
     
-    
     @Override
     public TableName createTableDefinition(final Session session, final String defaultSchemaName,
                                            final String originalDDL) throws Exception {
@@ -265,6 +266,43 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         });
         
         return newTable.getName();
+    }
+
+    @Override
+    public void renameTable(Session session, TableName currentName, TableName newName) throws Exception {
+        String curSchema = currentName.getSchemaName();
+        String newSchema = newName.getSchemaName();
+        if(curSchema.equals(TableName.AKIBAN_INFORMATION_SCHEMA)) {
+            throw new ProtectedTableDDLException(currentName);
+        }
+        if(newSchema.equals(TableName.AKIBAN_INFORMATION_SCHEMA)) {
+            throw new ProtectedTableDDLException(newName);
+        }
+
+        UserTable curTable = getAis(session).getUserTable(currentName);
+        UserTable newTable = getAis(session).getUserTable(newName);
+        if(curTable == null) {
+            throw new NoSuchTableException(currentName);
+        }
+        if(newTable != null) {
+            throw new DuplicateTableNameException(newName.toString());
+        }
+
+        final AkibanInformationSchema newAIS = new AkibanInformationSchema();
+        new Writer(new AISTarget(newAIS)).save(ais);
+        AISBuilder builder = new AISBuilder(newAIS);
+
+        // Note: Relies on all referencing objects (column, index, etc)
+        // due so by holding a Table (*not* a tableName)
+        builder.renameTable(currentName, newName);
+
+        String vol1 = getVolumeForSchemaTree(currentName.getSchemaName());
+        String vol2 = getVolumeForSchemaTree(newName.getSchemaName());
+
+        commitAISChange(session, newAIS, currentName.getSchemaName(), null);
+        if(!vol1.equals(vol2)) {
+            commitAISChange(session, newAIS, currentName.getSchemaName(), null);
+        }
     }
 
     private static boolean inSameBranch(UserTable t1, UserTable t2) {

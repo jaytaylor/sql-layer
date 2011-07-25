@@ -45,6 +45,15 @@ public interface SchemaManager {
     TableName createTableDefinition(Session session, UserTable newTable) throws Exception;
 
     /**
+     * Rename an existing table.
+     * @param session Session
+     * @param currentName Current name of table
+     * @param newName Desired name of table
+     * @throws Exception For any error
+     */
+    void renameTable(Session session, TableName currentName, TableName newName) throws Exception;
+
+    /**
      * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are
      * supported through this interface. If indexes is empty, this method does nothing.
      * @param session Session to operate under.

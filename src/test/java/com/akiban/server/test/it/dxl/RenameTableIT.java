@@ -45,7 +45,7 @@ public class RenameTableIT extends ITBase {
     }
 
     private void createITable() {
-        createTable(SCHEMA, I_NAME, "id int, oid int, primary key(id)", akibanFK("cid", O_NAME, "id"));
+        createTable(SCHEMA, I_NAME, "id int, oid int, primary key(id)", akibanFK("oid", O_NAME, "id"));
     }
 
     private void expectTablesInSchema(String schemaName, String... tableNames) {
@@ -111,6 +111,6 @@ public class RenameTableIT extends ITBase {
         createITable();
         ddl().renameTable(session(), tableName(SCHEMA, I_NAME), tableName("hat", "ice"));
         expectTablesInSchema(SCHEMA, C_NAME, O_NAME);
-        expectTablesInSchema(SCHEMA, "hat", "ice");
+        expectTablesInSchema("hat", "ice");
     }
 }

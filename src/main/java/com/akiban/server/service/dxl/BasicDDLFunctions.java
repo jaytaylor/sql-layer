@@ -140,7 +140,18 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             DuplicateTableNameException,
             GenericInvalidOperationException
     {
-        throw new UnsupportedOperationException();
+        try {
+            schemaManager().renameTable(session, currentName, newName);
+            checkCursorsForDDLModification(session, getAIS(session).getTable(currentName));
+        } catch (Exception e) {
+            InvalidOperationException ioe = launder(e);
+            throwIfInstanceOf(ioe,
+                    NoSuchTableException.class,
+                    ProtectedTableDDLException.class,
+                    DuplicateTableNameException.class
+            );
+            throw new GenericInvalidOperationException(ioe);
+        }
     }
 
 

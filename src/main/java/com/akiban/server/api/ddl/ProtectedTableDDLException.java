@@ -15,10 +15,16 @@
 
 package com.akiban.server.api.ddl;
 
+import com.akiban.ais.model.TableName;
+import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
 
 public final class ProtectedTableDDLException extends DDLException {
     public ProtectedTableDDLException(InvalidOperationException e) {
         super(e);
+    }
+
+    public ProtectedTableDDLException(TableName name) {
+        super(ErrorCode.PROTECTED_TABLE, "Table cannot be modified %s", name);
     }
 }
