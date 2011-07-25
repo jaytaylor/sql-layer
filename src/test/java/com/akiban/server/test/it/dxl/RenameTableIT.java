@@ -18,7 +18,11 @@ package com.akiban.server.test.it.dxl;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowData;
+import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.api.ddl.DuplicateTableNameException;
+import com.akiban.server.api.ddl.ProtectedTableDDLException;
 import com.akiban.server.test.it.ITBase;
+import junit.framework.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -118,7 +122,62 @@ public class RenameTableIT extends ITBase {
         }
     }
 
-    
+
+    @Test(expected= NoSuchTableException.class)
+    public void nonExistingTable() {
+        ddl().renameTable(session(), tableName("a", "b"), tableName("b", "c"));
+    }
+
+    @Test
+    public void duplicateInSameSchema() {
+        final String NEW_NAME = "new_name";
+        createCTable();
+        int rowCount = writeCRows();
+        createTable(SCHEMA, NEW_NAME, "id int key");
+        try {
+            ddl().renameTable(session(), tableName(SCHEMA, C_NAME), tableName(SCHEMA, NEW_NAME));
+            Assert.fail("Expected DuplicateTableNameException");
+        }
+        catch(DuplicateTableNameException e) {
+        }
+        expectTablesInSchema(SCHEMA, C_NAME, NEW_NAME);
+        expectStatusAndScanCount(SCHEMA, C_NAME, rowCount);
+        expectStatusAndScanCount(SCHEMA, NEW_NAME, 0);
+    }
+
+    @Test
+    public void duplicateInDifferentSchema() {
+        final String NEW_SCHEMA = "new_schema";
+        final String NEW_NAME = "new_name";
+        createCTable();
+        int rowCount = writeCRows();
+        createTable(NEW_SCHEMA, NEW_NAME, "id int key");
+        try {
+            ddl().renameTable(session(), tableName(SCHEMA, C_NAME), tableName(NEW_SCHEMA, NEW_NAME));
+            Assert.fail("Expected DuplicateTableNameException");
+        }
+        catch(DuplicateTableNameException e) {
+        }
+        expectTablesInSchema(SCHEMA, C_NAME);
+        expectTablesInSchema(NEW_SCHEMA, NEW_NAME);
+        expectStatusAndScanCount(SCHEMA, C_NAME, rowCount);
+        expectStatusAndScanCount(NEW_SCHEMA, NEW_NAME, 0);
+    }
+
+    @Test
+    public void toSystemSchema() {
+        createCTable();
+        int rowCount = writeCRows();
+        try {
+            ddl().renameTable(session(), tableName(SCHEMA, C_NAME), tableName(TableName.AKIBAN_INFORMATION_SCHEMA, C_NAME));
+            Assert.fail("Expected ProtectedTableDDLException");
+        }
+        catch(ProtectedTableDDLException e) {
+        }
+        expectTablesInSchema(SCHEMA, C_NAME);
+        expectStatusAndScanCount(SCHEMA, C_NAME, rowCount);
+    }
+
     @Test
     public void singleTableJustName() {
         final String NEW_NAME = "ahh";
