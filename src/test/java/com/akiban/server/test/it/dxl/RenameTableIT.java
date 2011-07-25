@@ -16,10 +16,12 @@
 package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.RowData;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -48,6 +50,49 @@ public class RenameTableIT extends ITBase {
         createTable(SCHEMA, I_NAME, "id int, oid int, primary key(id)", akibanFK("oid", O_NAME, "id"));
     }
 
+    private int writeCRows() {
+        int cid = tableId(SCHEMA, C_NAME);
+        return writeRows(createNewRow(cid, 1L),
+                         createNewRow(cid, 2L),  // no As, Os
+                         createNewRow(cid, 3L),  // no Os
+                         createNewRow(cid, 5L));
+    }
+
+    private int writeARows() {
+        int aid = tableId(SCHEMA, A_NAME);
+        return writeRows(createNewRow(aid, 1L, 1L),
+                         createNewRow(aid, 2L, 3L),
+                         createNewRow(aid, 3L, 4L), // orphan
+                         createNewRow(aid, 5L, 5L));
+    }
+
+    private int writeORows() {
+        int oid = tableId(SCHEMA, O_NAME);
+        return writeRows(createNewRow(oid, 1L, 1L),
+                         createNewRow(oid, 2L, 1L), // no Is
+                         createNewRow(oid, 3L, 2L),
+                         createNewRow(oid, 4L, 2L),
+                         createNewRow(oid, 5L, 4L), // orphan
+                         createNewRow(oid, 6L, 4L), // orphan
+                         createNewRow(oid, 9L, 5L));
+    }
+
+    private int writeIRows() {
+        int iid = tableId(SCHEMA, I_NAME);
+        return writeRows(createNewRow(iid, 1L, 1L),
+                         createNewRow(iid, 2L, 1L),
+                         createNewRow(iid, 3L, 3L),
+                         createNewRow(iid, 4L, 3L),
+                         createNewRow(iid, 5L, 4L),
+                         createNewRow(iid, 6L, 5L),
+                         createNewRow(iid, 7L, 6L),
+                         createNewRow(iid, 8L, 6L),
+                         createNewRow(iid, 9L, 7L), // orphan
+                         createNewRow(iid, 10L, 7L), // orphan
+                         createNewRow(iid, 11L, 9L));
+
+    }
+    
     private void expectTablesInSchema(String schemaName, String... tableNames) {
         Set<String> actualInSchema = new TreeSet<String>();
         for(UserTable table : ddl().getAIS(session()).getUserTables().values()) {
@@ -62,55 +107,103 @@ public class RenameTableIT extends ITBase {
                      expectedInSchema, actualInSchema);
     }
 
+    private void expectStatusAndScanCount(String schemaName, String tableName, long rowCount) {
+        updateAISGeneration();
+        int id = tableId(schemaName, tableName);
+        expectRowCount(id, rowCount);
+        List<RowData> rows = scanFull(scanAllRequest(id));
+        if(rowCount != rows.size()) {
+            assertEquals("Scan rows: " + rows, rowCount, rows.size());
+        }
+    }
+
     
     @Test
     public void singleTableJustName() {
+        final String NEW_NAME = "ahh";
         createCTable();
-        ddl().renameTable(session(), tableName(SCHEMA, C_NAME), tableName(SCHEMA, "ahh"));
-        expectTablesInSchema(SCHEMA, "ahh");
+        int rowCount = writeCRows();
+        ddl().renameTable(session(), tableName(SCHEMA, C_NAME), tableName(SCHEMA, NEW_NAME));
+        expectTablesInSchema(SCHEMA, NEW_NAME);
+        expectStatusAndScanCount(SCHEMA, NEW_NAME, rowCount);
     }
 
     @Test
     public void singleTableNameAndSchema() {
+        final String NEW_SCHEMA = "box";
+        final String NEW_NAME = "cob";
         createCTable();
-        ddl().renameTable(session(), tableName(SCHEMA, C_NAME), tableName("box", "cob"));
+        int rowCount = writeCRows();
+        ddl().renameTable(session(), tableName(SCHEMA, C_NAME), tableName(NEW_SCHEMA, NEW_NAME));
         expectTablesInSchema(SCHEMA);
-        expectTablesInSchema("box", "cob");
+        expectTablesInSchema(NEW_SCHEMA, NEW_NAME);
+        expectStatusAndScanCount(NEW_SCHEMA, NEW_NAME, rowCount);
     }
 
     @Test
     public void leafTableJustName() {
+        final String NEW_NAME = "DIP";
         createCTable();
         createATable();
-        ddl().renameTable(session(), tableName(SCHEMA, A_NAME), tableName(SCHEMA, "dip"));
-        expectTablesInSchema(SCHEMA, C_NAME, "dip");
+        int cCount = writeCRows();
+        int aCount = writeARows();
+        ddl().renameTable(session(), tableName(SCHEMA, A_NAME), tableName(SCHEMA, NEW_NAME));
+        expectTablesInSchema(SCHEMA, C_NAME, NEW_NAME);
+        expectStatusAndScanCount(SCHEMA, C_NAME, cCount);
+        expectStatusAndScanCount(SCHEMA, NEW_NAME, aCount);
     }
 
     @Test
     public void leafTableNameAndSchema() {
+        final String NEW_SCHEMA = "eep";
+        final String NEW_NAME = "fee";
         createCTable();
         createATable();
-        ddl().renameTable(session(), tableName(SCHEMA, A_NAME), tableName("eep", "fee"));
+        int cCount = writeCRows();
+        int aCount = writeARows();
+        ddl().renameTable(session(), tableName(SCHEMA, A_NAME), tableName(NEW_SCHEMA, NEW_NAME));
         expectTablesInSchema(SCHEMA, C_NAME);
-        expectTablesInSchema("eep", "fee");
+        expectTablesInSchema(NEW_SCHEMA, NEW_NAME);
+        expectStatusAndScanCount(SCHEMA, C_NAME, cCount);
+        expectStatusAndScanCount(NEW_SCHEMA, NEW_NAME, aCount);
     }
 
     @Test
     public void middleTableJustName() {
+        final String NEW_NAME = "goo";
         createCTable();
         createOTable();
         createITable();
-        ddl().renameTable(session(), tableName(SCHEMA, I_NAME), tableName(SCHEMA, "goo"));
-        expectTablesInSchema(SCHEMA, C_NAME, O_NAME, "goo");
+        int cCount = writeCRows();
+        int oCount = writeORows();
+        int iCount = writeIRows();
+        ddl().renameTable(session(), tableName(SCHEMA, O_NAME), tableName(SCHEMA, NEW_NAME));
+        expectTablesInSchema(SCHEMA, C_NAME, NEW_NAME, I_NAME);
+        expectStatusAndScanCount(SCHEMA, C_NAME, cCount);
+        expectStatusAndScanCount(SCHEMA, NEW_NAME, oCount);
+        expectStatusAndScanCount(SCHEMA, I_NAME, iCount);
     }
 
     @Test
     public void middleTableNameAndSchema() {
+        final String NEW_SCHEMA = "hat";
+        final String NEW_NAME = "ice";
         createCTable();
         createOTable();
         createITable();
-        ddl().renameTable(session(), tableName(SCHEMA, I_NAME), tableName("hat", "ice"));
-        expectTablesInSchema(SCHEMA, C_NAME, O_NAME);
-        expectTablesInSchema("hat", "ice");
+        int cCount = writeCRows();
+        int oCount = writeORows();
+        int iCount = writeIRows();
+        ddl().renameTable(session(), tableName(SCHEMA, O_NAME), tableName(NEW_SCHEMA, NEW_NAME));
+        expectTablesInSchema(SCHEMA, C_NAME, I_NAME);
+        expectTablesInSchema(NEW_SCHEMA, NEW_NAME);
+        expectStatusAndScanCount(SCHEMA, C_NAME, cCount);
+        expectStatusAndScanCount(NEW_SCHEMA, NEW_NAME, oCount);
+        expectStatusAndScanCount(SCHEMA, I_NAME, iCount);
+    }
+
+    @Test
+    public void renameAllWithDataAndRestart() {
+        
     }
 }
