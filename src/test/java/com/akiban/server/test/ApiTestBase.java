@@ -340,10 +340,11 @@ public class ApiTestBase {
         return scanAll(new ScanAllRequest(index.getTable().getTableId(), columns, index.getIndexId(), null));
     }
 
-    protected final void writeRows(NewRow... rows) throws InvalidOperationException {
+    protected final int writeRows(NewRow... rows) throws InvalidOperationException {
         for (NewRow row : rows) {
             dml().writeRow(session(), row);
         }
+        return rows.length;
     }
 
     protected final void expectRows(ScanRequest request, NewRow... expectedRows) throws InvalidOperationException {
