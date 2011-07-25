@@ -371,21 +371,8 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         return treeName;
     }
 
-    /**
-     * Indexes on GroupTables must have the same tree name as their matching UserTable index.
-     * This is a work around for that.
-     * @param treeName New tree name
-     */
     public void setTreeName(String treeName) {
         this.treeName = treeName;
-    }
-    
-    public void computeTreeName(String groupName) {
-        String SEP = "$$";
-        treeName = groupName + SEP +
-                   indexName.getSchemaName() + SEP +
-                   indexName.getTableName() + SEP +
-                   indexName.getName();
     }
 
     private IndexName indexName;

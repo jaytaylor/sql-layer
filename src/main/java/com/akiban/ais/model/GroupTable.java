@@ -48,11 +48,6 @@ public class GroupTable extends Table
         return false;
     }
 
-    @Override
-    public void computeTreeName() {
-        treeName = tableName.getSchemaName() + "." + tableName.getTableName();
-    }
-
     public UserTable getRoot()
     {
         UserTable tableInGroup = null;

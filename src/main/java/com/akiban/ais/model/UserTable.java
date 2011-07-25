@@ -45,14 +45,6 @@ public class UserTable extends Table
     }
 
     @Override
-    public void computeTreeName() {
-        if(group == null || group.getGroupTable() == null) {
-            throw new IllegalStateException("No group table");
-        }
-        treeName = group.getGroupTable().getTreeName();
-    }
-
-    @Override
     protected void addIndex(TableIndex index)
     {
         super.addIndex(index);

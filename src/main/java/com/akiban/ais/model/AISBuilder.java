@@ -274,7 +274,6 @@ public class
                 groupTableName, tableIdGenerator++);
         Group group = Group.create(ais, groupName);
         groupTable.setGroup(group);
-        groupTable.computeTreeName();
     }
 
     public void deleteGroup(String groupName) {

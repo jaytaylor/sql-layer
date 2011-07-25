@@ -23,7 +23,6 @@ import com.akiban.ais.model.validation.AISInvariants;
 public abstract class Table implements Serializable, ModelNames, Traversable, HasGroup
 {
     public abstract boolean isUserTable();
-    public abstract void computeTreeName();
 
     @Override
     public String toString()
@@ -407,6 +406,10 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 
     public String getTreeName() {
         return treeName;
+    }
+
+    public void setTreeName(String treeName) {
+        this.treeName = treeName;
     }
 
     // State
