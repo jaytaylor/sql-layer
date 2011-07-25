@@ -178,9 +178,13 @@ public class AISMerge {
         String parentTableName = join.getParent().getName().getTableName();
         UserTable parentTable = targetAIS.getUserTable(parentSchemaName, parentTableName);
         if (parentTable == null) {
-            throw new InvalidOperationException (ErrorCode.JOIN_TO_UNKNOWN_TABLE, 
-                    "Join to unknown parent table %s.%s", parentSchemaName, parentTableName); 
-        }
+            throw new InvalidOperationException (ErrorCode.JOIN_TO_UNKNOWN_TABLE,
+                    "Table `%s`.`%s` joins to undefined table `%s`.`%s`",
+                    sourceTable.getName().getSchemaName(),
+                    sourceTable.getName().getTableName(),
+                    parentSchemaName, 
+                    parentTableName);
+         }
         LOG.debug(String.format("Table is child of table %s", parentTable.getName().toString()));
         String joinName = groupNames.generateJoinName(parentTable, sourceTable, join.getJoinColumns());
 
@@ -201,7 +205,13 @@ public class AISMerge {
                     joinColumn.getChild().getName());
             } catch (AISBuilder.NoSuchObjectException ex) {
                 throw new InvalidOperationException (ErrorCode.JOIN_TO_WRONG_COLUMNS,
-                        ex.getMessage()); 
+                        "Table `%s`.`%s` join reference part `%s` does not match `%s`.`%s` primary key part `%s`",
+                        sourceTable.getName().getSchemaName(),
+                        sourceTable.getName().getTableName(),
+                        joinColumn.getChild().getName(),
+                        parentSchemaName, 
+                        parentTableName,
+                        joinColumn.getParent().getName());
             }
         }
         builder.basicSchemaIsComplete();

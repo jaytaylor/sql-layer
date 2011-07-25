@@ -435,6 +435,7 @@ public class UserTable extends Table
                                         Types.BIGINT); // adds column to table
         pkColumn.setNullable(false);
         // Create an index for the PK column
+        // Starting index should be id 1
         int maxIndexId = 0;
         for (Index index : getIndexes()) {
             if (index.getIndexId() > maxIndexId) {
