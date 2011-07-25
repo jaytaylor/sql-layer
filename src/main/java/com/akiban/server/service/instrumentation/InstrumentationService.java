@@ -38,12 +38,9 @@ public interface InstrumentationService {
     void disable(int sessionId);
     
     /*
-     * controls whether to perform query logging or not
+     * query log related functions
      */
     boolean isQueryLogEnabled();
-    void enableQueryLog();
-    void disableQueryLog();
-    void setQueryLogFileName(String fileName);
-    String getQueryLogFileName();
+    void logQuery(int sessionId, String sqlText, long duration);
     
 }

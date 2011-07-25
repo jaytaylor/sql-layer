@@ -331,6 +331,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     protected void processQuery() throws IOException, StandardException {
+        long startTime = System.nanoTime();
         sql = messenger.readString();
         sessionTracer.setCurrentStatement(sql);
         logger.info("Query: {}", sql);
@@ -385,6 +386,9 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
         readyForQuery();
         logger.debug("Query complete");
+        if (ServiceManagerImpl.get().getInstrumentationService().isQueryLogEnabled()) {
+            ServiceManagerImpl.get().getInstrumentationService().logQuery(pid, sql, (System.nanoTime() - startTime));
+        }
     }
 
     protected void processParse() throws IOException, StandardException {
@@ -493,6 +497,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     protected void processExecute() throws IOException, StandardException {
+        long startTime = System.nanoTime();
         String portalName = messenger.readString();
         int maxrows = messenger.readInt();
         PostgresStatement pstmt = boundPortals.get(portalName);
@@ -504,6 +509,9 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             sessionTracer.endEvent();
         }
         logger.debug("Execute complete");
+        if (ServiceManagerImpl.get().getInstrumentationService().isQueryLogEnabled()) {
+            ServiceManagerImpl.get().getInstrumentationService().logQuery(pid, sql, (System.nanoTime() - startTime));
+        }
     }
 
     protected void processClose() throws IOException {

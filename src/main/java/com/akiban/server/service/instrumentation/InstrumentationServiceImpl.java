@@ -15,7 +15,9 @@
 
 package com.akiban.server.service.instrumentation;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -25,11 +27,17 @@ import org.slf4j.LoggerFactory;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.service.jmx.JmxManageable.JmxObjectInfo;
+import com.akiban.sql.pg.PostgresMXBean;
 import com.akiban.sql.pg.PostgresServer;
 import com.akiban.sql.pg.PostgresSessionTracer;
 
 public class InstrumentationServiceImpl implements
-    InstrumentationService, Service<InstrumentationService> {
+    InstrumentationService, 
+    Service<InstrumentationService>,
+    InstrumentationMXBean,
+    JmxManageable {
     
     public InstrumentationServiceImpl()
     {
@@ -55,13 +63,22 @@ public class InstrumentationServiceImpl implements
         }
         queryLogFile = new File(queryLogFileName);
         try {
-            if (! queryLogFile.createNewFile()) {
-                LOGGER.info("Query log file already exists. Appending to existing file.");
+            if (queryLogFile.createNewFile()) {
+                LOGGER.info("Query log file already existed. Appending to existing file.");
             }
         } catch (IOException e) {
             LOGGER.error("Failed to create query log file", e);
             return false;
         }
+        FileWriter fstream;
+        try {
+            fstream = new FileWriter(queryLogFileName, true);
+        } catch (IOException e) {
+            LOGGER.error("Failed to create FileWriter object for query log.", e);
+            return false;
+        }
+        queryOut = new BufferedWriter(fstream);
+        LOGGER.info("Query log file ready for writing.");
         return true;
     }
     
@@ -95,7 +112,9 @@ public class InstrumentationServiceImpl implements
 
     @Override
     public void stop() throws Exception {
-        // anything to do?
+        if (queryOut != null){
+            queryOut.close();
+        }
     }
 
     @Override
@@ -138,6 +157,34 @@ public class InstrumentationServiceImpl implements
     {
         return queryLogEnabled.get();
     }
+    
+    @Override
+    public void logQuery(int sessionId, String sql, long duration)
+    {
+        /*
+         * format of each query log entry is:
+         * sessionID    SQL text    Exec time in ns
+         */
+        StringBuilder buffer = new StringBuilder();
+        buffer.append(sessionId);
+        buffer.append('\t');
+        buffer.append(sql);
+        buffer.append('\t');
+        buffer.append(duration);
+        buffer.append('\n');
+        try {
+            synchronized(this) {
+                queryOut.write(buffer.toString());
+                queryOut.flush();
+            }
+        } catch (IOException e) {
+            LOGGER.error("Failed to write to query log.", e);
+            /* disable query logging due to failure */
+            queryLogEnabled.set(false);
+        }
+    }
+    
+    // InstrumentationMXBean interface
 
     @Override
     public void enableQueryLog()
@@ -163,6 +210,14 @@ public class InstrumentationServiceImpl implements
         return queryLogFileName;
     }
     
+    // JmxManageable interface
+    
+    @Override
+    public JmxObjectInfo getJmxObjectInfo()
+    {
+        return new JmxObjectInfo("Instrumentation", this, InstrumentationMXBean.class);
+    }
+    
     // state
     
     private static final String QUERY_LOG_PROPERTY = "akserver.querylog";
@@ -174,6 +229,7 @@ public class InstrumentationServiceImpl implements
     private AtomicBoolean queryLogEnabled;
     private String queryLogFileName;
     private File queryLogFile;
+    private BufferedWriter queryOut;
     private ServiceManager serviceManager;
     
 }
