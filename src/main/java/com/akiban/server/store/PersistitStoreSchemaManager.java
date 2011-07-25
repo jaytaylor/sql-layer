@@ -431,7 +431,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
         });
     }
-
+/*
     private void deleteTableDefinitions(List<TableName> tables, Exchange schemaEx, Exchange statusEx) throws Exception {
         for(final TableName tn : tables) {
             schemaEx.clear().append(BY_NAME).append(tn.getSchemaName()).append(tn.getTableName());
@@ -445,7 +445,32 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
         }
     }
-
+*/
+    
+    private void deleteTableDefinitions(List<TableName> tables, Exchange schemaEx, Exchange statusEx) throws Exception {
+        for(final TableName tn : tables) {
+            UserTable table = ais.getUserTable(tn);
+            // Could have been group table name, nothing to cleanup there
+            if(table != null) {
+                int tableId = table.getTableId();
+                statusEx.clear().append(tableId).remove();
+                // Status created on demand, can't check
+                serviceManager.getTreeService().getTableStatusCache().drop(tableId);
+                // Table ID may have changed so use filter and iterate
+                schemaEx.clear().append(BY_NAME).append(tn.getSchemaName()).append(tn.getTableName());
+                final KeyFilter keyFilter = new KeyFilter(schemaEx.getKey(), 4, 4);
+                schemaEx.clear();
+                int schemaRemovedCount = 0;
+                while (schemaEx.next(keyFilter)) {
+                    schemaEx.remove();
+                    ++schemaRemovedCount;
+                }
+                assert schemaRemovedCount == 1 : "Wrong schema count removed: " + schemaRemovedCount + " " + tn;
+            }
+        }
+    }
+    
+    
     @Override
     public TableDefinition getTableDefinition(Session session, TableName tableName) throws NoSuchTableException {
         final Table table = getAis(session).getTable(tableName);
