@@ -273,6 +273,7 @@ public class
         GroupTable groupTable = GroupTable.create(ais, groupSchemaName,
                 groupTableName, tableIdGenerator++);
         Group group = Group.create(ais, groupName);
+        groupTable.setTreeName(groupTableName);
         groupTable.setGroup(group);
     }
 
@@ -306,7 +307,7 @@ public class
                 concat(schemaName, tableName));
         checkGroupAddition(group, table.getGroup(),
                 concat(schemaName, tableName));
-        table.setGroup(group);
+        setTablesGroup(table, group);
         // group table columns
         generateGroupTableColumns(group);
     }
@@ -333,7 +334,7 @@ public class
                 concat(parentSchemaName, parentTableName));
         checkGroupAddition(group, parent.getGroup(),
                 concat(parentSchemaName, parentTableName));
-        parent.setGroup(group);
+        setTablesGroup(parent, group);
         // child
         String childSchemaName = join.getChild().getName().getSchemaName();
         String childTableName = join.getChild().getName().getTableName();
@@ -343,7 +344,7 @@ public class
         checkGroupAddition(group, child.getGroup(),
                 concat(childSchemaName, childTableName));
         checkCycle(child, group);
-        child.setGroup(group);
+        setTablesGroup(child, group);
         join.setGroup(group);
         join.setWeight(weight);
         assert join.getParent() == parent : join;
@@ -370,7 +371,7 @@ public class
                             + "it is the only table in the group, group "
                             + group.getName() + ", table " + table.getName());
         }
-        table.setGroup(null);
+        setTablesGroup(table, null);
         generateGroupTableColumns(group);
     }
 
@@ -403,12 +404,12 @@ public class
         // joins in this group.
         if (parent.getChildJoins().size() == 0
                 && parent.getParentJoin() == null) {
-            parent.setGroup(null);
+            setTablesGroup(parent, null);
         }
         // Same for the child (except we know that parent is null)
         assert child.getParentJoin() == null;
         if (child.getChildJoins().size() == 0) {
-            child.setGroup(null);
+            setTablesGroup(child, null);
         }
         generateGroupTableColumns(group);
     }
@@ -444,7 +445,7 @@ public class
         // to another group will cause
         // getChildJoins() to return empty.
         List<Join> children = table.getChildJoins();
-        table.setGroup(group);
+        setTablesGroup(table, group);
 
         // Move the join to the group
         join.setGroup(group);
@@ -486,7 +487,7 @@ public class
         // Move table to group. Get the children first (see comment in
         // moveTreeToGroup).
         List<Join> children = table.getChildJoins();
-        table.setGroup(group);
+        setTablesGroup(table, group);
 
         // update group table columns and indexes for the affected groups
         updateGroupTablesOnMove(oldGroup, group, children);
@@ -512,7 +513,7 @@ public class
         // Move table to group. Get the children first (see comment in
         // moveTreeToGroup).
         List<Join> children = table.getChildJoins();
-        table.setGroup(group);
+        setTablesGroup(table, group);
 
         // update group table columns and indexes for the affected groups
         updateGroupTablesOnMove(oldGroup, group, children);
@@ -611,7 +612,7 @@ public class
         ais.getGroups().clear();
         ais.getGroupTables().clear();
         for (UserTable table : ais.getUserTables().values()) {
-            table.setGroup(null);
+            setTablesGroup(table, null);
             for (Column column : table.getColumnsIncludingInternal()) {
                 column.setGroupColumn(null);
             }
@@ -686,7 +687,7 @@ public class
         LOG.debug("moving tree " + joins + " to group " + group);
         for (Join join : joins) {
             List<Join> children = join.getChild().getChildJoins();
-            join.getChild().setGroup(group);
+            setTablesGroup(join.getChild(), group);
             join.setGroup(group);
             moveTree(children, group);
         }
@@ -731,6 +732,11 @@ public class
             buffer.append(strings[i]);
         }
         return buffer.toString();
+    }
+
+    private void setTablesGroup(Table table, Group group) {
+        table.setGroup(group);
+        table.setTreeName(group != null ? group.getGroupTable().getTreeName() : "");
     }
 
     // State
