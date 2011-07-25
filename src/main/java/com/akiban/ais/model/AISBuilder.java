@@ -274,6 +274,7 @@ public class
                 groupTableName, tableIdGenerator++);
         Group group = Group.create(ais, groupName);
         groupTable.setGroup(group);
+        groupTable.computeTreeName();
     }
 
     public void deleteGroup(String groupName) {
@@ -550,19 +551,35 @@ public class
         }
     }
 
-    private void generateGroupTableIndexes(GroupTable groupTable,
-            UserTable userTable) {
+    private void generateGroupTableIndexes(GroupTable groupTable, UserTable userTable) {
         LOG.debug("generating group table indexes for group table "
                 + groupTable + " and user table " + userTable);
+
         for (TableIndex userIndex : userTable.getIndexesIncludingInternal()) {
-            TableIndex groupIndex = TableIndex.create(ais, groupTable,
-                    nameGenerator.generateGroupIndexName(userIndex),
-                    userIndex.getIndexId(), false, Index.KEY_CONSTRAINT);
+            String indexName = nameGenerator.generateGroupIndexName(userIndex);
+
+            // Check if the index we're about to add is already in the table.
+            // This can happen if the user alters one or more groups, then
+            // calls groupingIsComplete again (or just calls it twice in a row)
+            // but this assumes that indexName == index Definition
+            // TODO: Need to check definition, not just name.
+            if (AISInvariants.isIndexInTable(groupTable, indexName)) {
+                continue;
+            }
+            TableIndex groupIndex = TableIndex.create(ais, groupTable, indexName, userIndex.getIndexId(),
+                                                      false, Index.KEY_CONSTRAINT);
+            groupIndex.setTreeName(userIndex.getTreeName());
+
             int position = 0;
             for (IndexColumn userIndexColumn : userIndex.getColumns()) {
-                IndexColumn groupIndexColumn = new IndexColumn(groupIndex,
+                this.checkFound(userIndexColumn, "building group indexes", "userIndexColumn", "NONE");
+                this.checkFound(userIndexColumn.getColumn().getGroupColumn(), "building group indexes",
+                                "group column", userIndexColumn.getColumn().getName());
+                IndexColumn groupIndexColumn = new IndexColumn(
+                        groupIndex,
                         userIndexColumn.getColumn().getGroupColumn(),
-                        position++, userIndexColumn.isAscending(),
+                        position++,
+                        userIndexColumn.isAscending(),
                         userIndexColumn.getIndexedLength());
                 groupIndex.addColumn(groupIndexColumn);
             }
@@ -585,34 +602,7 @@ public class
         for (UserTable userTable : ais.getUserTables().values()) {
             Group group = userTable.getGroup();
             if (group != null) {
-                GroupTable groupTable = group.getGroupTable();
-                for (TableIndex userIndex : userTable.getIndexesIncludingInternal()) {
-                    String indexName = nameGenerator.generateGroupIndexName(userIndex);
-                    
-                    // Check if the index we're about to add is already in the table.
-                    // This can happen if the user alters one or more groups, then 
-                    // calls groupingIsComplete again (or just calls it twice in a row)
-                    // but this assumes that indexName == index Definition
-                    // TODO: Need to check definition, not just name. 
-                    if (AISInvariants.isIndexInTable(groupTable, indexName)) {
-                        continue;
-                    }
-                    TableIndex groupIndex = TableIndex.create(ais, groupTable,
-                            indexName, userIndex.getIndexId(), false, Index.KEY_CONSTRAINT);
-                    int position = 0;
-
-                    for (IndexColumn userIndexColumn : userIndex.getColumns()) {
-                        this.checkFound(userIndexColumn, "building group indexes", "userIndexColumn", "NONE");
-                        this.checkFound(userIndexColumn.getColumn().getGroupColumn(), "building group indexes", "group column", userIndexColumn.getColumn().getName());
-                        IndexColumn groupIndexColumn = new IndexColumn(
-                                groupIndex, 
-                                userIndexColumn.getColumn().getGroupColumn(), 
-                                position++,
-                                userIndexColumn.isAscending(),
-                                userIndexColumn.getIndexedLength());
-                        groupIndex.addColumn(groupIndexColumn);
-                    }
-                }
+                generateGroupTableIndexes(group);
             }
         }
     }
