@@ -23,6 +23,7 @@ import com.akiban.ais.model.validation.AISInvariants;
 public abstract class Table implements Serializable, ModelNames, Traversable, HasGroup
 {
     public abstract boolean isUserTable();
+    protected abstract String computeTreeName();
 
     @Override
     public String toString()
@@ -50,6 +51,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         }
         assert table != null;
         table.migrationUsage = MigrationUsage.values()[(Integer) map.get(table_migrationUsage)];
+        table.treeName = (String) map.get(table_treeName);
         return table;
     }
 
@@ -62,6 +64,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         map.put(table_tableId, getTableId());
         map.put(table_groupName, getGroup() == null ? null : getGroup().getName());
         map.put(table_migrationUsage, migrationUsage.ordinal());
+        map.put(table_treeName, getTreeName());
         return map;
     }
 
@@ -118,6 +121,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     public void setGroup(Group group)
     {
         this.group = group;
+        treeName = computeTreeName();
     }
 
     public Column getColumn(String columnName)
@@ -402,6 +406,10 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         return declaredColumns;
     }
 
+    public String getTreeName() {
+        return treeName;
+    }
+
     // State
 
     protected AkibanInformationSchema ais;
@@ -416,6 +424,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     private CharsetAndCollation charsetAndCollation;
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
     protected String engine;
+    private String treeName;
 
     private final Collection<GroupIndex> groupIndexes;
     private final Collection<GroupIndex> unmodifiableGroupIndexes;

@@ -46,6 +46,16 @@ public class UserTable extends Table
     }
 
     @Override
+    protected String computeTreeName() {
+        if(group != null) {
+            return group.getGroupTable().getTreeName();
+        }
+        else {
+            return tableName.toString();
+        }
+    }
+
+    @Override
     protected void addIndex(TableIndex index)
     {
         super.addIndex(index);
