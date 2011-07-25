@@ -214,40 +214,6 @@ public class RowDefCache {
         return ordinalMap;
     }
 
-    private static String getTreeName(GroupTable groupTable) {
-        return groupTable.getName().toString();
-    }
-    
-    private static String getTreeName(String groupName, TableIndex index) {
-        IndexName iname = index.getIndexName();
-        String schemaName = iname.getSchemaName();
-        String tableName = iname.getTableName();
-        String indexName = iname.getName();
-
-        // Tree names for identical indexes on the group and user table must match.
-        // Check if this index originally came from a user table and, if so, use their
-        // names instead.
-        if (index.getTable().isGroupTable()) {
-            Column c = index.getColumns().get(0).getColumn().getUserColumn();
-            if (c != null) {
-                UserTable table = c.getUserTable();
-                for(Index i : table.getIndexes()) {
-                    if(i.getIndexId().equals(index.getIndexId())) {
-                        tableName = table.getName().getTableName();
-                        indexName = i.getIndexName().getName();
-                        break;
-                    }
-                }
-            }
-        }
-
-        return String.format("%s$$%s$$%s$$%s", groupName, schemaName, tableName, indexName);
-    }
-
-    private static String getTreeName(String groupName, GroupIndex index) {
-        return String.format("%s$$%s", groupName, index.getIndexName().getName());
-    }
-    
     private RowDef createUserTableRowDef(UserTable table) {
         RowDef rowDef = new RowDef(table, tableStatusCache.getTableStatus(table.getTableId()));
         // parentRowDef
@@ -275,27 +241,20 @@ public class RowDefCache {
         // group table name
         final GroupTable groupTable = root.getGroup().getGroupTable();
         final String groupTableName = groupTable.getName().getTableName();
-        final String groupTableTreeName = getTreeName(groupTable);
-        
         assert groupTableName != null : root;
-        assert groupTableTreeName != null : root;
 
         // Secondary indexes
         List<Index> indexList = new ArrayList<Index>();
         for (TableIndex index : table.getIndexesIncludingInternal()) {
             List<IndexColumn> indexColumns = index.getColumns();
-            if (!indexColumns.isEmpty()) {
-                String treeName = getTreeName(groupTableName, index);
-                IndexDef indexDef = new IndexDef(treeName, rowDef, index);
-                if (index.isPrimaryKey()) {
-                    indexList.add(0, index);
-                } else {
-                    indexList.add(index);
-                }
-            } // else: Don't create an index for an artificial IndexDef that has
-              // no fields.
+            assert !indexColumns.isEmpty() : "No columns: " + index;
+            new IndexDef(rowDef, index);
+            if (index.isPrimaryKey()) {
+                indexList.add(0, index);
+            } else {
+                indexList.add(index);
+            }
         }
-        rowDef.setTreeName(groupTableTreeName);
         rowDef.setParentJoinFields(parentJoinFields);
         rowDef.setIndexes(indexList.toArray(new Index[indexList.size()]));
         return rowDef;
@@ -319,28 +278,21 @@ public class RowDefCache {
         for (Integer userTableRowDefId : userTableRowDefIds) {
             userTableRowDefs[i++] = cacheMap.get(userTableRowDefId);
         }
-        final String groupTableName = table.getName().getTableName();
-        final String groupTableTreeName = getTreeName(table);
         // Secondary indexes
         final List<Index> indexList = new ArrayList<Index>();
         for (TableIndex index : table.getIndexes()) {
             List<IndexColumn> indexColumns = index.getColumns();
-            if (!indexColumns.isEmpty()) {
-                String treeName = getTreeName(groupTableName, index);
-                IndexDef indexDef = new IndexDef(treeName, rowDef, index);
-                indexList.add(index);
-            } // else: Don't create a group table index for an artificial
-              // IndeDef that has no fields.
+            assert !indexColumns.isEmpty() : "No columns: " + index;
+            new IndexDef(rowDef, index);
+            indexList.add(index);
         }
         // Group indexes
         final List<GroupIndex> groupIndexList = new ArrayList<GroupIndex>();
         for (GroupIndex index : table.getGroup().getIndexes()) {
-            String treeName = getTreeName(groupTableName, index);
-            IndexDef indexDef = new IndexDef(treeName, rowDef, index);
+            new IndexDef(rowDef, index);
             groupIndexList.add(index);
 
         }
-        rowDef.setTreeName(groupTableTreeName);
         rowDef.setUserTableRowDefs(userTableRowDefs);
         rowDef.setIndexes(indexList.toArray(new Index[indexList.size()]));
         rowDef.setGroupIndexes(groupIndexList.toArray(new GroupIndex[groupIndexList.size()]));

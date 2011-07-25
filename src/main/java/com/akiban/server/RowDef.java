@@ -60,11 +60,6 @@ public class RowDef implements TreeLink {
     private int[] parentJoinFields;
 
     /**
-     * Name of the tree storing this table - same as the group table name
-     */
-    private String treeName;
-
-    /**
      * Field index of the auto-increment column; -1 if none.
      */
     private int autoIncrementField;
@@ -206,7 +201,7 @@ public class RowDef implements TreeLink {
         StringBuilder sb = new StringBuilder(String.format("RowDef #%d %s (%s.%s)",
                                                            table.getTableId(),
                                                            table.getName(),
-                                                           treeName, getPkTreeName()));
+                                                           getTreeName(), getPkTreeName()));
         if (userTableRowDefs != null) {
             for (int i = 0; i < userTableRowDefs.length; i++) {
                 sb.append(i == 0 ? "{" : ",");
@@ -470,7 +465,7 @@ public class RowDef implements TreeLink {
     }
 
     public String getTreeName() {
-        return treeName;
+        return table.getTreeName();
     }
 
     public String getSchemaName() {
@@ -507,10 +502,6 @@ public class RowDef implements TreeLink {
 
     public void setAutoIncrementField(int autoIncrementField) {
         this.autoIncrementField = autoIncrementField;
-    }
-
-    public void setTreeName(final String treeName) {
-        this.treeName = treeName;
     }
 
     public int getAutoIncrementField() {
@@ -629,7 +620,7 @@ public class RowDef implements TreeLink {
         final RowDef def = (RowDef) o;
         return this == def || def.getRowDefId() == def.getRowDefId()
                 && AkServerUtil.equals(table.getName(), def.table.getName())
-                && AkServerUtil.equals(treeName, def.treeName)
+                && AkServerUtil.equals(getTreeName(), def.getTreeName())
                 && Arrays.deepEquals(fieldDefs, def.fieldDefs)
                 && Arrays.deepEquals(indexes, def.indexes)
                 && getOrdinal() == def.getOrdinal()
@@ -640,7 +631,7 @@ public class RowDef implements TreeLink {
     @Override
     public int hashCode() {
         return getRowDefId() ^ table.getName().hashCode()
-                ^ AkServerUtil.hashCode(treeName) ^ Arrays.hashCode(fieldDefs)
+                ^ AkServerUtil.hashCode(getTreeName()) ^ Arrays.hashCode(fieldDefs)
                 ^ Arrays.hashCode(parentJoinFields);
     }
 
