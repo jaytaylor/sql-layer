@@ -15,6 +15,7 @@
 
 package com.akiban.server.test.it.dxl;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowData;
 import com.akiban.server.test.it.ITBase;
@@ -203,7 +204,28 @@ public class RenameTableIT extends ITBase {
     }
 
     @Test
-    public void renameAllWithDataAndRestart() {
+    public void renameAllSchemasAndTablesParentDownWithRestartsBetween() throws Exception {
+        final TableName NEW_NAMES[] = { tableName("j","k"), tableName("l","m"),
+                                        tableName("n","o"), tableName("p","q") };
+        TableName curNames[] = { tableName(SCHEMA, C_NAME), tableName(SCHEMA, A_NAME),
+                                 tableName(SCHEMA, O_NAME), tableName(SCHEMA, I_NAME) };
         
+        createCTable();
+        createATable();
+        createOTable();
+        createITable();
+        final int COUNTS[] = { writeCRows(), writeARows(), writeORows(), writeIRows() };
+
+        for(int i = 0; i < NEW_NAMES.length; ++i) {
+            ddl().renameTable(session(), curNames[i], NEW_NAMES[i]);
+            curNames[i] = NEW_NAMES[i];
+
+            safeRestartTestServices();
+
+            for(TableName tn : curNames) {
+                expectStatusAndScanCount(tn.getSchemaName(), tn.getTableName(), COUNTS[i]);
+            }
+
+        }
     }
 }
