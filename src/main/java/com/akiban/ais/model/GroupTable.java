@@ -49,8 +49,8 @@ public class GroupTable extends Table
     }
 
     @Override
-    protected String computeTreeName() {
-        return tableName.getSchemaName() + "." + tableName.getTableName();
+    public void computeTreeName() {
+        treeName = tableName.getSchemaName() + "." + tableName.getTableName();
     }
 
     public UserTable getRoot()

@@ -23,7 +23,7 @@ import com.akiban.ais.model.validation.AISInvariants;
 public abstract class Table implements Serializable, ModelNames, Traversable, HasGroup
 {
     public abstract boolean isUserTable();
-    protected abstract String computeTreeName();
+    public abstract void computeTreeName();
 
     @Override
     public String toString()
@@ -121,7 +121,6 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     public void setGroup(Group group)
     {
         this.group = group;
-        treeName = computeTreeName();
     }
 
     public Column getColumn(String columnName)
@@ -424,7 +423,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     private CharsetAndCollation charsetAndCollation;
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
     protected String engine;
-    private String treeName;
+    protected String treeName;
 
     private final Collection<GroupIndex> groupIndexes;
     private final Collection<GroupIndex> unmodifiableGroupIndexes;

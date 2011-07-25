@@ -16,6 +16,7 @@
 package com.akiban.ais.model;
 
 import com.akiban.util.ArgumentValidation;
+import sun.plugin.dom.exception.InvalidStateException;
 
 import java.util.*;
 
@@ -46,13 +47,11 @@ public class UserTable extends Table
     }
 
     @Override
-    protected String computeTreeName() {
-        if(group != null) {
-            return group.getGroupTable().getTreeName();
+    public void computeTreeName() {
+        if(group == null || group.getGroupTable() == null) {
+            throw new InvalidStateException("No group table");
         }
-        else {
-            return tableName.toString();
-        }
+        treeName = group.getGroupTable().getTreeName();
     }
 
     @Override
