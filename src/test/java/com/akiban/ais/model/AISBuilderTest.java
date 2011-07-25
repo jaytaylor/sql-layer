@@ -912,11 +912,11 @@ public class AISBuilderTest
         // Failure 3: 3 joins to parent
         fail = fails.next();
         Assert.assertEquals(ErrorCode.JOIN_TO_WRONG_COLUMNS, fail.errorCode());
-        Assert.assertEquals("Join nkjoin has mis-matched column (nk) to parent table PK column (pk)", fail.message());
+        Assert.assertEquals("Table `s`.`child` join reference part `nk` does not match `s`.`parent` primary key part `pk`", fail.message());
         // Failure 4: 3 joins to parent
         fail = fails.next();
         Assert.assertEquals(ErrorCode.JOIN_TO_WRONG_COLUMNS, fail.errorCode());
-        Assert.assertEquals("Join ukjoin has mis-matched column (uk) to parent table PK column (pk)", fail.message());
+        Assert.assertEquals("Table `s`.`child` join reference part `uk` does not match `s`.`parent` primary key part `pk`", fail.message());
     }
 
     @Test

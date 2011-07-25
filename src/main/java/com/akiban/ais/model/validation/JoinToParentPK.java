@@ -44,8 +44,13 @@ class JoinToParentPK implements AISValidation {
                 JoinColumn joinColumn = joinColumns.next();
                 if (parentPKColumn.getColumn() != joinColumn.getParent()) {
                     output.reportFailure(new AISValidationFailure (ErrorCode.JOIN_TO_WRONG_COLUMNS,
-                            "Join %s has mis-matched column (%s) to parent table PK column (%s)",
-                            join.getName(), joinColumn.getParent().getName(), parentPKColumn.getColumn().getName()));
+                            "Table `%s`.`%s` join reference part `%s` does not match `%s`.`%s` primary key part `%s`",
+                            join.getChild().getName().getSchemaName(),
+                            join.getChild().getName().getTableName(),
+                            joinColumn.getParent().getName(),
+                            parentPK.getTable().getName().getSchemaName(),
+                            parentPK.getTable().getName().getTableName(),
+                            parentPKColumn.getColumn().getName()));
                 }
             }
         }
