@@ -39,7 +39,6 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.*;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.config.ModuleConfiguration;
 import com.akiban.server.service.session.Session;
 
 import java.io.IOException;
