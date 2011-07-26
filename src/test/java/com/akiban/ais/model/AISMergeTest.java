@@ -340,7 +340,77 @@ public class AISMergeTest {
         assertEquals (TABLE, t.getUserTable(SCHEMA, TABLE).getGroup().getName());
 
     }
-    
+
+    @Test
+    public void joinOfDifferingIntTypes() throws Exception {
+        b.userTable(SCHEMA, TABLE);
+        b.column(SCHEMA, TABLE, "c1", 0, "BIGINT", 0L, 0L, false, false, null, null);
+        b.index(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        b.indexColumn(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, 0);
+        b.basicSchemaIsComplete();
+        b.createGroup(TABLE, SCHEMA, "_akiban_t1");
+        b.addTableToGroup(TABLE, SCHEMA, TABLE);
+        b.groupingIsComplete();
+        
+        AISMerge merge = new AISMerge(t, s.getUserTable(TABLENAME));
+        t = merge.merge().getAIS();
+        assertTrue(t.isFrozen());
+        assertEquals(TABLE, t.getUserTable(TABLENAME).getGroup().getName());
+        assertEquals("test._akiban_t1", t.getUserTable(TABLENAME).getGroup().getGroupTable().getName().toString());
+
+        b.userTable(SCHEMA, "t2");
+        b.column(SCHEMA, "t2", "c1", 0, "INT", 0L, 0L, false, false, null, null);
+        b.column(SCHEMA, "t2", "parentid", 1, "INT", 0L, 0L, false, false, null, null);
+
+        // join bigint->int
+        b.joinTables("test/t1/test/t2", SCHEMA, TABLE, SCHEMA, "t2");
+        b.joinColumns("test/t1/test/t2", SCHEMA, TABLE, "c1", SCHEMA, "t2", "parentid");
+        b.basicSchemaIsComplete();
+        b.addJoinToGroup(TABLE, "test/t1/test/t2", 0);
+        b.groupingIsComplete();
+
+        merge = new AISMerge(t, s.getUserTable(SCHEMA, "t2"));
+        t = merge.merge().getAIS();
+
+        assertEquals(1, t.getJoins().size());
+        assertNotNull(t.getUserTable(SCHEMA, "t2").getParentJoin());
+        assertEquals(1, t.getUserTable(TABLENAME).getChildJoins().size());
+        assertNotNull(t.getGroup(TABLE));
+        assertEquals(TABLE, t.getUserTable(SCHEMA, "t2").getGroup().getName());
+    }
+
+    @Test(expected= InvalidOperationException.class)
+    public void joinDifferentTypes() throws Exception {
+        b.userTable(SCHEMA, TABLE);
+        b.column(SCHEMA, TABLE, "c1", 0, "BIGINT", 0L, 0L, false, false, null, null);
+        b.index(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        b.indexColumn(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, 0);
+        b.basicSchemaIsComplete();
+        b.createGroup(TABLE, SCHEMA, "_akiban_t1");
+        b.addTableToGroup(TABLE, SCHEMA, TABLE);
+        b.groupingIsComplete();
+
+        AISMerge merge = new AISMerge(t, s.getUserTable(TABLENAME));
+        t = merge.merge().getAIS();
+        assertTrue(t.isFrozen());
+        assertEquals(TABLE, t.getUserTable(TABLENAME).getGroup().getName());
+        assertEquals("test._akiban_t1", t.getUserTable(TABLENAME).getGroup().getGroupTable().getName().toString());
+
+        b.userTable(SCHEMA, "t2");
+        b.column(SCHEMA, "t2", "c1", 0, "INT", 0L, 0L, false, false, null, null);
+        b.column(SCHEMA, "t2", "parentid", 1, "varchar", 32L, 0L, false, false, null, null);
+
+        // join bigint->varchar
+        b.joinTables("test/t1/test/t2", SCHEMA, TABLE, SCHEMA, "t2");
+        b.joinColumns("test/t1/test/t2", SCHEMA, TABLE, "c1", SCHEMA, "t2", "parentid");
+        b.basicSchemaIsComplete();
+        b.addJoinToGroup(TABLE, "test/t1/test/t2", 0);
+        b.groupingIsComplete();
+
+        merge = new AISMerge(t, s.getUserTable(SCHEMA, "t2"));
+        t = merge.merge().getAIS();
+    }
+
     private void checkColumns(List<Column> actual, String ... expected)
     {
         assertEquals(expected.length, actual.size());
