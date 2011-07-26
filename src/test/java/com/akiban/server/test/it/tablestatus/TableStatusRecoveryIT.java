@@ -17,8 +17,7 @@ package com.akiban.server.test.it.tablestatus;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.Collections;
 
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
@@ -45,9 +44,8 @@ public class TableStatusRecoveryIT extends ITBase {
         db.getJournalManager().force();
         crashTestServices();
       
-        final Property property = new Property(Property.parseKey("akserver.datapath"), datapath);
-        final Collection<Property> extraProperties = Arrays.asList(new Property[]{property});
-        restartTestServices(extraProperties);
+        final Property property = new Property("akserver.datapath", datapath);
+        restartTestServices(Collections.singleton(property));
         
         final TableStatistics ts2 = store().getTableStatistics(session(), tableId);
         assertEquals(10000, ts2.getRowCount());
@@ -81,9 +79,8 @@ public class TableStatusRecoveryIT extends ITBase {
 
         crashTestServices();
       
-        final Property property = new Property(Property.parseKey("akserver.datapath"), datapath);
-        final Collection<Property> extraProperties = Arrays.asList(new Property[]{property});
-        restartTestServices(extraProperties);
+        final Property property = new Property("akserver.datapath", datapath);
+        restartTestServices(Collections.singleton(property));
         
         final TableStatistics ts3 = store().getTableStatistics(session(), tableId);
         assertEquals(20000, ts3.getRowCount());

@@ -39,7 +39,7 @@ public final class ConfigurationServiceImplTest {
 
     private static class MockConfigService extends ConfigurationServiceImpl {
         final private Property[] properties;
-        private final Set<Property.Key> mockRequiredKeys = new HashSet<Property.Key>();
+        private final Set<String> mockRequiredKeys = new HashSet<String>();
 
         MockConfigService(Property... properties) {
             assertNotNull(properties);
@@ -47,8 +47,8 @@ public final class ConfigurationServiceImplTest {
         }
 
         @Override
-        protected Map<Property.Key, Property> loadProperties() throws IOException {
-            Map<Property.Key,Property> ret = new HashMap<Property.Key, Property>(properties.length);
+        protected Map<String, Property> loadProperties() throws IOException {
+            Map<String,Property> ret = new HashMap<String, Property>(properties.length);
             for (Property property : properties) {
                 ret.put(property.getKey(), property);
             }
@@ -56,11 +56,11 @@ public final class ConfigurationServiceImplTest {
         }
 
         public void requireKey(String name) {
-            mockRequiredKeys.add(Property.parseKey(name) );
+            mockRequiredKeys.add(name);
         }
 
         @Override
-        protected Set<Property.Key> getRequiredKeys() {
+        protected Set<String> getRequiredKeys() {
             return Collections.unmodifiableSet(mockRequiredKeys);
         }
     }
@@ -244,7 +244,7 @@ public final class ConfigurationServiceImplTest {
         final Properties props = new Properties();
         props.setProperty(normalKey, "alpha");
         props.setProperty(requiredKey,"two,three, four");
-        final Set<Property.Key> requiredKeys = new HashSet<Property.Key>();
+        final Set<String> requiredKeys = new HashSet<String>();
 
         ConfigurationServiceImpl.stripRequiredProperties(props, requiredKeys);
 
@@ -252,10 +252,10 @@ public final class ConfigurationServiceImplTest {
         assertEquals("props[one.two]", "alpha", props.getProperty(normalKey));
         assertEquals("props[required.one]", null, props.getProperty(requiredKey));
 
-        final Set<Property.Key> expectedRequired = new HashSet<Property.Key>();
-        expectedRequired.add( Property.parseKey("one.two"));
-        expectedRequired.add( Property.parseKey("one.three"));
-        expectedRequired.add( Property.parseKey("one.four"));
+        final Set<String> expectedRequired = new HashSet<String>();
+        expectedRequired.add("one.two");
+        expectedRequired.add("one.three");
+        expectedRequired.add("one.four");
 
         assertEquals("requiredKeys", expectedRequired, requiredKeys);
     }
@@ -278,21 +278,6 @@ public final class ConfigurationServiceImplTest {
 
         assertFalse("p1.equals(p2)", p1.equals(p2));
         assertTrue("p1.equals(p5)", p1.equals(p5));
-    }
-
-    @Test
-    public void testKeyParsing() {
-        Map<String,Property.Key> expecteds = new HashMap<String, Property.Key>();
-        expecteds.put("module.name", Property.parseKey("module.name"));
-        expecteds.put("name", Property.parseKey("name"));
-        expecteds.put(".name", Property.parseKey(".name"));
-        expecteds.put("name.", Property.parseKey("name."));
-
-        for (Map.Entry<String,Property.Key> entry : expecteds.entrySet()) {
-            String string = entry.getKey();
-            Property.Key expected = entry.getValue();
-            assertEquals(string, expected, Property.parseKey(string));
-        }
     }
 
     private static void testComparison(Property p1, Property p2, int expected) {

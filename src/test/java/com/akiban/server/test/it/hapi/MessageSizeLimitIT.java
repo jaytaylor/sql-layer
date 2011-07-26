@@ -30,6 +30,7 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import static junit.framework.Assert.assertTrue;
@@ -46,10 +47,7 @@ public class MessageSizeLimitIT extends ITBase
 
     protected Collection<Property> startupConfigProperties()
     {
-        List<Property> properties = new ArrayList<Property>();
-        Property property = new Property(Property.parseKey("akserver.maxHAPIMessageSizeBytes"), "200");
-        properties.add(property);
-        return properties;
+        return Collections.singleton(new Property("akserver.maxHAPIMessageSizeBytes", "200"));
     }
 
     private void createSchema() throws InvalidOperationException

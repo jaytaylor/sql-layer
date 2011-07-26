@@ -37,12 +37,11 @@ public class PostgresServerCacheIT extends PostgresServerITBase
 {
     public static final String QUERY = "SELECT id FROM t1 WHERE id = %d";
     public static final int NROWS = 100;
-    public static final int CAPACITY = 10;
+    public static final String CAPACITY = "10";
 
     @Override
     protected Collection<Property> startupConfigProperties() {
-        return Collections.singleton(new Property(Property.parseKey("akserver.postgres.statementCacheCapacity"),
-                                                  Integer.toString(CAPACITY)));
+        return Collections.singleton(new Property("akserver.postgres.statementCacheCapacity", CAPACITY));
     }
 
     @Before
