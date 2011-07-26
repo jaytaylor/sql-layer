@@ -26,6 +26,7 @@ public interface DXLFunctionsHook {
 
     static enum DXLFunction {
         CREATE_TABLE(DXLType.DDL_FUNCTIONS_WRITE),
+        RENAME_TABLE(DXLType.DDL_FUNCTIONS_WRITE),
         DROP_TABLE(DXLType.DDL_FUNCTIONS_WRITE),
         DROP_SCHEMA(DXLType.DDL_FUNCTIONS_WRITE),
         DROP_GROUP(DXLType.DDL_FUNCTIONS_WRITE),

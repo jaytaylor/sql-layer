@@ -207,6 +207,16 @@ public class TableDDLTest {
             
         }
 
+        @Override
+        public void renameTable(Session session, TableName currentName, TableName newName)
+                throws NoSuchTableException,
+                ProtectedTableDDLException,
+                DuplicateTableNameException,
+                GenericInvalidOperationException
+        {
+            throw new UnsupportedOperationException();
+        }
+
         private void checkIndexes(UserTable sourceTable, UserTable checkTable) {
             for (Index index : sourceTable.getIndexesIncludingInternal()) {
                 assertNotNull(checkTable.getIndexIncludingInternal(index.getIndexName().getName()));

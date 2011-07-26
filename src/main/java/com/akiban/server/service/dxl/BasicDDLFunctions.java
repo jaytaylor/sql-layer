@@ -132,7 +132,28 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new GenericInvalidOperationException(ioe);
         }
     }
-    
+
+    @Override
+    public void renameTable(Session session, TableName currentName, TableName newName)
+            throws NoSuchTableException,
+            ProtectedTableDDLException,
+            DuplicateTableNameException,
+            GenericInvalidOperationException
+    {
+        try {
+            schemaManager().renameTable(session, currentName, newName);
+            checkCursorsForDDLModification(session, getAIS(session).getTable(newName));
+        } catch (Exception e) {
+            InvalidOperationException ioe = launder(e);
+            throwIfInstanceOf(ioe,
+                    NoSuchTableException.class,
+                    ProtectedTableDDLException.class,
+                    DuplicateTableNameException.class
+            );
+            throw new GenericInvalidOperationException(ioe);
+        }
+    }
+
 
     @Override
     public void dropTable(Session session, TableName tableName)

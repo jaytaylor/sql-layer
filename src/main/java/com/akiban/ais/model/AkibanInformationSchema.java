@@ -532,6 +532,11 @@ public class AkibanInformationSchema implements Serializable, Traversable
         }
     }
 
+    void removeTable(TableName name) {
+        userTables.remove(name);
+        invalidateTableIdMap();
+    }
+
     // State
 
     public static final String DEFAULT_CHARSET = "latin1";
