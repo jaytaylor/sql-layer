@@ -15,13 +15,63 @@
 
 package com.akiban.server.service.instrumentation;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.akiban.server.service.Service;
+import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.service.jmx.JmxManageable.JmxObjectInfo;
+import com.akiban.sql.pg.PostgresMXBean;
 import com.akiban.sql.pg.PostgresServer;
 import com.akiban.sql.pg.PostgresSessionTracer;
 
 public class InstrumentationServiceImpl implements
-    InstrumentationService, Service<InstrumentationService> {
+    InstrumentationService, 
+    Service<InstrumentationService>,
+    InstrumentationMXBean,
+    JmxManageable {
+    
+    /**
+     * create the necessary file on disk for the query log
+     * if it does not already exist.
+     * @return false on failure; true on success
+     */
+    private boolean setUpQueryLog()
+    {
+        if (queryLogFileName.isEmpty()) {
+            LOGGER.error("File name for query log was never set.");
+            return false;
+        }
+        if (queryLogFile == null) {
+            queryLogFile = new File(queryLogFileName);
+        }
+        try {
+            if (queryLogFile.createNewFile()) {
+                LOGGER.info("Query log file already existed. Appending to existing file.");
+            }
+        } catch (IOException e) {
+            LOGGER.error("Failed to create query log file", e);
+            return false;
+        }
+        FileWriter fstream;
+        try {
+            fstream = new FileWriter(queryLogFileName, true);
+        } catch (IOException e) {
+            LOGGER.error("Failed to create FileWriter object for query log.", e);
+            return false;
+        }
+        queryOut = new BufferedWriter(fstream);
+        LOGGER.info("Query log file ready for writing.");
+        return true;
+    }
     
     // InstrumentationService interface
     
@@ -48,12 +98,21 @@ public class InstrumentationServiceImpl implements
 
     @Override
     public void start() throws Exception {
-        pgServer = ServiceManagerImpl.get().getPostgresService().getServer();
+        this.serviceManager = ServiceManagerImpl.get();
+        pgServer = serviceManager.getPostgresService().getServer();
+        String enableLog = serviceManager.getConfigurationService().getProperty(QUERY_LOG_PROPERTY);
+        this.queryLogEnabled = new AtomicBoolean(Boolean.parseBoolean(enableLog));
+        queryLogFileName = serviceManager.getConfigurationService().getProperty(QUERY_LOG_FILE_PROPERTY);
+        if (isQueryLogEnabled()) {
+            setUpQueryLog();
+        }
     }
 
     @Override
     public void stop() throws Exception {
-        // anything to do?
+        if (queryOut != null){
+            queryOut.close();
+        }
     }
 
     @Override
@@ -90,9 +149,95 @@ public class InstrumentationServiceImpl implements
     public void disable(int sessionId) {  
         pgServer.disableInstrumentation(sessionId);
     }
-  
+
+    @Override
+    public boolean isQueryLogEnabled()
+    {
+        return queryLogEnabled.get();
+    }
+    
+    @Override
+    public void logQuery(int sessionId, String sql, long duration)
+    {
+        /*
+         * format of each query log entry is:
+         * sessionID    SQL text    Exec time in ns
+         */
+        StringBuilder buffer = new StringBuilder();
+        buffer.append(sessionId);
+        buffer.append('\t');
+        buffer.append(sql);
+        buffer.append('\t');
+        buffer.append(duration);
+        buffer.append('\n');
+        try {
+            synchronized(this) {
+                queryOut.write(buffer.toString());
+                queryOut.flush();
+            }
+        } catch (IOException e) {
+            LOGGER.error("Failed to write to query log.", e);
+            /* disable query logging due to failure */
+            queryLogEnabled.set(false);
+        }
+    }
+    
+    // InstrumentationMXBean interface
+
+    @Override
+    public void enableQueryLog()
+    {
+        if (! isQueryLogEnabled()) {
+            queryLogEnabled.set(setUpQueryLog());
+        }
+    }
+
+    @Override
+    public void disableQueryLog()
+    {
+        queryLogEnabled.set(false);
+        if (queryOut != null) {
+            try {
+                queryOut.close();
+            } catch (IOException e) {
+                LOGGER.error("Failed to close query log output stream.", e);
+            }
+        }
+    }
+
+    @Override
+    public void setQueryLogFileName(String fileName)
+    {
+        this.queryLogFileName = fileName;
+        this.queryLogFile = null;        
+    }
+
+    @Override
+    public String getQueryLogFileName()
+    {
+        return queryLogFileName;
+    }
+    
+    // JmxManageable interface
+    
+    @Override
+    public JmxObjectInfo getJmxObjectInfo()
+    {
+        return new JmxObjectInfo("Instrumentation", this, InstrumentationMXBean.class);
+    }
+    
     // state
+    
+    private static final String QUERY_LOG_PROPERTY = "akserver.querylog";
+    private static final String QUERY_LOG_FILE_PROPERTY = "akserver.querylogfile";
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(InstrumentationServiceImpl.class);
             
     private PostgresServer pgServer;
-
+    private AtomicBoolean queryLogEnabled;
+    private String queryLogFileName;
+    private File queryLogFile;
+    private BufferedWriter queryOut;
+    private ServiceManager serviceManager;
+    
 }

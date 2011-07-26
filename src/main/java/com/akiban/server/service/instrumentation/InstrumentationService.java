@@ -37,4 +37,10 @@ public interface InstrumentationService {
     void enable(int sessionId);
     void disable(int sessionId);
     
+    /*
+     * query log related functions
+     */
+    boolean isQueryLogEnabled();
+    void logQuery(int sessionId, String sqlText, long duration);
+    
 }
