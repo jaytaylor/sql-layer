@@ -38,6 +38,7 @@ import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.*;
 import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.config.ModuleConfiguration;
 import com.akiban.server.service.session.Session;
 
@@ -280,9 +281,8 @@ public class Scanrows implements HapiProcessor {
     {
         ScanLimit limit;
         // Message size limit
-        ModuleConfiguration config =
-            ServiceManagerImpl.get().getConfigurationService().getModuleConfiguration("akserver");
-        int maxMessageSize = Integer.parseInt(config.getProperty("maxHAPIMessageSizeBytes", "-1"));
+        ConfigurationService config = ServiceManagerImpl.get().getConfigurationService();
+        int maxMessageSize = Integer.parseInt(config.getProperty("akserver.hapi.scanrows.messageSizeBytes"));
         ScanLimit messageSizeLimit = null;
         if (maxMessageSize >= 0) {
             messageSizeLimit = new MessageSizeLimit(maxMessageSize);

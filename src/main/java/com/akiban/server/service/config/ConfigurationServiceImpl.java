@@ -45,13 +45,6 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     private final Object INTERNAL_LOCK = new Object();
 
     @Override
-    public final String getProperty(String propertyName,
-            String defaultValue) {
-        Property property = internalGetProperty(propertyName);
-        return (property == null) ? defaultValue : property.getValue();
-    }
-
-    @Override
     public final String getProperty(String propertyName)
             throws PropertyNotDefinedException {
         Property property = internalGetProperty(propertyName);
@@ -82,11 +75,6 @@ public class ConfigurationServiceImpl implements ConfigurationService,
             }
 
             @Override
-            public String getProperty(String propertyName, String defaultValue) {
-                return ConfigurationServiceImpl.this.getProperty(key(propertyName), defaultValue);
-            }
-
-            @Override
             public String getProperty(String propertyName)
                     throws PropertyNotDefinedException {
                 return ConfigurationServiceImpl.this.getProperty(key(propertyName));
@@ -109,8 +97,6 @@ public class ConfigurationServiceImpl implements ConfigurationService,
 
     @Override
     public final void start() throws IOException, ServiceStartupException {
-        // TODO - consider whether we really need to synchronize here - the
-        // calls to service start methods are currently single-threaded.
         synchronized (INTERNAL_LOCK) {
             if (properties == null) {
                 properties = null;
@@ -191,7 +177,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
      * for customization in unit tests. For example, some unit tests create data
      * files in a temporary directory. These should also override
      * {@link #unloadProperties()} to clean them up.
-     * 
+     * @throws IOException if loading the properties throws an IO exception
      * @return the configuration properties
      */
     protected Map<Property.Key, Property> loadProperties() throws IOException {
@@ -210,8 +196,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
      * Override this method in unit tests to clean up any temporary files, etc.
      * A class that overrides {@link #loadProperties()} should probably also
      * override this method.
-     * 
-     * @throws IOException
+     * @throws IOException not thrown by the default implementation
      */
     protected void unloadProperties() throws IOException {
 

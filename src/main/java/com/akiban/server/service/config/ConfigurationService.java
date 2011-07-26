@@ -15,16 +15,10 @@
 
 package com.akiban.server.service.config;
 
+import java.util.Set;
+
 public interface ConfigurationService
 {
-    /**
-     * Gets the specified property, or a default if the property isn't set.
-     * @param propertyName the property's name
-     * @param defaultValue the default value to return, if the given property isn't found
-     * @return the property's value, or the given default
-     */
-    String getProperty(String propertyName, String defaultValue);
-
     /**
      * Gets the specified property.
      * @param propertyName the property name
@@ -46,4 +40,10 @@ public interface ConfigurationService
      * @return a ModuleConfiguration backed by this ConfigurationService.
      */
     ModuleConfiguration getModuleConfiguration(String module);
+
+    /**
+     * Get all of the defined properties
+     * @return a set of all defined properties
+     */
+    Set<Property> getProperties();
 }

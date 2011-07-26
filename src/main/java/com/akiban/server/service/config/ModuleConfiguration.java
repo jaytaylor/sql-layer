@@ -24,14 +24,6 @@ import java.util.Properties;
 public interface ModuleConfiguration {
 
     /**
-     * Gets the specified property for this module, or a default if the property isn't set.
-     * @param propertyName the property's name
-     * @param defaultValue the default value to return, if the given property isn't found
-     * @return the property's value, or the given default
-     */
-    String getProperty(String propertyName, String defaultValue);
-
-    /**
      * Gets the specified property for this module.
      * @param propertyName the property name
      * @return the specified property's value, or defaultValue

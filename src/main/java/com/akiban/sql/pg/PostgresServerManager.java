@@ -19,6 +19,7 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.ServiceStartupException;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 
 import java.net.*;
@@ -28,25 +29,10 @@ import java.util.*;
 /** The PostgreSQL server service.
  * @see PostgresServer
 */
-public class PostgresServerManager implements PostgresService, 
-    Service<PostgresService>, JmxManageable {
-    private ServiceManager serviceManager;
-    private int port;
-    private int statementCacheCapacity;
+public class PostgresServerManager implements PostgresService, Service<PostgresService>, JmxManageable {
     private PostgresServer server = null;
 
     public PostgresServerManager() {
-        this.serviceManager = ServiceManagerImpl.get();
-        String portString = serviceManager.getConfigurationService()
-            .getProperty("akserver.postgres.port", "");
-        if (portString.length() > 0) {
-            this.port = Integer.parseInt(portString);
-        }
-        String capacityString = serviceManager.getConfigurationService()
-            .getProperty("akserver.postgres.statementCacheCapacity", "");
-        if (capacityString.length() > 0) {
-            this.statementCacheCapacity = Integer.parseInt(capacityString);
-        }
     }
 
     /*** Service<PostgresService> ***/
@@ -60,6 +46,12 @@ public class PostgresServerManager implements PostgresService,
     }
 
     public void start() throws ServiceStartupException {
+        ConfigurationService configs = ServiceManagerImpl.get().getConfigurationService();
+        String portString = configs.getProperty("akserver.postgres.port");
+        int port = Integer.parseInt(portString);
+        String capacityString = configs.getProperty("akserver.postgres.statementCacheCapacity");
+        int statementCacheCapacity = Integer.parseInt(capacityString);
+
         if (port > 0) {
             server = new PostgresServer(port, statementCacheCapacity);
             server.start();
@@ -82,7 +74,7 @@ public class PostgresServerManager implements PostgresService,
     /*** PostgresService ***/
 
     public int getPort() {
-        return port;
+        return server.getPort();
     }
     
     public PostgresServer getServer() {

@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Also keeps global state for shutdown and inter-connection communication like cancel.
 */
 public class PostgresServer implements Runnable, PostgresMXBean {
-    private int port;
+    private final int port;
     private PostgresStatementCache statementCache;
     private ServerSocket socket = null;
     private boolean running = false;
@@ -46,6 +46,10 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         if (statementCacheCapacity > 0)
             statementCache = new PostgresStatementCache(statementCacheCapacity);
         instrumentationEnabled = new AtomicBoolean(false);
+    }
+
+    public int getPort() {
+        return port;
     }
 
     /** Called from the (AkServer's) main thread to start a server

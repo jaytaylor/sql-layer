@@ -74,13 +74,13 @@ public final class ConfigurationServiceImplTest {
     @Test(expected=ServiceNotStartedException.class)
     public void unstartedGetProperty() {
         ConfigurationServiceImpl service = new MockConfigService();
-        service.getProperty("mod1", "key1");
+        service.getProperty("mod1");
     }
 
     @Test(expected=ServiceNotStartedException.class)
     public void unstartedGetPropertyDefault() {
         ConfigurationServiceImpl service = new MockConfigService();
-        service.getProperty("mod1.key1", "default1");
+        service.getProperty("mod1.key1");
     }
 
     @Test(expected= ServiceNotStartedException.class)
@@ -94,14 +94,14 @@ public final class ConfigurationServiceImplTest {
     public void stoppedGetPropertyDefault() throws Exception {
         ConfigurationServiceImpl service = createAndStart();
         service.stop();
-        service.getProperty("mod1.key1", "default1");
+        service.getProperty("mod1.key1");
     }
 
     @Test(expected=ServiceNotStartedException.class)
     public void stoppedGetProperty() throws Exception {
         ConfigurationServiceImpl service = createAndStart();
         service.stop();
-        service.getProperty("mod1", "key1");
+        service.getProperty("mod1");
     }
 
     @Test
@@ -109,7 +109,7 @@ public final class ConfigurationServiceImplTest {
         ConfigurationServiceImpl service = createAndStart("mod1", "key1", "val1");
         ModuleConfiguration moduleConfig = service.getModuleConfiguration("mod1");
         service.start();
-        assertEquals("mod1, key1", "val1", moduleConfig.getProperty("key1", "foo"));
+        assertEquals("mod1, key1", "val1", moduleConfig.getProperty("key1"));
     }
 
     @Test
@@ -165,7 +165,7 @@ public final class ConfigurationServiceImplTest {
         String actual = service.getProperty("mod1.key1");
         assertEquals("mod1, key1", "val1", actual);
         
-        String actual2 = service.getProperty("mod1.key1", "some default");
+        String actual2 = service.getProperty("mod1.key1");
         assertEquals("mod1, key1", "val1", actual2);
     }
 
@@ -175,7 +175,7 @@ public final class ConfigurationServiceImplTest {
         String actual = service.getProperty("mod1.key1");
         assertEquals("mod1, key1", null, actual);
 
-        String actual2 = service.getProperty("mod1.key1", "some default");
+        String actual2 = service.getProperty("mod1.key1");
         assertEquals("mod1, key1", null, actual2);
     }
 
@@ -189,20 +189,6 @@ public final class ConfigurationServiceImplTest {
     public void getPropertyUnDefinedModule() {
         ConfigurationServiceImpl service = createAndStart("mod1", "key1", "val1");
         service.getProperty("mod2.key1");
-    }
-
-    @Test
-    public void getPropertyUnDefinedKeyWithDefault() {
-        ConfigurationServiceImpl service = createAndStart("mod1", "key1", "val1");
-        String actual = service.getProperty("mod1.key2", "default1");
-        assertEquals("mod1, key2", "default1", actual);
-    }
-
-    @Test
-    public void getPropertyUnDefinedModuleWithDefault() {
-        ConfigurationServiceImpl service = createAndStart("mod1", "key1", "val1");
-        String actual = service.getProperty("mod2.key1", "foobar2");
-        assertEquals("mod2, key1", "foobar2", actual);
     }
 
     @Test(expected=ServiceStartupException.class)

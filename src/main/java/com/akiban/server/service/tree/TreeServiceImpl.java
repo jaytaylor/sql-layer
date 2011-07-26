@@ -63,8 +63,6 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
     private static final String BUFFER_SIZE_PROP_NAME = "buffersize";
 
-    private static final String DEFAULT_DATAPATH = "/tmp/akiban_server";
-
     // Must be one of 1024, 2048, 4096, 8192, 16384:
     static final int DEFAULT_BUFFER_SIZE = 16384;
 
@@ -178,8 +176,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         // Sets the property named "buffersize" so that the volume
         // specifications can use the substitution syntax ${buffersize}.
         //
-        final String datapath = configService.getProperty("akserver."
-                + DATAPATH_PROP_NAME, DEFAULT_DATAPATH);
+        final String datapath = configService.getProperty("akserver." + DATAPATH_PROP_NAME);
         properties.setProperty(DATAPATH_PROP_NAME, datapath);
         ensureDirectoryExists(datapath, false);
 
