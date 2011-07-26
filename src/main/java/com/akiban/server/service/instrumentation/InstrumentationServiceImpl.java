@@ -100,9 +100,9 @@ public class InstrumentationServiceImpl implements
     public void start() throws Exception {
         this.serviceManager = ServiceManagerImpl.get();
         pgServer = serviceManager.getPostgresService().getServer();
-        String enableLog = serviceManager.getConfigurationService().getProperty(QUERY_LOG_PROPERTY, "");
+        String enableLog = serviceManager.getConfigurationService().getProperty(QUERY_LOG_PROPERTY);
         this.queryLogEnabled = new AtomicBoolean(Boolean.parseBoolean(enableLog));
-        queryLogFileName = serviceManager.getConfigurationService().getProperty(QUERY_LOG_FILE_PROPERTY, "");
+        queryLogFileName = serviceManager.getConfigurationService().getProperty(QUERY_LOG_FILE_PROPERTY);
         if (isQueryLogEnabled()) {
             setUpQueryLog();
         }
