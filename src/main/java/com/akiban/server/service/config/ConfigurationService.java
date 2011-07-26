@@ -15,6 +15,7 @@
 
 package com.akiban.server.service.config;
 
+import java.util.Properties;
 import java.util.Set;
 
 public interface ConfigurationService
@@ -28,18 +29,56 @@ public interface ConfigurationService
     String getProperty(String propertyName) throws PropertyNotDefinedException;
 
     /**
-     * Gets a ModuleConfiguration for the specified module. This ModuleConfiguration represents a view
-     * of its ConfigurationService; if either is mutable, changes to the one should be reflected in the other.
-     *
-     * <p>This method should always return a ModuleConfiguration, even if the service isn't started, or there
-     * are no properties defined for the given module, or in any other situation. In those cases, the exception
-     * (PropertyNotDefinedException, ServiceNotStartedException, etc.) should be thrown when using the
-     * ModuleConfiguration instance, not when getting it via this method. This underscores the fact that the
-     * ModuleConfiguration is nothing more than a stateless view into this ConfigurationService.</p>
-     * @param module the namespace to use
-     * @return a ModuleConfiguration backed by this ConfigurationService.
+     * <p>Creates a {@code java.util.Properties} file that reflects all known properties whose keys start with the given
+     * prefix. That prefix will be omitted from the keys of the resulting Properties.</p>
+     * <p>For instance, if this ConfigurationService had defined properties:
+     * <table border="1">
+     *     <tr>
+     *         <th>key</th>
+     *         <th>value</th>
+     *     </tr>
+     *     <tr>
+     *         <td>a.one</td>
+     *         <td>1</td>
+     *     </tr>
+     *     <tr>
+     *         <td>a.one.alpha</td>
+     *         <td>1a</td>
+     *     </tr>
+     *     <tr>
+     *         <td>a.two</td>
+     *         <td>2</td>
+     *     </tr>
+     *     <tr>
+     *         <td>b.three</td>
+     *         <td>3</td>
+     *     </tr>
+     * </table>
+     * ...then {@code deriveProperties(a.)} would result in a Properties instance with key-value pairs:
+     * <table border="1">
+     *     <tr>
+     *         <th>key</th>
+     *         <th>value</th>
+     *     </tr>
+     *     <tr>
+     *         <td>one</td>
+     *         <td>1</td>
+     *     </tr>
+     *     <tr>
+     *         <td>one.alpha</td>
+     *         <td>1a</td>
+     *     </tr>
+     *     <tr>
+     *         <td>two</td>
+     *         <td>2</td>
+     *     </tr>
+     * </table>
+     * </p>
+     * @param withPrefix the key prefix which acts as both a selector and eliding force of keys
+     * @return the derived Properties instance, which may be safely altered
+     * @throws NullPointerException if withPrefix is null
      */
-    ModuleConfiguration getModuleConfiguration(String module);
+    Properties deriveProperties(String withPrefix);
 
     /**
      * Get all of the defined properties

@@ -66,33 +66,18 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     }
 
     @Override
-    public ModuleConfiguration getModuleConfiguration(String module) {
-        final String moduleString = module;
-        return new ModuleConfiguration() {
-
-            private String key(String propertyName) {
-                return moduleString + '.' + propertyName;
+    public Properties deriveProperties(String withPrefix) {
+        Properties properties = new Properties();
+        for (Property configProp : internalGetProperties().values()) {
+            String key = configProp.getModule() + '.' + configProp.getName();
+            if (key.startsWith(withPrefix)) {
+                properties.setProperty(
+                        key.substring(withPrefix.length()),
+                        configProp.getValue()
+                );
             }
-
-            @Override
-            public String getProperty(String propertyName)
-                    throws PropertyNotDefinedException {
-                return ConfigurationServiceImpl.this.getProperty(key(propertyName));
-            }
-
-            @Override
-            public Properties getProperties() {
-                Properties ret = new Properties();
-                for (Map.Entry<Property.Key, Property> entry : internalGetProperties()
-                        .entrySet()) {
-                    if (moduleString.equals(entry.getKey().getModule())) {
-                        ret.setProperty(entry.getKey().getName(), entry
-                                .getValue().getValue());
-                    }
-                }
-                return ret;
-            }
-        };
+        }
+        return properties;
     }
 
     @Override

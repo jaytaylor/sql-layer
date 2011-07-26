@@ -57,7 +57,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     private static final Logger LOG = LoggerFactory
             .getLogger(TreeServiceImpl.class.getName());
 
-    private static final String PERSISTIT_MODULE_NAME = "persistit";
+    private static final String PERSISTIT_MODULE_NAME = "persistit.";
 
     private static final String DATAPATH_PROP_NAME = "datapath";
 
@@ -166,8 +166,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         // then the corresponding key created by getModuleConfiguration will be
         // just "appendonly".
         //
-        final Properties properties = configService.getModuleConfiguration(
-                PERSISTIT_MODULE_NAME).getProperties();
+        final Properties properties = configService.deriveProperties(PERSISTIT_MODULE_NAME);
         //
         // Copies the akserver.datapath property to the Persistit properties
         // set. This allows Persistit to perform substitution of ${datapath}
@@ -539,8 +538,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     void buildSchemaMap() {
-        final Properties properties = configService.getModuleConfiguration(
-                "akserver").getProperties();
+        final Properties properties = configService.deriveProperties("akserver.");
         for (final Entry<Object, Object> entry : properties.entrySet()) {
             final String name = (String) entry.getKey();
             final String value = (String) entry.getValue();

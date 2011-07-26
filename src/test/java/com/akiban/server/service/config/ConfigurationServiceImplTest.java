@@ -105,38 +105,6 @@ public final class ConfigurationServiceImplTest {
     }
 
     @Test
-    public void moduleConfigForDefinedField() throws ServiceStartupException, IOException {
-        ConfigurationServiceImpl service = createAndStart("mod1", "key1", "val1");
-        ModuleConfiguration moduleConfig = service.getModuleConfiguration("mod1");
-        service.start();
-        assertEquals("mod1, key1", "val1", moduleConfig.getProperty("key1"));
-    }
-
-    @Test
-    public void getModuleProperties() throws ServiceStartupException, IOException {
-        ConfigurationServiceImpl service = createAndStart(
-                "mod1", "key1", "val1",
-                "mod1", "key2", "val2",
-                "mod2", "key3", "val3");
-        ModuleConfiguration moduleConfig = service.getModuleConfiguration("mod1");
-        service.start();
-
-        Properties properties = moduleConfig.getProperties();
-
-        Properties expected = new Properties();
-        expected.setProperty("key1", "val1");
-        expected.setProperty("key2", "val2");
-
-        assertEquals("properties", expected, properties);
-    }
-
-    @Test(expected=ServiceNotStartedException.class)
-    public void moduleConfigUnstartedService() {
-        ConfigurationService service = new MockConfigService(new Property("mod1", "key1", "val1"));
-        service.getModuleConfiguration("mod1").getProperty("key1");
-    }
-
-    @Test
     public void getProperties() {
         ConfigurationServiceImpl service = createAndStart(
                 "mod1", "key1", "val1",
@@ -189,6 +157,60 @@ public final class ConfigurationServiceImplTest {
     public void getPropertyUnDefinedModule() {
         ConfigurationServiceImpl service = createAndStart("mod1", "key1", "val1");
         service.getProperty("mod2.key1");
+    }
+
+    @Test
+    public void prefixProperties() {
+        ConfigurationServiceImpl service = createAndStart(
+                "a", "one", "1",
+                "a", "one.alpha", "1a",
+                "a", "two", "2",
+                "b", "three", "3"
+        );
+        Properties props = service.deriveProperties("a.");
+        assertEquals("properties.size()", 3, props.size());
+        assertEquals("properties[one]", "1", props.getProperty("one"));
+        assertEquals("properties[one.alpha]", "1a", props.getProperty("one.alpha"));
+        assertEquals("properties[two]", "2", props.getProperty("two"));
+    }
+
+    @Test
+    public void prefixPropertiesEmptyPrefix() {
+        ConfigurationServiceImpl service = createAndStart(
+                "a", "one", "1",
+                "a", "one.alpha", "1a",
+                "a", "two", "2",
+                "b", "three", "3"
+        );
+        Properties props = service.deriveProperties("");
+        assertEquals("properties.size()", 4, props.size());
+        assertEquals("properties[a.one]", "1", props.getProperty("a.one"));
+        assertEquals("properties[a.one.alpha]", "1a", props.getProperty("a.one.alpha"));
+        assertEquals("properties[a.two]", "2", props.getProperty("a.two"));
+        assertEquals("properties[a.three]", "3", props.getProperty("b.three"));
+    }
+
+    @Test
+    public void prefixPropertiesUnmatchedPrefix() {
+        ConfigurationServiceImpl service = createAndStart(
+                "a", "one", "1",
+                "a", "one.alpha", "1a",
+                "a", "two", "2",
+                "b", "three", "3"
+        );
+        Properties props = service.deriveProperties("c.");
+        assertEquals("properties.size()", 0, props.size());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void prefixPropertiesNullPrefix() {
+        ConfigurationServiceImpl service = createAndStart(
+                "a", "one", "1",
+                "a", "one.alpha", "1a",
+                "a", "two", "2",
+                "b", "three", "3"
+        );
+        service.deriveProperties(null);
     }
 
     @Test(expected=ServiceStartupException.class)
