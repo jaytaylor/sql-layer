@@ -15,12 +15,14 @@
 package com.akiban.ais.model.validation;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.message.ErrorCode;
+
 /**
  * validate the columns used for the join in the parent (PK) and 
- * the child are of the same type. 
+ * the child are join-able, according to the AIS.
  * @author tjoneslo
  *
  */
@@ -30,10 +32,13 @@ public class JoinColumnTypesMatch implements AISValidation {
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         for (Join join : ais.getJoins().values()) {
             for (JoinColumn column : join.getJoinColumns()) {
-                if (!column.getChild().getType().equals(column.getParent().getType())) {
+                Column parentCol = column.getParent();
+                Column childCol = column.getChild();
+                if(!ais.canTypesBeJoined(parentCol.getType().name(), childCol.getType().name())) {
                     output.reportFailure(new AISValidationFailure (ErrorCode.FK_TYPE_MISMATCH,
-                            "Join %s has columns (parent %s and child %s) with different types",
-                            join.getName(), column.getParent().getName(), column.getChild().getName()));
+                            "Join %s has columns (parent %s and child %s) with different types (%s and %s)",
+                            join.getName(), parentCol.getName(), childCol.getName(),
+                            parentCol.getType().name(), childCol.getType().name()));
                 }
             }
         }
