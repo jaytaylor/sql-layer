@@ -47,7 +47,7 @@ public class MessageSizeLimitIT extends ITBase
 
     protected Collection<Property> startupConfigProperties()
     {
-        return Collections.singleton(new Property("akserver.maxHAPIMessageSizeBytes", "200"));
+        return Collections.singleton(new Property("akserver.hapi.scanrows.messageSizeBytes", "200"));
     }
 
     private void createSchema() throws InvalidOperationException
