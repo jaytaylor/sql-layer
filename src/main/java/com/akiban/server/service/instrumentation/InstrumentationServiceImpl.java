@@ -39,17 +39,6 @@ public class InstrumentationServiceImpl implements
     InstrumentationMXBean,
     JmxManageable {
     
-    public InstrumentationServiceImpl()
-    {
-        this.serviceManager = ServiceManagerImpl.get();
-        String enableLog = serviceManager.getConfigurationService().getProperty(QUERY_LOG_PROPERTY, "");
-        this.queryLogEnabled = new AtomicBoolean(Boolean.parseBoolean(enableLog));
-        queryLogFileName = serviceManager.getConfigurationService().getProperty(QUERY_LOG_FILE_PROPERTY, "");
-        if (isQueryLogEnabled()) {
-            setUpQueryLog();
-        }
-    }
-    
     /**
      * create the necessary file on disk for the query log
      * if it does not already exist.
@@ -61,7 +50,9 @@ public class InstrumentationServiceImpl implements
             LOGGER.error("File name for query log was never set.");
             return false;
         }
-        queryLogFile = new File(queryLogFileName);
+        if (queryLogFile == null) {
+            queryLogFile = new File(queryLogFileName);
+        }
         try {
             if (queryLogFile.createNewFile()) {
                 LOGGER.info("Query log file already existed. Appending to existing file.");
@@ -107,7 +98,14 @@ public class InstrumentationServiceImpl implements
 
     @Override
     public void start() throws Exception {
-        pgServer = ServiceManagerImpl.get().getPostgresService().getServer();
+        this.serviceManager = ServiceManagerImpl.get();
+        pgServer = serviceManager.getPostgresService().getServer();
+        String enableLog = serviceManager.getConfigurationService().getProperty(QUERY_LOG_PROPERTY, "");
+        this.queryLogEnabled = new AtomicBoolean(Boolean.parseBoolean(enableLog));
+        queryLogFileName = serviceManager.getConfigurationService().getProperty(QUERY_LOG_FILE_PROPERTY, "");
+        if (isQueryLogEnabled()) {
+            setUpQueryLog();
+        }
     }
 
     @Override
@@ -189,19 +187,29 @@ public class InstrumentationServiceImpl implements
     @Override
     public void enableQueryLog()
     {
-        queryLogEnabled.set(setUpQueryLog());
+        if (! isQueryLogEnabled()) {
+            queryLogEnabled.set(setUpQueryLog());
+        }
     }
 
     @Override
     public void disableQueryLog()
     {
         queryLogEnabled.set(false);
+        if (queryOut != null) {
+            try {
+                queryOut.close();
+            } catch (IOException e) {
+                LOGGER.error("Failed to close query log output stream.", e);
+            }
+        }
     }
 
     @Override
     public void setQueryLogFileName(String fileName)
     {
         this.queryLogFileName = fileName;
+        this.queryLogFile = null;        
     }
 
     @Override
