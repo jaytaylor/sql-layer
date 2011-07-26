@@ -50,6 +50,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         }
         assert table != null;
         table.migrationUsage = MigrationUsage.values()[(Integer) map.get(table_migrationUsage)];
+        table.treeName = (String) map.get(table_treeName);
         return table;
     }
 
@@ -62,6 +63,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         map.put(table_tableId, getTableId());
         map.put(table_groupName, getGroup() == null ? null : getGroup().getName());
         map.put(table_migrationUsage, migrationUsage.ordinal());
+        map.put(table_treeName, getTreeName());
         return map;
     }
 
@@ -402,6 +404,14 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         return declaredColumns;
     }
 
+    public String getTreeName() {
+        return treeName;
+    }
+
+    public void setTreeName(String treeName) {
+        this.treeName = treeName;
+    }
+
     // State
 
     protected AkibanInformationSchema ais;
@@ -416,6 +426,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     private CharsetAndCollation charsetAndCollation;
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
     protected String engine;
+    protected String treeName;
 
     private final Collection<GroupIndex> groupIndexes;
     private final Collection<GroupIndex> unmodifiableGroupIndexes;

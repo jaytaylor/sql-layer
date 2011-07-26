@@ -44,7 +44,7 @@ public class TableStatisticsMessageTest {
         };
         SchemaFactory schemaFactory = new SchemaFactory();
         RowDefCache rowDefCache = schemaFactory.rowDefCache(DDL);
-        RowDef rowDef = rowDefCache.getRowDef("schema.test");
+        RowDef rowDef = rowDefCache.getRowDef("schema", "test");
         final TableStatistics ts = new TableStatistics(123);
         ts.setAutoIncrementValue(999);
         ts.setBlockSize(8192);

@@ -52,8 +52,7 @@ public class AkServerAisSource extends Source {
     protected final void read(String typename, Receiver receiver)
             throws Exception {
         ModelObject modelObject = MetaModel.only().definition(typename);
-        final RowDef rowDef = store.getRowDefCache().getRowDef(
-                modelObject.tableName());
+        final RowDef rowDef = store.getRowDefCache().getRowDef(modelObject.tableName());
         if (rowDef == null) {
             throw new IllegalStateException(
                     "Missing table definition for AIS table "

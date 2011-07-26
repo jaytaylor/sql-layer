@@ -21,7 +21,6 @@ import java.util.*;
 
 public class UserTable extends Table
 {
-
     public static UserTable create(AkibanInformationSchema ais,
                                    String schemaName,
                                    String tableName,

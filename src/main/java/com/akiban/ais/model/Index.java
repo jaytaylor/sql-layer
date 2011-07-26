@@ -57,6 +57,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
                 index = GroupIndex.create(ais, group, indexName, indexId, unique, constraint);
             }
         }
+        index.treeName = (String) map.get(index_treeName);
         return index;
     }
 
@@ -69,6 +70,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         this.indexId = indexId;
         this.isUnique = isUnique;
         this.constraint = constraint;
+        this.treeName = this.indexName.toString();
         columns = new ArrayList<IndexColumn>();
     }
 
@@ -98,6 +100,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         map.put(index_indexId, indexId);
         map.put(index_unique, isUnique);
         map.put(index_constraint, constraint);
+        map.put(index_treeName, treeName);
         return map;
     }
 
@@ -365,6 +368,13 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         private final String asString;
     }
 
+    public String getTreeName() {
+        return treeName;
+    }
+
+    public void setTreeName(String treeName) {
+        this.treeName = treeName;
+    }
 
     private IndexName indexName;
     private Integer indexId;
@@ -373,6 +383,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     private boolean columnsStale = true;
     private List<IndexColumn> columns;
     private boolean columnsFrozen = false;
+    private String treeName;
 
     // It really is an IndexDef, but declaring it that way creates trouble for AIS. We don't want to pull in
     // all the RowDef stuff and have it visible to GWT.

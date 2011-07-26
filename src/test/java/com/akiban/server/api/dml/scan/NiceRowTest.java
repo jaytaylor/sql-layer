@@ -152,7 +152,7 @@ public final class NiceRowTest {
         }
         ddl[i] = ") engine = akibandb;";
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
-        return rowDefCache.getRowDef("test_schema.test_table");
+        return rowDefCache.getRowDef("test_schema", "test_table");
     }
 
     private RowData create(RowDef rowDef, Object[] objects) {

@@ -29,6 +29,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
 import junit.framework.Assert;
 
 import org.junit.Test;
@@ -1188,7 +1189,7 @@ public class RowDefCacheTest
         }
     }
 
-    private String tableName(String name)
+    private TableName tableName(String name)
     {
         return RowDefCache.nameOf(SCHEMA, name);
     }

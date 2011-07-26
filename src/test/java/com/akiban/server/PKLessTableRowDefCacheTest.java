@@ -131,7 +131,7 @@ public class PKLessTableRowDefCacheTest
         assertEquals(2, indexToHKey.getIndexRowPosition(1)); // child row counter
     }
 
-    private String tableName(String name)
+    private TableName tableName(String name)
     {
         return RowDefCache.nameOf(SCHEMA, name);
     }

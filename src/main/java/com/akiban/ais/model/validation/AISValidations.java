@@ -23,6 +23,7 @@ public final class AISValidations {
     public static final AISValidation CHARACTER_SET_SUPPORTED = new CharacterSetSupported();
     public static final AISValidation COLUMN_POSITION_DENSE = new ColumnPositionDense();
     public static final AISValidation GROUP_TABLE_SINGLE_ROOT = new GroupTableSingleRoot();
+    public static final AISValidation INDEX_TREE_NAMES_UNIQUE = new IndexTreeNamesUnique();
     public static final AISValidation JOIN_COLUMN_TYPES_MATCH = new JoinColumnTypesMatch();
     public static final AISValidation JOIN_TO_PARENT_PK = new JoinToParentPK();
     public static final AISValidation JOIN_TO_ONE_PARENT = new JoinToOneParent();
@@ -35,6 +36,8 @@ public final class AISValidations {
     public static final AISValidation TABLE_HAS_PRIMARY_KEY = new TableHasPrimaryKey();
     public static final AISValidation TABLEID_UNIQUE = new TableIDsUnique();
     public static final AISValidation TABLES_IN_A_GROUP = new TablesInAGroup();
+    public static final AISValidation TABLES_IN_GROUP_SAME_TREE_NAME = new TablesInGroupSameTreeName();
+    public static final AISValidation TABLE_TREE_NAMES_UNIQUE = new TableTreeNamesUnique();
     
     public static final Collection<AISValidation> LIVE_AIS_VALIDATIONS;
     
@@ -53,7 +56,10 @@ public final class AISValidations {
                 GROUP_TABLE_SINGLE_ROOT,
                 JOIN_TO_ONE_PARENT,
                 JOIN_TO_PARENT_PK,
-                JOIN_COLUMN_TYPES_MATCH
+                JOIN_COLUMN_TYPES_MATCH,
+                TABLES_IN_GROUP_SAME_TREE_NAME,
+                TABLE_TREE_NAMES_UNIQUE,
+                INDEX_TREE_NAMES_UNIQUE
                 //CHARACTER_SET_SUPPORTED
                 ));
     }

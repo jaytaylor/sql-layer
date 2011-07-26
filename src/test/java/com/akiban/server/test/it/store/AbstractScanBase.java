@@ -24,6 +24,8 @@ import java.util.TreeMap;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
+import com.akiban.server.RowDefCache;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -44,7 +46,7 @@ public abstract class AbstractScanBase extends ITSuiteBase {
 
     protected final static boolean VERBOSE = false;
     
-    protected static SortedMap<String, UserTable> tableMap = new TreeMap<String, UserTable>();
+    protected static SortedMap<TableName, UserTable> tableMap = new TreeMap<TableName, UserTable>();
 
     protected List<RowData> result = new ArrayList<RowData>();
 
@@ -55,8 +57,7 @@ public abstract class AbstractScanBase extends ITSuiteBase {
         final AkibanInformationSchema ais = serviceManager.getDXL().ddlFunctions().getAIS(session);
         for (UserTable table : ais.getUserTables().values()) {
             if (table.getName().getTableName().startsWith("a")) {
-                tableMap.put(table.getName().getSchemaName() + "."
-                        + table.getName().getTableName(), table);
+                tableMap.put(RowDefCache.nameOf(table.getName().getSchemaName(), table.getName().getTableName()), table);
             }
         }
         
@@ -74,9 +75,9 @@ public abstract class AbstractScanBase extends ITSuiteBase {
         // way the tables are defined, this also creates all parents before
         // their children.
         // PrintStream output = new PrintStream(new FileOutputStream(new File("/tmp/srt.out")));
-        for (String name : tableMap.keySet()) {
+        for (TableName name : tableMap.keySet()) {
             final RowDef rowDef = rowDefCache.getRowDef(name);
-            final int level = name.length() - SCHEMA.length() - 1;
+            final int level = name.getTableName().length();
             int k = (int) Math.pow(10, level);
             for (int i = 0; i < k; i++) {
                 rowData.createRow(rowDef, new Object[] { (i / 10), i, 7, 8,
@@ -94,7 +95,7 @@ public abstract class AbstractScanBase extends ITSuiteBase {
     }
 
     protected RowDef rowDef(final String name) {
-        return rowDefCache.getRowDef(SCHEMA + "." + name);
+        return rowDefCache.getRowDef(RowDefCache.nameOf(SCHEMA, name));
     }
 
     protected int scanAllRows(final String test, final RowData start,

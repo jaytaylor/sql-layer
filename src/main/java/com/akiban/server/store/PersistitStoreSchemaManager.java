@@ -54,6 +54,7 @@ import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.Type;
+import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.server.api.common.NoSuchGroupException;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.encoding.EncoderFactory;
@@ -128,6 +129,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     public static final String MAX_AIS_SIZE_PROPERTY = "akserver.max_ais_size_bytes";
 
+    private static final String TREE_NAME_SEPARATOR = "$$";
+
     private interface AISChangeCallback {
         public void beforeCommit(Exchange schemaExchange, TreeService treeService) throws Exception;
     }
@@ -137,6 +140,53 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
     private ByteBuffer aisByteBuffer;
+
+
+    private static String computeTreeName(Group group, Index index) {
+        IndexName iName = index.getIndexName();
+        return group.getName() + TREE_NAME_SEPARATOR +
+               iName.getSchemaName() + TREE_NAME_SEPARATOR +
+               iName.getTableName() + TREE_NAME_SEPARATOR +
+               iName.getName();
+    }
+
+    /**
+     * The AISBuilder normally sets tree names for GroupTable indexes but on a brand new table,
+     * those indexes don't have tree names yet (they are set afterwards). This syncs up all the
+     * tree names on the given GroupTable.
+     * @param groupTable GroupTable to fix up
+     */
+    private static void syncIndexTreeNames(GroupTable groupTable) {
+        for(TableIndex index : groupTable.getIndexes()) {
+            if(!index.getColumns().isEmpty()) {
+                Column groupColumn = index.getColumns().get(0).getColumn();
+                Column userColumn = groupColumn.getUserColumn();
+                assert userColumn != null : groupColumn;
+                boolean found = false;
+                for(TableIndex userIndex : userColumn.getUserTable().getIndexesIncludingInternal()) {
+                    if(userIndex.getIndexId().equals(index.getIndexId())) {
+                        index.setTreeName(userIndex.getTreeName());
+                        found = true;
+                        break;
+                    }
+                }
+                assert found : index;
+            }
+        }
+    }
+
+    // TODO: Cleanup {@link #createIndexes(Session, Collection)} so AISBuilder can set final tree name
+    // on an index and {@link #syncIndexTreeNames(GroupTable)} could go away entirely
+    private static void setTreeNames(UserTable newTable) {
+        Group group = newTable.getGroup();
+        GroupTable groupTable = group.getGroupTable();
+        newTable.setTreeName(groupTable.getTreeName());
+        for(TableIndex index : newTable.getIndexesIncludingInternal()) {
+            index.setTreeName(computeTreeName(group, index));
+        }
+        syncIndexTreeNames(groupTable);
+    }
+
     
     @Override
     public TableName createTableDefinition(Session session, final UserTable newTable) throws Exception
@@ -146,12 +196,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         
         final String schemaName = newTable.getName().getSchemaName();
         final String originalDDL =  new DDLGenerator().createTable(newTable);
+        final UserTable finalTable = merge.getAIS().getUserTable(newTable.getName());
+        setTreeNames(finalTable);
         
         commitAISChange(session, merge.getAIS(), schemaName, new AISChangeCallback() {
             @Override
             public void beforeCommit(Exchange schemaExchange, TreeService treeService) throws Exception {
                 schemaExchange.clear().append(BY_NAME).append(schemaName).append(newTable.getName().getTableName());
-                schemaExchange.append(newTable.getTableId().intValue());
+                schemaExchange.append(finalTable.getTableId().intValue());
                 schemaExchange.getValue().put(originalDDL);
                 schemaExchange.store();
             }
@@ -195,6 +247,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         final AkibanInformationSchema newAIS = addSchemaDefToAIS(schemaDef);
         final UserTable newTable = newAIS.getUserTable(schemaName, tableName);
         validateIndexSizes(newTable);
+        setTreeNames(newTable);
+        
+        // A dozen or two ITs need updated before can validate through this (or mostly NOT NULL
+        // primary key parts, a few modifications of frozen AIS)
+        //newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        //newAIS.freeze();
 
         commitAISChange(session, newAIS, schemaName, new AISChangeCallback() {
             @Override
@@ -330,6 +388,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
 
             newIndex.freezeColumns();
+            newIndex.setTreeName(computeTreeName(newGroup, newIndex));
             newIndexes.add(newIndex);
             builder.generateGroupTableIndexes(newGroup);
         }
@@ -675,6 +734,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     int curId = AIS_BASE_TABLE_ID;
                     for(UserTable table : newAIS.getUserTables().values()) {
                         table.setTableId(curId++);
+                        setTreeNames(table);
                     }
                     setGroupTableIds(newAIS);
 

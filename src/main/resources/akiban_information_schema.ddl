@@ -10,6 +10,7 @@ create table akiban_information_schema.tables (
     table_id          int,
     group_name        varchar(64),
     source_types      int,
+    tree_name         varchar(160) not null, -- max schema + table name length (and slack)
     primary key(schema_name, table_name)
 ) engine=akibandb;
 
@@ -65,6 +66,7 @@ create table akiban_information_schema.indexes (
     index_id         int,
     table_constraint varchar(64),
     is_unique        tinyint,
+    tree_name        varchar(224) not null, -- max schema + table + index name length (and slack)
     primary key(schema_name, table_name, index_name)
 ) engine=akibandb;
 

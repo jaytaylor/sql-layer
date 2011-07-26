@@ -25,18 +25,16 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class IndexDef implements TreeLink {
     private final Index index;
-    private final String treeName;
     // Identifies fields within the row that form the key part of the index entry.
     private final int[] fields;
     private final RowDef rowDef;
     private AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
 
 
-    public IndexDef(String treeName, RowDef rowDef, Index index)
+    public IndexDef(RowDef rowDef, Index index)
     {
         this.index = index;
         index.indexDef(this);
-        this.treeName = treeName;
         this.rowDef = rowDef;
         this.fields = new int[index.getColumns().size()];
         for (IndexColumn indexColumn : index.getColumns()) {
@@ -64,7 +62,7 @@ public class IndexDef implements TreeLink {
 
     @Override
     public String toString() {
-        return index.toString() + "[" + treeName + "]";
+        return index.toString() + "[" + getTreeName() + "]";
     }
 
     @Override
@@ -86,7 +84,7 @@ public class IndexDef implements TreeLink {
 
     @Override
     public String getTreeName() {
-        return treeName;
+        return index.getTreeName();
     }
 
     @Override

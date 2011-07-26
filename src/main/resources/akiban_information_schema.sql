@@ -48,6 +48,7 @@ create table tables(
     table_id          int,
     group_name        varchar(64),
     migration_usage   int not null,
+    tree_name         varchar(160) not null,
     primary key(schema_name, table_name),
     foreign key(group_name) references groups
 ) engine=akibandb;
@@ -137,6 +138,7 @@ create table indexes (
     index_id         int not null,
     table_constraint varchar(64) not null   COMMENT 'one of PRIMARY KEY, FOREIGN KEY, UNIQUE, or INDEX',
     is_unique        tinyint not null       COMMENT '1 = true, 0 = false',
+    tree_name        varchar(224) not null,
     primary key(schema_name, table_name, index_name),
     foreign key(schema_name, table_name) references tables(schema_name, table_name)
 ) engine=akibandb;

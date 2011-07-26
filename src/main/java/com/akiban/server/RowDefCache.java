@@ -24,6 +24,7 @@ import java.util.TreeMap;
 
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.TableName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +57,7 @@ public class RowDefCache {
 
     private final Map<Integer, RowDef> cacheMap = new TreeMap<Integer, RowDef>();
 
-    private final Map<String, Integer> nameMap = new TreeMap<String, Integer>();
+    private final Map<TableName, Integer> nameMap = new TreeMap<TableName, Integer>();
     
     private TableStatusCache tableStatusCache;
 
@@ -106,7 +107,7 @@ public class RowDefCache {
         return new ArrayList<RowDef>(cacheMap.values());
     }
 
-    public synchronized RowDef getRowDef(final String tableName) throws RowDefNotFoundException {
+    public synchronized RowDef getRowDef(TableName tableName) throws RowDefNotFoundException {
         final Integer key = nameMap.get(tableName);
         if (key == null) {
             return null;
@@ -114,9 +115,22 @@ public class RowDefCache {
         return getRowDef(key.intValue());
     }
 
+    public RowDef getRowDef(String schema, String table) throws RowDefNotFoundException {
+        return getRowDef(new TableName(schema, table));
+    }
+
+    /**
+     * @deprecated Ambiguous, use {@link #getRowDef(String, String)}
+     */
+    public RowDef getRowDef(String schemaAndTable) throws RowDefNotFoundException {
+        String schemaTable[] = schemaAndTable.split("\\.");
+        assert schemaTable.length == 2 : schemaAndTable;
+        return getRowDef(schemaTable[0], schemaTable[1]);
+    }
+
     /**
      * Given a schema and table name, gets a string that uniquely identifies a
-     * table. This string can then be passed to {@link #getRowDef(String)}.
+     * table. This string can then be passed to {@link #getRowDef(TableName)}.
      * 
      * @param schema
      *            the schema
@@ -124,10 +138,10 @@ public class RowDefCache {
      *            the table name
      * @return a unique form
      */
-    public static String nameOf(String schema, String table) {
+    public static TableName nameOf(String schema, String table) {
         assert schema != null;
         assert table != null;
-        return schema + "." + table;
+        return new TableName(schema, table);
     }
 
     public synchronized void clear() {
@@ -214,40 +228,6 @@ public class RowDefCache {
         return ordinalMap;
     }
 
-    private static String getTreeName(GroupTable groupTable) {
-        return groupTable.getName().toString();
-    }
-    
-    private static String getTreeName(String groupName, TableIndex index) {
-        IndexName iname = index.getIndexName();
-        String schemaName = iname.getSchemaName();
-        String tableName = iname.getTableName();
-        String indexName = iname.getName();
-
-        // Tree names for identical indexes on the group and user table must match.
-        // Check if this index originally came from a user table and, if so, use their
-        // names instead.
-        if (index.getTable().isGroupTable()) {
-            Column c = index.getColumns().get(0).getColumn().getUserColumn();
-            if (c != null) {
-                UserTable table = c.getUserTable();
-                for(Index i : table.getIndexes()) {
-                    if(i.getIndexId().equals(index.getIndexId())) {
-                        tableName = table.getName().getTableName();
-                        indexName = i.getIndexName().getName();
-                        break;
-                    }
-                }
-            }
-        }
-
-        return String.format("%s$$%s$$%s$$%s", groupName, schemaName, tableName, indexName);
-    }
-
-    private static String getTreeName(String groupName, GroupIndex index) {
-        return String.format("%s$$%s", groupName, index.getIndexName().getName());
-    }
-    
     private RowDef createUserTableRowDef(UserTable table) {
         RowDef rowDef = new RowDef(table, tableStatusCache.getTableStatus(table.getTableId()));
         // parentRowDef
@@ -275,27 +255,22 @@ public class RowDefCache {
         // group table name
         final GroupTable groupTable = root.getGroup().getGroupTable();
         final String groupTableName = groupTable.getName().getTableName();
-        final String groupTableTreeName = getTreeName(groupTable);
-        
         assert groupTableName != null : root;
-        assert groupTableTreeName != null : root;
 
         // Secondary indexes
         List<Index> indexList = new ArrayList<Index>();
         for (TableIndex index : table.getIndexesIncludingInternal()) {
             List<IndexColumn> indexColumns = index.getColumns();
-            if (!indexColumns.isEmpty()) {
-                String treeName = getTreeName(groupTableName, index);
-                IndexDef indexDef = new IndexDef(treeName, rowDef, index);
+            if(!indexColumns.isEmpty()) {
+                new IndexDef(rowDef, index);
                 if (index.isPrimaryKey()) {
                     indexList.add(0, index);
                 } else {
                     indexList.add(index);
                 }
-            } // else: Don't create an index for an artificial IndexDef that has
-              // no fields.
+            }
+            //else Don't create IndexDef for empty, autogenerated indexes
         }
-        rowDef.setTreeName(groupTableTreeName);
         rowDef.setParentJoinFields(parentJoinFields);
         rowDef.setIndexes(indexList.toArray(new Index[indexList.size()]));
         return rowDef;
@@ -319,28 +294,23 @@ public class RowDefCache {
         for (Integer userTableRowDefId : userTableRowDefIds) {
             userTableRowDefs[i++] = cacheMap.get(userTableRowDefId);
         }
-        final String groupTableName = table.getName().getTableName();
-        final String groupTableTreeName = getTreeName(table);
         // Secondary indexes
         final List<Index> indexList = new ArrayList<Index>();
         for (TableIndex index : table.getIndexes()) {
             List<IndexColumn> indexColumns = index.getColumns();
-            if (!indexColumns.isEmpty()) {
-                String treeName = getTreeName(groupTableName, index);
-                IndexDef indexDef = new IndexDef(treeName, rowDef, index);
+            if(!indexColumns.isEmpty()) {
+                new IndexDef(rowDef, index);
                 indexList.add(index);
-            } // else: Don't create a group table index for an artificial
-              // IndeDef that has no fields.
+            }
+            //else Don't create IndexDef for empty, autogenerated indexes
         }
         // Group indexes
         final List<GroupIndex> groupIndexList = new ArrayList<GroupIndex>();
         for (GroupIndex index : table.getGroup().getIndexes()) {
-            String treeName = getTreeName(groupTableName, index);
-            IndexDef indexDef = new IndexDef(treeName, rowDef, index);
+            new IndexDef(rowDef, index);
             groupIndexList.add(index);
 
         }
-        rowDef.setTreeName(groupTableTreeName);
         rowDef.setUserTableRowDefs(userTableRowDefs);
         rowDef.setIndexes(indexList.toArray(new Index[indexList.size()]));
         rowDef.setGroupIndexes(groupIndexList.toArray(new GroupIndex[groupIndexList.size()]));
@@ -349,7 +319,7 @@ public class RowDefCache {
     
     private synchronized void putRowDef(final RowDef rowDef) {
         final Integer key = rowDef.getRowDefId();
-        final String name = nameOf(rowDef.getSchemaName(), rowDef.getTableName());
+        final TableName name = nameOf(rowDef.getSchemaName(), rowDef.getTableName());
         if (cacheMap.containsKey(key)) {
             throw new IllegalStateException("Duplicate RowDefID (" + key + ") for RowDef: " + rowDef);
         }
@@ -370,7 +340,7 @@ public class RowDefCache {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("\n");
-        for (Map.Entry<String, Integer> entry : nameMap.entrySet()) {
+        for (Map.Entry<TableName, Integer> entry : nameMap.entrySet()) {
             final RowDef rowDef = cacheMap.get(entry.getValue());
             sb.append("   ");
             sb.append(rowDef);

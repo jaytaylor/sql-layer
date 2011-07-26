@@ -16,6 +16,7 @@
 package com.akiban.ais.model;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -268,15 +269,33 @@ public class
         forwardReferences.clear();
     }
 
+    private String computeTreeName(String groupSchemaName, String groupTableName) {
+        String proposedName = groupSchemaName + "$$" + groupTableName;
+        Collection<GroupTable> groupTables = ais.getGroupTables().values();
+        int saw = 0;
+        while(saw < groupTables.size()) {
+            saw = 0;
+            for(GroupTable table : groupTables) {
+                if(table.getTreeName().equals(proposedName)) {
+                    proposedName += "+";
+                    break;
+                }
+                ++saw;
+            }
+        }
+        return proposedName;
+    }
+
     // API for describing groups
 
     public void createGroup(String groupName, String groupSchemaName,
             String groupTableName) {
         LOG.info("createGroup: " + groupName + " -> " + groupSchemaName + "."
                 + groupTableName);
-        GroupTable groupTable = GroupTable.create(ais, groupSchemaName,
-                groupTableName, tableIdGenerator++);
+        String treeName = computeTreeName(groupSchemaName, groupTableName);
+        GroupTable groupTable = GroupTable.create(ais, groupSchemaName, groupTableName, tableIdGenerator++);
         Group group = Group.create(ais, groupName);
+        groupTable.setTreeName(treeName);
         groupTable.setGroup(group);
     }
 
@@ -310,7 +329,7 @@ public class
                 concat(schemaName, tableName));
         checkGroupAddition(group, table.getGroup(),
                 concat(schemaName, tableName));
-        table.setGroup(group);
+        setTablesGroup(table, group);
         // group table columns
         generateGroupTableColumns(group);
     }
@@ -337,7 +356,7 @@ public class
                 concat(parentSchemaName, parentTableName));
         checkGroupAddition(group, parent.getGroup(),
                 concat(parentSchemaName, parentTableName));
-        parent.setGroup(group);
+        setTablesGroup(parent, group);
         // child
         String childSchemaName = join.getChild().getName().getSchemaName();
         String childTableName = join.getChild().getName().getTableName();
@@ -347,7 +366,7 @@ public class
         checkGroupAddition(group, child.getGroup(),
                 concat(childSchemaName, childTableName));
         checkCycle(child, group);
-        child.setGroup(group);
+        setTablesGroup(child, group);
         join.setGroup(group);
         join.setWeight(weight);
         assert join.getParent() == parent : join;
@@ -374,7 +393,7 @@ public class
                             + "it is the only table in the group, group "
                             + group.getName() + ", table " + table.getName());
         }
-        table.setGroup(null);
+        setTablesGroup(table, null);
         generateGroupTableColumns(group);
     }
 
@@ -407,12 +426,12 @@ public class
         // joins in this group.
         if (parent.getChildJoins().size() == 0
                 && parent.getParentJoin() == null) {
-            parent.setGroup(null);
+            setTablesGroup(parent, null);
         }
         // Same for the child (except we know that parent is null)
         assert child.getParentJoin() == null;
         if (child.getChildJoins().size() == 0) {
-            child.setGroup(null);
+            setTablesGroup(child, null);
         }
         generateGroupTableColumns(group);
     }
@@ -448,7 +467,7 @@ public class
         // to another group will cause
         // getChildJoins() to return empty.
         List<Join> children = table.getChildJoins();
-        table.setGroup(group);
+        setTablesGroup(table, group);
 
         // Move the join to the group
         join.setGroup(group);
@@ -490,7 +509,7 @@ public class
         // Move table to group. Get the children first (see comment in
         // moveTreeToGroup).
         List<Join> children = table.getChildJoins();
-        table.setGroup(group);
+        setTablesGroup(table, group);
 
         // update group table columns and indexes for the affected groups
         updateGroupTablesOnMove(oldGroup, group, children);
@@ -516,7 +535,7 @@ public class
         // Move table to group. Get the children first (see comment in
         // moveTreeToGroup).
         List<Join> children = table.getChildJoins();
-        table.setGroup(group);
+        setTablesGroup(table, group);
 
         // update group table columns and indexes for the affected groups
         updateGroupTablesOnMove(oldGroup, group, children);
@@ -554,19 +573,35 @@ public class
         }
     }
 
-    private void generateGroupTableIndexes(GroupTable groupTable,
-            UserTable userTable) {
+    private void generateGroupTableIndexes(GroupTable groupTable, UserTable userTable) {
         LOG.debug("generating group table indexes for group table "
                 + groupTable + " and user table " + userTable);
+
         for (TableIndex userIndex : userTable.getIndexesIncludingInternal()) {
-            TableIndex groupIndex = TableIndex.create(ais, groupTable,
-                    nameGenerator.generateGroupIndexName(userIndex),
-                    userIndex.getIndexId(), false, Index.KEY_CONSTRAINT);
+            String indexName = nameGenerator.generateGroupIndexName(userIndex);
+
+            // Check if the index we're about to add is already in the table.
+            // This can happen if the user alters one or more groups, then
+            // calls groupingIsComplete again (or just calls it twice in a row)
+            // but this assumes that indexName == index Definition
+            // TODO: Need to check definition, not just name.
+            if (AISInvariants.isIndexInTable(groupTable, indexName)) {
+                continue;
+            }
+            TableIndex groupIndex = TableIndex.create(ais, groupTable, indexName, userIndex.getIndexId(),
+                                                      false, Index.KEY_CONSTRAINT);
+            groupIndex.setTreeName(userIndex.getTreeName());
+
             int position = 0;
             for (IndexColumn userIndexColumn : userIndex.getColumns()) {
-                IndexColumn groupIndexColumn = new IndexColumn(groupIndex,
+                this.checkFound(userIndexColumn, "building group indexes", "userIndexColumn", "NONE");
+                this.checkFound(userIndexColumn.getColumn().getGroupColumn(), "building group indexes",
+                                "group column", userIndexColumn.getColumn().getName());
+                IndexColumn groupIndexColumn = new IndexColumn(
+                        groupIndex,
                         userIndexColumn.getColumn().getGroupColumn(),
-                        position++, userIndexColumn.isAscending(),
+                        position++,
+                        userIndexColumn.isAscending(),
                         userIndexColumn.getIndexedLength());
                 groupIndex.addColumn(groupIndexColumn);
             }
@@ -589,34 +624,7 @@ public class
         for (UserTable userTable : ais.getUserTables().values()) {
             Group group = userTable.getGroup();
             if (group != null) {
-                GroupTable groupTable = group.getGroupTable();
-                for (TableIndex userIndex : userTable.getIndexesIncludingInternal()) {
-                    String indexName = nameGenerator.generateGroupIndexName(userIndex);
-                    
-                    // Check if the index we're about to add is already in the table.
-                    // This can happen if the user alters one or more groups, then 
-                    // calls groupingIsComplete again (or just calls it twice in a row)
-                    // but this assumes that indexName == index Definition
-                    // TODO: Need to check definition, not just name. 
-                    if (AISInvariants.isIndexInTable(groupTable, indexName)) {
-                        continue;
-                    }
-                    TableIndex groupIndex = TableIndex.create(ais, groupTable,
-                            indexName, userIndex.getIndexId(), false, Index.KEY_CONSTRAINT);
-                    int position = 0;
-
-                    for (IndexColumn userIndexColumn : userIndex.getColumns()) {
-                        this.checkFound(userIndexColumn, "building group indexes", "userIndexColumn", "NONE");
-                        this.checkFound(userIndexColumn.getColumn().getGroupColumn(), "building group indexes", "group column", userIndexColumn.getColumn().getName());
-                        IndexColumn groupIndexColumn = new IndexColumn(
-                                groupIndex, 
-                                userIndexColumn.getColumn().getGroupColumn(), 
-                                position++,
-                                userIndexColumn.isAscending(),
-                                userIndexColumn.getIndexedLength());
-                        groupIndex.addColumn(groupIndexColumn);
-                    }
-                }
+                generateGroupTableIndexes(group);
             }
         }
     }
@@ -626,7 +634,7 @@ public class
         ais.getGroups().clear();
         ais.getGroupTables().clear();
         for (UserTable table : ais.getUserTables().values()) {
-            table.setGroup(null);
+            setTablesGroup(table, null);
             for (Column column : table.getColumnsIncludingInternal()) {
                 column.setGroupColumn(null);
             }
@@ -701,7 +709,7 @@ public class
         LOG.debug("moving tree " + joins + " to group " + group);
         for (Join join : joins) {
             List<Join> children = join.getChild().getChildJoins();
-            join.getChild().setGroup(group);
+            setTablesGroup(join.getChild(), group);
             join.setGroup(group);
             moveTree(children, group);
         }
@@ -746,6 +754,11 @@ public class
             buffer.append(strings[i]);
         }
         return buffer.toString();
+    }
+
+    private void setTablesGroup(Table table, Group group) {
+        table.setGroup(group);
+        table.setTreeName(group != null ? group.getGroupTable().getTreeName() : "");
     }
 
     // State
