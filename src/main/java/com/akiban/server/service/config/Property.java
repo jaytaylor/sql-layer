@@ -15,109 +15,26 @@
 
 package com.akiban.server.service.config;
 
-import com.akiban.util.ArgumentValidation;
-
 public final class Property implements Comparable<Property> {
 
-    public static final class Key implements Comparable<Key> {
-        private final String module;
-        private final String name;
-
-        private Key(String module, String name) {
-            ArgumentValidation.notNull("module", module);
-            ArgumentValidation.notNull("property name", name);
-            this.module = module;
-            this.name = name;
-        }
-
-        public String getModule() {
-            return module;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            Key that = (Key) o;
-
-            return module.equals(that.module) && name.equals(that.name);
-
-        }
-
-        @Override
-        public int hashCode() {
-            int result = module.hashCode();
-            result = 31 * result + name.hashCode();
-            return result;
-        }
-
-        @Override
-        public int compareTo(Key other) {
-            int comparison = this.module.compareTo(other.module);
-            if (comparison != 0) {
-                return comparison;
-            }
-            return this.name.compareTo(other.name);
-        }
-
-        @Override
-        public String toString() {
-            return String.format("Property.Key[%s, %s]", module, name);
-        }
-    }
-
-    public static Key parseKey(String fullName) {
-        ArgumentValidation.notNull("property name", fullName);
-        int dotAt = fullName.indexOf('.');
-        final String beforeDot;
-        final String afterDot;
-        if (dotAt < 0) {
-            beforeDot = "";
-            afterDot = fullName;
-        }
-        else {
-            beforeDot = fullName.substring(0, dotAt);
-            afterDot = fullName.substring(dotAt+1);
-        }
-        return new Key(beforeDot, afterDot);
-    }
-
-    private final Key key;
+    private final String key;
     private final String value;
 
-    public Property(Key key, String value) {
+    public Property(String key, String value) {
         this.key = key;
         this.value = value;
     }
 
-    public Property(String keyStr, String value) {
-        this.key = parseKey(keyStr);
-        this.value = value;
-    }
-
+    @Deprecated
     Property(String module, String name, String value) {
-        this.key = new Key(module, name);
-        this.value = value;
-    }
-
-    public String getModule() {
-        return key.getModule();
-    }
-
-    public String getName() {
-        return key.getName();
+        this(module + '.' + name, value);
     }
 
     public String getValue() {
         return value;
     }
 
-    public Key getKey() {
+    public String getKey() {
         return key;
     }
 
@@ -138,6 +55,6 @@ public final class Property implements Comparable<Property> {
 
     @Override
     public String toString() {
-        return String.format("Property[%s > %s = %s]", getModule(), getName(), value);
+        return key + " => " + value;
     }
 }

@@ -41,20 +41,14 @@ public class TestConfigService extends ConfigurationServiceImpl {
     }
 
     @Override
-    protected Map<Property.Key, Property> loadProperties()
-            throws IOException {
-        Map<Property.Key, Property> ret = new HashMap<Property.Key, Property>(
-                super.loadProperties());
+    protected Map<String, Property> loadProperties() throws IOException {
+        Map<String, Property> ret = new HashMap<String, Property>(super.loadProperties());
         tmpDir = makeTempDatapathDirectory();
-        Property.Key datapathKey = Property.parseKey("akserver.datapath");
-        ret.put(datapathKey,
-                new Property(datapathKey, tmpDir.getAbsolutePath()));
-        final int bufferSize = Integer.parseInt(ret.get(
-                Property.parseKey("persistit.buffersize")).getValue());
-        Property.Key memoryKey = Property.parseKey("persistit.buffer.memory."
-                + bufferSize);
-        ret.put(memoryKey, new Property(memoryKey,
-                UNIT_TEST_PERSISTIT_MEMORY));
+        String datapathKey = "akserver.datapath";
+        ret.put(datapathKey, new Property(datapathKey, tmpDir.getAbsolutePath()));
+        final int bufferSize = Integer.parseInt(ret.get("persistit.buffersize").getValue());
+        String memoryKey = "persistit.buffer.memory." + bufferSize;
+        ret.put(memoryKey, new Property(memoryKey, UNIT_TEST_PERSISTIT_MEMORY));
         if (extraProperties != null) {
             for (final Property property : extraProperties) {
                 ret.put(property.getKey(), property);
@@ -69,7 +63,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
     }
 
     @Override
-    protected Set<Property.Key> getRequiredKeys() {
+    protected Set<String> getRequiredKeys() {
         return Collections.emptySet();
     }
 

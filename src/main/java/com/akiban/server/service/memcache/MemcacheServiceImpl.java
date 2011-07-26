@@ -113,9 +113,7 @@ public class MemcacheServiceImpl implements MemcacheService,
 
         OutputFormat defaultOutput;
         {
-            String defaultOutputName = config.getProperty(
-                    "akserver.memcached.output.format", OutputFormat.JSON
-                            .name());
+            String defaultOutputName = config.getProperty("akserver.memcached.output.format");
             try {
                 defaultOutput = OutputFormat.valueOf(defaultOutputName
                         .toUpperCase());
@@ -128,9 +126,7 @@ public class MemcacheServiceImpl implements MemcacheService,
 
         HapiProcessorFactory defaultHapi;
         {
-            String defaultHapiName = config.getProperty(
-                    "akserver.memcached.processor",
-                    HapiProcessorFactory.SCANROWS.name());
+            String defaultHapiName = config.getProperty("akserver.memcached.processor");
             try {
                 defaultHapi = HapiProcessorFactory.valueOf(defaultHapiName
                         .toUpperCase());

@@ -57,13 +57,11 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     private static final Logger LOG = LoggerFactory
             .getLogger(TreeServiceImpl.class.getName());
 
-    private static final String PERSISTIT_MODULE_NAME = "persistit";
+    private static final String PERSISTIT_MODULE_NAME = "persistit.";
 
     private static final String DATAPATH_PROP_NAME = "datapath";
 
     private static final String BUFFER_SIZE_PROP_NAME = "buffersize";
-
-    private static final String DEFAULT_DATAPATH = "/tmp/akiban_server";
 
     // Must be one of 1024, 2048, 4096, 8192, 16384:
     static final int DEFAULT_BUFFER_SIZE = 16384;
@@ -168,8 +166,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         // then the corresponding key created by getModuleConfiguration will be
         // just "appendonly".
         //
-        final Properties properties = configService.getModuleConfiguration(
-                PERSISTIT_MODULE_NAME).getProperties();
+        final Properties properties = configService.deriveProperties(PERSISTIT_MODULE_NAME);
         //
         // Copies the akserver.datapath property to the Persistit properties
         // set. This allows Persistit to perform substitution of ${datapath}
@@ -178,8 +175,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         // Sets the property named "buffersize" so that the volume
         // specifications can use the substitution syntax ${buffersize}.
         //
-        final String datapath = configService.getProperty("akserver."
-                + DATAPATH_PROP_NAME, DEFAULT_DATAPATH);
+        final String datapath = configService.getProperty("akserver." + DATAPATH_PROP_NAME);
         properties.setProperty(DATAPATH_PROP_NAME, datapath);
         ensureDirectoryExists(datapath, false);
 
@@ -542,8 +538,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     void buildSchemaMap() {
-        final Properties properties = configService.getModuleConfiguration(
-                "akserver").getProperties();
+        final Properties properties = configService.deriveProperties("akserver.");
         for (final Entry<Object, Object> entry : properties.entrySet()) {
             final String name = (String) entry.getKey();
             final String value = (String) entry.getValue();
