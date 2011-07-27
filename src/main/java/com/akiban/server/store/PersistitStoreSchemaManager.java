@@ -101,8 +101,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     
     static final String AIS_DDL_NAME = "akiban_information_schema.ddl";
 
-    static final String BY_NAME = "byName";
-
     static final String BY_AIS = "byAIS";
 
     private static final Logger LOG = LoggerFactory
@@ -197,20 +195,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         merge.merge();
         
         final String schemaName = newTable.getName().getSchemaName();
-        final String originalDDL =  new DDLGenerator().createTable(newTable);
         final UserTable finalTable = merge.getAIS().getUserTable(newTable.getName());
         setTreeNames(finalTable);
         
-        commitAISChange(session, merge.getAIS(), schemaName, null
-/*                new AISChangeCallback() {
-            @Override
-            public void beforeCommit(Exchange schemaExchange, TreeService treeService) throws Exception {
-                schemaExchange.clear().append(BY_NAME).append(schemaName).append(newTable.getName().getTableName());
-                schemaExchange.append(finalTable.getTableId().intValue());
-                schemaExchange.getValue().put(originalDDL);
-                schemaExchange.store();
-            }
-        }*/);
+        commitAISChange(session, merge.getAIS(), schemaName, null);
         return newTable.getName();
     }
     
@@ -256,15 +244,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         //newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
         //newAIS.freeze();
 
-        commitAISChange(session, newAIS, schemaName, null /*new AISChangeCallback() {
-            @Override
-            public void beforeCommit(Exchange schemaExchange, TreeService treeService) throws Exception {
-                schemaExchange.clear().append(BY_NAME).append(schemaName).append(newTable.getName().getTableName());
-                schemaExchange.append(newTable.getTableId().intValue());
-                schemaExchange.getValue().put(originalDDL);
-                schemaExchange.store();
-            }
-        }*/);
+        commitAISChange(session, newAIS, schemaName, null);
         
         return newTable.getName();
     }
@@ -555,18 +535,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 statusEx.clear().append(tableId).remove();
                 // Status created on demand, can't check
                 serviceManager.getTreeService().getTableStatusCache().drop(tableId);
-                // Table ID may have changed so use filter and iterate
-/*                
-                schemaEx.clear().append(BY_NAME).append(tn.getSchemaName()).append(tn.getTableName());
-                final KeyFilter keyFilter = new KeyFilter(schemaEx.getKey(), 4, 4);
-                schemaEx.clear();
-                int schemaRemovedCount = 0;
-                while (schemaEx.next(keyFilter)) {
-                    schemaEx.remove();
-                    ++schemaRemovedCount;
-                }
-                assert schemaRemovedCount == 1 : "Wrong schema count removed: " + schemaRemovedCount + " " + tn;
-*/                
             }
         }
     }
