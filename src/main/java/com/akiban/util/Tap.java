@@ -194,6 +194,7 @@ public abstract class Tap {
          * is what this class does) and reporting on them.
          * @return the underlying tap's report
          */
+        @Deprecated
         public TapReport getReport() {
             return internal.getReport();
         }
