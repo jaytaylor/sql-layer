@@ -27,8 +27,7 @@ public class TapTest {
 
     @Test
     public void testPerThreadTap() throws Exception {
-        final Tap tap = Tap.add(new Tap.PerThread("ttap",
-                Tap.TimeStampLog.class));
+        final Tap.InOutTap tap = Tap.createTimeStampLog("ttap");
         Tap.setEnabled(".*", true);
         final Thread[] threads = new Thread[10];
         for (int i = 0; i < 10; i++) {
