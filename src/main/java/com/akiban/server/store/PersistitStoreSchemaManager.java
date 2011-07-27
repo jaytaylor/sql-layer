@@ -55,7 +55,6 @@ import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.Type;
-import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.server.api.common.NoSuchGroupException;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.DuplicateTableNameException;
@@ -202,7 +201,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         final UserTable finalTable = merge.getAIS().getUserTable(newTable.getName());
         setTreeNames(finalTable);
         
-        commitAISChange(session, merge.getAIS(), schemaName, new AISChangeCallback() {
+        commitAISChange(session, merge.getAIS(), schemaName, null
+/*                new AISChangeCallback() {
             @Override
             public void beforeCommit(Exchange schemaExchange, TreeService treeService) throws Exception {
                 schemaExchange.clear().append(BY_NAME).append(schemaName).append(newTable.getName().getTableName());
@@ -210,7 +210,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 schemaExchange.getValue().put(originalDDL);
                 schemaExchange.store();
             }
-        });
+        }*/);
         return newTable.getName();
     }
     
@@ -256,7 +256,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         //newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
         //newAIS.freeze();
 
-        commitAISChange(session, newAIS, schemaName, new AISChangeCallback() {
+        commitAISChange(session, newAIS, schemaName, null /*new AISChangeCallback() {
             @Override
             public void beforeCommit(Exchange schemaExchange, TreeService treeService) throws Exception {
                 schemaExchange.clear().append(BY_NAME).append(schemaName).append(newTable.getName().getTableName());
@@ -264,7 +264,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 schemaExchange.getValue().put(originalDDL);
                 schemaExchange.store();
             }
-        });
+        }*/);
         
         return newTable.getName();
     }
@@ -556,6 +556,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 // Status created on demand, can't check
                 serviceManager.getTreeService().getTableStatusCache().drop(tableId);
                 // Table ID may have changed so use filter and iterate
+/*                
                 schemaEx.clear().append(BY_NAME).append(tn.getSchemaName()).append(tn.getTableName());
                 final KeyFilter keyFilter = new KeyFilter(schemaEx.getKey(), 4, 4);
                 schemaEx.clear();
@@ -565,6 +566,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     ++schemaRemovedCount;
                 }
                 assert schemaRemovedCount == 1 : "Wrong schema count removed: " + schemaRemovedCount + " " + tn;
+*/                
             }
         }
     }
@@ -625,7 +627,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     /**
-     * Construct a new AIS instance containg a copy of the currently known data, see @{link #ais},
+     * Construct a new AIS instance containing a copy of the currently known data, see @{link #ais},
      * minus the given list of TableNames.
      * @param tableNames List of tables to exclude from new AIS.
      * @return A completely new AIS.
