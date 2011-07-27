@@ -15,7 +15,6 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.row.Row;
 import com.akiban.util.Tap;
 
 class TopLevelWrappingCursor extends ChainedCursor {
@@ -58,7 +57,7 @@ class TopLevelWrappingCursor extends ChainedCursor {
 
     // Class state
 
-    private static final Tap CURSOR_SETUP_TAP = Tap.add(new Tap.PerThread("cursor setup"));
-    private static final Tap CURSOR_SCAN_TAP = Tap.add(new Tap.PerThread("cursor scan"));
+    private static final Tap.InOutTap CURSOR_SETUP_TAP = Tap.createTimer("cursor setup");
+    private static final Tap.InOutTap CURSOR_SCAN_TAP = Tap.createTimer("cursor scan");
 
 }

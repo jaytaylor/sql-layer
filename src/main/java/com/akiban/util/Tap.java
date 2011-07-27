@@ -55,7 +55,7 @@ import org.slf4j.LoggerFactory;
  *   	MY_TAP.out();
  * </pre>
  * <p />
- * The static {@link #add(String)} method creates an instance of an initially
+ * The static {@link #add(Tap)} method creates an instance of an initially
  * disabled {@link Tap.Dispatch}. when enabled, this {@link Tap.Dispatch} will
  * invoke a {@link Tap.TimeAndCount} instance to count and time the invocations
  * of {@link #in()} and {@link #out()}. You may instantiate other Tap subclasses
@@ -143,6 +143,68 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class Tap {
 
+    public static class PointTap {
+
+        public void hit() {
+            internal.in();
+            internal.out();
+        }
+
+        private PointTap(Tap internal) {
+            this.internal = internal;
+        }
+
+        private final Tap internal;
+    }
+
+    public static class InOutTap {
+
+        public void in() {
+            internal.in();
+        }
+
+        public void out() {
+            internal.out();
+        }
+
+        /**
+         * Reset the tap.
+         * @deprecated using this method indicates an improper separation of concerns between defining events (which
+         * is what this class does) and reporting on them.
+         */
+        @Deprecated
+        public void reset() {
+            internal.reset();
+        }
+
+        /**
+         * Gets the duration of the tap's in-to-out timer.
+         * @deprecated using this method indicates an improper separation of concerns between defining events (which
+         * is what this class does) and reporting on them.
+         * @return the tap's duration
+         */
+        @Deprecated
+        public long getDuration() {
+            return internal.getDuration();
+        }
+
+        /**
+         * Gets the tap's report
+         * @deprecated using this method indicates an improper separation of concerns between defining events (which
+         * is what this class does) and reporting on them.
+         * @return the underlying tap's report
+         */
+        public TapReport getReport() {
+            return internal.getReport();
+        }
+
+        private InOutTap(Tap internal) {
+            this.internal = internal;
+        }
+
+        private final Tap internal;
+    }
+
     private static final Logger LOG = LoggerFactory.getLogger(Tap.class.getName());
 
     public final static String NEW_LINE = System.getProperty("line.separator");
@@ -151,16 +213,16 @@ public abstract class Tap {
 
     private static boolean registered;
 
-    /**
-     * Add or replace a new Dispatch declaration for a {@link TimeAndCount} Tap.
-     * Generally called by static initializers of classes to be measured.
-     * 
-     * @param name
-     * @return The Dispatch instance.
-     * 
-     */
-    public static Dispatch add(final String name) {
-        return add(new TimeAndCount(name));
+    public static PointTap createCount(String name) {
+        return new PointTap(add(new PerThread(name, Count.class)));
+    }
+
+    public static InOutTap createTimer(String name) {
+        return new InOutTap(add(new PerThread(name, TimeAndCount.class)));
+    }
+
+    public static InOutTap createTimeStampLog(String name) {
+        return new InOutTap(add(new PerThread(name, TimeStampLog.class)));
     }
 
     /**
@@ -171,21 +233,10 @@ public abstract class Tap {
      *            The Tap to call when enabled.
      * @return The Dispatch instance.
      */
-    public static Dispatch add(final Tap tap) {
+    private static Dispatch add(final Tap tap) {
         final Dispatch dispatch = new Dispatch(tap.getName(), tap);
         dispatches.put(tap.getName(), dispatch);
         return dispatch;
-    }
-
-    /**
-     * Remove and return a Dispatch by name.
-     * 
-     * @param name
-     * @return The removed Dispatch or <tt>null</tt> if there was none for that
-     *         name.
-     */
-    public static Dispatch remove(final String name) {
-        return dispatches.remove(name);
     }
 
     /**
@@ -333,7 +384,7 @@ public abstract class Tap {
      * 
      * @param name
      */
-    public Tap(final String name) {
+    private Tap(final String name) {
         this.name = name;
     }
 
@@ -345,14 +396,14 @@ public abstract class Tap {
     }
 
     /**
-     * Mark the beginning of a section of code to be timed
+     * Mark the beginning of a section of code to be timed. Package-private; should be invoked by PointTap or InOutTap.
      */
-    public abstract void in();
+    abstract void in();
 
     /**
-     * Mark the end of a section of code to be timed
+     * Mark the end of a section of code to be timed. Package-private; should be invoked by PointTap or InOutTap.
      */
-    public abstract void out();
+    abstract void out();
     
     /**
      * @return duration of time spent in section of code to be timed
@@ -444,7 +495,7 @@ public abstract class Tap {
      * every added {@link Tap.Dispatch}.
      * 
      */
-    public static class Null extends Tap {
+    private static class Null extends Tap {
 
         public Null(final String name) {
             super(name);
@@ -484,7 +535,7 @@ public abstract class Tap {
      * Generally this is faster than {@link TimeAndCount} because the system
      * clock is not read.
      */
-    public static class Count extends Tap {
+    private static class Count extends Tap {
 
         public Count(final String name) {
             super(name);
@@ -530,7 +581,7 @@ public abstract class Tap {
      * A Tap subclass that counts and times the intervals between calls to
      * {@link #in()} and {@link #out()}.
      */
-    public static class TimeAndCount extends Tap {
+    private static class TimeAndCount extends Tap {
 
         public TimeAndCount(final String name) {
             super(name);
@@ -607,7 +658,7 @@ public abstract class Tap {
      * corresponding with the zero timestamp value.
      * 
      */
-    public static class TimeStampLog extends Tap {
+    static class TimeStampLog extends Tap {
 
         public final static int LOG_SIZE_DELTA = 100000;
 
@@ -749,7 +800,7 @@ public abstract class Tap {
      * two-argument constructor provides a way to override that default.
      * 
      */
-    public static class PerThread extends Tap {
+    static class PerThread extends Tap {
 
         private static final Comparator<Thread> THREAD_COMPARATOR = new Comparator<Thread>() {
             @Override
@@ -803,16 +854,6 @@ public abstract class Tap {
             public Map<String, TapReport> getTapReportMap() {
                 return new TreeMap<String, TapReport>(reportMap);
             }
-        }
-
-        /**
-         * Create a PerThread instance the adds a new {@link Tap.TimeAndCount}
-         * for each Thread.
-         * 
-         * @param name
-         */
-        public PerThread(final String name) {
-            this(name, TimeAndCount.class);
         }
 
         /**
