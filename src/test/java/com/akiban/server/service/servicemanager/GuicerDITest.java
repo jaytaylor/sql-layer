@@ -189,7 +189,7 @@ public final class GuicerDITest {
     public interface FieldInjectionB {}
     
     public static class FieldInjectionAImpl implements FieldInjectionA {
-        @SuppressWarnings("unused") @Inject private FieldInjectionB b = null;
+        @SuppressWarnings("unused") @Inject private FieldInjectionB b;
     }
     
     public static class FieldInjectionBImpl implements FieldInjectionB {}
