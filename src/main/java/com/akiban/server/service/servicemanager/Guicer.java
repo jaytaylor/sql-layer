@@ -238,9 +238,7 @@ public final class Guicer {
         while (reverseIter.hasPrevious()) {
             try {
                 Object serviceObject = reverseIter.previous();
-                synchronized (services) {
-                    services.remove(serviceObject);
-                }
+                services.remove(serviceObject);
                 if (withActions != null) {
                     S service = withActions.castIfActionable(serviceObject);
                     if (service != null) {
