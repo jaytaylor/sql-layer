@@ -34,6 +34,12 @@ public final class ServiceManagerImpl
 
     private ServiceManagerImpl() {}
 
+    /**
+     * Gets the active ServiceManager; you can then use the returned instance to get any service you want.
+     * @return the active ServiceManager
+     * @deprecated for new code, please just use dependency injection
+     */
+    @Deprecated
     public static ServiceManager get() {
         return instance.get();
     }
