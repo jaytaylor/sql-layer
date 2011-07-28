@@ -49,7 +49,7 @@ public final class ServiceManagerImpl
      * @return a new Session
      */
     public static Session newSession() {
-        ServiceManager serviceManager = get();
+        @SuppressWarnings("deprecation") ServiceManager serviceManager = get();
         if (serviceManager == null) {
             throw new ServiceNotStartedException("ServiceManagerImpl.get() hasn't been given an instance");
         }
