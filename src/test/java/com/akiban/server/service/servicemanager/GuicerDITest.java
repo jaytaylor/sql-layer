@@ -1,0 +1,168 @@
+/**
+ * Copyright (C) 2011 Akiban Technologies Inc.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses.
+ */
+
+package com.akiban.server.service.servicemanager;
+
+import org.junit.Test;
+
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * <p>Tests the startup of various services. Here's the dependency graph:
+ * <pre>
+ *        A   <---+
+ *      ↙   ↘     ¦
+ *     B     C    ¦
+ *  ↙  ↓     ↓    ¦
+ * E   D     ↓    ¦
+ *  ↖   ↘   ↙     ¦
+ *    ← ← F - - - +
+ * </pre>
+ * </p>
+ * <p>The dotted line from F to A represents a circular dependency. We don't allow this, so most tests use an
+ * implementation of F that does <em>not</em> depend on A. The one that does, we're looking for an exception.</p>
+ */
+public final class GuicerDITest {
+
+    @Test
+    public void nonCircularFromA() {
+        standardTester()
+                .startAndStop(A.class)
+                .check(AImpl.class, BImpl.class, CImpl.class, EImpl.class, DImpl.class, FImpl.class)
+                .checkDependencies(AImpl.class, BImpl.class, CImpl.class, EImpl.class, DImpl.class, FImpl.class)
+                .checkDependencies(BImpl.class, EImpl.class, DImpl.class, FImpl.class)
+                .checkDependencies(CImpl.class, FImpl.class, EImpl.class)
+                .checkDependencies(DImpl.class, FImpl.class, EImpl.class)
+                .checkDependencies(EImpl.class)
+                .checkDependencies(FImpl.class, EImpl.class)
+        ;
+    }
+    
+    @Test
+    public void nonCircularFromF() {
+        standardTester()
+                .startAndStop(F.class)
+                .check(EImpl.class, FImpl.class)
+                .checkDependencies(EImpl.class)
+                .checkDependencies(FImpl.class, EImpl.class)
+        ;
+    }
+
+
+    @Test
+    public void nonCircularFromE() {
+        standardTester()
+                .startAndStop(E.class)
+                .check(EImpl.class)
+        ;
+    }
+
+    @Test(expected = CircularDependencyException.class)
+    public void circular() {
+        standardTester()
+                .bind(F.class, CircularF.class)
+                .check()
+                .startAndStop(F.class);
+    }
+
+    private static GuiceInjectionTester<Interesting> standardTester() {
+        return GuiceInjectionTester.forTarget(Interesting.class)
+                .bind(A.class, AImpl.class)
+                .bind(B.class, BImpl.class)
+                .bind(C.class, CImpl.class)
+                .bind(D.class, DImpl.class)
+                .bind(E.class, EImpl.class)
+                .bind(F.class, FImpl.class);
+    }
+
+    public static abstract class Interesting {
+        
+        protected Interesting(Object... dependencies) {
+            this.dependencies = Arrays.asList(dependencies);
+        }
+
+        @Override
+        public String toString() {
+            List<String> dependencyClasses = new ArrayList<String>();
+            for (Object dependency : dependencies) {
+                dependencyClasses.add(dependency.getClass().getSimpleName());
+            }
+            return getClass().getSimpleName() + " directly depends on " + dependencyClasses;
+        }
+
+        private List<?> dependencies;
+    }
+
+    public interface A {}
+
+    public interface B {}
+
+    public interface C {}
+
+    public interface D {}
+
+    public interface E {}
+
+    public interface F {}
+
+    public static class AImpl extends Interesting implements A {
+        @Inject
+        public AImpl(B b, C c) {
+            super(b, c);
+        }
+    }
+
+    public static class BImpl extends Interesting implements B {
+        @Inject
+        public BImpl(D d, E e) {
+            super(d, e);
+        }
+    }
+
+    public static class CImpl extends Interesting implements C {
+        @Inject
+        public CImpl(F f) {
+            super(f);
+        }
+    }
+    
+    public static class DImpl extends Interesting implements D {
+        @Inject
+        public DImpl(F f, E e) {
+            super(f, e);
+        }
+    }
+
+    public static class EImpl extends Interesting implements E {
+    }
+
+    public static class FImpl extends Interesting implements F {
+        @Inject
+        public FImpl(E e) {
+            super(e);
+        }
+    }
+
+    public static class CircularF extends Interesting implements F {
+        @Inject
+        public CircularF(A a) {
+            super(a);
+            System.out.println(a);
+        }
+    }
+}

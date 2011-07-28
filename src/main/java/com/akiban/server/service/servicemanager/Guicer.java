@@ -16,23 +16,30 @@
 package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
+import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Exceptions;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.ProvisionException;
 import com.google.inject.Scopes;
+import com.google.inject.TypeLiteral;
+import com.google.inject.matcher.Matchers;
+import com.google.inject.spi.InjectionListener;
+import com.google.inject.spi.Message;
+import com.google.inject.spi.TypeEncounter;
+import com.google.inject.spi.TypeListener;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 
 public final class Guicer {
-
     // Guicer interface
 
     public Collection<Class<?>> directlyRequiredClasses() {
@@ -48,34 +55,44 @@ public final class Guicer {
     }
 
     public <T> T get(Class<T> serviceClass, ServiceLifecycleActions<?> withActions) {
-        return startService(_injector.getInstance(serviceClass), withActions);
+        final T instance;
+        try {
+            instance = _injector.getInstance(serviceClass);
+        } catch (ProvisionException e) {
+            for (Message message: e.getErrorMessages()) {
+                if (message.getMessage().contains("circular dependency")) {
+                    throw new CircularDependencyException(e);
+                }
+            }
+            throw e;
+        }
+        return startService(instance, withActions);
     }
 
     public boolean serviceIsStarted(Class<?> serviceClass) {
-        synchronized (lock) {
-            return services.contains(serviceClass);
-        }
+        return services.contains(serviceClass);
     }
 
     public boolean isRequired(Class<?> interfaceClass) {
         return directlyRequiredClasses.contains(interfaceClass);
     }
 
-
     // public class methods
 
-    public static Guicer forServices(Collection<ServiceBinding> serviceBindings)
+    public static Guicer forServices(Collection<ServiceBinding> serviceBindings, InjectionHandler<?> injectionHandler)
     throws ClassNotFoundException
     {
-        return new Guicer(serviceBindings);
+        ArgumentValidation.notNull("bindings", serviceBindings);
+        ArgumentValidation.notNull("injection handler", injectionHandler);
+        return new Guicer(serviceBindings, injectionHandler);
     }
 
     // private methods
 
-    private Guicer(Collection<ServiceBinding> serviceBindings)
+    private Guicer(Collection<ServiceBinding> serviceBindings, InjectionHandler<?> injectionHandler)
     throws ClassNotFoundException
     {
-        Collection<Class<?>> localDirectlyRequiredClasses = new ArrayList<Class<?>>();
+        List<Class<?>> localDirectlyRequiredClasses = new ArrayList<Class<?>>();
         List<ResolvedServiceBinding> resolvedServiceBindings = new ArrayList<ResolvedServiceBinding>();
 
         for (ServiceBinding serviceBinding : serviceBindings) {
@@ -85,20 +102,39 @@ public final class Guicer {
                 localDirectlyRequiredClasses.add(resolvedServiceBinding.serviceInterfaceClass());
             }
         }
+        Collections.sort(localDirectlyRequiredClasses, BY_CLASS_NAME);
         directlyRequiredClasses = Collections.unmodifiableCollection(localDirectlyRequiredClasses);
 
-        AbstractModule module = new ServiceBindingsModule(resolvedServiceBindings);
-        _injector = Guice.createInjector(module);
+        this.services = Collections.synchronizedSet(new LinkedHashSet<Object>());
 
-        // sync isn't technically required since services is final, but makes it clear that it's protected by the lock
-        lock = new Object();
-        synchronized (lock) {
-            this.services = new LinkedHashSet<Object>();
+        AbstractModule module = new ServiceBindingsModule(
+                resolvedServiceBindings,
+                new DelegatingInjectionHandler(services, injectionHandler)
+        );
+        _injector = Guice.createInjector(module);
+    }
+
+    private static class DelegatingInjectionHandler extends InjectionHandler<Object> {
+
+        @Override
+        protected void handle(Object instance) {
+            services.add(instance);
+            delegate.afterInjection(instance);
         }
+
+        DelegatingInjectionHandler(Set<Object> services, InjectionHandler<?> delegate)
+        {
+            super(Object.class);
+            this.services = services;
+            this.delegate = delegate;
+        }
+
+        private final Set<Object> services;
+        private final InjectionHandler<?> delegate;
     }
 
     private <T,S> T startService(T instance, ServiceLifecycleActions<S> withActions) {
-        synchronized (lock) {
+        synchronized (services) {
             if (services.contains(instance)) {
                 return instance;
             }
@@ -140,7 +176,7 @@ public final class Guicer {
 
     private <S> List<Throwable> tryStopServices(ServiceLifecycleActions<S> withActions, Exception initialCause) {
         ListIterator<?> reverseIter;
-        synchronized (lock) {
+        synchronized (services) {
             reverseIter = new ArrayList<Object>(services).listIterator(services.size());
         }
         List<Throwable> exceptions = new ArrayList<Throwable>();
@@ -150,7 +186,7 @@ public final class Guicer {
         while (reverseIter.hasPrevious()) {
             try {
                 Object serviceObject = reverseIter.previous();
-                synchronized (lock) {
+                synchronized (services) {
                     services.remove(serviceObject);
                 }
                 if (withActions != null) {
@@ -177,9 +213,17 @@ public final class Guicer {
     // object state
 
     private final Collection<Class<?>> directlyRequiredClasses;
-    private final Object lock;
     private final Set<Object> services;
     private final Injector _injector;
+
+    // consts
+
+    private static final Comparator<? super Class<?>> BY_CLASS_NAME = new Comparator<Class<?>>() {
+        @Override
+        public int compare(Class<?> o1, Class<?> o2) {
+            return o1.getName().compareTo(o2.getName());
+        }
+    };
 
     // nested classes
 
@@ -218,17 +262,59 @@ public final class Guicer {
                 Class unchecked = binding.serviceInterfaceClass();
                 bind(unchecked).to(binding.serviceImplementationClass()).in(Scopes.SINGLETON);
             }
+            binder().bindListener(Matchers.any(), new MyTypeListener(injectionHandler));
+            binder().disableCircularProxies();
         }
 
         // ServiceBindingsModule interface
 
-        private ServiceBindingsModule(Collection<ResolvedServiceBinding> bindings) {
+        private ServiceBindingsModule(Collection<ResolvedServiceBinding> bindings, InjectionHandler<?> injectionHandler)
+        {
             this.bindings = bindings;
+            this.injectionHandler = injectionHandler;
         }
 
         // object state
 
         private final Collection<ResolvedServiceBinding> bindings;
+        private final InjectionHandler<?> injectionHandler;
+    }
+
+    private static class MyTypeListener implements TypeListener {
+        @Override
+        public <I> void hear(TypeLiteral<I> type, TypeEncounter<I> encounter) {
+            if (injectionHandler.classIsInteresting(type.getRawType())) {
+                encounter.register(injectionHandler);
+            }
+        }
+
+        MyTypeListener(InjectionHandler<?> injectionHandler) {
+            this.injectionHandler = injectionHandler;
+        }
+
+        private final InjectionHandler<?> injectionHandler;
+    }
+
+    abstract static class InjectionHandler<T> implements InjectionListener<Object> {
+
+        @Override
+        final public void afterInjection(Object injectee) {
+            if (classIsInteresting(injectee.getClass())) {
+                handle(targetClass.cast(injectee));
+            }
+        }
+
+        final public boolean classIsInteresting(Class<?> type) {
+            return targetClass.isAssignableFrom(type) && ! (type.getPackage().getName().startsWith("com.google."));
+        }
+
+        protected abstract void handle(T instance);
+
+        protected InjectionHandler(Class<T> targetClass) {
+            this.targetClass = targetClass;
+        }
+
+        private final Class<T> targetClass;
     }
 
     static interface ServiceLifecycleActions<T> {
@@ -242,4 +328,5 @@ public final class Guicer {
          */
         T castIfActionable(Object object);
     }
+
 }
