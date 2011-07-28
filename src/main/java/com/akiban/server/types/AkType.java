@@ -18,48 +18,48 @@ package com.akiban.server.types;
 public enum AkType {
     LONG {
         @Override
-        void notNullDispatch(ConversionSource source, ConversionTarget target) {
+        void notNullConversion(ConversionSource source, ConversionTarget target) {
             target.setLong(source.getLong());
         }
     },
 
     DATE {
         @Override
-        void notNullDispatch(ConversionSource source, ConversionTarget target) {
+        void notNullConversion(ConversionSource source, ConversionTarget target) {
             target.setDate(source.getDate());
         }
     },
 
     STRING {
         @Override
-        void notNullDispatch(ConversionSource source, ConversionTarget target) {
+        void notNullConversion(ConversionSource source, ConversionTarget target) {
             target.setString(source.getString());
         }
     },
 
     NULL {
         @Override
-        void notNullDispatch(ConversionSource source, ConversionTarget target) {
+        void notNullConversion(ConversionSource source, ConversionTarget target) {
             throw new AssertionError("invoking notNullDispatch on NULL");
         }
     },
 
     UNSUPPORTED {
         @Override
-        void notNullDispatch(ConversionSource source, ConversionTarget target) {
+        void notNullConversion(ConversionSource source, ConversionTarget target) {
             throw new UnsupportedOperationException();
         }
     }
     ;
 
-    public void dispatch(ConversionSource source, ConversionTarget target) {
+    public void convert(ConversionSource source, ConversionTarget target) {
         if (source.isNull()) {
             target.setNull();
         }
         else {
-            notNullDispatch(source, target);
+            notNullConversion(source, target);
         }
     }
 
-    abstract void notNullDispatch(ConversionSource source, ConversionTarget target);
+    abstract void notNullConversion(ConversionSource source, ConversionTarget target);
 }
