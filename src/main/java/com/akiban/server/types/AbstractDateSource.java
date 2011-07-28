@@ -13,21 +13,30 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.row;
+package com.akiban.server.types;
 
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.ConversionSource;
+public abstract class AbstractDateSource implements ConversionSource {
 
-public interface RowBase
-{
-    RowType rowType();
-    Object field(int i, Bindings bindings);
-    ConversionSource conversionSource(int i, Bindings bindings);
-    HKey hKey();
-    boolean ancestorOf(RowBase that);
-    int runId();
-    void runId(int runId);
+    protected abstract long computeDate();
 
-    final int UNDEFINED_RUN_ID = -1;
+    @Override
+    final public long getLong() {
+        SourceIsNullException.checkNotNull(this);
+        return computeDate();
+    }
+
+    @Override
+    final public double getDouble() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <T> T getObject(Class<T> requiredClass) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    final public AkType conversionType() {
+        return AkType.DATE;
+    }
 }

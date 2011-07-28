@@ -22,6 +22,7 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.FieldDef;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.types.ConversionSource;
 
 public class NewRowBackedIndexRow implements RowBase
 {
@@ -56,6 +57,11 @@ public class NewRowBackedIndexRow implements RowBase
             return null;
         }
         return row.get(fieldPos);
+    }
+
+    @Override
+    public ConversionSource conversionSource(int i, Bindings bindings) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

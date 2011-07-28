@@ -15,6 +15,8 @@
 
 package com.akiban.ais.model;
 
+import com.akiban.server.types.AkType;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,6 +52,10 @@ public class Type implements Serializable, ModelNames
     public String encoding()
     {
         return encoding;
+    }
+
+    public AkType akType() {
+        return akType;
     }
 
     @Override
@@ -90,11 +96,17 @@ public class Type implements Serializable, ModelNames
 
     public Type(String name, Integer typeParameters, Boolean fixedSize, Long maxStorageSizeBytes, String encoding)
     {
+        this(name, typeParameters, fixedSize, maxStorageSizeBytes, encoding, AkType.UNSUPPORTED);
+    }
+
+    public Type(String name, Integer typeParameters, Boolean fixedSize, Long maxStorageSizeBytes, String encoding, AkType akType)
+    {
         this.name = name;
         this.typeParameters = typeParameters;
         this.fixedSize = fixedSize;
         this.maxStorageSizeBytes = maxStorageSizeBytes;
         this.encoding = encoding;
+        this.akType = akType;
     }
 
     public static void create(AkibanInformationSchema ais, Map<String, Object> map)
@@ -124,4 +136,5 @@ public class Type implements Serializable, ModelNames
     private Boolean fixedSize;
     private Long maxStorageSizeBytes;
     private String encoding;
+    private AkType akType;
 }

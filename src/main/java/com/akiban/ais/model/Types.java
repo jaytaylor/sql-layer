@@ -15,6 +15,8 @@
 
 package com.akiban.ais.model;
 
+import com.akiban.server.types.AkType;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -72,7 +74,7 @@ public class Types {
 	public static Type U_DOUBLE =     new Type("double unsigned", 0, true, 8L, "U_DOUBLE");
 	public static Type FLOAT =        new Type("float", 0, true, 4L, "FLOAT");
 	public static Type U_FLOAT =      new Type("float unsigned", 0, true, 4L, "U_FLOAT");
-	public static Type INT =          new Type("int", 0, true, 4L, "INT");
+	public static Type INT =          new Type("int", 0, true, 4L, "INT", AkType.LONG);
 	public static Type U_INT =        new Type("int unsigned", 0, true, 4L, "U_INT");
 	public static Type MEDIUMINT =    new Type("mediumint", 0, true, 3L, "INT");
 	public static Type U_MEDIUMINT =  new Type("mediumint unsigned", 0, true, 3L, "U_INT");
@@ -94,7 +96,7 @@ public class Types {
 	//
 	public static Type VARBINARY =    new Type("varbinary", 1, false, 65535L, "VARBINARY");
 	public static Type BINARY =       new Type("binary", 1, false, 255L, "VARBINARY");
-    public static Type VARCHAR =      new Type("varchar", 1, false, 65535L, "VARCHAR");
+    public static Type VARCHAR =      new Type("varchar", 1, false, 65535L, "VARCHAR", AkType.STRING);
 	public static Type CHAR =         new Type("char", 1, false, 767L, "VARCHAR");
     //
 	// BLOB and TEXT types.  Currently handled identically. The maxByteSize values

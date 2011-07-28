@@ -13,21 +13,12 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.row;
+package com.akiban.server.types;
 
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.ConversionSource;
-
-public interface RowBase
-{
-    RowType rowType();
-    Object field(int i, Bindings bindings);
-    ConversionSource conversionSource(int i, Bindings bindings);
-    HKey hKey();
-    boolean ancestorOf(RowBase that);
-    int runId();
-    void runId(int runId);
-
-    final int UNDEFINED_RUN_ID = -1;
+public enum AkType {
+    LONG,
+    DATE,
+    STRING,
+    NULL,
+    UNSUPPORTED
 }
