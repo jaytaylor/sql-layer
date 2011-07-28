@@ -193,7 +193,7 @@ public final class GuicedServiceManager implements ServiceManager {
 
         final Collection<ServiceBinding> bindings = configurationHandler.serviceBindings();
         try {
-            guicer = Guicer.forServices(bindings, null);
+            guicer = Guicer.forServices(bindings);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }

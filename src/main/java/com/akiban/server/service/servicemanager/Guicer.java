@@ -64,7 +64,7 @@ public final class Guicer {
         } catch (ProvisionException e) {
             throw extractCircularDependencyException(e);
         }
-        return startService(instance, withActions);
+        return startService(serviceClass, instance, withActions);
     }
 
     public boolean serviceIsStarted(Class<?> serviceClass) {
@@ -111,7 +111,13 @@ public final class Guicer {
     }
 
     // public class methods
+    public static Guicer forServices(Collection<ServiceBinding> serviceBindings)
+    throws ClassNotFoundException
+    {
+        return forServices(serviceBindings, NO_OP_INJECTION_HANDLER);
+    }
 
+    @Deprecated
     public static Guicer forServices(Collection<ServiceBinding> serviceBindings, InjectionHandler<?> injectionHandler)
     throws ClassNotFoundException
     {
@@ -140,10 +146,7 @@ public final class Guicer {
 
         this.services = Collections.synchronizedSet(new LinkedHashSet<Object>());
 
-        AbstractModule module = new ServiceBindingsModule(
-                resolvedServiceBindings,
-                new DelegatingInjectionHandler(services, injectionHandler)
-        );
+        AbstractModule module = new ServiceBindingsModule(resolvedServiceBindings, injectionHandler);
         _injector = Guice.createInjector(module);
     }
 
@@ -174,51 +177,43 @@ public final class Guicer {
         return e;
     }
 
-    private static class DelegatingInjectionHandler extends InjectionHandler<Object> {
-
-        @Override
-        protected void handle(Object instance) {
-            services.add(instance);
-            delegate.afterInjection(instance);
-        }
-
-        DelegatingInjectionHandler(Set<Object> services, InjectionHandler<?> delegate)
-        {
-            super(Object.class);
-            this.services = services;
-            this.delegate = delegate;
-        }
-
-        private final Set<Object> services;
-        private final InjectionHandler<?> delegate;
-    }
-
-    private <T,S> T startService(T instance, ServiceLifecycleActions<S> withActions) {
+    private <T,S> T startService(Class<T> serviceClass, T instance, ServiceLifecycleActions<S> withActions) {
         synchronized (services) {
             if (services.contains(instance)) {
                 return instance;
             }
-            if (withActions == null) {
-                services.add(instance);
-                return instance;
-            }
 
-            S service = withActions.castIfActionable(instance);
-            if (service != null) {
-                try {
-                    withActions.onStart(service);
-                    services.add(service);
-                } catch (Exception e) {
-                    try {
-                        stopServices(withActions, e);
-                    } catch (Exception e1) {
-                        e = e1;
-                    }
-                    throw new ProvisionException("While starting service " + instance.getClass(), e);
-                }
+            for (Object dependency : reverse(dependenciesFor(serviceClass))) {
+                startServiceIfApplicable(dependency, withActions);
             }
         }
         return instance;
+    }
+
+    private static <T> List<T> reverse(List<T> list) {
+        Collections.reverse(list);
+        return list;
+    }
+
+    private <T, S> void startServiceIfApplicable(T instance, ServiceLifecycleActions<S> withActions) {
+        if (withActions == null) {
+            services.add(instance);
+            return;
+        }
+        S service = withActions.castIfActionable(instance);
+        if (service != null) {
+            try {
+                withActions.onStart(service);
+                services.add(service);
+            } catch (Exception e) {
+                try {
+                    stopServices(withActions, e);
+                } catch (Exception e1) {
+                    e = e1;
+                }
+                throw new ProvisionException("While starting service " + instance.getClass(), e);
+            }
+        }
     }
 
     private void stopServices(ServiceLifecycleActions<?> withActions, Exception initialCause) throws Exception {
@@ -283,6 +278,11 @@ public final class Guicer {
         public int compare(Class<?> o1, Class<?> o2) {
             return o1.getName().compareTo(o2.getName());
         }
+    };
+
+    private static final InjectionHandler<?> NO_OP_INJECTION_HANDLER = new InjectionHandler<Object>(Object.class) {
+        @Override
+        protected void handle(Object instance) {}
     };
 
     // nested classes
