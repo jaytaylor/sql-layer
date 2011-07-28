@@ -23,19 +23,15 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.ProvisionException;
 import com.google.inject.Scopes;
-import com.google.inject.TypeLiteral;
-import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.Dependency;
-import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.InjectionPoint;
-import com.google.inject.spi.Message;
-import com.google.inject.spi.TypeEncounter;
-import com.google.inject.spi.TypeListener;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -58,12 +54,7 @@ public final class Guicer {
     }
 
     public <T> T get(Class<T> serviceClass, ServiceLifecycleActions<?> withActions) {
-        final T instance;
-        try {
-            instance = _injector.getInstance(serviceClass);
-        } catch (ProvisionException e) {
-            throw extractCircularDependencyException(e);
-        }
+        final T instance = _injector.getInstance(serviceClass);
         return startService(serviceClass, instance, withActions);
     }
 
@@ -102,33 +93,24 @@ public final class Guicer {
      */
     public List<?> dependenciesFor(Class<?> rootClass) {
         LinkedHashMap<Class<?>,Object> result = new LinkedHashMap<Class<?>,Object>(16, .75f, true);
-        try {
-            buildDependencies(rootClass, result);
-        } catch (ProvisionException e) {
-            throw extractCircularDependencyException(e);
-        }
+        Deque<Object> dependents = new ArrayDeque<Object>();
+        buildDependencies(rootClass, result, dependents);
+        assert dependents.isEmpty() : dependents;
         return new ArrayList<Object>(result.values());
     }
 
     // public class methods
+
     public static Guicer forServices(Collection<ServiceBinding> serviceBindings)
     throws ClassNotFoundException
     {
-        return forServices(serviceBindings, NO_OP_INJECTION_HANDLER);
-    }
-
-    @Deprecated
-    public static Guicer forServices(Collection<ServiceBinding> serviceBindings, InjectionHandler<?> injectionHandler)
-    throws ClassNotFoundException
-    {
         ArgumentValidation.notNull("bindings", serviceBindings);
-        ArgumentValidation.notNull("injection handler", injectionHandler);
-        return new Guicer(serviceBindings, injectionHandler);
+        return new Guicer(serviceBindings);
     }
 
     // private methods
 
-    private Guicer(Collection<ServiceBinding> serviceBindings, InjectionHandler<?> injectionHandler)
+    private Guicer(Collection<ServiceBinding> serviceBindings)
     throws ClassNotFoundException
     {
         List<Class<?>> localDirectlyRequiredClasses = new ArrayList<Class<?>>();
@@ -146,12 +128,16 @@ public final class Guicer {
 
         this.services = Collections.synchronizedSet(new LinkedHashSet<Object>());
 
-        AbstractModule module = new ServiceBindingsModule(resolvedServiceBindings, injectionHandler);
+        AbstractModule module = new ServiceBindingsModule(resolvedServiceBindings);
         _injector = Guice.createInjector(module);
     }
 
-    private void buildDependencies(Class<?> forClass, LinkedHashMap<Class<?>,Object> results) {
+    private void buildDependencies(Class<?> forClass, LinkedHashMap<Class<?>,Object> results, Deque<Object> dependents) {
         Object instance = _injector.getInstance(forClass);
+        if (dependents.contains(instance)) {
+            throw new CircularDependencyException("circular dependency at " + forClass + ": " + dependents);
+        }
+        dependents.addLast(instance);
         Class<?> actualClass = instance.getClass();
         Object oldInstance = results.put(actualClass, instance);
         if (oldInstance != null) {
@@ -164,17 +150,10 @@ public final class Guicer {
         }
         Collections.sort(dependencyClasses, BY_CLASS_NAME);
         for (Class<?> dependencyClass : dependencyClasses) {
-            buildDependencies(dependencyClass, results);
+            buildDependencies(dependencyClass, results, dependents);
         }
-    }
-
-    private static RuntimeException extractCircularDependencyException(ProvisionException e) {
-        for (Message message: e.getErrorMessages()) {
-            if (message.getMessage().contains("circular dependency")) { // Eww! But there isn't a better way I know of
-                return new CircularDependencyException(e);
-            }
-        }
-        return e;
+        Object removed = dependents.removeLast();
+        assert removed == instance : removed + " != " + instance;
     }
 
     private <T,S> T startService(Class<T> serviceClass, T instance, ServiceLifecycleActions<S> withActions) {
@@ -280,11 +259,6 @@ public final class Guicer {
         }
     };
 
-    private static final InjectionHandler<?> NO_OP_INJECTION_HANDLER = new InjectionHandler<Object>(Object.class) {
-        @Override
-        protected void handle(Object instance) {}
-    };
-
     // nested classes
 
     private static final class ResolvedServiceBinding {
@@ -322,59 +296,18 @@ public final class Guicer {
                 Class unchecked = binding.serviceInterfaceClass();
                 bind(unchecked).to(binding.serviceImplementationClass()).in(Scopes.SINGLETON);
             }
-            binder().bindListener(Matchers.any(), new MyTypeListener(injectionHandler));
-            binder().disableCircularProxies();
         }
 
         // ServiceBindingsModule interface
 
-        private ServiceBindingsModule(Collection<ResolvedServiceBinding> bindings, InjectionHandler<?> injectionHandler)
+        private ServiceBindingsModule(Collection<ResolvedServiceBinding> bindings)
         {
             this.bindings = bindings;
-            this.injectionHandler = injectionHandler;
         }
 
         // object state
 
         private final Collection<ResolvedServiceBinding> bindings;
-        private final InjectionHandler<?> injectionHandler;
-    }
-
-    private static class MyTypeListener implements TypeListener {
-        @Override
-        public <I> void hear(TypeLiteral<I> type, TypeEncounter<I> encounter) {
-            if (injectionHandler.classIsInteresting(type.getRawType())) {
-                encounter.register(injectionHandler);
-            }
-        }
-
-        MyTypeListener(InjectionHandler<?> injectionHandler) {
-            this.injectionHandler = injectionHandler;
-        }
-
-        private final InjectionHandler<?> injectionHandler;
-    }
-
-    abstract static class InjectionHandler<T> implements InjectionListener<Object> {
-
-        @Override
-        final public void afterInjection(Object injectee) {
-            if (classIsInteresting(injectee.getClass())) {
-                handle(targetClass.cast(injectee));
-            }
-        }
-
-        final public boolean classIsInteresting(Class<?> type) {
-            return targetClass.isAssignableFrom(type) && ! (type.getPackage().getName().startsWith("com.google."));
-        }
-
-        protected abstract void handle(T instance);
-
-        protected InjectionHandler(Class<T> targetClass) {
-            this.targetClass = targetClass;
-        }
-
-        private final Class<T> targetClass;
     }
 
     static interface ServiceLifecycleActions<T> {

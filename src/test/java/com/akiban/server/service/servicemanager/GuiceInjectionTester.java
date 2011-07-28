@@ -21,7 +21,6 @@ import com.akiban.util.JUnitUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -39,14 +38,13 @@ public final class GuiceInjectionTester<T> {
             configHandler.require(requiredClass.getName());
         }
         try {
-            guicer = Guicer.forServices(configHandler.serviceBindings(), injectionHandler);
+            guicer = Guicer.forServices(configHandler.serviceBindings());
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
         for (Class<?> requiredClass : guicer.directlyRequiredClasses()) {
             guicer.get(requiredClass, shutdownHook);
         }
-        startupOrder.addAll(injectionHandler.startedClasses());
         guicer.stopAllServices(shutdownHook);
         return this;
     }
@@ -70,7 +68,6 @@ public final class GuiceInjectionTester<T> {
 
     public GuiceInjectionTester<T> check(Class<?>... expectedClasses) {
         List<Class<?>> expectedList = Arrays.asList(expectedClasses);
-        checkExactContents("startup", expectedList, startupOrder);
         checkExactContents("shutdown", expectedList, shutdownHook.stoppedClasses());
         return this;
     }
@@ -82,13 +79,6 @@ public final class GuiceInjectionTester<T> {
 
     private void checkSingleDependency(Class<?> aClass, Class<?> itsDependency) {
     // The class should appear after the dependency in startup, and before it for shutdown
-        int aClassStartupOrder = findInList(aClass, startupOrder);
-        int dependencyStartupOrder = findInList(itsDependency, startupOrder);
-        assertTrue(
-                String.format("%s started after %s: %s", n(itsDependency), n(aClass), l(startupOrder)),
-                aClassStartupOrder > dependencyStartupOrder
-        );
-
         List<Class<?>> shutdownOrder = shutdownHook.stoppedClasses();
         int aClassShutdownOrder = findInList(aClass, shutdownOrder);
         int dependencyShutdownOrder = findInList(itsDependency, shutdownOrder);
@@ -117,37 +107,17 @@ public final class GuiceInjectionTester<T> {
     }
 
     public static <T> GuiceInjectionTester<T> forTarget(Class<T> targetClass) {
-        return new GuiceInjectionTester<T>(targetClass);
+        return new GuiceInjectionTester<T>();
     }
 
-    private GuiceInjectionTester(Class<T> interestingClass) {
-        injectionHandler = new ListingInjectionHandler<T>(interestingClass);
+    private GuiceInjectionTester() {
     }
 
     private final DefaultServiceConfigurationHandler configHandler = new DefaultServiceConfigurationHandler();
-    private final ListingInjectionHandler<T> injectionHandler;
     private final ListOnShutdown shutdownHook = new ListOnShutdown();
-    private final List<Class<?>> startupOrder = new ArrayList<Class<?>>();
     private Guicer guicer;
 
     // nested classes
-
-    private static class ListingInjectionHandler<T> extends Guicer.InjectionHandler<T> {
-        @Override
-        protected void handle(T instance) {
-            startedClasses.add(instance.getClass());
-        }
-
-        LinkedHashSet<Class<?>> startedClasses() {
-            return startedClasses;
-        }
-
-        private ListingInjectionHandler(Class<T> targetClass) {
-            super(targetClass);
-        }
-
-        private final LinkedHashSet<Class<?>> startedClasses = new LinkedHashSet<Class<?>>();
-    }
 
     private static class ListOnShutdown implements Guicer.ServiceLifecycleActions<Object> {
 

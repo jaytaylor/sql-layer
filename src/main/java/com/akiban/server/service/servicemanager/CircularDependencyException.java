@@ -16,6 +16,10 @@
 package com.akiban.server.service.servicemanager;
 
 public class CircularDependencyException extends RuntimeException {
+    public CircularDependencyException(String message) {
+        super(message);
+    }
+
     public CircularDependencyException(Throwable cause) {
         super(cause);
     }
