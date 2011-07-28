@@ -79,9 +79,29 @@ public final class GuicerDITest {
                 .check()
                 .startAndStop(F.class);
     }
+    
+    @Test
+    public void fieldInjection() {
+        new GuiceInjectionTester()
+                .bind(FieldInjectionA.class, FieldInjectionAImpl.class)
+                .bind(FieldInjectionB.class, FieldInjectionBImpl.class)
+                .startAndStop(FieldInjectionA.class)
+                .check(FieldInjectionAImpl.class, FieldInjectionBImpl.class)
+                .checkDependencies(FieldInjectionAImpl.class, FieldInjectionBImpl.class);
+    }
 
-    private static GuiceInjectionTester<Interesting> standardTester() {
-        return GuiceInjectionTester.forTarget(Interesting.class)
+    @Test
+    public void methodInjection() {
+        new GuiceInjectionTester()
+                .bind(MethodInjectionA.class, MethodInjectionAImpl.class)
+                .bind(MethodInjectionB.class, MethodInjectionBImpl.class)
+                .startAndStop(MethodInjectionA.class)
+                .check(MethodInjectionAImpl.class, MethodInjectionBImpl.class)
+                .checkDependencies(MethodInjectionAImpl.class, MethodInjectionBImpl.class);
+    }
+
+    private static GuiceInjectionTester standardTester() {
+        return new GuiceInjectionTester()
                 .bind(A.class, AImpl.class)
                 .bind(B.class, BImpl.class)
                 .bind(C.class, CImpl.class)
@@ -162,7 +182,27 @@ public final class GuicerDITest {
         @Inject
         public CircularF(A a) {
             super(a);
-            System.out.println(a);
         }
     }
+
+    public interface FieldInjectionA {}
+    public interface FieldInjectionB {}
+    
+    public static class FieldInjectionAImpl implements FieldInjectionA {
+        @SuppressWarnings("unused") @Inject private FieldInjectionB b = null;
+    }
+    
+    public static class FieldInjectionBImpl implements FieldInjectionB {}
+
+    public interface MethodInjectionA {}
+    public interface MethodInjectionB {}
+
+    public static class MethodInjectionAImpl implements MethodInjectionA {
+        @SuppressWarnings("unused") @Inject
+        private void setDependency(MethodInjectionB b) {
+            assert b != null;
+        }
+    }
+
+    public static class MethodInjectionBImpl implements MethodInjectionB {}
 }

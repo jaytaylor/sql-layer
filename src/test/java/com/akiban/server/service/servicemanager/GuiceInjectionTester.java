@@ -26,14 +26,14 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public final class GuiceInjectionTester<T> {
+public final class GuiceInjectionTester {
 
-    public <I> GuiceInjectionTester<T> bind(Class<I> anInterface, Class<? extends I> anImplementation) {
+    public <I> GuiceInjectionTester bind(Class<I> anInterface, Class<? extends I> anImplementation) {
         configHandler.bind(anInterface.getName(), anImplementation.getName());
         return this;
     }
 
-    public GuiceInjectionTester<T> startAndStop(Class<?>... requiredClasses) {
+    public GuiceInjectionTester startAndStop(Class<?>... requiredClasses) {
         for (Class<?> requiredClass : requiredClasses) {
             configHandler.require(requiredClass.getName());
         }
@@ -49,7 +49,7 @@ public final class GuiceInjectionTester<T> {
         return this;
     }
 
-    public GuiceInjectionTester<T> checkDependencies(Class<?> aClass, Class<?>... itsDependencies) {
+    public GuiceInjectionTester checkDependencies(Class<?> aClass, Class<?>... itsDependencies) {
         for (Class<?> dependency : itsDependencies) {
             checkSingleDependency(aClass, dependency);
         }
@@ -66,13 +66,16 @@ public final class GuiceInjectionTester<T> {
         return this;
     }
 
-    public GuiceInjectionTester<T> check(Class<?>... expectedClasses) {
+    public GuiceInjectionTester check(Class<?>... expectedClasses) {
         List<Class<?>> expectedList = Arrays.asList(expectedClasses);
         checkExactContents("shutdown", expectedList, shutdownHook.stoppedClasses());
         return this;
     }
 
     private void checkExactContents(String whichList, List<Class<?>> expectedList, List<Class<?>> actualList) {
+        if (expectedList.size() != actualList.size()) {
+            JUnitUtils.equalCollections(whichList + " lists not of same size", expectedList, actualList);
+        }
         assertEquals(whichList + " size", expectedList.size(), actualList.size());
         assertTrue(whichList + ": " + l(expectedList) + " != " + l(actualList), actualList.containsAll(expectedList));
     }
@@ -104,13 +107,6 @@ public final class GuiceInjectionTester<T> {
         int index = list.indexOf(aClass);
         assertTrue(aClass + " not in list " + list, index >= 0);
         return index;
-    }
-
-    public static <T> GuiceInjectionTester<T> forTarget(Class<T> targetClass) {
-        return new GuiceInjectionTester<T>();
-    }
-
-    private GuiceInjectionTester() {
     }
 
     private final DefaultServiceConfigurationHandler configHandler = new DefaultServiceConfigurationHandler();

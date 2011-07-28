@@ -137,21 +137,39 @@ public final class Guicer {
         if (dependents.contains(instance)) {
             throw new CircularDependencyException("circular dependency at " + forClass + ": " + dependents);
         }
+
+        // Start building this object
         dependents.addLast(instance);
+
         Class<?> actualClass = instance.getClass();
         Object oldInstance = results.put(actualClass, instance);
         if (oldInstance != null) {
             assert oldInstance == instance : oldInstance + " != " + instance;
         }
-        InjectionPoint constructorInjector = InjectionPoint.forConstructorOf(actualClass);
+
+        // Build the dependency list
         List<Class<?>> dependencyClasses = new ArrayList<Class<?>>();
-        for (Dependency<?> dependency : constructorInjector.getDependencies()) {
+        for (Dependency<?> dependency : InjectionPoint.forConstructorOf(actualClass).getDependencies()) {
             dependencyClasses.add(dependency.getKey().getTypeLiteral().getRawType());
         }
+        for (InjectionPoint injectionPoint : InjectionPoint.forInstanceMethodsAndFields(actualClass)) {
+            for (Dependency<?> dependency : injectionPoint.getDependencies()) {
+                dependencyClasses.add(dependency.getKey().getTypeLiteral().getRawType());
+            }
+        }
+        for (InjectionPoint injectionPoint : InjectionPoint.forStaticMethodsAndFields(actualClass)) {
+            for (Dependency<?> dependency : injectionPoint.getDependencies()) {
+                dependencyClasses.add(dependency.getKey().getTypeLiteral().getRawType());
+            }
+        }
+
+        // Sort it and recursively invoke
         Collections.sort(dependencyClasses, BY_CLASS_NAME);
         for (Class<?> dependencyClass : dependencyClasses) {
             buildDependencies(dependencyClass, results, dependents);
         }
+
+        // Done building the object; pop the deque and confirm the instance
         Object removed = dependents.removeLast();
         assert removed == instance : removed + " != " + instance;
     }
