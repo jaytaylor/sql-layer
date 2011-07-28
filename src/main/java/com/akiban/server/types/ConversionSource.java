@@ -18,7 +18,6 @@ package com.akiban.server.types;
 public interface ConversionSource {
     public boolean isNull();
     public long getLong();
-    public double getDouble();
-    public <T> T getObject(Class<T> requiredClass);
-    AkType conversionType();
+    public long getDate();
+    public String getString();
 }

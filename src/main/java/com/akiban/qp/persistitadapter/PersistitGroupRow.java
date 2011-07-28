@@ -60,7 +60,8 @@ public class PersistitGroupRow extends AbstractRow
     public ConversionSource conversionSource(int i, Bindings bindings) {
         FieldDef fieldDef = rowDef().getFieldDef(i);
         RowData rowData = rowData();
-        return conversionSource.forField(fieldDef, rowData);
+        conversionSource.bind(fieldDef, rowData);
+        return conversionSource;
     }
 
     public PersistitHKey hKey()

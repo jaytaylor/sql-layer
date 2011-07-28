@@ -15,28 +15,9 @@
 
 package com.akiban.server.types;
 
-public abstract class AbstractDateSource implements ConversionSource {
-
-    protected abstract long computeDate();
-
-    @Override
-    final public long getLong() {
-        SourceIsNullException.checkNotNull(this);
-        return computeDate();
-    }
-
-    @Override
-    final public double getDouble() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> T getObject(Class<T> requiredClass) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    final public AkType conversionType() {
-        return AkType.DATE;
-    }
+public interface ConversionTarget {
+    void setNull();
+    void setLong(long value);
+    void setDate(long value);
+    void setString(String value);
 }

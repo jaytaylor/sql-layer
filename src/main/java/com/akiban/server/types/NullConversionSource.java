@@ -32,18 +32,13 @@ public final class NullConversionSource implements ConversionSource {
     }
 
     @Override
-    public double getDouble() {
+    public long getDate() {
         throw new SourceIsNullException();
     }
 
     @Override
-    public <T> T getObject(Class<T> requiredClass) {
+    public String getString() {
         throw new SourceIsNullException();
-    }
-
-    @Override
-    public AkType conversionType() {
-        return AkType.NULL;
     }
 
     private NullConversionSource() {}

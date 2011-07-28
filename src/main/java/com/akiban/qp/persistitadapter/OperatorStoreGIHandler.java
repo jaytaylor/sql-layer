@@ -61,7 +61,7 @@ class OperatorStoreGIHandler {
             Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
 
             ConversionSource source = row.conversionSource(flattenedIndex, UndefBindings.only());
-            target.append(source);
+            column.getType().akType().dispatch(source, target);
 
             boolean isHKeyComponent = i+1 > groupIndex.getColumns().size();
             if (sourceRowPosition.isAboveSegment() && isHKeyComponent && column.getTable().equals(sourceTable)) {

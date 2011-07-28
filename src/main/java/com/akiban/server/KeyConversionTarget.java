@@ -15,12 +15,10 @@
 
 package com.akiban.server;
 
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ConversionDispatch;
-import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ConversionTarget;
 import com.persistit.Key;
 
-public final class KeyConversionTarget {
+public final class KeyConversionTarget implements ConversionTarget {
 
     // KeyConversionTarget interface
 
@@ -28,13 +26,24 @@ public final class KeyConversionTarget {
         this.key = key;
     }
 
-    public void append(ConversionSource conversionSource) {
-        if (conversionSource.isNull()) {
-            key.append(null);
-        } else {
-            KeyAppender appender = dispatch.get(conversionSource.conversionType());
-            appender.appendSource(conversionSource, key);
-        }
+    @Override
+    public void setNull() {
+        key.append(null);
+    }
+
+    @Override
+    public void setLong(long value) {
+        key.append(value);
+    }
+
+    @Override
+    public void setDate(long value) {
+        key.append(value);
+    }
+
+    @Override
+    public void setString(String value) {
+        key.append(value);
     }
 
     // object interface
@@ -47,31 +56,4 @@ public final class KeyConversionTarget {
     // object state
 
     private Key key;
-    private final ConversionDispatch<KeyAppender> dispatch = new ConversionDispatch<KeyAppender>(
-            new LongAppender(),
-            new LongAppender(),
-            new StringAppender()
-    );
-
-    // nested classes
-
-    private interface KeyAppender {
-        void appendSource(ConversionSource source, Key key);
-    }
-
-    private static class LongAppender implements KeyAppender {
-        @Override
-        public void appendSource(ConversionSource source, Key key) {
-            assert source.conversionType() == AkType.LONG : source.conversionType();
-            key.append(source.getLong());
-        }
-    }
-
-    private static class StringAppender implements KeyAppender {
-        @Override
-        public void appendSource(ConversionSource source, Key key) {
-            assert source.conversionType() == AkType.STRING : source.conversionType();
-            key.append(source.getObject(String.class));
-        }
-    }
 }
