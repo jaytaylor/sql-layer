@@ -16,9 +16,11 @@
 package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.service.servicemanager.configuration.DefaultServiceConfigurationHandler;
+import com.akiban.util.JUnitUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 
@@ -26,7 +28,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public final class GuiceInjectionTester<T> {
-
 
     public <I> GuiceInjectionTester<T> bind(Class<I> anInterface, Class<? extends I> anImplementation) {
         configHandler.bind(anInterface.getName(), anImplementation.getName());
@@ -37,7 +38,6 @@ public final class GuiceInjectionTester<T> {
         for (Class<?> requiredClass : requiredClasses) {
             configHandler.require(requiredClass.getName());
         }
-        final Guicer guicer;
         try {
             guicer = Guicer.forServices(configHandler.serviceBindings(), injectionHandler);
         } catch (ClassNotFoundException e) {
@@ -55,6 +55,16 @@ public final class GuiceInjectionTester<T> {
         for (Class<?> dependency : itsDependencies) {
             checkSingleDependency(aClass, dependency);
         }
+
+        // alternate method
+        List<Class<?>> allClassesExpected = new ArrayList<Class<?>>();
+        allClassesExpected.add(aClass);
+        Collections.addAll(allClassesExpected, itsDependencies);
+        List<Class<?>> allClassesActual = new ArrayList<Class<?>>();
+        for (Object instance : guicer.dependenciesFor(aClass)) {
+            allClassesActual.add(instance.getClass());
+        }
+        JUnitUtils.equalCollections("for " + aClass, allClassesExpected, allClassesActual);
         return this;
     }
 
@@ -118,6 +128,7 @@ public final class GuiceInjectionTester<T> {
     private final ListingInjectionHandler<T> injectionHandler;
     private final ListOnShutdown shutdownHook = new ListOnShutdown();
     private final List<Class<?>> startupOrder = new ArrayList<Class<?>>();
+    private Guicer guicer;
 
     // nested classes
 

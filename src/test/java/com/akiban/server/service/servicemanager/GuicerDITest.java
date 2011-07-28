@@ -44,8 +44,8 @@ public final class GuicerDITest {
         standardTester()
                 .startAndStop(A.class)
                 .check(AImpl.class, BImpl.class, CImpl.class, EImpl.class, DImpl.class, FImpl.class)
-                .checkDependencies(AImpl.class, BImpl.class, CImpl.class, EImpl.class, DImpl.class, FImpl.class)
-                .checkDependencies(BImpl.class, EImpl.class, DImpl.class, FImpl.class)
+                .checkDependencies(AImpl.class, BImpl.class, DImpl.class, CImpl.class, FImpl.class, EImpl.class)
+                .checkDependencies(BImpl.class, DImpl.class, FImpl.class, EImpl.class)
                 .checkDependencies(CImpl.class, FImpl.class, EImpl.class)
                 .checkDependencies(DImpl.class, FImpl.class, EImpl.class)
                 .checkDependencies(EImpl.class)
@@ -143,8 +143,8 @@ public final class GuicerDITest {
     
     public static class DImpl extends Interesting implements D {
         @Inject
-        public DImpl(F f, E e) {
-            super(f, e);
+        public DImpl(F f) {
+            super(f);
         }
     }
 
