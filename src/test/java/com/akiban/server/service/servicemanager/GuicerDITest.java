@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.Assert.fail;
+
 /**
  * <p>Tests the startup of various services. Here's the dependency graph:
  * <pre>
@@ -74,10 +76,14 @@ public final class GuicerDITest {
 
     @Test(expected = CircularDependencyException.class)
     public void circular() {
-        standardTester()
-                .bind(F.class, CircularF.class)
-                .check()
-                .startAndStop(F.class);
+        GuiceInjectionTester tester = standardTester().bind(F.class, CircularF.class).check();
+        try {
+            tester.startAndStop(F.class);
+            fail("expected a CircularDependencyException");
+        } catch (CircularDependencyException e) {
+            tester.check();
+            throw e;
+        }
     }
     
     @Test
