@@ -15,6 +15,9 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.tree.TreeService;
+import com.google.inject.Inject;
 import com.persistit.Key;
 
 import java.util.ArrayList;
@@ -33,6 +36,11 @@ public class TestOperatorStore extends OperatorStore {
 
     public void clearHookStrings() {
         hook.getAndClear();
+    }
+
+    @Inject
+    public TestOperatorStore(DXLService dxl, TreeService treeService) {
+        super(dxl, treeService);
     }
 
     // service overrides

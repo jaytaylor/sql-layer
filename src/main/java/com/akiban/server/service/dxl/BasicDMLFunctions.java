@@ -74,6 +74,8 @@ import com.akiban.server.service.dxl.BasicDXLMiddleman.ScanData;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.RowCollector;
+import com.akiban.server.store.SchemaManager;
+import com.akiban.server.store.Store;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Tap;
@@ -98,8 +100,8 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     private static Tap SCAN_RETRY_COUNT_TAP = Tap.add(new Tap.Count("BasicDMLFunctions: scan retries"));
     private static Tap SCAN_RETRY_ABANDON_TAP = Tap.add(new Tap.Count("BasicDMLFunctions: scan abandons"));
 
-    BasicDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions ddlFunctions) {
-        super(middleman);
+    BasicDMLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, DDLFunctions ddlFunctions) {
+        super(middleman, schemaManager, store);
         this.ddlFunctions = ddlFunctions;
         this.scanner = new Scanner();
     }
