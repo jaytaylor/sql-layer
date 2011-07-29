@@ -61,7 +61,9 @@ import com.akiban.server.api.ddl.DuplicateTableNameException;
 import com.akiban.server.api.ddl.ProtectedTableDDLException;
 import com.akiban.server.encoding.EncoderFactory;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeLink;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,14 +83,11 @@ import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.RowDefCache;
 import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.service.tree.TreeVisitor;
 import com.persistit.Exchange;
 import com.persistit.Key;
-import com.persistit.KeyFilter;
 import com.persistit.Transaction;
 import com.persistit.Transaction.DefaultCommitListener;
 import com.persistit.exception.RollbackException;
@@ -136,11 +135,21 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     private AkibanInformationSchema ais;
-    private ServiceManager serviceManager;
+    private final SessionService sessionService;
+    private final Store store;
+    private final TreeService treeService;
+    private final ConfigurationService config;
     private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
     private ByteBuffer aisByteBuffer;
 
+    @Inject
+    public PersistitStoreSchemaManager(ConfigurationService config, SessionService sessionService, Store store, TreeService treeService) {
+        this.config = config;
+        this.sessionService = sessionService;
+        this.treeService = treeService;
+        this.store = store;
+    }
 
     private static String computeTreeName(Group group, Index index) {
         IndexName iName = index.getIndexName();
@@ -276,7 +285,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         AISTableNameChanger nameChanger = new AISTableNameChanger(newTable);
         nameChanger.setSchemaName(newName.getSchemaName());
         nameChanger.setNewTableName(newName.getTableName());
-        nameChanger.doChange();;
+        nameChanger.doChange();
         
         String vol1 = getVolumeForSchemaTree(currentName.getSchemaName());
         String vol2 = getVolumeForSchemaTree(newName.getSchemaName());
@@ -520,7 +529,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 final int tableId = schemaEx.getKey().indexTo(-1).decodeInt();
                 schemaEx.remove();
                 statusEx.clear().append(tableId).remove();
-                serviceManager.getTreeService().getTableStatusCache().drop(tableId);
+                treeService.getTableStatusCache().drop(tableId);
             }
         }
     }
@@ -534,7 +543,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 int tableId = table.getTableId();
                 statusEx.clear().append(tableId).remove();
                 // Status created on demand, can't check
-                serviceManager.getTreeService().getTableStatusCache().drop(tableId);
+                treeService.getTableStatusCache().drop(tableId);
             }
         }
     }
@@ -672,8 +681,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     @Override
     public synchronized void forceNewTimestamp() {
-        final TreeService treeService = serviceManager.getTreeService();
-        Session session = ServiceManagerImpl.newSession();
+        Session session = sessionService.createSession();
         try {
             updateTimestamp.set(treeService.getTimestamp(session));
         } finally {
@@ -693,9 +701,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     @Override
     public void start() throws Exception {
-        serviceManager = ServiceManagerImpl.get();
         updateTimestamp = new AtomicLong();
-        ConfigurationService config = serviceManager.getConfigurationService();
         maxAISBufferSize = Integer.parseInt(config.getProperty(MAX_AIS_SIZE_PROPERTY));
         if(maxAISBufferSize < 0) {
             LOG.warn("Clamping property "+MAX_AIS_SIZE_PROPERTY+" to 0");
@@ -709,7 +715,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public void stop() throws Exception {
         this.ais = null;
-        this.serviceManager = null;
         this.updateTimestamp = null;
         this.maxAISBufferSize = 0;
         this.aisByteBuffer = null;
@@ -727,8 +732,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * specifically, to be up and functional
      */
     private void afterStart() throws Exception {
-        final TreeService treeService = serviceManager.getTreeService();
-        final Session session = ServiceManagerImpl.newSession();
+        final Session session = sessionService.createSession();
         final Transaction transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;
         InputStream aisFileStream = null;
@@ -786,9 +790,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private void onTransactionCommit(final AkibanInformationSchema newAis, final long timestamp) {
         // None of this code "can fail" because it is being ran inside of a Persistit commit. Fail LOUDLY.
         try {
-            final RowDefCache rowDefCache = serviceManager.getStore().getRowDefCache();
+            final RowDefCache rowDefCache = store.getRowDefCache();
             rowDefCache.clear();
-            serviceManager.getTreeService().getTableStatusCache().detachAIS();
+            treeService.getTableStatusCache().detachAIS();
             rowDefCache.setAIS(newAis);
             updateTimestamp.set(timestamp);
             this.ais = newAis;
@@ -1060,7 +1064,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     private String getVolumeForSchemaTree(final String schemaName) {
-        return serviceManager.getTreeService().volumeForTree(schemaName, SCHEMA_TREE_NAME);
+        return treeService.volumeForTree(schemaName, SCHEMA_TREE_NAME);
     }
 
     /**
@@ -1078,7 +1082,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
         //TODO: Verify the newAIS.isFrozen(), if not throw an exception. 
         ByteBuffer buffer = trySerializeAIS(newAIS, getVolumeForSchemaTree(schemaName));
-        final TreeService treeService = serviceManager.getTreeService();
         final Transaction transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;
         for(;;) {

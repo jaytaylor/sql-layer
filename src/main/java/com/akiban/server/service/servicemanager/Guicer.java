@@ -176,9 +176,6 @@ public final class Guicer {
 
     private <T,S> T startService(Class<T> serviceClass, T instance, ServiceLifecycleActions<S> withActions) {
         synchronized (services) {
-            if (services.contains(instance)) {
-                return instance;
-            }
 
             for (Object dependency : reverse(dependenciesFor(serviceClass))) {
                 startServiceIfApplicable(dependency, withActions);
@@ -193,6 +190,9 @@ public final class Guicer {
     }
 
     private <T, S> void startServiceIfApplicable(T instance, ServiceLifecycleActions<S> withActions) {
+        if (services.contains(instance)) {
+            return;
+        }
         if (withActions == null) {
             services.add(instance);
             return;

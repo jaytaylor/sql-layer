@@ -28,12 +28,13 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import com.akiban.server.service.session.SessionService;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.TableStatusCache;
 import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
@@ -68,7 +69,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
     static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
-    private ConfigurationService configService;
+    private final ConfigurationService configService;
 
     private static int instanceCount = 0;
 
@@ -82,7 +83,15 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
     private final Map<String, TreeLink> statusLinkMap = new HashMap<String, TreeLink>();
 
+    private final SessionService sessionService;
+
     private TableStatusCache tableStatusCache;
+
+    @Inject
+    public TreeServiceImpl(SessionService sessionService, ConfigurationService configService) {
+        this.sessionService = sessionService;
+        this.configService = configService;
+    }
 
     private final TreeServiceMXBean bean = new TreeServiceMXBean() {
         @Override
@@ -123,8 +132,6 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     public synchronized void start() throws Exception {
-        configService = ServiceManagerImpl.get().getConfigurationService();
-
         assert getDb() == null;
         // TODO - remove this when sure we don't need it
         ++instanceCount;
@@ -137,7 +144,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         Persistit db = new Persistit();
         dbRef.set(db);
 
-        tableStatusCache = new TableStatusCache(db, this);
+        tableStatusCache = new TableStatusCache(sessionService, db, this);
         tableStatusCache.register();
 
         db.setPersistitLogger(new Slf4jAdapter(LOG));
@@ -153,7 +160,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         }
     }
 
-    final Properties setupPersistitProperties(
+    static Properties setupPersistitProperties(
             final ConfigurationService configService)
             throws FileNotFoundException {
         //

@@ -52,7 +52,7 @@ public class SchemaFactory {
 
     private static class FakeRowDefCache extends RowDefCache {
         public FakeRowDefCache() {
-            super(new TableStatusCache(null, null));
+            super(new TableStatusCache(null, null, null));
         }
 
         @Override
