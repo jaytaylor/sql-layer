@@ -239,7 +239,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     @Inject
     public OperatorStore(DXLService dxl, TreeService treeService) {
-        super(new PersistitStore(false));
+        super(new PersistitStore(false, treeService));
         this.dxl = dxl;
         this.treeService = treeService;
     }
