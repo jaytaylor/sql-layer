@@ -220,12 +220,13 @@ public final class Guicer {
         List<Throwable> exceptions = tryStopServices(withActions, initialCause);
         if (!exceptions.isEmpty()) {
             if (exceptions.size() == 1) {
-                throw Exceptions.throwAlways(exceptions.get(0));
+                throw Exceptions.throwAlways(exceptions, 0);
             }
             for (Throwable t : exceptions) {
                 t.printStackTrace();
             }
-            throw new Exception("Failure(s) while shutting down services: " + exceptions, exceptions.get(0));
+            Throwable cause = exceptions.get(0);
+            throw new Exception("Failure(s) while shutting down services: " + exceptions, cause);
         }
     }
 

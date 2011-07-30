@@ -15,6 +15,8 @@
 
 package com.akiban.util;
 
+import java.util.List;
+
 public final class Exceptions {
     /**
      * Throws the given throwable, downcast, if it's of the appropriate type
@@ -46,6 +48,11 @@ public final class Exceptions {
         }
         throwIfInstanceOf(t, Error.class);
         throw new Error("not a RuntimeException, checked exception or Error?!", t);
+    }
+
+    public static Error throwAlways(List<? extends Throwable> throwables, int index) {
+        Throwable t = throwables.get(index);
+        throw throwAlways(t);
     }
 
     /*
