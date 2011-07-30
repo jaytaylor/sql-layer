@@ -59,6 +59,7 @@ import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.server.util.RowDefNotFoundException;
@@ -177,7 +178,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         try {
-            DMLFunctions dml = new BasicDMLFunctions(middleman(), schemaManager(), store(), this);
+            DMLFunctions dml = new BasicDMLFunctions(middleman(), schemaManager(), store(), treeService(), this);
             if(userTable.getParentJoin() == null) {
                 // Root table and no child tables, can delete all associated trees
                 store().removeTrees(session, table);
@@ -500,7 +501,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
     }
 
-    BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store) {
-        super(middleman, schemaManager, store);
+    BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService) {
+        super(middleman, schemaManager, store, treeService);
     }
 }

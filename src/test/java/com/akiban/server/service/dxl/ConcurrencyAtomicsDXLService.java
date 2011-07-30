@@ -34,6 +34,7 @@ import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.api.dml.scan.TableDefinitionChangedException;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.google.inject.Inject;
@@ -74,12 +75,12 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
     @Override
     DMLFunctions createDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions newlyCreatedDDLF) {
-        return new ScanhooksDMLFunctions(middleman, schemaManager(), store(), newlyCreatedDDLF);
+        return new ScanhooksDMLFunctions(middleman, schemaManager(), store(), treeService(), newlyCreatedDDLF);
     }
 
     @Override
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
-        return new ConcurrencyAtomicsDDLFunctions(middleman, schemaManager(), store());
+        return new ConcurrencyAtomicsDDLFunctions(middleman, schemaManager(), store(), treeService());
     }
 
     public static ScanHooks installScanHook(Session session, ScanHooks hook) {
@@ -113,13 +114,13 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
     }
 
     @Inject
-    public ConcurrencyAtomicsDXLService(SchemaManager schemaManager, Store store) {
-        super(schemaManager, store);
+    public ConcurrencyAtomicsDXLService(SchemaManager schemaManager, Store store, TreeService treeService) {
+        super(schemaManager, store, treeService);
     }
 
     public class ScanhooksDMLFunctions extends BasicDMLFunctions {
-        ScanhooksDMLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, DDLFunctions ddlFunctions) {
-            super(middleman, schemaManager, store, ddlFunctions);
+        ScanhooksDMLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService, DDLFunctions ddlFunctions) {
+            super(middleman, schemaManager, store, treeService, ddlFunctions);
         }
 
         @Override
@@ -182,8 +183,8 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
             }
         }
 
-        private ConcurrencyAtomicsDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store) {
-            super(middleman, schemaManager, store);
+        private ConcurrencyAtomicsDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService) {
+            super(middleman, schemaManager, store, treeService);
         }
     }
 }

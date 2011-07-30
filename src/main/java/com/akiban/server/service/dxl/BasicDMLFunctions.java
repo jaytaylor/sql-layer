@@ -71,14 +71,15 @@ import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.api.dml.scan.TableDefinitionChangedException;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.service.dxl.BasicDXLMiddleman.ScanData;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.RowCollector;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Tap;
+import com.google.inject.Inject;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
@@ -100,8 +101,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     private static Tap SCAN_RETRY_COUNT_TAP = Tap.add(new Tap.Count("BasicDMLFunctions: scan retries"));
     private static Tap SCAN_RETRY_ABANDON_TAP = Tap.add(new Tap.Count("BasicDMLFunctions: scan abandons"));
 
-    BasicDMLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, DDLFunctions ddlFunctions) {
-        super(middleman, schemaManager, store);
+    @Inject
+    BasicDMLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService, DDLFunctions ddlFunctions) {
+        super(middleman, schemaManager, store, treeService);
         this.ddlFunctions = ddlFunctions;
         this.scanner = new Scanner();
     }
@@ -355,7 +357,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             throw new CursorIsFinishedException(cursorId);
         }
         
-        Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
+        Transaction transaction = treeService().getTransaction(session);
         int retriesLeft = SCAN_RETRY_COUNT;
         while (true) {
             output.mark();

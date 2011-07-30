@@ -175,8 +175,11 @@ public final class Guicer {
     }
 
     private <T,S> T startService(Class<T> serviceClass, T instance, ServiceLifecycleActions<S> withActions) {
+        // quick check; startServiceIfApplicable will do this too, but this way we can avoid finding dependencies
+        if (services.contains(instance)) {
+            return instance;
+        }
         synchronized (services) {
-
             for (Object dependency : reverse(dependenciesFor(serviceClass))) {
                 startServiceIfApplicable(dependency, withActions);
             }

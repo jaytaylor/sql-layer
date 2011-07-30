@@ -38,6 +38,7 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.api.dml.scan.ScanFlag;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.config.TestConfigService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
@@ -207,11 +208,11 @@ public class ApiTestBase {
     }
     
     protected final DMLFunctions dml() {
-        return sm.getDXL().dmlFunctions();
+        return dxl().dmlFunctions();
     }
 
     protected final DDLFunctions ddl() {
-        return sm.getDXL().ddlFunctions();
+        return dxl().ddlFunctions();
     }
 
     protected final Store store() {
@@ -248,6 +249,14 @@ public class ApiTestBase {
 
     protected final ServiceManager serviceManager() {
         return sm;
+    }
+
+    protected final ConfigurationService configService() {
+        return sm.getConfigurationService();
+    }
+
+    protected final DXLService dxl() {
+        return sm.getDXL();
     }
 
     protected final int aisGeneration() {

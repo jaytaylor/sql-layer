@@ -21,15 +21,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.sql.pg.PostgresService;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.jmx.JmxManageable;
-import com.akiban.server.service.jmx.JmxManageable.JmxObjectInfo;
-import com.akiban.sql.pg.PostgresMXBean;
 import com.akiban.sql.pg.PostgresServer;
 import com.akiban.sql.pg.PostgresSessionTracer;
 
@@ -98,11 +97,9 @@ public class InstrumentationServiceImpl implements
 
     @Override
     public void start() throws Exception {
-        this.serviceManager = ServiceManagerImpl.get();
-        pgServer = serviceManager.getPostgresService().getServer();
-        String enableLog = serviceManager.getConfigurationService().getProperty(QUERY_LOG_PROPERTY);
+        String enableLog = config.getProperty(QUERY_LOG_PROPERTY);
         this.queryLogEnabled = new AtomicBoolean(Boolean.parseBoolean(enableLog));
-        queryLogFileName = serviceManager.getConfigurationService().getProperty(QUERY_LOG_FILE_PROPERTY);
+        queryLogFileName = config.getProperty(QUERY_LOG_FILE_PROPERTY);
         if (isQueryLogEnabled()) {
             setUpQueryLog();
         }
@@ -225,7 +222,16 @@ public class InstrumentationServiceImpl implements
     {
         return new JmxObjectInfo("Instrumentation", this, InstrumentationMXBean.class);
     }
-    
+
+    // InstrumentationServiceImpl interface
+
+    @Inject
+    public InstrumentationServiceImpl(ConfigurationService config, PostgresService pgService) {
+        this.config = config;
+        this.pgServer = pgService.getServer();
+    }
+
+
     // state
     
     private static final String QUERY_LOG_PROPERTY = "akserver.querylog";
@@ -233,11 +239,11 @@ public class InstrumentationServiceImpl implements
     
     private static final Logger LOGGER = LoggerFactory.getLogger(InstrumentationServiceImpl.class);
             
-    private PostgresServer pgServer;
+    private final PostgresServer pgServer;
+    private final ConfigurationService config;
     private AtomicBoolean queryLogEnabled;
     private String queryLogFileName;
     private File queryLogFile;
     private BufferedWriter queryOut;
-    private ServiceManager serviceManager;
     
 }

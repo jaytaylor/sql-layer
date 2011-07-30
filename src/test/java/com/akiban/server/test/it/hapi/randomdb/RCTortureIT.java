@@ -219,7 +219,7 @@ public class RCTortureIT extends ITBase
     String query;
     HapiGetRequest request;
     private Expected expected = new Expected(this);
-    private Actual actual = new Actual(this);
+    private Actual actual = new Actual(this, configService(), dxl());
     private Database database = new Database(this);
 
 }

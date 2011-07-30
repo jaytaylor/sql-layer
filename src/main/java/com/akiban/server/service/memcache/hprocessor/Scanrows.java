@@ -37,8 +37,8 @@ import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.*;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.session.Session;
 
 import java.io.IOException;
@@ -57,8 +57,13 @@ import java.util.TreeMap;
 import static com.akiban.server.api.HapiRequestException.ReasonCode.*;
 
 public class Scanrows implements HapiProcessor {
-    public static Scanrows instance() {
-        return new Scanrows();
+    public static Scanrows instance(ConfigurationService config, DXLService dxl) {
+        return new Scanrows(config, dxl);
+    }
+
+    public Scanrows(ConfigurationService config, DXLService dxl) {
+        this.config = config;
+        this.dxl = dxl;
     }
 
     private static class RowDataStruct {
@@ -280,7 +285,6 @@ public class Scanrows implements HapiProcessor {
     {
         ScanLimit limit;
         // Message size limit
-        ConfigurationService config = ServiceManagerImpl.get().getConfigurationService();
         int maxMessageSize = Integer.parseInt(config.getProperty("akserver.hapi.scanrows.messageSizeBytes"));
         ScanLimit messageSizeLimit = null;
         if (maxMessageSize >= 0) {
@@ -611,11 +615,14 @@ public class Scanrows implements HapiProcessor {
         return indexColumns;
     }
 
-    private static DDLFunctions ddlFunctions() {
-        return ServiceManagerImpl.get().getDXL().ddlFunctions();
+    private DDLFunctions ddlFunctions() {
+        return dxl.ddlFunctions();
     }
 
-    private static DMLFunctions dmlFunctions() {
-        return ServiceManagerImpl.get().getDXL().dmlFunctions();
+    private DMLFunctions dmlFunctions() {
+        return dxl.dmlFunctions();
     }
+
+    private final ConfigurationService config;
+    private final DXLService dxl;
 }

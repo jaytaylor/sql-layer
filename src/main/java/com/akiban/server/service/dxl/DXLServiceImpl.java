@@ -21,6 +21,7 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceNotStartedException;
 import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.google.inject.Inject;
@@ -36,6 +37,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     private volatile DMLFunctions dmlFunctions;
     private final SchemaManager schemaManager;
     private final Store store;
+    private final TreeService treeService;
 
     private final DXLMXBean bean = new DXLMXBeanImpl(this);
 
@@ -70,11 +72,11 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     }
 
     DMLFunctions createDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions newlyCreatedDDLF) {
-        return new BasicDMLFunctions(middleman, schemaManager, store, newlyCreatedDDLF);
+        return new BasicDMLFunctions(middleman, schemaManager, store, treeService, newlyCreatedDDLF);
     }
 
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
-        return new BasicDDLFunctions(middleman, schemaManager, store);
+        return new BasicDDLFunctions(middleman, schemaManager, store, treeService);
     }
 
     @Override
@@ -117,9 +119,10 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     }
 
     @Inject
-    public DXLServiceImpl(SchemaManager schemaManager, Store store) {
+    public DXLServiceImpl(SchemaManager schemaManager, Store store, TreeService treeService) {
         this.schemaManager = schemaManager;
         this.store = store;
+        this.treeService = treeService;
     }
 
     // for use by subclasses
@@ -130,5 +133,9 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
 
     protected final Store store() {
         return store;
+    }
+
+    protected final TreeService treeService() {
+        return treeService;
     }
 }
