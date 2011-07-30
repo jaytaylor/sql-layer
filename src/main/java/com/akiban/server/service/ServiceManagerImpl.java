@@ -17,9 +17,21 @@ package com.akiban.server.service;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.akiban.server.AkServer;
+import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.instrumentation.InstrumentationService;
+import com.akiban.server.service.jmx.JmxRegistryService;
+import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.stats.StatisticsService;
+import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.SchemaManager;
+import com.akiban.server.store.Store;
+import com.akiban.sql.pg.PostgresService;
 
-public final class ServiceManagerImpl
+public final class ServiceManagerImpl implements ServiceManager
 {
     private static final AtomicReference<ServiceManager> instance = new AtomicReference<ServiceManager>(null);
 
@@ -41,7 +53,7 @@ public final class ServiceManagerImpl
      */
     @Deprecated
     public static ServiceManager get() {
-        return instance.get();
+        return installed();
     }
 
     /**
@@ -49,10 +61,101 @@ public final class ServiceManagerImpl
      * @return a new Session
      */
     public static Session newSession() {
-        @SuppressWarnings("deprecation") ServiceManager serviceManager = get();
-        if (serviceManager == null) {
-            throw new ServiceNotStartedException("ServiceManagerImpl.get() hasn't been given an instance");
+        return installed().getSessionService().createSession();
+    }
+
+    // ServiceManager interface
+
+    @Override
+    public void startServices() throws ServiceStartupException {
+        throw new UnsupportedOperationException("can't start services via the static delegate");
+    }
+
+    @Override
+    public void stopServices() throws Exception {
+        throw new UnsupportedOperationException("can't start services via the static delegate");
+    }
+
+    @Override
+    public void crashServices() throws Exception {
+        throw new UnsupportedOperationException("can't start services via the static delegate");
+    }
+
+    @Override
+    public ConfigurationService getConfigurationService() {
+        return installed().getConfigurationService();
+    }
+
+    @Override
+    public AkServer getAkSserver() {
+        return installed().getAkSserver();
+    }
+
+    @Override
+    public Store getStore() {
+        return installed().getStore();
+    }
+
+    @Override
+    public TreeService getTreeService() {
+        return installed().getTreeService();
+    }
+
+    @Override
+    public MemcacheService getMemcacheService() {
+        return installed().getMemcacheService();
+    }
+
+    @Override
+    public PostgresService getPostgresService() {
+        return installed().getPostgresService();
+    }
+
+    @Override
+    public SchemaManager getSchemaManager() {
+        return installed().getSchemaManager();
+    }
+
+    @Override
+    public JmxRegistryService getJmxRegistryService() {
+        return installed().getJmxRegistryService();
+    }
+
+    @Override
+    public StatisticsService getStatisticsService() {
+        return installed().getStatisticsService();
+    }
+
+    @Override
+    public SessionService getSessionService() {
+        return installed().getSessionService();
+    }
+
+    @Override
+    public <T> T getServiceByClass(Class<T> serviceClass) {
+        return installed().getServiceByClass(serviceClass);
+    }
+
+    @Override
+    public DXLService getDXL() {
+        return installed().getDXL();
+    }
+
+    @Override
+    public boolean serviceIsStarted(Class<?> serviceClass) {
+        return installed().serviceIsStarted(serviceClass);
+    }
+
+    @Override
+    public InstrumentationService getInstrumentationService() {
+        return installed().getInstrumentationService();
+    }
+
+    private static ServiceManager installed() {
+        ServiceManager sm = instance.get();
+        if (sm == null) {
+            throw new ServiceNotStartedException("services haven't been started");
         }
-        return serviceManager.getSessionService().createSession();
+        return sm;
     }
 }
