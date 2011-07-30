@@ -43,7 +43,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private Map<Integer,PostgresServerConnection> connections =
         new HashMap<Integer,PostgresServerConnection>();
     private Thread thread;
-    private AtomicBoolean instrumentationEnabled;
+    private final AtomicBoolean instrumentationEnabled = new AtomicBoolean(false);
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
@@ -51,7 +51,6 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         this.port = port;
         if (statementCacheCapacity > 0)
             statementCache = new PostgresStatementCache(statementCacheCapacity);
-        instrumentationEnabled = new AtomicBoolean(false);
         this.reqs = reqs;
     }
 

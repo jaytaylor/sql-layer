@@ -71,17 +71,6 @@ public class InstrumentationServiceImpl implements
         LOGGER.info("Query log file ready for writing.");
         return true;
     }
-    
-    // InstrumentationService interface
-    
-    public synchronized PostgresSessionTracer createSqlSessionTracer(int sessionId) {
-        PostgresSessionTracer ret = new PostgresSessionTracer(sessionId, pgServer.isInstrumentationEnabled());
-        return ret;
-    }
-    
-    public synchronized PostgresSessionTracer getSqlSessionTracer(int sessionId) {
-        return (PostgresSessionTracer)pgServer.getConnection(sessionId).getSessionTracer();
-    }
 
     // Service interface
     
@@ -115,36 +104,6 @@ public class InstrumentationServiceImpl implements
     @Override
     public void crash() throws Exception {
         // anything to do?
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return pgServer.isInstrumentationEnabled();
-    }
-
-    @Override
-    public void enable() {
-        pgServer.enableInstrumentation();
-    }
-
-    @Override
-    public void disable() {
-        pgServer.disableInstrumentation();
-    }
-
-    @Override
-    public boolean isEnabled(int sessionId) {
-        return pgServer.isInstrumentationEnabled(sessionId);
-    }
-
-    @Override
-    public void enable(int sessionId) {
-        pgServer.enableInstrumentation(sessionId);
-    }
-
-    @Override
-    public void disable(int sessionId) {  
-        pgServer.disableInstrumentation(sessionId);
     }
 
     @Override
@@ -226,9 +185,8 @@ public class InstrumentationServiceImpl implements
     // InstrumentationServiceImpl interface
 
     @Inject
-    public InstrumentationServiceImpl(ConfigurationService config, PostgresService pgService) {
+    public InstrumentationServiceImpl(ConfigurationService config) {
         this.config = config;
-        this.pgServer = pgService.getServer();
     }
 
 
@@ -239,7 +197,7 @@ public class InstrumentationServiceImpl implements
     
     private static final Logger LOGGER = LoggerFactory.getLogger(InstrumentationServiceImpl.class);
             
-    private final PostgresServer pgServer;
+//    private final PostgresServer pgServer;
     private final ConfigurationService config;
     private AtomicBoolean queryLogEnabled;
     private String queryLogFileName;

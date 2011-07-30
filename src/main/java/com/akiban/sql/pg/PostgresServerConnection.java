@@ -92,7 +92,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         this.socket = socket;
         this.pid = pid;
         this.secret = secret;
-        this.sessionTracer = (PostgresSessionTracer) reqs.instrumentation().createSqlSessionTracer(pid);
+        this.sessionTracer = new PostgresSessionTracer(pid, server.isInstrumentationEnabled());
         sessionTracer.setRemoteAddress(socket.getInetAddress().getHostAddress());
     }
 
