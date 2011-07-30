@@ -39,11 +39,9 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     private final Store store;
     private final TreeService treeService;
 
-    private final DXLMXBean bean = new DXLMXBeanImpl(this);
-
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("DXL", bean, DXLMXBean.class);
+        return new JmxObjectInfo("DXL", new DXLMXBeanImpl(this), DXLMXBean.class);
     }
 
     @Override
