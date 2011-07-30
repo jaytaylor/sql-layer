@@ -135,7 +135,7 @@ public final class Guicer {
     private void buildDependencies(Class<?> forClass, LinkedHashMap<Class<?>,Object> results, Deque<Object> dependents) {
         Object instance = _injector.getInstance(forClass);
         if (dependents.contains(instance)) {
-            throw circularDependencyInjection(forClass, dependents);
+            throw circularDependencyInjection(forClass, instance, dependents);
         }
 
         // Start building this object
@@ -174,16 +174,15 @@ public final class Guicer {
         assert removed == instance : removed + " != " + instance;
     }
 
-    private CircularDependencyException circularDependencyInjection(Class<?> forClass, Deque<Object> dependents) {
+    private CircularDependencyException circularDependencyInjection(Class<?> forClass, Object instance, Deque<Object> dependents) {
         final CircularDependencyException exception;
         String forClassName = forClass.getSimpleName();
         List<String> classNames = new ArrayList<String>();
         for (Object o : dependents) {
             classNames.add(o.getClass().getSimpleName());
         }
-        classNames.add(forClassName);
-        exception = new CircularDependencyException("circular dependency at " + forClassName + ": " + classNames);
-        return exception;
+        classNames.add(instance.getClass().getSimpleName());
+        return new CircularDependencyException("circular dependency at " + forClassName + ": " + classNames);
     }
 
     private <T,S> T startService(Class<T> serviceClass, T instance, ServiceLifecycleActions<S> withActions) {

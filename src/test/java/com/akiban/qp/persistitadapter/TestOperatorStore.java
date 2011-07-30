@@ -15,8 +15,8 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.SchemaManager;
 import com.google.inject.Inject;
 import com.persistit.Key;
 
@@ -39,8 +39,8 @@ public class TestOperatorStore extends OperatorStore {
     }
 
     @Inject
-    public TestOperatorStore(DXLService dxl, TreeService treeService) {
-        super(dxl, treeService);
+    public TestOperatorStore(SchemaManager schemaManager, TreeService treeService) {
+        super(schemaManager, treeService);
     }
 
     // service overrides
