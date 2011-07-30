@@ -14,3 +14,7 @@
     com.akiban.server.store.Store : com.akiban.qp.persistitadapter.OperatorStore
     com.akiban.sql.pg.PostgresService : com.akiban.sql.pg.PostgresServerManager
     com.akiban.server.service.instrumentation.InstrumentationService : com.akiban.server.service.instrumentation.InstrumentationServiceImpl
+
+# This binding is really just a crutch while we move away from the static SMI.get() pattern
+- bind:
+    com.akiban.server.service.ServiceManager : com.akiban.server.service.ServiceManagerImpl
