@@ -1,4 +1,5 @@
 - bind:
+    com.akiban.server.store.AisHolder : com.akiban.server.store.AisHolderImpl
     com.akiban.server.AkServerEmptyInterface : com.akiban.server.AkServer
     com.akiban.server.service.config.ConfigurationService : com.akiban.server.service.config.ConfigurationServiceImpl
     com.akiban.server.service.dxl.DXLService : com.akiban.server.service.dxl.DXLServiceImpl

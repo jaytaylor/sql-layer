@@ -53,9 +53,9 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.SchemaManager;
 import com.google.inject.Inject;
 import com.persistit.Exchange;
 import com.persistit.Transaction;
@@ -151,7 +151,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 transaction.begin();
                 super.writeRow(session, rowData);
 
-                AkibanInformationSchema ais = schemaManager.getAis(session);
+                AkibanInformationSchema ais = aisHolder.getAis();
                 PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
                 UserTable uTable = ais.getUserTable(rowData.getRowDefId());
                 maintainGroupIndexes(
@@ -178,7 +178,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         for(int retryCount=0; ; ++retryCount) {
             try {
                 transaction.begin();
-                AkibanInformationSchema ais = schemaManager.getAis(session);
+                AkibanInformationSchema ais = aisHolder.getAis();
                 PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
                 UserTable uTable = ais.getUserTable(rowData.getRowDefId());
                 maintainGroupIndexes(
@@ -219,7 +219,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             super.buildIndexes(session, tableIndexes, defer);
         }
 
-        AkibanInformationSchema ais = schemaManager.getAis(session);
+        AkibanInformationSchema ais = aisHolder.getAis();
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
         for(GroupIndex groupIndex : groupIndexes) {
             PhysicalOperator plan = OperatorStoreMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
@@ -238,9 +238,9 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // OperatorStore interface
 
     @Inject
-    public OperatorStore(SchemaManager schemaManager, TreeService treeService) {
+    public OperatorStore(AisHolder aisHolder, TreeService treeService) {
         super(new PersistitStore(false, treeService));
-        this.schemaManager = schemaManager;
+        this.aisHolder = aisHolder;
         this.treeService = treeService;
     }
 
@@ -426,7 +426,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // object state
     private final TreeService treeService;
-    private final SchemaManager schemaManager;
+    private final AisHolder aisHolder;
 
     // consts
 

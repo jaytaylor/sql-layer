@@ -62,7 +62,7 @@ public class MemcacheServiceImpl implements MemcacheService,
 
     private final static Tap HAPI_CONNECTION_TAP = Tap.add(new Tap.Count("hapi: connection"));
     private final static Tap HAPI_EXCEPTION_TAP = Tap.add(new Tap.Count("hapi: exception"));
-    private final MemcacheMXBean manageBean;
+    private MemcacheMXBean manageBean;
 
     private final AkibanCommandHandler.CommandCallback callback = new AkibanCommandHandler.CommandCallback() {
 
@@ -97,6 +97,8 @@ public class MemcacheServiceImpl implements MemcacheService,
 
     // Service vars
     private final ConfigurationService config;
+    private final JmxRegistryService jmxRegistry;
+    private final SessionService sessionService;
 
     // Daemon vars
     private final int text_frame_size = 32768 * 1024;
@@ -107,6 +109,31 @@ public class MemcacheServiceImpl implements MemcacheService,
     @Inject
     public MemcacheServiceImpl(ConfigurationService config, JmxRegistryService jmxRegistry, SessionService sessionService) {
         this.config = config;
+        this.jmxRegistry = jmxRegistry;
+        this.sessionService = sessionService;
+    }
+
+    @Override
+    public void processRequest(Session session, HapiGetRequest request,
+            HapiOutputter outputter, OutputStream outputStream)
+            throws HapiRequestException {
+        final HapiProcessor processor = manageBean.getHapiProcessor()
+                .getHapiProcessor();
+
+        processor.processRequest(session, request, outputter, outputStream);
+    }
+
+    @Override
+    public Index findHapiRequestIndex(Session session, HapiGetRequest request)
+            throws HapiRequestException {
+        final HapiProcessor processor = manageBean.getHapiProcessor()
+                .getHapiProcessor();
+
+        return processor.findHapiRequestIndex(session, request);
+    }
+
+    @Override
+    public void start() throws ServiceStartupException {
         OutputFormat defaultOutput;
         {
             String defaultOutputName = config.getProperty("akserver.memcached.output.format");
@@ -134,29 +161,6 @@ public class MemcacheServiceImpl implements MemcacheService,
         }
 
         manageBean = new ManageBean(defaultHapi, defaultOutput, jmxRegistry, sessionService);
-    }
-
-    @Override
-    public void processRequest(Session session, HapiGetRequest request,
-            HapiOutputter outputter, OutputStream outputStream)
-            throws HapiRequestException {
-        final HapiProcessor processor = manageBean.getHapiProcessor()
-                .getHapiProcessor();
-
-        processor.processRequest(session, request, outputter, outputStream);
-    }
-
-    @Override
-    public Index findHapiRequestIndex(Session session, HapiGetRequest request)
-            throws HapiRequestException {
-        final HapiProcessor processor = manageBean.getHapiProcessor()
-                .getHapiProcessor();
-
-        return processor.findHapiRequestIndex(session, request);
-    }
-
-    @Override
-    public void start() throws ServiceStartupException {
         try {
             final String portString = config.getProperty("akserver.memcached.port");
 
