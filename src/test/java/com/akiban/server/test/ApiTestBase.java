@@ -81,7 +81,6 @@ import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 
 /**
@@ -141,7 +140,7 @@ public class ApiTestBase {
         testServicesStarted = false;
         sm = createServiceManager( startupConfigProperties() );
         sm.startServices();
-        session = ServiceManagerImpl.newSession();
+        session = sm.getSessionService().createSession();
         testServicesStarted = true;
     }
 
@@ -187,7 +186,7 @@ public class ApiTestBase {
     public final void restartTestServices(Collection<Property> properties) throws Exception {
         sm = createServiceManager( properties );
         sm.startServices();
-        session = ServiceManagerImpl.newSession();
+        session = sm.getSessionService().createSession();
         ddl(); // loads up the schema manager et al
     }
 
@@ -331,12 +330,11 @@ public class ApiTestBase {
     }
 
     protected final List<NewRow> scanAll(ScanRequest request) throws InvalidOperationException {
-        Session session = ServiceManagerImpl.newSession();
         ListRowOutput output = new ListRowOutput();
-        CursorId cursorId = dml().openCursor(session, aisGeneration(), request);
+        CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
 
-        dml().scanSome(session, cursorId, output);
-        dml().closeCursor(session, cursorId);
+        dml().scanSome(session(), cursorId, output);
+        dml().closeCursor(session(), cursorId);
 
         return output.getRows();
     }
