@@ -64,7 +64,7 @@ public final class GuicedServiceManager implements ServiceManager {
     @Override
     public void startServices() throws ServiceStartupException {
         ServiceManagerImpl.setServiceManager(this);
-
+        guicer.graph("/home/yshavit/Desktop/services/graph.dot", guicer.directlyRequiredClasses());
         for (Class<?> directlyRequiredClass : guicer.directlyRequiredClasses()) {
             guicer.get(directlyRequiredClass, STANDARD_SERVICE_ACTIONS);
         }
