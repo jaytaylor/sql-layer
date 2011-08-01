@@ -80,17 +80,17 @@ public class PersistitStore implements Store {
     private static final Logger LOG = LoggerFactory
             .getLogger(PersistitStore.class.getName());
 
-    private static final Tap WRITE_ROW_TAP = Tap.add(new Tap.PerThread("write: write_row"));
+    private static final Tap.InOutTap WRITE_ROW_TAP = Tap.createTimer("write: write_row");
 
-    private static final Tap UPDATE_ROW_TAP = Tap.add(new Tap.PerThread("write: update_row"));
+    private static final Tap.InOutTap UPDATE_ROW_TAP = Tap.createTimer("write: update_row");
 
-    private static final Tap DELETE_ROW_TAP = Tap.add(new Tap.PerThread("write: delete_row"));
+    private static final Tap.InOutTap DELETE_ROW_TAP = Tap.createTimer("write: delete_row");
 
-    private static final Tap TX_COMMIT_TAP = Tap.add(new Tap.PerThread("write: tx_commit"));
+    private static final Tap.InOutTap TX_COMMIT_TAP = Tap.createTimer("write: tx_commit");
 
-    private static final Tap TX_RETRY_TAP = Tap.add(new Tap.PerThread("write: tx_retry", Tap.Count.class));
+    private static final Tap.PointTap TX_RETRY_TAP = Tap.createCount("write: tx_retry");
 
-    private static final Tap NEW_COLLECTOR_TAP = Tap.add(new Tap.PerThread("read: new_collector"));
+    private static final Tap.InOutTap NEW_COLLECTOR_TAP = Tap.createTimer("read: new_collector");
 
     static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
@@ -513,7 +513,7 @@ public class PersistitStore implements Store {
 
                     break;
                 } catch (RollbackException re) {
-                    TX_RETRY_TAP.out();
+                    TX_RETRY_TAP.hit();
                     if (--retries < 0) {
                         throw new TransactionFailedException();
                     }
@@ -637,7 +637,7 @@ public class PersistitStore implements Store {
 
                     return;
                 } catch (RollbackException re) {
-                    TX_RETRY_TAP.out();
+                    TX_RETRY_TAP.hit();
                     if (--retries < 0) {
                         throw new TransactionFailedException();
                     }
@@ -723,7 +723,7 @@ public class PersistitStore implements Store {
 
                     return;
                 } catch (RollbackException re) {
-                    TX_RETRY_TAP.out();
+                    TX_RETRY_TAP.hit();
                     if (--retries < 0) {
                         throw new TransactionFailedException();
                     }
@@ -840,7 +840,7 @@ public class PersistitStore implements Store {
                 transaction.commit(forceToDisk);
                 return;
             } catch (RollbackException re) {
-                TX_RETRY_TAP.out();
+                TX_RETRY_TAP.hit();
                 if (--retries < 0) {
                     throw new TransactionFailedException();
                 }
@@ -1375,7 +1375,7 @@ public class PersistitStore implements Store {
                     transaction.commit(forceToDisk);
                     break; // success
                 } catch (RollbackException re) {
-                    TX_RETRY_TAP.out();
+                    TX_RETRY_TAP.hit();
                     if (--retries < 0) {
                         throw new TransactionFailedException();
                     }

@@ -77,9 +77,9 @@ public class PostgresMessenger implements DataInput, DataOutput
     public static final int AUTHENTICATION_SSPI = 9;
     public static final int AUTHENTICATION_GSS_CONTINUE = 8;
 
-    private final static Tap waitTap = Tap.add(new Tap.PerThread("sql: msg: wait", Tap.TimeAndCount.class));
-    private final static Tap recvTap = Tap.add(new Tap.PerThread("sql: msg: recv", Tap.TimeAndCount.class));
-    private final static Tap xmitTap = Tap.add(new Tap.PerThread("sql: msg: xmit", Tap.TimeAndCount.class));
+    private final static Tap.InOutTap waitTap = Tap.createTimer("sql: msg: wait");
+    private final static Tap.InOutTap recvTap = Tap.createTimer("sql: msg: recv");
+    private final static Tap.InOutTap xmitTap = Tap.createTimer("sql: msg: xmit");
 
     private InputStream inputStream;
     private OutputStream outputStream;
