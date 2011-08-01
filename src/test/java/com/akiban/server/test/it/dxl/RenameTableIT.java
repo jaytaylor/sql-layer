@@ -17,7 +17,7 @@ package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.DuplicateTableNameException;
 import com.akiban.server.api.ddl.ProtectedTableDDLException;

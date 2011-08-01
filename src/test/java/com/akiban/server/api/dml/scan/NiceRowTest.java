@@ -23,12 +23,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.rowdata.RowDefCache;
+import com.akiban.server.rowdata.SchemaFactory;
 import org.junit.Test;
-
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
-import com.akiban.server.RowDefCache;
-import com.akiban.server.SchemaFactory;
 
 public final class NiceRowTest {
     @Test

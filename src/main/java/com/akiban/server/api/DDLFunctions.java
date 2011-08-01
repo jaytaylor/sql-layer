@@ -24,7 +24,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.common.NoSuchGroupException;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.DuplicateColumnNameException;

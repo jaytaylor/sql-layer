@@ -15,6 +15,7 @@
 
 package com.akiban.server;
 
+import com.akiban.server.rowdata.FieldDef;
 import com.akiban.util.AkibanAppender;
 
 import java.io.File;

@@ -16,7 +16,7 @@
 package com.akiban.server.encoding;
 
 import com.akiban.server.AkServerUtil;
-import com.akiban.server.FieldDef;
+import com.akiban.server.rowdata.FieldDef;
 
 public final class UDoubleEncoder extends DoubleEncoder {
     UDoubleEncoder() {

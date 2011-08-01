@@ -15,8 +15,8 @@
 
 package com.akiban.server.store;
 
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import com.persistit.KeyState;
 
 /**

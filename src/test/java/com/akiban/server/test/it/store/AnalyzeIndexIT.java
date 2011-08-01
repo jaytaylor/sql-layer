@@ -19,15 +19,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.akiban.server.IndexDef;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
 import com.akiban.server.TableStatistics;
 
 public class AnalyzeIndexIT extends AbstractScanBase {

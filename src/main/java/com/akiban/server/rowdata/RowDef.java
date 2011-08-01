@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server;
+package com.akiban.server.rowdata;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,6 +29,8 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.AkServerUtil;
+import com.akiban.server.TableStatus;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
 
