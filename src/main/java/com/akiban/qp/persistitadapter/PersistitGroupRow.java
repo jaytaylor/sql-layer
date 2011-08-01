@@ -19,7 +19,7 @@ import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.FieldDef;
-import com.akiban.server.FieldDefConversionSource;
+import com.akiban.server.rowdata.FieldDefConversionSource;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
