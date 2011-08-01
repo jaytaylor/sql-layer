@@ -16,8 +16,8 @@
 package com.akiban.server.types;
 
 public interface ConversionTarget {
-    void setNull();
-    void setLong(long value);
-    void setDate(long value);
-    void setString(String value);
+    void putNull();
+    void putLong(long value);
+    void putDate(long value);
+    void putString(String value);
 }

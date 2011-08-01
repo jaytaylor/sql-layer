@@ -19,21 +19,21 @@ public enum AkType {
     LONG {
         @Override
         void notNullConversion(ConversionSource source, ConversionTarget target) {
-            target.setLong(source.getLong());
+            target.putLong(source.getLong());
         }
     },
 
     DATE {
         @Override
         void notNullConversion(ConversionSource source, ConversionTarget target) {
-            target.setDate(source.getDate());
+            target.putDate(source.getDate());
         }
     },
 
     STRING {
         @Override
         void notNullConversion(ConversionSource source, ConversionTarget target) {
-            target.setString(source.getString());
+            target.putString(source.getString());
         }
     },
 
@@ -54,7 +54,7 @@ public enum AkType {
 
     public void convert(ConversionSource source, ConversionTarget target) {
         if (source.isNull()) {
-            target.setNull();
+            target.putNull();
         }
         else {
             notNullConversion(source, target);

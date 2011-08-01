@@ -27,22 +27,22 @@ public final class KeyConversionTarget implements ConversionTarget {
     }
 
     @Override
-    public void setNull() {
+    public void putNull() {
         key.append(null);
     }
 
     @Override
-    public void setLong(long value) {
+    public void putLong(long value) {
         key.append(value);
     }
 
     @Override
-    public void setDate(long value) {
+    public void putDate(long value) {
         key.append(value);
     }
 
     @Override
-    public void setString(String value) {
+    public void putString(String value) {
         key.append(value);
     }
 
