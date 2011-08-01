@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server;
+package com.akiban.server.rowdata;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -21,7 +21,8 @@ import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
 
-import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.AkServerUtil;
+import com.akiban.server.Quote;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.util.AkibanAppender;

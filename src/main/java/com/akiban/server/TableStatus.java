@@ -15,6 +15,7 @@
 
 package com.akiban.server;
 
+import com.akiban.server.rowdata.RowDef;
 import com.persistit.Value;
 import com.persistit.exception.ConversionException;
 

@@ -20,7 +20,7 @@ import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.FieldDef;
+import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.api.dml.scan.NewRow;
 
 public class NewRowBackedIndexRow implements RowBase

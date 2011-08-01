@@ -13,14 +13,13 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server;
+package com.akiban.server.rowdata;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
 
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class IndexDef implements TreeLink {

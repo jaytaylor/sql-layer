@@ -13,10 +13,11 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server;
+package com.akiban.server.rowdata;
 
 import java.util.Arrays;
 
+import com.akiban.server.AkServerUtil;
 import junit.framework.TestCase;
 
 public class RowDefTest extends TestCase {
@@ -185,7 +186,7 @@ public class RowDefTest extends TestCase {
                     System.out.println("RowData:\n");
                     System.out.println(AkServerUtil.dump(rowData.getBytes(),
                             rowData.getRowStart(), rowData.getRowEnd()
-                                    - rowData.getRowStart()));
+                            - rowData.getRowStart()));
                 }
                 for (int i = 0; i < fieldDefs.length; i++) {
                     final long location = rowDef.fieldLocation(rowData, i);

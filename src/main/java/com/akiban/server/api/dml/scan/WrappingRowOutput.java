@@ -17,7 +17,7 @@ package com.akiban.server.api.dml.scan;
 
 import java.nio.ByteBuffer;
 
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.util.ArgumentValidation;
 
 public class WrappingRowOutput implements LegacyRowOutput {

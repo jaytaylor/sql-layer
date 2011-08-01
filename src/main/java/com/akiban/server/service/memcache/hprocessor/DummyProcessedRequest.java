@@ -16,7 +16,7 @@
 package com.akiban.server.service.memcache.hprocessor;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.HapiGetRequest;
 
 import java.util.Collections;

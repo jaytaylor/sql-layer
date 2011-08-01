@@ -16,7 +16,7 @@
 package com.akiban.server.api.dml.scan;
 
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.service.session.Session;
 import com.akiban.util.ListUtils;

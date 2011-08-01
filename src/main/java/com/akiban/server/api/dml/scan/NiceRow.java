@@ -20,9 +20,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import com.akiban.server.FieldDef;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.encoding.Encoding;

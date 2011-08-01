@@ -15,7 +15,7 @@
 
 package com.akiban.server.test.it.rowtests;
 
-import com.akiban.server.FieldDef;
+import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.encoding.Encoding;
 import com.akiban.server.test.it.ITBase;
 import com.persistit.Key;

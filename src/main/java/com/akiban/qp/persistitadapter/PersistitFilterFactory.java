@@ -21,7 +21,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.RowBase;
-import com.akiban.server.FieldDef;
+import com.akiban.server.rowdata.FieldDef;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 

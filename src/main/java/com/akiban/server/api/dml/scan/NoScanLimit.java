@@ -15,7 +15,7 @@
 
 package com.akiban.server.api.dml.scan;
 
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 
 /**
  * A ScanLimit that represents no limit. This is package private because nobody should ever instantiate it directly;
