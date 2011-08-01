@@ -15,9 +15,28 @@
 
 package com.akiban.server.types;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+
 public interface ConversionTarget {
     void putNull();
-    void putLong(long value);
     void putDate(long value);
+    void putDateTime(long value);
+    void putDecimal(BigDecimal value);
+    void putDouble(double value);
+    void putFloat(float value);
+    void putInt(long value);
+    void putLong(long value);
     void putString(String value);
+    void putText(String value);
+    void putTime(long value);
+    void putTimestamp(long value);
+    void putUBigInt(BigInteger value);
+    void putUDouble(double value);
+    void putUFloat(float value);
+    void putUInt(long value);
+    void putVarBinary(ByteBuffer value);
+    void putYear(long value);
+
 }

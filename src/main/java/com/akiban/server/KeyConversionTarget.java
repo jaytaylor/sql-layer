@@ -18,6 +18,10 @@ package com.akiban.server;
 import com.akiban.server.types.ConversionTarget;
 import com.persistit.Key;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+
 public final class KeyConversionTarget implements ConversionTarget {
 
     // KeyConversionTarget interface
@@ -26,14 +30,11 @@ public final class KeyConversionTarget implements ConversionTarget {
         this.key = key;
     }
 
+    // ConversionTarget interface
+
     @Override
     public void putNull() {
         key.append(null);
-    }
-
-    @Override
-    public void putLong(long value) {
-        key.append(value);
     }
 
     @Override
@@ -42,7 +43,83 @@ public final class KeyConversionTarget implements ConversionTarget {
     }
 
     @Override
+    public void putDateTime(long value) {
+        key.append(value);
+    }
+
+    @Override
+    public void putDecimal(BigDecimal value) {
+        key.append(value);
+    }
+
+    @Override
+    public void putDouble(double value) {
+        key.append(value);
+    }
+
+    @Override
+    public void putFloat(float value) {
+        key.append(value);
+    }
+
+    @Override
+    public void putInt(long value) {
+        key.append(value);
+    }
+
+    @Override
+    public void putLong(long value) {
+        key.append(value);
+    }
+
+    @Override
     public void putString(String value) {
+        key.append(value);
+    }
+
+    @Override
+    public void putText(String value) {
+        key.append(value);
+    }
+
+    @Override
+    public void putTime(long value) {
+        key.append(value);
+    }
+
+    @Override
+    public void putTimestamp(long value) {
+        key.append(value);
+    }
+
+    @Override
+    public void putUBigInt(BigInteger value) {
+        key.append(value);
+    }
+
+    @Override
+    public void putUDouble(double value) {
+        key.append(value);
+    }
+
+    @Override
+    public void putUFloat(float value) {
+        key.append(value);
+    }
+
+    @Override
+    public void putUInt(long value) {
+        key.append(value);
+    }
+
+    @Override
+    public void putVarBinary(ByteBuffer value) {
+        assert value.hasArray() : "ByteBuffer.hasArray() == false: " + value;
+        key.appendByteArray(value.array(), value.arrayOffset(), value.limit());
+    }
+
+    @Override
+    public void putYear(long value) {
         key.append(value);
     }
 

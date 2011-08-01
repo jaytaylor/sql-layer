@@ -18,7 +18,7 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.FieldDef;
+import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.FieldDefConversionSource;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.rowdata.RowData;

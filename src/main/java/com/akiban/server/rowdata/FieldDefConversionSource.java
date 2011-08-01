@@ -17,6 +17,10 @@ package com.akiban.server.rowdata;
 
 import com.akiban.server.types.ConversionSource;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+
 public final class FieldDefConversionSource implements ConversionSource {
 
     // FieldDefConversionSource interface
@@ -34,13 +38,78 @@ public final class FieldDefConversionSource implements ConversionSource {
     }
 
     @Override
+    public BigDecimal getDecimal() {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    public BigInteger getUBigInt() {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    public ByteBuffer getVarBinary() {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    public double getDouble() {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    public double getUDouble() {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    public float getFloat() {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    public float getUFloat() {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    public long getDate() {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    public long getDateTime() {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    public long getInt() {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
     public long getLong() {
         return extractLong(fieldDef, rowData);
     }
 
     @Override
-    public long getDate() {
-        throw new UnsupportedOperationException(); // TODO just getLong()?
+    public long getTime() {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    public long getTimestamp() {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    public long getUInt() {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    public long getYear() {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     @Override
@@ -49,6 +118,11 @@ public final class FieldDefConversionSource implements ConversionSource {
         return location == 0
                 ? null
                 : rowData.getStringValue((int) location, (int) (location >>> 32), fieldDef);
+    }
+
+    @Override
+    public String getText() {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     private FieldDef fieldDef;

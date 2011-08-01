@@ -15,9 +15,28 @@
 
 package com.akiban.server.types;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+
 public interface ConversionSource {
     public boolean isNull();
-    public long getLong();
-    public long getDate();
-    public String getString();
+    BigDecimal getDecimal();
+    BigInteger getUBigInt();
+    ByteBuffer getVarBinary();
+    double getDouble();
+    double getUDouble();
+    float getFloat();
+    float getUFloat();
+    long getDate();
+    long getDateTime();
+    long getInt();
+    long getLong();
+    long getTime();
+    long getTimestamp();
+    long getUInt();
+    long getYear();
+    String getString();
+    String getText();
+
 }

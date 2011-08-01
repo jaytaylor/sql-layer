@@ -16,37 +16,33 @@
 package com.akiban.server.types;
 
 public enum AkType {
-    LONG {
-        @Override
-        void notNullConversion(ConversionSource source, ConversionTarget target) {
-            target.putLong(source.getLong());
-        }
-    },
-
-    DATE {
-        @Override
-        void notNullConversion(ConversionSource source, ConversionTarget target) {
-            target.putDate(source.getDate());
-        }
-    },
-
-    STRING {
-        @Override
-        void notNullConversion(ConversionSource source, ConversionTarget target) {
-            target.putString(source.getString());
-        }
-    },
+    DATE        { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putDate( src.getDate() ); } },
+    DATETIME    { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putDateTime( src.getDateTime() ); } },
+    DECIMAL     { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putDecimal( src.getDecimal() ); } },
+    DOUBLE      { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putDouble( src.getDouble() ); } },
+    FLOAT       { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putFloat( src.getFloat() ); } },
+    INT         { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putInt( src.getInt() ); } },
+    LONG        { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putLong( src.getLong() ); } },
+    STRING      { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putString( src.getString() ); } },
+    TEXT        { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putText( src.getText() ); } },
+    TIME        { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putTime( src.getTime() ); } },
+    TIMESTAMP   { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putTimestamp( src.getTimestamp() ); } },
+    U_BIGINT    { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putUBigInt( src.getUBigInt() ); } },
+    U_DOUBLE    { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putUDouble( src.getUDouble() ); } },
+    U_FLOAT     { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putUFloat( src.getUFloat() ); } },
+    U_INT       { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putUInt( src.getUInt() ); } },
+    VARBINARY   { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putVarBinary( src.getVarBinary() ); } },
+    YEAR        { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putYear( src.getYear() ); } },
 
     NULL {
-        @Override
-        void notNullConversion(ConversionSource source, ConversionTarget target) {
-            throw new AssertionError("invoking notNullDispatch on NULL");
+        @Override void doConversion(ConversionSource source, ConversionTarget target) {
+            throw new AssertionError("invoking doConversion on NULL");
         }
     },
 
     UNSUPPORTED {
         @Override
-        void notNullConversion(ConversionSource source, ConversionTarget target) {
+        void doConversion(ConversionSource source, ConversionTarget target) {
             throw new UnsupportedOperationException();
         }
     }
@@ -57,9 +53,9 @@ public enum AkType {
             target.putNull();
         }
         else {
-            notNullConversion(source, target);
+            doConversion(source, target);
         }
     }
 
-    abstract void notNullConversion(ConversionSource source, ConversionTarget target);
+    abstract void doConversion(ConversionSource source, ConversionTarget target);
 }
