@@ -319,12 +319,11 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         RowType invertActionRowType = maintenancePlan == null ? null : maintenancePlan.flattenedAncestorRowType();
         Cursor cursor = API.cursor(rootOperator, adapter);
         cursor.open(bindings);
-        KeyConversionTarget target = new KeyConversionTarget(); // TODO
         try {
             Row row;
             while ((row = cursor.next()) != null) {
                 if (row.rowType().equals(rootOperator.rowType())) {
-                    handler.handleRow(groupIndex, row, action, target);
+                    handler.handleRow(groupIndex, row, action);
                 } else if (row.rowType().equals(invertActionRowType)) {
                     assert maintenancePlan != null;
                     final boolean handleRow;
@@ -342,7 +341,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                         throw new AssertionError(action.name());
                     }
                     if (handleRow) {
-                        handler.handleRow(groupIndex, maintenancePlan.flattenLeft(row), invert(action), target);
+                        handler.handleRow(groupIndex, maintenancePlan.flattenLeft(row), invert(action));
                     }
                 }
             }

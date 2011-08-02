@@ -34,7 +34,7 @@ class OperatorStoreGIHandler {
 
     // GroupIndexHandler interface
 
-    public void handleRow(GroupIndex groupIndex, Row row, Action action, KeyConversionTarget target)
+    public void handleRow(GroupIndex groupIndex, Row row, Action action)
     throws PersistitException
     {
         assert Action.BULK_ADD.equals(action) == (sourceTable==null) : null;
@@ -208,6 +208,7 @@ class OperatorStoreGIHandler {
 
     private final PersistitAdapter adapter;
     private final UserTable sourceTable;
+    private final KeyConversionTarget target = new KeyConversionTarget();
     private static volatile GIHandlerHook giHandlerHook;
 
     // nested classes
