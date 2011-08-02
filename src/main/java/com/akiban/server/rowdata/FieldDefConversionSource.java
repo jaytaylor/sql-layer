@@ -16,6 +16,7 @@
 package com.akiban.server.rowdata;
 
 import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.SourceIsNullException;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -39,82 +40,107 @@ public final class FieldDefConversionSource implements ConversionSource {
 
     @Override
     public BigDecimal getDecimal() {
-        throw new UnsupportedOperationException(); // TODO
+        StringBuilder sb = new StringBuilder(fieldDef.getMaxStorageSize());
+        ConversionHelperBigDecimal.decodeToString(fieldDef, rowData, sb);
+        String asString = sb.toString();
+        assert ! asString.isEmpty();
+        try {
+            return new BigDecimal(asString);
+        } catch (NumberFormatException e) {
+            throw new NumberFormatException(asString);
+        }
     }
 
     @Override
     public BigInteger getUBigInt() {
-        throw new UnsupportedOperationException(); // TODO
+        long offsetAndWidth = getRawOffsetAndWidth();
+        if (offsetAndWidth == 0) {
+            return null;
+        }
+        int offset = (int)offsetAndWidth;
+        int width = (int)(offsetAndWidth >>> 32);
+        return rowData.getUnsignedLongValue(offset, width);
     }
 
     @Override
     public ByteBuffer getVarBinary() {
-        throw new UnsupportedOperationException(); // TODO
+        long offsetAndWidth = getRawOffsetAndWidth();
+        if (offsetAndWidth == 0) {
+            return null;
+        }
+        int offset = (int) offsetAndWidth + fieldDef.getPrefixSize();
+        int size = (int) (offsetAndWidth >>> 32) - fieldDef.getPrefixSize();
+        byte[] copy = new byte[size];
+        System.arraycopy(rowData.getBytes(), offset, copy, 0, size);
+        return ByteBuffer.wrap(copy);
     }
 
     @Override
     public double getDouble() {
-        throw new UnsupportedOperationException(); // TODO
+        long asLong = extractLong();
+        return Double.longBitsToDouble(asLong);
     }
 
     @Override
     public double getUDouble() {
-        throw new UnsupportedOperationException(); // TODO
+        return getDouble();
     }
 
     @Override
     public float getFloat() {
-        throw new UnsupportedOperationException(); // TODO
+        long asLong = extractLong();
+        int asInt = (int) asLong;
+        return Float.intBitsToFloat(asInt);
     }
 
     @Override
     public float getUFloat() {
-        throw new UnsupportedOperationException(); // TODO
+        return getFloat();
     }
 
     @Override
     public long getDate() {
-        throw new UnsupportedOperationException(); // TODO
+        return extractLong();
     }
 
     @Override
     public long getDateTime() {
-        throw new UnsupportedOperationException(); // TODO
+        return extractLong();
     }
 
     @Override
     public long getInt() {
-        throw new UnsupportedOperationException(); // TODO
+        return extractLong();
     }
 
     @Override
     public long getLong() {
-        return extractLong(fieldDef, rowData);
+        return extractLong();
     }
 
     @Override
     public long getTime() {
-        throw new UnsupportedOperationException(); // TODO
+        return extractLong();
     }
 
     @Override
     public long getTimestamp() {
-        throw new UnsupportedOperationException(); // TODO
+        return extractLong();
     }
 
     @Override
     public long getUInt() {
-        throw new UnsupportedOperationException(); // TODO
+        return extractLong();
     }
 
     @Override
     public long getYear() {
-        throw new UnsupportedOperationException(); // TODO
+        return extractLong();
     }
 
     @Override
     public String getString() {
-        final long location = getOffsetAndWidth(fieldDef, rowData);
+        final long location = getRawOffsetAndWidth();
         return location == 0
                 ? null
                 : rowData.getStringValue((int) location, (int) (location >>> 32), fieldDef);
@@ -131,15 +157,22 @@ public final class FieldDefConversionSource implements ConversionSource {
     // for use within this class
     // Stolen from the Encoding classes
 
-    private static long getOffsetAndWidth(FieldDef fieldDef, RowData rowData) {
+    private long getRawOffsetAndWidth() {
         return fieldDef.getRowDef().fieldLocation(rowData, fieldDef.getFieldIndex());
     }
-
-    private static long extractLong(FieldDef fieldDef, RowData rowData) {
-        long offsetAndWidth = getOffsetAndWidth(fieldDef, rowData);
-        assert offsetAndWidth != 0 : fieldDef + " null for " + rowData;
+    
+    private long extractLong() {
+        long offsetAndWidth = getCheckedOffsetAndWidth();
         final int offset = (int)offsetAndWidth;
         final int width = (int)(offsetAndWidth >>> 32);
         return rowData.getIntegerValue(offset, width);
+    }
+
+    private long getCheckedOffsetAndWidth() {
+        long offsetAndWidth = getRawOffsetAndWidth();
+        if (offsetAndWidth == 0) {
+            throw new SourceIsNullException();
+        }
+        return offsetAndWidth;
     }
 }
