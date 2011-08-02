@@ -94,11 +94,6 @@ public class Type implements Serializable, ModelNames
         // GWT requires empty constructor
     }
 
-    public Type(String name, Integer typeParameters, Boolean fixedSize, Long maxStorageSizeBytes, String encoding)
-    {
-        this(name, typeParameters, fixedSize, maxStorageSizeBytes, encoding, AkType.UNSUPPORTED);
-    }
-
     public Type(String name, Integer typeParameters, Boolean fixedSize, Long maxStorageSizeBytes, String encoding, AkType akType)
     {
         this.name = name;
@@ -116,7 +111,7 @@ public class Type implements Serializable, ModelNames
         Boolean fixedSize = (Boolean) map.get(type_fixedSize);
         Long maxSizeBytes = (Long) map.get(type_maxSizeBytes);
         String encoding = (String) map.get(type_encoding);
-        Type type = new Type(name, typeParameters, fixedSize, maxSizeBytes, encoding);
+        Type type = new Type(name, typeParameters, fixedSize, maxSizeBytes, encoding, null);
         ais.addType(type);
     }
     
