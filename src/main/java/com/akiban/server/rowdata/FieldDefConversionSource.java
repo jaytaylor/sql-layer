@@ -22,26 +22,19 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
-public final class FieldDefConversionSource implements ConversionSource {
-
-    // FieldDefConversionSource interface
-
-    public void bind(FieldDef fieldDef, RowData rowData) {
-        this.fieldDef = fieldDef;
-        this.rowData = rowData;
-    }
+public final class FieldDefConversionSource extends FieldDefConversionBase implements ConversionSource {
 
     // ConversionSource interface
 
     @Override
     public boolean isNull() {
-        return (rowData.isNull(fieldDef.getFieldIndex()));
+        return (rowData().isNull(fieldDef().getFieldIndex()));
     }
 
     @Override
     public BigDecimal getDecimal() {
-        StringBuilder sb = new StringBuilder(fieldDef.getMaxStorageSize());
-        ConversionHelperBigDecimal.decodeToString(fieldDef, rowData, sb);
+        StringBuilder sb = new StringBuilder(fieldDef().getMaxStorageSize());
+        ConversionHelperBigDecimal.decodeToString(fieldDef(), rowData(), sb);
         String asString = sb.toString();
         assert ! asString.isEmpty();
         try {
@@ -59,7 +52,7 @@ public final class FieldDefConversionSource implements ConversionSource {
         }
         int offset = (int)offsetAndWidth;
         int width = (int)(offsetAndWidth >>> 32);
-        return rowData.getUnsignedLongValue(offset, width);
+        return rowData().getUnsignedLongValue(offset, width);
     }
 
     @Override
@@ -68,10 +61,10 @@ public final class FieldDefConversionSource implements ConversionSource {
         if (offsetAndWidth == 0) {
             return null;
         }
-        int offset = (int) offsetAndWidth + fieldDef.getPrefixSize();
-        int size = (int) (offsetAndWidth >>> 32) - fieldDef.getPrefixSize();
+        int offset = (int) offsetAndWidth + fieldDef().getPrefixSize();
+        int size = (int) (offsetAndWidth >>> 32) - fieldDef().getPrefixSize();
         byte[] copy = new byte[size];
-        System.arraycopy(rowData.getBytes(), offset, copy, 0, size);
+        System.arraycopy(rowData().getBytes(), offset, copy, 0, size);
         return ByteBuffer.wrap(copy);
     }
 
@@ -143,7 +136,7 @@ public final class FieldDefConversionSource implements ConversionSource {
         final long location = getRawOffsetAndWidth();
         return location == 0
                 ? null
-                : rowData.getStringValue((int) location, (int) (location >>> 32), fieldDef);
+                : rowData().getStringValue((int) location, (int) (location >>> 32), fieldDef());
     }
 
     @Override
@@ -151,21 +144,18 @@ public final class FieldDefConversionSource implements ConversionSource {
         throw new UnsupportedOperationException(); // TODO
     }
 
-    private FieldDef fieldDef;
-    private RowData rowData;
-
     // for use within this class
     // Stolen from the Encoding classes
 
     private long getRawOffsetAndWidth() {
-        return fieldDef.getRowDef().fieldLocation(rowData, fieldDef.getFieldIndex());
+        return fieldDef().getRowDef().fieldLocation(rowData(), fieldDef().getFieldIndex());
     }
     
     private long extractLong() {
         long offsetAndWidth = getCheckedOffsetAndWidth();
         final int offset = (int)offsetAndWidth;
         final int width = (int)(offsetAndWidth >>> 32);
-        return rowData.getIntegerValue(offset, width);
+        return rowData().getIntegerValue(offset, width);
     }
 
     private long getCheckedOffsetAndWidth() {
