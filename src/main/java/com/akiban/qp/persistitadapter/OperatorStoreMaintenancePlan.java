@@ -88,7 +88,7 @@ final class OperatorStoreMaintenancePlan {
         PhysicalOperator plan = API.groupScan_Default(
                 groupTable,
                 NoLimit.instance(),
-                com.akiban.qp.expression.API.variable(HKEY_BINDING_POSITION),
+                HKEY_BINDING_POSITION,
                 false
         );
         plan = API.ancestorLookup_Default(plan, groupTable, rowType, Collections.singleton(parentRowType), false);
@@ -169,7 +169,7 @@ final class OperatorStoreMaintenancePlan {
         PhysicalOperator plan = API.groupScan_Default(
                 groupIndex.getGroup().getGroupTable(),
                 NoLimit.instance(),
-                com.akiban.qp.expression.API.variable(HKEY_BINDING_POSITION),
+                HKEY_BINDING_POSITION,
                 deep
         );
         if (branchTables.fromRoot().size() == 1) {

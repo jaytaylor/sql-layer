@@ -65,7 +65,7 @@ public class FlattenedRow extends AbstractRow
         this.nParentFields = rowType.parentType().nFields();
         this.hKey = hKey;
         if (parent != null && child != null) {
-            assert parent.runId() == child.runId();
+            // assert parent.runId() == child.runId();
         }
         if (parent != null && !rowType.parentType().equals(parent.rowType())) {
             throw new IllegalArgumentException("mismatched type between " +rowType+ " and parent " + parent.rowType());

@@ -19,21 +19,19 @@ import com.akiban.util.Undef;
 
 import java.util.Arrays;
 
-public final class ArrayBindings implements Bindings {
-
-    private final Object[] bindings;
+public final class ArrayBindings extends Bindings
+{
+    private Object[] bindings;
 
     // ArrayBindings interface
 
-    public ArrayBindings(int count) {
-        bindings = new Object[count];
-        for (int i=0; i < count; ++i) {
+    // queryParameters is the number of parameters in the query. There may be additional bindings, in which case
+    // set(int, Object) will cause the array to grow.
+    public ArrayBindings(int queryParameters) {
+        bindings = new Object[queryParameters];
+        for (int i=0; i < queryParameters; ++i) {
             bindings[i] = Undef.only();
         }
-    }
-
-    public void set(int index, Object value) {
-        bindings[index] = value;
     }
 
     @Override
@@ -56,4 +54,16 @@ public final class ArrayBindings implements Bindings {
         }
         return value;
     }
+
+    @Override
+    public void set(int index, Object value)
+    {
+        if (index >= bindings.length) {
+            Object[] newBindings = new Object[index + 1];
+            System.arraycopy(bindings, 0, newBindings, 0, bindings.length);
+            bindings = newBindings;
+        }
+        bindings[index] = value;
+    }
+
 }

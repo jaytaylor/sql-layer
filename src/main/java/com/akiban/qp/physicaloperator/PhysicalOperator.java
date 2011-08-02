@@ -32,7 +32,7 @@ public abstract class PhysicalOperator implements Plannable
     // multiple RowTypes.
     public RowType rowType()
     {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     /**

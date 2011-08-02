@@ -250,7 +250,7 @@ public class PhysicalOperatorITBase extends ITBase
                 strings.add(String.valueOf(String.format("%s: %s", row.runId(), row)));
             }
         } catch (Throwable t) {
-            strings.add("ERROR: " + t);
+            t.printStackTrace();
         }finally {
             cursor.close();
         }
@@ -302,8 +302,7 @@ public class PhysicalOperatorITBase extends ITBase
         return rowDef.getOrdinal();
     }
 
-    protected static final Bindings NO_BINDINGS = UndefBindings.only();
-    protected static final Limit NO_LIMIT = new PersistitRowLimit(ScanLimit.NONE);
+    protected static final Bindings NO_BINDINGS = new ArrayBindings(0);
 
     protected int customer;
     protected int order;

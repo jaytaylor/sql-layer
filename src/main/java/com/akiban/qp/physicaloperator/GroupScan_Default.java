@@ -17,7 +17,6 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.Expression;
-import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.util.ArgumentValidation;
@@ -29,7 +28,7 @@ class GroupScan_Default extends PhysicalOperator
     @Override
     public String toString()
     {
-        return getClass().getSimpleName() + '(' + cursorCreator + ' ' +  limit + ')';
+        return getClass().getSimpleName() + '(' + cursorCreator + ' ' + limit + ')';
     }
 
     // PhysicalOperator interface
@@ -37,7 +36,7 @@ class GroupScan_Default extends PhysicalOperator
     @Override
     protected Cursor cursor(StoreAdapter adapter)
     {
-        return new Execution(cursorCreator.cursor(adapter), limit);
+        return new Execution(adapter, cursorCreator, limit);
     }
 
     // GroupScan_Default interface
@@ -86,41 +85,49 @@ class GroupScan_Default extends PhysicalOperator
 
         // Execution interface
 
-        Execution(Cursor cursor, Limit limit)
+        Execution(StoreAdapter adapter, GroupCursorCreator cursorCreator, Limit limit)
         {
-            this.cursor = cursor;
+            this.adapter = adapter;
+            this.cursor = cursorCreator.cursor(adapter);
             this.limit = limit;
         }
 
         // Object state
 
+        private final StoreAdapter adapter;
         private final Cursor cursor;
         private final Limit limit;
     }
 
-    static interface GroupCursorCreator {
+    static interface GroupCursorCreator
+    {
         Cursor cursor(StoreAdapter adapter);
+
         GroupTable groupTable();
     }
 
-    private static abstract class AbstractGroupCursorCreator implements GroupCursorCreator {
+    private static abstract class AbstractGroupCursorCreator implements GroupCursorCreator
+    {
 
         // GroupCursorCreator interface
 
         @Override
-        public final GroupTable groupTable() {
+        public final GroupTable groupTable()
+        {
             return targetGroupTable;
         }
 
 
         // for use by subclasses
 
-        protected AbstractGroupCursorCreator(GroupTable groupTable) {
+        protected AbstractGroupCursorCreator(GroupTable groupTable)
+        {
             this.targetGroupTable = groupTable;
         }
 
         @Override
-        public final String toString() {
+        public final String toString()
+        {
             return describeRange() + " on " + targetGroupTable.getName().getTableName();
         }
 
@@ -131,84 +138,93 @@ class GroupScan_Default extends PhysicalOperator
         private final GroupTable targetGroupTable;
     }
 
-    static class FullGroupCursorCreator extends AbstractGroupCursorCreator {
+    static class FullGroupCursorCreator extends AbstractGroupCursorCreator
+    {
 
         // GroupCursorCreator interface
 
         @Override
-        public Cursor cursor(StoreAdapter adapter) {
+        public Cursor cursor(StoreAdapter adapter)
+        {
             return adapter.newGroupCursor(groupTable());
         }
 
         // FullGroupCursorCreator interface
 
-        public FullGroupCursorCreator(GroupTable groupTable) {
+        public FullGroupCursorCreator(GroupTable groupTable)
+        {
             super(groupTable);
         }
 
         // AbstractGroupCursorCreator interface
 
         @Override
-        public String describeRange() {
+        public String describeRange()
+        {
             return "full scan";
         }
     }
 
-    static class PositionalGroupCursorCreator extends AbstractGroupCursorCreator {
+    static class PositionalGroupCursorCreator extends AbstractGroupCursorCreator
+    {
 
         // GroupCursorCreator interface
 
         @Override
-        public Cursor cursor(StoreAdapter adapter) {
-            return new HKeyBoundCursor(adapter.newGroupCursor(groupTable()), hKeyExpression, deep);
+        public Cursor cursor(StoreAdapter adapter)
+        {
+            return new HKeyBoundCursor(adapter.newGroupCursor(groupTable()), hKeyBindingPosition, deep);
         }
 
         // PositionalGroupCursorCreator interface
 
-        PositionalGroupCursorCreator(GroupTable groupTable, Expression hKeyExpression, boolean deep) {
+        PositionalGroupCursorCreator(GroupTable groupTable, int hKeyBindingPosition, boolean deep)
+        {
             super(groupTable);
-            this.hKeyExpression = hKeyExpression;
+            this.hKeyBindingPosition = hKeyBindingPosition;
             this.deep = deep;
         }
 
         // AbstractGroupCursorCreator interface
 
         @Override
-        public String describeRange() {
+        public String describeRange()
+        {
             return deep ? "deep hkey-bound scan" : "shallow hkey-bound scan";
         }
 
         // object state
 
-        private final Expression hKeyExpression;
+        private final int hKeyBindingPosition;
         private final boolean deep;
     }
 
-    private static class HKeyBoundCursor extends ChainedCursor {
+    private static class HKeyBoundCursor extends ChainedCursor
+    {
 
         @Override
-        public void open(Bindings bindings) {
-            Object evaluated = expression.evaluate(null, bindings);
-            if (! (evaluated instanceof HKey)) {
-                throw new RuntimeException("binding failed; expression didn't evaluate to HKey: "
-                        + expression
-                        + " with bindings " + bindings
-                );
+        public void open(Bindings bindings)
+        {
+            Object supposedHKey = bindings.get(hKeyBindingPosition);
+            if (!(supposedHKey instanceof HKey)) {
+                throw new RuntimeException(String.format("%s doesn't contain hkey at position %s",
+                                                         bindings, hKeyBindingPosition));
             }
-            HKey hKey = (HKey)evaluated;
+            HKey hKey = (HKey) supposedHKey;
             input.rebind(hKey, deep);
             input.open(bindings);
         }
 
-        HKeyBoundCursor(GroupCursor input, Expression hkeyExpression, boolean deep) {
+        HKeyBoundCursor(GroupCursor input, int hKeyBindingPosition, boolean deep)
+        {
             super(input);
             this.input = input;
-            this.expression = hkeyExpression;
+            this.hKeyBindingPosition = hKeyBindingPosition;
             this.deep = deep;
         }
 
         private final GroupCursor input;
-        private final Expression expression;
+        private final int hKeyBindingPosition;
         private final boolean deep;
     }
 }
