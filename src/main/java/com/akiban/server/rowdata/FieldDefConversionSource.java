@@ -15,8 +15,11 @@
 
 package com.akiban.server.rowdata;
 
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ConversionSourceAppendHelper;
 import com.akiban.server.types.SourceIsNullException;
+import com.akiban.util.AkibanAppender;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -33,9 +36,9 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
 
     @Override
     public BigDecimal getDecimal() {
-        StringBuilder sb = new StringBuilder(fieldDef().getMaxStorageSize());
-        ConversionHelperBigDecimal.decodeToString(fieldDef(), rowData(), sb);
-        String asString = sb.toString();
+        AkibanAppender appender = AkibanAppender.of(new StringBuilder(fieldDef().getMaxStorageSize()));
+        ConversionHelperBigDecimal.decodeToString(fieldDef(), rowData(), appender);
+        String asString = appender.toString();
         assert ! asString.isEmpty();
         try {
             return new BigDecimal(asString);
@@ -141,7 +144,12 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
 
     @Override
     public String getText() {
-        throw new UnsupportedOperationException(); // TODO
+        return getString();
+    }
+
+    @Override
+    public void appendAsString(AkibanAppender appender) {
+        appendHelper.source(this).appendTo(appender);
     }
 
     // for use within this class
@@ -165,4 +173,17 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
         }
         return offsetAndWidth;
     }
+
+    // object state
+    private final ConversionSourceAppendHelper appendHelper = new ConversionSourceAppendHelper() {
+        @Override
+        protected AkType akType() {
+            return fieldDef().column().getType().akType();
+        }
+
+        @Override
+        protected void appendDecimal(AkibanAppender appender) {
+            ConversionHelperBigDecimal.decodeToString(fieldDef(), rowData(), appender);
+        }
+    };
 }

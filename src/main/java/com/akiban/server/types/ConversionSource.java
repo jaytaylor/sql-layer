@@ -15,12 +15,14 @@
 
 package com.akiban.server.types;
 
+import com.akiban.util.AkibanAppender;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
 public interface ConversionSource {
-    public boolean isNull();
+    boolean isNull();
     BigDecimal getDecimal();
     BigInteger getUBigInt();
     ByteBuffer getVarBinary();
@@ -38,5 +40,5 @@ public interface ConversionSource {
     long getYear();
     String getString();
     String getText();
-
+    void appendAsString(AkibanAppender appender);
 }

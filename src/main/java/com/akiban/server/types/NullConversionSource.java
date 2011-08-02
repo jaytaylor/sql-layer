@@ -15,6 +15,8 @@
 
 package com.akiban.server.types;
 
+import com.akiban.util.AkibanAppender;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -116,7 +118,13 @@ public final class NullConversionSource implements ConversionSource {
     public String getText() {
         throw new SourceIsNullException();
     }
-// hidden ctor
+
+    @Override
+    public void appendAsString(AkibanAppender appender) {
+        appender.append("null");
+    }
+
+    // hidden ctor
 
     private NullConversionSource() {}
     

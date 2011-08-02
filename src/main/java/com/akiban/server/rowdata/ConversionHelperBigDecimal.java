@@ -27,11 +27,11 @@ final class ConversionHelperBigDecimal {
      * Decodes the field from the given RowData into the given StringBuilder.
      * @param fieldDef the fieldDef whose type is a decimal
      * @param rowData the RowData from which to extract the BigDecimal
-     * @param sb the appender to use
+     * @param appender the appender to use
      * @throws NullPointerException if any arguments are null
      * @throws SourceConversionException if the string can't be parsed to a BigDecimal
      */
-    public static void decodeToString(FieldDef fieldDef, RowData rowData, StringBuilder sb) {
+    public static void decodeToString(FieldDef fieldDef, RowData rowData, AkibanAppender appender) {
         final int precision = fieldDef.getTypeParameter1().intValue();
         final int scale = fieldDef.getTypeParameter2().intValue();
         final long locationAndOffset = fieldDef.getRowDef().fieldLocation(rowData, fieldDef.getFieldIndex());
@@ -39,7 +39,7 @@ final class ConversionHelperBigDecimal {
         final byte[] from = rowData.getBytes();
 
         try {
-            decodeToString(from, location, precision, scale, sb);
+            decodeToString(from, location, precision, scale, appender);
         } catch (NumberFormatException e) {
             StringBuilder errSb = new StringBuilder();
             errSb.append("in field[");
@@ -62,12 +62,12 @@ final class ConversionHelperBigDecimal {
      * @param location the starting offset within the "from" array
      * @param precision the decimal's precision
      * @param scale the decimal's scale
-     * @param sb the StringBuilder to write to
-     * @throws NullPointerException if from or sb are null
+     * @param appender the StringBuilder to write to
+     * @throws NullPointerException if from or appender are null
      * @throws NumberFormatException if the parse failed; the exception's message will be the String that we
      * tried to parse
      */
-    static void decodeToString(byte[] from, int location, int precision, int scale, StringBuilder sb) {
+    static void decodeToString(byte[] from, int location, int precision, int scale, AkibanAppender appender) {
         final int intCount = precision - scale;
         final int intFull = intCount / DECIMAL_DIGIT_PER;
         final int intPartial = intCount % DECIMAL_DIGIT_PER;
@@ -82,7 +82,7 @@ final class ConversionHelperBigDecimal {
         from[curOff] ^= 0x80;
 
         if (mask != 0)
-            sb.append('-');
+            appender.append('-');
 
         boolean hadOutput = false;
         if (intPartial != 0) {
@@ -91,7 +91,7 @@ final class ConversionHelperBigDecimal {
             curOff += count;
             if (x != 0) {
                 hadOutput = true;
-                sb.append(x);
+                appender.append(x);
             }
         }
 
@@ -100,35 +100,35 @@ final class ConversionHelperBigDecimal {
             curOff += DECIMAL_TYPE_SIZE;
 
             if (hadOutput) {
-                sb.append(String.format("%09d", x));
+                appender.append(String.format("%09d", x));
             } else if (x != 0) {
                 hadOutput = true;
-                sb.append(x);
+                appender.append(x);
             }
         }
 
         if (fracFull + fracPartial > 0) {
             if (hadOutput) {
-                sb.append('.');
+                appender.append('.');
             }
             else {
-                sb.append("0.");
+                appender.append("0.");
             }
         }
         else if(!hadOutput)
-            sb.append('0');
+            appender.append('0');
 
         for (int i = 0; i < fracFull; ++i) {
             int x = unpackIntegerByWidth(DECIMAL_TYPE_SIZE, from, curOff) ^ mask;
             curOff += DECIMAL_TYPE_SIZE;
-            sb.append(String.format("%09d", x));
+            appender.append(String.format("%09d", x));
         }
 
         if (fracPartial != 0) {
             int count = DECIMAL_BYTE_DIGITS[fracPartial];
             int x = unpackIntegerByWidth(count, from, curOff) ^ mask;
             int width = scale - (fracFull * DECIMAL_DIGIT_PER);
-            sb.append(String.format("%0" + width + "d", x));
+            appender.append(String.format("%0" + width + "d", x));
         }
 
         // Restore high bit
