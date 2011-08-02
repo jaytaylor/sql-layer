@@ -13,7 +13,10 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.optimizer;
+package com.akiban.sql.optimizer.simplified;
+
+import com.akiban.sql.optimizer.*;
+import com.akiban.sql.optimizer.query.TableTreeBase;
 
 import com.akiban.sql.parser.*;
 import com.akiban.sql.types.DataTypeDescriptor;
@@ -911,7 +914,7 @@ public class SimplifiedQuery
         return new JoinJoinNode(left, right, joinType);
     }
 
-    protected ColumnExpression getColumnExpression(Column column)
+    public ColumnExpression getColumnExpression(Column column)
             throws StandardException {
         TableNode table = getColumnTable(column);
         return new ColumnExpression(table, column);

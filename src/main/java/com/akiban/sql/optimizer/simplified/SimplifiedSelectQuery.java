@@ -13,67 +13,41 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.optimizer;
+package com.akiban.sql.optimizer.simplified;
+
+import com.akiban.sql.optimizer.UnsupportedSQLException;
 
 import com.akiban.sql.parser.*;
 
-import com.akiban.sql.StandardException;
-
 import com.akiban.ais.model.Column;
+
+import com.akiban.sql.StandardException;
 
 import java.util.*;
 
 /**
- * An SQL INSERT statement turned into a simpler form for the interim
+ * An SQL SELECT statement turned into a simpler form for the interim
  * heuristic optimizer.
  */
-public class SimplifiedInsertStatement extends SimplifiedTableStatement
+public class SimplifiedSelectQuery extends SimplifiedQuery
 {
-    private List<Column> targetColumns;
-    
-    public SimplifiedInsertStatement(InsertNode insert, Set<ValueNode> joinConditions)
+    // Turn the given SELECT statement into its simplified form.
+    public SimplifiedSelectQuery(CursorNode cursor, Set<ValueNode> joinConditions)
             throws StandardException {
-        super(insert, joinConditions);
+        super(cursor, joinConditions);
 
-        if (insert.getTargetColumnList() != null)
-            fillTargetColumns(insert.getTargetColumnList());
-        else {
-            // No explicit column list: use DDL order.
-            int ncols = insert.getResultSetNode().getResultColumns().size();
-            List<Column> aisColumns = getTargetTable().getTable().getColumns();
-            if (ncols > aisColumns.size())
-                ncols = aisColumns.size();
-            targetColumns = new ArrayList<Column>(ncols);
-            for (int i = 0; i < ncols; i++) {
-                targetColumns.add(aisColumns.get(i));
-            }
-        }
-    }
-
-    public List<Column> getTargetColumns() {
-        return targetColumns;
-    }
-
-    protected void fillTargetColumns(ResultColumnList rcl) 
-            throws StandardException {
-        targetColumns = new ArrayList<Column>(rcl.size());
-        for (ResultColumn resultColumn : rcl) {
-            Column column = getColumnReferenceColumn(resultColumn.getReference(),
-                                                     "Unsupported target column");
-            targetColumns.add(column);
-        }
+        if (cursor.getOrderByList() != null)
+            fillFromOrderBy(cursor.getOrderByList());
+        if (cursor.getOffsetClause() != null)
+            fillOffset(cursor.getOffsetClause());
+        if (cursor.getFetchFirstClause() != null)
+            fillLimit(cursor.getFetchFirstClause());
+        if (cursor.getUpdateMode() == CursorNode.UpdateMode.UPDATE)
+            throw new UnsupportedSQLException("Unsupported FOR UPDATE");
     }
 
     public String toString() {
         StringBuilder str = new StringBuilder(super.toString());
-        str.append("\ntarget: ");
-        str.append(getTargetTable());
-        str.append("\ncolumns: [");
-        for (int i = 0; i < getTargetColumns().size(); i++) {
-            if (i > 0) str.append(", ");
-            str.append(getTargetColumns().get(i));
-        }
-        str.append("]");
         str.append("\ngroup: ");
         str.append(getGroup());
         if (getJoins() != null) {

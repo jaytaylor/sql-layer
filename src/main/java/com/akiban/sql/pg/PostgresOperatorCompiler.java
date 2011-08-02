@@ -21,7 +21,9 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.sql.StandardException;
 
 import com.akiban.sql.optimizer.OperatorCompiler;
-import static com.akiban.sql.optimizer.SimplifiedQuery.*;
+import com.akiban.sql.optimizer.simplified.SimplifiedQuery.ColumnExpression;
+import com.akiban.sql.optimizer.simplified.SimplifiedQuery.SimpleExpression;
+import com.akiban.sql.optimizer.simplified.SimplifiedQuery.SimpleSelectColumn;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.SQLParser;
