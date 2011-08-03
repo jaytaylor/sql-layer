@@ -18,7 +18,6 @@ package com.akiban.ais.io;
 import java.util.Map;
 
 import com.akiban.ais.metamodel.MetaModel;
-import com.akiban.ais.metamodel.MetaModelVersionMismatchException;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
@@ -31,6 +30,7 @@ import com.akiban.ais.model.Source;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.MetaModelVersionMismatchException;
 
 public class Reader
 {

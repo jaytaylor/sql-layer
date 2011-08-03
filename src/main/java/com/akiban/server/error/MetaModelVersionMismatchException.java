@@ -12,15 +12,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package com.akiban.ais.metamodel;
+package com.akiban.server.error;
 
-public class MetaModelVersionMismatchException extends MetaModelException {
-    public MetaModelVersionMismatchException (final String message) {
-        super (message);
-    }
-
+public class MetaModelVersionMismatchException extends InvalidOperationException {
     public MetaModelVersionMismatchException (final int expectedVersion, final int actualVersion) {
-        super (String.format("Model version mismatch, expected version %d vs actual version %d",
-                             expectedVersion, actualVersion));
+        super (ErrorCode.METAMODEL_MISMATCH, expectedVersion, actualVersion);
     }
 }

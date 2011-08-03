@@ -43,12 +43,12 @@ public enum ErrorCode {
     // Generic codes
     UNKNOWN               (0, 0, Importance.ERROR, null, "UNKNOWN: Unused error code"),
     UNEXPECTED_EXCEPTION  (0, 1, Importance.ERROR, null, "UNEXPECTED EXCEPTION: unused error code"),
-    UNSUPPORTED_OPERATION (0, 900, Importance.ERROR),
+    UNSUPPORTED_OPERATION (0, 900, Importance.ERROR, null, "UNSUPPORTED_OPERATION: unused error code"),
 
     // AkSserver and Head are out of sync
     SERVER_SHUTDOWN(1, 0, Importance.DEBUG, null, "SERVER_SHUTDOWN: Unused Error Code"),
     STALE_AIS      (1, 1, Importance.TRACE, OldAISException.class, "AIS generation seen was %d but current generation is %d"), //OldAISException
-
+    METAMODEL_MISMATCH      (1, 2, Importance.ERROR, MetaModelVersionMismatchException.class, "AIS Model version mismatch, expected version %d vs actual version %d"),
     // DDL errors
     PARSE_EXCEPTION         (2, 0, Importance.DEBUG, ParseException.class, "[%s] %s: %s"),
     UNSUPPORTED_CHARSET     (2, 1, Importance.DEBUG, UnsupportedCharsetException.class, "Table `%s`.`%s` has unsupported character set `%s`"), // Validation use only
