@@ -17,119 +17,101 @@ package com.akiban.server;
 
 import com.akiban.server.types.ConversionTarget;
 import com.akiban.util.ByteSource;
-import com.persistit.Key;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public final class PersistitKeyConversionTarget implements ConversionTarget {
-
-    // KeyConversionTarget interface
-
-    public void attach(Key key) {
-        this.key = key;
-    }
+public final class PersistitKeyConversionTarget extends PersistitKeyConversionBase implements ConversionTarget {
 
     // ConversionTarget interface
 
     @Override
     public void putNull() {
-        key.append(null);
+        key().append(null);
     }
 
     @Override
     public void putDate(long value) {
-        key.append(value);
+        key().append(value);
     }
 
     @Override
     public void putDateTime(long value) {
-        key.append(value);
+        key().append(value);
     }
 
     @Override
     public void putDecimal(BigDecimal value) {
-        key.append(value);
+        key().append(value);
     }
 
     @Override
     public void putDouble(double value) {
-        key.append(value);
+        key().append(value);
     }
 
     @Override
     public void putFloat(float value) {
-        key.append(value);
+        key().append(value);
     }
 
     @Override
     public void putInt(long value) {
-        key.append(value);
+        key().append(value);
     }
 
     @Override
     public void putLong(long value) {
-        key.append(value);
+        key().append(value);
     }
 
     @Override
     public void putString(String value) {
-        key.append(value);
+        key().append(value);
     }
 
     @Override
     public void putText(String value) {
-        key.append(value);
+        key().append(value);
     }
 
     @Override
     public void putTime(long value) {
-        key.append(value);
+        key().append(value);
     }
 
     @Override
     public void putTimestamp(long value) {
-        key.append(value);
+        key().append(value);
     }
 
     @Override
     public void putUBigInt(BigInteger value) {
-        key.append(value);
+        key().append(value);
     }
 
     @Override
     public void putUDouble(double value) {
-        key.append(value);
+        key().append(value);
     }
 
     @Override
     public void putUFloat(float value) {
-        key.append(value);
+        key().append(value);
     }
 
     @Override
     public void putUInt(long value) {
-        key.append(value);
+        key().append(value);
     }
 
     @Override
     public void putVarBinary(ByteSource value) {
-        key.appendByteArray(value.byteArray(), value.byteArrayOffset(), value.byteArrayLength());
+        key().appendByteArray(value.byteArray(), value.byteArrayOffset(), value.byteArrayLength());
     }
 
     @Override
     public void putYear(long value) {
-        key.append(value);
+        key().append(value);
     }
-
-    // object interface
-
-    @Override
-    public String toString() {
-        return key.toString();
-    }
-
-    // object state
-
-    private Key key;
 }
