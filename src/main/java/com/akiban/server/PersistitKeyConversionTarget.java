@@ -22,7 +22,7 @@ import com.persistit.Key;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public final class KeyConversionTarget implements ConversionTarget {
+public final class PersistitKeyConversionTarget implements ConversionTarget {
 
     // KeyConversionTarget interface
 

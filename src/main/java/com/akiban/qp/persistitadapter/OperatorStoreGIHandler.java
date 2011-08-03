@@ -21,7 +21,7 @@ import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
-import com.akiban.server.KeyConversionTarget;
+import com.akiban.server.PersistitKeyConversionTarget;
 import com.akiban.server.types.ConversionSource;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowDef;
@@ -208,7 +208,7 @@ class OperatorStoreGIHandler {
 
     private final PersistitAdapter adapter;
     private final UserTable sourceTable;
-    private final KeyConversionTarget target = new KeyConversionTarget();
+    private final PersistitKeyConversionTarget target = new PersistitKeyConversionTarget();
     private static volatile GIHandlerHook giHandlerHook;
 
     // nested classes
