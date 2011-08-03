@@ -16,16 +16,16 @@
 package com.akiban.server.types;
 
 import com.akiban.util.AkibanAppender;
+import com.akiban.util.ByteSource;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 
 public interface ConversionSource {
     boolean isNull();
     BigDecimal getDecimal();
     BigInteger getUBigInt();
-    ByteBuffer getVarBinary();
+    ByteSource getVarBinary();
     double getDouble();
     double getUDouble();
     float getFloat();

@@ -15,9 +15,10 @@
 
 package com.akiban.server.types;
 
+import com.akiban.util.ByteSource;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 
 public interface ConversionTarget {
     void putNull();
@@ -36,7 +37,7 @@ public interface ConversionTarget {
     void putUDouble(double value);
     void putUFloat(float value);
     void putUInt(long value);
-    void putVarBinary(ByteBuffer value);
+    void putVarBinary(ByteSource value);
     void putYear(long value);
 
 }

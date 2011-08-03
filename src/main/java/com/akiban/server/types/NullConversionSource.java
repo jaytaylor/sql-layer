@@ -16,10 +16,10 @@
 package com.akiban.server.types;
 
 import com.akiban.util.AkibanAppender;
+import com.akiban.util.ByteSource;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 
 public final class NullConversionSource implements ConversionSource {
 
@@ -45,7 +45,7 @@ public final class NullConversionSource implements ConversionSource {
     }
 
     @Override
-    public ByteBuffer getVarBinary() {
+    public ByteSource getVarBinary() {
         throw new SourceIsNullException();
     }
 

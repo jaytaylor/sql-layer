@@ -20,10 +20,11 @@ import com.akiban.server.types.ConversionSource;
 import com.akiban.server.types.ConversionSourceAppendHelper;
 import com.akiban.server.types.SourceIsNullException;
 import com.akiban.util.AkibanAppender;
+import com.akiban.util.ByteSource;
+import com.akiban.util.WrappingByteSource;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 
 public final class FieldDefConversionSource extends FieldDefConversionBase implements ConversionSource {
 
@@ -59,16 +60,14 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
     }
 
     @Override
-    public ByteBuffer getVarBinary() {
+    public ByteSource getVarBinary() {
         long offsetAndWidth = getRawOffsetAndWidth();
         if (offsetAndWidth == 0) {
             return null;
         }
         int offset = (int) offsetAndWidth + fieldDef().getPrefixSize();
         int size = (int) (offsetAndWidth >>> 32) - fieldDef().getPrefixSize();
-        byte[] copy = new byte[size];
-        System.arraycopy(rowData().getBytes(), offset, copy, 0, size);
-        return ByteBuffer.wrap(copy);
+        return byteSource.wrap(rowData().getBytes(), offset, size);
     }
 
     @Override
@@ -186,4 +185,6 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
             ConversionHelperBigDecimal.decodeToString(fieldDef(), rowData(), appender);
         }
     };
+
+    private final WrappingByteSource byteSource = new WrappingByteSource();
 }

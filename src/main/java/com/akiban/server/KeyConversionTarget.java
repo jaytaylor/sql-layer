@@ -16,11 +16,11 @@
 package com.akiban.server;
 
 import com.akiban.server.types.ConversionTarget;
+import com.akiban.util.ByteSource;
 import com.persistit.Key;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 
 public final class KeyConversionTarget implements ConversionTarget {
 
@@ -113,9 +113,8 @@ public final class KeyConversionTarget implements ConversionTarget {
     }
 
     @Override
-    public void putVarBinary(ByteBuffer value) {
-        assert value.hasArray() : "ByteBuffer.hasArray() == false: " + value;
-        key.appendByteArray(value.array(), value.arrayOffset(), value.limit());
+    public void putVarBinary(ByteSource value) {
+        key.appendByteArray(value.byteArray(), value.byteArrayOffset(), value.byteArrayLength());
     }
 
     @Override
