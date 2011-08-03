@@ -96,8 +96,8 @@ public class Types {
 	//
 	public static Type VARBINARY =    new Type("varbinary", 1, false, 65535L, "VARBINARY", AkType.VARBINARY);
 	public static Type BINARY =       new Type("binary", 1, false, 255L, "VARBINARY", AkType.VARBINARY);
-    public static Type VARCHAR =      new Type("varchar", 1, false, 65535L, "VARCHAR", AkType.STRING);
-	public static Type CHAR =         new Type("char", 1, false, 767L, "VARCHAR", AkType.STRING);
+    public static Type VARCHAR =      new Type("varchar", 1, false, 65535L, "VARCHAR", AkType.VARCHAR);
+	public static Type CHAR =         new Type("char", 1, false, 767L, "VARCHAR", AkType.VARCHAR);
     //
 	// BLOB and TEXT types.  Currently handled identically. The maxByteSize values
 	// here are used in computing the correct prefix size.  The maximum allow size

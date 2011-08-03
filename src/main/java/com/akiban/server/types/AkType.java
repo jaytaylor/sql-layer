@@ -23,7 +23,7 @@ public enum AkType {
     FLOAT       { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putFloat( src.getFloat() ); } },
     INT         { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putInt( src.getInt() ); } },
     LONG        { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putLong( src.getLong() ); } },
-    STRING      { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putString( src.getString() ); } },
+    VARCHAR     { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putString( src.getString() ); } },
     TEXT        { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putText( src.getText() ); } },
     TIME        { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putTime( src.getTime() ); } },
     TIMESTAMP   { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putTimestamp( src.getTimestamp() ); } },

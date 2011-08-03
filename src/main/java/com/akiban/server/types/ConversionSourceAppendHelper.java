@@ -125,7 +125,7 @@ public abstract class ConversionSourceAppendHelper {
             case FLOAT: appendFloat(appender); break;
             case INT: appendInt(appender); break;
             case LONG: appendLong(appender); break;
-            case STRING: appendString(appender); break;
+            case VARCHAR: appendString(appender); break;
             case TEXT: appendText(appender); break;
             case TIME: appendTime(appender); break;
             case TIMESTAMP: appendTimeStamp(appender); break;
