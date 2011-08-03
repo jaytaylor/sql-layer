@@ -502,11 +502,7 @@ public final class JsonHapiIT extends ITBase {
                         }
                         row.put(col, value);
                     }
-                    try {
                         dml().writeRow(session(), row);
-                    } catch (InvalidOperationException e) {
-                        throw new InvalidOperationException(ErrorCode.UNKNOWN, "while writing " + row, e);
-                    }
                 }
             }
         }

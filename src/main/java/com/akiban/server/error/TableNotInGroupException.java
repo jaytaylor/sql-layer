@@ -12,11 +12,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-
 package com.akiban.server.error;
 
-public final class NoSuchColumnException extends InvalidOperationException {
-    public NoSuchColumnException(String columnName) {
-        super (ErrorCode.NO_SUCH_COLUMN, columnName);
+import com.akiban.ais.model.TableName;
+
+public class TableNotInGroupException extends InvalidOperationException {
+    public TableNotInGroupException (TableName table) {
+        super(ErrorCode.TABLE_NOT_IN_GROUP, table.getSchemaName(), table.getTableName());
     }
 }

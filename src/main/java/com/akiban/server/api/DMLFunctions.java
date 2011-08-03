@@ -231,12 +231,10 @@ public interface DMLFunctions {
      * <p>Deletes a row, possibly cascading the deletion to its children rows.</p>
      * @param row the row to delete
      * @throws NullPointerException if either the given table ID or row are null
-     * @throws NoSuchRowException if the specified row doesn't exist
      * @throws GenericInvalidOperationException if some other exception occurred
      */
     void deleteRow(Session session, NewRow row)
-    throws  NoSuchRowException,
-            GenericInvalidOperationException;
+    throws  GenericInvalidOperationException;
 
     /**
      * <p>Updates a row, possibly cascading updates to its PK to children rows.</p>
@@ -244,12 +242,10 @@ public interface DMLFunctions {
      * @param newRow the row's new values
      * @param columnSelector specifies which columns are being updated
      * @throws NullPointerException if any of the arguments are <tt>null</tt>
-     * @throws NoSuchRowException if the specified oldRow doesn't exist
      * @throws GenericInvalidOperationException if some other exception occurred
      */
     void updateRow(Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector)
-    throws  NoSuchRowException,
-            GenericInvalidOperationException;
+    throws  GenericInvalidOperationException;
 
     /**
      * Truncates the given table, possibly cascading the truncate to child tables.

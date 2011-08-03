@@ -52,6 +52,7 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.error.CursorCloseBadException;
 import com.akiban.server.error.CursorIsUnknownException;
 import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.error.ErrorCode;
@@ -908,13 +909,11 @@ public class PersistitStore implements Store {
         final Integer tableId = rc.getTableId();
         final List<RowCollector> list = collectorsForTableId(session, tableId);
         if (list.isEmpty()) {
-            throw new InvalidOperationException(ErrorCode.INTERNAL_ERROR,
-                    "Attempt to remove RowCollector from empty list");
+            throw new CursorIsUnknownException (tableId);
         }
         final RowCollector removed = list.remove(list.size() - 1);
         if (removed != rc) {
-            throw new InvalidOperationException(ErrorCode.INTERNAL_ERROR,
-                    "Attempt to remove the wrong RowCollector");
+            throw new CursorCloseBadException (tableId);
         }
     }
 

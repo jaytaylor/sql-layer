@@ -36,33 +36,18 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.GenericInvalidOperationException;
 import com.akiban.server.api.ddl.GroupWithProtectedTableException;
-import com.akiban.server.api.ddl.IndexAlterException;
 import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.error.DropIndexNotAllowedException;
-import com.akiban.server.error.DuplicateColumnNameException;
-import com.akiban.server.error.DuplicateKeyException;
-import com.akiban.server.error.DuplicateTableNameException;
-import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.ForeignConstraintDDLException;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.JoinToMultipleParentsException;
-import com.akiban.server.error.JoinToUnknownTableException;
-import com.akiban.server.error.JoinToWrongColumnsException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.error.ParseException;
-import com.akiban.server.error.ProtectedTableDDLException;
-import com.akiban.server.error.RowDefNotFoundException;
-import com.akiban.server.error.UnknownIndexException;
-import com.akiban.server.error.UnsupportedCharsetException;
-import com.akiban.server.error.UnsupportedDataTypeException;
 import com.akiban.server.error.UnsupportedDropException;
-import com.akiban.server.error.UnsupportedIndexDataTypeException;
-import com.akiban.server.error.UnsupportedIndexSizeException;
 import com.akiban.server.service.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -302,12 +287,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public List<String> getDDLs(final Session session) throws InvalidOperationException {
         logger.trace("getting DDLs");
-        try {
-            return schemaManager().schemaStrings(session, false);
-        } catch (Exception e) {
-            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION,
-                    "Unexpected exception", e);
-        }
+        return schemaManager().schemaStrings(session, false);
     }
 
     @Override

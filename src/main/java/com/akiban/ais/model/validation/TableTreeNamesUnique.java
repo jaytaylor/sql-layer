@@ -16,7 +16,7 @@ package com.akiban.ais.model.validation;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupTable;
-import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.DuplicateTableTreeNamesException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,11 +36,8 @@ class TableTreeNamesUnique implements AISValidation {
             GroupTable curTable = treeNameMap.get(treeName);
             if(curTable != null) {
                 output.reportFailure(
-                    new AISValidationFailure(ErrorCode.VALIDATION_FAILURE,
-                                             "Table %s has a duplicate tree name to table %s (%s)",
-                                             table.getName(),
-                                             curTable.getName(),
-                                             treeName));
+                    new AISValidationFailure(
+                            new DuplicateTableTreeNamesException (table.getName(), curTable.getName(), treeName)));
             }
             else {
                 treeNameMap.put(treeName, table);

@@ -15,7 +15,6 @@
 
 package com.akiban.server.error;
 
-
 /**
  * The error codes that are part of the AkSserver's public API.
  *
@@ -42,9 +41,9 @@ package com.akiban.server.error;
  */
 public enum ErrorCode {
     // Generic codes
-    UNKNOWN(0, 0, Importance.ERROR),
-    UNEXPECTED_EXCEPTION(0, 1, Importance.ERROR),
-    UNSUPPORTED_OPERATION(0, 900, Importance.ERROR),
+    UNKNOWN               (0, 0, Importance.ERROR, null, "UNKNOWN: Unused error code"),
+    UNEXPECTED_EXCEPTION  (0, 1, Importance.ERROR, null, "UNEXPECTED EXCEPTION: unused error code"),
+    UNSUPPORTED_OPERATION (0, 900, Importance.ERROR),
 
     // AkSserver and Head are out of sync
     SERVER_SHUTDOWN(1, 0, Importance.DEBUG, null, "SERVER_SHUTDOWN: Unused Error Code"),
@@ -68,12 +67,13 @@ public enum ErrorCode {
     REFERENCED_TABLE        (2, 14, Importance.DEBUG, ReferencedTableException.class,  "Table %s has one or more child tables in the group"),  
     DROP_INDEX_NOT_ALLOWED  (2, 15, Importance.DEBUG, DropIndexNotAllowedException.class,  "Can not drop index `%s` from table `%s`.`%s`"),
     FK_DDL_VIOLATION        (2, 16, Importance.DEBUG, ForeignConstraintDDLException.class, "Cannot drop table `%s`.`%s`, it has child table `%s`.`%s`"),
+    PROTECTED_INDEX         (2, 17, Importance.DEBUG, ProtectedIndexException.class, "Index `%s` can not be added to a table"),
     
     // DML errors
     NO_REFERENCED_ROW (3, 0, Importance.DEBUG, null,  "NO_REFERENCED_ROW: Unused error code"), // NULL
     DUPLICATE_KEY     (3, 1, Importance.DEBUG, DuplicateKeyException.class, "Non-unique key for index %s: %s"),
     NO_SUCH_TABLE     (3, 2, Importance.DEBUG, NoSuchTableException.class,  "Can not find the table `%s`.`%s`"), 
-    NO_SUCH_COLUMN    (3, 3, Importance.DEBUG, NoSuchColumnException.class, "NO_SUCH_COLUMN: Unused error code"),
+
     NO_INDEX          (3, 4, Importance.DEBUG, NoSuchIndexException.class, "Unknown index: `%s`"),
     NO_SUCH_RECORD    (3, 5, Importance.DEBUG, null,  "NO_SUCH_RECORD: Unused error code"),
     FK_CONSTRAINT_VIOLATION(3, 6, Importance.DEBUG, ForeignKeyConstraintDMLException.class, "FK_CONSTRAINT_VIOLATION: Unused error code"),
@@ -94,31 +94,36 @@ public enum ErrorCode {
 
     // Messaging errors
     MALFORMED_REQUEST (21, 0, Importance.ERROR, null, "MALFORMED_REQUEST: Unused error code"), 
-    CURSOR_IS_FINISHED(21, 1, Importance.ERROR, CursorIsFinishedException.class, "Finished scan cursor requested more rows: %s"), 
-    CURSOR_IS_UNKNOWN (21, 2, Importance.ERROR, CursorIsUnknownException.class,  "Cursor/RowCollector for Table <%d> is unknown"),
-    NO_ACTIVE_CURSOR  (21, 3, Importance.ERROR, NoActiveCursorException.class,   "No cursor found for tableId <%d>"),
     BAD_STATISTICS_TYPE (21, 4, Importance.ERROR, BadStatisticsTypeException.class, "Unexpected histogram request type <%d>"),
     
     // AIS Validation errors, Attempts to modify and build an AIS failed
     // due to missing or invalid information.
     VALIDATION_FAILURE(22, 0, Importance.DEBUG),
     INTERNAL_REFERENCES_BROKEN(22, 1, Importance.DEBUG),
-    GROUP_MULTIPLE_ROOTS (22, 2, Importance.DEBUG, GroupHasMultipleRootsException.class,   "Group `%s` has multiple root tables: `%s`.`%s` and `%s`.`%s`"),
-    JOIN_TYPE_MISMATCH   (22, 3, Importance.DEBUG, JoinColumnTypesMismatchException.class, "Column `%s`.`%s`.`%s` type used for join does not match parent column `%s`.`%s`.`%s`"),
-    PK_NULL_COLUMN       (22, 4, Importance.DEBUG, PrimaryKeyNullColumnException.class, "Table `%s`.`%s` primary key has a nullable column %s"),
-    DUPLICATE_INDEXES    (22, 5, Importance.DEBUG, DuplicateIndexException.class,     "Table `%s`.`%s` already has index `%s`"),
-    MISSING_PRIMARY_KEY  (22, 6, Importance.DEBUG, NoPrimaryKeyException.class,       "Table `%s`.`%s` is missing its primary key"),
-    DUPLICATE_TABLEID    (22, 7, Importance.DEBUG, DuplicateTableIdException.class,   "Table `%s`.`%s` has a duplicate tableID to table `%s`.`%s`"),
-    JOIN_COLUMN_MISMATCH (22, 8, Importance.DEBUG, JoinColumnMismatchException.class, "Join column list size (%d) for table `%s`.`%s` does not match table `%s`.`%s` primary key (%d)"),
-
+    GROUP_MULTIPLE_ROOTS (22,  2, Importance.DEBUG, GroupHasMultipleRootsException.class,   "Group `%s` has multiple root tables: `%s`.`%s` and `%s`.`%s`"),
+    JOIN_TYPE_MISMATCH   (22,  3, Importance.DEBUG, JoinColumnTypesMismatchException.class, "Column `%s`.`%s`.`%s` type used for join does not match parent column `%s`.`%s`.`%s`"),
+    PK_NULL_COLUMN       (22,  4, Importance.DEBUG, PrimaryKeyNullColumnException.class, "Table `%s`.`%s` primary key has a nullable column %s"),
+    DUPLICATE_INDEXES    (22,  5, Importance.DEBUG, DuplicateIndexException.class,     "Table `%s`.`%s` already has index `%s`"),
+    MISSING_PRIMARY_KEY  (22,  6, Importance.DEBUG, NoPrimaryKeyException.class,       "Table `%s`.`%s` is missing its primary key"),
+    DUPLICATE_TABLEID    (22,  7, Importance.DEBUG, DuplicateTableIdException.class,   "Table `%s`.`%s` has a duplicate tableID to table `%s`.`%s`"),
+    JOIN_COLUMN_MISMATCH (22,  8, Importance.DEBUG, JoinColumnMismatchException.class, "Join column list size (%d) for table `%s`.`%s` does not match table `%s`.`%s` primary key (%d)"),
+    INDEX_LACKS_COLUMNS  (22,  9, Importance.DEBUG, IndexLacksColumnsException.class,  "Table `%s`.`%s` index `%s` defined without any colums"),
+    NO_SUCH_COLUMN       (22, 10, Importance.DEBUG, NoSuchColumnException.class,       "Unknown column: %s"),
+    DUPLICATE_INDEX_TREENAME (22, 11, Importance.DEBUG, DuplicateIndexTreeNamesException.class, "Index `%s`.`%s`.`%s` has duplicate tree name to index `%s`.`%s`.`%s`. Treename: [%s]"),
+    DUPLICATE_TABLE_TREENAME (22, 12, Importance.DEBUG, DuplicateTableTreeNamesException.class, "Table `%s`.`%s` has duplicate tree name to table `%s`.`%s`. Treename: [%s]"),
+    TABLE_NOT_IN_GROUP   (22, 13, Importance.DEBUG, TableNotInGroupException.class,    "Table `%s`.`%s` does not belong to a group"),
     // AkSserver errors
     // TRANSACTION_ERROR(30, 0), // TODO PersistitException should get caught and wrapped as this
     MULTIGENERATIONAL_TABLE(30, 900, Importance.ERROR, null, "MULTIGENERATION_TABLE: Unused error code"),
 
     // Bad AkSserver errors
-    INTERNAL_ERROR      (31, 0, Importance.ERROR, null, ""),
+    INTERNAL_ERROR      (31, 0, Importance.ERROR, null, "INTERNAL_ERROR: Unused error code"),
     INTERNAL_CORRUPTION (31, 1, Importance.ERROR, RowDataCorruptionException.class, "Internal corrupt RowData at %s"),
-    AIS_TOO_LARGE       (31, 3, Importance.ERROR, AISTooLargeException.class, "Serialized AIS size <%d> exceeds maximum size<%d>")
+    AIS_TOO_LARGE       (31, 2, Importance.ERROR, AISTooLargeException.class, "Serialized AIS size <%d> exceeds maximum size<%d>"),
+    CURSOR_IS_FINISHED  (31, 3, Importance.ERROR, CursorIsFinishedException.class, "Finished scan cursor requested more rows: %s"), 
+    CURSOR_IS_UNKNOWN   (31, 4, Importance.ERROR, CursorIsUnknownException.class,  "Cursor/RowCollector for Table <%d> is unknown"),
+    NO_ACTIVE_CURSOR    (31, 5, Importance.ERROR, NoActiveCursorException.class,   "No cursor found for tableId <%d>"),
+    CURSOR_CLOSE_BAD    (31, 6, Importance.ERROR, CursorCloseBadException.class,   "Removing RowCollector for Table <%d> remove wrong one")
     ;
 
     private final short value;

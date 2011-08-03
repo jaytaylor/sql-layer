@@ -18,7 +18,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.DuplicateIndexTreeNamesException;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -49,11 +49,8 @@ class IndexTreeNamesUnique implements AISValidation {
             Index curIndex = treeNameMap.get(treeName);
             if(curIndex != null) {
                 output.reportFailure(
-                        new AISValidationFailure(ErrorCode.VALIDATION_FAILURE,
-                                                 "Index %s has duplicate tree name to index %s (%s)",
-                                                 index,
-                                                 curIndex,
-                                                 treeName));
+                        new AISValidationFailure(
+                                new DuplicateIndexTreeNamesException(index.getIndexName(), curIndex.getIndexName(), treeName)));
             } else {
                 treeNameMap.put(treeName, index);
             }

@@ -60,17 +60,22 @@ import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.IndexLacksColumnsException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.JoinColumnMismatchException;
+import com.akiban.server.error.JoinColumnTypesMismatchException;
 import com.akiban.server.error.JoinToMultipleParentsException;
 import com.akiban.server.error.JoinToProtectedTableException;
 import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.JoinToWrongColumnsException;
+import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ParseException;
+import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.ProtectedTableDDLException;
 import com.akiban.server.error.ReferencedTableException;
+import com.akiban.server.error.TableNotInGroupException;
 import com.akiban.server.error.UnsupportedCharsetException;
 import com.akiban.server.error.UnsupportedDataTypeException;
 import com.akiban.server.error.UnsupportedIndexDataTypeException;
@@ -333,7 +338,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
         for(Index index : indexesToAdd) {
             if(index.isPrimaryKey()) {
-                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION, "Cannot add primary key");
+                throw new ProtectedIndexException("PRIMARY");
             }
 
             final Index curIndex;
@@ -379,7 +384,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 throw new DuplicateIndexException(indexName);
             }
             if(index.getColumns().isEmpty()) {
-                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION, "Index has no columns: " + index);
+                throw new IndexLacksColumnsException (
+                        new TableName(index.getIndexName().getSchemaName(), index.getIndexName().getTableName()),
+                        index.getIndexName().getName());
             }
 
             volumeToSchema.put(getVolumeForSchemaTree(schemaName), schemaName);
@@ -392,8 +399,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     throw new NoSuchTableException(refTableName);
                 }
                 if(!newRefTable.getGroup().equals(newGroup)) {
-                    throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
-                                                        "Table not in group: " + refTableName);
+                    throw new TableNotInGroupException (refTableName);
                 }
                 if(lastTable != null && !inSameBranch(lastTable, newRefTable)) {
                     throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
@@ -404,12 +410,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 final Column column = indexCol.getColumn();
                 final Column newColumn = newRefTable.getColumn(column.getName());
                 if(newColumn == null) {
-                    throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
-                                                        "Unknown column: " + column.getName());
+                    throw new NoSuchColumnException (column.getName());
                 }
                 if(!column.getType().equals(newColumn.getType())) {
-                    throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
-                                                        "Column type mismatch: "  + column + "," + newColumn);
+                    throw new JoinColumnTypesMismatchException (
+                            new TableName (index.getIndexName().getSchemaName(), index.getIndexName().getTableName()),
+                            column.getName(),
+                            newRefTable.getName(), newColumn.getName());
                 }
                 IndexColumn newIndexCol = new IndexColumn(newIndex, newColumn, indexCol.getPosition(),
                                                           indexCol.isAscending(), indexCol.getIndexedLength());

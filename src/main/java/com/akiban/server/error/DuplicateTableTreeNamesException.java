@@ -12,11 +12,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-
 package com.akiban.server.error;
 
-public final class NoSuchColumnException extends InvalidOperationException {
-    public NoSuchColumnException(String columnName) {
-        super (ErrorCode.NO_SUCH_COLUMN, columnName);
+import com.akiban.ais.model.TableName;
+
+public class DuplicateTableTreeNamesException extends InvalidOperationException {
+    public DuplicateTableTreeNamesException (TableName table, TableName table2, String treeName) {
+        super (ErrorCode.DUPLICATE_TABLE_TREENAME, 
+                table.getSchemaName(), table.getTableName(), 
+                table2.getSchemaName(), table2.getTableName(),
+                treeName);
     }
 }
