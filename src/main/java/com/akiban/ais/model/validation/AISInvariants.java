@@ -18,21 +18,18 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.DuplicateColumnNameException;
 import com.akiban.server.error.DuplicateGroupNameException;
+import com.akiban.server.error.DuplicateIndexColumnException;
 import com.akiban.server.error.DuplicateIndexException;
-import com.akiban.server.error.DuplicateIndexesException;
 import com.akiban.server.error.DuplicateTableNameException;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NameIsNullException;
 
 public class AISInvariants {
 
     public static void checkNullName (final String name, final String source, final String type) {
         if (name == null || name.length() == 0) {
-            throw new InvalidOperationException (ErrorCode.VALIDATION_FAILURE,
-                    "%s creation has a null %s", source, type);
+            throw new NameIsNullException (source, type);
         }
     }
     
@@ -50,9 +47,6 @@ public class AISInvariants {
         }
     }
     public static void checkDuplicateColumnPositions(Table table, Integer position) {
-        /* TODO: fix AkServerAisSourceTargetIT throwing this exception: 
-         * Table akiban_information_schema._akiban_columns already has a column in position 7
-         */ 
         if (position < table.getColumnsIncludingInternal().size() && 
                 table.getColumn(position) != null &&
                 table.getColumn(position).getPosition() == position) {
@@ -63,9 +57,7 @@ public class AISInvariants {
     public static void checkDuplicateColumnsInIndex(Index index, String columnName)
     {
         if (index.getColumns().contains(columnName)) {
-            throw new InvalidOperationException (ErrorCode.DUPLICATE_COLUMN, 
-                    "Index %s already has column %s", 
-                    index.getIndexName().toString(), columnName);
+            throw new DuplicateIndexColumnException (index, columnName);
         }
     }
     

@@ -36,6 +36,7 @@ import com.akiban.server.RowDef;
 import com.akiban.server.api.GenericInvalidOperationException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.error.PersistItErrorException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Exchange;
@@ -138,7 +139,7 @@ public class PersistitAdapter extends StoreAdapter
         try {
             persistit.updateRow(session, oldRowData, newRowData, null);
         } catch (PersistitException e) {
-            throw new GenericInvalidOperationException(e);
+            throw new PersistItErrorException(e);
         }
     }
 

@@ -35,15 +35,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.api.GenericInvalidOperationException;
-import com.akiban.server.api.ddl.GroupWithProtectedTableException;
-import com.akiban.server.api.ddl.IndexAlterException;
-import com.akiban.server.error.DuplicateKeyException;
-import com.akiban.server.error.ForeignConstraintDDLException;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoSuchGroupException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.ParseException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
@@ -165,9 +157,7 @@ public class TableDDLTest {
         public DDLFunctionsMock(AkibanInformationSchema ais) { this.internalAIS = ais; }
         
         @Override
-        public void createTable(Session session, UserTable table)
-                throws GroupWithProtectedTableException,
-                GenericInvalidOperationException {
+        public void createTable(Session session, UserTable table) {
             
             assertEquals(table.getName(), dropTable);
             for (Column col : table.getColumnsIncludingInternal()) {
@@ -192,7 +182,6 @@ public class TableDDLTest {
 
         @Override
         public void renameTable(Session session, TableName currentName, TableName newName)
-                throws GenericInvalidOperationException
         {
             throw new UnsupportedOperationException();
         }
@@ -219,8 +208,7 @@ public class TableDDLTest {
         }
 
         @Override
-        public void dropTable(Session session, TableName tableName)
-                throws GenericInvalidOperationException {
+        public void dropTable(Session session, TableName tableName) {
             assertEquals(tableName, dropTable);
         }
         
@@ -231,29 +219,23 @@ public class TableDDLTest {
 
         @Override
         public void createIndexes(Session session,
-                Collection<Index> indexesToAdd) throws 
-                IndexAlterException,
-                GenericInvalidOperationException {}
+                Collection<Index> indexesToAdd) {}
 
         @Override
-        public void createTable(Session session, String schema, String ddlText)
-                throws ParseException, GroupWithProtectedTableException, 
-                GenericInvalidOperationException {}
+        public void createTable(Session session, String schema, String ddlText) {}
         @Override
-        public void dropGroup(Session session, String groupName)
-                throws GenericInvalidOperationException {}
+        public void dropGroup(Session session, String groupName) {}
 
         @Override
         public void dropGroupIndexes(Session session, String groupName,
-                Collection<String> indexesToDrop) throws IndexAlterException, GenericInvalidOperationException {}
+                Collection<String> indexesToDrop) {}
 
         @Override
-        public void dropSchema(Session session, String schemaName)
-                throws GenericInvalidOperationException {}
+        public void dropSchema(Session session, String schemaName) {}
 
         @Override
         public void dropTableIndexes(Session session, TableName tableName,
-                Collection<String> indexesToDrop) IndexAlterException, GenericInvalidOperationException {}
+                Collection<String> indexesToDrop) {}
 
         @Override
         public void forceGenerationUpdate() {}

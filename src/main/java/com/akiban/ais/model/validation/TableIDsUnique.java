@@ -23,7 +23,6 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.DuplicateTableIdException;
-import com.akiban.server.error.ErrorCode;
 
 class TableIDsUnique implements AISValidation {
 

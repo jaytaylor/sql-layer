@@ -27,7 +27,9 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.Visitor;
-import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.AISNullReferenceException;
+import com.akiban.server.error.BadAISInternalSettingException;
+import com.akiban.server.error.BadAISReferenceException;
 
 /**
  * Validates the internal references used by the AIS are correct. 
@@ -52,12 +54,12 @@ class ReferencesCorrect implements AISValidation,Visitor {
     public void visitUserTable(UserTable userTable) {
         visitingTable = userTable;
         if (userTable == null) {
-            output.reportFailure(new AISValidationFailure(ErrorCode.INTERNAL_REFERENCES_BROKEN,
-                    "null table found"));
+            output.reportFailure(new AISValidationFailure(
+                    new AISNullReferenceException ("ais", "", "user table")));
         }
         if (userTable.isGroupTable()) {
-            output.reportFailure(new AISValidationFailure(ErrorCode.INTERNAL_REFERENCES_BROKEN,
-                    "wrong value for isGroupTable(): %s", userTable.getName().toString()));
+            output.reportFailure(new AISValidationFailure(
+                    new BadAISInternalSettingException("User table", userTable.getName().toString(), "isGroupTable")));
         }
         
     }
@@ -65,13 +67,12 @@ class ReferencesCorrect implements AISValidation,Visitor {
     @Override
     public void visitColumn(Column column) {
         if (column == null) {
-            output.reportFailure(new AISValidationFailure(ErrorCode.INTERNAL_REFERENCES_BROKEN, 
-                    "null column in table %s", visitingTable.getName().toString()));
+            output.reportFailure(new AISValidationFailure(
+                    new AISNullReferenceException ("user table", visitingTable.getName().toString(), "column")));
         }
         if (column.getTable() != visitingTable) {
-            output.reportFailure(new AISValidationFailure(ErrorCode.INTERNAL_REFERENCES_BROKEN,
-                    "column %s has bad reference to table %s", 
-                    column.getName(), visitingTable.getName().toString()));
+            output.reportFailure(new AISValidationFailure(
+                    new BadAISReferenceException ("column", column.getName(), "table", visitingTable.getName().toString())));
         }
     }
 
@@ -79,12 +80,12 @@ class ReferencesCorrect implements AISValidation,Visitor {
     public void visitGroupTable(GroupTable groupTable) {
         visitingTable = groupTable;
         if (groupTable == null) {
-            output.reportFailure(new AISValidationFailure(ErrorCode.INTERNAL_REFERENCES_BROKEN,
-            "null table found"));
+            output.reportFailure(new AISValidationFailure(
+                    new AISNullReferenceException("ais", "", "group table")));
         }
         if (groupTable.isUserTable()) {
-            output.reportFailure(new AISValidationFailure(ErrorCode.INTERNAL_REFERENCES_BROKEN,
-                    "wrong value for isUserTable(): %s", groupTable.getName().toString()));
+            output.reportFailure(new AISValidationFailure(
+                    new BadAISInternalSettingException ("Group table", groupTable.getName().toString(), "isUserTable")));
         }
     }
 
@@ -92,13 +93,13 @@ class ReferencesCorrect implements AISValidation,Visitor {
     public void visitGroup(Group group) {
         visitingGroup = group;
         if (group == null) {
-            output.reportFailure(new AISValidationFailure(ErrorCode.INTERNAL_REFERENCES_BROKEN,
-                    "null group found"));
+            output.reportFailure(new AISValidationFailure(
+                    new AISNullReferenceException("ais", "", "group")));
             return;
         }
         if (group.getGroupTable() == null) {
-            output.reportFailure(new AISValidationFailure(ErrorCode.INTERNAL_REFERENCES_BROKEN,
-                    "group %s has null group table", group.getName()));
+            output.reportFailure(new AISValidationFailure(
+                    new AISNullReferenceException("group", group.getName(), "group table")));
         }
     }
 
@@ -107,31 +108,30 @@ class ReferencesCorrect implements AISValidation,Visitor {
     public void visitIndex(Index index) {
         visitingIndex = index;
         if (index == null) {
-            output.reportFailure(new AISValidationFailure (ErrorCode.INTERNAL_REFERENCES_BROKEN,
-                    "null index in table %s", visitingTable.getName().toString()));
+            output.reportFailure(new AISValidationFailure (
+                    new AISNullReferenceException ("table", visitingTable.getName().toString(), "index")));
         } else if (index.isTableIndex() && index.rootMostTable() != visitingTable) {
-            output.reportFailure(new AISValidationFailure (ErrorCode.INTERNAL_REFERENCES_BROKEN,
-                    "Table index %s has bad reference to table %s",
-                    index.getIndexName().toString(), visitingTable.getName().toString()));
+            output.reportFailure(new AISValidationFailure (
+                    new BadAISReferenceException ("Table index", index.getIndexName().toString(), 
+                            "table", visitingTable.getName().toString())));
         } else if (index.isGroupIndex() && ((GroupIndex)index).getGroup() != visitingGroup) {
-            output.reportFailure(new AISValidationFailure (ErrorCode.INTERNAL_REFERENCES_BROKEN,
-                    "Group index %s has bad reference to group %s",
-                    index.getIndexName().toString(), 
-                    visitingGroup.getName()));
+            output.reportFailure(new AISValidationFailure (
+                    new BadAISReferenceException ("Group index", index.getIndexName().toString(), 
+                            "group", visitingGroup.getName())));
         }
         
     }
     @Override
     public void visitIndexColumn(IndexColumn indexColumn) {
         if (indexColumn == null) {
-            output.reportFailure(new AISValidationFailure (ErrorCode.INTERNAL_REFERENCES_BROKEN,
-                    "null column in index %s", visitingIndex.getIndexName().toString()));
+            output.reportFailure(new AISValidationFailure (
+                    new AISNullReferenceException ("index", visitingIndex.getIndexName().toString(), "column")));
             return;
         }
         if (indexColumn.getIndex() != visitingIndex) {
-            output.reportFailure(new AISValidationFailure (ErrorCode.INTERNAL_REFERENCES_BROKEN, 
-                    "Index column has bad reference to index %s",
-                    visitingIndex.getIndexName().toString()));
+            output.reportFailure(new AISValidationFailure (
+                    new BadAISReferenceException ("Index column",indexColumn.getColumn().getName(), 
+                            "index", visitingIndex.getIndexName().toString())));
         }
 
     }

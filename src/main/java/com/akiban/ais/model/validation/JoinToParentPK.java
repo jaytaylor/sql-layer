@@ -21,7 +21,6 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.TableIndex;
-import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.JoinColumnMismatchException;
 import com.akiban.server.error.JoinToWrongColumnsException;
 

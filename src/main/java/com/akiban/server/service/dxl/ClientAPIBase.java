@@ -85,16 +85,8 @@ abstract class ClientAPIBase {
      *            the exception to wrap
      * @return as specific an InvalidOperationException as we know how to make
      */
-    protected static InvalidOperationException launder(Exception e) {
-        if (e instanceof InvalidOperationException) {
-            final InvalidOperationException ioe = (InvalidOperationException) e;
-            switch (ioe.getCode()) {
-                default:
-                    return ioe;
-            }
-        }
-        return new GenericInvalidOperationException(e);
-    }
+    //protected static InvalidOperationException launder(Exception e) {
+    //}
 
     BasicDXLMiddleman.ScanData putScanData(Session session, CursorId cursorId, BasicDXLMiddleman.ScanData scanData) {
         return middleman.putScanData(session, cursorId, scanData);

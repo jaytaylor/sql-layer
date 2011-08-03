@@ -39,9 +39,9 @@ public interface SchemaManager {
      * there is an internal error.
      * @return The name of the table that was created.
      */
-    TableName createTableDefinition(Session session, String defaultSchemaName, String statement) throws Exception;
+    TableName createTableDefinition(Session session, String defaultSchemaName, String statement);
     
-    TableName createTableDefinition(Session session, UserTable newTable) throws Exception;
+    TableName createTableDefinition(Session session, UserTable newTable);
 
     /**
      * Rename an existing table.
@@ -50,7 +50,7 @@ public interface SchemaManager {
      * @param newName Desired name of table
      * @throws Exception For any error
      */
-    void renameTable(Session session, TableName currentName, TableName newName) throws Exception;
+    void renameTable(Session session, TableName currentName, TableName newName);
 
     /**
      * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are
@@ -61,7 +61,7 @@ public interface SchemaManager {
      * was an internal error.
      * @return List of newly created indexes.
      */
-    Collection<Index> createIndexes(Session session, Collection<Index> indexes) throws Exception;
+    Collection<Index> createIndexes(Session session, Collection<Index> indexes);
 
     /**
      * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are
@@ -70,7 +70,7 @@ public interface SchemaManager {
      * @param indexes List of indexes to drop.
      * @throws Exception If there was an internal error.
      */
-    void dropIndexes(Session session, Collection<Index> indexes) throws Exception;
+    void dropIndexes(Session session, Collection<Index> indexes);
 
     /**
      * Delete the definition of the table with the given name. This method does nothing if
@@ -80,7 +80,7 @@ public interface SchemaManager {
      * @param tableName The name of the table.
      * @throws Exception If the definition cannot be deleted (e.g. table is referenced) or an internal error.
      */
-    void deleteTableDefinition(Session session, String schemaName, String tableName) throws Exception;
+    void deleteTableDefinition(Session session, String schemaName, String tableName);
 
     /**
      * Generate a TableDefinition, which includes a canonical 'create table' statement,
@@ -98,7 +98,7 @@ public interface SchemaManager {
      * @return Map, keyed by table name, of all TableDefinitions.
      * @throws Exception For an internal error.
      */
-    SortedMap<String, TableDefinition> getTableDefinitions(Session session, String schemaName) throws Exception;
+    SortedMap<String, TableDefinition> getTableDefinitions(Session session, String schemaName);
 
     /**
      * Returns the current and authoritative AIS, containing all metadata about

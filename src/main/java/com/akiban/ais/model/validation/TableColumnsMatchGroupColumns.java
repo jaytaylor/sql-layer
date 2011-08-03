@@ -20,7 +20,8 @@ import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.GroupMissingTableColumnException;
+import com.akiban.server.error.TableColumnNotInGroupException;
 /**
  * Verifies that all the table columns are also present in the corresponding group table.
  * 
@@ -39,15 +40,13 @@ class TableColumnsMatchGroupColumns implements AISValidation {
             
             for (Column column : table.getColumnsIncludingInternal()) {
                 if (column.getGroupColumn() == null) {
-                    output.reportFailure(new AISValidationFailure (ErrorCode.VALIDATION_FAILURE,
-                            "Table %s column %s is has no link to Group column",
-                            table.getName().toString(), column.getName()));
+                    output.reportFailure(new AISValidationFailure (
+                            new TableColumnNotInGroupException (table.getName(),column.getName())));
                 }
                 String groupColumnName = name.generateColumnName(column);
                 if (groupTable.getColumn(groupColumnName) == null) {
-                    output.reportFailure(new AISValidationFailure (ErrorCode.VALIDATION_FAILURE,
-                            "Group table %s is missing user table column %s.%s",
-                            groupTable.getName().toString(), table.getName().toString(), column.getName()));
+                    output.reportFailure(new AISValidationFailure (
+                            new GroupMissingTableColumnException (groupTable.getName(), table.getName(), column.getName())));
                 }
             }
         }

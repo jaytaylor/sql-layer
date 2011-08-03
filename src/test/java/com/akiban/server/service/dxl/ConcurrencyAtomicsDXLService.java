@@ -24,8 +24,6 @@ import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.error.CursorIsUnknownException;
-import com.akiban.server.error.ForeignConstraintDDLException;
-import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.session.Session;
 
 import java.util.Collection;
@@ -110,8 +108,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
         @Override
         public void scanSome(Session session, CursorId cursorId, LegacyRowOutput output)
                 throws CursorIsUnknownException,
-                BufferFullException,
-                GenericInvalidOperationException {
+                BufferFullException {
             ScanHooks hooks = session.remove(SCANHOOKS_KEY);
             if (hooks == null) {
                 hooks = BasicDMLFunctions.DEFAULT_SCAN_HOOK;
@@ -121,8 +118,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
         @Override
         public void scanSome(Session session, CursorId cursorId, RowOutput output)
-                throws CursorIsUnknownException,
-                GenericInvalidOperationException
+                throws CursorIsUnknownException
         {
             ScanHooks hooks = session.remove(SCANHOOKS_KEY);
             if (hooks == null) {
@@ -134,8 +130,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
     private static class ConcurrencyAtomicsDDLFunctions extends BasicDDLFunctions {
         @Override
-        public void dropTableIndexes(Session session, TableName tableName, Collection<String> indexNamesToDrop)
-                throws GenericInvalidOperationException {
+        public void dropTableIndexes(Session session, TableName tableName, Collection<String> indexNamesToDrop) {
             BeforeAndAfter hook = session.remove(DELAY_ON_DROP_INDEX);
             if (hook != null) {
                 hook.doBefore();
@@ -147,7 +142,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
         }
 
         @Override
-        public void dropTable(Session session, TableName tableName) throws GenericInvalidOperationException {
+        public void dropTable(Session session, TableName tableName) {
             BeforeAndAfter hook = session.remove(DELAY_ON_DROP_TABLE);
             if (hook != null) {
                 hook.doBefore();

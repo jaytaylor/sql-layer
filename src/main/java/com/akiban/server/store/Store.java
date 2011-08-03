@@ -42,23 +42,21 @@ public interface Store extends Service<Store> {
 
     RowDefCache getRowDefCache();
 
-    void writeRow(final Session session, final RowData rowData)
-            throws Exception;
+    void writeRow(final Session session, final RowData rowData);
 
     void writeRowForBulkLoad(final Session session, final Exchange hEx,
             final RowDef rowDef, final RowData rowData, final int[] ordinals,
             final int[] nKeyColumns, final FieldDef[] fieldDefs,
-            final Object[] hKey) throws Exception;
+            final Object[] hKey);
 
     void updateTableStats(final Session session, final RowDef rowDef,
-            long rowCount) throws Exception;
+            long rowCount);
 
-    void deleteRow(final Session session, final RowData rowData)
-            throws Exception;
+    void deleteRow(final Session session, final RowData rowData);
 
     void updateRow(final Session session, final RowData oldRowData,
                    final RowData newRowData,
-                   final ColumnSelector columnSelector) throws Exception;
+                   final ColumnSelector columnSelector);
 
     /**
      * See {@link #newRowCollector(Session, int, int, int, byte[], RowData, ColumnSelector, RowData, ColumnSelector, ScanLimit)}
@@ -74,7 +72,7 @@ public interface Store extends Service<Store> {
                                  RowData start,
                                  RowData end,
                                  byte[] columnBitMap,
-                                 ScanLimit scanLimit) throws Exception;
+                                 ScanLimit scanLimit);
 
     /**
      * Create a new RowCollector.
@@ -98,7 +96,7 @@ public interface Store extends Service<Store> {
                                  ColumnSelector startColumns,
                                  RowData end,
                                  ColumnSelector endColumns,
-                                 ScanLimit scanLimit) throws Exception;
+                                 ScanLimit scanLimit);
     /**
      * Get the previously saved RowCollector for the specified tableId. Used in
      * processing the ScanRowsMoreRequest message.
@@ -106,8 +104,8 @@ public interface Store extends Service<Store> {
      * @param tableId
      * @return
      */
-    RowCollector getSavedRowCollector(final Session session, final int tableId)
-            throws InvalidOperationException;
+    RowCollector getSavedRowCollector(final Session session, final int tableId);
+
 
     /**
      * Push a RowCollector onto a stack so that it can subsequently be
@@ -123,18 +121,14 @@ public interface Store extends Service<Store> {
      * 
      * @param rc
      */
-    void removeSavedRowCollector(final Session session, final RowCollector rc)
-            throws InvalidOperationException;
+    void removeSavedRowCollector(final Session session, final RowCollector rc);
 
     long getRowCount(final Session session, final boolean exact,
-            final RowData start, final RowData end, final byte[] columnBitMap)
-            throws Exception;
+            final RowData start, final RowData end, final byte[] columnBitMap);
 
-    TableStatistics getTableStatistics(final Session session, final int tableId)
-            throws Exception;
+    TableStatistics getTableStatistics(final Session session, final int tableId);
 
-    void truncateGroup(final Session session, final int rowDefId)
-            throws Exception;
+    void truncateGroup(final Session session, final int rowDefId);
 
     void truncateTableStatus(Session session, int rowDefId)
         throws PersistitException;
@@ -144,23 +138,21 @@ public interface Store extends Service<Store> {
      * histograms for its indexes.
      * 
      * @param tableId
-     * @throws Exception
      */
-    void analyzeTable(final Session session, int tableId) throws Exception;
-    void analyzeTable(final Session session, int tableId, int sampleSize) throws Exception;
+    void analyzeTable(final Session session, int tableId);
+    void analyzeTable(final Session session, int tableId, int sampleSize);
 
     boolean isDeferIndexes();
     void setDeferIndexes(final boolean b);
-    void flushIndexes(Session session) throws Exception;
-    void deleteIndexes(Session session, Collection<? extends Index> indexes) throws Exception;
-    void buildAllIndexes(Session session, boolean deferIndexes) throws Exception;
-    void buildIndexes(Session session, Collection<? extends Index> indexes, boolean deferIndexes) throws Exception;
+    void flushIndexes(Session session);
+    void deleteIndexes(Session session, Collection<? extends Index> indexes);
+    void buildAllIndexes(Session session, boolean deferIndexes);
+    void buildIndexes(Session session, Collection<? extends Index> indexes, boolean deferIndexes);
 
     /**
      * Remove all trees, and their contents, associated with the given table.
      * @param session Session
      * @param table Table
-     * @throws Exception For any error.
      */
-    void removeTrees(Session session, Table table) throws Exception;
+    void removeTrees(Session session, Table table);
 }

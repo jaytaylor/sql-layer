@@ -57,9 +57,9 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.Type;
 import com.akiban.server.encoding.EncoderFactory;
 import com.akiban.server.error.AISTooLargeException;
+import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.DuplicateTableNameException;
-import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.IndexLacksColumnsException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.JoinColumnMismatchException;
@@ -106,7 +106,6 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.service.tree.TreeVisitor;
 import com.persistit.Exchange;
 import com.persistit.Key;
-import com.persistit.KeyFilter;
 import com.persistit.Transaction;
 import com.persistit.Transaction.DefaultCommitListener;
 import com.persistit.exception.RollbackException;
@@ -402,8 +401,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     throw new TableNotInGroupException (refTableName);
                 }
                 if(lastTable != null && !inSameBranch(lastTable, newRefTable)) {
-                    throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
-                                                        "Branching group index: " + lastTable + "," + newRefTable);
+                    throw new BranchingGroupIndexException (
+                            newRefTable.getGroup().getGroupTable().getName(),
+                            lastTable.getName(), newRefTable.getName());
                 }
                 lastTable = newRefTable;
 

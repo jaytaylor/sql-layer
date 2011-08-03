@@ -34,8 +34,6 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.api.GenericInvalidOperationException;
-import com.akiban.server.api.ddl.GroupWithProtectedTableException;
 import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.ScanRequest;
@@ -46,13 +44,10 @@ import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
-import com.akiban.server.error.ParseException;
 import com.akiban.server.error.UnsupportedDropException;
 import com.akiban.server.service.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.akiban.util.Exceptions.throwIfInstanceOf;
 
 class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
@@ -60,57 +55,29 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void createTable(Session session, String schema, String ddlText)
-            throws ParseException, 
-            GroupWithProtectedTableException, 
-            GenericInvalidOperationException
     {
         logger.trace("creating table: ({}) {}", schema, ddlText);
-        try {
-            TableName tableName = schemaManager().createTableDefinition(session, schema, ddlText);
-            checkCursorsForDDLModification(session, getAIS(session).getTable(tableName));
-        } catch (Exception e) {
-            InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(ioe,
-                    ParseException.class
-            );
-            throw new GenericInvalidOperationException(ioe);
-        }
+        TableName tableName = schemaManager().createTableDefinition(session, schema, ddlText);
+        checkCursorsForDDLModification(session, getAIS(session).getTable(tableName));
     }
     
     @Override
     public void createTable(Session session, UserTable table)
-    throws ParseException, GroupWithProtectedTableException, 
-    GenericInvalidOperationException
     {
-        try {
-            TableName tableName = schemaManager().createTableDefinition(session, table);
-            checkCursorsForDDLModification(session, getAIS(session).getTable(tableName));
-        } catch (Exception e) {
-            InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(ioe,
-                    ParseException.class
-            );
-            throw new GenericInvalidOperationException(ioe);
-        }
+        TableName tableName = schemaManager().createTableDefinition(session, table);
+        checkCursorsForDDLModification(session, getAIS(session).getTable(tableName));
     }
 
     @Override
     public void renameTable(Session session, TableName currentName, TableName newName)
-            throws GenericInvalidOperationException
     {
-        try {
-            schemaManager().renameTable(session, currentName, newName);
-            checkCursorsForDDLModification(session, getAIS(session).getTable(newName));
-        } catch (Exception e) {
-            InvalidOperationException ioe = launder(e);
-            throw new GenericInvalidOperationException(ioe);
-        }
+        schemaManager().renameTable(session, currentName, newName);
+        checkCursorsForDDLModification(session, getAIS(session).getTable(newName));
     }
 
 
     @Override
     public void dropTable(Session session, TableName tableName)
-            throws GenericInvalidOperationException
     {
         logger.trace("dropping table {}", tableName);
         final Table table = getAIS(session).getTable(tableName);
@@ -126,27 +93,22 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new UnsupportedDropException(table.getName());
         }
 
-        try {
-            DMLFunctions dml = new BasicDMLFunctions(middleman(), this);
-            if(userTable.getParentJoin() == null) {
-                // Root table and no child tables, can delete all associated trees
-                store().removeTrees(session, table);
-            }
-            else {
-                dml.truncateTable(session, table.getTableId());
-                store().deleteIndexes(session, userTable.getIndexesIncludingInternal());
-                store().deleteIndexes(session, userTable.getGroupIndexes());
-            }
-            schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
-            checkCursorsForDDLModification(session, table);
-        } catch (Exception e) {
-            throw new GenericInvalidOperationException(e);
+        DMLFunctions dml = new BasicDMLFunctions(middleman(), this);
+        if(userTable.getParentJoin() == null) {
+            // Root table and no child tables, can delete all associated trees
+            store().removeTrees(session, table);
         }
+        else {
+            dml.truncateTable(session, table.getTableId());
+            store().deleteIndexes(session, userTable.getIndexesIncludingInternal());
+            store().deleteIndexes(session, userTable.getGroupIndexes());
+        }
+        schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
+        checkCursorsForDDLModification(session, table);
     }
 
     @Override
     public void dropSchema(Session session, String schemaName)
-            throws GenericInvalidOperationException
     {
         logger.trace("dropping schema {}", schemaName);
 
@@ -199,23 +161,18 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void dropGroup(Session session, String groupName)
-            throws GenericInvalidOperationException
     {
         logger.trace("dropping group {}", groupName);
         final Group group = getAIS(session).getGroup(groupName);
         if(group == null) {
             return;
         }
-        try {
-            final Table table = group.getGroupTable();
-            final RowDef rowDef = getRowDef(table.getTableId());
-            final TableName tableName = table.getName();
-            store().truncateGroup(session, rowDef.getRowDefId());
-            schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
-            checkCursorsForDDLModification(session, table);
-        } catch(Exception e) {
-            throw new GenericInvalidOperationException(e);
-        }
+        final Table table = group.getGroupTable();
+        final RowDef rowDef = getRowDef(table.getTableId());
+        final TableName tableName = table.getName();
+        store().truncateGroup(session, rowDef.getRowDefId());
+        schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
+        checkCursorsForDDLModification(session, table);
     }
 
     @Override
@@ -304,25 +261,14 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public void createIndexes(final Session session, Collection<Index> indexesToAdd)
-            throws GenericInvalidOperationException {
+    public void createIndexes(final Session session, Collection<Index> indexesToAdd) {
         logger.trace("creating indexes {}", indexesToAdd);
         if (indexesToAdd.isEmpty() == true) {
             return;
         }
 
         final Collection<Index> newIndexes;
-        try {
-            newIndexes = schemaManager().createIndexes(session, indexesToAdd);
-        }
-        catch(InvalidOperationException e) {
-            throw e;
-            //throwIfInstanceOf(e, NoSuchTableException.class, NoSuchGroupException.class);
-            //throw new IndexAlterException(e);
-        }
-        catch(Exception e) {
-            throw new GenericInvalidOperationException(e);
-        }
+        newIndexes = schemaManager().createIndexes(session, indexesToAdd);
 
         for(Index index : newIndexes) {
             checkCursorsForDDLModification(session, index.leafMostTable());
@@ -330,7 +276,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         try {
             store().buildIndexes(session, newIndexes, false);
-        } catch(Exception e) {
+        } catch(InvalidOperationException e) {
             // Try and roll back all changes
             try {
                 store().deleteIndexes(session, newIndexes);
@@ -344,7 +290,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void dropTableIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
-            throws GenericInvalidOperationException
     {
         logger.trace("dropping table indexes {} {}", tableName, indexNamesToDrop);
         if(indexNamesToDrop.isEmpty() == true) {
@@ -363,20 +308,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
             indexes.add(index);
         }
-        
-        try {
-            // Drop them from the Store before while IndexDefs still exist
-            store().deleteIndexes(session, indexes);
-            schemaManager().dropIndexes(session, indexes);
-            checkCursorsForDDLModification(session, table);
-        } catch(Exception e) {
-            throw new GenericInvalidOperationException(e);
-        }
+        // Drop them from the Store before while IndexDefs still exist
+        store().deleteIndexes(session, indexes);
+        schemaManager().dropIndexes(session, indexes);
+        checkCursorsForDDLModification(session, table);
     }
 
     @Override
     public void dropGroupIndexes(Session session, String groupName, Collection<String> indexNamesToDrop)
-            throws GenericInvalidOperationException {
+        throws NoSuchGroupException, NoSuchIndexException {
         logger.trace("dropping group indexes {} {}", groupName, indexNamesToDrop);
         if(indexNamesToDrop.isEmpty()) {
             return;
@@ -396,14 +336,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             indexes.add(index);
         }
 
-        try {
-            // Drop them from the Store before while IndexDefs still exist
-            store().deleteIndexes(session, indexes);
-            schemaManager().dropIndexes(session, indexes);
-            // TODO: checkCursorsForDDLModification ?
-        } catch(Exception e) {
-            throw new GenericInvalidOperationException(e);
-        }
+        // Drop them from the Store before while IndexDefs still exist
+        store().deleteIndexes(session, indexes);
+        schemaManager().dropIndexes(session, indexes);
+        // TODO: checkCursorsForDDLModification ?
     }
 
     private void checkCursorsForDDLModification(Session session, Table table) {

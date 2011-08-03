@@ -22,15 +22,8 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.api.GenericInvalidOperationException;
 import com.akiban.server.api.ddl.GroupWithProtectedTableException;
-import com.akiban.server.api.ddl.IndexAlterException;
-import com.akiban.server.error.DuplicateKeyException;
-import com.akiban.server.error.ForeignConstraintDDLException;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoSuchGroupException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.ParseException;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.server.service.session.Session;
@@ -53,8 +46,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     
     @Override
     public void createTable(Session session, UserTable table)
-            throws GroupWithProtectedTableException,
-            GenericInvalidOperationException {
+            throws GroupWithProtectedTableException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.CREATE_TABLE);
@@ -62,11 +54,6 @@ public final class HookableDDLFunctions implements DDLFunctions {
         }catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.CREATE_TABLE, t);
-            throwIfInstanceOf(t,
-                    ParseException.class,
-                    GroupWithProtectedTableException.class,
-                    GenericInvalidOperationException.class
-            );
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.CREATE_TABLE, thrown);
@@ -74,7 +61,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void createTable(Session session, String schema, String ddlText) throws ParseException, GroupWithProtectedTableException,  GenericInvalidOperationException {
+    public void createTable(Session session, String schema, String ddlText) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.CREATE_TABLE);
@@ -82,11 +69,6 @@ public final class HookableDDLFunctions implements DDLFunctions {
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.CREATE_TABLE, t);
-            throwIfInstanceOf(t,
-                    ParseException.class,
-                    GroupWithProtectedTableException.class,
-                    GenericInvalidOperationException.class
-            );
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.CREATE_TABLE, thrown);
@@ -95,9 +77,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
 
 
     @Override
-    public void renameTable(Session session, TableName currentName, TableName newName)
-            throws GenericInvalidOperationException
-    {
+    public void renameTable(Session session, TableName currentName, TableName newName) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.RENAME_TABLE);
@@ -105,9 +85,6 @@ public final class HookableDDLFunctions implements DDLFunctions {
         }catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.RENAME_TABLE, t);
-            throwIfInstanceOf(t,
-                    GenericInvalidOperationException.class
-            );
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.RENAME_TABLE, thrown);
@@ -115,7 +92,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void dropTable(Session session, TableName tableName) throws GenericInvalidOperationException {
+    public void dropTable(Session session, TableName tableName) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.DROP_TABLE);
@@ -123,9 +100,6 @@ public final class HookableDDLFunctions implements DDLFunctions {
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.DROP_TABLE, t);
-            throwIfInstanceOf(t,
-                    GenericInvalidOperationException.class
-            );
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.DROP_TABLE, thrown);
@@ -133,7 +107,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void dropSchema(Session session, String schemaName) throws GenericInvalidOperationException {
+    public void dropSchema(Session session, String schemaName) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.DROP_SCHEMA);
@@ -141,9 +115,6 @@ public final class HookableDDLFunctions implements DDLFunctions {
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.DROP_SCHEMA, t);
-            throwIfInstanceOf(t,
-                    GenericInvalidOperationException.class
-            );
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.DROP_SCHEMA, thrown);
@@ -151,7 +122,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void dropGroup(Session session, String groupName) throws GenericInvalidOperationException {
+    public void dropGroup(Session session, String groupName) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.DROP_GROUP);
@@ -159,9 +130,6 @@ public final class HookableDDLFunctions implements DDLFunctions {
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.DROP_GROUP, t);
-            throwIfInstanceOf(t,
-                    GenericInvalidOperationException.class
-            );
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.DROP_GROUP, thrown);
@@ -335,8 +303,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void createIndexes(final Session session, Collection<Index> indexesToAdd)
-            throws IndexAlterException, GenericInvalidOperationException {
+    public void createIndexes(final Session session, Collection<Index> indexesToAdd) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.CREATE_INDEXES);
@@ -344,8 +311,6 @@ public final class HookableDDLFunctions implements DDLFunctions {
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.CREATE_INDEXES, t);
-            throwIfInstanceOf(t, IndexAlterException.class);
-            throwIfInstanceOf(t, GenericInvalidOperationException.class);
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.CREATE_INDEXES, thrown);
@@ -353,8 +318,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void dropTableIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
-            throws IndexAlterException, GenericInvalidOperationException {
+    public void dropTableIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.DROP_INDEXES);
@@ -362,8 +326,6 @@ public final class HookableDDLFunctions implements DDLFunctions {
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.DROP_INDEXES, t);
-            throwIfInstanceOf(t, IndexAlterException.class);
-            throwIfInstanceOf(t, GenericInvalidOperationException.class);
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.DROP_INDEXES, thrown);
@@ -371,8 +333,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop)
-            throws IndexAlterException, GenericInvalidOperationException {
+    public void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.DROP_INDEXES);
@@ -380,12 +341,9 @@ public final class HookableDDLFunctions implements DDLFunctions {
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.DROP_INDEXES, t);
-            throwIfInstanceOf(t, IndexAlterException.class);
-            throwIfInstanceOf(t, GenericInvalidOperationException.class);
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.DROP_INDEXES, thrown);
         }
     }
-
 }

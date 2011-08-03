@@ -18,7 +18,6 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.PrimaryKeyNullColumnException;
 
 /**

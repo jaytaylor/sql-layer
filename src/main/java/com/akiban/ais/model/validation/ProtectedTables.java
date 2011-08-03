@@ -31,7 +31,6 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.Visitor;
-import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.JoinToProtectedTableException;
 import com.akiban.server.error.ProtectedTableDDLException;
 

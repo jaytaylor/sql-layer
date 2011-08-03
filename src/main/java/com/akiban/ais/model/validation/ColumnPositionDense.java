@@ -16,7 +16,7 @@ package com.akiban.ais.model.validation;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Table;
-import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.ColumnPositionNotOrderedException;
 
 class ColumnPositionDense implements AISValidation {
 
@@ -34,12 +34,11 @@ class ColumnPositionDense implements AISValidation {
     private void checkTable (Table table, AISValidationOutput output) {
         for (int i = 0; i < table.getColumnsIncludingInternal().size(); i++) {
             if (table.getColumnsIncludingInternal().get(i).getPosition() != i) {
-                output.reportFailure(new AISValidationFailure(ErrorCode.VALIDATION_FAILURE,
-                        "table %s has column %s position (%d) != index (%d)",
-                        table.getName().toString(), 
-                        table.getColumn(i).getName(),
-                        table.getColumn(i).getPosition(),
-                        i));
+                output.reportFailure(new AISValidationFailure(
+                        new ColumnPositionNotOrderedException(table.getName(), 
+                                table.getColumn(i).getName(), 
+                                table.getColumn(i).getPosition(),
+                                i)));
             }
         }
     }

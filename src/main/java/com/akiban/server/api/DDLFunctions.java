@@ -25,9 +25,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.ddl.GroupWithProtectedTableException;
-import com.akiban.server.error.ForeignConstraintDDLException;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.ParseException;
 import com.akiban.server.service.session.Session;
 
@@ -41,62 +39,47 @@ public interface DDLFunctions {
      *  or if there is some other parse error
      * @throws GroupWithProtectedTableException if the table's DDL would put it in the same group as a protected
      *  table, such as an <tt>akiban_information_schema</tt> table or a group table.
-     * @throws GenericInvalidOperationException if some other exception occurred
      * exists
      */
     void createTable(Session session, String schema, String ddlText)
             throws ParseException,
-            GroupWithProtectedTableException,
-            GenericInvalidOperationException;
-
+            GroupWithProtectedTableException;
     /**
      * 
      * @param session the session to run the Create under
      * @param table - new user table to add to the existing system
      * @throws GroupWithProtectedTableException
-     * @throws GenericInvalidOperationException
      */
     void createTable (Session session, UserTable table)
-            throws GroupWithProtectedTableException,
-            GenericInvalidOperationException;
+            throws GroupWithProtectedTableException;
 
     /**
      * Rename an existing table.
      * @param session Session
      * @param currentName Current name of the table
      * @param newName Desired name of the table
-     * @throws GenericInvalidOperationException for any other error
      */
-    void renameTable(Session session, TableName currentName, TableName newName)
-            throws GenericInvalidOperationException;
+    void renameTable(Session session, TableName currentName, TableName newName);
 
     /**
      * Drops a table if it exists.
      * @param tableName the table to drop
      * @throws NullPointerException if tableName is null
-     * @throws GenericInvalidOperationException if some other exception occurred
      */
-    void dropTable(Session session, TableName tableName)
-            throws GenericInvalidOperationException;
-
+    void dropTable(Session session, TableName tableName);
     /**
      * Drops a table if it exists, and possibly its children.
      * @param schemaName the schema to drop
      * @throws NullPointerException if schemaName is null
-     * @throws GenericInvalidOperationException if some other exception occurred
      */
-    void dropSchema(Session session, String schemaName)
-            throws GenericInvalidOperationException;
+    void dropSchema(Session session, String schemaName);
 
      /**
      * Drops all tables associated with the group
      * @param groupName the group to drop
      * @throws NullPointerException if groupName is null
-     * @throws GenericInvalidOperationException if some other exception occurred
      */
-    void dropGroup(Session session, String groupName)
-            throws GenericInvalidOperationException;
-
+    void dropGroup(Session session, String groupName);
     /**
      * Gets the AIS from the Store.
      * @return returns the store's AIS.
@@ -177,8 +160,7 @@ public interface DDLFunctions {
      * @param indexesToAdd a list of indexes to add to the existing AIS
      * @throws InvalidOperationException
      */
-    void createIndexes(Session session, Collection<Index> indexesToAdd)
-            throws GenericInvalidOperationException;
+    void createIndexes(Session session, Collection<Index> indexesToAdd);
 
     /**
      * Drop indexes on an existing table.
@@ -186,14 +168,12 @@ public interface DDLFunctions {
      * @param indexesToDrop list of indexes to drop
      * @throws InvalidOperationException
      */
-    void dropTableIndexes(Session session, TableName tableName, Collection<String> indexesToDrop)
-            throws GenericInvalidOperationException;
+    void dropTableIndexes(Session session, TableName tableName, Collection<String> indexesToDrop);
 
     /**
-     * Drop indexes on an existing roup.
+     * Drop indexes on an existing group.
      * @param indexesToDrop
      * @throws InvalidOperationException
      */
-    void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop)
-            throws GenericInvalidOperationException;
+    void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop);
 }

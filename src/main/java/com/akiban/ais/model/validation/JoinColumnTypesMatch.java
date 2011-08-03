@@ -18,7 +18,6 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
-import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.JoinColumnTypesMismatchException;
 
 /**

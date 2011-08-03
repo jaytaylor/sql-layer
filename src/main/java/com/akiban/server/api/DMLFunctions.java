@@ -52,10 +52,8 @@ public interface DMLFunctions {
      * @param updateFirst whether to update the statistics before returning them
      * @return the table's statistics
      * @throws NullPointerException if tableId is null
-     * @throws GenericInvalidOperationException if some other exception occurred
      */
-    TableStatistics getTableStatistics(Session session, int tableId, boolean updateFirst)
-    throws GenericInvalidOperationException;
+    TableStatistics getTableStatistics(Session session, int tableId, boolean updateFirst);
 
     /**
      * Opens a new cursor for scanning a table. This cursor will be stored in the current session, and a handle
@@ -66,10 +64,8 @@ public interface DMLFunctions {
      * @param request the request specifications
      * @return a handle to the newly created cursor.
      * @throws NullPointerException if the request is null
-     * @throws GenericInvalidOperationException if some other exception occurred
      */
-    CursorId openCursor(Session session, int knownAIS, ScanRequest request)
-            throws GenericInvalidOperationException;
+    CursorId openCursor(Session session, int knownAIS, ScanRequest request);
 
     /**
      * <p>Performs a scan using the given cursor. This scan optionally limits the number of rows scanned, and passes
@@ -107,12 +103,10 @@ public interface DMLFunctions {
      * @param output the RowOutput to collect the given rows
      * @return whether more rows remain to be scanned
      * @throws NullPointerException if cursorId or output are null
-     * @throws GenericInvalidOperationException if some other exception occurred
      * @throws BufferFullException if the output buffer couldn't fit the rows
      */
     void scanSome(Session session, CursorId cursorId, LegacyRowOutput output)
-    throws  BufferFullException,
-            GenericInvalidOperationException;
+    throws  BufferFullException;
 
     /**
      * <p>Performs a scan using the given cursor. This scan optionally limits the number of rows scanned, and passes
@@ -154,10 +148,8 @@ public interface DMLFunctions {
      * @param output the RowOutput to collect the given rows
      * @return whether more rows remain to be scanned
      * @throws NullPointerException if cursorId or output are null
-     * @throws GenericInvalidOperationException if some other exception occurred
      */
-    void scanSome(Session session, CursorId cursorId, RowOutput output)
-            throws GenericInvalidOperationException;
+    void scanSome(Session session, CursorId cursorId, RowOutput output);
 
     /**
      * Closes the given cursor. This releases the relevant resources from the session.
@@ -222,19 +214,15 @@ public interface DMLFunctions {
      * @param row the row to write
      * @return the generated autoincrement value, or <tt>null</tt> if none was generated
      * @throws NullPointerException if the given tableId or row are null
-     * @throws GenericInvalidOperationException if some other exception occurred
      */
-    Long writeRow(Session session, NewRow row)
-    throws  GenericInvalidOperationException;
+    Long writeRow(Session session, NewRow row);
 
     /**
      * <p>Deletes a row, possibly cascading the deletion to its children rows.</p>
      * @param row the row to delete
      * @throws NullPointerException if either the given table ID or row are null
-     * @throws GenericInvalidOperationException if some other exception occurred
      */
-    void deleteRow(Session session, NewRow row)
-    throws  GenericInvalidOperationException;
+    void deleteRow(Session session, NewRow row);
 
     /**
      * <p>Updates a row, possibly cascading updates to its PK to children rows.</p>
@@ -242,10 +230,8 @@ public interface DMLFunctions {
      * @param newRow the row's new values
      * @param columnSelector specifies which columns are being updated
      * @throws NullPointerException if any of the arguments are <tt>null</tt>
-     * @throws GenericInvalidOperationException if some other exception occurred
      */
-    void updateRow(Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector)
-    throws  GenericInvalidOperationException;
+    void updateRow(Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector);
 
     /**
      * Truncates the given table, possibly cascading the truncate to child tables.
@@ -258,9 +244,7 @@ public interface DMLFunctions {
      * In particular, this means that orphan rows will also be deleted,</p>
      * @param tableId the table to truncate
      * @throws NullPointerException if the given tableId is null
-     * @throws GenericInvalidOperationException if some other exception occurred
      */
-    void truncateTable(Session session, int tableId)
-    throws  GenericInvalidOperationException;
+    void truncateTable(Session session, int tableId);
 
 }
