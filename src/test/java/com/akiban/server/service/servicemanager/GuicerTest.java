@@ -56,6 +56,28 @@ public final class GuicerTest {
     }
 
     @Test
+    public void mixedDI() throws Exception {
+        Guicer guicer = messageGuicer(
+                bind(DummyInterfaces.Alpha.class, DummyMixedDIServices.MixedDIAlpha.class, true),
+                bind(DummyInterfaces.Beta.class, DummyMixedDIServices.MixedDIBeta.class, false),
+                bind(DummyInterfaces.Gamma.class, DummyMixedDIServices.MixedDIGamma.class, false)
+        );
+        startRequiredServices(guicer);
+        assertEquals(
+                "messages",
+                joined(
+                        "starting MixedDIBeta",
+                        "starting MixedDIGamma",
+                        "started MixedDIGamma",
+                        "started MixedDIBeta",
+                        "starting MixedDIAlpha",
+                        "started MixedDIAlpha"
+                ),
+                Strings.join(DummyInterfaces.messages())
+        );
+    }
+
+    @Test
     public void errorOnStartup() throws Exception {
         Guicer guicer = messageGuicer(
                 bind(DummyInterfaces.Alpha.class, DummyErroringServices.ErroringAlpha.class, true),

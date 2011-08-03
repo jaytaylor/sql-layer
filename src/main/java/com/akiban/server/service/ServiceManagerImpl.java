@@ -34,6 +34,12 @@ public final class ServiceManagerImpl
 
     private ServiceManagerImpl() {}
 
+    /**
+     * Gets the active ServiceManager; you can then use the returned instance to get any service you want.
+     * @return the active ServiceManager
+     * @deprecated for new code, please just use dependency injection
+     */
+    @Deprecated
     public static ServiceManager get() {
         return instance.get();
     }
@@ -43,7 +49,7 @@ public final class ServiceManagerImpl
      * @return a new Session
      */
     public static Session newSession() {
-        ServiceManager serviceManager = get();
+        @SuppressWarnings("deprecation") ServiceManager serviceManager = get();
         if (serviceManager == null) {
             throw new ServiceNotStartedException("ServiceManagerImpl.get() hasn't been given an instance");
         }
