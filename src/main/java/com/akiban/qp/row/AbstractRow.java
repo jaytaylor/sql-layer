@@ -18,6 +18,7 @@ package com.akiban.qp.row;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types.ConversionSource;
 
 public abstract class AbstractRow implements Row
 {
@@ -28,6 +29,13 @@ public abstract class AbstractRow implements Row
 
     @Override
     public abstract Object field(int i, Bindings bindings);
+
+    @Override
+    public ConversionSource conversionSource(int i, Bindings bindings) {
+        throw new UnsupportedOperationException(
+                "this should really be abstract, but for the sake of this proposal I'm stubbing it out"
+        );
+    }
 
     @Override
     public abstract HKey hKey();

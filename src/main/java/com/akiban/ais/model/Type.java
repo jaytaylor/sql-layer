@@ -15,6 +15,8 @@
 
 package com.akiban.ais.model;
 
+import com.akiban.server.types.AkType;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,6 +52,10 @@ public class Type implements Serializable, ModelNames
     public String encoding()
     {
         return encoding;
+    }
+
+    public AkType akType() {
+        return akType;
     }
 
     @Override
@@ -88,13 +94,14 @@ public class Type implements Serializable, ModelNames
         // GWT requires empty constructor
     }
 
-    public Type(String name, Integer typeParameters, Boolean fixedSize, Long maxStorageSizeBytes, String encoding)
+    public Type(String name, Integer typeParameters, Boolean fixedSize, Long maxStorageSizeBytes, String encoding, AkType akType)
     {
         this.name = name;
         this.typeParameters = typeParameters;
         this.fixedSize = fixedSize;
         this.maxStorageSizeBytes = maxStorageSizeBytes;
         this.encoding = encoding;
+        this.akType = akType;
     }
 
     public static void create(AkibanInformationSchema ais, Map<String, Object> map)
@@ -104,7 +111,7 @@ public class Type implements Serializable, ModelNames
         Boolean fixedSize = (Boolean) map.get(type_fixedSize);
         Long maxSizeBytes = (Long) map.get(type_maxSizeBytes);
         String encoding = (String) map.get(type_encoding);
-        Type type = new Type(name, typeParameters, fixedSize, maxSizeBytes, encoding);
+        Type type = new Type(name, typeParameters, fixedSize, maxSizeBytes, encoding, null);
         ais.addType(type);
     }
     
@@ -124,4 +131,5 @@ public class Type implements Serializable, ModelNames
     private Boolean fixedSize;
     private Long maxStorageSizeBytes;
     private String encoding;
+    private AkType akType;
 }
