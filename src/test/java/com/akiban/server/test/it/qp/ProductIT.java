@@ -63,12 +63,19 @@ public class ProductIT extends PhysicalOperatorITBase
             createNewRow(customer, 6L, "flybridge"), // no orders or addresses
             // Add a few items to test Product_ByRun rejecting unexpected input. All other tests remove these items.
             createNewRow(item, 1000L, 100L),
-            createNewRow(item, 1001L, 101L),
+            createNewRow(item, 1001L, 100L),
+            createNewRow(item, 1010L, 101L),
+            createNewRow(item, 1011L, 101L),
             createNewRow(item, 2000L, 200L),
-            createNewRow(item, 2001L, 201L),
+            createNewRow(item, 2001L, 200L),
+            createNewRow(item, 2010L, 201L),
+            createNewRow(item, 2011L, 201L),
             createNewRow(item, 3000L, 300L),
+            createNewRow(item, 3001L, 300L),
             createNewRow(item, 4000L, 400L),
-            createNewRow(item, 4001L, 401L),
+            createNewRow(item, 4001L, 400L),
+            createNewRow(item, 4010L, 401L),
+            createNewRow(item, 4011L, 401L),
         };
         use(db);
     }
@@ -231,17 +238,21 @@ public class ProductIT extends PhysicalOperatorITBase
             flatten_HKeyOrdered(
                 filter_Default(
                     branchLookup_Default(
-                        indexScan_Default(customerNameIndexRowType, false, null),
+                        ancestorLookup_Default(
+                            indexScan_Default(customerNameIndexRowType, false, null),
+                            coi,
+                            customerNameIndexRowType,
+                            Collections.singleton(customerRowType),
+                            false),
                         coi,
-                        customerNameIndexRowType,
                         customerRowType,
-                        false),
+                        orderRowType,
+                        true),
                     Arrays.asList(customerRowType, orderRowType)),
                 customerRowType,
                 orderRowType,
                 INNER_JOIN,
                 KEEP_PARENT);
-        // dumpToAssertion(flattenCO);
         PhysicalOperator flattenCA =
             flatten_HKeyOrdered(
                 branchLookup_Nested(

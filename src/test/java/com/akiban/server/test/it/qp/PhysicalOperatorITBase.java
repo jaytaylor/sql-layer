@@ -247,11 +247,11 @@ public class PhysicalOperatorITBase extends ITBase
             cursor.open(NO_BINDINGS);
             Row row;
             while ((row = cursor.next()) != null) {
-                strings.add(String.valueOf(String.format("%s: %s", row.runId(), row)));
+                strings.add(String.valueOf(row));
             }
         } catch (Throwable t) {
             t.printStackTrace();
-        }finally {
+        } finally {
             cursor.close();
         }
         strings.add(0, strings.size() == 1 ? "1 string:" : strings.size() + " strings:");
