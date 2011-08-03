@@ -27,7 +27,7 @@ public class ProductRowType extends DerivedRowType
     @Override
     public String toString()
     {
-        return String.format("product(%s x %s)", left, right);
+        return String.format("product(%s: %s x %s)", branchType, leftType, rightType);
     }
 
 
@@ -36,35 +36,43 @@ public class ProductRowType extends DerivedRowType
     @Override
     public int nFields()
     {
-        return left.nFields() + right.nFields();
+        return leftType.nFields() + rightType.nFields() - branchType.nFields();
     }
 
     // ProductRowType interface
 
+    public RowType branchType()
+    {
+        return branchType;
+    }
+
     public RowType leftType()
     {
-        return left;
+        return leftType;
     }
 
     public RowType rightType()
     {
-        return right;
+        return rightType;
     }
 
-    public ProductRowType(Schema schema, int typeId, RowType left, RowType right)
+    public ProductRowType(Schema schema, int typeId, RowType branchType, RowType leftType, RowType rightType)
     {
         super(schema, typeId);
-        assert left.schema() == schema : left;
-        assert right.schema() == schema : right;
-        this.left = left;
-        this.right = right;
-        List<UserTable> parentAndChildTables = new ArrayList<UserTable>(left.typeComposition().tables());
-        parentAndChildTables.addAll(right.typeComposition().tables());
-        typeComposition(new TypeComposition(this, parentAndChildTables));
+        assert branchType.schema() == schema : branchType;
+        assert leftType.schema() == schema : leftType;
+        assert rightType.schema() == schema : rightType;
+        this.branchType = branchType;
+        this.leftType = leftType;
+        this.rightType = rightType;
+        List<UserTable> tables = new ArrayList<UserTable>(leftType.typeComposition().tables());
+        tables.addAll(rightType.typeComposition().tables());
+        typeComposition(new TypeComposition(this, tables));
     }
 
     // Object state
 
-    private final RowType left;
-    private final RowType right;
+    private final RowType branchType;
+    private final RowType leftType;
+    private final RowType rightType;
 }

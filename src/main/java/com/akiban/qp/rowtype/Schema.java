@@ -54,9 +54,9 @@ public class Schema
         return new ProjectedRowType(this, nextTypeId(), columns);
     }
 
-    public ProductRowType newProductType(RowType left, RowType right)
+    public ProductRowType newProductType(RowType branchType, RowType leftType, RowType rightType)
     {
-        return new ProductRowType(this, nextTypeId(), left, right);
+        return new ProductRowType(this, nextTypeId(), branchType, leftType, rightType);
     }
     
     public synchronized ValuesRowType newValuesType(int nfields)

@@ -15,15 +15,19 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.ProductRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -81,7 +85,18 @@ class Product_ByRun extends PhysicalOperator
         this.inputOperator = inputOperator;
         this.leftType = leftType;
         this.rightType = rightType;
-        this.productType = leftType.schema().newProductType(leftType, rightType);
+        // Figure out the branch type. TODO: do this for Product_NestedLoops too?
+        Set<UserTable> common = new HashSet<UserTable>(leftType.typeComposition().tables());
+        common.retainAll(rightType.typeComposition().tables());
+        UserTable leafmostCommon = null;
+        for (UserTable table : common) {
+            if (leafmostCommon == null || table.getDepth() > leafmostCommon.getDepth()) {
+                leafmostCommon = table;
+            }
+        }
+        Schema schema = leftType.schema();
+        UserTableRowType branchType = schema.userTableRowType(leafmostCommon);
+        this.productType = schema.newProductType(branchType, leftType, rightType);
     }
 
     // Object state

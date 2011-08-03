@@ -94,7 +94,7 @@ class Product_NestedLoops extends PhysicalOperator
         this.branchType = branchType;
         this.outerType = outerType;
         this.innerType = innerType;
-        this.productType = outerType.schema().newProductType(outerType, innerType);
+        this.productType = branchType.schema().newProductType(branchType, outerType, innerType);
         this.inputBindingPosition = inputBindingPosition;
     }
 

@@ -27,7 +27,17 @@ public class ProductRow extends AbstractRow
     @Override
     public String toString()
     {
-        return String.format("%s, %s", left, right);
+        StringBuilder buffer = new StringBuilder();
+        buffer.append('(');
+        int nFields = rowType.leftType().nFields() + rowType.rightType().nFields() - rowType.branchType().nFields();
+        for (int i = 0; i < nFields; i++) {
+            if (i > 0) {
+                buffer.append(", ");
+            }
+            buffer.append(field(i, null));
+        }
+        buffer.append(')');
+        return buffer.toString();
     }
 
     // Row interface
@@ -45,7 +55,7 @@ public class ProductRow extends AbstractRow
         if (i < nLeftFields) {
             field = left.isNull() ? null : left.get().field(i, bindings);
         } else {
-            field = right.isNull() ? null : right.get().field(i - nLeftFields, bindings);
+            field = right.isNull() ? null : right.get().field(i - firstRightFieldOffset, bindings);
         }
         return field;
     }
@@ -64,6 +74,7 @@ public class ProductRow extends AbstractRow
         this.left.set(left);
         this.right.set(right);
         this.nLeftFields = rowType.leftType().nFields();
+        this.firstRightFieldOffset = nLeftFields - rowType.branchType().nFields();
         if (left != null && right != null) {
             // assert left.runId() == right.runId();
         }
@@ -76,4 +87,5 @@ public class ProductRow extends AbstractRow
     private final RowHolder<Row> left = new RowHolder<Row>();
     private final RowHolder<Row> right = new RowHolder<Row>();
     private final int nLeftFields;
+    private final int firstRightFieldOffset;
 }

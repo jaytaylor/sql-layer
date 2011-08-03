@@ -173,14 +173,14 @@ public class ProductIT extends PhysicalOperatorITBase
         RowType coaRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
-            row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2L, "foundation", 2000L, 2L, "222 2000 st"),
-            row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2L, "foundation", 2000L, 2L, "222 2000 st"),
-            row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3L, "matrix", 3000L, 3L, "333 3000 st"),
-            row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3L, "matrix", 3001L, 3L, "333 3001 st"),
-            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1L, "northbridge", 1000L, 1L, "111 1000 st"),
-            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1L, "northbridge", 1000L, 1L, "111 1000 st"),
-            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1L, "northbridge", 1001L, 1L, "111 1001 st"),
-            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1L, "northbridge", 1001L, 1L, "111 1001 st"),
+            row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
+            row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2000L, 2L, "222 2000 st"),
+            row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3000L, 3L, "333 3000 st"),
+            row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3001L, 3L, "333 3001 st"),
+            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1000L, 1L, "111 1000 st"),
+            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1000L, 1L, "111 1000 st"),
+            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1001L, 1L, "111 1001 st"),
+            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1001L, 1L, "111 1001 st"),
         };
         compareRows(expected, cursor);
     }
@@ -211,20 +211,20 @@ public class ProductIT extends PhysicalOperatorITBase
         RowType coaRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
-            row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2L, "foundation", 2000L, 2L, "222 2000 st"),
-            row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2L, "foundation", 2000L, 2L, "222 2000 st"),
-            row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2L, "foundation", 2000L, 2L, "222 2000 st"),
-            row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2L, "foundation", 2000L, 2L, "222 2000 st"),
-            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1L, "northbridge", 1000L, 1L, "111 1000 st"),
-            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1L, "northbridge", 1000L, 1L, "111 1000 st"),
-            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1L, "northbridge", 1001L, 1L, "111 1001 st"),
-            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1L, "northbridge", 1001L, 1L, "111 1001 st"),
-            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1L, "northbridge", 1000L, 1L, "111 1000 st"),
-            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1L, "northbridge", 1000L, 1L, "111 1000 st"),
-            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1L, "northbridge", 1001L, 1L, "111 1001 st"),
-            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1L, "northbridge", 1001L, 1L, "111 1001 st"),
-            row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3L, "matrix", 3000L, 3L, "333 3000 st"),
-            row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3L, "matrix", 3001L, 3L, "333 3001 st"),
+            row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
+            row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2000L, 2L, "222 2000 st"),
+            row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
+            row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2000L, 2L, "222 2000 st"),
+            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1000L, 1L, "111 1000 st"),
+            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1000L, 1L, "111 1000 st"),
+            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1001L, 1L, "111 1001 st"),
+            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1001L, 1L, "111 1001 st"),
+            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1000L, 1L, "111 1000 st"),
+            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1000L, 1L, "111 1000 st"),
+            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1001L, 1L, "111 1001 st"),
+            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1001L, 1L, "111 1001 st"),
+            row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3000L, 3L, "333 3000 st"),
+            row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3001L, 3L, "333 3001 st"),
         };
         compareRows(expected, cursor);
     }
