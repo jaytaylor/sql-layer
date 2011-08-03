@@ -21,13 +21,13 @@ import java.util.List;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.TableName;
+import com.akiban.server.rowdata.IndexDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.server.IndexDef;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.TableStatistics.Histogram;
 import com.akiban.server.TableStatistics.HistogramSample;
@@ -89,7 +89,7 @@ public class PersistitStoreIndexManager implements IndexManager {
      * 
      * @see
      * com.akiban.server.store.IndexManager#analyzeTable(com.akiban.server.service
-     * .session.Session, com.akiban.server.RowDef)
+     * .session.Session, com.akiban.server.rowdata.RowDef)
      */
     @Override
     public void analyzeTable(final Session session, final RowDef rowDef)
@@ -102,7 +102,7 @@ public class PersistitStoreIndexManager implements IndexManager {
      * 
      * @see
      * com.akiban.server.store.IndexManager#analyzeTable(com.akiban.server.service
-     * .session.Session, com.akiban.server.RowDef, int)
+     * .session.Session, com.akiban.server.rowdata.RowDef, int)
      */
     @Override
     public void analyzeTable(final Session session, final RowDef rowDef, final int sampleSize) throws Exception {

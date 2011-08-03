@@ -365,7 +365,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 
     public void rowDef(Object rowDef)
     {
-        assert rowDef.getClass().getName().equals("com.akiban.server.RowDef") : rowDef.getClass();
+        assert rowDef.getClass().getName().equals("com.akiban.server.rowdata.RowDef") : rowDef.getClass();
         this.rowDef = rowDef;
     }
 

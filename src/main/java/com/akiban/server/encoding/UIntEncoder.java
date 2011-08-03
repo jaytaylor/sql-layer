@@ -17,8 +17,8 @@ package com.akiban.server.encoding;
 
 import com.akiban.ais.model.Type;
 import com.akiban.server.AkServerUtil;
-import com.akiban.server.FieldDef;
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.rowdata.RowData;
 
 public final class UIntEncoder extends LongEncoderBase {
     UIntEncoder() {

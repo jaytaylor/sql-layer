@@ -15,7 +15,7 @@
 
 package com.akiban.server.test.it.keyupdate;
 
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowDef;
 
 public class Schema
 {

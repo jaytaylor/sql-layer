@@ -23,8 +23,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.akiban.server.IndexDef;
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.IndexDef;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.ScanLimit;

@@ -16,8 +16,8 @@
 package com.akiban.server.service.memcache.outputter.jsonoutputter;
 
 import com.akiban.ais.model.*;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 
 import java.util.*;
 

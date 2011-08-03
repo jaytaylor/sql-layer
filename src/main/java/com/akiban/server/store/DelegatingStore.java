@@ -17,11 +17,11 @@ package com.akiban.server.store;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
-import com.akiban.server.FieldDef;
+import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
-import com.akiban.server.RowDefCache;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;

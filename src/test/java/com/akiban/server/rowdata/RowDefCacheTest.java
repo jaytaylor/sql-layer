@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server;
+package com.akiban.server.rowdata;
 
 import static junit.framework.Assert.assertSame;
 import static org.junit.Assert.assertArrayEquals;

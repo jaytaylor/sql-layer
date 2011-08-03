@@ -25,15 +25,14 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
-import com.akiban.server.RowDefCache;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.rowdata.RowDefCache;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServerUtil;
-import com.akiban.server.IndexDef;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
 import com.akiban.server.store.RowCollector;
 import com.akiban.server.test.it.ITSuiteBase;
 import com.akiban.util.ByteBufferFactory;
