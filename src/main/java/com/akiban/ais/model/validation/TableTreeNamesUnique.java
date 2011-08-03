@@ -16,7 +16,7 @@ package com.akiban.ais.model.validation;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupTable;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.ErrorCode;
 
 import java.util.HashMap;
 import java.util.Map;

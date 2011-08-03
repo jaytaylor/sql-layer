@@ -20,7 +20,8 @@ import java.nio.charset.Charset;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.UnsupportedCharsetException;
 
 /**
  * Verify the table default character set and define character sets for each column
@@ -35,17 +36,17 @@ class CharacterSetSupported implements AISValidation {
         for (UserTable table : ais.getUserTables().values()) {
             final String tableCharset = table.getCharsetAndCollation().charset(); 
             if (tableCharset != null && !Charset.isSupported(tableCharset)) {
-                output.reportFailure(new AISValidationFailure (ErrorCode.UNSUPPORTED_CHARSET,
-                        "Table %s has unsupported default charset %s",
-                        table.getName().toString(), tableCharset));
+                output.reportFailure(new AISValidationFailure (
+                        new UnsupportedCharsetException (table.getName().getSchemaName(),
+                                table.getName().getTableName(), tableCharset)));
             }
             
             for (Column column : table.getColumnsIncludingInternal()) {
                 final String columnCharset = column.getCharsetAndCollation().charset();
                 if (columnCharset != null && !Charset.isSupported(columnCharset)) {
-                    output.reportFailure(new AISValidationFailure (ErrorCode.UNSUPPORTED_CHARSET,
-                            "Table %s column %s has unsupported charset %s",
-                            table.getName().toString(), column.getName(), columnCharset));
+                    output.reportFailure(new AISValidationFailure (
+                            new UnsupportedCharsetException (table.getName().getSchemaName(),
+                                    table.getName().getTableName(), columnCharset)));
                 }
             }
         }

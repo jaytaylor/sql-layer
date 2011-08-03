@@ -67,18 +67,18 @@ import com.akiban.util.ListUtils;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.HapiProcessor;
-import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanRequest;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
@@ -351,7 +351,7 @@ public class ApiTestBase {
         assertEquals("rows scanned", Arrays.asList(expectedRows), scanAll(request));
     }
 
-    protected final ScanAllRequest scanAllRequest(int tableId) throws NoSuchTableException {
+    protected final ScanAllRequest scanAllRequest(int tableId) {
         Table uTable = ddl().getTable(session(), tableId);
         Set<Integer> allCols = new HashSet<Integer>();
         for (int i=0, MAX=uTable.getColumns().size(); i < MAX; ++i) {
@@ -424,7 +424,7 @@ public class ApiTestBase {
         expectRowCount(tableId, expectedRows.length);
     }
 
-    protected final List<NewRow> convertRowDatas(List<RowData> rowDatas) throws NoSuchTableException {
+    protected final List<NewRow> convertRowDatas(List<RowData> rowDatas) {
         List<NewRow> ret = new ArrayList<NewRow>(rowDatas.size());
         for(RowData rowData : rowDatas) {
             NewRow newRow = NiceRow.fromRowData(rowData, ddl().getRowDef(rowData.getRowDefId()));
@@ -524,7 +524,7 @@ public class ApiTestBase {
         return new TableName(schema, table);
     }
 
-    protected final UserTable getUserTable(String schema, String name) throws NoSuchTableException {
+    protected final UserTable getUserTable(String schema, String name) {
         return ddl().getUserTable(session(), tableName(schema, name));
     }
 

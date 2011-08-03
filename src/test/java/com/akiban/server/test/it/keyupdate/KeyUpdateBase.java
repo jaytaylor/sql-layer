@@ -16,11 +16,11 @@
 package com.akiban.server.test.it.keyupdate;
 
 import com.akiban.ais.model.Index;
-import com.akiban.message.ErrorCode;
 import com.akiban.server.FieldDef;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Before;
 import org.junit.Test;

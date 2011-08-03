@@ -19,28 +19,15 @@ import com.akiban.server.RowData;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.GenericInvalidOperationException;
-import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.DuplicateKeyException;
-import com.akiban.server.api.dml.ForeignKeyConstraintDMLException;
-import com.akiban.server.api.dml.NoSuchColumnException;
-import com.akiban.server.api.dml.NoSuchIndexException;
-import com.akiban.server.api.dml.NoSuchRowException;
-import com.akiban.server.api.dml.TableDefinitionMismatchException;
-import com.akiban.server.api.dml.UnsupportedModificationException;
 import com.akiban.server.api.dml.scan.BufferFullException;
-import com.akiban.server.api.dml.scan.ConcurrentScanAndUpdateException;
 import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.CursorIsFinishedException;
-import com.akiban.server.api.dml.scan.CursorIsUnknownException;
 import com.akiban.server.api.dml.scan.CursorState;
 import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.OldAISException;
 import com.akiban.server.api.dml.scan.RowOutput;
-import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.api.dml.scan.ScanRequest;
-import com.akiban.server.api.dml.scan.TableDefinitionChangedException;
+import com.akiban.server.error.CursorIsUnknownException;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.server.service.session.Session;
@@ -62,7 +49,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public TableStatistics getTableStatistics(Session session, int tableId, boolean updateFirst) throws NoSuchTableException, GenericInvalidOperationException {
+    public TableStatistics getTableStatistics(Session session, int tableId, boolean updateFirst) throws GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS);
@@ -71,7 +58,6 @@ public final class HookableDMLFunctions implements DMLFunctions {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS, t);
             throwIfInstanceOf(t,
-                    NoSuchTableException.class,
                     GenericInvalidOperationException.class
             );
             throw throwAlways(t);
@@ -81,7 +67,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public CursorId openCursor(Session session, int knownAIS, ScanRequest request) throws NoSuchTableException, NoSuchColumnException, NoSuchIndexException, GenericInvalidOperationException, OldAISException {
+    public CursorId openCursor(Session session, int knownAIS, ScanRequest request) throws GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.OPEN_CURSOR);
@@ -90,10 +76,6 @@ public final class HookableDMLFunctions implements DMLFunctions {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.OPEN_CURSOR, t);
             throwIfInstanceOf(t,
-                    NoSuchTableException.class,
-                    NoSuchColumnException.class,
-                    NoSuchIndexException.class,
-                    OldAISException.class,
                     GenericInvalidOperationException.class
             );
             throw throwAlways(t);
@@ -118,7 +100,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public void scanSome(Session session, CursorId cursorId, LegacyRowOutput output) throws CursorIsFinishedException, CursorIsUnknownException, RowOutputException, BufferFullException, ConcurrentScanAndUpdateException, TableDefinitionChangedException, GenericInvalidOperationException {
+    public void scanSome(Session session, CursorId cursorId, LegacyRowOutput output) throws CursorIsUnknownException, BufferFullException, GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.SCAN_SOME);
@@ -127,12 +109,8 @@ public final class HookableDMLFunctions implements DMLFunctions {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.SCAN_SOME, t);
             throwIfInstanceOf(t,
-                    CursorIsFinishedException.class,
                     CursorIsUnknownException.class,
-                    RowOutputException.class,
                     BufferFullException.class,
-                    ConcurrentScanAndUpdateException.class,
-                    TableDefinitionChangedException.class,
                     GenericInvalidOperationException.class
             );
             throw throwAlways(t);
@@ -142,7 +120,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public void scanSome(Session session, CursorId cursorId, RowOutput output) throws CursorIsFinishedException, CursorIsUnknownException, RowOutputException, NoSuchTableException, ConcurrentScanAndUpdateException, TableDefinitionChangedException, GenericInvalidOperationException {
+    public void scanSome(Session session, CursorId cursorId, RowOutput output) throws CursorIsUnknownException, GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.SCAN_SOME);
@@ -151,12 +129,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.SCAN_SOME, t);
             throwIfInstanceOf(t,
-                    CursorIsFinishedException.class,
                     CursorIsUnknownException.class,
-                    RowOutputException.class,
-                    NoSuchTableException.class,
-                    ConcurrentScanAndUpdateException.class,
-                    TableDefinitionChangedException.class,
                     GenericInvalidOperationException.class
             );
             throw throwAlways(t);
@@ -197,7 +170,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public RowData convertNewRow(NewRow row) throws NoSuchTableException {
+    public RowData convertNewRow(NewRow row){
         Session session = ServiceManagerImpl.newSession();
         Throwable thrown = null;
         try {
@@ -206,7 +179,6 @@ public final class HookableDMLFunctions implements DMLFunctions {
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_NEW_ROW, t);
-            throwIfInstanceOf(t, NoSuchTableException.class);
             throw throwAlways(t);
         } finally {
             try {
@@ -218,7 +190,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public NewRow convertRowData(RowData rowData) throws NoSuchTableException {
+    public NewRow convertRowData(RowData rowData) {
         Session session = ServiceManagerImpl.newSession();
         Throwable thrown = null;
         try {
@@ -227,7 +199,6 @@ public final class HookableDMLFunctions implements DMLFunctions {
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATA, t);
-            throwIfInstanceOf(t, NoSuchTableException.class);
             throw throwAlways(t);
         } finally {
             try {
@@ -239,7 +210,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public List<NewRow> convertRowDatas(List<RowData> rowDatas) throws NoSuchTableException {
+    public List<NewRow> convertRowDatas(List<RowData> rowDatas) {
         Session session = ServiceManagerImpl.newSession();
         Throwable thrown = null;
         try {
@@ -248,7 +219,6 @@ public final class HookableDMLFunctions implements DMLFunctions {
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATAS, t);
-            throwIfInstanceOf(t, NoSuchTableException.class);
             throw throwAlways(t);
         } finally {
             try {
@@ -260,7 +230,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public Long writeRow(Session session, NewRow row) throws NoSuchTableException, UnsupportedModificationException, TableDefinitionMismatchException, DuplicateKeyException, GenericInvalidOperationException {
+    public Long writeRow(Session session, NewRow row) throws GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.WRITE_ROW);
@@ -269,10 +239,6 @@ public final class HookableDMLFunctions implements DMLFunctions {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.WRITE_ROW, t);
             throwIfInstanceOf(t,
-                    NoSuchTableException.class,
-                    UnsupportedModificationException.class,
-                    TableDefinitionMismatchException.class,
-                    DuplicateKeyException.class,
                     GenericInvalidOperationException.class
             );
             throw throwAlways(t);
@@ -282,7 +248,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public void deleteRow(Session session, NewRow row) throws NoSuchTableException, UnsupportedModificationException, ForeignKeyConstraintDMLException, NoSuchRowException, TableDefinitionMismatchException, GenericInvalidOperationException {
+    public void deleteRow(Session session, NewRow row) throws GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.DELETE_ROW);
@@ -291,11 +257,6 @@ public final class HookableDMLFunctions implements DMLFunctions {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.DELETE_ROW, t);
             throwIfInstanceOf(t,
-                    NoSuchTableException.class,
-                    UnsupportedModificationException.class,
-                    ForeignKeyConstraintDMLException.class,
-                    NoSuchRowException.class,
-                    TableDefinitionMismatchException.class,
                     GenericInvalidOperationException.class
             );
             throw throwAlways(t);
@@ -305,7 +266,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public void updateRow(Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector) throws NoSuchTableException, DuplicateKeyException, TableDefinitionMismatchException, UnsupportedModificationException, ForeignKeyConstraintDMLException, NoSuchRowException, GenericInvalidOperationException {
+    public void updateRow(Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector) throws GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.UPDATE_ROW);
@@ -314,12 +275,6 @@ public final class HookableDMLFunctions implements DMLFunctions {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.UPDATE_ROW, t);
             throwIfInstanceOf(t,
-                    NoSuchTableException.class,
-                    DuplicateKeyException.class,
-                    TableDefinitionMismatchException.class,
-                    UnsupportedModificationException.class,
-                    ForeignKeyConstraintDMLException.class,
-                    NoSuchRowException.class,
                     GenericInvalidOperationException.class
             );
             throw throwAlways(t);
@@ -329,7 +284,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public void truncateTable(final Session session, final int tableId) throws NoSuchTableException, UnsupportedModificationException, ForeignKeyConstraintDMLException, GenericInvalidOperationException {
+    public void truncateTable(final Session session, final int tableId) throws GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.TRUNCATE_TABLE);
@@ -338,9 +293,6 @@ public final class HookableDMLFunctions implements DMLFunctions {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.TRUNCATE_TABLE, t);
             throwIfInstanceOf(t,
-                    NoSuchTableException.class,
-                    UnsupportedModificationException.class,
-                    ForeignKeyConstraintDMLException.class,
                     GenericInvalidOperationException.class
             );
             throw throwAlways(t);

@@ -15,9 +15,9 @@
 
 package com.akiban.server.test.mt.mthapi.base;
 
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.session.Session;
 
 import java.util.concurrent.atomic.AtomicBoolean;

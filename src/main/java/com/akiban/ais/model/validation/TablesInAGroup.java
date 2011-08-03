@@ -17,7 +17,7 @@ package com.akiban.ais.model.validation;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.ErrorCode;
 /**
  * Validates that all tables belong to a group, 
  * All user tables should be in a group.

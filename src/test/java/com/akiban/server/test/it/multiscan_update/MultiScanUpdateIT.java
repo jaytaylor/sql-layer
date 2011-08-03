@@ -21,12 +21,10 @@ import com.akiban.junit.OnlyIf;
 import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.BufferedLegacyOutputRouter;
-import com.akiban.server.api.dml.scan.ConcurrentScanAndUpdateException;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.LegacyOutputConverter;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -34,6 +32,8 @@ import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.ScanRequest;
+import com.akiban.server.error.ConcurrentScanAndUpdateException;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Before;
@@ -228,7 +228,7 @@ public class MultiScanUpdateIT extends ITBase {
             super(cause);
             this.cause = cause;
         }
-
+        
         @Override
         public Throwable getCause() {
             assert super.getCause() == cause : String.format("%s != %s", super.getCause(), cause);

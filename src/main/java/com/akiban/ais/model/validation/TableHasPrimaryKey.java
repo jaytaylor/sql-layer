@@ -16,7 +16,7 @@ package com.akiban.ais.model.validation;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.NoPrimaryKeyException;
 
 class TableHasPrimaryKey implements AISValidation {
 
@@ -24,9 +24,8 @@ class TableHasPrimaryKey implements AISValidation {
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         for (UserTable table : ais.getUserTables().values()) {
             if (table.getPrimaryKeyIncludingInternal() == null) {
-                output.reportFailure(new AISValidationFailure (ErrorCode.NO_INDEX, 
-                        "Table %s is missing it's primary key",
-                        table.getName().toString()));
+                output.reportFailure(new AISValidationFailure (
+                        new NoPrimaryKeyException(table.getName())));
             }
         }
     }

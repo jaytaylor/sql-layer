@@ -25,7 +25,7 @@ import org.junit.Test;
 import com.akiban.ais.model.validation.AISValidationFailure;
 import com.akiban.ais.model.validation.AISValidationResults;
 import com.akiban.ais.model.validation.AISValidations;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.ErrorCode;
 
 public class AISBuilderTest
 {

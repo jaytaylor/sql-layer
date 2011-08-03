@@ -18,7 +18,6 @@ package com.akiban.server.api.dml.scan;
 import java.util.Set;
 
 import com.akiban.server.RowData;
-import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.ColumnSelector;
 
 public class NewScanRange implements ScanRange {
@@ -41,7 +40,7 @@ public class NewScanRange implements ScanRange {
     }
 
     @Override
-    public RowData getStart() throws NoSuchTableException {
+    public RowData getStart() {
         return convert(predicate.getStartRow());
     }
 
@@ -51,7 +50,7 @@ public class NewScanRange implements ScanRange {
     }
 
     @Override
-    public RowData getEnd() throws NoSuchTableException {
+    public RowData getEnd() {
         return convert(predicate.getEndRow());
     }
 
@@ -60,7 +59,7 @@ public class NewScanRange implements ScanRange {
         return null;
     }
 
-    private RowData convert(NewRow row) throws NoSuchTableException {
+    private RowData convert(NewRow row) {
         return row.toRowData();
     }
 
@@ -70,7 +69,7 @@ public class NewScanRange implements ScanRange {
     }
 
     @Override
-    public int getTableId() throws NoSuchTableException {
+    public int getTableId() {
         return tableId;
     }
 

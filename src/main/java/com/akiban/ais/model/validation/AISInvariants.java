@@ -17,9 +17,15 @@ package com.akiban.ais.model.validation;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.message.ErrorCode;
-import com.akiban.server.InvalidOperationException;
+import com.akiban.server.error.DuplicateColumnNameException;
+import com.akiban.server.error.DuplicateGroupNameException;
+import com.akiban.server.error.DuplicateIndexException;
+import com.akiban.server.error.DuplicateIndexesException;
+import com.akiban.server.error.DuplicateTableNameException;
+import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.InvalidOperationException;
 
 public class AISInvariants {
 
@@ -33,17 +39,14 @@ public class AISInvariants {
     public static void checkDuplicateTables(AkibanInformationSchema ais, String schemaName, String tableName)
     {
         if (ais.getTable(schemaName, tableName) != null) {
-            throw new InvalidOperationException (ErrorCode.DUPLICATE_TABLE,
-                    "Table %s.%s already exists in the system", 
-                    schemaName, tableName);
+            throw new DuplicateTableNameException (new TableName(schemaName, tableName));
         }
     }
     
     public static void checkDuplicateColumnsInTable(Table table, String columnName)
     {
         if (table.getColumn(columnName) != null) {
-            throw new InvalidOperationException (ErrorCode.DUPLICATE_COLUMN,
-                    "Table %s already has column %s", table.getName().toString(), columnName);
+            throw new DuplicateColumnNameException(table.getName(), columnName);
         }
     }
     public static void checkDuplicateColumnPositions(Table table, Integer position) {
@@ -53,13 +56,8 @@ public class AISInvariants {
         if (position < table.getColumnsIncludingInternal().size() && 
                 table.getColumn(position) != null &&
                 table.getColumn(position).getPosition() == position) {
-            throw new InvalidOperationException (ErrorCode.DUPLICATE_COLUMN,
-                    "Table %s already has a column %s in position %d", 
-                    table.getName().toString(),
-                    table.getColumn(position).toString(),
-                    position);
+            throw new DuplicateColumnNameException (table.getName(), table.getColumn(position).getName());
         }
-        
     }
     
     public static void checkDuplicateColumnsInIndex(Index index, String columnName)
@@ -74,8 +72,7 @@ public class AISInvariants {
     public static void checkDuplicateIndexesInTable(Table table, String indexName) 
     {
         if (isIndexInTable(table, indexName)) {
-            throw new InvalidOperationException (ErrorCode.DUPLICATE_KEY,
-                    "Table %s already has index %s", table.getName().toString(), indexName);
+            throw new DuplicateIndexException (table.getName(), indexName);
         }
     }
     
@@ -92,9 +89,7 @@ public class AISInvariants {
     public static void checkDuplicateGroups (AkibanInformationSchema ais, String groupName)
     {
         if (ais.getGroup(groupName) != null) {
-            throw new InvalidOperationException (ErrorCode.DUPLICATE_GROUP,
-                    "Group %s already exists in the system",
-                    groupName);
+            throw new DuplicateGroupNameException (groupName);
         }
     }    
 }

@@ -18,7 +18,8 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.JoinColumnTypesMismatchException;
 
 /**
  * validate the columns used for the join in the parent (PK) and 
@@ -35,10 +36,9 @@ public class JoinColumnTypesMatch implements AISValidation {
                 Column parentCol = column.getParent();
                 Column childCol = column.getChild();
                 if(!ais.canTypesBeJoined(parentCol.getType().name(), childCol.getType().name())) {
-                    output.reportFailure(new AISValidationFailure (ErrorCode.FK_TYPE_MISMATCH,
-                            "Join %s has columns (parent %s and child %s) with different types (%s and %s)",
-                            join.getName(), parentCol.getName(), childCol.getName(),
-                            parentCol.getType().name(), childCol.getType().name()));
+                    output.reportFailure(new AISValidationFailure (
+                            new JoinColumnTypesMismatchException (parentCol.getTable().getName(), parentCol.getName(),
+                                    childCol.getTable().getName(), childCol.getName())));
                 }
             }
         }

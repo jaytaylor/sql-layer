@@ -17,14 +17,16 @@ package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.FixedCountLimit;
-import com.akiban.server.api.common.NoSuchTableException;
-import com.akiban.server.api.dml.NoSuchRowException;
-import com.akiban.server.api.dml.TableDefinitionMismatchException;
 import com.akiban.server.api.dml.scan.*;
+import com.akiban.server.error.CursorIsFinishedException;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchRowException;
+import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.OldAISException;
+import com.akiban.server.error.TableDefinitionMismatchException;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 

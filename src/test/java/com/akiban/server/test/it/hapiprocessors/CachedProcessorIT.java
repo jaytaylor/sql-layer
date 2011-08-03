@@ -15,13 +15,13 @@
 
 package com.akiban.server.test.it.hapiprocessors;
 
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiProcessedGetRequest;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.hapi.DefaultHapiGetRequest;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.memcache.hprocessor.CachedProcessor;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Before;

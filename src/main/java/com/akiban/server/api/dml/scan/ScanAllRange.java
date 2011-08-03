@@ -18,8 +18,8 @@ package com.akiban.server.api.dml.scan;
 import java.util.Set;
 
 import com.akiban.server.RowData;
-import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.error.NoSuchTableException;
 
 public class ScanAllRange implements ScanRange {
 
@@ -60,7 +60,7 @@ public class ScanAllRange implements ScanRange {
     }
 
     @Override
-    public int getTableId() throws NoSuchTableException {
+    public int getTableId(){
         return tableId;
     }
 

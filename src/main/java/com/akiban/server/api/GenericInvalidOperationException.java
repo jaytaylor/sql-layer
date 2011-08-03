@@ -15,7 +15,7 @@
 
 package com.akiban.server.api;
 
-import com.akiban.server.InvalidOperationException;
+import com.akiban.server.error.InvalidOperationException;
 
 /**
  * Wrapper for an InvalidOperationException. The sole purpose of this exception type is so that if you want to

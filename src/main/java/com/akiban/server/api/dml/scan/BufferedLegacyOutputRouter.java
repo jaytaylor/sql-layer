@@ -19,6 +19,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.akiban.server.error.RowOutputException;
+
 /**
  * Class for routing a legacy RowData to zero or more handlers. You can use this to route the data to just a single
  * handler (i.e., perform a conversion) or to multiple handlers (in which case it acts as a splitter).
@@ -35,7 +37,7 @@ public class BufferedLegacyOutputRouter extends WrappingRowOutput {
     public interface Handler {
         void mark();
         void rewind();
-        void handleRow(byte[] bytes, int offset, int length) throws RowOutputException;
+        void handleRow(byte[] bytes, int offset, int length);
     }
 
     private int lastPosition;
@@ -74,7 +76,7 @@ public class BufferedLegacyOutputRouter extends WrappingRowOutput {
     }
 
     @Override
-    protected void postWroteRow() throws RowOutputException {
+    protected void postWroteRow() {
         super.postWroteRow();
         final byte[] bytes = wrapped.array();
         final int incomingPosition = wrapped.position();

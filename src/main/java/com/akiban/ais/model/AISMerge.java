@@ -20,8 +20,9 @@ import org.slf4j.LoggerFactory;
 import com.akiban.ais.io.AISTarget;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.validation.AISValidations;
-import com.akiban.message.ErrorCode;
-import com.akiban.server.InvalidOperationException;
+import com.akiban.server.error.JoinToMultipleParentsException;
+import com.akiban.server.error.JoinToUnknownTableException;
+import com.akiban.server.error.JoinToWrongColumnsException;
 
 /**
  * AISMerge is designed to merge a single UserTable definition into an existing AIS. The merge process 
@@ -85,12 +86,7 @@ public class AISMerge {
             String parentTableName = sourceTable.getParentJoin().getParent().getName().getTableName(); 
             UserTable parentTable = targetAIS.getUserTable(parentSchemaName, parentTableName);
             if (parentTable == null) {
-                throw new InvalidOperationException (ErrorCode.JOIN_TO_UNKNOWN_TABLE, 
-                        "Table `%s`.`%s` joins to undefined table `%s`.`%s`",
-                        sourceTable.getName().getSchemaName(),
-                        sourceTable.getName().getTableName(),
-                        parentSchemaName, 
-                        parentTableName);
+                throw new JoinToUnknownTableException (sourceTable.getName(), new TableName(parentSchemaName, parentTableName));
             }
             builder.setIndexIdOffset(computeIndexIDOffset(targetAIS, parentTable.getGroup().getName()));
         }
@@ -181,12 +177,7 @@ public class AISMerge {
         String parentTableName = join.getParent().getName().getTableName();
         UserTable parentTable = targetAIS.getUserTable(parentSchemaName, parentTableName);
         if (parentTable == null) {
-            throw new InvalidOperationException (ErrorCode.JOIN_TO_UNKNOWN_TABLE,
-                    "Table `%s`.`%s` joins to undefined table `%s`.`%s`",
-                    sourceTable.getName().getSchemaName(),
-                    sourceTable.getName().getTableName(),
-                    parentSchemaName, 
-                    parentTableName);
+            throw new JoinToUnknownTableException(sourceTable.getName(), new TableName(parentSchemaName, parentTableName));
          }
         LOG.debug(String.format("Table is child of table %s", parentTable.getName().toString()));
         String joinName = groupNames.generateJoinName(parentTable, sourceTable, join.getJoinColumns());
@@ -207,13 +198,9 @@ public class AISMerge {
                     sourceTable.getName().getTableName(), 
                     joinColumn.getChild().getName());
             } catch (AISBuilder.NoSuchObjectException ex) {
-                throw new InvalidOperationException (ErrorCode.JOIN_TO_WRONG_COLUMNS,
-                        "Table `%s`.`%s` join reference part `%s` does not match `%s`.`%s` primary key part `%s`",
-                        sourceTable.getName().getSchemaName(),
-                        sourceTable.getName().getTableName(),
-                        joinColumn.getChild().getName(),
-                        parentSchemaName, 
-                        parentTableName,
+                throw new JoinToWrongColumnsException (
+                        sourceTable.getName(), joinColumn.getChild().getName(),
+                        new TableName(parentSchemaName, parentTableName),
                         joinColumn.getParent().getName());
             }
         }
@@ -222,8 +209,7 @@ public class AISMerge {
         try {
             builder.addJoinToGroup(parentTable.getGroup().getName(), joinName, 0);
         } catch (AISBuilder.GroupStructureException ex) {
-            throw new InvalidOperationException (ErrorCode.JOIN_TO_MULTIPLE_PARENTS,
-                    ex.getMessage());
+            throw new JoinToMultipleParentsException(join.getChild().getName());
         }
     }
     private int computeTableIdOffset(AkibanInformationSchema ais) {

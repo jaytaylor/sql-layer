@@ -15,9 +15,10 @@
 
 package com.akiban.server.test.it.bugs.bug696096;
 
-import com.akiban.server.InvalidOperationException;
-import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.error.DuplicateKeyException;
+import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.test.it.ITBase;
 import org.junit.After;
 import org.junit.Before;
@@ -94,7 +95,9 @@ public final class DuplicateKeyValueMessageIT extends ITBase {
     }
 
     private static void dupMessageValid(DuplicateKeyException e, String indexName) {
-        final String expectedMessagePrefix = "DUPLICATE_KEY: Non-unique key for index " + indexName;
+        final String message = String.format(ErrorCode.DUPLICATE_KEY.getMessage(), indexName);
+        final String expectedMessagePrefix = message.substring(0, message.length()-4);
+        
         boolean messageIsValid = e.getMessage().startsWith(expectedMessagePrefix);
 
         if (!messageIsValid) {

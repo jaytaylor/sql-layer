@@ -19,7 +19,7 @@ import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.ErrorCode;
 
 /**
  * This validates a current limitation of the system which expects all of the 

@@ -16,9 +16,9 @@
 package com.akiban.server.store;
 
 import com.akiban.ais.model.Index;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.TableStatistics;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.session.Session;
 import com.persistit.exception.PersistitException;
 

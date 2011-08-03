@@ -15,36 +15,35 @@
 
 package com.akiban.server.service.dxl;
 
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.GenericInvalidOperationException;
-import com.akiban.server.api.common.NoSuchGroupException;
-import com.akiban.server.api.common.NoSuchTableException;
-import com.akiban.server.api.ddl.DuplicateTableNameException;
-import com.akiban.server.api.ddl.JoinToMultipleParentsException;
-import com.akiban.server.api.ddl.JoinToUnknownTableException;
-import com.akiban.server.api.ddl.JoinToWrongColumnsException;
-import com.akiban.server.api.ddl.ParseException;
-import com.akiban.server.api.ddl.ProtectedTableDDLException;
-import com.akiban.server.api.ddl.UnsupportedCharsetException;
-import com.akiban.server.api.ddl.UnsupportedDataTypeException;
-import com.akiban.server.api.ddl.UnsupportedDropException;
-import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
-import com.akiban.server.api.ddl.UnsupportedIndexSizeException;
-import com.akiban.server.api.dml.DuplicateKeyException;
-import com.akiban.server.api.dml.ForeignKeyConstraintDMLException;
-import com.akiban.server.api.dml.NoSuchColumnException;
-import com.akiban.server.api.dml.NoSuchIndexException;
-import com.akiban.server.api.dml.NoSuchRowException;
-import com.akiban.server.api.dml.UnsupportedModificationException;
 import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.CursorIsFinishedException;
-import com.akiban.server.api.dml.scan.CursorIsUnknownException;
+import com.akiban.server.error.CursorIsFinishedException;
+import com.akiban.server.error.CursorIsUnknownException;
+import com.akiban.server.error.DuplicateTableNameException;
+import com.akiban.server.error.ForeignKeyConstraintDMLException;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.JoinToMultipleParentsException;
+import com.akiban.server.error.JoinToUnknownTableException;
+import com.akiban.server.error.JoinToWrongColumnsException;
+import com.akiban.server.error.NoSuchColumnException;
+import com.akiban.server.error.NoSuchGroupException;
+import com.akiban.server.error.NoSuchIndexException;
+import com.akiban.server.error.NoSuchRowException;
+import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.ParseException;
+import com.akiban.server.error.ProtectedTableDDLException;
+import com.akiban.server.error.RowDefNotFoundException;
+import com.akiban.server.error.UnsupportedCharsetException;
+import com.akiban.server.error.UnsupportedDataTypeException;
+import com.akiban.server.error.UnsupportedDropException;
+import com.akiban.server.error.UnsupportedIndexDataTypeException;
+import com.akiban.server.error.UnsupportedIndexSizeException;
+import com.akiban.server.error.UnsupportedModificationException;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
-import com.akiban.server.util.RowDefNotFoundException;
 
 import java.util.Map;
 
@@ -90,59 +89,9 @@ abstract class ClientAPIBase {
         if (e instanceof InvalidOperationException) {
             final InvalidOperationException ioe = (InvalidOperationException) e;
             switch (ioe.getCode()) {
-                case NO_SUCH_RECORD:
-                    return new NoSuchRowException(ioe);
-                case PARSE_EXCEPTION:
-                    return new ParseException(ioe);
-                case DUPLICATE_KEY:
-                    return new DuplicateKeyException(ioe);
-
-                case UNSUPPORTED_CHARSET:
-                    return new UnsupportedCharsetException(ioe);
-                case PROTECTED_TABLE:
-                    return new ProtectedTableDDLException(ioe);
-                case JOIN_TO_PROTECTED_TABLE:
-                    return new ProtectedTableDDLException(ioe);
-                case JOIN_TO_UNKNOWN_TABLE:
-                    return new JoinToUnknownTableException(ioe);
-                case JOIN_TO_WRONG_COLUMNS:
-                    return new JoinToWrongColumnsException(ioe);
-                case JOIN_TO_MULTIPLE_PARENTS:
-                    return new JoinToMultipleParentsException(ioe);
-                case UNSUPPORTED_INDEX_DATA_TYPE:
-                    return new UnsupportedIndexDataTypeException(ioe);
-                case UNSUPPORTED_INDEX_SIZE:
-                    return new UnsupportedIndexSizeException(ioe);
-                case DUPLICATE_TABLE:
-                    return new DuplicateTableNameException(ioe);
-                case UNSUPPORTED_DROP:
-                    return new UnsupportedDropException(ioe);
-                case UNSUPPORTED_DATA_TYPE:
-                    return new UnsupportedDataTypeException(ioe);
-                case NO_SUCH_TABLE:
-                    return new NoSuchTableException(ioe);
-                case NO_SUCH_COLUMN:
-                    return new NoSuchColumnException(ioe);
-                case NO_INDEX:
-                    return new NoSuchIndexException(ioe);
-                case FK_CONSTRAINT_VIOLATION:
-                    return new ForeignKeyConstraintDMLException(ioe);
-                case NO_SUCH_ROW:
-                    return new NoSuchRowException(ioe);
-                case NO_SUCH_GROUP:
-                    return new NoSuchGroupException(ioe);
-                case CURSOR_IS_FINISHED:
-                    return new CursorIsFinishedException(ioe);
-                case CURSOR_IS_UNKNOWN:
-                    return new CursorIsUnknownException(ioe);
-                case UNSUPPORTED_MODIFICATION:
-                    return new UnsupportedModificationException(ioe);
                 default:
                     return ioe;
             }
-        }
-        if (e instanceof RowDefNotFoundException) {
-            return new NoSuchTableException( ((RowDefNotFoundException)e).getId() );
         }
         return new GenericInvalidOperationException(e);
     }

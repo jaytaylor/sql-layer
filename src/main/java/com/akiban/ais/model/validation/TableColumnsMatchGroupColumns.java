@@ -20,7 +20,7 @@ import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.UserTable;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.ErrorCode;
 /**
  * Verifies that all the table columns are also present in the corresponding group table.
  * 

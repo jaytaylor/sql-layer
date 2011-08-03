@@ -33,29 +33,17 @@ import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.GenericInvalidOperationException;
-import com.akiban.server.api.common.NoSuchGroupException;
-import com.akiban.server.api.common.NoSuchTableException;
-import com.akiban.server.api.ddl.DuplicateColumnNameException;
-import com.akiban.server.api.ddl.DuplicateTableNameException;
-import com.akiban.server.api.ddl.ForeignConstraintDDLException;
 import com.akiban.server.api.ddl.GroupWithProtectedTableException;
 import com.akiban.server.api.ddl.IndexAlterException;
-import com.akiban.server.api.ddl.JoinToMultipleParentsException;
-import com.akiban.server.api.ddl.JoinToUnknownTableException;
-import com.akiban.server.api.ddl.JoinToWrongColumnsException;
-import com.akiban.server.api.ddl.NoPrimaryKeyException;
-import com.akiban.server.api.ddl.ParseException;
-import com.akiban.server.api.ddl.ProtectedTableDDLException;
-import com.akiban.server.api.ddl.UnsupportedCharsetException;
-import com.akiban.server.api.ddl.UnsupportedDataTypeException;
-import com.akiban.server.api.ddl.UnsupportedDropException;
-import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
-import com.akiban.server.api.ddl.UnsupportedIndexSizeException;
-import com.akiban.server.api.dml.DuplicateKeyException;
+import com.akiban.server.error.DuplicateKeyException;
+import com.akiban.server.error.ForeignConstraintDDLException;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchGroupException;
+import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.ParseException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
@@ -178,13 +166,8 @@ public class TableDDLTest {
         
         @Override
         public void createTable(Session session, UserTable table)
-                throws UnsupportedCharsetException, ProtectedTableDDLException,
-                DuplicateTableNameException, GroupWithProtectedTableException,
-                JoinToUnknownTableException, JoinToWrongColumnsException,
-                NoPrimaryKeyException, DuplicateColumnNameException,
-                UnsupportedDataTypeException, JoinToMultipleParentsException,
-                UnsupportedIndexDataTypeException,
-                UnsupportedIndexSizeException, GenericInvalidOperationException {
+                throws GroupWithProtectedTableException,
+                GenericInvalidOperationException {
             
             assertEquals(table.getName(), dropTable);
             for (Column col : table.getColumnsIncludingInternal()) {
@@ -209,10 +192,7 @@ public class TableDDLTest {
 
         @Override
         public void renameTable(Session session, TableName currentName, TableName newName)
-                throws NoSuchTableException,
-                ProtectedTableDDLException,
-                DuplicateTableNameException,
-                GenericInvalidOperationException
+                throws GenericInvalidOperationException
         {
             throw new UnsupportedOperationException();
         }
@@ -240,11 +220,10 @@ public class TableDDLTest {
 
         @Override
         public void dropTable(Session session, TableName tableName)
-                throws ProtectedTableDDLException,
-                ForeignConstraintDDLException, UnsupportedDropException,
-                GenericInvalidOperationException {
+                throws GenericInvalidOperationException {
             assertEquals(tableName, dropTable);
         }
+        
         @Override
         public AkibanInformationSchema getAIS(Session session) {
             return internalAIS;
@@ -252,40 +231,29 @@ public class TableDDLTest {
 
         @Override
         public void createIndexes(Session session,
-                Collection<Index> indexesToAdd) throws NoSuchTableException,
-                DuplicateKeyException, IndexAlterException,
+                Collection<Index> indexesToAdd) throws 
+                IndexAlterException,
                 GenericInvalidOperationException {}
 
         @Override
         public void createTable(Session session, String schema, String ddlText)
-                throws ParseException, UnsupportedCharsetException,
-                ProtectedTableDDLException, DuplicateTableNameException,
-                GroupWithProtectedTableException, JoinToUnknownTableException,
-                JoinToWrongColumnsException, NoPrimaryKeyException,
-                DuplicateColumnNameException, UnsupportedDataTypeException,
-                JoinToMultipleParentsException,
-                UnsupportedIndexDataTypeException,
-                UnsupportedIndexSizeException, GenericInvalidOperationException {}
+                throws ParseException, GroupWithProtectedTableException, 
+                GenericInvalidOperationException {}
         @Override
         public void dropGroup(Session session, String groupName)
-                throws ProtectedTableDDLException,
-                GenericInvalidOperationException {}
+                throws GenericInvalidOperationException {}
 
         @Override
         public void dropGroupIndexes(Session session, String groupName,
-                Collection<String> indexesToDrop) throws NoSuchGroupException,
-                IndexAlterException, GenericInvalidOperationException {}
+                Collection<String> indexesToDrop) throws IndexAlterException, GenericInvalidOperationException {}
 
         @Override
         public void dropSchema(Session session, String schemaName)
-                throws ProtectedTableDDLException,
-                ForeignConstraintDDLException, UnsupportedDropException,
-                GenericInvalidOperationException {}
+                throws GenericInvalidOperationException {}
 
         @Override
         public void dropTableIndexes(Session session, TableName tableName,
-                Collection<String> indexesToDrop) throws NoSuchTableException,
-                IndexAlterException, GenericInvalidOperationException {}
+                Collection<String> indexesToDrop) IndexAlterException, GenericInvalidOperationException {}
 
         @Override
         public void forceGenerationUpdate() {}
@@ -303,37 +271,32 @@ public class TableDDLTest {
         }
 
         @Override
-        public RowDef getRowDef(int tableId) throws NoSuchTableException {
+        public RowDef getRowDef(int tableId) {
             return null;
         }
 
         @Override
-        public Table getTable(Session session, int tableId)
-                throws NoSuchTableException {
+        public Table getTable(Session session, int tableId) {
             return null;
         }
 
         @Override
-        public Table getTable(Session session, TableName tableName)
-                throws NoSuchTableException {
+        public Table getTable(Session session, TableName tableName) {
             return null;
         }
 
         @Override
-        public int getTableId(Session session, TableName tableName)
-                throws NoSuchTableException {
+        public int getTableId(Session session, TableName tableName) {
             return 0;
         }
 
         @Override
-        public TableName getTableName(Session session, int tableId)
-                throws NoSuchTableException {
+        public TableName getTableName(Session session, int tableId) {
             return null;
         }
 
         @Override
-        public UserTable getUserTable(Session session, TableName tableName)
-                throws NoSuchTableException {
+        public UserTable getUserTable(Session session, TableName tableName) {
             return null;
         }
     } // END class DDLFunctionsMock

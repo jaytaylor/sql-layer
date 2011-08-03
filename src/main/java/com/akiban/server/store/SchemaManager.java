@@ -23,7 +23,6 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.service.session.Session;
 
 public interface SchemaManager {
@@ -89,9 +88,8 @@ public interface SchemaManager {
      * @param session Session to operate under.
      * @param tableName The name of the requested table.
      * @return Filled in TableDefinition.
-     * @throws NoSuchTableException If the requested table does not exist.
      */
-    TableDefinition getTableDefinition(Session session, TableName tableName) throws NoSuchTableException;
+    TableDefinition getTableDefinition(Session session, TableName tableName);
 
     /**
      * Generate a 'create table' DDL statement for each table in the given schema.
@@ -120,7 +118,7 @@ public interface SchemaManager {
      * @return List of every create statement request.
      * @throws Exception For any internal error.
      */
-    List<String> schemaStrings(Session session, boolean withGroupTables) throws Exception;
+    List<String> schemaStrings(Session session, boolean withGroupTables);
 
     /**
      * Return the last timestamp for the last successful change through the SchemaManager.

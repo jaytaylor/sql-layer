@@ -16,16 +16,15 @@
 package com.akiban.server.api.dml.scan;
 
 import com.akiban.server.RowData;
-import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.ColumnSelector;
 
 public interface ScanRange {
-    RowData getStart() throws NoSuchTableException;
+    RowData getStart();
     ColumnSelector getStartColumns();
-    RowData getEnd() throws NoSuchTableException;
+    RowData getEnd();
     ColumnSelector getEndColumns();
     byte[] getColumnBitMap();
-    int getTableId() throws NoSuchTableException;
+    int getTableId();
 
     /**
      * If this is provided, {@linkplain #getColumnBitMap()} should be ignored, and the behavior should be as if the

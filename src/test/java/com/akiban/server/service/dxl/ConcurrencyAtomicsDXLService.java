@@ -19,20 +19,13 @@ import com.akiban.ais.model.TableName;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.GenericInvalidOperationException;
-import com.akiban.server.api.common.NoSuchTableException;
-import com.akiban.server.api.ddl.ForeignConstraintDDLException;
-import com.akiban.server.api.ddl.IndexAlterException;
-import com.akiban.server.api.ddl.ProtectedTableDDLException;
-import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.api.dml.scan.BufferFullException;
-import com.akiban.server.api.dml.scan.ConcurrentScanAndUpdateException;
 import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.CursorIsFinishedException;
-import com.akiban.server.api.dml.scan.CursorIsUnknownException;
 import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.RowOutput;
-import com.akiban.server.api.dml.scan.RowOutputException;
-import com.akiban.server.api.dml.scan.TableDefinitionChangedException;
+import com.akiban.server.error.CursorIsUnknownException;
+import com.akiban.server.error.ForeignConstraintDDLException;
+import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.session.Session;
 
 import java.util.Collection;
@@ -116,12 +109,8 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
         @Override
         public void scanSome(Session session, CursorId cursorId, LegacyRowOutput output)
-                throws CursorIsFinishedException,
-                CursorIsUnknownException,
-                RowOutputException,
+                throws CursorIsUnknownException,
                 BufferFullException,
-                ConcurrentScanAndUpdateException,
-                TableDefinitionChangedException,
                 GenericInvalidOperationException {
             ScanHooks hooks = session.remove(SCANHOOKS_KEY);
             if (hooks == null) {
@@ -132,12 +121,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
         @Override
         public void scanSome(Session session, CursorId cursorId, RowOutput output)
-                throws CursorIsFinishedException,
-                CursorIsUnknownException,
-                RowOutputException,
-                ConcurrentScanAndUpdateException,
-                NoSuchTableException,
-                TableDefinitionChangedException,
+                throws CursorIsUnknownException,
                 GenericInvalidOperationException
         {
             ScanHooks hooks = session.remove(SCANHOOKS_KEY);
@@ -151,7 +135,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
     private static class ConcurrencyAtomicsDDLFunctions extends BasicDDLFunctions {
         @Override
         public void dropTableIndexes(Session session, TableName tableName, Collection<String> indexNamesToDrop)
-                throws NoSuchTableException, IndexAlterException, GenericInvalidOperationException {
+                throws GenericInvalidOperationException {
             BeforeAndAfter hook = session.remove(DELAY_ON_DROP_INDEX);
             if (hook != null) {
                 hook.doBefore();
@@ -163,7 +147,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
         }
 
         @Override
-        public void dropTable(Session session, TableName tableName) throws ProtectedTableDDLException, ForeignConstraintDDLException, UnsupportedDropException, GenericInvalidOperationException {
+        public void dropTable(Session session, TableName tableName) throws GenericInvalidOperationException {
             BeforeAndAfter hook = session.remove(DELAY_ON_DROP_TABLE);
             if (hook != null) {
                 hook.doBefore();

@@ -15,8 +15,8 @@
 
 package com.akiban.server.test.it.rowtests;
 
-import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.error.UnsupportedDataTypeException;
 import com.akiban.server.test.it.ITBase;
 import junit.framework.Assert;
 import org.junit.Test;

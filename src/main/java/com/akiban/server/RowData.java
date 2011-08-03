@@ -21,9 +21,8 @@ import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
 
-import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.encoding.EncodingException;
-import com.akiban.server.util.RowDefNotFoundException;
+import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 

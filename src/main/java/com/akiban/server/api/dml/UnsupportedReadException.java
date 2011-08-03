@@ -15,7 +15,7 @@
 
 package com.akiban.server.api.dml;
 
-import com.akiban.server.InvalidOperationException;
+import com.akiban.server.error.InvalidOperationException;
 
 public final class UnsupportedReadException extends DMLException {
     public UnsupportedReadException(InvalidOperationException e) {

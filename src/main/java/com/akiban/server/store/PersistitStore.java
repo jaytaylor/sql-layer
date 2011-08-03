@@ -31,7 +31,6 @@ import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.Table;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
-import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,11 +39,9 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.UserTable;
-import com.akiban.message.ErrorCode;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.FieldDef;
 import com.akiban.server.IndexDef;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.RowDefCache;
@@ -55,6 +52,12 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.error.CursorIsUnknownException;
+import com.akiban.server.error.DuplicateKeyException;
+import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchRowException;
+import com.akiban.server.error.RowDataCorruptionException;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
@@ -438,7 +441,7 @@ public class PersistitStore implements Store {
                     uniqueId = constructHKey(session, hEx, rowDef, rowData,
                             true);
                     if (hEx.isValueDefined()) {
-                        complainAboutDuplicateKey("PRIMARY", hEx.getKey());
+                        throw new DuplicateKeyException("PRIMARY", hEx.getKey());
                     }
 
                     packRowData(hEx, rowDef, rowData);
@@ -533,11 +536,6 @@ public class PersistitStore implements Store {
         }
     }
 
-    private void complainAboutDuplicateKey(String indexName, Key hkey)
-            throws DuplicateKeyException {
-        throw new DuplicateKeyException(String.format("Non-unique key for index %s: %s", indexName, hkey));
-    }
-
     @Override
     public void writeRowForBulkLoad(final Session session, Exchange hEx,
             RowDef rowDef, RowData rowData, int[] ordinals, int[] nKeyColumns,
@@ -594,9 +592,7 @@ public class PersistitStore implements Store {
                     // Verify that the row exists
                     //
                     if (!hEx.getValue().isDefined()) {
-                        throw new InvalidOperationException(
-                                ErrorCode.NO_SUCH_RECORD,
-                                "Missing record at key: %s", hEx.getKey());
+                        throw new NoSuchRowException(hEx.getKey());
                     }
                     //
                     // Verify that the row hasn't changed. Note: at some point
@@ -682,9 +678,7 @@ public class PersistitStore implements Store {
                     // Verify that the row exists
                     //
                     if (!hEx.getValue().isDefined()) {
-                        throw new InvalidOperationException(
-                                ErrorCode.NO_SUCH_RECORD,
-                                "Missing record at key: %s", hEx.getKey());
+                        throw new NoSuchRowException (hEx.getKey());
                     }
                     // Combine current version of row with the version coming in
                     // on the update request.
@@ -885,9 +879,7 @@ public class PersistitStore implements Store {
         final List<RowCollector> list = collectorsForTableId(session, tableId);
         if (list.isEmpty()) {
             LOG.debug("Nested RowCollector on tableId={} depth={}", tableId, (list.size() + 1));
-            throw new InvalidOperationException(ErrorCode.CURSOR_IS_FINISHED,
-                    "No RowCollector for tableId=%d (depth=%d)", tableId,
-                    list.size() + 1);
+            throw new CursorIsUnknownException(tableId);
         }
         return list.get(list.size() - 1);
     }
@@ -1120,14 +1112,14 @@ public class PersistitStore implements Store {
     }
 
     private void checkUniqueness(Index index, RowData rowData, Exchange iEx)
-            throws PersistitException, DuplicateKeyException
+            throws PersistitException
     {
         if (index.isUnique() && !hasNullIndexSegments(rowData, index)) {
             final Key key = iEx.getKey();
             KeyState ks = new KeyState(key);
             key.setDepth(((IndexDef) index.indexDef()).getIndexKeySegmentCount());
             if (iEx.hasChildren()) {
-                complainAboutDuplicateKey(index.getIndexName().getName(), key);
+                throw new DuplicateKeyException(index.getIndexName().getName(), key);
             }
             ks.copyTo(key);
         }
@@ -1153,7 +1145,7 @@ public class PersistitStore implements Store {
     public void updateIndex(final Session session, final Index index,
                             final RowDef rowDef, final RowData oldRowData,
                             final RowData newRowData, final Key hkey)
-            throws PersistitException, DuplicateKeyException
+            throws PersistitException
     {
         checkNotGroupIndex(index);
         IndexDef indexDef = (IndexDef)index.indexDef();
@@ -1241,8 +1233,7 @@ public class PersistitStore implements Store {
                 LOG.error("Value at " + exchange.getKey()
                         + " is not a valid row - skipping");
             }
-            throw new InvalidOperationException(ErrorCode.INTERNAL_CORRUPTION,
-                    "Corrupt RowData at " + exchange.getKey());
+            throw new RowDataCorruptionException (exchange.getKey());
         }
 
         int rowDefId = AkServerUtil.getInt(valueBytes, RowData.O_ROW_DEF_ID

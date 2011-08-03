@@ -15,8 +15,8 @@
 
 package com.akiban.server.api.dml;
 
-import com.akiban.server.InvalidOperationException;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.InvalidOperationException;
 
 public class DMLException extends InvalidOperationException {
     protected DMLException(InvalidOperationException cause) {

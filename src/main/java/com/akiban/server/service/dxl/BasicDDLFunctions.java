@@ -31,36 +31,39 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.GenericInvalidOperationException;
-import com.akiban.server.api.common.NoSuchGroupException;
-import com.akiban.server.api.common.NoSuchTableException;
-import com.akiban.server.api.ddl.DuplicateColumnNameException;
-import com.akiban.server.api.ddl.DuplicateTableNameException;
-import com.akiban.server.api.ddl.ForeignConstraintDDLException;
 import com.akiban.server.api.ddl.GroupWithProtectedTableException;
 import com.akiban.server.api.ddl.IndexAlterException;
-import com.akiban.server.api.ddl.JoinToMultipleParentsException;
-import com.akiban.server.api.ddl.JoinToUnknownTableException;
-import com.akiban.server.api.ddl.JoinToWrongColumnsException;
-import com.akiban.server.api.ddl.NoPrimaryKeyException;
-import com.akiban.server.api.ddl.ParseException;
-import com.akiban.server.api.ddl.ProtectedTableDDLException;
-import com.akiban.server.api.ddl.UnsupportedCharsetException;
-import com.akiban.server.api.ddl.UnsupportedDataTypeException;
-import com.akiban.server.api.ddl.UnsupportedDropException;
-import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
-import com.akiban.server.api.ddl.UnsupportedIndexSizeException;
-import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.ScanRequest;
+import com.akiban.server.error.DropIndexNotAllowedException;
+import com.akiban.server.error.DuplicateColumnNameException;
+import com.akiban.server.error.DuplicateKeyException;
+import com.akiban.server.error.DuplicateTableNameException;
+import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.ForeignConstraintDDLException;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.JoinToMultipleParentsException;
+import com.akiban.server.error.JoinToUnknownTableException;
+import com.akiban.server.error.JoinToWrongColumnsException;
+import com.akiban.server.error.NoSuchGroupException;
+import com.akiban.server.error.NoSuchIndexException;
+import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.NoSuchTableIdException;
+import com.akiban.server.error.ParseException;
+import com.akiban.server.error.ProtectedTableDDLException;
+import com.akiban.server.error.RowDefNotFoundException;
+import com.akiban.server.error.UnknownIndexException;
+import com.akiban.server.error.UnsupportedCharsetException;
+import com.akiban.server.error.UnsupportedDataTypeException;
+import com.akiban.server.error.UnsupportedDropException;
+import com.akiban.server.error.UnsupportedIndexDataTypeException;
+import com.akiban.server.error.UnsupportedIndexSizeException;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.util.RowDefNotFoundException;
-import com.akiban.message.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,13 +75,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void createTable(Session session, String schema, String ddlText)
-            throws ParseException, UnsupportedCharsetException,
-            ProtectedTableDDLException, DuplicateTableNameException,
-            GroupWithProtectedTableException, JoinToUnknownTableException,
-            JoinToWrongColumnsException, JoinToMultipleParentsException,
-            NoPrimaryKeyException, DuplicateColumnNameException,
-            UnsupportedDataTypeException, UnsupportedIndexDataTypeException,
-            UnsupportedIndexSizeException, GenericInvalidOperationException
+            throws ParseException, 
+            GroupWithProtectedTableException, 
+            GenericInvalidOperationException
     {
         logger.trace("creating table: ({}) {}", schema, ddlText);
         try {
@@ -87,16 +86,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ioe,
-                    ParseException.class,
-                    ProtectedTableDDLException.class,
-                    UnsupportedCharsetException.class,
-                    UnsupportedDataTypeException.class,
-                    JoinToUnknownTableException.class,
-                    JoinToWrongColumnsException.class,
-                    JoinToMultipleParentsException.class,
-                    DuplicateTableNameException.class,
-                    UnsupportedIndexDataTypeException.class,
-                    UnsupportedIndexSizeException.class
+                    ParseException.class
             );
             throw new GenericInvalidOperationException(ioe);
         }
@@ -104,13 +94,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     
     @Override
     public void createTable(Session session, UserTable table)
-    throws ParseException, UnsupportedCharsetException,
-    ProtectedTableDDLException, DuplicateTableNameException,
-    GroupWithProtectedTableException, JoinToUnknownTableException,
-    JoinToWrongColumnsException, JoinToMultipleParentsException,
-    NoPrimaryKeyException, DuplicateColumnNameException,
-    UnsupportedDataTypeException, UnsupportedIndexDataTypeException,
-    UnsupportedIndexSizeException, GenericInvalidOperationException
+    throws ParseException, GroupWithProtectedTableException, 
+    GenericInvalidOperationException
     {
         try {
             TableName tableName = schemaManager().createTableDefinition(session, table);
@@ -118,16 +103,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ioe,
-                    ParseException.class,
-                    ProtectedTableDDLException.class,
-                    UnsupportedCharsetException.class,
-                    UnsupportedDataTypeException.class,
-                    JoinToUnknownTableException.class,
-                    JoinToWrongColumnsException.class,
-                    JoinToMultipleParentsException.class,
-                    DuplicateTableNameException.class,
-                    UnsupportedIndexDataTypeException.class,
-                    UnsupportedIndexSizeException.class
+                    ParseException.class
             );
             throw new GenericInvalidOperationException(ioe);
         }
@@ -135,21 +111,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void renameTable(Session session, TableName currentName, TableName newName)
-            throws NoSuchTableException,
-            ProtectedTableDDLException,
-            DuplicateTableNameException,
-            GenericInvalidOperationException
+            throws GenericInvalidOperationException
     {
         try {
             schemaManager().renameTable(session, currentName, newName);
             checkCursorsForDDLModification(session, getAIS(session).getTable(newName));
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(ioe,
-                    NoSuchTableException.class,
-                    ProtectedTableDDLException.class,
-                    DuplicateTableNameException.class
-            );
             throw new GenericInvalidOperationException(ioe);
         }
     }
@@ -157,8 +125,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void dropTable(Session session, TableName tableName)
-            throws ProtectedTableDDLException, ForeignConstraintDDLException,
-            UnsupportedDropException, GenericInvalidOperationException
+            throws GenericInvalidOperationException
     {
         logger.trace("dropping table {}", tableName);
         final Table table = getAIS(session).getTable(tableName);
@@ -171,7 +138,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         // Halo spec: may only drop leaf tables through DDL interface
         if(userTable == null || userTable.getChildJoins().isEmpty() == false) {
-            throw new UnsupportedDropException(String.format("Cannot drop non-leaf table [%s]", table.getName()));
+            throw new UnsupportedDropException(table.getName());
         }
 
         try {
@@ -194,8 +161,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void dropSchema(Session session, String schemaName)
-            throws ProtectedTableDDLException, ForeignConstraintDDLException,
-            UnsupportedDropException, GenericInvalidOperationException
+            throws GenericInvalidOperationException
     {
         logger.trace("dropping schema {}", schemaName);
 
@@ -220,9 +186,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 for(Join childJoin : table.getChildJoins()) {
                     final TableName childName = childJoin.getChild().getName();
                     if(!childName.getSchemaName().equals(schemaName)) {
-                        throw new ForeignConstraintDDLException(String.format(
-                                "Cannot drop schema [%s], table [%s] has child table [%s]",
-                                schemaName, tableName, childName));
+                        throw new ForeignConstraintDDLException(tableName, childName);
                     }
                 }
             }
@@ -250,7 +214,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void dropGroup(Session session, String groupName)
-            throws ProtectedTableDDLException, GenericInvalidOperationException
+            throws GenericInvalidOperationException
     {
         logger.trace("dropping group {}", groupName);
         final Group group = getAIS(session).getGroup(groupName);
@@ -276,7 +240,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public int getTableId(Session session, TableName tableName) throws NoSuchTableException{
+    public int getTableId(Session session, TableName tableName) {
         logger.trace("getting table ID for {}", tableName);
         Table table = getAIS(session).getTable(tableName);
         if (table == null) {
@@ -286,7 +250,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public Table getTable(Session session, int tableId) throws NoSuchTableException {
+    public Table getTable(Session session, int tableId) {
         logger.trace("getting AIS Table for {}", tableId);
         for (Table userTable : getAIS(session).getUserTables().values()) {
             if (tableId == userTable.getTableId()) {
@@ -298,11 +262,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 return groupTable;
             }
         }
-        throw new NoSuchTableException(tableId);
+        throw new NoSuchTableIdException(tableId);
     }
 
     @Override
-    public Table getTable(Session session, TableName tableName) throws NoSuchTableException {
+    public Table getTable(Session session, TableName tableName) {
         logger.trace("getting AIS Table for {}", tableName);
         AkibanInformationSchema ais = getAIS(session);
         Table table = ais.getTable(tableName);
@@ -313,7 +277,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public UserTable getUserTable(Session session, TableName tableName) throws NoSuchTableException {
+    public UserTable getUserTable(Session session, TableName tableName) {
         logger.trace("getting AIS UserTable for {}", tableName);
         AkibanInformationSchema ais = getAIS(session);
         UserTable table = ais.getUserTable(tableName);
@@ -324,19 +288,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public TableName getTableName(Session session, int tableId) throws NoSuchTableException {
+    public TableName getTableName(Session session, int tableId) {
         logger.trace("getting table name for {}", tableId);
         return getTable(session, tableId).getName();
     }
 
     @Override
-    public RowDef getRowDef(int tableId) throws NoSuchTableException {
+    public RowDef getRowDef(int tableId) {
         logger.trace("getting RowDef for {}", tableId);
-        try {
-            return store().getRowDefCache().getRowDef(tableId);
-        } catch (RowDefNotFoundException e) {
-            throw new NoSuchTableException(tableId, e);
-        }
+        return store().getRowDefCache().getRowDef(tableId);
     }
 
     @Override
@@ -365,7 +325,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void createIndexes(final Session session, Collection<Index> indexesToAdd)
-            throws NoSuchTableException, DuplicateKeyException, IndexAlterException, GenericInvalidOperationException {
+            throws GenericInvalidOperationException {
         logger.trace("creating indexes {}", indexesToAdd);
         if (indexesToAdd.isEmpty() == true) {
             return;
@@ -376,8 +336,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             newIndexes = schemaManager().createIndexes(session, indexesToAdd);
         }
         catch(InvalidOperationException e) {
-            throwIfInstanceOf(e, NoSuchTableException.class, NoSuchGroupException.class);
-            throw new IndexAlterException(e);
+            throw e;
+            //throwIfInstanceOf(e, NoSuchTableException.class, NoSuchGroupException.class);
+            //throw new IndexAlterException(e);
         }
         catch(Exception e) {
             throw new GenericInvalidOperationException(e);
@@ -397,15 +358,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             } catch(Exception e2) {
                 logger.error("Exception while rolling back failed createIndex: " + newIndexes, e2);
             }
-            InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(ioe, DuplicateKeyException.class);
-            throw new GenericInvalidOperationException(ioe);
+            throw e;
         }
     }
 
     @Override
     public void dropTableIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
-            throws NoSuchTableException, IndexAlterException, GenericInvalidOperationException
+            throws GenericInvalidOperationException
     {
         logger.trace("dropping table indexes {} {}", tableName, indexNamesToDrop);
         if(indexNamesToDrop.isEmpty() == true) {
@@ -417,10 +376,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         for(String indexName : indexNamesToDrop) {
             Index index = table.getIndex(indexName);
             if(index == null) {
-                throw new IndexAlterException(ErrorCode.NO_INDEX, "Unknown index: " + indexName);
+                throw new NoSuchIndexException (indexName);
             }
             if(index.isPrimaryKey()) {
-                throw new IndexAlterException(ErrorCode.UNSUPPORTED_OPERATION, "Cannot drop primary key index");
+                throw new DropIndexNotAllowedException ("PRIMARY", tableName);
             }
             indexes.add(index);
         }
@@ -437,7 +396,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void dropGroupIndexes(Session session, String groupName, Collection<String> indexNamesToDrop)
-            throws NoSuchGroupException, IndexAlterException, GenericInvalidOperationException {
+            throws GenericInvalidOperationException {
         logger.trace("dropping group indexes {} {}", groupName, indexNamesToDrop);
         if(indexNamesToDrop.isEmpty()) {
             return;
@@ -452,7 +411,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         for(String indexName : indexNamesToDrop) {
             final Index index = group.getIndex(indexName);
             if(index == null) {
-                throw new IndexAlterException(ErrorCode.NO_INDEX, "Unknown index: " + indexName);
+                throw new NoSuchIndexException(indexName);
             }
             indexes.add(index);
         }
@@ -467,7 +426,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
     }
 
-    private void checkCursorsForDDLModification(Session session, Table table) throws NoSuchTableException {
+    private void checkCursorsForDDLModification(Session session, Table table) {
         Map<CursorId,BasicDXLMiddleman.ScanData> cursorsMap = getScanDataMap(session);
         if (cursorsMap == null) {
             return;

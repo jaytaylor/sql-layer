@@ -25,12 +25,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.IndexDef;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.TableStatistics.Histogram;
 import com.akiban.server.TableStatistics.HistogramSample;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.persistit.Exchange;

@@ -33,12 +33,11 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.util.RowDefNotFoundException;
+import com.akiban.server.error.RowDefNotFoundException;
 
 /**
  * Caches RowDef instances. In this incarnation, this class also constructs
@@ -330,7 +329,7 @@ public class RowDefCache {
         nameMap.put(name, key);
     }
     
-    private void analyzeAll() throws RowDefNotFoundException {
+    private void analyzeAll() {
         Map<Table,Integer> ordinalMap = fixUpOrdinals();
         for (final RowDef rowDef : cacheMap.values()) {
             rowDef.computeFieldAssociations(ordinalMap);

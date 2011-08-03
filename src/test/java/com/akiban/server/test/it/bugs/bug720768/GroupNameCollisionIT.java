@@ -19,7 +19,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.staticgrouping.GroupsBuilder;
-import com.akiban.server.InvalidOperationException;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 

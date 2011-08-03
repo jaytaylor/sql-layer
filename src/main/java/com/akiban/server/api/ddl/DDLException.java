@@ -15,8 +15,8 @@
 
 package com.akiban.server.api.ddl;
 
-import com.akiban.server.InvalidOperationException;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.InvalidOperationException;
 
 public abstract class DDLException extends InvalidOperationException {
     protected DDLException(InvalidOperationException cause) {

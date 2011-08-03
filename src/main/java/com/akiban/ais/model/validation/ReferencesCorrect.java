@@ -27,7 +27,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.Visitor;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.ErrorCode;
 
 /**
  * Validates the internal references used by the AIS are correct. 

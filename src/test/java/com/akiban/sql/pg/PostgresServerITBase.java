@@ -21,9 +21,9 @@ import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.RowOutput;
-import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanFlag;
+import com.akiban.server.error.RowOutputException;
 import com.akiban.server.test.it.ITBase;
 
 import org.junit.After;
@@ -170,7 +170,7 @@ public class PostgresServerITBase extends ITBase
                                            EnumSet.of(ScanFlag.DEEP)));
         dml().scanSome(session(), cursorId,
                        new RowOutput() {
-                           public void output(NewRow row) throws RowOutputException {
+                           public void output(NewRow row) {
                                RowDef rowDef = row.getRowDef();
                                str.append(rowDef.table().getName().getTableName());
                                for (int i = 0; i < rowDef.getFieldCount(); i++) {

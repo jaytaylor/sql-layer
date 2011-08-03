@@ -15,7 +15,7 @@
 
 package com.akiban.server.api.ddl;
 
-import com.akiban.server.InvalidOperationException;
+import com.akiban.server.error.InvalidOperationException;
 
 public final class GroupWithProtectedTableException extends DDLException {
     public GroupWithProtectedTableException(InvalidOperationException e) {

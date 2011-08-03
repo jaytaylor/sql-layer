@@ -21,7 +21,9 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.TableIndex;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.JoinColumnMismatchException;
+import com.akiban.server.error.JoinToWrongColumnsException;
 
 class JoinToParentPK implements AISValidation {
 
@@ -33,24 +35,23 @@ class JoinToParentPK implements AISValidation {
             TableIndex parentPK = join.getParent().getPrimaryKey().getIndex();
             
             if (parentPK.getColumns().size() != join.getJoinColumns().size()) {
-                output.reportFailure(new AISValidationFailure(ErrorCode.JOIN_TO_WRONG_COLUMNS,
-                        "Join %s join column list size (%d) does not match parent table (%s) PK list size (%d)",
-                        join.getName(), join.getJoinColumns().size(), 
-                        join.getParent().getName().toString(), parentPK.getColumns().size()));
+                output.reportFailure(new AISValidationFailure(
+                        new JoinColumnMismatchException (join.getJoinColumns().size(),
+                                join.getChild().getName(),
+                                join.getParent().getName(), 
+                                parentPK.getColumns().size())));
+                        
                 return;
             }
             Iterator<JoinColumn>  joinColumns = join.getJoinColumns().iterator();            
             for (IndexColumn parentPKColumn : parentPK.getColumns()) {
                 JoinColumn joinColumn = joinColumns.next();
                 if (parentPKColumn.getColumn() != joinColumn.getParent()) {
-                    output.reportFailure(new AISValidationFailure (ErrorCode.JOIN_TO_WRONG_COLUMNS,
-                            "Table `%s`.`%s` join reference part `%s` does not match `%s`.`%s` primary key part `%s`",
-                            join.getChild().getName().getSchemaName(),
-                            join.getChild().getName().getTableName(),
-                            joinColumn.getParent().getName(),
-                            parentPK.getTable().getName().getSchemaName(),
-                            parentPK.getTable().getName().getTableName(),
-                            parentPKColumn.getColumn().getName()));
+                    output.reportFailure(new AISValidationFailure (
+                            new JoinToWrongColumnsException (
+                                    join.getChild().getName(), 
+                                    joinColumn.getParent().getName(), 
+                                    parentPK.getTable().getName(), parentPKColumn.getColumn().getName())));
                 }
             }
         }

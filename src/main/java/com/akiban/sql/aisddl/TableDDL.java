@@ -18,8 +18,8 @@ package com.akiban.sql.aisddl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.ColumnDefinitionNode;
 import com.akiban.sql.parser.ConstraintDefinitionNode;
@@ -132,6 +132,9 @@ public class TableDDL
         switch (type.getTypeId().getTypeFormatId()) {
         case FormatIds.INT_TYPE_ID:
             typeName = Types.INT.name();
+            break;
+        case FormatIds.LONGVARCHAR_TYPE_ID:
+            typeName = Types.BLOB.name();
             break;
         case FormatIds.CHAR_TYPE_ID:
         case FormatIds.VARCHAR_TYPE_ID:

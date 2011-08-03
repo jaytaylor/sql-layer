@@ -21,7 +21,6 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
-import com.akiban.message.ErrorCode;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.expression.IndexBound;
@@ -30,7 +29,6 @@ import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.ArrayBindings;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.physicaloperator.UpdateFunction;
@@ -41,16 +39,15 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.ConstantColumnSelector;
-import com.akiban.server.api.dml.DuplicateKeyException;
-import com.akiban.server.api.dml.NoSuchRowException;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.error.NoRowsUpdatedException;
+import com.akiban.server.error.TooManyRowsUpdatedException;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.DelegatingStore;
@@ -381,42 +378,27 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     private static void runCursor(RowData oldRowData, RowDef rowDef, UpdatePlannable plannable, PersistitAdapter adapter)
-            throws DuplicateKeyException, NoSuchRowException
     {
         final UpdateResult result;
-        try {
+        //try {
             result = plannable.run(UndefBindings.only(), adapter);
-        } catch (CursorUpdateException e) {
-            Throwable cause = e.getCause();
-            if ( (cause instanceof InvalidOperationException)
-                    && ErrorCode.DUPLICATE_KEY.equals(((InvalidOperationException) cause).getCode()))
-            {
-                throw new DuplicateKeyException((InvalidOperationException)cause);
-            }
-            throw e;
-        }
+        // Currently CursorUpdateException isn't thrown from anywhere. TODO: implement or remove    
+        //} catch (CursorUpdateException e) {
+        //    Throwable cause = e.getCause();
+        //    if ( (cause instanceof InvalidOperationException)
+        //            && ErrorCode.DUPLICATE_KEY.equals(((InvalidOperationException) cause).getCode()))
+        //    {
+        //        throw new DuplicateKeyException((InvalidOperationException)cause);
+        //    }
+        //    throw e;
+        //}
 
         if (result.rowsModified() == 0 || result.rowsTouched() == 0) {
-            throw new NoSuchRowException(describeRow(oldRowData, rowDef));
+            throw new NoRowsUpdatedException (oldRowData, rowDef);
         }
         else if(result.rowsModified() != 1 || result.rowsTouched() != 1) {
-            throw new RuntimeException(String.format(
-                    "%s: %d touched, %d modified",
-                    describeRow(oldRowData, rowDef),
-                    result.rowsTouched(),
-                    result.rowsModified()
-            ));
+            throw new TooManyRowsUpdatedException (oldRowData, rowDef, result);
         }
-    }
-
-    private static String describeRow(RowData oldRowData, RowDef rowDef) {
-        String rowDescription;
-        try {
-            rowDescription = oldRowData.toString(rowDef);
-        } catch (Exception e) {
-            rowDescription = "error in generating RowData.toString";
-        }
-        return rowDescription;
     }
 
     // consts

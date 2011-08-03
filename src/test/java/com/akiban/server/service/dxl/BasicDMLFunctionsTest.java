@@ -32,11 +32,11 @@ import com.persistit.exception.PersistitException;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.CursorIsFinishedException;
 import com.akiban.server.api.dml.scan.LegacyRowOutput;
+import com.akiban.server.error.CursorIsFinishedException;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.store.RowCollector;
 
 public final class BasicDMLFunctionsTest {
