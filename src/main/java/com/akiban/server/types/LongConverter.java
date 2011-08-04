@@ -15,31 +15,22 @@
 
 package com.akiban.server.types;
 
-import com.akiban.util.AkibanAppender;
-import com.akiban.util.ByteSource;
+public abstract class LongConverter extends AbstractConverter {
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
+    // AbstractLongConverter interface
 
-public interface ConversionSource {
-    boolean isNull();
-    BigDecimal getDecimal();
-    BigInteger getUBigInt();
-    ByteSource getVarBinary();
-    double getDouble();
-    double getUDouble();
-    float getFloat();
-    float getUFloat();
-    long getDate();
-    long getDateTime();
-    long getInt();
-    long getLong();
-    long getTime();
-    long getTimestamp();
-    long getUInt();
-    long getYear();
-    String getString();
-    String getText();
-    void appendAsString(AkibanAppender appender);
-    AkType getConversionType();
+    public abstract long getLong(ConversionSource source);
+
+    // defined in subclasses
+
+    protected abstract void putLong(ConversionTarget target, long value);
+
+    // for use in this package
+
+    @Override
+    protected final void doConvert(ConversionSource source, ConversionTarget target) {
+        putLong(target, getLong(source));
+    }
+
+    LongConverter() {}
 }

@@ -17,27 +17,23 @@ package com.akiban.server.types;
 
 import com.akiban.util.ByteSource;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
+final class ConverterForVarBinary extends ObjectConverter<ByteSource> {
 
-public interface ConversionTarget {
-    void putNull();
-    void putDate(long value);
-    void putDateTime(long value);
-    void putDecimal(BigDecimal value);
-    void putDouble(double value);
-    void putFloat(float value);
-    void putInt(long value);
-    void putLong(long value);
-    void putString(String value);
-    void putText(String value);
-    void putTime(long value);
-    void putTimestamp(long value);
-    void putUBigInt(BigInteger value);
-    void putUDouble(double value);
-    void putUFloat(float value);
-    void putUInt(long value);
-    void putVarBinary(ByteSource value);
-    void putYear(long value);
-    AkType getConversionType();
+    static final ObjectConverter<ByteSource> INSTANCE = new ConverterForVarBinary();
+
+    @Override
+    public ByteSource getObject(ConversionSource source) {
+        AkType type = source.getConversionType();
+        switch (type) {
+        case U_BIGINT:   return source.getVarBinary();
+        default: throw unsupportedConversion(type);
+        }
+    }
+
+    @Override
+    protected void putObject(ConversionTarget target, ByteSource value) {
+        target.putVarBinary(value);
+    }
+
+    private ConverterForVarBinary() {}
 }

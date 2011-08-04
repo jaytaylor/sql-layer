@@ -15,6 +15,8 @@
 
 package com.akiban.server;
 
+import com.akiban.ais.model.Column;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ConversionTarget;
 import com.akiban.util.ByteSource;
 import com.persistit.Key;
@@ -30,86 +32,123 @@ public final class KeyConversionTarget implements ConversionTarget {
         this.key = key;
     }
 
+    public KeyConversionTarget expectingType(Column column) {
+        this.type = column.getType().akType();
+        return this;
+    }
+    
     // ConversionTarget interface
 
     @Override
     public void putNull() {
+        checkState();
         key.append(null);
+        invalidate();
     }
 
     @Override
     public void putDate(long value) {
+        checkState();
         key.append(value);
+        invalidate();
     }
 
     @Override
     public void putDateTime(long value) {
+        checkState();
         key.append(value);
+        invalidate();
     }
 
     @Override
     public void putDecimal(BigDecimal value) {
+        checkState();
         key.append(value);
+        invalidate();
     }
 
     @Override
     public void putDouble(double value) {
+        checkState();
         key.append(value);
+        invalidate();
     }
 
     @Override
     public void putFloat(float value) {
+        checkState();
         key.append(value);
+        invalidate();
     }
 
     @Override
     public void putInt(long value) {
+        checkState();
         key.append(value);
+        invalidate();
     }
 
     @Override
     public void putLong(long value) {
+        checkState();
         key.append(value);
+        invalidate();
     }
 
     @Override
     public void putString(String value) {
+        checkState();
         key.append(value);
+        invalidate();
     }
 
     @Override
     public void putText(String value) {
+        checkState();
         key.append(value);
+        invalidate();
     }
 
     @Override
     public void putTime(long value) {
+        checkState();
         key.append(value);
+        invalidate();
     }
 
     @Override
     public void putTimestamp(long value) {
+        checkState();
         key.append(value);
+        invalidate();
     }
 
     @Override
     public void putUBigInt(BigInteger value) {
+        checkState();
         key.append(value);
+        invalidate();
     }
 
     @Override
     public void putUDouble(double value) {
+        checkState();
         key.append(value);
+        invalidate();
     }
 
     @Override
     public void putUFloat(float value) {
+        checkState();
         key.append(value);
+        invalidate();
     }
 
     @Override
     public void putUInt(long value) {
+        checkState();
         key.append(value);
+        invalidate();
     }
 
     @Override
@@ -119,7 +158,14 @@ public final class KeyConversionTarget implements ConversionTarget {
 
     @Override
     public void putYear(long value) {
+        checkState();
         key.append(value);
+        invalidate();
+    }
+
+    @Override
+    public AkType getConversionType() {
+        return type;
     }
 
     // object interface
@@ -128,8 +174,21 @@ public final class KeyConversionTarget implements ConversionTarget {
     public String toString() {
         return key.toString();
     }
+    
+    // private methods
+    
+    private void checkState() {
+        if (type == AkType.UNSUPPORTED) {
+            throw new IllegalStateException("target AkType not set");
+        }
+    }
+
+    private void invalidate() {
+        type = AkType.UNSUPPORTED;
+    }
 
     // object state
 
     private Key key;
+    private AkType type = AkType.UNSUPPORTED;
 }

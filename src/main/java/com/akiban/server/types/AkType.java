@@ -16,46 +16,38 @@
 package com.akiban.server.types;
 
 public enum AkType {
-    DATE        { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putDate( src.getDate() ); } },
-    DATETIME    { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putDateTime( src.getDateTime() ); } },
-    DECIMAL     { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putDecimal( src.getDecimal() ); } },
-    DOUBLE      { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putDouble( src.getDouble() ); } },
-    FLOAT       { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putFloat( src.getFloat() ); } },
-    INT         { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putInt( src.getInt() ); } },
-    LONG        { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putLong( src.getLong() ); } },
-    VARCHAR     { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putString( src.getString() ); } },
-    TEXT        { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putText( src.getText() ); } },
-    TIME        { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putTime( src.getTime() ); } },
-    TIMESTAMP   { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putTimestamp( src.getTimestamp() ); } },
-    U_BIGINT    { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putUBigInt( src.getUBigInt() ); } },
-    U_DOUBLE    { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putUDouble( src.getUDouble() ); } },
-    U_FLOAT     { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putUFloat( src.getUFloat() ); } },
-    U_INT       { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putUInt( src.getUInt() ); } },
-    VARBINARY   { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putVarBinary( src.getVarBinary() ); } },
-    YEAR        { @Override void doConversion(ConversionSource src, ConversionTarget tgt) { tgt.putYear( src.getYear() ); } },
-
-    NULL {
-        @Override void doConversion(ConversionSource source, ConversionTarget target) {
-            throw new AssertionError("invoking doConversion on NULL");
-        }
-    },
-
-    UNSUPPORTED {
-        @Override
-        void doConversion(ConversionSource source, ConversionTarget target) {
-            throw new UnsupportedOperationException();
-        }
-    }
+    DATE (ConvertersForDates.DATE),
+    DATETIME (ConvertersForDates.DATETIME),
+    DECIMAL (ConverterForBigDecimal.INSTANCE),
+    DOUBLE (ConverterForDouble.INSTANCE),
+    FLOAT (ConverterForFloat.INSTANCE),
+    INT (ConverterForLong.INT),
+    LONG (ConverterForLong.LONG),
+    VARCHAR (ConverterForString.STRING),
+    TEXT (ConverterForString.TEXT),
+    TIME (ConvertersForDates.TIME),
+    TIMESTAMP (ConvertersForDates.TIMESTAMP),
+    U_BIGINT (ConverterForBigInteger.INSTANCE),
+    U_DOUBLE (ConverterForDouble.INSTANCE),
+    U_FLOAT (ConverterForFloat.INSTANCE),
+    U_INT (ConverterForLong.U_INT),
+    VARBINARY (ConverterForVarBinary.INSTANCE),
+    YEAR (ConvertersForDates.YEAR),
+    NULL (null),
+    UNSUPPORTED (null),
     ;
 
-    public void convert(ConversionSource source, ConversionTarget target) {
-        if (source.isNull()) {
-            target.putNull();
+
+    AbstractConverter converter() {
+        if (converter == null) {
+            throw new UnsupportedOperationException("no converter for " + name());
         }
-        else {
-            doConversion(source, target);
-        }
+        return converter;
     }
 
-    abstract void doConversion(ConversionSource source, ConversionTarget target);
+    AkType(AbstractConverter converter) {
+        this.converter = converter;
+    }
+
+    private final AbstractConverter converter;
 }

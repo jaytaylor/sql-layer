@@ -15,31 +15,16 @@
 
 package com.akiban.server.types;
 
-import com.akiban.util.AkibanAppender;
-import com.akiban.util.ByteSource;
+public final class Converters {
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
+    public static void convert(ConversionSource source, ConversionTarget target) {
+        get(target.getConversionType()).convert(source, target);
+    }
 
-public interface ConversionSource {
-    boolean isNull();
-    BigDecimal getDecimal();
-    BigInteger getUBigInt();
-    ByteSource getVarBinary();
-    double getDouble();
-    double getUDouble();
-    float getFloat();
-    float getUFloat();
-    long getDate();
-    long getDateTime();
-    long getInt();
-    long getLong();
-    long getTime();
-    long getTimestamp();
-    long getUInt();
-    long getYear();
-    String getString();
-    String getText();
-    void appendAsString(AkibanAppender appender);
-    AkType getConversionType();
+    public static AbstractConverter get(AkType type) {
+        return type.converter();
+    }
+
+    // for use in this class
+    private Converters() {}
 }

@@ -151,6 +151,11 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
         appendHelper.source(this).appendTo(appender);
     }
 
+    @Override
+    public AkType getConversionType() {
+        return fieldDef().getType().akType();
+    }
+
     // for use within this class
     // Stolen from the Encoding classes
 
