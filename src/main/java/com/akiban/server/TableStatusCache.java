@@ -365,15 +365,11 @@ public class TableStatusCache extends TransactionalCache {
             treeService.visitStorage(session, new TreeVisitor() {
 
                 @Override
-                public void visit(Exchange exchange) throws Exception {
+                public void visit(Exchange exchange) throws PersistitException {
                     loadOneVolume(exchange);
                 }
 
             }, STATUS_TREE_NAME);
-        } catch (PersistitException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         } finally {
             session.close();
         }
@@ -399,20 +395,14 @@ public class TableStatusCache extends TransactionalCache {
     }
 
     private void removeAll(final Session session) throws PersistitException {
-        try {
-            treeService.visitStorage(session, new TreeVisitor() {
+        treeService.visitStorage(session, new TreeVisitor() {
 
-                @Override
-                public void visit(Exchange exchange) throws Exception {
-                    exchange.removeAll();
-                }
+            @Override
+            public void visit(Exchange exchange) throws PersistitException  {
+                exchange.removeAll();
+            }
 
-            }, STATUS_TREE_NAME);
-        } catch (PersistitException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        }, STATUS_TREE_NAME);
     }
 
     // ====

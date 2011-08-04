@@ -15,30 +15,7 @@
 
 package com.akiban.server.service.dxl;
 
-import com.akiban.server.api.GenericInvalidOperationException;
 import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.error.CursorIsFinishedException;
-import com.akiban.server.error.CursorIsUnknownException;
-import com.akiban.server.error.DuplicateTableNameException;
-import com.akiban.server.error.ForeignKeyConstraintDMLException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.JoinToMultipleParentsException;
-import com.akiban.server.error.JoinToUnknownTableException;
-import com.akiban.server.error.JoinToWrongColumnsException;
-import com.akiban.server.error.NoSuchColumnException;
-import com.akiban.server.error.NoSuchGroupException;
-import com.akiban.server.error.NoSuchIndexException;
-import com.akiban.server.error.NoSuchRowException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.ParseException;
-import com.akiban.server.error.ProtectedTableDDLException;
-import com.akiban.server.error.RowDefNotFoundException;
-import com.akiban.server.error.UnsupportedCharsetException;
-import com.akiban.server.error.UnsupportedDataTypeException;
-import com.akiban.server.error.UnsupportedDropException;
-import com.akiban.server.error.UnsupportedIndexDataTypeException;
-import com.akiban.server.error.UnsupportedIndexSizeException;
-import com.akiban.server.error.UnsupportedModificationException;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;

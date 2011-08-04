@@ -66,7 +66,11 @@ public class TableDDL
         } catch (InvalidOperationException ex) {
             logger.error(ex.getMessage(), ex.getStackTrace());
             throw new StandardException (ex.getMessage());
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e.getStackTrace());
+            throw new StandardException (e.getMessage());
         }
+        
     }
 
     public static void createTable(DDLFunctions ddlFunctions,
@@ -120,6 +124,9 @@ public class TableDDL
         } catch (InvalidOperationException ex) {
             logger.error(ex.getMessage(), ex.getStackTrace());
             throw new StandardException (ex.getMessage());
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e.getStackTrace());
+            throw new StandardException (e.getMessage());
         }
     }
     

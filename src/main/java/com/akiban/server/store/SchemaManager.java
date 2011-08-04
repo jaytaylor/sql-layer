@@ -38,6 +38,7 @@ public interface SchemaManager {
      * @throws Exception If the statement is invalid, the table contains unsupported parts (e.g. data type), or
      * there is an internal error.
      * @return The name of the table that was created.
+     * @throws Exception 
      */
     TableName createTableDefinition(Session session, String defaultSchemaName, String statement);
     
@@ -48,6 +49,7 @@ public interface SchemaManager {
      * @param session Session
      * @param currentName Current name of table
      * @param newName Desired name of table
+     * @throws Exception 
      * @throws Exception For any error
      */
     void renameTable(Session session, TableName currentName, TableName newName);
@@ -60,6 +62,7 @@ public interface SchemaManager {
      * @throws Exception If the request is invalid (e.g. duplicate index name, malformed Index) or there
      * was an internal error.
      * @return List of newly created indexes.
+     * @throws Exception 
      */
     Collection<Index> createIndexes(Session session, Collection<Index> indexes);
 
@@ -68,6 +71,7 @@ public interface SchemaManager {
      * supported through this interface.
      * @param session Session to operate under.
      * @param indexes List of indexes to drop.
+     * @throws Exception 
      * @throws Exception If there was an internal error.
      */
     void dropIndexes(Session session, Collection<Index> indexes);
@@ -78,6 +82,7 @@ public interface SchemaManager {
      * @param session The session to operate under.
      * @param schemaName The name of the schema the table is in.
      * @param tableName The name of the table.
+     * @throws Exception 
      * @throws Exception If the definition cannot be deleted (e.g. table is referenced) or an internal error.
      */
     void deleteTableDefinition(Session session, String schemaName, String tableName);
@@ -96,6 +101,7 @@ public interface SchemaManager {
      * @param session Session to operate under.
      * @param schemaName Schema to to query.
      * @return Map, keyed by table name, of all TableDefinitions.
+     * @throws Exception 
      * @throws Exception For an internal error.
      */
     SortedMap<String, TableDefinition> getTableDefinitions(Session session, String schemaName);

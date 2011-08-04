@@ -15,15 +15,16 @@
 
 package com.akiban.server;
 
-import java.sql.SQLException;
 import java.util.Map;
 
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Target;
+import com.akiban.server.error.PersistItErrorException;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
+import com.persistit.exception.PersistitException;
 
 /**
  * Implements the Target interface. This class is intended only for unit tests.
@@ -41,7 +42,7 @@ public class AkServerAisTarget extends Target {
 
     // Target interface
 
-    public void deleteAll() throws Exception {
+    public void deleteAll() {
         deleteTable(type);
         deleteTable(group);
         deleteTable(table);
@@ -52,21 +53,25 @@ public class AkServerAisTarget extends Target {
         deleteTable(indexColumn);
     }
 
-    private void deleteTable(final String name) throws Exception {
+    private void deleteTable(final String name) {
         final ModelObject modelObject = MetaModel.only().definition(name);
         final RowDef rowDef = store.getRowDefCache().getRowDef(modelObject.tableName());
         if (rowDef == null) {
             throw new IllegalStateException(
                     "Missing table definition for AIS table " + name);
         }
+        try {
         store.truncateGroup(session, rowDef.getRowDefId());
+        } catch (PersistitException ex) {
+            throw new PersistItErrorException (ex);
+        }
     }
 
     @Override
-    public void writeCount(int count) throws Exception {
+    public void writeCount(int count) {
     }
 
-    public void close() throws SQLException {
+    public void close() {
         session.close();
     }
 
@@ -83,8 +88,7 @@ public class AkServerAisTarget extends Target {
         //no writing version for test classes. 
     }
     @Override
-    protected final void write(String typename, Map<String, Object> map)
-            throws Exception {
+    protected final void write(String typename, Map<String, Object> map) {
         ModelObject modelObject = MetaModel.only().definition(typename);
         final RowDef rowDef = store.getRowDefCache().getRowDef(modelObject.tableName());
         if (rowDef == null) {
@@ -116,6 +120,10 @@ public class AkServerAisTarget extends Target {
         }
         final RowData rowData = new RowData(new byte[1024]);
         rowData.createRow(rowDef, values);
-        store.writeRow(session, rowData);
+        try {
+            store.writeRow(session, rowData);
+        } catch (PersistitException ex) {
+            throw new PersistItErrorException (ex);
+        }
     }
 }

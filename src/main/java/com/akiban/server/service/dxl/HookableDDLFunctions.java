@@ -22,7 +22,6 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.api.ddl.GroupWithProtectedTableException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
@@ -45,8 +44,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
     
     @Override
-    public void createTable(Session session, UserTable table)
-            throws GroupWithProtectedTableException {
+    public void createTable(Session session, UserTable table) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.CREATE_TABLE);

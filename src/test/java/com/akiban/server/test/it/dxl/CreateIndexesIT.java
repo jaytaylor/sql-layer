@@ -33,11 +33,15 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
-import com.akiban.server.api.ddl.IndexAlterException;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.DuplicateKeyException;
+import com.akiban.server.error.IndexLacksColumnsException;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.JoinColumnMismatchException;
+import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.ProtectedIndexException;
 
 import com.akiban.server.test.it.ITBase;
 import org.junit.Assert;
@@ -114,7 +118,7 @@ public final class CreateIndexesIT extends ITBase {
         ddl().createIndexes(session(), Arrays.asList(index));
     }
 
-    @Test(expected=IndexAlterException.class)
+    @Test(expected=IndexLacksColumnsException.class)
     public void noIndexColumns() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key, foo int");
         AkibanInformationSchema ais = createAISWithTable(tId);
@@ -122,7 +126,7 @@ public final class CreateIndexesIT extends ITBase {
         ddl().createIndexes(session(), Arrays.asList(index));
     }
 
-    @Test(expected=IndexAlterException.class) 
+    @Test(expected=ProtectedIndexException.class) 
     public void createPrimaryKey() throws InvalidOperationException {
         int tId = createTable("test", "atable", "id int");
         AkibanInformationSchema ais = createAISWithTable(tId);
@@ -131,7 +135,7 @@ public final class CreateIndexesIT extends ITBase {
         ddl().createIndexes(session(), Arrays.asList(index));
     }
     
-    @Test(expected=IndexAlterException.class) 
+    @Test(expected=DuplicateIndexException.class) 
     public void duplicateIndexName() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key");
         AkibanInformationSchema ais = createAISWithTable(tId);
@@ -139,7 +143,7 @@ public final class CreateIndexesIT extends ITBase {
         ddl().createIndexes(session(), Arrays.asList(index));
     }
     
-    @Test(expected=IndexAlterException.class) 
+    @Test(expected=NoSuchColumnException.class) 
     public void unknownColumnName() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key");
         AkibanInformationSchema ais = createAISWithTable(tId);
@@ -150,7 +154,7 @@ public final class CreateIndexesIT extends ITBase {
         ddl().createIndexes(session(), Arrays.asList(index));
     }
   
-    @Test(expected=IndexAlterException.class) 
+    @Test(expected=JoinColumnMismatchException.class) 
     public void mismatchedColumnType() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key");
         AkibanInformationSchema ais = createAISWithTable(tId);

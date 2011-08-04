@@ -92,8 +92,7 @@ public class PersistitStoreIndexManager implements IndexManager {
      * .session.Session, com.akiban.server.RowDef)
      */
     @Override
-    public void analyzeTable(final Session session, final RowDef rowDef)
-            throws Exception {
+    public void analyzeTable(final Session session, final RowDef rowDef) throws PersistitException {
         analyzeTable(session, rowDef, DEFAULT_SAMPLE_SIZE - 1);
     }
 
@@ -105,7 +104,7 @@ public class PersistitStoreIndexManager implements IndexManager {
      * .session.Session, com.akiban.server.RowDef, int)
      */
     @Override
-    public void analyzeTable(final Session session, final RowDef rowDef, final int sampleSize) throws Exception {
+    public void analyzeTable(final Session session, final RowDef rowDef, final int sampleSize) throws PersistitException {
         for (Index index : rowDef.getIndexes()) {
             analyzeIndex(session, index, sampleSize);
         }
@@ -172,8 +171,7 @@ public class PersistitStoreIndexManager implements IndexManager {
      * .session.Session, com.akiban.server.IndexDef, int)
      */
     @Override
-    public void analyzeIndex(final Session session, final Index index, final int sampleSize)
-            throws InvalidOperationException, PersistitException {
+    public void analyzeIndex(final Session session, final Index index, final int sampleSize) throws PersistitException {
         final Exchange probeEx;
         final Key startKey;
         final Key endKey;
@@ -378,7 +376,7 @@ public class PersistitStoreIndexManager implements IndexManager {
      */
     @Override
     public void populateTableStatistics(final Session session,
-            final TableStatistics tableStatistics) throws Exception {
+            final TableStatistics tableStatistics) throws PersistitException {
         final int tableId = tableStatistics.getRowDefId();
         final RowDef rowDef = store.getRowDefCache().getRowDef(tableId);
         if (rowDef == null) {

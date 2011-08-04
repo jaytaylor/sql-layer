@@ -29,12 +29,14 @@ import com.akiban.ais.model.Source;
 
 public class CSVSource extends Source
 {
-
-
     @Override
-    public void close() throws Exception
+    public void close()
     {
+        try {
         input.close();
+        } catch (IOException ex) {
+            
+        }
     }
 
     // PersistitSource interface
@@ -54,7 +56,7 @@ public class CSVSource extends Source
     }
     
     @Override
-    protected final void read(String typename, Receiver receiver) throws Exception
+    protected final void read(String typename, Receiver receiver)
     {
         ModelObject modelObject = MetaModel.only().definition(typename);
         while (typeIs(typename)) {

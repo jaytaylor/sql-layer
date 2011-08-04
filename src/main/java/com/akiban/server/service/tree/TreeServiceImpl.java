@@ -272,21 +272,19 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     @Override
-    public Exchange getExchange(final Session session, final TreeLink link)
-            throws PersistitException {
+    public Exchange getExchange(final Session session, final TreeLink link) throws PersistitException {
         final TreeCache cache = populateTreeCache(link);
         Tree tree = cache.getTree();
         return getExchange(session, tree);
     }
 
     @Override
-    public Key getKey(Session session) throws PersistitException {
+    public Key getKey(Session session) {
         return new Key(getDb());
     }
 
     @Override
-    public Exchange getExchange(final Session session, final Tree tree)
-            throws PersistitException {
+    public Exchange getExchange(final Session session, final Tree tree) {
         final List<Exchange> list = exchangeList(session, tree);
         if (list.isEmpty()) {
             return new Exchange(tree);
@@ -325,7 +323,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
     @Override
     public void visitStorage(final Session session, final TreeVisitor visitor,
-            final String treeName) throws Exception {
+            final String treeName) throws PersistitException {
         Persistit db = getDb();
         final Volume sysVol = db.getSystemVolume();
         final Volume txnVol = db.getTransactionVolume();
@@ -345,15 +343,13 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     @Override
-    public boolean isContainer(final Exchange exchange, final TreeLink link)
-            throws PersistitException {
+    public boolean isContainer(final Exchange exchange, final TreeLink link) throws PersistitException{
         final TreeCache treeCache = populateTreeCache(link);
         return exchange.getVolume().equals(treeCache.getTree().getVolume());
     }
 
     @Override
-    public int aisToStore(final TreeLink link, final int tableId)
-            throws PersistitException {
+    public int aisToStore(final TreeLink link, final int tableId) throws PersistitException {
         final TreeCache cache = populateTreeCache(link);
         int offset = cache.getTableIdOffset();
         if (offset < 0) {
@@ -364,8 +360,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     @Override
-    public int storeToAis(final TreeLink link, final int tableId)
-            throws PersistitException {
+    public int storeToAis(final TreeLink link, final int tableId)  throws PersistitException {
         final TreeCache cache = populateTreeCache(link);
         int offset = cache.getTableIdOffset();
         if (offset < 0) {
@@ -381,8 +376,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         return tableId + offset;
     }
 
-    private TreeCache populateTreeCache(final TreeLink link)
-            throws PersistitException {
+    private TreeCache populateTreeCache(final TreeLink link) throws PersistitException {
         TreeCache cache = (TreeCache) link.getTreeCache();
         if (cache == null || !cache.getTree().isValid()) {
             Volume volume = mappedVolume(link.getSchemaName(),
@@ -492,8 +486,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     @Override
-    public boolean treeExists(final String schemaName, final String treeName)
-            throws PersistitException {
+    public boolean treeExists(final String schemaName, final String treeName) throws PersistitException {
         final Volume volume = mappedVolume(schemaName, treeName);
         final Tree tree = volume.getTree(treeName, false);
         return tree != null;

@@ -24,7 +24,6 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowDef;
-import com.akiban.server.api.ddl.GroupWithProtectedTableException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.ParseException;
 import com.akiban.server.service.session.Session;
@@ -37,39 +36,38 @@ public interface DDLFunctions {
      * @param ddlText the DDL text: <tt>CREATE TABLE....</tt>
      * @throws ParseException if the given schema is <tt>null</tt> and no schema is provided in the DDL;
      *  or if there is some other parse error
-     * @throws GroupWithProtectedTableException if the table's DDL would put it in the same group as a protected
-     *  table, such as an <tt>akiban_information_schema</tt> table or a group table.
      * exists
+     * @throws Exception 
      */
-    void createTable(Session session, String schema, String ddlText)
-            throws ParseException,
-            GroupWithProtectedTableException;
+    void createTable(Session session, String schema, String ddlText);
     /**
      * 
      * @param session the session to run the Create under
      * @param table - new user table to add to the existing system
-     * @throws GroupWithProtectedTableException
+     * @throws Exception 
      */
-    void createTable (Session session, UserTable table)
-            throws GroupWithProtectedTableException;
+    void createTable (Session session, UserTable table);
 
     /**
      * Rename an existing table.
      * @param session Session
      * @param currentName Current name of the table
      * @param newName Desired name of the table
+     * @throws Exception 
      */
     void renameTable(Session session, TableName currentName, TableName newName);
 
     /**
      * Drops a table if it exists.
      * @param tableName the table to drop
+     * @throws Exception 
      * @throws NullPointerException if tableName is null
      */
     void dropTable(Session session, TableName tableName);
     /**
      * Drops a table if it exists, and possibly its children.
      * @param schemaName the schema to drop
+     * @throws Exception 
      * @throws NullPointerException if schemaName is null
      */
     void dropSchema(Session session, String schemaName);
@@ -77,6 +75,7 @@ public interface DDLFunctions {
      /**
      * Drops all tables associated with the group
      * @param groupName the group to drop
+     * @throws Exception 
      * @throws NullPointerException if groupName is null
      */
     void dropGroup(Session session, String groupName);
@@ -139,10 +138,9 @@ public interface DDLFunctions {
      * schema. The DDLs will be arranged such that it should be safe to call them in order, but they will not contain
      * any DROP commands; it is up to the caller to drop all conflicting tables. Schemas will be created with
      * <tt>IF NOT EXISTS</tt>, so the caller does not need to drop conflicting schemas.
-     * @throws InvalidOperationException if an exception occurred
      * @return the list of CREATE SCHEMA and CREATE TABLE statements that correspond to known tables
      */
-    List<String> getDDLs(Session session) throws InvalidOperationException;
+    List<String> getDDLs(Session session);
 
     int getGeneration();
 
@@ -150,7 +148,6 @@ public interface DDLFunctions {
      * Forces an increment to the chunkserver's AIS generation ID. This can be useful for debugging.
      * @throws InvalidOperationException if an exception occurred
      */
-    @SuppressWarnings("unused") // meant to be used from JMX
     void forceGenerationUpdate();
     
     /**
@@ -158,6 +155,7 @@ public interface DDLFunctions {
      * keys can not be created through this interface. Specified index IDs will not be used as they
      * are recalculated later. Blocks until the actual index data has been created.
      * @param indexesToAdd a list of indexes to add to the existing AIS
+     * @throws Exception 
      * @throws InvalidOperationException
      */
     void createIndexes(Session session, Collection<Index> indexesToAdd);
@@ -166,6 +164,7 @@ public interface DDLFunctions {
      * Drop indexes on an existing table.
      * @param tableName the table containing the indexes to drop
      * @param indexesToDrop list of indexes to drop
+     * @throws Exception 
      * @throws InvalidOperationException
      */
     void dropTableIndexes(Session session, TableName tableName, Collection<String> indexesToDrop);
@@ -173,6 +172,7 @@ public interface DDLFunctions {
     /**
      * Drop indexes on an existing group.
      * @param indexesToDrop
+     * @throws Exception 
      * @throws InvalidOperationException
      */
     void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop);

@@ -16,7 +16,6 @@
 package com.akiban.server.api.dml.scan;
 
 import com.akiban.server.RowData;
-import com.akiban.server.error.RowOutputException;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

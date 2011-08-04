@@ -136,10 +136,14 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             boolean updateFirst) 
     {
         logger.trace("stats for {} updating: {}", tableId, updateFirst);
-        if (updateFirst) {
-            store().analyzeTable(session, tableId);
+        try {
+            if (updateFirst) {
+                store().analyzeTable(session, tableId);
+            }
+            return store().getTableStatistics(session, tableId);
+        } catch (PersistitException ex) {
+            throw new PersistItErrorException (ex);
         }
-        return store().getTableStatistics(session, tableId);
     }
 
     @Override
@@ -286,13 +290,12 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
 
     @Override
-    public void scanSome(Session session, CursorId cursorId, LegacyRowOutput output)
-        throws BufferFullException
+    public void scanSome(Session session, CursorId cursorId, LegacyRowOutput output) throws BufferFullException
     {
         scanSome(session, cursorId, output, DEFAULT_SCAN_HOOK);
     }
 
-    void scanSome(Session session, CursorId cursorId, LegacyRowOutput output, ScanHooks scanHooks)
+    void scanSome(Session session, CursorId cursorId, LegacyRowOutput output, ScanHooks scanHooks) 
         throws BufferFullException
     {
         logger.trace("scanning from {}", cursorId);
@@ -436,19 +439,14 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
          *            the output; see
          *            {@link #scanSome(Session, CursorId, LegacyRowOutput)}
          * @param scanHooks the scan hooks to use
-         * @throws BufferFullException
-         *             see
-         *             {@link #scanSome(Session, CursorId, LegacyRowOutput)}
-         * @throws RollbackException
-         *             if scanning results in a RollbackException
+         * @throws Exception 
          * @see #scanSome(Session, CursorId, LegacyRowOutput)
          */
         protected void doScan(Cursor cursor,
                                         CursorId cursorId,
                                         LegacyRowOutput output,
                                         ScanHooks scanHooks)
-                throws BufferFullException,
-                       RollbackException
+            throws BufferFullException
         {
             assert cursor != null;
             assert cursorId != null;
@@ -605,7 +603,11 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     {
         logger.trace("writing a row");
         final RowData rowData = niceRowToRowData(row);
-        store().writeRow(session, rowData);
+        try {
+            store().writeRow(session, rowData);
+        } catch (PersistitException ex) {
+            throw new PersistItErrorException (ex);
+        }
         return null;
     }
 
@@ -614,7 +616,11 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     {
         logger.trace("deleting a row");
         final RowData rowData = niceRowToRowData(row);
-        store().deleteRow(session, rowData);
+        try {
+            store().deleteRow(session, rowData);
+        } catch (PersistitException ex) {
+            throw new PersistItErrorException (ex);
+        }
     }
 
     private RowData niceRowToRowData(NewRow row) 
@@ -641,7 +647,12 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 tableId
         );
 
-        store().updateRow(session, oldData, newData, columnSelector);
+        try {
+            store().updateRow(session, oldData, newData, columnSelector);
+        } catch (PersistitException ex) {
+            throw new PersistItErrorException (ex);
+        }
+            
     }
 
     private void checkForModifiedCursors(
@@ -715,6 +726,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
      * @param session Session to operation on
      * @param userTable UserTable to determine if a fast truncate is possible on
      * @return true if store.truncateGroup() used, false otherwise
+     * @throws Exception 
      */
     private boolean canFastTruncate(Session session, UserTable userTable) {
         UserTable rootTable = userTable.getGroup().getGroupTable().getRoot();
@@ -742,7 +754,12 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
         if(utable == null || canFastTruncate(session, utable)) {
             final RowDef rowDef = ddlFunctions.getRowDef(table.getTableId());
-            store().truncateGroup(session, rowDef.getRowDefId());
+            try {
+                store().truncateGroup(session, rowDef.getRowDefId());
+            } catch (PersistitException ex) {
+                throw new PersistItErrorException (ex);
+            }
+                
             return;
         }
 

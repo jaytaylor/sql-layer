@@ -25,6 +25,7 @@ import com.akiban.server.TableStatistics;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
 import com.persistit.Exchange;
@@ -42,25 +43,26 @@ public interface Store extends Service<Store> {
 
     RowDefCache getRowDefCache();
 
-    void writeRow(final Session session, final RowData rowData);
+    void writeRow(final Session session, final RowData rowData) throws PersistitException;
 
     void writeRowForBulkLoad(final Session session, final Exchange hEx,
             final RowDef rowDef, final RowData rowData, final int[] ordinals,
             final int[] nKeyColumns, final FieldDef[] fieldDefs,
-            final Object[] hKey);
+            final Object[] hKey) throws PersistitException;
 
     void updateTableStats(final Session session, final RowDef rowDef,
             long rowCount);
 
-    void deleteRow(final Session session, final RowData rowData);
+    void deleteRow(final Session session, final RowData rowData) throws PersistitException;
 
     void updateRow(final Session session, final RowData oldRowData,
                    final RowData newRowData,
-                   final ColumnSelector columnSelector);
+                   final ColumnSelector columnSelector) throws PersistitException;
 
     /**
      * See {@link #newRowCollector(Session, int, int, int, byte[], RowData, ColumnSelector, RowData, ColumnSelector, ScanLimit)}
      * for parameter descriptions.
+     * @throws Exception 
      *
      * @deprecated This constructor is ambiguous and may not return the expected rows. Fields from <code>start</code>
      * and <code>end</code> that are <code>NULL</code> are considered to be <b>unset</b>.
@@ -86,6 +88,7 @@ public interface Store extends Service<Store> {
      * @param startColumns ColumnSelector indicating which fields are set in <code>start</code>
      * @param end RowData containing values to stop the scan at.
      * @param endColumns ColumnSelector indicating which fields are set in <code>end</code>
+     * @throws Exception 
      */
     RowCollector newRowCollector(Session session,
                                  int scanFlags,
@@ -126,9 +129,9 @@ public interface Store extends Service<Store> {
     long getRowCount(final Session session, final boolean exact,
             final RowData start, final RowData end, final byte[] columnBitMap);
 
-    TableStatistics getTableStatistics(final Session session, final int tableId);
+    TableStatistics getTableStatistics(final Session session, final int tableId) throws PersistitException;
 
-    void truncateGroup(final Session session, final int rowDefId);
+    void truncateGroup(final Session session, final int rowDefId) throws PersistitException;
 
     void truncateTableStatus(Session session, int rowDefId)
         throws PersistitException;
@@ -138,21 +141,25 @@ public interface Store extends Service<Store> {
      * histograms for its indexes.
      * 
      * @param tableId
+     * @throws PersistitException 
+     * @throws Exception 
      */
-    void analyzeTable(final Session session, int tableId);
-    void analyzeTable(final Session session, int tableId, int sampleSize);
+    void analyzeTable(final Session session, int tableId) throws PersistitException;
+    void analyzeTable(final Session session, int tableId, int sampleSize) throws PersistitException;
 
     boolean isDeferIndexes();
     void setDeferIndexes(final boolean b);
-    void flushIndexes(Session session);
-    void deleteIndexes(Session session, Collection<? extends Index> indexes);
-    void buildAllIndexes(Session session, boolean deferIndexes);
-    void buildIndexes(Session session, Collection<? extends Index> indexes, boolean deferIndexes);
+    void flushIndexes(Session session) throws PersistitException;
+    void deleteIndexes(Session session, Collection<? extends Index> indexes) throws PersistitException;
+    void buildAllIndexes(Session session, boolean deferIndexes) throws RowDefNotFoundException, InvalidOperationException, PersistitException;
+    void buildIndexes(Session session, Collection<? extends Index> indexes, boolean deferIndexes) throws RowDefNotFoundException, InvalidOperationException, PersistitException;
 
     /**
      * Remove all trees, and their contents, associated with the given table.
      * @param session Session
      * @param table Table
+     * @throws PersistitException 
+     * @throws Exception 
      */
-    void removeTrees(Session session, Table table);
+    void removeTrees(Session session, Table table) throws PersistitException;
 }

@@ -43,32 +43,27 @@ public interface TreeService extends Service<TreeService> {
 
     Persistit getDb();
 
-    Exchange getExchange(Session session, TreeLink context)
-            throws PersistitException;
+    Exchange getExchange(Session session, TreeLink context) throws PersistitException;
 
-    Exchange getExchange(Session session, Tree tree) throws PersistitException;
+    Exchange getExchange(Session session, Tree tree);
 
-    Key getKey(Session session) throws PersistitException;
+    Key getKey(Session session);
 
     void releaseExchange(Session session, Exchange exchange);
 
     Transaction getTransaction(Session session);
 
-    void visitStorage(Session session, TreeVisitor visitor, String treeName)
-            throws Exception;
+    void visitStorage(Session session, TreeVisitor visitor, String treeName) throws PersistitException;
 
     long getTimestamp(Session session);
 
     boolean isContainer(Exchange exchange, TreeLink storageLink) throws PersistitException;
 
-    int aisToStore(final TreeLink link, final int logicalTableId)
-            throws PersistitException;
+    int aisToStore(final TreeLink link, final int logicalTableId) throws PersistitException;
 
-    int storeToAis(final TreeLink link, final int storedTableId)
-            throws PersistitException;
+    int storeToAis(final TreeLink link, final int storedTableId) throws PersistitException;
 
-    int storeToAis(final Volume volume, final int storedTableId)
-            throws PersistitException;
+    int storeToAis(final Volume volume, final int storedTableId);
     
     void checkpoint();
 

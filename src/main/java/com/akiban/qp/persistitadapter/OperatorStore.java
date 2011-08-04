@@ -46,7 +46,9 @@ import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoRowsUpdatedException;
+import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.error.TooManyRowsUpdatedException;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
@@ -70,8 +72,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // Store interface
 
     @Override
-    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector)
-            throws Exception
+    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector) throws PersistitException
     {
         PersistitStore persistitStore = getPersistitStore();
         AkibanInformationSchema ais = persistitStore.getRowDefCache().ais();
@@ -139,7 +140,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     @Override
-    public void writeRow(Session session, RowData rowData) throws Exception {
+    public void writeRow(Session session, RowData rowData) throws PersistitException {
         Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
         for(int retryCount=0; ; ++retryCount) {
             try {
@@ -168,7 +169,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     @Override
-    public void deleteRow(Session session, RowData rowData) throws Exception {
+    public void deleteRow(Session session, RowData rowData) throws PersistitException {
         Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
         for(int retryCount=0; ; ++retryCount) {
             try {
@@ -195,7 +196,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     @Override
-    public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) throws Exception {
+    public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) throws RowDefNotFoundException, InvalidOperationException, PersistitException {
         List<TableIndex> tableIndexes = new ArrayList<TableIndex>();
         List<GroupIndex> groupIndexes = new ArrayList<GroupIndex>();
         for(Index index : indexes) {

@@ -55,10 +55,10 @@ import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.CursorCloseBadException;
 import com.akiban.server.error.CursorIsUnknownException;
 import com.akiban.server.error.DuplicateKeyException;
-import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchRowException;
 import com.akiban.server.error.RowDataCorruptionException;
+import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
@@ -171,13 +171,13 @@ public class PersistitStore implements Store {
         return treeService.getDb();
     }
 
-    public Exchange getExchange(final Session session, final RowDef rowDef) throws PersistitException {
+    public Exchange getExchange(final Session session, final RowDef rowDef) {
         final RowDef groupRowDef = rowDef.isGroupTable() ? rowDef
                                    : rowDefCache.getRowDef(rowDef.getGroupRowDefId());
         return treeService.getExchange(session, groupRowDef);
     }
 
-    public Exchange getExchange(final Session session, final Index index) throws PersistitException {
+    public Exchange getExchange(final Session session, final Index index) {
         return treeService.getExchange(session, (IndexDef)index.indexDef());
     }
 
@@ -197,8 +197,7 @@ public class PersistitStore implements Store {
                               Exchange hEx,
                               RowDef rowDef,
                               RowData rowData,
-                              boolean insertingRow)
-    throws PersistitException, InvalidOperationException
+                              boolean insertingRow) throws PersistitException
     {
         // Initialize the hkey being constructed
         long uniqueId = -1;
@@ -288,8 +287,7 @@ public class PersistitStore implements Store {
     }
 
     void constructHKey(Exchange hEx, RowDef rowDef, int[] ordinals,
-            int[] nKeyColumns, FieldDef[] hKeyFieldDefs, Object[] hKeyValues)
-            throws Exception {
+            int[] nKeyColumns, FieldDef[] hKeyFieldDefs, Object[] hKeyValues) {
         final Key hkey = hEx.getKey();
         hkey.clear();
         int k = 0;
@@ -406,13 +404,10 @@ public class PersistitStore implements Store {
      * 
      * @param rowData
      *            the row data
-     * @throws InvalidOperationException
-     *             if the given table is unknown or deleted; or if there's a
-     *             duplicate key error
+     * @throws PersistitException 
      */
     @Override
-    public void writeRow(final Session session, final RowData rowData)
-            throws InvalidOperationException, PersistitException {
+    public void writeRow(final Session session, final RowData rowData) throws PersistitException {
         final int rowDefId = rowData.getRowDefId();
 
         if (rowData.getRowSize() > MAX_ROW_SIZE) {
@@ -427,7 +422,8 @@ public class PersistitStore implements Store {
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         checkNoGroupIndexes(rowDef.table());
         final Transaction transaction = treeService.getTransaction(session);
-        Exchange hEx = getExchange(session, rowDef);
+        Exchange hEx;
+        hEx = getExchange(session, rowDef);
         try {
             long uniqueId = -1;
             int retries = MAX_TRANSACTION_RETRY_COUNT;
@@ -540,7 +536,7 @@ public class PersistitStore implements Store {
     @Override
     public void writeRowForBulkLoad(final Session session, Exchange hEx,
             RowDef rowDef, RowData rowData, int[] ordinals, int[] nKeyColumns,
-            FieldDef[] hKeyFieldDefs, Object[] hKeyValues) throws Exception {
+            FieldDef[] hKeyFieldDefs, Object[] hKeyValues) throws PersistitException  {
         /*
          * if (verbose && LOG.isInfoEnabled()) { LOG.info("BulkLoad writeRow: "
          * + rowData.toString(rowDefCache)); }
@@ -565,13 +561,12 @@ public class PersistitStore implements Store {
     // bulk loader.
     @Override
     public void updateTableStats(final Session session, RowDef rowDef,
-            long rowCount) throws Exception {
+            long rowCount) {
         // no-up for now
     }
 
     @Override
-    public void deleteRow(final Session session, final RowData rowData)
-            throws InvalidOperationException, PersistitException {
+    public void deleteRow(final Session session, final RowData rowData) throws PersistitException {
         DELETE_ROW_TAP.in();
         final int rowDefId = rowData.getRowDefId();
 
@@ -652,7 +647,7 @@ public class PersistitStore implements Store {
     @Override
     public void updateRow(final Session session, final RowData oldRowData,
             final RowData newRowData, final ColumnSelector columnSelector)
-            throws InvalidOperationException, PersistitException {
+            throws PersistitException {
         final int rowDefId = oldRowData.getRowDefId();
 
         if (newRowData.getRowDefId() != rowDefId) {
@@ -740,7 +735,7 @@ public class PersistitStore implements Store {
     }
 
     private void propagateDownGroup(Session session, Exchange exchange)
-            throws PersistitException, InvalidOperationException {
+            throws PersistitException {
         // exchange is positioned at a row R that has just been replaced by R',
         // (because we're processing an update
         // that has to be implemented as delete/insert). hKey is the hkey of R.
@@ -792,12 +787,10 @@ public class PersistitStore implements Store {
      *            Session to work on.
      * @param rowDefId
      *            RowDef ID to select group to truncate
-     * @throws PersistitException
-     *             for a PersistIt level error (e.g. Rollback)
+     * @throws PersistitException 
      */
     @Override
-    public void truncateGroup(final Session session, final int rowDefId)
-            throws PersistitException {
+    public void truncateGroup(final Session session, final int rowDefId) throws PersistitException {
         RowDef groupRowDef = rowDefCache.getRowDef(rowDefId);
         if (!groupRowDef.isGroupTable()) {
             groupRowDef = rowDefCache.getRowDef(groupRowDef.getGroupRowDefId());
@@ -876,7 +869,7 @@ public class PersistitStore implements Store {
 
     @Override
     public RowCollector getSavedRowCollector(final Session session,
-            final int tableId) throws InvalidOperationException {
+            final int tableId) throws CursorIsUnknownException {
         final List<RowCollector> list = collectorsForTableId(session, tableId);
         if (list.isEmpty()) {
             LOG.debug("Nested RowCollector on tableId={} depth={}", tableId, (list.size() + 1));
@@ -905,7 +898,7 @@ public class PersistitStore implements Store {
 
     @Override
     public void removeSavedRowCollector(final Session session,
-            final RowCollector rc) throws InvalidOperationException {
+            final RowCollector rc) throws CursorIsUnknownException {
         final Integer tableId = rc.getTableId();
         final List<RowCollector> list = collectorsForTableId(session, tableId);
         if (list.isEmpty()) {
@@ -970,7 +963,7 @@ public class PersistitStore implements Store {
                                         RowData start,
                                         RowData end,
                                         byte[] columnBitMap,
-                                        ScanLimit scanLimit) throws Exception
+                                        ScanLimit scanLimit)
     {
         return newRowCollector(session, scanFlags, rowDefId, indexId, columnBitMap, start, null, end, null, scanLimit);
     }
@@ -986,7 +979,6 @@ public class PersistitStore implements Store {
                                         RowData end,
                                         ColumnSelector endColumns,
                                         ScanLimit scanLimit)
-        throws InvalidOperationException, PersistitException
     {
         NEW_COLLECTOR_TAP.in();
         if(start != null && startColumns == null) {
@@ -1015,8 +1007,7 @@ public class PersistitStore implements Store {
 
     @Override
     public long getRowCount(final Session session, final boolean exact,
-            final RowData start, final RowData end, final byte[] columnBitMap)
-            throws Exception {
+            final RowData start, final RowData end, final byte[] columnBitMap) {
         //
         // TODO: Compute a reasonable value. The value "2" is a hack -
         // special because it's not 0 or 1, but small enough to induce
@@ -1030,8 +1021,7 @@ public class PersistitStore implements Store {
     }
 
     @Override
-    public TableStatistics getTableStatistics(final Session session, int tableId)
-            throws Exception {
+    public TableStatistics getTableStatistics(final Session session, int tableId) throws PersistitException {
         final RowDef rowDef = rowDefCache.getRowDef(tableId);
         final TableStatistics ts = new TableStatistics(tableId);
         final TableStatus status = rowDef.getTableStatus();
@@ -1053,14 +1043,13 @@ public class PersistitStore implements Store {
     }
 
     @Override
-    public void analyzeTable(final Session session, final int tableId)
-            throws Exception {
+    public void analyzeTable(final Session session, final int tableId) throws PersistitException {
         final RowDef rowDef = rowDefCache.getRowDef(tableId);
         indexManager.analyzeTable(session, rowDef);
     }
 
     @Override
-    public void analyzeTable(Session session, int tableId, int sampleSize) throws Exception {
+    public void analyzeTable(Session session, int tableId, int sampleSize) throws PersistitException {
         final RowDef rowDef = rowDefCache.getRowDef(tableId);
         indexManager.analyzeTable(session, rowDef, sampleSize);
     }
@@ -1124,8 +1113,7 @@ public class PersistitStore implements Store {
         }
     }
 
-    void putAllDeferredIndexKeys(final Session session)
-            throws PersistitException {
+    void putAllDeferredIndexKeys(final Session session) throws PersistitException {
         synchronized (deferredIndexKeys) {
             for (final Map.Entry<Tree, SortedSet<KeyState>> entry : deferredIndexKeys
                     .entrySet()) {
@@ -1218,8 +1206,7 @@ public class PersistitStore implements Store {
         hEx.getValue().setEncodedSize(size);
     }
 
-    public void expandRowData(final Exchange exchange, final RowData rowData)
-            throws InvalidOperationException, PersistitException {
+    public void expandRowData(final Exchange exchange, final RowData rowData) {
         // TODO this needs to be a more specific exception
         final int size = exchange.getValue().getEncodedSize();
         final int rowDataSize = size + RowData.ENVELOPE_SIZE;
@@ -1261,7 +1248,7 @@ public class PersistitStore implements Store {
     }
 
     @Override
-    public void buildAllIndexes(Session session, boolean deferIndexes) throws Exception {
+    public void buildAllIndexes(Session session, boolean deferIndexes) throws RowDefNotFoundException, InvalidOperationException, PersistitException {
         Collection<Index> indexes = new HashSet<Index>();
         for(RowDef rowDef : rowDefCache.getRowDefs()) {
             if(rowDef.isUserTable()) {
@@ -1271,7 +1258,7 @@ public class PersistitStore implements Store {
         buildIndexes(session, indexes, deferIndexes);
     }
 
-    public void buildIndexes(final Session session, final Collection<? extends Index> indexes, final boolean defer) throws Exception {
+    public void buildIndexes(final Session session, final Collection<? extends Index> indexes, final boolean defer) throws RowDefNotFoundException, InvalidOperationException, PersistitException {
         flushIndexes(session);
 
         final Set<RowDef> userRowDefs = new HashSet<RowDef>();
@@ -1309,29 +1296,24 @@ public class PersistitStore implements Store {
                 }
             }
             int indexKeyCount = 0;
-            try {
-                Exchange hEx = getExchange(session, rowDef);
-                hEx.getKey().clear();
-                // while (hEx.traverse(Key.GT, hFilter, Integer.MAX_VALUE)) {
-                while (hEx.next(true)) {
-                    expandRowData(hEx, rowData);
-                    final int tableId = rowData.getRowDefId();
-                    final RowDef userRowDef = rowDefCache.getRowDef(tableId);
-                    if (userRowDefs.contains(userRowDef)) {
-                        for (Index index : userRowDef.getIndexes()) {
-                            if(indexesToBuild.contains(index)) {
-                                insertIntoIndex(session, index, rowData, hEx.getKey(), defer);
-                                indexKeyCount++;
-                            }
-                        }
-                        if (deferredIndexKeyLimit <= 0) {
-                            putAllDeferredIndexKeys(session);
+            Exchange hEx = getExchange(session, rowDef);
+            hEx.getKey().clear();
+            // while (hEx.traverse(Key.GT, hFilter, Integer.MAX_VALUE)) {
+            while (hEx.next(true)) {
+                expandRowData(hEx, rowData);
+                final int tableId = rowData.getRowDefId();
+                final RowDef userRowDef = rowDefCache.getRowDef(tableId);
+                if (userRowDefs.contains(userRowDef)) {
+                    for (Index index : userRowDef.getIndexes()) {
+                        if(indexesToBuild.contains(index)) {
+                            insertIntoIndex(session, index, rowData, hEx.getKey(), defer);
+                            indexKeyCount++;
                         }
                     }
+                    if (deferredIndexKeyLimit <= 0) {
+                        putAllDeferredIndexKeys(session);
+                    }
                 }
-            } catch (Exception e) {
-                LOG.debug("Exception while inserting index into: " + rowDef.table().getName(), e);
-                throw e;
             }
             flushIndexes(session);
             LOG.debug("Inserted {} index keys into {}", indexKeyCount, rowDef.table().getName());
@@ -1384,16 +1366,16 @@ public class PersistitStore implements Store {
         }
     }
 
-    public void flushIndexes(final Session session) throws Exception {
+    public void flushIndexes(final Session session) throws PersistitException {
         try {
             putAllDeferredIndexKeys(session);
-        } catch (Exception e) {
+        } catch (PersistitException e) {
             LOG.debug("Exception while trying to flush deferred index keys", e);
             throw e;
         }
     }
 
-    public void deleteIndexes(final Session session, final Collection<? extends Index> indexes) throws Exception {
+    public void deleteIndexes(final Session session, final Collection<? extends Index> indexes) throws PersistitException {
         for(Index index : indexes) {
             final IndexDef indexDef = (IndexDef) index.indexDef();
             if(indexDef == null) {
@@ -1402,7 +1384,7 @@ public class PersistitStore implements Store {
             try {
                 Exchange iEx = getExchange(session, index);
                 iEx.removeTree();
-            } catch (Exception e) {
+            } catch (PersistitException e) {
                 LOG.debug("Exception while removing index tree: " + indexDef, e);
                 throw e;
             }

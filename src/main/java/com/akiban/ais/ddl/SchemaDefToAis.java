@@ -74,7 +74,7 @@ public class SchemaDefToAis {
      * @param akibandbOnly When <code>true</code>, only tables with the AKIBANDB engine are converted.
      * @throws Exception For any error encountered.
      */
-    public SchemaDefToAis(SchemaDef schemaDef, AkibanInformationSchema ais, boolean akibandbOnly) throws Exception {
+    public SchemaDefToAis(SchemaDef schemaDef, AkibanInformationSchema ais, boolean akibandbOnly) {
         this.schemaDef = schemaDef;
         this.builder = new AISBuilder(ais);
         buildAISFromBuilder(akibandbOnly);
@@ -283,7 +283,7 @@ public class SchemaDefToAis {
         }
     }
 
-    private void buildAISFromBuilder(final boolean akibandbOnly) throws Exception {
+    private void buildAISFromBuilder(final boolean akibandbOnly) {
         removeNonAkibanForeignKeys();
         addImpliedGroups();
 

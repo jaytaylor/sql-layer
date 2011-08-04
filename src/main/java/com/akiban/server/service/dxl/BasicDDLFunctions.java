@@ -44,8 +44,11 @@ import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
+import com.akiban.server.error.PersistItErrorException;
 import com.akiban.server.error.UnsupportedDropException;
 import com.akiban.server.service.session.Session;
+import com.persistit.exception.PersistitException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,12 +99,20 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         DMLFunctions dml = new BasicDMLFunctions(middleman(), this);
         if(userTable.getParentJoin() == null) {
             // Root table and no child tables, can delete all associated trees
-            store().removeTrees(session, table);
+            try {
+                store().removeTrees(session, table);
+            } catch (PersistitException ex) {
+                throw new PersistItErrorException (ex);
+            }
         }
         else {
             dml.truncateTable(session, table.getTableId());
-            store().deleteIndexes(session, userTable.getIndexesIncludingInternal());
-            store().deleteIndexes(session, userTable.getGroupIndexes());
+            try {
+                store().deleteIndexes(session, userTable.getIndexesIncludingInternal());
+                store().deleteIndexes(session, userTable.getGroupIndexes());
+            } catch (PersistitException ex) {
+                throw new PersistItErrorException (ex);
+            }
         }
         schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
         checkCursorsForDDLModification(session, table);
@@ -170,7 +181,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final Table table = group.getGroupTable();
         final RowDef rowDef = getRowDef(table.getTableId());
         final TableName tableName = table.getName();
-        store().truncateGroup(session, rowDef.getRowDefId());
+        try {
+            store().truncateGroup(session, rowDef.getRowDefId());
+        } catch (PersistitException ex) {
+            throw new PersistItErrorException (ex);
+        }
         schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
         checkCursorsForDDLModification(session, table);
     }
@@ -242,7 +257,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public List<String> getDDLs(final Session session) throws InvalidOperationException {
+    public List<String> getDDLs(final Session session) {
         logger.trace("getting DDLs");
         return schemaManager().schemaStrings(session, false);
     }
@@ -261,7 +276,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public void createIndexes(final Session session, Collection<Index> indexesToAdd) {
+    public void createIndexes(Session session, Collection<Index> indexesToAdd) {
+    //public void createIndexes(final Session session, Collection<Index> indexesToAdd) {
         logger.trace("creating indexes {}", indexesToAdd);
         if (indexesToAdd.isEmpty() == true) {
             return;
@@ -285,11 +301,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 logger.error("Exception while rolling back failed createIndex: " + newIndexes, e2);
             }
             throw e;
+        } catch (PersistitException ex) {
+            throw new PersistItErrorException (ex);
         }
     }
 
     @Override
-    public void dropTableIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
+    public void dropTableIndexes(Session session, TableName tableName, Collection<String> indexNamesToDrop)
     {
         logger.trace("dropping table indexes {} {}", tableName, indexNamesToDrop);
         if(indexNamesToDrop.isEmpty() == true) {
@@ -309,14 +327,18 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             indexes.add(index);
         }
         // Drop them from the Store before while IndexDefs still exist
-        store().deleteIndexes(session, indexes);
+        try {
+            store().deleteIndexes(session, indexes);
+        } catch (PersistitException ex) {
+            throw new PersistItErrorException (ex);
+        }
+            
         schemaManager().dropIndexes(session, indexes);
         checkCursorsForDDLModification(session, table);
     }
 
     @Override
-    public void dropGroupIndexes(Session session, String groupName, Collection<String> indexNamesToDrop)
-        throws NoSuchGroupException, NoSuchIndexException {
+    public void dropGroupIndexes(Session session, String groupName, Collection<String> indexNamesToDrop) {
         logger.trace("dropping group indexes {} {}", groupName, indexNamesToDrop);
         if(indexNamesToDrop.isEmpty()) {
             return;
@@ -337,7 +359,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         // Drop them from the Store before while IndexDefs still exist
-        store().deleteIndexes(session, indexes);
+        try {
+            store().deleteIndexes(session, indexes);
+        } catch (PersistitException ex) {
+            throw new PersistItErrorException (ex);
+        }
+            
         schemaManager().dropIndexes(session, indexes);
         // TODO: checkCursorsForDDLModification ?
     }

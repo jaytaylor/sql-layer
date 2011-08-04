@@ -31,29 +31,36 @@ public class MySQLTarget extends Target
 {
     // Target interface
 
-    public void deleteAll() throws Exception
-    {
-        Statement stmt = connection.createStatement();
-        stmt.executeUpdate(MetaModel.only().definition(type).cleanupQuery());
-        stmt.executeUpdate(MetaModel.only().definition(group).cleanupQuery());
-        stmt.executeUpdate(MetaModel.only().definition(table).cleanupQuery());
-        stmt.executeUpdate(MetaModel.only().definition(column).cleanupQuery());
-        stmt.executeUpdate(MetaModel.only().definition(join).cleanupQuery());
-        stmt.executeUpdate(MetaModel.only().definition(joinColumn).cleanupQuery());
-        stmt.executeUpdate(MetaModel.only().definition(index).cleanupQuery());
-        stmt.executeUpdate(MetaModel.only().definition(indexColumn).cleanupQuery());
-        stmt.close();
+    public void deleteAll() {
+        try {
+            Statement stmt = connection.createStatement();
+            stmt.executeUpdate(MetaModel.only().definition(type).cleanupQuery());
+            stmt.executeUpdate(MetaModel.only().definition(group).cleanupQuery());
+            stmt.executeUpdate(MetaModel.only().definition(table).cleanupQuery());
+            stmt.executeUpdate(MetaModel.only().definition(column).cleanupQuery());
+            stmt.executeUpdate(MetaModel.only().definition(join).cleanupQuery());
+            stmt.executeUpdate(MetaModel.only().definition(joinColumn).cleanupQuery());
+            stmt.executeUpdate(MetaModel.only().definition(index).cleanupQuery());
+            stmt.executeUpdate(MetaModel.only().definition(indexColumn).cleanupQuery());
+            stmt.close();
+        } catch (SQLException ex) {
+            
+        }
     }
 
     @Override
-    public void writeCount(int count) throws Exception
+    public void writeCount(int count)
     {
     }
 
-    public void close() throws SQLException
+    public void close()
     {
+        try {
         connection.commit();
         connection.close();
+        } catch (SQLException ex) {
+            
+        }
     }
 
     // MySQLTarget interface
@@ -80,7 +87,7 @@ public class MySQLTarget extends Target
         // don't write the version number, we have no place to put it. 
     }
     
-    public void writeType(Map<String, Object> map) throws Exception
+    public void writeType(Map<String, Object> map)
     {
         // Don't write the Types table
     }
@@ -88,29 +95,34 @@ public class MySQLTarget extends Target
     // For use by this class
 
     @Override
-    protected final void write(String typename, Map<String, Object> map) throws Exception
+    protected final void write(String typename, Map<String, Object> map)
     {
+        int updateCount= 0;
         ModelObject modelObject = MetaModel.only().definition(typename);
-        PreparedStatement stmt = connection.prepareStatement(modelObject.writeQuery());
-        int c = 0;
-        for (ModelObject.Attribute attribute : modelObject.attributes()) {
-            c++;
-            switch (attribute.type()) {
-                case INTEGER:
-                    bind(stmt, c, (Integer) map.get(attribute.name()));
-                    break;
-                case LONG:
-                    bind(stmt, c, (Long) map.get(attribute.name()));
-                    break;
-                case STRING:
-                    bind(stmt, c, (String) map.get(attribute.name()));
-                    break;
-                case BOOLEAN:
-                    bind(stmt, c, (Boolean) map.get(attribute.name()));
-                    break;
+        try {
+            PreparedStatement stmt = connection.prepareStatement(modelObject.writeQuery());
+            int c = 0;
+            for (ModelObject.Attribute attribute : modelObject.attributes()) {
+                c++;
+                switch (attribute.type()) {
+                    case INTEGER:
+                        bind(stmt, c, (Integer) map.get(attribute.name()));
+                        break;
+                    case LONG:
+                        bind(stmt, c, (Long) map.get(attribute.name()));
+                        break;
+                    case STRING:
+                        bind(stmt, c, (String) map.get(attribute.name()));
+                        break;
+                    case BOOLEAN:
+                        bind(stmt, c, (Boolean) map.get(attribute.name()));
+                        break;
+                }
             }
+            updateCount = stmt.executeUpdate();
+        } catch (SQLException ex) {
+            
         }
-        int updateCount = stmt.executeUpdate();
         assert updateCount == 1;
     }
 

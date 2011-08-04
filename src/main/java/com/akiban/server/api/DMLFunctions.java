@@ -42,6 +42,7 @@ import com.akiban.server.error.TableDefinitionChangedException;
 import com.akiban.server.error.TableDefinitionMismatchException;
 import com.akiban.server.error.UnsupportedModificationException;
 import com.akiban.server.service.session.Session;
+import com.persistit.exception.PersistitException;
 
 @SuppressWarnings("unused")
 public interface DMLFunctions {
@@ -51,6 +52,7 @@ public interface DMLFunctions {
      * @param tableId the table for which to get (and possibly update) statistics
      * @param updateFirst whether to update the statistics before returning them
      * @return the table's statistics
+     * @throws Exception 
      * @throws NullPointerException if tableId is null
      */
     TableStatistics getTableStatistics(Session session, int tableId, boolean updateFirst);
@@ -63,6 +65,7 @@ public interface DMLFunctions {
      * @param session the context in which this cursor is opened
      * @param request the request specifications
      * @return a handle to the newly created cursor.
+     * @throws Exception 
      * @throws NullPointerException if the request is null
      */
     CursorId openCursor(Session session, int knownAIS, ScanRequest request);
@@ -104,6 +107,7 @@ public interface DMLFunctions {
      * @return whether more rows remain to be scanned
      * @throws NullPointerException if cursorId or output are null
      * @throws BufferFullException if the output buffer couldn't fit the rows
+
      */
     void scanSome(Session session, CursorId cursorId, LegacyRowOutput output)
     throws  BufferFullException;
@@ -147,6 +151,7 @@ public interface DMLFunctions {
      * @param session the context in which the cursor was opened
      * @param output the RowOutput to collect the given rows
      * @return whether more rows remain to be scanned
+     * @throws Exception 
      * @throws NullPointerException if cursorId or output are null
      */
     void scanSome(Session session, CursorId cursorId, RowOutput output);
@@ -213,6 +218,8 @@ public interface DMLFunctions {
      * will always return <tt>null</tt>. This is expected to change in the nearish future.</p>
      * @param row the row to write
      * @return the generated autoincrement value, or <tt>null</tt> if none was generated
+     * @throws PersistitException 
+     * @throws Exception 
      * @throws NullPointerException if the given tableId or row are null
      */
     Long writeRow(Session session, NewRow row);
@@ -220,6 +227,8 @@ public interface DMLFunctions {
     /**
      * <p>Deletes a row, possibly cascading the deletion to its children rows.</p>
      * @param row the row to delete
+     * @throws PersistitException 
+     * @throws Exception 
      * @throws NullPointerException if either the given table ID or row are null
      */
     void deleteRow(Session session, NewRow row);
@@ -229,6 +238,7 @@ public interface DMLFunctions {
      * @param oldRow the row to update
      * @param newRow the row's new values
      * @param columnSelector specifies which columns are being updated
+     * @throws Exception 
      * @throws NullPointerException if any of the arguments are <tt>null</tt>
      */
     void updateRow(Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector);
@@ -243,8 +253,8 @@ public interface DMLFunctions {
      * relationship is CASCADE; it will not delete rows in those tables based on their existence in the parent table.
      * In particular, this means that orphan rows will also be deleted,</p>
      * @param tableId the table to truncate
+     * @throws Exception 
      * @throws NullPointerException if the given tableId is null
      */
     void truncateTable(Session session, int tableId);
-
 }

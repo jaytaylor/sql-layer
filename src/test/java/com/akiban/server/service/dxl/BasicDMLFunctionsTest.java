@@ -16,7 +16,6 @@
 package com.akiban.server.service.dxl;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -82,7 +81,7 @@ public final class BasicDMLFunctionsTest {
         }
 
         @Override
-        public RowData collectNextRow() throws Exception
+        public RowData collectNextRow()
         {
             Assert.fail();
             return null;

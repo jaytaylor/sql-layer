@@ -50,7 +50,7 @@ public class AISMerge {
      * @param newTable - UserTable to merge into the primaryAIS
      * @throws Exception
      */
-    public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) throws Exception {
+    public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) {
         targetAIS = new AkibanInformationSchema();
         new Writer(new AISTarget(targetAIS)).save(primaryAIS);
         

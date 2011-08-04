@@ -15,8 +15,6 @@
 
 package com.akiban.server.service.dxl;
 
-import com.akiban.ais.io.AISTarget;
-import com.akiban.ais.io.TableSubsetWriter;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
@@ -64,7 +62,7 @@ class DXLMXBeanImpl implements DXLMXBean {
         usingSchema.set(schema);
     }
 
-    public void createTable(String schema, String ddl) {
+    public void createTable(String schema, String ddl) throws Exception {
         Session session = ServiceManagerImpl.newSession();
         try {
             dxlService.ddlFunctions().createTable(session, schema, ddl);
@@ -76,7 +74,7 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     @Override
-    public void createTable(String ddl) {
+    public void createTable(String ddl) throws Exception {
         createTable(usingSchema.get(), ddl);
     }
 
@@ -106,7 +104,7 @@ class DXLMXBeanImpl implements DXLMXBean {
         }
     }
 
-    public void dropTable(String schema, String tableName) {
+    public void dropTable(String schema, String tableName) throws Exception {
         Session session = ServiceManagerImpl.newSession();
         try {
             dxlService.ddlFunctions().dropTable(session, new TableName(schema, tableName));
@@ -118,12 +116,12 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     @Override
-    public void dropTable(String tableName) {
+    public void dropTable(String tableName) throws Exception {
         dropTable(usingSchema.get(), tableName);
     }
 
     @Override
-    public void dropGroupIndex(String groupName, String indexName) {
+    public void dropGroupIndex(String groupName, String indexName) throws Exception {
         Session session = ServiceManagerImpl.newSession();
         try {
             dxlService.ddlFunctions().dropGroupIndexes(session, groupName, Collections.singleton(indexName));
@@ -135,7 +133,7 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     @Override
-    public void dropGroupBySchema(String schemaName)
+    public void dropGroupBySchema(String schemaName) throws Exception
     {
         final Session session = ServiceManagerImpl.newSession();
         try {
@@ -156,7 +154,7 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     @Override
-    public void dropGroup(String groupName) {
+    public void dropGroup(String groupName) throws Exception {
         Session session = ServiceManagerImpl.newSession();
         try {
             dxlService.ddlFunctions().dropGroup(session, groupName);
@@ -168,7 +166,7 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     @Override
-    public void dropAllGroups() {
+    public void dropAllGroups() throws Exception {
         Session session = ServiceManagerImpl.newSession();
         try {
             for(String groupName : dxlService.ddlFunctions().getAIS(session).getGroups().keySet()) {
@@ -233,7 +231,7 @@ class DXLMXBeanImpl implements DXLMXBean {
         }
     }
 
-    public void writeRow(String schema, String table, String fields) {
+    public void writeRow(String schema, String table, String fields) throws Exception {
         final Session session = ServiceManagerImpl.newSession();
         try {
             int tableId = dxlService.ddlFunctions().getTableId(session, new TableName(schema, table));
@@ -254,7 +252,7 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     @Override
-    public void writeRow(String table, String fields) {
+    public void writeRow(String table, String fields) throws Exception {
         writeRow(usingSchema.get(), table, fields);
     }
 

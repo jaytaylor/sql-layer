@@ -22,10 +22,11 @@ import java.util.List;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
-import com.akiban.server.api.ddl.IndexAlterException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.NoSuchIndexException;
+import com.akiban.server.error.ProtectedIndexException;
 
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
@@ -53,19 +54,19 @@ public final class DropIndexesIT extends ITBase {
         ddl().dropTableIndexes(session(), tableName("test", "bar"), Arrays.asList("bar"));
     }
     
-    @Test(expected=IndexAlterException.class)
+    @Test(expected=NoSuchIndexException.class)
     public void unknownIndex() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key, name varchar(255)");
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
     }
 
-    @Test(expected=IndexAlterException.class)
+    @Test(expected=ProtectedIndexException.class)
     public void hiddenPrimaryKey() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int, name varchar(255)");
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("PRIMARY"));
     }
     
-    @Test(expected=IndexAlterException.class)
+    @Test(expected=ProtectedIndexException.class)
     public void declaredPrimaryKey() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key, name varchar(255)");
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("PRIMARY"));
