@@ -31,8 +31,20 @@ public final class WrappingByteSourceTest {
     }
 
     @Test
+    public void simpleWrap() {
+        byte[] bytes = new byte[10];
+        check(wrap(bytes), bytes, 0, 10);
+    }
+
+    @Test
     public void offsetAndLengthZero() {
         byte[] bytes = new byte[10];
+        check(wrap(bytes, 0, 0), bytes, 0, 0);
+    }
+
+    @Test
+    public void offsetSizeAndLengthZero() {
+        byte[] bytes = new byte[0];
         check(wrap(bytes, 0, 0), bytes, 0, 0);
     }
 
@@ -85,6 +97,10 @@ public final class WrappingByteSourceTest {
 
     private static String stringify(byte[] bytes) {
         return Arrays.toString(bytes);
+    }
+
+    private static WrappingByteSource wrap(byte[] bytes) {
+        return new WrappingByteSource().wrap(bytes);
     }
 
     private static WrappingByteSource wrap(byte[] bytes, int offset, int length) {

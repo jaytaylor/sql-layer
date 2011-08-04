@@ -13,32 +13,17 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server;
+package com.akiban.util;
 
-import com.persistit.Key;
+import org.junit.Test;
 
-abstract class PersistitKeyConversionBase {
+import static org.junit.Assert.assertTrue;
 
-    // PersistitKeyConversionBase interface
-
-    public final void attach(Key key) {
-        this.key = key;
+public final class EqualityTest {
+    @Test
+    public void equalArrays() {
+        int[] intArrayOne = new int[] { 1, 2, 5 }; // 3, sir!
+        int[] intArrayTwo = new int[] { 1, 2, 5 };
+        assertTrue("int[] should have been equal", Equality.areEqual(intArrayOne, intArrayTwo));
     }
-
-    // object interface
-
-    @Override
-    public String toString() {
-        return key().toString();
-    }
-
-    // for use by subclasses
-
-    protected final Key key() {
-        return key;
-    }
-
-    // object state
-
-    private Key key;
 }

@@ -15,15 +15,19 @@
 
 package com.akiban.server.test.it.rowtests;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
+import com.akiban.server.PersistitKeyConversionSource;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.store.IndexVisitor;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.types.ToObjectConversionTarget;
+import com.akiban.util.Equality;
 import com.persistit.Key;
 import com.persistit.Value;
 import junit.framework.Assert;
@@ -69,12 +73,24 @@ public class KeyToObjectIT extends ITBase {
 
                 final NewRow row = rowIt.next();
                 key.indexTo(0);
+
+                PersistitKeyConversionSource conversionSource = new PersistitKeyConversionSource();
+                ToObjectConversionTarget conversionTarget = new ToObjectConversionTarget();
                 
                 for(IndexColumn indexColumn : index.getColumns()) {
-                    int colPos = indexColumn.getColumn().getPosition();
+                    Column column = indexColumn.getColumn();
+                    int colPos = column.getPosition();
                     FieldDef fieldDef = rowDef.getFieldDef(colPos);
                     Object objFromRow = row.get(colPos);
                     Object objFromKey = fieldDef.getEncoding().toObject(key);
+                    conversionSource.attach(key, 0);
+                    try {
+                        column.getType().akType().convert(conversionSource, conversionTarget);
+                    } catch (Exception e) {
+                        throw new RuntimeException("with AkType." + column.getType().akType(), e);
+                    }
+                    Equality.areEqual(objFromKey, conversionTarget.lastConvertedValue());
+
                     // Work around for dropping of 0 value sigfigs from key.decode()
                     int compareValue = 1;
                     if(objFromRow instanceof BigDecimal && objFromKey instanceof BigDecimal) {

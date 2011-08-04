@@ -16,10 +16,23 @@
 package com.akiban.util;
 
 public final class WrappingByteSource implements ByteSource {
+
     // WrappingByteSource interface
+
+    public WrappingByteSource wrap(byte[] bytes) {
+        return wrap(bytes, 0, bytes.length);
+    }
 
     public WrappingByteSource wrap(byte[] bytes, int offset, int length) {
         ArgumentValidation.notNull("byte array", bytes);
+        if (bytes.length == 0) {
+            ArgumentValidation.isEQ("length on wrapped byte[0]", length, 0);
+            ArgumentValidation.isEQ("offset on wrapped byte[0]", offset, 0);
+            this.bytes = bytes;
+            this.offset = 0;
+            this.length = 0;
+            return this;
+        }
         if (offset < 0 || offset >= bytes.length) {
             throw new IllegalArgumentException("offset must be between 0 and bytes.length (" + bytes.length + ')');
         }
