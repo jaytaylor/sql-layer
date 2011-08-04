@@ -75,12 +75,13 @@ class AncestorLookup_Default extends PhysicalOperator
                                   GroupTable groupTable,
                                   RowType rowType,
                                   Collection<? extends RowType> ancestorTypes,
-                                  boolean keepInput)
+                                  API.LookupOption flag)
     {
         ArgumentValidation.notEmpty("ancestorTypes", ancestorTypes);
         // Keeping index rows not currently supported
         boolean inputFromIndex = rowType instanceof IndexRowType;
-        ArgumentValidation.isTrue("!(keepInput && inputFromIndex)", !(keepInput && inputFromIndex));
+        ArgumentValidation.isTrue("!inputFromIndex || flag == API.LookupOption.DISCARD_INPUT",
+                                  !inputFromIndex || flag == API.LookupOption.DISCARD_INPUT);
         RowType tableRowType =
             inputFromIndex
             ? ((IndexRowType) rowType).tableType()
@@ -98,7 +99,7 @@ class AncestorLookup_Default extends PhysicalOperator
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
         this.rowType = rowType;
-        this.keepInput = keepInput;
+        this.keepInput = flag == API.LookupOption.KEEP_INPUT;
         // Sort ancestor types by depth
         this.ancestorTypes = new ArrayList<RowType>(ancestorTypes);
         if (this.ancestorTypes.size() > 1) {

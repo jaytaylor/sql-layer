@@ -15,10 +15,13 @@
 
 package com.akiban.qp.rowtype;
 
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ProductRowType extends DerivedRowType
 {
@@ -56,18 +59,33 @@ public class ProductRowType extends DerivedRowType
         return rightType;
     }
 
-    public ProductRowType(Schema schema, int typeId, RowType branchType, RowType leftType, RowType rightType)
+    public ProductRowType(Schema schema, int typeId, RowType leftType, RowType rightType)
     {
         super(schema, typeId);
-        assert branchType.schema() == schema : branchType;
         assert leftType.schema() == schema : leftType;
         assert rightType.schema() == schema : rightType;
-        this.branchType = branchType;
+        this.branchType = leafmostCommonType(leftType, rightType);
         this.leftType = leftType;
         this.rightType = rightType;
         List<UserTable> tables = new ArrayList<UserTable>(leftType.typeComposition().tables());
         tables.addAll(rightType.typeComposition().tables());
         typeComposition(new TypeComposition(this, tables));
+    }
+
+    // For use by this class
+
+    private static RowType leafmostCommonType(RowType leftType, RowType rightType)
+    {
+        Set<UserTable> common = new HashSet<UserTable>(leftType.typeComposition().tables());
+        common.retainAll(rightType.typeComposition().tables());
+        UserTable leafmostCommon = null;
+        for (UserTable table : common) {
+            if (leafmostCommon == null || table.getDepth() > leafmostCommon.getDepth()) {
+                leafmostCommon = table;
+            }
+        }
+        assert leafmostCommon != null : String.format("leftType: %s, rightType: %s", leftType, rightType);
+        return leftType.schema().userTableRowType(leafmostCommon);
     }
 
     // Object state

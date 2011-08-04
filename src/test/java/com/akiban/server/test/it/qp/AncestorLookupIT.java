@@ -71,7 +71,7 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
                                coi,
                                customerRowType,
                                list(),
-                               true);
+                               LookupOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -81,7 +81,7 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
                                coi,
                                customerRowType,
                                list(itemRowType),
-                               true);
+                               LookupOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -91,7 +91,7 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
                                coi,
                                customerRowType,
                                list(customerRowType),
-                               true);
+                               LookupOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -101,7 +101,7 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
                                coi,
                                customerNameIndexRowType,
                                list(customerRowType),
-                               true);
+                               LookupOption.KEEP_INPUT);
     }
 
     // Test ancestor lookup given index row
@@ -358,7 +358,7 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
                  coi,
                  itemIidIndexRowType,
                  list(rowTypes),
-                 false);
+                 LookupOption.DISCARD_INPUT);
     }
 
     private PhysicalOperator groupRowToAncestorPlan(int iid, boolean keepInput, RowType ... rowTypes)
@@ -370,11 +370,11 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
                                 coi,
                                 itemIidIndexRowType,
                                 itemRowType,
-                                false),
+                                LookupOption.DISCARD_INPUT),
                  coi,
                  itemRowType,
                  list(rowTypes),
-                 keepInput);
+                 keepInput ? LookupOption.KEEP_INPUT : LookupOption.DISCARD_INPUT);
     }
 
     private IndexKeyRange itemIidEQ(int iid)

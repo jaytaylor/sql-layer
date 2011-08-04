@@ -103,28 +103,28 @@ public class API
                                                         GroupTable groupTable,
                                                         RowType inputRowType,
                                                         RowType outputRowType,
-                                                        boolean keepInput)
+                                                        LookupOption flag)
     {
-        return branchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, keepInput, NO_LIMIT);
+        return branchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, flag, NO_LIMIT);
     }
 
     public static PhysicalOperator branchLookup_Default(PhysicalOperator inputOperator,
                                                         GroupTable groupTable,
                                                         RowType inputRowType,
                                                         RowType outputRowType,
-                                                        boolean keepInput,
+                                                        LookupOption flag,
                                                         Limit limit)
     {
-        return new BranchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, keepInput, limit);
+        return new BranchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, flag, limit);
     }
 
     public static PhysicalOperator branchLookup_Nested(GroupTable groupTable,
                                                        RowType inputRowType,
                                                        RowType outputRowType,
-                                                       boolean keepInput,
+                                                       LookupOption flag,
                                                        int inputBindingPosition)
     {
-        return new BranchLookup_Nested(groupTable, inputRowType, outputRowType, keepInput, inputBindingPosition);
+        return new BranchLookup_Nested(groupTable, inputRowType, outputRowType, flag, inputBindingPosition);
     }
 
     // Limit
@@ -140,9 +140,9 @@ public class API
                                                           GroupTable groupTable,
                                                           RowType rowType,
                                                           Collection<? extends RowType> ancestorTypes,
-                                                          boolean keepInput)
+                                                          LookupOption flag)
     {
-        return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, keepInput);
+        return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, flag);
     }
 
     public static PhysicalOperator ancestorLookup_Nested(GroupTable groupTable,
@@ -200,12 +200,11 @@ public class API
 
     public static PhysicalOperator product_NestedLoops(PhysicalOperator outerInput,
                                                        PhysicalOperator innerInput,
-                                                       RowType branchType,
                                                        RowType outerType,
                                                        RowType innerType,
                                                        int hKeyBindingPosition)
     {
-        return new Product_NestedLoops(outerInput, innerInput, branchType, outerType, innerType, hKeyBindingPosition);
+        return new Product_NestedLoops(outerInput, innerInput, outerType, innerType, hKeyBindingPosition);
     }
 
     // Cut
@@ -239,6 +238,7 @@ public class API
     // Options
 
     // Flattening flags
+
     public static enum JoinType {
         INNER_JOIN,
         LEFT_JOIN,
@@ -250,6 +250,13 @@ public class API
         KEEP_PARENT,
         KEEP_CHILD,
         LEFT_JOIN_SHORTENS_HKEY
+    }
+
+    // Lookup flags
+
+    public static enum LookupOption {
+        KEEP_INPUT,
+        DISCARD_INPUT
     }
 
     // Class state

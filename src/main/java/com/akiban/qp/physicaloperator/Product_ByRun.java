@@ -85,18 +85,7 @@ class Product_ByRun extends PhysicalOperator
         this.inputOperator = inputOperator;
         this.leftType = leftType;
         this.rightType = rightType;
-        // Figure out the branch type. TODO: do this for Product_NestedLoops too?
-        Set<UserTable> common = new HashSet<UserTable>(leftType.typeComposition().tables());
-        common.retainAll(rightType.typeComposition().tables());
-        UserTable leafmostCommon = null;
-        for (UserTable table : common) {
-            if (leafmostCommon == null || table.getDepth() > leafmostCommon.getDepth()) {
-                leafmostCommon = table;
-            }
-        }
-        Schema schema = leftType.schema();
-        UserTableRowType branchType = schema.userTableRowType(leafmostCommon);
-        this.productType = schema.newProductType(branchType, leftType, rightType);
+        this.productType = leftType.schema().newProductType(leftType, rightType);
     }
 
     // Object state

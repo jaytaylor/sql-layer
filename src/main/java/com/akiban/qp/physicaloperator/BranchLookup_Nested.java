@@ -69,15 +69,15 @@ public class BranchLookup_Nested extends PhysicalOperator
     public BranchLookup_Nested(GroupTable groupTable,
                                RowType inputRowType,
                                RowType outputRowType,
-                               boolean keepInput,
+                               API.LookupOption flag,
                                int inputBindingPosition)
     {
         ArgumentValidation.notNull("inputRowType", inputRowType);
         ArgumentValidation.notNull("outputRowType", outputRowType);
         ArgumentValidation.isTrue("inputRowType instanceof IndexRowType || outputRowType != inputRowType",
                                   inputRowType instanceof IndexRowType || outputRowType != inputRowType);
-        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || !keepInput",
-                                  inputRowType instanceof UserTableRowType || !keepInput);
+        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT",
+                                  inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT);
         ArgumentValidation.isGTE("hKeyBindingPosition", inputBindingPosition, 0);
         UserTableRowType inputTableType = null;
         if (inputRowType instanceof UserTableRowType) {
@@ -95,7 +95,7 @@ public class BranchLookup_Nested extends PhysicalOperator
         this.groupTable = groupTable;
         this.inputRowType = inputRowType;
         this.outputRowType = outputRowType;
-        this.keepInput = keepInput;
+        this.keepInput = flag == API.LookupOption.KEEP_INPUT;
         this.inputBindingPosition = inputBindingPosition;
         UserTable commonAncestor = commonAncestor(inputTable, outputTable);
         this.commonSegments = commonAncestor.getDepth() + 1;

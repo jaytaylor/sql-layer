@@ -285,7 +285,7 @@ public class OperatorCompiler
                 if (descendantUsed) {
                     resultOperator = branchLookup_Default(resultOperator, groupTable,
                                                           indexRowType, tableType, 
-                                                          false);
+                                                          LookupOption.DISCARD_INPUT);
                     ancestorInputType = tableType; // Index no longer in stream.
                     ancestorInputKept = tableUsed;
                     needFilter = true; // Might be other descendants, too.
@@ -346,7 +346,7 @@ public class OperatorCompiler
                     resultOperator = ancestorLookup_Default(resultOperator, groupTable,
                                                             ancestorInputType, 
                                                             addAncestorTypes, 
-                                                            ancestorInputKept);
+                                                            ancestorInputKept ? LookupOption.KEEP_INPUT : LookupOption.DISCARD_INPUT);
                     resultOperator = maybeAddTableConditions(resultOperator,
                                                              squery, addAncestors);
                 }
@@ -354,7 +354,7 @@ public class OperatorCompiler
                     resultOperator = branchLookup_Default(resultOperator, groupTable,
                                                           branchInputType, 
                                                           tableRowType(branchTable), 
-                                                          true);
+                                                          LookupOption.KEEP_INPUT);
                     resultOperator = maybeAddTableConditions(resultOperator,
                                                              squery, 
                                                              branchTable.subtree());
@@ -517,7 +517,7 @@ public class OperatorCompiler
                                                index.getIndexKeyRange());
             List<RowType> ancestors = Collections.<RowType>singletonList(targetRowType);
             resultOperator = ancestorLookup_Default(resultOperator, groupTable,
-                                                    indexRowType, ancestors, false);
+                                                    indexRowType, ancestors, LookupOption.DISCARD_INPUT);
         }
         else {
             resultOperator = groupScan_Default(groupTable);

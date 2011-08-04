@@ -76,7 +76,7 @@ public class ProductRow extends AbstractRow
         this.nLeftFields = rowType.leftType().nFields();
         this.firstRightFieldOffset = nLeftFields - rowType.branchType().nFields();
         if (left != null && right != null) {
-            // assert left.runId() == right.runId();
+            assert left.runId() == right.runId();
         }
         super.runId(left == null ? right.runId() : left.runId());
     }

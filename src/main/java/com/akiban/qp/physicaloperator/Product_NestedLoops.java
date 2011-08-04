@@ -78,23 +78,21 @@ class Product_NestedLoops extends PhysicalOperator
 
     public Product_NestedLoops(PhysicalOperator outerInputOperator,
                                PhysicalOperator innerInputOperator,
-                               RowType branchType,
                                RowType outerType,
                                RowType innerType,
                                int inputBindingPosition)
     {
         ArgumentValidation.notNull("outerInputOperator", outerInputOperator);
         ArgumentValidation.notNull("innerInputOperator", innerInputOperator);
-        ArgumentValidation.notNull("branchType", branchType);
         ArgumentValidation.notNull("outerType", outerType);
         ArgumentValidation.notNull("innerType", innerType);
         ArgumentValidation.isGTE("inputBindingPosition", inputBindingPosition, 0);
         this.outerInputOperator = outerInputOperator;
         this.innerInputOperator = innerInputOperator;
-        this.branchType = branchType;
         this.outerType = outerType;
         this.innerType = innerType;
-        this.productType = branchType.schema().newProductType(branchType, outerType, innerType);
+        this.productType = outerType.schema().newProductType(outerType, innerType);
+        this.branchType = productType.branchType();
         this.inputBindingPosition = inputBindingPosition;
     }
 

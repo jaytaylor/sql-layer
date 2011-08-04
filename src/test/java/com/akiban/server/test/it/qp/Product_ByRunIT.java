@@ -34,7 +34,7 @@ import static com.akiban.qp.physicaloperator.API.JoinType.*;
 import static com.akiban.qp.physicaloperator.API.FlattenOption.*;
 import static org.junit.Assert.assertTrue;
 
-public class ProductIT extends PhysicalOperatorITBase
+public class Product_ByRunIT extends PhysicalOperatorITBase
 {
     @Before
     public void before()
@@ -133,7 +133,7 @@ public class ProductIT extends PhysicalOperatorITBase
                     coi,
                     customerNameIndexRowType,
                     customerRowType,
-                    false),
+                    LookupOption.DISCARD_INPUT),
                 customerRowType,
                 orderRowType,
                 INNER_JOIN,
@@ -158,7 +158,7 @@ public class ProductIT extends PhysicalOperatorITBase
                         coi,
                         customerNameIndexRowType,
                         customerRowType,
-                        false),
+                        LookupOption.DISCARD_INPUT),
                     removeDescendentTypes(orderRowType)),
                 customerRowType,
                 orderRowType,
@@ -196,7 +196,7 @@ public class ProductIT extends PhysicalOperatorITBase
                         coi,
                         orderSalesmanIndexRowType,
                         customerRowType,
-                        false),
+                        LookupOption.DISCARD_INPUT),
                     removeDescendentTypes(orderRowType)),
                 customerRowType,
                 orderRowType,
@@ -228,66 +228,6 @@ public class ProductIT extends PhysicalOperatorITBase
         };
         compareRows(expected, cursor);
     }
-
-    // Product_NestedLoops
-
-    @Test
-    public void testProductNestedAfterIndexScanOfRoot()
-    {
-        PhysicalOperator flattenCO =
-            flatten_HKeyOrdered(
-                filter_Default(
-                    branchLookup_Default(
-                        ancestorLookup_Default(
-                            indexScan_Default(customerNameIndexRowType, false, null),
-                            coi,
-                            customerNameIndexRowType,
-                            Collections.singleton(customerRowType),
-                            false),
-                        coi,
-                        customerRowType,
-                        orderRowType,
-                        true),
-                    Arrays.asList(customerRowType, orderRowType)),
-                customerRowType,
-                orderRowType,
-                INNER_JOIN,
-                KEEP_PARENT);
-        PhysicalOperator flattenCA =
-            flatten_HKeyOrdered(
-                branchLookup_Nested(
-                    coi,
-                    customerRowType,
-                    addressRowType,
-                    true,
-                    0),
-                customerRowType,
-                addressRowType,
-                INNER_JOIN);
-        PhysicalOperator plan = product_NestedLoops(flattenCO,
-                                                    flattenCA,
-                                                    customerRowType,
-                                                    flattenCO.rowType(),
-                                                    flattenCA.rowType(),
-                                                    0);
-        dumpToAssertion(plan);
-/*
-        RowType coaRowType = plan.rowType();
-        Cursor cursor = cursor(plan, adapter);
-        RowBase[] expected = new RowBase[]{
-            row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2L, "foundation", 2000L, 2L, "222 2000 st"),
-            row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2L, "foundation", 2000L, 2L, "222 2000 st"),
-            row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3L, "matrix", 3000L, 3L, "333 3000 st"),
-            row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3L, "matrix", 3001L, 3L, "333 3001 st"),
-            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1L, "northbridge", 1000L, 1L, "111 1000 st"),
-            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1L, "northbridge", 1000L, 1L, "111 1000 st"),
-            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1L, "northbridge", 1001L, 1L, "111 1001 st"),
-            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1L, "northbridge", 1001L, 1L, "111 1001 st"),
-        };
-        compareRows(expected, cursor);
-*/
-    }
-
 
     // TODO: Test handling of rows whose type is not involved in product.
 

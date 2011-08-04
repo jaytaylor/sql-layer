@@ -78,7 +78,7 @@ public class BranchLookupIT extends PhysicalOperatorITBase
                 coi,
                 null,
                 customerRowType,
-                true);
+                LookupOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -88,7 +88,7 @@ public class BranchLookupIT extends PhysicalOperatorITBase
                 coi,
                 customerRowType,
                 null,
-                true);
+                LookupOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -98,7 +98,7 @@ public class BranchLookupIT extends PhysicalOperatorITBase
                 coi,
                 customerRowType,
                 customerRowType,
-                true);
+                LookupOption.KEEP_INPUT);
     }
 
     @Test
@@ -108,7 +108,7 @@ public class BranchLookupIT extends PhysicalOperatorITBase
                 coi,
                 customerNameIndexRowType,
                 customerRowType,
-                false);
+                LookupOption.DISCARD_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -118,7 +118,7 @@ public class BranchLookupIT extends PhysicalOperatorITBase
                 coi,
                 customerNameIndexRowType,
                 customerRowType,
-                true);
+                LookupOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -128,7 +128,7 @@ public class BranchLookupIT extends PhysicalOperatorITBase
                 coi,
                 addressRowType,
                 itemRowType,
-                true);
+                LookupOption.KEEP_INPUT);
     }
 
     @Test
@@ -138,7 +138,7 @@ public class BranchLookupIT extends PhysicalOperatorITBase
                 coi,
                 addressRowType,
                 orderRowType,
-                true);
+                LookupOption.KEEP_INPUT);
     }
 
     // customer index -> customer + descendents
@@ -328,7 +328,11 @@ public class BranchLookupIT extends PhysicalOperatorITBase
     {
         PhysicalOperator addressIndexScan = indexScan_Default(addressAddressIndexRowType, false, null);
         Cursor addressIndexCursor = cursor(addressIndexScan, adapter);
-        PhysicalOperator nestedBranchLookup = branchLookup_Nested(coi, addressRowType, orderRowType, false, 0);
+        PhysicalOperator nestedBranchLookup = branchLookup_Nested(coi,
+                                                                  addressRowType,
+                                                                  orderRowType,
+                                                                  LookupOption.DISCARD_INPUT,
+                                                                  0);
         Cursor orderCursor = cursor(nestedBranchLookup, adapter);
         ArrayBindings bindings = new ArrayBindings(0);
         Row addressIndexRow;
@@ -355,7 +359,7 @@ public class BranchLookupIT extends PhysicalOperatorITBase
                 coi,
                 customerNameIndexRowType,
                 customerRowType,
-                false);
+                LookupOption.DISCARD_INPUT);
     }
 
     private PhysicalOperator addressAddressToCustomerPlan(String address)
@@ -366,7 +370,7 @@ public class BranchLookupIT extends PhysicalOperatorITBase
                 coi,
                 addressAddressIndexRowType,
                 customerRowType,
-                false);
+                LookupOption.DISCARD_INPUT);
     }
 
     private PhysicalOperator addressToCustomerPlan(String address)
@@ -378,11 +382,11 @@ public class BranchLookupIT extends PhysicalOperatorITBase
                         coi,
                         addressAddressIndexRowType,
                         addressRowType,
-                        false),
+                        LookupOption.DISCARD_INPUT),
                     coi,
                     addressRowType,
                     customerRowType,
-                    false);
+                    LookupOption.DISCARD_INPUT);
     }
 
     private PhysicalOperator addressToOrderPlan(String address, boolean keepInput)
@@ -394,11 +398,11 @@ public class BranchLookupIT extends PhysicalOperatorITBase
                     coi,
                     addressAddressIndexRowType,
                     Arrays.asList(addressRowType),
-                    false),
+                    LookupOption.DISCARD_INPUT),
                 coi,
                 addressRowType,
                 orderRowType,
-                keepInput);
+                keepInput ? LookupOption.KEEP_INPUT : LookupOption.DISCARD_INPUT);
     }
 
     private PhysicalOperator orderToAddressPlan(String salesman, boolean keepInput)
@@ -410,11 +414,11 @@ public class BranchLookupIT extends PhysicalOperatorITBase
                     coi,
                     orderSalesmanIndexRowType,
                     Arrays.asList(orderRowType),
-                    false),
+                    LookupOption.DISCARD_INPUT),
                 coi,
                 orderRowType,
                 addressRowType,
-                keepInput);
+                keepInput ? LookupOption.KEEP_INPUT : LookupOption.DISCARD_INPUT);
     }
 
     private PhysicalOperator itemToAddressPlan(long iid, boolean keepInput)
@@ -426,11 +430,11 @@ public class BranchLookupIT extends PhysicalOperatorITBase
                     coi,
                     itemIidIndexRowType,
                     Arrays.asList(itemRowType),
-                    false),
+                    LookupOption.DISCARD_INPUT),
                 coi,
                 itemRowType,
                 addressRowType,
-                keepInput);
+                keepInput ? LookupOption.KEEP_INPUT : LookupOption.DISCARD_INPUT);
     }
 
     private IndexKeyRange customerNameEQ(String name)
