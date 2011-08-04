@@ -15,7 +15,7 @@
 
 package com.akiban.server.service.memcache.hprocessor;
 
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.util.ArgumentValidation;
 

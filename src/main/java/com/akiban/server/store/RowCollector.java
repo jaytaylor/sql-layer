@@ -15,8 +15,8 @@
 
 package com.akiban.server.store;
 
-import com.akiban.server.IndexDef;
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.IndexDef;
+import com.akiban.server.rowdata.RowData;
 
 import java.nio.ByteBuffer;
 

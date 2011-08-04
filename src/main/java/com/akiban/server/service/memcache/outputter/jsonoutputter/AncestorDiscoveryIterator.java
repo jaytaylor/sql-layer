@@ -19,7 +19,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 
 import java.util.HashMap;
 import java.util.Iterator;

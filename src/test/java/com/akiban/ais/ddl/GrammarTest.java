@@ -18,8 +18,8 @@ package com.akiban.ais.ddl;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.RowDefCache;
-import com.akiban.server.SchemaFactory;
+import com.akiban.server.rowdata.RowDefCache;
+import com.akiban.server.rowdata.SchemaFactory;
 import org.junit.Test;
 
 import static junit.framework.Assert.*;

@@ -16,7 +16,7 @@
 package com.akiban.server.test.it.keyupdate;
 
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowDef;
 
 import java.util.ArrayList;
 import java.util.Iterator;

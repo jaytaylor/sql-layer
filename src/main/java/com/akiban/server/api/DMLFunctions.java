@@ -18,7 +18,7 @@ package com.akiban.server.api;
 import java.util.List;
 import java.util.Set;
 
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.ColumnSelector;

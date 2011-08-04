@@ -25,9 +25,8 @@ import static org.junit.Assert.assertFalse;
 import java.util.Iterator;
 import java.util.List;
 
+import com.akiban.server.rowdata.SchemaFactory;
 import org.junit.Test;
-
-import com.akiban.server.SchemaFactory;
 
 public class AISTest
 {
