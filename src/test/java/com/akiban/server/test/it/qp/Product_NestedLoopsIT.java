@@ -180,8 +180,7 @@ public class Product_NestedLoopsIT extends PhysicalOperatorITBase
                     LookupOption.DISCARD_INPUT),
                 customerRowType,
                 orderRowType,
-                INNER_JOIN,
-                KEEP_PARENT);
+                INNER_JOIN);
         PhysicalOperator flattenCA =
             flatten_HKeyOrdered(
                 branchLookup_Nested(coi, customerRowType, addressRowType, LookupOption.KEEP_INPUT, 0),
@@ -193,13 +192,7 @@ public class Product_NestedLoopsIT extends PhysicalOperatorITBase
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
-            row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
             row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2000L, 2L, "222 2000 st"),
-            row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2000L, 2L, "222 2000 st"),
-            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1000L, 1L, "111 1000 st"),
-            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1001L, 1L, "111 1001 st"),
-            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1000L, 1L, "111 1000 st"),
-            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1001L, 1L, "111 1001 st"),
             row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1000L, 1L, "111 1000 st"),
             row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1001L, 1L, "111 1001 st"),
             row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1000L, 1L, "111 1000 st"),

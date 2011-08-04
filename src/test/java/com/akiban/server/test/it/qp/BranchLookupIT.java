@@ -321,34 +321,6 @@ public class BranchLookupIT extends PhysicalOperatorITBase
         compareRows(expected, cursor);
     }
 
-    // BranchLookup_Nested
-
-    @Test
-    public void testNested()
-    {
-        PhysicalOperator addressIndexScan = indexScan_Default(addressAddressIndexRowType, false, null);
-        Cursor addressIndexCursor = cursor(addressIndexScan, adapter);
-        PhysicalOperator nestedBranchLookup = branchLookup_Nested(coi,
-                                                                  addressRowType,
-                                                                  orderRowType,
-                                                                  LookupOption.DISCARD_INPUT,
-                                                                  0);
-        Cursor orderCursor = cursor(nestedBranchLookup, adapter);
-        ArrayBindings bindings = new ArrayBindings(0);
-        Row addressIndexRow;
-        addressIndexCursor.open(bindings);
-        while ((addressIndexRow = addressIndexCursor.next()) != null) {
-            HKey addressHKey = addressIndexRow.hKey();
-            System.out.println(String.format("addressHKey: %s", addressHKey));
-            bindings.set(0, addressHKey);
-            orderCursor.open(bindings);
-            Row orderRow;
-            while ((orderRow = orderCursor.next()) != null) {
-                System.out.println(String.format("    %s", orderRow));
-            }
-        }
-    }
-
     // For use by this class
 
     private PhysicalOperator customerNameToCustomerPlan(String customerName)

@@ -66,6 +66,24 @@ public class ProductRow extends AbstractRow
         return null;
     }
 
+    @Override
+    public Row subRow(RowType subRowType)
+    {
+        Row subRow;
+        if (subRowType == rowType.leftType()) {
+            subRow = left.get();
+        } else if (subRowType == rowType.rightType()) {
+            subRow = right.get();
+        } else {
+            // If the subRowType doesn't match leftType or rightType, then it be buried deeper.
+            subRow = left.get().subRow(subRowType);
+            if (subRow == null) {
+                subRow = right.get().subRow(subRowType);
+            }
+        }
+        return subRow;
+    }
+
     // ProductRow interface
 
     public ProductRow(ProductRowType rowType, Row left, Row right)
@@ -76,7 +94,7 @@ public class ProductRow extends AbstractRow
         this.nLeftFields = rowType.leftType().nFields();
         this.firstRightFieldOffset = nLeftFields - rowType.branchType().nFields();
         if (left != null && right != null) {
-            assert left.runId() == right.runId();
+            // assert left.runId() == right.runId();
         }
         super.runId(left == null ? right.runId() : left.runId());
     }

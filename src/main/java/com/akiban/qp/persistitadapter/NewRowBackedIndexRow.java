@@ -18,6 +18,7 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.HKey;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.FieldDef;
@@ -77,6 +78,14 @@ public class NewRowBackedIndexRow implements RowBase
     public void runId(int runId) {
         this.runId  = runId;
     }
+
+    @Override
+    public Row subRow(RowType subRowType)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    // Object state
 
     private int runId = RowBase.UNDEFINED_RUN_ID;
     private final NewRow row;

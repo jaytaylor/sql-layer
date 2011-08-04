@@ -322,32 +322,6 @@ public class AncestorLookupIT extends PhysicalOperatorITBase
         compareRows(expected, cursor);
     }
 
-    // AncestorLookup_Nested
-
-    @Test
-    public void testNested()
-    {
-        PhysicalOperator itemIndexScan = indexScan_Default(itemOidIndexRowType, false, null);
-        Cursor itemIndexCursor = cursor(itemIndexScan, adapter);
-        PhysicalOperator nestedAncestorLookup = ancestorLookup_Nested(coi,
-                                                                      itemRowType,
-                                                                      Arrays.asList(customerRowType, orderRowType), 0);
-        Cursor ancestorCursor = cursor(nestedAncestorLookup, adapter);
-        ArrayBindings bindings = new ArrayBindings(0);
-        Row itemIndexRow;
-        itemIndexCursor.open(bindings);
-        while ((itemIndexRow = itemIndexCursor.next()) != null) {
-            HKey itemHKey = itemIndexRow.hKey();
-            System.out.println(String.format("itemHKey: %s", itemHKey));
-            bindings.set(0, itemHKey);
-            ancestorCursor.open(bindings);
-            Row ancestorRow;
-            while ((ancestorRow = ancestorCursor.next()) != null) {
-                System.out.println(String.format("    %s", ancestorRow));
-            }
-        }
-    }
-
     // For use by this class
 
     private PhysicalOperator indexRowToAncestorPlan(int iid, RowType ... rowTypes)

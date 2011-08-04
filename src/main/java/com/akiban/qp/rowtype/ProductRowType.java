@@ -15,7 +15,6 @@
 
 package com.akiban.qp.rowtype;
 
-import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 
 import java.util.ArrayList;

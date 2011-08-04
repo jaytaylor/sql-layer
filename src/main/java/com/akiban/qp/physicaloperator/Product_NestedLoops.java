@@ -135,19 +135,21 @@ class Product_NestedLoops extends PhysicalOperator
                         close();
                     } else {
                         RowType rowType = row.rowType();
-                        if (rowType == branchType) {
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("Product_NestedLoops: branch row {}", row);
+                        if (rowType == outerType) {
+                            Row branchRow = row.subRow(branchType);
+                            assert branchRow != null : row;
+                            if (outerBranchRow.isNull() || !branchRow.hKey().equals(outerBranchRow.get().hKey())) {
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("Product_NestedLoops: branch row {}", row);
+                                }
+                                outerBranchRow.set(branchRow);
+                                innerRows.newBranchRow(branchRow);
                             }
-                            innerRows.newBranchRow(row);
-                        } else if (rowType == outerType) {
                             outerRow.set(row);
                             if (LOG.isDebugEnabled()) {
                                 LOG.debug("Product_NestedLoops: restart inner loop using current branch row");
                             }
                             innerRows.resetForCurrentBranchRow();
-                        } else {
-                            outputRow = row;
                         }
                     }
                 }
@@ -207,6 +209,7 @@ class Product_NestedLoops extends PhysicalOperator
 
         private final Cursor outerInput;
         private final RowHolder<Row> outerRow = new RowHolder<Row>();
+        private final RowHolder<Row> outerBranchRow = new RowHolder<Row>();
         private final InnerRows innerRows;
         private Bindings bindings;
         private boolean closed = false;
