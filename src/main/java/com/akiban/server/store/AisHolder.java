@@ -13,14 +13,11 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.pg;
+package com.akiban.server.store;
 
-/** The service interface for the PostgreSQL server. */
-public interface PostgresService {
-    /** Get the port on which the server is listening. */
-    public int getPort();
-    /** Get the server itself. */
-    public PostgresServer getServer();
+import com.akiban.ais.model.AkibanInformationSchema;
 
-
+public interface AisHolder {
+    AkibanInformationSchema getAis();
+    void setAis(AkibanInformationSchema ais);
 }

@@ -112,7 +112,7 @@ public class PersistitStore implements Store {
 
     RowDefCache rowDefCache;
 
-    TreeService treeService;
+    final TreeService treeService;
 
     TableStatusCache tableStatusCache;
 
@@ -126,12 +126,12 @@ public class PersistitStore implements Store {
 
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
 
-    public PersistitStore(boolean updateGroupIndexes) {
+    public PersistitStore(boolean updateGroupIndexes, TreeService treeService) {
         this.updateGroupIndexes = updateGroupIndexes;
+        this.treeService = treeService;
     }
 
     public synchronized void start() throws Exception {
-        treeService = ServiceManagerImpl.get().getTreeService();
         tableStatusCache = treeService.getTableStatusCache();
         indexManager = new PersistitStoreIndexManager(this, treeService);
         rowDefCache = new RowDefCache(tableStatusCache);
@@ -143,7 +143,6 @@ public class PersistitStore implements Store {
 
     public synchronized void stop() throws Exception {
         getDb().getManagement().setDisplayFilter(originalDisplayFilter);
-        treeService = null;
         indexManager = null;
         rowDefCache = null;
     }

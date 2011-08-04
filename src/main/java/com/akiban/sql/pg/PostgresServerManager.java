@@ -16,11 +16,15 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.instrumentation.InstrumentationService;
 import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.Store;
+import com.google.inject.Inject;
 
 import java.net.*;
 import java.io.*;
@@ -31,8 +35,18 @@ import java.util.*;
 */
 public class PostgresServerManager implements PostgresService, Service<PostgresService>, JmxManageable {
     private PostgresServer server = null;
+    private final PostgresServiceRequirements reqs;
 
-    public PostgresServerManager() {
+    @Inject
+    public PostgresServerManager(ConfigurationService config,
+                                 DXLService dxlService,
+                                 InstrumentationService instrumentation,
+                                 SessionService sessionService,
+                                 Store store,
+                                 TreeService treeService
+    ) {
+        this.config = config;
+        this.reqs = new PostgresServiceRequirements(dxlService, instrumentation, sessionService, store, treeService);
     }
 
     /*** Service<PostgresService> ***/
@@ -46,14 +60,13 @@ public class PostgresServerManager implements PostgresService, Service<PostgresS
     }
 
     public void start() throws ServiceStartupException {
-        ConfigurationService configs = ServiceManagerImpl.get().getConfigurationService();
-        String portString = configs.getProperty("akserver.postgres.port");
+        String portString = config.getProperty("akserver.postgres.port");
         int port = Integer.parseInt(portString);
-        String capacityString = configs.getProperty("akserver.postgres.statementCacheCapacity");
+        String capacityString = config.getProperty("akserver.postgres.statementCacheCapacity");
         int statementCacheCapacity = Integer.parseInt(capacityString);
 
         if (port > 0) {
-            server = new PostgresServer(port, statementCacheCapacity);
+            server = new PostgresServer(port, statementCacheCapacity, reqs);
             server.start();
         } else {
             throw new ServiceStartupException("Invalid port specified for Postgres Server");
@@ -88,4 +101,7 @@ public class PostgresServerManager implements PostgresService, Service<PostgresS
         return new JmxObjectInfo("PostgresServer", server, PostgresMXBean.class);
     }
 
+    // object state
+
+    private final ConfigurationService config;
 }

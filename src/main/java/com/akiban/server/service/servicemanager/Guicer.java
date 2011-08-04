@@ -23,9 +23,18 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.ProvisionException;
 import com.google.inject.Scopes;
+import com.google.inject.grapher.GrapherModule;
+import com.google.inject.grapher.InjectorGrapher;
+import com.google.inject.grapher.graphviz.GraphvizModule;
+import com.google.inject.grapher.graphviz.GraphvizRenderer;
 import com.google.inject.spi.Dependency;
 import com.google.inject.spi.InjectionPoint;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.FileNameMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -99,6 +108,51 @@ public final class Guicer {
         return new ArrayList<Object>(result.values());
     }
 
+    public void graph(String filename, Collection<Class<?>> roots) {
+        try {
+            StringWriter stringWriter = new StringWriter();
+            PrintWriter out = new PrintWriter(stringWriter);
+            Injector injector = Guice.createInjector(new GraphvizModule(), new GrapherModule());
+            GraphvizRenderer renderer = injector.getInstance(GraphvizRenderer.class);
+            renderer.setOut(out);
+            InjectorGrapher grapher = injector.getInstance(InjectorGrapher.class);
+            grapher.of(_injector);
+            grapher.rootedAt(roots.toArray(new Class<?>[roots.size()]));
+            grapher.graph();
+            out.flush();
+            out.close();
+
+            String dotText = stringWriter.toString();
+            dotText = dotText.replace("invis", "solid");
+            PrintWriter fileOut = new PrintWriter(uniqueFile(filename), "UTF-8");
+            fileOut.print(dotText);
+            fileOut.flush();
+            fileOut.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private File uniqueFile(String filename) {
+        File file = new File(filename);
+        if (file.exists()) {
+            int lastDot = filename.lastIndexOf('.');
+            final String prefix, suffix;
+            if (lastDot > 0) {
+                prefix = filename.substring(0, lastDot);
+                suffix = filename.substring(lastDot);
+            } else {
+                prefix = filename;
+                suffix = "";
+            }
+            for (int i=1; file.exists(); ++i) {
+                file = new File(prefix + i + suffix);
+            }
+
+        }
+        return file;
+    }
+
     // public class methods
 
     public static Guicer forServices(Collection<ServiceBinding> serviceBindings)
@@ -135,7 +189,7 @@ public final class Guicer {
     private void buildDependencies(Class<?> forClass, LinkedHashMap<Class<?>,Object> results, Deque<Object> dependents) {
         Object instance = _injector.getInstance(forClass);
         if (dependents.contains(instance)) {
-            throw new CircularDependencyException("circular dependency at " + forClass + ": " + dependents);
+            throw circularDependencyInjection(forClass, instance, dependents);
         }
 
         // Start building this object
@@ -174,12 +228,23 @@ public final class Guicer {
         assert removed == instance : removed + " != " + instance;
     }
 
-    private <T,S> T startService(Class<T> serviceClass, T instance, ServiceLifecycleActions<S> withActions) {
-        synchronized (services) {
-            if (services.contains(instance)) {
-                return instance;
-            }
+    private CircularDependencyException circularDependencyInjection(Class<?> forClass, Object instance, Deque<Object> dependents) {
+        final CircularDependencyException exception;
+        String forClassName = forClass.getSimpleName();
+        List<String> classNames = new ArrayList<String>();
+        for (Object o : dependents) {
+            classNames.add(o.getClass().getSimpleName());
+        }
+        classNames.add(instance.getClass().getSimpleName());
+        return new CircularDependencyException("circular dependency at " + forClassName + ": " + classNames);
+    }
 
+    private <T,S> T startService(Class<T> serviceClass, T instance, ServiceLifecycleActions<S> withActions) {
+        // quick check; startServiceIfApplicable will do this too, but this way we can avoid finding dependencies
+        if (services.contains(instance)) {
+            return instance;
+        }
+        synchronized (services) {
             for (Object dependency : reverse(dependenciesFor(serviceClass))) {
                 startServiceIfApplicable(dependency, withActions);
             }
@@ -193,6 +258,9 @@ public final class Guicer {
     }
 
     private <T, S> void startServiceIfApplicable(T instance, ServiceLifecycleActions<S> withActions) {
+        if (services.contains(instance)) {
+            return;
+        }
         if (withActions == null) {
             services.add(instance);
             return;
@@ -217,12 +285,13 @@ public final class Guicer {
         List<Throwable> exceptions = tryStopServices(withActions, initialCause);
         if (!exceptions.isEmpty()) {
             if (exceptions.size() == 1) {
-                throw Exceptions.throwAlways(exceptions.get(0));
+                throw Exceptions.throwAlways(exceptions, 0);
             }
             for (Throwable t : exceptions) {
                 t.printStackTrace();
             }
-            throw new Exception("Failure(s) while shutting down services: " + exceptions, exceptions.get(0));
+            Throwable cause = exceptions.get(0);
+            throw new Exception("Failure(s) while shutting down services: " + exceptions, cause);
         }
     }
 

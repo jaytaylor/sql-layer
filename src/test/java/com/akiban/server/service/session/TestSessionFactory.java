@@ -32,10 +32,6 @@ public final class TestSessionFactory implements SessionFactory {
 
     @Override
     public Session createSession() {
-        ServiceManager serviceManager = ServiceManagerImpl.get();
-        if (serviceManager != null) {
-            throw new RuntimeException("you should only use this is there is no ServiceManagerImpl available");
-        }
         return new Session(null);
     }
 }

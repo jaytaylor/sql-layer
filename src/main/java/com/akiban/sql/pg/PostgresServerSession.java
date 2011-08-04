@@ -15,6 +15,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.sql.StandardException;
 
 import com.akiban.sql.parser.SQLParser;
@@ -57,7 +58,7 @@ public interface PostgresServerSession
     public void setAttribute(String key, Object attr);
 
     /** Return Akiban Server manager. */
-    public ServiceManager getServiceManager();
+    public DXLService getDXL();
 
     /** Return Akiban Server session. */
     public Session getSession();
