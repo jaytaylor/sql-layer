@@ -22,21 +22,21 @@ public interface DXLMXBean {
     String getUsingSchema();
     void setUsingSchema(String schema);
 
-    void createTable(String ddl) throws Exception;
+    void createTable(String ddl);
 
     void createGroupIndex(String groupName, String indexName, String tableColumnList);
 
-    void dropTable(String tableName) throws Exception;
+    void dropTable(String tableName) ;
 
-    void dropGroupIndex(String groupName, String indexName) throws Exception;
+    void dropGroupIndex(String groupName, String indexName) ;
 
-    void dropGroup(String groupName) throws Exception;
+    void dropGroup(String groupName) ;
     
-    void dropGroupBySchema(String schemaName) throws Exception;
+    void dropGroupBySchema(String schemaName) ;
 
-    void dropAllGroups() throws Exception;
+    void dropAllGroups() ;
 
-    void writeRow(String table, String fields) throws Exception;
+    void writeRow(String table, String fields) ;
 
     List<String> getGrouping();
 

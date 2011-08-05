@@ -70,6 +70,7 @@ public enum ErrorCode {
     FK_DDL_VIOLATION        (2, 16, Importance.DEBUG, ForeignConstraintDDLException.class, "Cannot drop table `%s`.`%s`, it has child table `%s`.`%s`"),
     PROTECTED_INDEX         (2, 17, Importance.DEBUG, ProtectedIndexException.class, "Index `%s` can not be added to a table"),
     BRANCHING_GROUP_INDEX   (2, 18, Importance.DEBUG, BranchingGroupIndexException.class, "Group index `%s` has tables %s%s and %s%s on different branches"),
+    WRONG_NAME_FORMAT       (2, 19, Importance.DEBUG, WrongNameFormatException.class, "Expected %s in format of table.column"),
 
     // DML errors
     NO_REFERENCED_ROW (3, 0, Importance.DEBUG, null,  "NO_REFERENCED_ROW: Unused error code"), // NULL

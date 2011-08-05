@@ -171,13 +171,13 @@ public class PersistitStore implements Store {
         return treeService.getDb();
     }
 
-    public Exchange getExchange(final Session session, final RowDef rowDef) {
+    public Exchange getExchange(final Session session, final RowDef rowDef) throws PersistitException {
         final RowDef groupRowDef = rowDef.isGroupTable() ? rowDef
                                    : rowDefCache.getRowDef(rowDef.getGroupRowDefId());
         return treeService.getExchange(session, groupRowDef);
     }
 
-    public Exchange getExchange(final Session session, final Index index) {
+    public Exchange getExchange(final Session session, final Index index) throws PersistitException {
         return treeService.getExchange(session, (IndexDef)index.indexDef());
     }
 

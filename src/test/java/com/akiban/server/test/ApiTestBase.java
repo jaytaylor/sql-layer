@@ -287,11 +287,7 @@ public class ApiTestBase {
             throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
         final Index index;
-        try {
-            index = GroupIndexCreator.createIndex(ais, groupName, indexName, unique, tableColumnPairs);
-        } catch(GroupIndexCreator.GroupIndexCreatorException e) {
-            throw new InvalidOperationException(e);
-        }
+        index = GroupIndexCreator.createIndex(ais, groupName, indexName, unique, tableColumnPairs);
         ddl().createIndexes(session(), Collections.singleton(index));
         return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
     }

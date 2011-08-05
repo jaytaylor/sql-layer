@@ -87,7 +87,7 @@ public class TreeServiceImplVolumeIT extends ITBase {
         final Set<Tree> trees = new HashSet<Tree>();
         treeService.visitStorage(session(), new TreeVisitor() {
             @Override
-            public void visit(Exchange exchange) throws Exception {
+            public void visit(Exchange exchange) {
                 trees.add(exchange.getTree());
             }
         }, "_schema_");
