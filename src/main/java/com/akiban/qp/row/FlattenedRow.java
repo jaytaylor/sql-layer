@@ -58,9 +58,19 @@ public class FlattenedRow extends AbstractRow
     @Override
     public Row subRow(RowType subRowType)
     {
-        return
-            subRowType == rowType.parentType() ? parent.get() :
-            subRowType == rowType.childType() ? child.get() : null;
+        Row subRow;
+        if (subRowType == rowType.parentType()) {
+            subRow = parent.get();
+        } else if (subRowType == rowType.childType()) {
+            subRow = child.get();
+        } else {
+            // If the subRowType doesn't match leftType or rightType, then it might be buried deeper.
+            subRow = parent.get().subRow(subRowType);
+            if (subRow == null) {
+                subRow = child.get().subRow(subRowType);
+            }
+        }
+        return subRow;
     }
 
     // FlattenedRow interface

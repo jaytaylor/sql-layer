@@ -53,7 +53,7 @@ public abstract class AbstractRow implements Row
     @Override
     public Row subRow(RowType subRowType)
     {
-        throw new UnsupportedOperationException();
+        return rowType() == subRowType ? this : null;
     }
 
     // ManagedRow interface

@@ -75,7 +75,7 @@ public class ProductRow extends AbstractRow
         } else if (subRowType == rowType.rightType()) {
             subRow = right.get();
         } else {
-            // If the subRowType doesn't match leftType or rightType, then it be buried deeper.
+            // If the subRowType doesn't match leftType or rightType, then it might be buried deeper.
             subRow = left.get().subRow(subRowType);
             if (subRow == null) {
                 subRow = right.get().subRow(subRowType);

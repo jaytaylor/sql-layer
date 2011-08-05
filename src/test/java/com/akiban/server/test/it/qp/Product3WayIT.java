@@ -84,6 +84,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
         bRowType = schema.userTableRowType(userTable(b));
         cRowType = schema.userTableRowType(userTable(c));
         aValueIndexRowType = indexType(a, "avalue");
+        rValueIndexRowType = indexType(r, "rvalue");
         rabc = groupTable(r);
         db = new NewRow[]{createNewRow(r, 1L, "r1"),
                           createNewRow(r, 2L, "r2"),
@@ -313,27 +314,95 @@ public class Product3WayIT extends PhysicalOperatorITBase
         PhysicalOperator RAC = product_NestedLoops(RA, RC, RA.rowType(), RC.rowType(), 0);
         PhysicalOperator RACB = product_NestedLoops(RAC, RB, RAC.rowType(), RB.rowType(), 0);
         Cursor cursor = cursor(RACB, adapter);
-        RowType rabcRowType = RACB.rowType();
+        RowType racbRowType = RACB.rowType();
         RowBase[] expected = new RowBase[]{
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 17L, 1L, "c17", 15L, 1L, "b15"),
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 17L, 1L, "c17", 16L, 1L, "b16"),
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 18L, 1L, "c18", 15L, 1L, "b15"),
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 18L, 1L, "c18", 16L, 1L, "b16"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 17L, 1L, "c17", 15L, 1L, "b15"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 17L, 1L, "c17", 16L, 1L, "b16"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 18L, 1L, "c18", 15L, 1L, "b15"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 18L, 1L, "c18", 16L, 1L, "b16"),
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 27L, 2L, "c27", 25L, 2L, "b25"),
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 27L, 2L, "c27", 26L, 2L, "b26"),
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 28L, 2L, "c28", 25L, 2L, "b25"),
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 28L, 2L, "c28", 26L, 2L, "b26"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 27L, 2L, "c27", 25L, 2L, "b25"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 27L, 2L, "c27", 26L, 2L, "b26"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 28L, 2L, "c28", 25L, 2L, "b25"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 28L, 2L, "c28", 26L, 2L, "b26"),
+            row(racbRowType, 1L, "r1", 13L, 1L, "a13", 17L, 1L, "c17", 15L, 1L, "b15"),
+            row(racbRowType, 1L, "r1", 13L, 1L, "a13", 17L, 1L, "c17", 16L, 1L, "b16"),
+            row(racbRowType, 1L, "r1", 13L, 1L, "a13", 18L, 1L, "c18", 15L, 1L, "b15"),
+            row(racbRowType, 1L, "r1", 13L, 1L, "a13", 18L, 1L, "c18", 16L, 1L, "b16"),
+            row(racbRowType, 1L, "r1", 14L, 1L, "a14", 17L, 1L, "c17", 15L, 1L, "b15"),
+            row(racbRowType, 1L, "r1", 14L, 1L, "a14", 17L, 1L, "c17", 16L, 1L, "b16"),
+            row(racbRowType, 1L, "r1", 14L, 1L, "a14", 18L, 1L, "c18", 15L, 1L, "b15"),
+            row(racbRowType, 1L, "r1", 14L, 1L, "a14", 18L, 1L, "c18", 16L, 1L, "b16"),
+            row(racbRowType, 2L, "r2", 23L, 2L, "a23", 27L, 2L, "c27", 25L, 2L, "b25"),
+            row(racbRowType, 2L, "r2", 23L, 2L, "a23", 27L, 2L, "c27", 26L, 2L, "b26"),
+            row(racbRowType, 2L, "r2", 23L, 2L, "a23", 28L, 2L, "c28", 25L, 2L, "b25"),
+            row(racbRowType, 2L, "r2", 23L, 2L, "a23", 28L, 2L, "c28", 26L, 2L, "b26"),
+            row(racbRowType, 2L, "r2", 24L, 2L, "a24", 27L, 2L, "c27", 25L, 2L, "b25"),
+            row(racbRowType, 2L, "r2", 24L, 2L, "a24", 27L, 2L, "c27", 26L, 2L, "b26"),
+            row(racbRowType, 2L, "r2", 24L, 2L, "a24", 28L, 2L, "c28", 25L, 2L, "b25"),
+            row(racbRowType, 2L, "r2", 24L, 2L, "a24", 28L, 2L, "c28", 26L, 2L, "b26"),
         };
         compareRows(expected, cursor);
     }
+
+    @Test
+    public void testProductAfterIndexScanOfR()
+    {
+        PhysicalOperator rScan =
+            ancestorLookup_Default(
+                indexScan_Default(rValueIndexRowType, false, null),
+                rabc,
+                rValueIndexRowType,
+                Arrays.asList(rRowType),
+                DISCARD_INPUT);
+        PhysicalOperator flattenRA =
+            flatten_HKeyOrdered(
+                branchLookup_Nested(
+                    rabc,
+                    rRowType,
+                    aRowType,
+                    KEEP_INPUT,
+                    0),
+                rRowType,
+                aRowType,
+                INNER_JOIN);
+        PhysicalOperator flattenRB =
+            flatten_HKeyOrdered(
+                branchLookup_Nested(
+                    rabc,
+                    rRowType,
+                    bRowType,
+                    KEEP_INPUT,
+                    0),
+                rRowType,
+                bRowType,
+                INNER_JOIN);
+        PhysicalOperator flattenRC =
+            flatten_HKeyOrdered(
+                branchLookup_Nested(
+                    rabc,
+                    rRowType,
+                    cRowType,
+                    KEEP_INPUT,
+                    0),
+                rRowType,
+                cRowType,
+                INNER_JOIN);
+        PhysicalOperator RA = product_NestedLoops(rScan, flattenRA, rRowType, flattenRA.rowType(), 0);
+        PhysicalOperator RAB = product_NestedLoops(RA, flattenRB, RA.rowType(), flattenRB.rowType(), 0);
+        PhysicalOperator RABC = product_NestedLoops(RAB, flattenRC, RAB.rowType(), flattenRC.rowType(), 0);
+        Cursor cursor = cursor(RABC, adapter);
+        RowType rabcRowType = RABC.rowType();
+        RowBase[] expected = new RowBase[]{
+            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 17L, 1L, "c17"),
+            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 18L, 1L, "c18"),
+            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 16L, 1L, "b16", 17L, 1L, "c17"),
+            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 16L, 1L, "b16", 18L, 1L, "c18"),
+            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 15L, 1L, "b15", 17L, 1L, "c17"),
+            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 15L, 1L, "b15", 18L, 1L, "c18"),
+            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 16L, 1L, "b16", 17L, 1L, "c17"),
+            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 16L, 1L, "b16", 18L, 1L, "c18"),
+            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 25L, 2L, "b25", 27L, 2L, "c27"),
+            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 25L, 2L, "b25", 28L, 2L, "c28"),
+            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 26L, 2L, "b26", 27L, 2L, "c27"),
+            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 26L, 2L, "b26", 28L, 2L, "c28"),
+            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 25L, 2L, "b25", 27L, 2L, "c27"),
+            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 25L, 2L, "b25", 28L, 2L, "c28"),
+            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 26L, 2L, "b26", 27L, 2L, "c27"),
+            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 26L, 2L, "b26", 28L, 2L, "c28"),
+        };
+        compareRows(expected, cursor);    }
 
     // TODO: What happens if inner produces rows of unexpected types?
 
@@ -440,5 +509,6 @@ public class Product3WayIT extends PhysicalOperatorITBase
     protected RowType cRowType;
     protected RowType bRowType;
     protected IndexRowType aValueIndexRowType;
+    protected IndexRowType rValueIndexRowType;
     protected GroupTable rabc;
 }

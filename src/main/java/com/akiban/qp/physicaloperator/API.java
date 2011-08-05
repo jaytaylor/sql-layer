@@ -191,6 +191,9 @@ public class API
 
     // Product
 
+    /**
+     * @deprecated Use product_NestedLoops instead.
+     */
     public static PhysicalOperator product_ByRun(PhysicalOperator input,
                                                  RowType leftType,
                                                  RowType rightType)
@@ -202,9 +205,9 @@ public class API
                                                        PhysicalOperator innerInput,
                                                        RowType outerType,
                                                        RowType innerType,
-                                                       int hKeyBindingPosition)
+                                                       int inputBindingPosition)
     {
-        return new Product_NestedLoops(outerInput, innerInput, outerType, innerType, hKeyBindingPosition);
+        return new Product_NestedLoops(outerInput, innerInput, outerType, innerType, inputBindingPosition);
     }
 
     // Cut
