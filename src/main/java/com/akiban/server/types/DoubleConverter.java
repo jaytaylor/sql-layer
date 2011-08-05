@@ -15,31 +15,22 @@
 
 package com.akiban.server.types;
 
-import com.akiban.util.AkibanAppender;
-import com.akiban.util.ByteSource;
+public abstract class DoubleConverter extends AbstractConverter {
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
+    // AbstractDoubleConverter interface
+    
+    public abstract double getDouble(ConversionSource source);
+    
+    // defined in subclasses
+    
+    protected abstract void putDouble(ConversionTarget target, double value);
+    
+    // for use in this package
 
-public interface ConversionSource {
-    boolean isNull();
-    BigDecimal getDecimal();
-    BigInteger getUBigInt();
-    ByteSource getVarBinary();
-    double getDouble();
-    double getUDouble();
-    float getFloat();
-    float getUFloat();
-    long getDate();
-    long getDateTime();
-    long getInt();
-    long getLong();
-    long getTime();
-    long getTimestamp();
-    long getUInt();
-    long getYear();
-    String getString();
-    String getText();
-    void appendAsString(AkibanAppender appender);
-    AkType getConversionType();
+    @Override
+    protected final void doConvert(ConversionSource source, ConversionTarget target) {
+        putDouble(target, getDouble(source));
+    }
+
+    DoubleConverter() {}
 }

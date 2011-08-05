@@ -20,7 +20,6 @@ import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.ConversionSource;
 import com.akiban.server.types.NullConversionSource;
-import sun.misc.Sort;
 
 public class FlattenedRow extends AbstractRow
 {

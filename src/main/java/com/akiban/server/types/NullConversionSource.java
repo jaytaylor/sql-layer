@@ -124,6 +124,11 @@ public final class NullConversionSource implements ConversionSource {
         appender.append("null");
     }
 
+    @Override
+    public AkType getConversionType() {
+        return AkType.NULL;
+    }
+
     // hidden ctor
 
     private NullConversionSource() {}

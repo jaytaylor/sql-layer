@@ -15,31 +15,21 @@
 
 package com.akiban.server.types;
 
-import com.akiban.util.AkibanAppender;
-import com.akiban.util.ByteSource;
+import com.persistit.exception.ConversionException;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
+abstract class AbstractConverter {
+    public final void convert(ConversionSource source, ConversionTarget target) {
+        if (source.isNull()) {
+            target.putNull();
+        }
+        else {
+            doConvert(source, target);
+        }
+    }
 
-public interface ConversionSource {
-    boolean isNull();
-    BigDecimal getDecimal();
-    BigInteger getUBigInt();
-    ByteSource getVarBinary();
-    double getDouble();
-    double getUDouble();
-    float getFloat();
-    float getUFloat();
-    long getDate();
-    long getDateTime();
-    long getInt();
-    long getLong();
-    long getTime();
-    long getTimestamp();
-    long getUInt();
-    long getYear();
-    String getString();
-    String getText();
-    void appendAsString(AkibanAppender appender);
-    AkType getConversionType();
+    protected abstract void doConvert(ConversionSource source, ConversionTarget target);
+
+    protected final RuntimeException unsupportedConversion(AkType unsupportedType) {
+        return new ConversionException("can't convert from type " + unsupportedType);
+    }
 }
