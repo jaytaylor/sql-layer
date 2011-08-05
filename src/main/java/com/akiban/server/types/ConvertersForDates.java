@@ -17,29 +17,34 @@ package com.akiban.server.types;
 
 abstract class ConvertersForDates extends LongConverter {
 
-    final static LongConverter DATE = new ConvertersForDates(AkType.DATE) {
+    final static LongConverter DATE = new ConvertersForDates() {
         @Override protected long doGetLong(ConversionSource source)             { return source.getDate(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putDate(value); }
+        @Override protected AkType requiredType() { return AkType.DATE; }
     };
 
-    final static LongConverter DATETIME = new ConvertersForDates(AkType.DATETIME) {
+    final static LongConverter DATETIME = new ConvertersForDates() {
         @Override protected long doGetLong(ConversionSource source)             { return source.getDateTime(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putDateTime(value); }
+        @Override protected AkType requiredType() { return AkType.DATETIME; }
     };
 
-    final static LongConverter TIME = new ConvertersForDates(AkType.TIME) {
+    final static LongConverter TIME = new ConvertersForDates() {
         @Override protected long doGetLong(ConversionSource source)             { return source.getTime(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putTime(value); }
+        @Override protected AkType requiredType() { return AkType.TIME; }
     };
 
-    final static LongConverter TIMESTAMP = new ConvertersForDates(AkType.TIMESTAMP) {
+    final static LongConverter TIMESTAMP = new ConvertersForDates() {
         @Override protected long doGetLong(ConversionSource source)             { return source.getTimestamp(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putTimestamp(value); }
+        @Override protected AkType requiredType() { return AkType.TIMESTAMP; }
     };
 
-    final static LongConverter YEAR = new ConvertersForDates(AkType.YEAR) {
+    final static LongConverter YEAR = new ConvertersForDates() {
         @Override protected long doGetLong(ConversionSource source)             { return source.getYear(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putYear(value); }
+        @Override protected AkType requiredType() { return AkType.YEAR; }
     };
 
     protected abstract long doGetLong(ConversionSource source);
@@ -47,15 +52,13 @@ abstract class ConvertersForDates extends LongConverter {
     @Override
     public long getLong(ConversionSource source) {
         AkType type = source.getConversionType();
-        if (type != requiredType) {
+        if (type != requiredType()) {
             throw unsupportedConversion(type);
         }
         return doGetLong(source);
     }
 
-    private ConvertersForDates(AkType requiredType) {
-        this.requiredType = requiredType;
-    }
+    protected abstract AkType requiredType();
 
-    private final AkType requiredType;
+    private ConvertersForDates() {}
 }
