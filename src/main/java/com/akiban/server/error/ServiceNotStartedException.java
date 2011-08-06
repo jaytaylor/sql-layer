@@ -13,22 +13,10 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service;
+package com.akiban.server.error;
 
-public final class ServiceNotStartedException extends RuntimeException {
-    public ServiceNotStartedException() {
-        super();
+public final class ServiceNotStartedException extends InvalidOperationException {
+    public ServiceNotStartedException (String serviceName) {
+        super (ErrorCode.SERVICE_NOT_STARTED, serviceName);
     }
-
-    public ServiceNotStartedException(String s) {
-        super(s);
-    }
-
-    public ServiceNotStartedException(String s, Throwable throwable) {
-        super(s, throwable);
-    }
-
-    public ServiceNotStartedException(Throwable throwable) {
-        super(throwable);
-    }
-}
+}    

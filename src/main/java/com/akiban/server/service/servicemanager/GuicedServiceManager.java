@@ -16,10 +16,10 @@
 package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.AkServer;
+import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
-import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.instrumentation.InstrumentationService;

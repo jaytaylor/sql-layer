@@ -17,9 +17,9 @@ package com.akiban.server.service.dxl;
 
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.error.ServiceNotStartedException;
+import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceNotStartedException;
-import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.jmx.JmxManageable;
 
 import java.util.Collections;
@@ -76,7 +76,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     public void stop() throws Exception {
         synchronized (MONITOR) {
             if (ddlFunctions == null) {
-                throw new ServiceNotStartedException();
+                throw new ServiceNotStartedException("DDL Functions stop");
             }
             ddlFunctions = null;
             dmlFunctions = null;
@@ -88,7 +88,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     public DDLFunctions ddlFunctions() {
         final DDLFunctions ret = ddlFunctions;
         if (ret == null) {
-            throw new ServiceNotStartedException();
+            throw new ServiceNotStartedException("DDL Functions");
         }
         return ret;
     }
@@ -97,7 +97,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     public DMLFunctions dmlFunctions() {
         final DMLFunctions ret = dmlFunctions;
         if (ret == null) {
-            throw new ServiceNotStartedException();
+            throw new ServiceNotStartedException("DML Functions");
         }
         return ret;
     }

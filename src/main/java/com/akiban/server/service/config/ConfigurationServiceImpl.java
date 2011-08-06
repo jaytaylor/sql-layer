@@ -26,9 +26,9 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.akiban.admin.Admin;
+import com.akiban.server.error.ServiceNotStartedException;
+import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceNotStartedException;
-import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.jmx.JmxManageable;
 
 public class ConfigurationServiceImpl implements ConfigurationService,
@@ -305,7 +305,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
             ret = properties;
         }
         if (ret == null) {
-            throw new ServiceNotStartedException();
+            throw new ServiceNotStartedException("Configuration");
         }
         return ret;
     }

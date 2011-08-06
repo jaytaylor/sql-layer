@@ -15,6 +15,7 @@
 
 package com.akiban.server.error;
 
+import java.text.MessageFormat;
 
 public abstract class InvalidOperationException extends RuntimeException
 {
@@ -31,7 +32,7 @@ public abstract class InvalidOperationException extends RuntimeException
     }
     
     InvalidOperationException(ErrorCode code, Object... args) {
-        this (code, String.format(code.getMessage(), args));
+        this (code, MessageFormat.format (code.getMessage(), args)); 
     }
 
     public ErrorCode getCode() {

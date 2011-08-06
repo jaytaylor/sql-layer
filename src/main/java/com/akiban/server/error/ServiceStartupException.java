@@ -13,18 +13,10 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service;
+package com.akiban.server.error;
 
-public final class ServiceStartupException extends Exception {
-    public ServiceStartupException(String message) {
-        super(message);
-    }
-
-    public ServiceStartupException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public ServiceStartupException(Throwable cause) {
-        super(cause);
+public final class ServiceStartupException extends InvalidOperationException {
+    public ServiceStartupException (String serviceName) {
+        super (ErrorCode.SERVICE_ALREADY_STARTED, serviceName);
     }
 }

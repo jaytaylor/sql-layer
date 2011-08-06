@@ -15,10 +15,10 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
-import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.jmx.JmxManageable;
 
 import java.net.*;

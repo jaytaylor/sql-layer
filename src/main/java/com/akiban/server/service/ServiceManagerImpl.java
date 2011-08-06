@@ -17,6 +17,7 @@ package com.akiban.server.service;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.akiban.server.error.ServiceNotStartedException;
 import com.akiban.server.service.session.Session;
 
 public final class ServiceManagerImpl
@@ -45,7 +46,7 @@ public final class ServiceManagerImpl
     public static Session newSession() {
         ServiceManager serviceManager = get();
         if (serviceManager == null) {
-            throw new ServiceNotStartedException("ServiceManagerImpl.get() hasn't been given an instance");
+            throw new ServiceNotStartedException("Service Manager");
         }
         return serviceManager.getSessionService().createSession();
     }
