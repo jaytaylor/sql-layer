@@ -84,8 +84,9 @@ public class MessageTarget extends Target
         if (s == null) {
             payload.putInt(NULL_STRING);
         } else {
-            payload.putInt(s.length());
-            payload.put(s.getBytes());
+            byte[] bytes = s.getBytes();
+            payload.putInt(bytes.length);
+            payload.put(bytes);
         }
     }
 
