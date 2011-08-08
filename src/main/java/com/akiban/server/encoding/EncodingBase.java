@@ -15,6 +15,8 @@
 
 package com.akiban.server.encoding;
 
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Type;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.Quote;
 import com.akiban.server.rowdata.RowData;
@@ -56,4 +58,15 @@ abstract class EncodingBase<T> implements Encoding<T> {
     public String toString() {
         return this.getClass().getSimpleName();
     }
+
+    // Deprecating methods
+    
+    abstract public boolean validate(Type type);
+    abstract public T toObject(FieldDef fieldDef, RowData rowData) throws EncodingException;
+    abstract public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset);
+    abstract public int widthFromObject(FieldDef fieldDef, Object value);
+    abstract public void toKey(FieldDef fieldDef, RowData rowData, Key key);
+    abstract public void toKey(FieldDef fieldDef, Object value, Key key);
+    abstract public long getMaxKeyStorageSize(Column column);
+    abstract public Class<T> getToObjectClass();
 }

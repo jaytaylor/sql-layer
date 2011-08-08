@@ -30,7 +30,6 @@ public class ObjectToKeyIT extends ITBase {
 
     private void testObjectToKey(FieldDef field, Object... testValues) throws PersistitException {
         final Encoding encoder = field.getEncoding();
-        final Class expectedClass = encoder.getToObjectClass();
 
         Key key = persistitStore().getKey(session());
         for(Object inObj : testValues) {
@@ -39,7 +38,6 @@ public class ObjectToKeyIT extends ITBase {
 
             Object outObj = key.decode();
             if(outObj != null) {
-                assertEquals(expectedClass, outObj.getClass());
                 assertEquals(inObj.toString(), outObj.toString());
             }
             else {
