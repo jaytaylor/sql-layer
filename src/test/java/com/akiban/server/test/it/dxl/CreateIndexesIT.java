@@ -38,7 +38,7 @@ import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.error.IndexLacksColumnsException;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.JoinColumnMismatchException;
+import com.akiban.server.error.JoinColumnTypesMismatchException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ProtectedIndexException;
@@ -122,7 +122,7 @@ public final class CreateIndexesIT extends ITBase {
     public void noIndexColumns() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key, foo int");
         AkibanInformationSchema ais = createAISWithTable(tId);
-        Index index = addIndex(ais, tId, "PRIMARY", false);
+        Index index = addIndex(ais, tId, "Failure", false);
         ddl().createIndexes(session(), Arrays.asList(index));
     }
 
@@ -154,7 +154,7 @@ public final class CreateIndexesIT extends ITBase {
         ddl().createIndexes(session(), Arrays.asList(index));
     }
   
-    @Test(expected=JoinColumnMismatchException.class) 
+    @Test(expected=JoinColumnTypesMismatchException.class) 
     public void mismatchedColumnType() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key");
         AkibanInformationSchema ais = createAISWithTable(tId);

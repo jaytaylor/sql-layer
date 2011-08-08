@@ -64,7 +64,6 @@ public final class GuicedServiceManager implements ServiceManager {
     @Override
     public void startServices() throws ServiceStartupException {
         ServiceManagerImpl.setServiceManager(this);
-
         for (Class<?> directlyRequiredClass : guicer.directlyRequiredClasses()) {
             guicer.get(directlyRequiredClass, STANDARD_SERVICE_ACTIONS);
         }
@@ -233,7 +232,6 @@ public final class GuicedServiceManager implements ServiceManager {
         @Override
         public void onStart(Service<?> service) throws Exception {
             service.start();
-
             if (service instanceof JmxManageable && isRequired(JmxRegistryService.class)) {
                 JmxRegistryService registry = (service instanceof JmxRegistryService)
                         ? (JmxRegistryService) service

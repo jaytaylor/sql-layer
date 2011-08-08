@@ -18,7 +18,6 @@ package com.akiban.server.test.it.dxl;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Types;
 import com.akiban.ais.util.DDLGenerator;
@@ -28,8 +27,9 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.JoinToMultipleParentsException;
 import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.JoinToWrongColumnsException;
+import com.akiban.server.error.JoinColumnMismatchException;
+import com.akiban.server.error.JoinToProtectedTableException;
 import com.akiban.server.error.ParseException;
-import com.akiban.server.error.ProtectedTableDDLException;
 import com.akiban.server.error.UnsupportedCharsetException;
 import com.akiban.server.error.UnsupportedDataTypeException;
 import com.akiban.server.error.UnsupportedIndexDataTypeException;
@@ -344,10 +344,10 @@ public final class CreateTableIT extends ITBase {
     public void joinMustMatchParentPK() throws InvalidOperationException {
         createTable("test", "p1", "id1 int, id2 int, primary key(id1,id2)");
         // subset of pk
-        createExpectException(JoinToWrongColumnsException.class, "test", "c",
+        createExpectException(JoinColumnMismatchException.class, "test", "c",
                               "id int key, pid1 int, pid2 int, constraint __akiban foreign key(pid1) references p1(id1)");
         // join key missing column
-        createExpectException(JoinToWrongColumnsException.class, "test", "c",
+        createExpectException(JoinColumnMismatchException.class, "test", "c",
                               "id int key, pid1 int, pid2 int, constraint __akiban foreign key(pid1) references p1(id1,id2)");
         // different order in table reference
         createExpectException(JoinToWrongColumnsException.class, "test", "c",
@@ -441,7 +441,7 @@ public final class CreateTableIT extends ITBase {
         ddl().createTable(session(), "test", "create table t(name varchar(32) charset utf42) engine=akibandb");
     }
 
-    @Test(expected=ProtectedTableDDLException.class)
+    @Test(expected=JoinToProtectedTableException.class)
     public void joinToAISTable() throws InvalidOperationException {
         createTable("test", "t", "id int key, tid int",
                     "CONSTRAINT __akiban FOREIGN KEY(tid) REFERENCES akiban_information_schema.tables(table_id))");

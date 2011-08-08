@@ -349,15 +349,15 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         final List<Index> newIndexes = new ArrayList<Index>();
 
         for(Index index : indexesToAdd) {
+            final IndexName indexName = index.getIndexName();
             if(index.isPrimaryKey()) {
-                throw new ProtectedIndexException("PRIMARY");
+                throw new ProtectedIndexException("PRIMARY", new TableName(indexName.getSchemaName(), indexName.getTableName()));
             }
 
             final Index curIndex;
             final Index newIndex;
             final Group newGroup;
             final String schemaName;
-            final IndexName indexName = index.getIndexName();
 
             switch(index.getIndexType()) {
                 case TABLE:

@@ -43,9 +43,9 @@ import java.util.ResourceBundle;
  */
 public enum ErrorCode {
     // Generic codes
-    UNKNOWN               (0, 0, Importance.ERROR, null),
-    UNEXPECTED_EXCEPTION  (0, 1, Importance.ERROR, null),
-    UNSUPPORTED_OPERATION (0, 900, Importance.ERROR, null),
+    UNKNOWN                 (0, 0, Importance.ERROR, null),
+    UNEXPECTED_EXCEPTION    (0, 1, Importance.ERROR, null),
+    UNSUPPORTED_OPERATION   (0, 900, Importance.ERROR, null),
 
     // AkSserver and Head are out of sync
     SERVER_SHUTDOWN         (1, 0, Importance.DEBUG, null),
@@ -68,31 +68,31 @@ public enum ErrorCode {
     DUPLICATE_COLUMN        (2, 12, Importance.DEBUG, DuplicateColumnNameException.class),
     DUPLICATE_GROUP         (2, 13, Importance.DEBUG, DuplicateGroupNameException.class), 
     REFERENCED_TABLE        (2, 14, Importance.DEBUG, ReferencedTableException.class),  
-    DROP_INDEX_NOT_ALLOWED  (2, 15, Importance.DEBUG, DropIndexNotAllowedException.class),
+    DROP_INDEX_NOT_ALLOWED  (2, 15, Importance.DEBUG, DropIndexNotAllowedException.class), //NOT USED
     FK_DDL_VIOLATION        (2, 16, Importance.DEBUG, ForeignConstraintDDLException.class),
     PROTECTED_INDEX         (2, 17, Importance.DEBUG, ProtectedIndexException.class),
     BRANCHING_GROUP_INDEX   (2, 18, Importance.DEBUG, BranchingGroupIndexException.class),
     WRONG_NAME_FORMAT       (2, 19, Importance.DEBUG, WrongNameFormatException.class),
 
     // DML errors
-    NO_REFERENCED_ROW (3, 0, Importance.DEBUG, null),
-    DUPLICATE_KEY     (3, 1, Importance.DEBUG, DuplicateKeyException.class),
-    NO_SUCH_TABLE     (3, 2, Importance.DEBUG, NoSuchTableException.class), 
+    NO_REFERENCED_ROW       (3, 0, Importance.DEBUG, null),
+    DUPLICATE_KEY           (3, 1, Importance.DEBUG, DuplicateKeyException.class),
+    NO_SUCH_TABLE           (3, 2, Importance.DEBUG, NoSuchTableException.class), 
 
-    NO_INDEX          (3, 4, Importance.DEBUG, NoSuchIndexException.class),
-    NO_SUCH_RECORD    (3, 5, Importance.DEBUG, null),
-    FK_CONSTRAINT_VIOLATION(3, 6, Importance.DEBUG, ForeignKeyConstraintDMLException.class),
+    NO_INDEX                (3, 4, Importance.DEBUG, NoSuchIndexException.class),
+    NO_SUCH_RECORD          (3, 5, Importance.DEBUG, null),
+    FK_CONSTRAINT_VIOLATION (3, 6, Importance.DEBUG, ForeignKeyConstraintDMLException.class),
     UNSUPPORTED_MODIFICATION(3, 7, Importance.DEBUG, null),
-    TABLEDEF_MISMATCH (3, 9, Importance.DEBUG, TableDefinitionMismatchException.class), 
-    NO_SUCH_ROW       (3, 10, Importance.DEBUG,  NoSuchRowException.class),
-    CONCURRENT_MODIFICATION(3, 11, Importance.DEBUG, ConcurrentScanAndUpdateException.class), 
+    TABLEDEF_MISMATCH       (3, 9, Importance.DEBUG, TableDefinitionMismatchException.class), 
+    NO_SUCH_ROW             (3, 10, Importance.DEBUG,  NoSuchRowException.class),
+    CONCURRENT_MODIFICATION (3, 11, Importance.DEBUG, ConcurrentScanAndUpdateException.class), 
     TABLE_DEFINITION_CHANGED(3, 12, Importance.DEBUG, TableDefinitionChangedException.class),
-    NO_SUCH_GROUP     (3, 13, Importance.DEBUG, NoSuchGroupException.class), 
-    NO_SUCH_TABLEDEF  (3, 14, Importance.DEBUG, RowDefNotFoundException.class), 
-    NO_ROWS_UPDATED   (3, 15, Importance.DEBUG, NoRowsUpdatedException.class),    
-    TOO_MANY_ROWS_UPDATED (3, 16, Importance.DEBUG, TooManyRowsUpdatedException.class),  
-    NO_SUCH_TABLEID   (3, 17, Importance.DEBUG, NoSuchTableIdException.class),
-    SCAN_RETRY_ABANDONDED (3, 18, Importance.ERROR, ScanRetryAbandonedException.class),
+    NO_SUCH_GROUP           (3, 13, Importance.DEBUG, NoSuchGroupException.class), 
+    NO_SUCH_TABLEDEF        (3, 14, Importance.DEBUG, RowDefNotFoundException.class), 
+    NO_ROWS_UPDATED         (3, 15, Importance.DEBUG, NoRowsUpdatedException.class),    
+    TOO_MANY_ROWS_UPDATED   (3, 16, Importance.DEBUG, TooManyRowsUpdatedException.class),  
+    NO_SUCH_TABLEID         (3, 17, Importance.DEBUG, NoSuchTableIdException.class),
+    SCAN_RETRY_ABANDONDED   (3, 18, Importance.ERROR, ScanRetryAbandonedException.class),
     
     ROW_OUTPUT(4, 11, Importance.DEBUG, RowOutputException.class), 
 
@@ -127,7 +127,7 @@ public enum ErrorCode {
     BAD_AIS_REFERENCE    (22, 22, Importance.DEBUG, BadAISReferenceException.class),
     BAD_INTERNAL_SETTING (22, 23, Importance.DEBUG, BadAISInternalSettingException.class),
     // AkSserver errors
-    // TRANSACTION_ERROR(30, 0), // TODO PersistitException should get caught and wrapped as this
+
     MULTIGENERATIONAL_TABLE(30, 900, Importance.ERROR, null),
 
     // Bad AkSserver errors
@@ -193,6 +193,9 @@ public enum ErrorCode {
     }
     public Class<? extends InvalidOperationException> associatedExceptionClass() {
         return exceptionClass; 
+    }
+    public String getFormattedValue() {
+        return formattedValue;
     }
 
     public static enum Importance {

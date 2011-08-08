@@ -60,7 +60,7 @@ public final class DropIndexesIT extends ITBase {
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
     }
 
-    @Test(expected=ProtectedIndexException.class)
+    @Test(expected=NoSuchIndexException.class)
     public void hiddenPrimaryKey() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int, name varchar(255)");
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("PRIMARY"));

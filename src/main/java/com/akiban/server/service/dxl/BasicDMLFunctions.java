@@ -475,9 +475,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 throw e; // Don't want this to be handled as an Exception
             } catch (RollbackException e) {
                 throw e; // Pass this up to be handled in scanSome
-            }
-            finally {
+            } catch (InvalidOperationException e) {
                 cursor.setFinished();
+                throw e;
             }
         }
 

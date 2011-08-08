@@ -37,7 +37,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NewRowBuilder;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.error.UnsupportedDropException;
 
 public final class COIBasicIT extends ITBase {
@@ -201,7 +201,7 @@ public final class COIBasicIT extends ITBase {
             expectFullRows(tids.coi);
             assertTrue("group table exists", false);
         }
-        catch(NoSuchTableException e) {
+        catch(NoSuchTableIdException e) {
             // Expected, deleting root table should remove group table
         }
     }

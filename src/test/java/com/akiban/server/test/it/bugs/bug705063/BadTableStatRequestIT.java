@@ -16,17 +16,17 @@
 package com.akiban.server.test.it.bugs.bug705063;
 
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 public final class BadTableStatRequestIT extends ITBase {
-    @Test(expected= NoSuchTableException.class)
+    @Test(expected= RowDefNotFoundException.class)
     public void noTablesDefined() throws InvalidOperationException {
         dml().getTableStatistics(session(), -1, false);
     }
 
-    @Test(expected= NoSuchTableException.class)
+    @Test(expected= RowDefNotFoundException.class)
     public void wrongTableIdDefined() throws InvalidOperationException {
         int created = createATable();
 

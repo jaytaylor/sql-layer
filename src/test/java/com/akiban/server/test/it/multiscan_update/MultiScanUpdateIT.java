@@ -209,9 +209,9 @@ public class MultiScanUpdateIT extends ITBase {
                 updateColumn.updateInPlace(newRow);
                 doUpdate(oldRow, newRow);
             }
-        } catch (ConcurrentScanAndUpdateRuntimeException e) {
+        } catch (ConcurrentScanAndUpdateException e) {
             assertEquals("calls to scanSome", 2, scanIterator.getScanSomeCalls());
-            throw e.cause;
+            throw e;
         } finally {
             scanIterator.close();
         }
@@ -221,20 +221,20 @@ public class MultiScanUpdateIT extends ITBase {
         dml().updateRow(session(), oldRow, newRow, ConstantColumnSelector.ALL_ON);
     }
 
-    private static class ConcurrentScanAndUpdateRuntimeException extends RuntimeException {
-        private final ConcurrentScanAndUpdateException cause;
-
-        private ConcurrentScanAndUpdateRuntimeException(ConcurrentScanAndUpdateException cause) {
-            super(cause);
-            this.cause = cause;
-        }
+//    private static class ConcurrentScanAndUpdateRuntimeException extends RuntimeException {
+//        private final ConcurrentScanAndUpdateException cause;
+//
+//        private ConcurrentScanAndUpdateRuntimeException(ConcurrentScanAndUpdateException cause) {
+//            super(cause);
+//            this.cause = cause;
+//        }
         
-        @Override
-        public Throwable getCause() {
-            assert super.getCause() == cause : String.format("%s != %s", super.getCause(), cause);
-            return cause;
-        }
-    }
+//        @Override
+//        public Throwable getCause() {
+//            assert super.getCause() == cause : String.format("%s != %s", super.getCause(), cause);
+//            return cause;
+//        }
+//    }
 
     private final static class ScanIterator implements Iterator<NewRow> {
         private final BufferedLegacyOutputRouter router;
@@ -295,10 +295,10 @@ public class MultiScanUpdateIT extends ITBase {
                     throw new RuntimeException(e); // couldn't pick up even a single row!
                 }
                 router.reset(0);
-            } catch (ConcurrentScanAndUpdateException e) {
-                throw new ConcurrentScanAndUpdateRuntimeException(e);
-            } catch (InvalidOperationException e) {
-                throw new RuntimeException(e);
+            //} catch (ConcurrentScanAndUpdateException e) {
+            //    throw new ConcurrentScanAndUpdateRuntimeException(e);
+            //} catch (InvalidOperationException e) {
+            //    throw new RuntimeException(e);
             }
             outputIterator = output.getRows().iterator();
         }

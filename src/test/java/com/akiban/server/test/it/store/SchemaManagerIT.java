@@ -228,7 +228,7 @@ public final class SchemaManagerIT extends ITBase {
             deleteTableDef(SCHEMA, T1_NAME);
             Assert.fail("Exception expected!");
         } catch(InvalidOperationException e) {
-            assertEquals("error code", ErrorCode.UNSUPPORTED_MODIFICATION, e.getCode());
+            assertEquals("error code", ErrorCode.REFERENCED_TABLE, e.getCode());
         }
 
         assertTablesInSchema(SCHEMA, T1_NAME, T3_CHILD_T1_NAME);

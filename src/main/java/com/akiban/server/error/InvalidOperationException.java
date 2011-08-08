@@ -25,7 +25,7 @@ public abstract class InvalidOperationException extends RuntimeException
     private final String shortMessage;
 
     private InvalidOperationException(ErrorCode code, String message) {
-        super(String.format("%s: %s", code.name(), message));
+        super(String.format("%s: %s", code.getFormattedValue(), message));
         this.code = code;
         this.shortMessage = message;
         assert this.getClass().equals(code.associatedExceptionClass());

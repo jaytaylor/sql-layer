@@ -37,7 +37,6 @@ import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.ScanRequest;
-import com.akiban.server.error.DropIndexNotAllowedException;
 import com.akiban.server.error.ForeignConstraintDDLException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchGroupException;
@@ -45,6 +44,7 @@ import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.UnsupportedDropException;
 import com.akiban.server.service.session.Session;
 import com.persistit.exception.PersistitException;
@@ -268,7 +268,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    @SuppressWarnings("unused")
     // meant to be used from JMX
     public void forceGenerationUpdate() {
         logger.trace("forcing schema generation update");
@@ -322,7 +321,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 throw new NoSuchIndexException (indexName);
             }
             if(index.isPrimaryKey()) {
-                throw new DropIndexNotAllowedException ("PRIMARY", tableName);
+                throw new ProtectedIndexException ("PRIMARY", table.getName());
             }
             indexes.add(index);
         }

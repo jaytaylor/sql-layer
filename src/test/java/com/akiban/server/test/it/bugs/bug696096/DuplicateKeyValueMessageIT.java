@@ -15,6 +15,8 @@
 
 package com.akiban.server.test.it.bugs.bug696096;
 
+import java.text.MessageFormat;
+
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.error.ErrorCode;
@@ -95,10 +97,10 @@ public final class DuplicateKeyValueMessageIT extends ITBase {
     }
 
     private static void dupMessageValid(DuplicateKeyException e, String indexName) {
-        final String message = String.format(ErrorCode.DUPLICATE_KEY.getMessage(), indexName);
-        final String expectedMessagePrefix = message.substring(0, message.length()-4);
+        final String message = MessageFormat.format(ErrorCode.DUPLICATE_KEY.getMessage(), indexName);
+        final String expectedMessagePrefix = message.substring(0, message.length()-5);
         
-        boolean messageIsValid = e.getMessage().startsWith(expectedMessagePrefix);
+        boolean messageIsValid = e.getShortMessage().startsWith(expectedMessagePrefix);
 
         if (!messageIsValid) {
             String errString = String.format("expected message to start with <%s>, but was <%s>",
