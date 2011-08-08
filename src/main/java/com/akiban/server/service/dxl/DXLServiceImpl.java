@@ -21,6 +21,10 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceNotStartedException;
 import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.SchemaManager;
+import com.akiban.server.store.Store;
+import com.google.inject.Inject;
 
 import java.util.Collections;
 import java.util.List;
@@ -31,12 +35,13 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
 
     private volatile DDLFunctions ddlFunctions;
     private volatile DMLFunctions dmlFunctions;
-
-    private final DXLMXBean bean = new DXLMXBeanImpl(this);
+    private final SchemaManager schemaManager;
+    private final Store store;
+    private final TreeService treeService;
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("DXL", bean, DXLMXBean.class);
+        return new JmxObjectInfo("DXL", new DXLMXBeanImpl(this), DXLMXBean.class);
     }
 
     @Override
@@ -65,11 +70,11 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     }
 
     DMLFunctions createDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions newlyCreatedDDLF) {
-        return new BasicDMLFunctions(middleman, newlyCreatedDDLF);
+        return new BasicDMLFunctions(middleman, schemaManager, store, treeService, newlyCreatedDDLF);
     }
 
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
-        return new BasicDDLFunctions(middleman);
+        return new BasicDDLFunctions(middleman, schemaManager, store, treeService);
     }
 
     @Override
@@ -109,5 +114,26 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     @Override
     public void crash() throws Exception {
         BasicDXLMiddleman.destroy();
+    }
+
+    @Inject
+    public DXLServiceImpl(SchemaManager schemaManager, Store store, TreeService treeService) {
+        this.schemaManager = schemaManager;
+        this.store = store;
+        this.treeService = treeService;
+    }
+
+    // for use by subclasses
+
+    protected final SchemaManager schemaManager() {
+        return schemaManager;
+    }
+
+    protected final Store store() {
+        return store;
+    }
+
+    protected final TreeService treeService() {
+        return treeService;
     }
 }

@@ -25,6 +25,7 @@ import com.akiban.server.PersistitKeyConversionTarget;
 import com.akiban.server.types.ConversionSource;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.types.Converters;
 import com.akiban.util.ArgumentValidation;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -61,7 +62,7 @@ class OperatorStoreGIHandler {
             Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
 
             ConversionSource source = row.conversionSource(flattenedIndex, UndefBindings.only());
-            column.getType().akType().convert(source, target);
+            Converters.convert(source, target.expectingType(column));
 
             boolean isHKeyComponent = i+1 > groupIndex.getColumns().size();
             if (sourceRowPosition.isAboveSegment() && isHKeyComponent && column.getTable().equals(sourceTable)) {

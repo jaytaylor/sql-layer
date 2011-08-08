@@ -87,7 +87,7 @@ public class MessageSizeLimitIT extends ITBase
         String query = query(minId);
         HapiGetRequest request = ParsedHapiGetRequest.parse(query);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(MESSAGE_LIMIT_BYTES);
-        Scanrows.instance().processRequest(session(), request, outputter, outputStream);
+        Scanrows.instance(configService(), dxl()).processRequest(session(), request, outputter, outputStream);
         return new String(outputStream.toByteArray());
     }
 

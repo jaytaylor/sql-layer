@@ -41,4 +41,5 @@ public interface ConversionSource {
     String getString();
     String getText();
     void appendAsString(AkibanAppender appender);
+    AkType getConversionType();
 }

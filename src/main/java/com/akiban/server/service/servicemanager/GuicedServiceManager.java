@@ -56,15 +56,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public final class GuicedServiceManager implements ServiceManager {
+public final class GuicedServiceManager implements ServiceManager, JmxManageable {
     // ServiceManager interface
 
     @Override
     public void startServices() throws ServiceStartupException {
         ServiceManagerImpl.setServiceManager(this);
-
+        getJmxRegistryService().register(this);
         for (Class<?> directlyRequiredClass : guicer.directlyRequiredClasses()) {
             guicer.get(directlyRequiredClass, STANDARD_SERVICE_ACTIONS);
         }
@@ -158,6 +159,14 @@ public final class GuicedServiceManager implements ServiceManager {
         return guicer.serviceIsStarted(serviceClass);
     }
 
+    // JmxManageable interface
+
+    @Override
+    public JmxObjectInfo getJmxObjectInfo() {
+        return new JmxObjectInfo("Services", bean, ServiceManagerMXBean.class);
+    }
+
+
     // GuicedServiceManager interface
 
     public GuicedServiceManager(BindingsConfigurationProvider bindingsConfigurationProvider) {
@@ -223,6 +232,41 @@ public final class GuicedServiceManager implements ServiceManager {
     // object state
 
     private final Guicer guicer;
+
+    private final ServiceManagerMXBean bean = new ServiceManagerMXBean() {
+        @Override
+        public List<String> getStartedDependencies() {
+            boolean fullNames = isFullClassNames();
+            List<String> result = new ArrayList<String>();
+            for (Class<?> requiredClass : guicer.directlyRequiredClasses()) {
+                List<?> dependencies = guicer.dependenciesFor(requiredClass);
+                List<String> dependenciesClasses = new ArrayList<String>();
+                for (Object dependency : dependencies) {
+                    Class<?> depClass = dependency.getClass();
+                    dependenciesClasses.add(fullNames ? depClass.getName() : depClass.getSimpleName());
+                }
+                result.add(dependenciesClasses.toString());
+            }
+            return result;
+        }
+
+        @Override
+        public void graphStartedDependencies(String filename) {
+            guicer.graph(filename, guicer.directlyRequiredClasses());
+        }
+
+        @Override
+        public boolean isFullClassNames() {
+            return fullClassNames.get();
+        }
+
+        @Override
+        public void setFullClassNames(boolean value) {
+            fullClassNames.set(value);
+        }
+
+        private final AtomicBoolean fullClassNames = new AtomicBoolean(false);
+    };
 
     final Guicer.ServiceLifecycleActions<Service<?>> STANDARD_SERVICE_ACTIONS
             = new Guicer.ServiceLifecycleActions<Service<?>>()

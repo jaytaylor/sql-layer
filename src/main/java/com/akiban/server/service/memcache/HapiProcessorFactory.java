@@ -16,6 +16,8 @@
 package com.akiban.server.service.memcache;
 
 import com.akiban.server.api.HapiProcessor;
+import com.akiban.server.service.ServiceManager;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.memcache.hprocessor.CachedProcessor;
 import com.akiban.server.service.memcache.hprocessor.EmptyRows;
 import com.akiban.server.service.memcache.hprocessor.Scanrows;
@@ -27,7 +29,8 @@ enum HapiProcessorFactory {
     SCANROWS(null) {
         @Override
         public HapiProcessor getHapiProcessor() {
-            return Scanrows.instance();
+            ServiceManager sm = ServiceManagerImpl.get();
+            return Scanrows.instance(sm.getConfigurationService(), sm.getDXL());
         }
     },
     CACHED(new CachedProcessor())

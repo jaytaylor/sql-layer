@@ -15,6 +15,8 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.store.Store;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
@@ -27,11 +29,8 @@ import com.akiban.qp.physicaloperator.StoreAdapter;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.EventTypes;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.Store;
 
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
@@ -53,7 +52,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresServerConnection.class);
 
-    private PostgresServer server;
+    private final PostgresServer server;
+    private final PostgresServiceRequirements reqs;
     private boolean running = false, ignoreUntilSync = false;
     private Socket socket;
     private PostgresMessenger messenger;
@@ -67,7 +67,6 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         new HashMap<String,PostgresStatement>();
 
     private Session session;
-    private ServiceManager serviceManager;
     private int aisGeneration = -1;
     private AkibanInformationSchema ais;
     private StoreAdapter adapter;
@@ -84,12 +83,16 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     private PostgresSessionTracer sessionTracer;
 
     public PostgresServerConnection(PostgresServer server, Socket socket, 
-                                    int pid, int secret) {
+                                    int pid, int secret,
+                                    PostgresServiceRequirements reqs
+    ) {
         this.server = server;
+        this.reqs = reqs;
+
         this.socket = socket;
         this.pid = pid;
         this.secret = secret;
-        this.sessionTracer = (PostgresSessionTracer) ServiceManagerImpl.get().getInstrumentationService().createSqlSessionTracer(pid);
+        this.sessionTracer = new PostgresSessionTracer(pid, server.isInstrumentationEnabled());
         sessionTracer.setRemoteAddress(socket.getInetAddress().getHostAddress());
     }
 
@@ -271,8 +274,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
 
         // Get initial version of AIS.
-        session = ServiceManagerImpl.newSession();
-        serviceManager = ServiceManagerImpl.get();
+        session = reqs.sessionService().createSession();
         updateAIS();
 
         {
@@ -386,8 +388,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
         readyForQuery();
         logger.debug("Query complete");
-        if (ServiceManagerImpl.get().getInstrumentationService().isQueryLogEnabled()) {
-            ServiceManagerImpl.get().getInstrumentationService().logQuery(pid, sql, (System.nanoTime() - startTime));
+        if (reqs.instrumentation().isQueryLogEnabled()) {
+            reqs.instrumentation().logQuery(pid, sql, (System.nanoTime() - startTime));
         }
     }
 
@@ -509,8 +511,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             sessionTracer.endEvent();
         }
         logger.debug("Execute complete");
-        if (ServiceManagerImpl.get().getInstrumentationService().isQueryLogEnabled()) {
-            ServiceManagerImpl.get().getInstrumentationService().logQuery(pid, sql, (System.nanoTime() - startTime));
+        if (reqs.instrumentation().isQueryLogEnabled()) {
+            reqs.instrumentation().logQuery(pid, sql, (System.nanoTime() - startTime));
         }
     }
 
@@ -539,7 +541,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     // When the AIS changes, throw everything away, since it might
     // point to obsolete objects.
     protected void updateAIS() throws StandardException {
-        DDLFunctions ddl = serviceManager.getDXL().ddlFunctions();
+        DDLFunctions ddl = reqs.dxl().ddlFunctions();
         // TODO: This could be more reliable if the AIS object itself
         // also knew its generation. Right now, can get new generation
         // # and old AIS and not notice until next change.
@@ -557,8 +559,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
         PostgresOperatorCompiler compiler = new PostgresOperatorCompiler(this);
         {
-            Store store = serviceManager.getStore();
-            PersistitStore persistitStore;
+            final Store store = reqs.store();
+            final PersistitStore persistitStore;
             if (store instanceof OperatorStore)
                 persistitStore = ((OperatorStore)store).getPersistitStore();
             else
@@ -653,8 +655,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     @Override
-    public ServiceManager getServiceManager() {
-        return serviceManager;
+    public DXLService getDXL() {
+        return reqs.dxl();
     }
 
     @Override
@@ -718,7 +720,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     public void beginTransaction() throws StandardException {
         if (transaction != null)
             throw new StandardException("A transaction is already in progress.");
-        transaction = serviceManager.getTreeService().getTransaction(session);
+        transaction = reqs.treeService().getTransaction(session);
         try {
             transaction.begin();
         }

@@ -18,24 +18,6 @@ package com.akiban.server.service.instrumentation;
 import com.akiban.sql.pg.PostgresSessionTracer;
 
 public interface InstrumentationService {
-
-    public PostgresSessionTracer createSqlSessionTracer(int sessionId);
-        
-    public PostgresSessionTracer getSqlSessionTracer(int sessionId);
-    
-    /*
-     * whether instrumentation is enabled for all sessions
-     */
-    boolean isEnabled();
-    void enable();
-    void disable();
-    
-    /*
-     * whether instrumentation is enabled for a specific session
-     */
-    boolean isEnabled(int sessionId);
-    void enable(int sessionId);
-    void disable(int sessionId);
     
     /*
      * query log related functions

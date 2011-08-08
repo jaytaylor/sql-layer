@@ -48,8 +48,7 @@ public class TreeServiceImplTest {
 
     @Test
     public void startupPropertiesTest() throws Exception {
-        final TreeServiceImpl treeService = new TreeServiceImpl();
-        final Properties properties = treeService.setupPersistitProperties(configService.cast());
+        final Properties properties = TreeServiceImpl.setupPersistitProperties(configService.cast());
         assertNotNull(properties.getProperty("datapath"));
         assertNotNull(properties.getProperty("buffer.memory.16384"));
     }
