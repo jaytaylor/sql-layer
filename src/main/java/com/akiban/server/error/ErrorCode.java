@@ -189,7 +189,7 @@ public enum ErrorCode {
     }
     
     public String getMessage() { 
-        return resourceBundle.getString(formattedValue);
+        return resourceBundle.getString(name());
     }
     public Class<? extends InvalidOperationException> associatedExceptionClass() {
         return exceptionClass; 
