@@ -15,6 +15,8 @@
 
 package com.akiban.server;
 
+import com.akiban.ais.model.Column;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ConversionSource;
 import com.akiban.server.types.SourceIsNullException;
 import com.akiban.util.AkibanAppender;
@@ -29,10 +31,11 @@ public final class PersistitKeyConversionSource implements ConversionSource {
 
     // PersistitKeyConversionSource interface
 
-    public void attach(Key key, int index) {
+    public void attach(Key key, Column column) {
         this.key = key;
-        this.key.indexTo(index);
+        this.key.indexTo(column.getPosition());
         clear();
+        this.akType = column.getType().akType();
     }
 
     // ConversionSource interface
@@ -134,8 +137,11 @@ public final class PersistitKeyConversionSource implements ConversionSource {
         appender.append(getString());
     }
 
-
-    // object interface
+    @Override
+    public AkType getConversionType() {
+        return akType;
+    }
+// object interface
 
     @Override
     public String toString() {
@@ -173,6 +179,7 @@ public final class PersistitKeyConversionSource implements ConversionSource {
     // object state
 
     private Key key;
+    private AkType akType = AkType.UNSUPPORTED;
     private Object decoded;
     private boolean needsDecoding = true;
     private final WrappingByteSource byteSource = new WrappingByteSource();

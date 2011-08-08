@@ -15,6 +15,7 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.physicaloperator.Bindings;
@@ -60,7 +61,8 @@ public class PersistitIndexRow extends AbstractRow
 
     @Override
     public ConversionSource conversionSource(int i, Bindings bindings) {
-        conversionSource.attach(indexRow, i);
+        Column column = index().getColumns().get(i).getColumn();
+        conversionSource.attach(indexRow, column);
         return conversionSource;
     }
 

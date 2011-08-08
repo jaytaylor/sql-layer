@@ -26,6 +26,7 @@ import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.store.IndexVisitor;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.types.Converters;
 import com.akiban.server.types.ToObjectConversionTarget;
 import com.akiban.util.Equality;
 import com.persistit.Key;
@@ -83,9 +84,10 @@ public class KeyToObjectIT extends ITBase {
                     FieldDef fieldDef = rowDef.getFieldDef(colPos);
                     Object objFromRow = row.get(colPos);
                     Object objFromKey = fieldDef.getEncoding().toObject(key);
-                    conversionSource.attach(key, 0);
+                    conversionSource.attach(key, column);
+                    conversionTarget.expectType(column.getType().akType());
                     try {
-                        column.getType().akType().convert(conversionSource, conversionTarget);
+                        Converters.convert(conversionSource, conversionTarget);
                     } catch (Exception e) {
                         throw new RuntimeException("with AkType." + column.getType().akType(), e);
                     }

@@ -23,6 +23,11 @@ import java.math.BigInteger;
 public final class ToObjectConversionTarget implements ConversionTarget {
     
     // ToObjectConversionTarget interface
+
+    public ToObjectConversionTarget expectType(AkType type) {
+        this.akType = type;
+        return this;
+    }
     
     public Object lastConvertedValue() {
         return result;
@@ -120,6 +125,11 @@ public final class ToObjectConversionTarget implements ConversionTarget {
         result = value;
     }
 
+    @Override
+    public AkType getConversionType() {
+        return akType;
+    }
+
     // Object interface
 
     @Override
@@ -130,4 +140,5 @@ public final class ToObjectConversionTarget implements ConversionTarget {
     // object state
     
     private Object result;
+    private AkType akType = AkType.UNSUPPORTED;
 }
