@@ -52,10 +52,7 @@ public class PersistitIndexRow extends AbstractRow
     @Override
     public Object field(int i, Bindings bindings)
     {
-        IndexColumn indexColumn = index().getColumns().get(i);
-        FieldDef def = (FieldDef) indexColumn.getColumn().getFieldDef();
-        indexRow.indexTo(i);
-        return def.getEncoding().toObject(indexRow);
+        throw new UnsupportedOperationException();
     }
 
     @Override

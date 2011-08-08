@@ -48,7 +48,6 @@ abstract class EncodingBase<T> implements Encoding<T> {
         }
     }
 
-    @Override
     public T toObject(Key key) {
         Object o = key.decode();
         return getToObjectClass().cast(o);

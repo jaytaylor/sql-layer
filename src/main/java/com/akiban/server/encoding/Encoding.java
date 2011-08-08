@@ -58,14 +58,6 @@ public interface Encoding<T> {
      * @throws EncodingException if the rowdata couldn't be converted to the appropriate type
      */
     T toObject(final FieldDef fieldDef, final RowData rowData) throws EncodingException;
-    
-    /**
-     * Converts the current index of the Key to a Java object.
-     * @param key the key to decode from
-     * @return a Java object
-     * @throws ClassCastException if the index is not null or of type T
-     */
-    T toObject(final Key key) throws ClassCastException;
 
     /**
      * Convert a value supplied as an Object to a value in a RowData backing
