@@ -17,6 +17,7 @@ package com.akiban.util;
 
 import org.junit.Test;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
@@ -84,6 +85,15 @@ public final class WrappingByteSourceTest {
     @Test(expected = IllegalArgumentException.class)
     public void negativeLength() {
         wrap(new byte[10], 0, -1);
+    }
+
+    @Test
+    public void byteBufferConversion() {
+        byte[] bytes = new byte[10];
+        ByteBuffer byteBuffer = ByteBuffer.wrap(bytes, 3, 4);
+        WrappingByteSource converted = WrappingByteSource.fromByteBuffer(byteBuffer);
+        WrappingByteSource manual = new WrappingByteSource().wrap(bytes, 3, 4);
+        assertEquals("converted WrappingByteSource", manual, converted);
     }
 
     private static void check(ByteSource byteSource, byte[] expectedBytes, int expectedOffset, int expectedLength) {

@@ -26,10 +26,14 @@ public final class ToObjectConversionTarget implements ConversionTarget {
 
     public ToObjectConversionTarget expectType(AkType type) {
         this.akType = type;
+        putPending = true;
         return this;
     }
     
     public Object lastConvertedValue() {
+        if (putPending) {
+            throw new IllegalStateException("put is pending for type " + akType);
+        }
         return result;
     }
     
@@ -37,92 +41,92 @@ public final class ToObjectConversionTarget implements ConversionTarget {
 
     @Override
     public void putNull() {
-        result = null;
+        internalPut(null);
     }
 
     @Override
     public void putDate(long value) {
-        result = value;
+        internalPut(value);
     }
 
     @Override
     public void putDateTime(long value) {
-        result = value;
+        internalPut(value);
     }
 
     @Override
     public void putDecimal(BigDecimal value) {
-        result = value;
+        internalPut(value);
     }
 
     @Override
     public void putDouble(double value) {
-        result = value;
+        internalPut(value);
     }
 
     @Override
     public void putFloat(float value) {
-        result = value;
+        internalPut(value);
     }
 
     @Override
     public void putInt(long value) {
-        result = value;
+        internalPut(value);
     }
 
     @Override
     public void putLong(long value) {
-        result = value;
+        internalPut(value);
     }
 
     @Override
     public void putString(String value) {
-        result = value;
+        internalPut(value);
     }
 
     @Override
     public void putText(String value) {
-        result = value;
+        internalPut(value);
     }
 
     @Override
     public void putTime(long value) {
-        result = value;
+        internalPut(value);
     }
 
     @Override
     public void putTimestamp(long value) {
-        result = value;
+        internalPut(value);
     }
 
     @Override
     public void putUBigInt(BigInteger value) {
-        result = value;
+        internalPut(value);
     }
 
     @Override
     public void putUDouble(double value) {
-        result = value;
+        internalPut(value);
     }
 
     @Override
     public void putUFloat(float value) {
-        result = value;
+        internalPut(value);
     }
 
     @Override
     public void putUInt(long value) {
-        result = value;
+        internalPut(value);
     }
 
     @Override
     public void putVarBinary(ByteSource value) {
-        result = value;
+        internalPut(value);
     }
 
     @Override
     public void putYear(long value) {
-        result = value;
+        internalPut(value);
     }
 
     @Override
@@ -134,11 +138,25 @@ public final class ToObjectConversionTarget implements ConversionTarget {
 
     @Override
     public String toString() {
-        return "Converted( " + result + " )";
+        return String.format("Converted(%s %s)",
+                akType,
+                putPending ? "<put pending>" : result
+        );
     }
 
+    // for use in this class
+    
+    private void internalPut(Object value) {
+        if (!putPending) {
+            throw new IllegalStateException("no put pending: " + toString());
+        }
+        result = value;
+        putPending = false;
+    }
+    
     // object state
     
     private Object result;
     private AkType akType = AkType.UNSUPPORTED;
+    private boolean putPending = true;
 }

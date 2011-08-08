@@ -29,17 +29,20 @@ import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.Converters;
 import com.akiban.server.types.ToObjectConversionTarget;
 import com.akiban.util.Equality;
+import com.akiban.util.WrappingByteSource;
 import com.persistit.Key;
 import com.persistit.Value;
 import junit.framework.Assert;
 import org.junit.Test;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 public class KeyToObjectIT extends ITBase {
 
@@ -84,14 +87,21 @@ public class KeyToObjectIT extends ITBase {
                     FieldDef fieldDef = rowDef.getFieldDef(colPos);
                     Object objFromRow = row.get(colPos);
                     Object objFromKey = fieldDef.getEncoding().toObject(key);
-                    conversionSource.attach(key, column);
+                    boolean convertByteBuffer = objFromKey instanceof ByteBuffer;
+                    if (convertByteBuffer) {
+                        objFromKey = WrappingByteSource.fromByteBuffer((ByteBuffer)objFromKey);
+                    }
+                    conversionSource.attach(key, indexColumn);
                     conversionTarget.expectType(column.getType().akType());
                     try {
                         Converters.convert(conversionSource, conversionTarget);
                     } catch (Exception e) {
                         throw new RuntimeException("with AkType." + column.getType().akType(), e);
                     }
-                    Equality.areEqual(objFromKey, conversionTarget.lastConvertedValue());
+                    Object lastConvertedValue = conversionTarget.lastConvertedValue();
+                    if (!Equality.areEqual(objFromKey, lastConvertedValue)) {
+                        fail(String.format("expected <%s> but found <%s>", objFromKey, lastConvertedValue));
+                    }
 
                     // Work around for dropping of 0 value sigfigs from key.decode()
                     int compareValue = 1;
@@ -99,6 +109,15 @@ public class KeyToObjectIT extends ITBase {
                         compareValue = ((BigDecimal)objFromRow).compareTo(((BigDecimal)objFromKey));
                     }
                     if(compareValue != 0) {
+                        if (convertByteBuffer) {
+                            if (! (objFromRow instanceof ByteBuffer)) {
+                                fail("objectFromRow expected type ByteBuffer, found "
+                                        + (objFromRow == null ? "null" : objFromRow.getClass())
+                                );
+                            }
+                            ByteBuffer asByteBuffer = (ByteBuffer) objFromRow;
+                            objFromRow = WrappingByteSource.fromByteBuffer(asByteBuffer);
+                        }
                         assertEquals(String.format("column %d of row %d, row value vs index entry", colPos, rowCounter),
                                      objFromRow, objFromKey);
                     }

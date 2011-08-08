@@ -15,9 +15,33 @@
 
 package com.akiban.util;
 
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+
 public final class WrappingByteSource implements ByteSource {
 
     // WrappingByteSource interface
+
+    /**
+     * Converts an array-backed ByteBuffer to a WrappingByteSource.
+     * @param byteBuffer the ByteBuffer that is wrapping a byte[]
+     * @return a WrappingByteSource that represents the same byte[] wrapping as the incoming ByteBuffer
+     * @throws NullPointerException if byteBuffer is null
+     * @throws IllegalArgumentException if {@code byteBuffer.hasArray() == false}
+     * @deprecated This method is intended to be used as a bridge while we convert the whole system to use
+     * the new conversions system. Once that conversion is in place, we shouldn't need this method.
+     */
+    @Deprecated
+    public static WrappingByteSource fromByteBuffer(ByteBuffer byteBuffer) {
+        if (!byteBuffer.hasArray()) {
+            throw new IllegalArgumentException("incoming ByteBuffer must have a backing array");
+        }
+        return new WrappingByteSource().wrap(
+                byteBuffer.array(),
+                byteBuffer.arrayOffset() + byteBuffer.position(),
+                byteBuffer.arrayOffset() + byteBuffer.limit() - byteBuffer.position()
+        );
+    }
 
     public WrappingByteSource wrap(byte[] bytes) {
         return wrap(bytes, 0, bytes.length);
@@ -63,7 +87,31 @@ public final class WrappingByteSource implements ByteSource {
         return length;
     }
 
-    // private methods
+    // Object interface
+
+    @Override
+    public String toString() {
+        return String.format("WrappingByteSource(byte[%d] offset=%d length=%d)", bytes.length, offset, length);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        WrappingByteSource that = (WrappingByteSource) o;
+
+        return length == that.length && offset == that.offset && Arrays.equals(bytes, that.bytes);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Arrays.hashCode(bytes);
+        result = 31 * result + offset;
+        result = 31 * result + length;
+        return result;
+    }
 
     // object state
 

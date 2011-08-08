@@ -29,6 +29,8 @@ final class ConverterForFloat extends FloatConverter {
         case LONG:      return source.getLong();
         case INT:       return source.getInt();
         case U_INT:     return source.getUInt();
+        case U_FLOAT:   return source.getUFloat();
+        case U_DOUBLE:  return (float) source.getUDouble();
         default: throw unsupportedConversion(type);
         }
     }

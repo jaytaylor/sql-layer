@@ -15,7 +15,7 @@
 
 package com.akiban.server;
 
-import com.akiban.ais.model.Column;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ConversionSource;
 import com.akiban.server.types.SourceIsNullException;
@@ -31,11 +31,11 @@ public final class PersistitKeyConversionSource implements ConversionSource {
 
     // PersistitKeyConversionSource interface
 
-    public void attach(Key key, Column column) {
+    public void attach(Key key, IndexColumn indexColumn) {
         this.key = key;
-        this.key.indexTo(column.getPosition());
+        this.key.indexTo(indexColumn.getPosition());
         clear();
-        this.akType = column.getType().akType();
+        this.akType = indexColumn.getColumn().getType().akType();
     }
 
     // ConversionSource interface

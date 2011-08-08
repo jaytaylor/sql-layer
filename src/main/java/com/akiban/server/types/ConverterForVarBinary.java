@@ -25,7 +25,7 @@ final class ConverterForVarBinary extends ObjectConverter<ByteSource> {
     public ByteSource getObject(ConversionSource source) {
         AkType type = source.getConversionType();
         switch (type) {
-        case U_BIGINT:   return source.getVarBinary();
+        case VARBINARY:   return source.getVarBinary();
         default: throw unsupportedConversion(type);
         }
     }
