@@ -83,6 +83,7 @@ public enum ErrorCode {
     NO_SUCH_RECORD          (3, 5, Importance.DEBUG, null),
     FK_CONSTRAINT_VIOLATION (3, 6, Importance.DEBUG, ForeignKeyConstraintDMLException.class),
     UNSUPPORTED_MODIFICATION(3, 7, Importance.DEBUG, null),
+
     TABLEDEF_MISMATCH       (3, 9, Importance.DEBUG, TableDefinitionMismatchException.class), 
     NO_SUCH_ROW             (3, 10, Importance.DEBUG,  NoSuchRowException.class),
     CONCURRENT_MODIFICATION (3, 11, Importance.DEBUG, ConcurrentScanAndUpdateException.class), 
