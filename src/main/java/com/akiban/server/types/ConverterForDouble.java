@@ -31,13 +31,22 @@ final class ConverterForDouble extends DoubleConverter {
         case U_INT:     return source.getUInt();
         case U_FLOAT:   return source.getFloat();
         case U_DOUBLE:  return source.getUDouble();
-        default: throw unsupportedConversion(type);
+        case TEXT:      return Double.parseDouble(source.getText());
+        case VARCHAR:   return Double.parseDouble(source.getString());
+        default: throw unsupportedConversion(source);
         }
     }
 
     @Override
     protected void putDouble(ConversionTarget target, double value) {
         target.putDouble(value);
+    }
+
+    // AbstractConverter interface
+
+    @Override
+    protected AkType nativeConversionType() {
+        return AkType.DOUBLE;
     }
 
     private ConverterForDouble() {}

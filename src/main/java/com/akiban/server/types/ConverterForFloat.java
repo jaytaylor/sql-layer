@@ -31,13 +31,22 @@ final class ConverterForFloat extends FloatConverter {
         case U_INT:     return source.getUInt();
         case U_FLOAT:   return source.getUFloat();
         case U_DOUBLE:  return (float) source.getUDouble();
-        default: throw unsupportedConversion(type);
+        case TEXT:      return Float.parseFloat(source.getText());
+        case VARCHAR:   return Float.parseFloat(source.getString());
+        default: throw unsupportedConversion(source);
         }
     }
 
     @Override
     protected void putFloat(ConversionTarget target, float value) {
         target.putFloat(value);
+    }
+
+    // AbstractConverter interface
+
+    @Override
+    protected AkType nativeConversionType() {
+        return AkType.FLOAT;
     }
 
     private ConverterForFloat() {}

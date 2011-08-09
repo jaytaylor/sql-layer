@@ -15,6 +15,7 @@
 
 package com.akiban.server.types;
 
+import com.akiban.util.AkibanAppender;
 import com.persistit.exception.ConversionException;
 
 abstract class AbstractConverter {
@@ -28,8 +29,12 @@ abstract class AbstractConverter {
     }
 
     protected abstract void doConvert(ConversionSource source, ConversionTarget target);
+    protected abstract AkType nativeConversionType();
 
-    protected final RuntimeException unsupportedConversion(AkType unsupportedType) {
-        return new ConversionException("can't convert from type " + unsupportedType);
+    protected final RuntimeException unsupportedConversion(ConversionSource source) {
+        StringBuilder sb = new StringBuilder("can't convert to type ").append(nativeConversionType());
+        sb.append(" from ").append(source.getConversionType()).append(": ");
+        source.appendAsString(AkibanAppender.of(sb));
+        return new ConversionException(sb.toString());
     }
 }

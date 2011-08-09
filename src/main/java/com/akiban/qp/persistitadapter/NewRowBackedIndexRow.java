@@ -67,7 +67,7 @@ public class NewRowBackedIndexRow implements RowBase
         if (row.isColumnNull(fieldPos)) {
             source.setNull();
         }
-        source.set(row.get(fieldPos), fieldDef.getType().akType());
+        source.setReflectively(row.get(fieldPos));
         return source;
     }
 

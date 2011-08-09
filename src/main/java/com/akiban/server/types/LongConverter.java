@@ -17,7 +17,7 @@ package com.akiban.server.types;
 
 public abstract class LongConverter extends AbstractConverter {
 
-    // AbstractLongConverter interface
+    // LongConverter interface
 
     public abstract long getLong(ConversionSource source);
 

@@ -22,12 +22,26 @@ abstract class ConverterForString extends ObjectConverter<String> {
         protected void putObject(ConversionTarget target, String value) {
             target.putString(value);
         }
+
+        // AbstractConverter interface
+
+        @Override
+        protected AkType nativeConversionType() {
+            return AkType.VARCHAR;
+        }
     };
 
     static final ObjectConverter<String> TEXT = new ConverterForString() {
         @Override
         protected void putObject(ConversionTarget target, String value) {
             target.putText(value);
+        }
+
+        // AbstractConverter interface
+
+        @Override
+        protected AkType nativeConversionType() {
+            return AkType.TEXT;
         }
     };
 
@@ -50,7 +64,7 @@ abstract class ConverterForString extends ObjectConverter<String> {
         case TIMESTAMP: // fall
         case VARBINARY: // fall
         case YEAR:      // fall
-        default: throw unsupportedConversion(type);
+        default: throw unsupportedConversion(source);
         }
     }
 

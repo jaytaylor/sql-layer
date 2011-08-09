@@ -439,7 +439,7 @@ public class RowData {
             if (fieldDef.isFixedSize()) {
                 if (object != null) {
                     try {
-                        source.set(object, fieldDef.getType().akType());
+                        source.setReflectively(object);
                         target.bind(fieldDef, this);
                         Converters.convert(source, target);
                     } catch (Exception e) {
@@ -486,7 +486,7 @@ public class RowData {
             final FieldDef fieldDef = rowDef.getFieldDef(index);
             if (object != null && !fieldDef.isFixedSize()) {
                 try {
-                    source.set(object, fieldDef.getType().akType());
+                    source.setReflectively(object);
                     target.bind(fieldDef, this);
                     Converters.convert(source, target);
                 } catch (Exception e) {

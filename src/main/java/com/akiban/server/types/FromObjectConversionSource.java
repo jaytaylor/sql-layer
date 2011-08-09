@@ -25,19 +25,6 @@ public final class FromObjectConversionSource implements ConversionSource {
 
     // FromObjectConversionSource interface
 
-    public void set(Object object, AkType asType) {
-        if (asType.equals(AkType.UNSUPPORTED)) {
-            throw new IllegalArgumentException("can't set to UNSUPPORTED");
-        }
-        if (object == null) {
-            setNull();
-        }
-        else {
-            this.akType = asType;
-            this.object = LegacyTransformations.INSTANCE.tryTransformations(asType, object);
-        }
-    }
-
     public void setReflectively(Object object) {
         if (object == null) {
             setNull();
@@ -194,6 +181,19 @@ public final class FromObjectConversionSource implements ConversionSource {
         } catch (ClassCastException e) {
             String className = object == null ? "null" : object.getClass().getName();
             throw new ClassCastException("casting " + className + " to " + castClass);
+        }
+    }
+
+    private void set(Object object, AkType asType) {
+        if (asType.equals(AkType.UNSUPPORTED)) {
+            throw new IllegalArgumentException("can't set to UNSUPPORTED");
+        }
+        if (object == null) {
+            setNull();
+        }
+        else {
+            this.akType = asType;
+            this.object = LegacyTransformations.TRIVIAL_TRANSFORMATIONS.tryTransformations(asType, object);
         }
     }
 

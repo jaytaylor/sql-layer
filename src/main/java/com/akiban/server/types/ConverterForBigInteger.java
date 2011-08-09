@@ -25,14 +25,23 @@ final class ConverterForBigInteger extends ObjectConverter<BigInteger> {
     public BigInteger getObject(ConversionSource source) {
         AkType type = source.getConversionType();
         switch (type) {
-        case U_BIGINT:   return source.getUBigInt();
-        default: throw unsupportedConversion(type);
+        case U_BIGINT:  return source.getUBigInt();
+        case TEXT:      return new BigInteger(source.getText());
+        case VARCHAR:   return new BigInteger(source.getString());
+        default: throw unsupportedConversion(source);
         }
     }
 
     @Override
     protected void putObject(ConversionTarget target, BigInteger value) {
         target.putUBigInt(value);
+    }
+
+    // AbstractConverter interface
+
+    @Override
+    protected AkType nativeConversionType() {
+        return AkType.U_BIGINT;
     }
 
     private ConverterForBigInteger() {}

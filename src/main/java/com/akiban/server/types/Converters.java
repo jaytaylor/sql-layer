@@ -18,7 +18,12 @@ package com.akiban.server.types;
 public final class Converters {
 
     public static void convert(ConversionSource source, ConversionTarget target) {
-        get(target.getConversionType()).convert(source, target);
+        AkType conversionType = target.getConversionType();
+        if (conversionType == AkType.NULL) {
+            target.putNull();
+        } else {
+            get(conversionType).convert(source, target);
+        }
     }
 
     public static AbstractConverter get(AkType type) {

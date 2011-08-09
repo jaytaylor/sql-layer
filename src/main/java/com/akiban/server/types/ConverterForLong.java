@@ -22,12 +22,26 @@ abstract class ConverterForLong extends LongConverter {
         protected void putLong(ConversionTarget target, long value) {
             target.putLong(value);
         }
+
+        // AbstractConverter interface
+
+        @Override
+        protected AkType nativeConversionType() {
+            return AkType.LONG;
+        }
     };
 
     static final LongConverter INT = new ConverterForLong() {
         @Override
         protected void putLong(ConversionTarget target, long value) {
             target.putInt(value);
+        }
+
+        // AbstractConverter interface
+
+        @Override
+        protected AkType nativeConversionType() {
+            return AkType.INT;
         }
     };
 
@@ -36,16 +50,25 @@ abstract class ConverterForLong extends LongConverter {
         protected void putLong(ConversionTarget target, long value) {
             target.putUInt(value);
         }
+
+        // AbstractConverter interface
+
+        @Override
+        protected AkType nativeConversionType() {
+            return AkType.U_INT;
+        }
     };
 
     @Override
     public long getLong(ConversionSource source) {
         AkType type = source.getConversionType();
         switch (type) {
-        case LONG:  return source.getLong();
-        case INT:   return source.getInt();
-        case U_INT: return source.getUInt();
-        default: throw unsupportedConversion(type);
+        case LONG:      return source.getLong();
+        case INT:       return source.getInt();
+        case U_INT:     return source.getUInt();
+        case TEXT:      return Long.parseLong(source.getText());
+        case VARCHAR:   return Long.parseLong(source.getString());
+        default: throw unsupportedConversion(source);
         }
     }
 

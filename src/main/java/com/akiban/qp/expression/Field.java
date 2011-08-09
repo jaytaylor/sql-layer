@@ -17,6 +17,9 @@ package com.akiban.qp.expression;
 
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.Row;
+import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.Converters;
+import com.akiban.server.types.ToObjectConversionTarget;
 
 class Field implements Expression
 {
@@ -25,7 +28,12 @@ class Field implements Expression
     @Override
     public Object evaluate(Row row, Bindings bindings)
     {
-        return row.field(position, bindings);
+        // TODO this isn't very efficient...
+        ConversionSource source = row.conversionSource(position, bindings);
+        ToObjectConversionTarget target = new ToObjectConversionTarget();
+        target.expectType( source.getConversionType() );
+        Converters.convert(source, target);
+        return target.lastConvertedValue();
     }
 
     @Override
