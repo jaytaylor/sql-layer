@@ -81,19 +81,6 @@ public interface Encoding<T> {
     void toKey(final FieldDef fieldDef, final RowData rowData, final Key key);
 
     /**
-     * Append a value supplied as an Object to a a Persistit
-     * {@link com.persistit.Key}.
-     *
-     * @param fieldDef
-     *            description of the field
-     * @param value
-     *            the value to append
-     * @param key
-     *            Persistit Key to receive the value
-     */
-    void toKey(final FieldDef fieldDef, final Object value, final Key key);
-
-    /**
      * Calculate the maximum storage size a given column using this encoding
      * will take when stored in a {@link Key}.
      * @param column column instance

@@ -17,12 +17,20 @@ package com.akiban.server.rowdata;
 
 abstract class FieldDefConversionBase {
 
-    // public method
+    // FieldDefConversionBase interface
 
     public void bind(FieldDef fieldDef, RowData rowData) {
         this.fieldDef = fieldDef;
         this.rowData = rowData;
     }
+
+    // Object interface
+
+    @Override
+    public String toString() {
+        return String.format("ConversionSource( %s -> %s )", fieldDef, rowData.toString(fieldDef.getRowDef()));
+    }
+
 
     // package-private
 

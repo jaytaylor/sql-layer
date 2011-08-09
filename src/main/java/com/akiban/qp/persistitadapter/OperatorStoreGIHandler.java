@@ -23,8 +23,6 @@ import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyConversionTarget;
 import com.akiban.server.types.ConversionSource;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.types.Converters;
 import com.akiban.util.ArgumentValidation;
 import com.persistit.Exchange;
@@ -178,7 +176,7 @@ class OperatorStoreGIHandler {
         }
     }
 
-    private static boolean nullOutHKey(int nullPoint, GroupIndex groupIndex, Row row, Key key) {
+    private boolean nullOutHKey(int nullPoint, GroupIndex groupIndex, Row row, Key key) {
         if (nullPoint < 0) {
             return false;
         }
@@ -191,10 +189,8 @@ class OperatorStoreGIHandler {
             else {
                 final int flattenedIndex = irc.getFieldPosition(i);
                 Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
-                Object value = row.field(flattenedIndex, UndefBindings.only());
-                RowDef rowDef = (RowDef) column.getTable().rowDef();
-                FieldDef fieldDef = rowDef.getFieldDef(column.getPosition());
-                fieldDef.getEncoding().toKey(fieldDef, value, key);
+                ConversionSource source = row.conversionSource(flattenedIndex, UndefBindings.only());
+                Converters.convert(source, target.expectingType(column));
             }
         }
         return true;

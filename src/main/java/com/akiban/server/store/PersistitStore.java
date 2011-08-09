@@ -55,7 +55,6 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.util.Tap;
@@ -173,7 +172,7 @@ public class PersistitStore implements Store {
     }
 
     public Exchange getExchange(final Session session, final Index index) throws PersistitException {
-        return treeService.getExchange(session, (IndexDef)index.indexDef());
+        return treeService.getExchange(session, (IndexDef) index.indexDef());
     }
 
     public Key getKey(Session session) throws PersistitException
@@ -285,11 +284,12 @@ public class PersistitStore implements Store {
     void constructHKey(Exchange hEx, RowDef rowDef, int[] ordinals,
             int[] nKeyColumns, FieldDef[] hKeyFieldDefs, Object[] hKeyValues)
             throws Exception {
+        PersistitKeyAppender appender = new PersistitKeyAppender(hEx.getKey());
         final Key hkey = hEx.getKey();
         hkey.clear();
         int k = 0;
         for (int i = 0; i < ordinals.length; i++) {
-            hkey.append(ordinals[i]);
+            appender.append(ordinals[i]);
             for (int j = 0; j < nKeyColumns[i]; j++) {
                 FieldDef fieldDef = hKeyFieldDefs[k];
                 if (fieldDef.isPKLessTableCounter()) {
@@ -300,7 +300,7 @@ public class PersistitStore implements Store {
                             .getTableStatus();
                     hkey.append(tableStatus.allocateNewUniqueId());
                 } else {
-                    appendKeyField(hkey, fieldDef, hKeyValues[k]);
+                    appender.append(hKeyValues[k], fieldDef);
                 }
                 k++;
             }
@@ -374,11 +374,6 @@ public class PersistitStore implements Store {
                     toKey.getEncodedBytes(), toKey.getEncodedSize(), to - from);
             toKey.setEncodedSize(toKey.getEncodedSize() + to - from);
         }
-    }
-
-    private void appendKeyField(final Key key, final FieldDef fieldDef,
-            Object value) {
-        fieldDef.getEncoding().toKey(fieldDef, value, key);
     }
 
     // --------------------- Implement Store interface --------------------
@@ -1490,4 +1485,5 @@ public class PersistitStore implements Store {
         }
         return visitor;
     }
+
 }

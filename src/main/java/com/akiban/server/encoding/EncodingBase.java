@@ -94,6 +94,18 @@ abstract class EncodingBase<T> implements Encoding<T> {
 
     abstract public int widthFromObject(FieldDef fieldDef, Object value);
     abstract public void toKey(FieldDef fieldDef, RowData rowData, Key key);
+
+    /**
+     * Append a value supplied as an Object to a a Persistit
+     * {@link com.persistit.Key}.
+     *
+     * @param fieldDef
+     *            description of the field
+     * @param value
+     *            the value to append
+     * @param key
+     *            Persistit Key to receive the value
+     */
     abstract public void toKey(FieldDef fieldDef, Object value, Key key);
     abstract public long getMaxKeyStorageSize(Column column);
     abstract public Class<T> getToObjectClass();

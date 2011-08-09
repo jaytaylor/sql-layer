@@ -17,6 +17,7 @@ package com.akiban.server.test.it.rowtests;
 
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.encoding.Encoding;
+import com.akiban.server.store.PersistitKeyAppender;
 import com.akiban.server.test.it.ITBase;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
@@ -29,12 +30,11 @@ import static org.junit.Assert.assertEquals;
 public class ObjectToKeyIT extends ITBase {
 
     private void testObjectToKey(FieldDef field, Object... testValues) throws PersistitException {
-        final Encoding encoder = field.getEncoding();
-
         Key key = persistitStore().getKey(session());
+        PersistitKeyAppender appender = new PersistitKeyAppender(key);
         for(Object inObj : testValues) {
             key.clear();
-            encoder.toKey(field, inObj, key);
+            appender.append(inObj, field);
 
             Object outObj = key.decode();
             if(outObj != null) {

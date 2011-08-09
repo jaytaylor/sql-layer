@@ -72,7 +72,7 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
 
     @Override
     public double getDouble() {
-        long asLong = extractLong();
+        long asLong = extractLong(Signage.SIGNED);
         return Double.longBitsToDouble(asLong);
     }
 
@@ -83,7 +83,7 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
 
     @Override
     public float getFloat() {
-        long asLong = extractLong();
+        long asLong = extractLong(Signage.SIGNED);
         int asInt = (int) asLong;
         return Float.intBitsToFloat(asInt);
     }
@@ -95,42 +95,42 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
 
     @Override
     public long getDate() {
-        return extractLong();
+        return extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getDateTime() {
-        return extractLong();
+        return extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getInt() {
-        return extractLong();
+        return extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getLong() {
-        return extractLong();
+        return extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getTime() {
-        return extractLong();
+        return extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getTimestamp() {
-        return extractLong();
+        return extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getUInt() {
-        return extractLong();
+        return extractLong(Signage.UNSIGNED);
     }
 
     @Override
     public long getYear() {
-        return extractLong();
+        return extractLong(Signage.SIGNED);
     }
 
     @Override
@@ -163,11 +163,16 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
         return fieldDef().getRowDef().fieldLocation(rowData(), fieldDef().getFieldIndex());
     }
     
-    private long extractLong() {
+    private long extractLong(Signage signage) {
         long offsetAndWidth = getCheckedOffsetAndWidth();
         final int offset = (int)offsetAndWidth;
         final int width = (int)(offsetAndWidth >>> 32);
-        return rowData().getIntegerValue(offset, width);
+        if (signage == Signage.SIGNED) {
+            return rowData().getIntegerValue(offset, width);
+        } else {
+            assert signage == Signage.UNSIGNED;
+            return rowData().getUnsignedIntegerValue(offset, width);
+        }
     }
 
     private long getCheckedOffsetAndWidth() {
@@ -192,4 +197,8 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
     };
 
     private final WrappingByteSource byteSource = new WrappingByteSource();
+
+    private enum Signage {
+        SIGNED, UNSIGNED
+    }
 }

@@ -27,10 +27,10 @@ public final class Converters {
      * @return the conversion target; this return value is provided as a convenience, so you can chain calls
      */
     public static <T extends ConversionTarget> T convert(ConversionSource source, T target) {
-        AkType conversionType = target.getConversionType();
-        if (conversionType == AkType.NULL) {
+        if (source.isNull()) {
             target.putNull();
         } else {
+            AkType conversionType = target.getConversionType();
             get(conversionType).convert(source, target);
         }
         return target;
