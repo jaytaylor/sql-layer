@@ -60,29 +60,8 @@ public interface Encoding<T> {
     T toObject(final FieldDef fieldDef, final RowData rowData) throws EncodingException;
 
     /**
-     * Convert a value supplied as an Object to a value in a RowData backing
-     * array. This method is mostly for the convenience of unit tests. It
-     * converts a Java Object value of an appropriate type to MySQL format. For
-     * example, the DATE Encoding converts an object supplies as a Date, or a
-     * String in date format to a MySQL field. For variable-length values
-     * (VARCHAR, TEXT, etc.) this method writes the length-prefixed string
-     * value.
-     *
-     * @param fieldDef
-     *            description of the field
-     * @param value
-     *            Value to convert
-     * @param dest
-     *            Byte array for the RowData being created
-     * @param offset
-     *            Offset of first byte to write in the array
-     * @return number of RowData bytes occupied by the value
-     */
-    int fromObject(final FieldDef fieldDef, final Object value, final byte[] dest, final int offset);
-
-    /**
      * Size in bytes required by the
-     * {@link #fromObject(FieldDef, Object, byte[], int)} method. For
+     * {@link EncodingBase#fromObject(FieldDef, Object, byte[], int)} method. For
      * fixed-length fields this is the field width. For variable-length fields,
      * this is the number of bytes used to store the item, including the number
      * of prefix bytes used to encode its length. For example, a VARCHAR(300)

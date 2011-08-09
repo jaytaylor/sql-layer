@@ -59,7 +59,7 @@ public final class TimeEncoder extends LongEncoderBase {
             seconds %= 60;
             hours += minutes/60;
             minutes %= 60;
-            value = mul * (hours*HOURS_SCALE + minutes*MINUTES_SCALE + seconds);
+            value = mul * (hours* TIME_HOURS_SCALE + minutes* TIME_MINUTES_SCALE + seconds);
         }else if(obj instanceof Number) {
             value = ((Number)obj).intValue();
         } else if(obj != null) {
@@ -71,9 +71,9 @@ public final class TimeEncoder extends LongEncoderBase {
     @Override
     public String decodeToString(long value) {
         final int abs = Math.abs((int)value);
-        final int hour = abs / HOURS_SCALE;
-        final int minute = (abs - hour*HOURS_SCALE) / MINUTES_SCALE;
-        final int second = abs - hour*HOURS_SCALE - minute*MINUTES_SCALE;
+        final int hour = abs / TIME_HOURS_SCALE;
+        final int minute = (abs - hour* TIME_HOURS_SCALE) / TIME_MINUTES_SCALE;
+        final int second = abs - hour* TIME_HOURS_SCALE - minute* TIME_MINUTES_SCALE;
         return String.format("%s%02d:%02d:%02d", abs != value ? "-" : "", hour, minute, second);
     }
 
@@ -88,6 +88,6 @@ public final class TimeEncoder extends LongEncoderBase {
     }
 
     
-    final static int HOURS_SCALE = 10000;
-    final static int MINUTES_SCALE = 100;
+    final static int TIME_HOURS_SCALE = 10000;
+    final static int TIME_MINUTES_SCALE = 100;
 }

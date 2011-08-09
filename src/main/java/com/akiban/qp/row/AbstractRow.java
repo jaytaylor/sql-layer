@@ -32,9 +32,7 @@ public abstract class AbstractRow implements Row
 
     @Override
     public ConversionSource conversionSource(int i, Bindings bindings) {
-        throw new UnsupportedOperationException(
-                "this should really be abstract, but for the sake of this proposal I'm stubbing it out"
-        );
+        throw new UnsupportedOperationException("not yet implemented: " + getClass().getName());
     }
 
     @Override

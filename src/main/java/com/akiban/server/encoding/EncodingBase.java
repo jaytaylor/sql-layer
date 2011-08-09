@@ -62,7 +62,28 @@ abstract class EncodingBase<T> implements Encoding<T> {
     
     abstract public boolean validate(Type type);
     abstract public T toObject(FieldDef fieldDef, RowData rowData) throws EncodingException;
+
+    /**
+     * Convert a value supplied as an Object to a value in a RowData backing
+     * array. This method is mostly for the convenience of unit tests. It
+     * converts a Java Object value of an appropriate type to MySQL format. For
+     * example, the DATE Encoding converts an object supplies as a Date, or a
+     * String in date format to a MySQL field. For variable-length values
+     * (VARCHAR, TEXT, etc.) this method writes the length-prefixed string
+     * value.
+     *
+     * @param fieldDef
+     *            description of the field
+     * @param value
+     *            Value to convert
+     * @param dest
+     *            Byte array for the RowData being created
+     * @param offset
+     *            Offset of first byte to write in the array
+     * @return number of RowData bytes occupied by the value
+     */
     abstract public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset);
+
     abstract public int widthFromObject(FieldDef fieldDef, Object value);
     abstract public void toKey(FieldDef fieldDef, RowData rowData, Key key);
     abstract public void toKey(FieldDef fieldDef, Object value, Key key);
