@@ -38,6 +38,33 @@ public final class FromObjectConversionSource implements ConversionSource {
         }
     }
 
+    public void setReflectively(Object object) {
+        if (object == null) {
+            setNull();
+            return;
+        }
+        
+        final AkType asType;
+
+        if (object instanceof Integer || object instanceof Long)
+            asType = AkType.LONG;
+        else if (object instanceof String)
+            asType = AkType.VARCHAR;
+        else if (object instanceof Double)
+            asType = AkType.DOUBLE;
+        else if (object instanceof Float)
+            asType = AkType.FLOAT;
+        else if (object instanceof BigDecimal)
+            asType = AkType.DECIMAL;
+        else if (object instanceof ByteSource || object instanceof byte[])
+            asType = AkType.VARBINARY;
+        else if (object instanceof BigInteger)
+             asType = AkType.U_BIGINT;
+        else throw new UnsupportedOperationException("can't reflectively set " + object.getClass() + ": " + object);
+
+        set(object, asType);
+    }
+
     public void setNull() {
         this.akType = AkType.NULL;
         this.object = null;
