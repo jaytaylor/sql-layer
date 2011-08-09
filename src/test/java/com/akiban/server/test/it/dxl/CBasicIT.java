@@ -17,7 +17,7 @@ package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.api.dml.scan.*;

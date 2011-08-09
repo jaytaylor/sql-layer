@@ -23,7 +23,7 @@ public class EventImpl implements Event {
         this.name = name;
         this.sessionId = sessionId;
         this.tapName = this.name + ":" + this.sessionId;
-        this.eventTap = Tap.add(new Tap.PerThread(this.tapName, Tap.TimeAndCount.class));
+        this.eventTap = Tap.createTimer(this.tapName);
         if (enabled) {
             enable();
         }
@@ -91,7 +91,7 @@ public class EventImpl implements Event {
     private int sessionId;
     private String tapName;
     private boolean enabled;
-    private final Tap eventTap;
+    private final Tap.InOutTap eventTap;
     private long lastDuration;
     private long totalTime;
     

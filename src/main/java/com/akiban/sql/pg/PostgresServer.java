@@ -15,6 +15,11 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.instrumentation.InstrumentationService;
+import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.Store;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +34,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Also keeps global state for shutdown and inter-connection communication like cancel.
 */
 public class PostgresServer implements Runnable, PostgresMXBean {
-    private int port;
+    private final int port;
+    private final PostgresServiceRequirements reqs;
     private PostgresStatementCache statementCache;
     private ServerSocket socket = null;
     private boolean running = false;
@@ -37,15 +43,19 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private Map<Integer,PostgresServerConnection> connections =
         new HashMap<Integer,PostgresServerConnection>();
     private Thread thread;
-    private AtomicBoolean instrumentationEnabled;
+    private final AtomicBoolean instrumentationEnabled = new AtomicBoolean(false);
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
-    public PostgresServer(int port, int statementCacheCapacity) {
+    public PostgresServer(int port, int statementCacheCapacity, PostgresServiceRequirements reqs) {
         this.port = port;
         if (statementCacheCapacity > 0)
             statementCache = new PostgresStatementCache(statementCacheCapacity);
-        instrumentationEnabled = new AtomicBoolean(false);
+        this.reqs = reqs;
+    }
+
+    public int getPort() {
+        return port;
     }
 
     /** Called from the (AkServer's) main thread to start a server
@@ -110,7 +120,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
                 pid++;
                 int secret = rand.nextInt();
                 PostgresServerConnection connection = 
-                    new PostgresServerConnection(this, sock, pid, secret);
+                    new PostgresServerConnection(this, sock, pid, secret, reqs);
                 connections.put(pid, connection);
                 connection.start();
             }

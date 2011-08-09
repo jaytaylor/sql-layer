@@ -16,7 +16,7 @@
 package com.akiban.server.encoding;
 
 import com.akiban.ais.model.Type;
-import com.akiban.server.FieldDef;
+import com.akiban.server.rowdata.FieldDef;
 
 // TODO - temporarily we handle just like VARCHAR
 public final class TextEncoder extends StringEncoder {

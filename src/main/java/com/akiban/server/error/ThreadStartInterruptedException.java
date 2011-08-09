@@ -12,14 +12,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+package com.akiban.server.error;
 
-package com.akiban.server;
-
-public class CorruptRowDataException extends RuntimeException {
-
-    private static final long serialVersionUID = 1L;
-
-    public CorruptRowDataException(final String msg) {
-        super(msg);
+public class ThreadStartInterruptedException extends InvalidOperationException {
+    public ThreadStartInterruptedException (String service, String message) {
+        super (ErrorCode.THREAD_START_INTR, service, message);
     }
 }

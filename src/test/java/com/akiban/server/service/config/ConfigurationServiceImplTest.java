@@ -39,7 +39,7 @@ public final class ConfigurationServiceImplTest {
 
     private static class MockConfigService extends ConfigurationServiceImpl {
         final private Property[] properties;
-        private final Set<Property.Key> mockRequiredKeys = new HashSet<Property.Key>();
+        private final Set<String> mockRequiredKeys = new HashSet<String>();
 
         MockConfigService(Property... properties) {
             assertNotNull(properties);
@@ -47,8 +47,8 @@ public final class ConfigurationServiceImplTest {
         }
 
         @Override
-        protected Map<Property.Key, Property> loadProperties() throws IOException {
-            Map<Property.Key,Property> ret = new HashMap<Property.Key, Property>(properties.length);
+        protected Map<String, Property> loadProperties() {
+            Map<String,Property> ret = new HashMap<String, Property>(properties.length);
             for (Property property : properties) {
                 ret.put(property.getKey(), property);
             }
@@ -56,11 +56,11 @@ public final class ConfigurationServiceImplTest {
         }
 
         public void requireKey(String name) {
-            mockRequiredKeys.add(Property.parseKey(name) );
+            mockRequiredKeys.add(name);
         }
 
         @Override
-        protected Set<Property.Key> getRequiredKeys() {
+        protected Set<String> getRequiredKeys() {
             return Collections.unmodifiableSet(mockRequiredKeys);
         }
     }
@@ -74,13 +74,13 @@ public final class ConfigurationServiceImplTest {
     @Test(expected=ServiceNotStartedException.class)
     public void unstartedGetProperty() {
         ConfigurationServiceImpl service = new MockConfigService();
-        service.getProperty("mod1", "key1");
+        service.getProperty("mod1");
     }
 
     @Test(expected=ServiceNotStartedException.class)
     public void unstartedGetPropertyDefault() {
         ConfigurationServiceImpl service = new MockConfigService();
-        service.getProperty("mod1.key1", "default1");
+        service.getProperty("mod1.key1");
     }
 
     @Test(expected= ServiceNotStartedException.class)
@@ -94,46 +94,14 @@ public final class ConfigurationServiceImplTest {
     public void stoppedGetPropertyDefault() throws Exception {
         ConfigurationServiceImpl service = createAndStart();
         service.stop();
-        service.getProperty("mod1.key1", "default1");
+        service.getProperty("mod1.key1");
     }
 
     @Test(expected=ServiceNotStartedException.class)
     public void stoppedGetProperty() throws Exception {
         ConfigurationServiceImpl service = createAndStart();
         service.stop();
-        service.getProperty("mod1", "key1");
-    }
-
-    @Test
-    public void moduleConfigForDefinedField() throws ServiceStartupException, IOException {
-        ConfigurationServiceImpl service = createAndStart("mod1", "key1", "val1");
-        ModuleConfiguration moduleConfig = service.getModuleConfiguration("mod1");
-        service.start();
-        assertEquals("mod1, key1", "val1", moduleConfig.getProperty("key1", "foo"));
-    }
-
-    @Test
-    public void getModuleProperties() throws ServiceStartupException, IOException {
-        ConfigurationServiceImpl service = createAndStart(
-                "mod1", "key1", "val1",
-                "mod1", "key2", "val2",
-                "mod2", "key3", "val3");
-        ModuleConfiguration moduleConfig = service.getModuleConfiguration("mod1");
-        service.start();
-
-        Properties properties = moduleConfig.getProperties();
-
-        Properties expected = new Properties();
-        expected.setProperty("key1", "val1");
-        expected.setProperty("key2", "val2");
-
-        assertEquals("properties", expected, properties);
-    }
-
-    @Test(expected=ServiceNotStartedException.class)
-    public void moduleConfigUnstartedService() {
-        ConfigurationService service = new MockConfigService(new Property("mod1", "key1", "val1"));
-        service.getModuleConfiguration("mod1").getProperty("key1");
+        service.getProperty("mod1");
     }
 
     @Test
@@ -165,7 +133,7 @@ public final class ConfigurationServiceImplTest {
         String actual = service.getProperty("mod1.key1");
         assertEquals("mod1, key1", "val1", actual);
         
-        String actual2 = service.getProperty("mod1.key1", "some default");
+        String actual2 = service.getProperty("mod1.key1");
         assertEquals("mod1, key1", "val1", actual2);
     }
 
@@ -175,7 +143,7 @@ public final class ConfigurationServiceImplTest {
         String actual = service.getProperty("mod1.key1");
         assertEquals("mod1, key1", null, actual);
 
-        String actual2 = service.getProperty("mod1.key1", "some default");
+        String actual2 = service.getProperty("mod1.key1");
         assertEquals("mod1, key1", null, actual2);
     }
 
@@ -192,17 +160,57 @@ public final class ConfigurationServiceImplTest {
     }
 
     @Test
-    public void getPropertyUnDefinedKeyWithDefault() {
-        ConfigurationServiceImpl service = createAndStart("mod1", "key1", "val1");
-        String actual = service.getProperty("mod1.key2", "default1");
-        assertEquals("mod1, key2", "default1", actual);
+    public void prefixProperties() {
+        ConfigurationServiceImpl service = createAndStart(
+                "a", "one", "1",
+                "a", "one.alpha", "1a",
+                "a", "two", "2",
+                "b", "three", "3"
+        );
+        Properties props = service.deriveProperties("a.");
+        assertEquals("properties.size()", 3, props.size());
+        assertEquals("properties[one]", "1", props.getProperty("one"));
+        assertEquals("properties[one.alpha]", "1a", props.getProperty("one.alpha"));
+        assertEquals("properties[two]", "2", props.getProperty("two"));
     }
 
     @Test
-    public void getPropertyUnDefinedModuleWithDefault() {
-        ConfigurationServiceImpl service = createAndStart("mod1", "key1", "val1");
-        String actual = service.getProperty("mod2.key1", "foobar2");
-        assertEquals("mod2, key1", "foobar2", actual);
+    public void prefixPropertiesEmptyPrefix() {
+        ConfigurationServiceImpl service = createAndStart(
+                "a", "one", "1",
+                "a", "one.alpha", "1a",
+                "a", "two", "2",
+                "b", "three", "3"
+        );
+        Properties props = service.deriveProperties("");
+        assertEquals("properties.size()", 4, props.size());
+        assertEquals("properties[a.one]", "1", props.getProperty("a.one"));
+        assertEquals("properties[a.one.alpha]", "1a", props.getProperty("a.one.alpha"));
+        assertEquals("properties[a.two]", "2", props.getProperty("a.two"));
+        assertEquals("properties[a.three]", "3", props.getProperty("b.three"));
+    }
+
+    @Test
+    public void prefixPropertiesUnmatchedPrefix() {
+        ConfigurationServiceImpl service = createAndStart(
+                "a", "one", "1",
+                "a", "one.alpha", "1a",
+                "a", "two", "2",
+                "b", "three", "3"
+        );
+        Properties props = service.deriveProperties("c.");
+        assertEquals("properties.size()", 0, props.size());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void prefixPropertiesNullPrefix() {
+        ConfigurationServiceImpl service = createAndStart(
+                "a", "one", "1",
+                "a", "one.alpha", "1a",
+                "a", "two", "2",
+                "b", "three", "3"
+        );
+        service.deriveProperties(null);
     }
 
     @Test(expected=ServiceStartupException.class)
@@ -236,7 +244,7 @@ public final class ConfigurationServiceImplTest {
         final Properties props = new Properties();
         props.setProperty(normalKey, "alpha");
         props.setProperty(requiredKey,"two,three, four");
-        final Set<Property.Key> requiredKeys = new HashSet<Property.Key>();
+        final Set<String> requiredKeys = new HashSet<String>();
 
         ConfigurationServiceImpl.stripRequiredProperties(props, requiredKeys);
 
@@ -244,10 +252,10 @@ public final class ConfigurationServiceImplTest {
         assertEquals("props[one.two]", "alpha", props.getProperty(normalKey));
         assertEquals("props[required.one]", null, props.getProperty(requiredKey));
 
-        final Set<Property.Key> expectedRequired = new HashSet<Property.Key>();
-        expectedRequired.add( Property.parseKey("one.two"));
-        expectedRequired.add( Property.parseKey("one.three"));
-        expectedRequired.add( Property.parseKey("one.four"));
+        final Set<String> expectedRequired = new HashSet<String>();
+        expectedRequired.add("one.two");
+        expectedRequired.add("one.three");
+        expectedRequired.add("one.four");
 
         assertEquals("requiredKeys", expectedRequired, requiredKeys);
     }
@@ -270,21 +278,6 @@ public final class ConfigurationServiceImplTest {
 
         assertFalse("p1.equals(p2)", p1.equals(p2));
         assertTrue("p1.equals(p5)", p1.equals(p5));
-    }
-
-    @Test
-    public void testKeyParsing() {
-        Map<String,Property.Key> expecteds = new HashMap<String, Property.Key>();
-        expecteds.put("module.name", Property.parseKey("module.name"));
-        expecteds.put("name", Property.parseKey("name"));
-        expecteds.put(".name", Property.parseKey(".name"));
-        expecteds.put("name.", Property.parseKey("name."));
-
-        for (Map.Entry<String,Property.Key> entry : expecteds.entrySet()) {
-            String string = entry.getKey();
-            Property.Key expected = entry.getValue();
-            assertEquals(string, expected, Property.parseKey(string));
-        }
     }
 
     private static void testComparison(Property p1, Property p2, int expected) {

@@ -14,9 +14,8 @@
  */
 
 package com.akiban.sql.pg;
-import com.akiban.sql.RegexFilenameFilter;
+import com.akiban.server.rowdata.RowDef;
 
-import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
@@ -25,6 +24,7 @@ import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.error.RowOutputException;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.sql.RegexFilenameFilter;
 
 import org.junit.After;
 import org.junit.Before;
@@ -33,7 +33,6 @@ import static junit.framework.Assert.*;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.SQLException;
 
 import java.io.BufferedReader;
 import java.io.File;

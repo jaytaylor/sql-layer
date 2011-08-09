@@ -43,7 +43,7 @@ public interface TreeService extends Service<TreeService> {
 
     Persistit getDb();
 
-    Exchange getExchange(Session session, TreeLink context) throws PersistitException;
+    Exchange getExchange(Session session, TreeLink context) ;
 
     Exchange getExchange(Session session, Tree tree);
 
@@ -57,11 +57,11 @@ public interface TreeService extends Service<TreeService> {
 
     long getTimestamp(Session session);
 
-    boolean isContainer(Exchange exchange, TreeLink storageLink) throws PersistitException;
+    boolean isContainer(Exchange exchange, TreeLink storageLink);
 
-    int aisToStore(final TreeLink link, final int logicalTableId) throws PersistitException;
+    int aisToStore(final TreeLink link, final int logicalTableId);
 
-    int storeToAis(final TreeLink link, final int storedTableId) throws PersistitException;
+    int storeToAis(final TreeLink link, final int storedTableId);
 
     int storeToAis(final Volume volume, final int storedTableId);
     
@@ -75,5 +75,5 @@ public interface TreeService extends Service<TreeService> {
 
     String volumeForTree(final String schemaName, final String treeName);
 
-    boolean treeExists(final String schemaName, final String treeName) throws PersistitException;
+    boolean treeExists(final String schemaName, final String treeName);
 }

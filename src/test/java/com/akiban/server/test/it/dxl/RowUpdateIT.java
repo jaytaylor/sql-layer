@@ -15,7 +15,7 @@
 
 package com.akiban.server.test.it.dxl;
 
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ByteArrayColumnSelector;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;

@@ -17,15 +17,14 @@ package com.akiban.server.store;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
-import com.akiban.server.FieldDef;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
-import com.akiban.server.RowDefCache;
+import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.service.session.Session;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
@@ -53,15 +52,15 @@ public class DelegatingStore<S extends Store> implements Store {
 
     // Store interface -- auto-generated
 
-    public void start() throws Exception {
+    public void start() {
         delegate.start();
     }
 
-    public void stop() throws Exception {
+    public void stop() {
         delegate.stop();
     }
 
-    public void crash() throws Exception {
+    public void crash() {
         delegate.crash();
     }
 
@@ -125,36 +124,36 @@ public class DelegatingStore<S extends Store> implements Store {
         return delegate.getRowCount(session, exact, start, end, columnBitMap);
     }
 
-    public TableStatistics getTableStatistics(final Session session, int tableId) throws PersistitException {
+    public TableStatistics getTableStatistics(final Session session, int tableId) {
         return delegate.getTableStatistics(session, tableId);
     }
 
-    public void analyzeTable(final Session session, final int tableId) throws PersistitException {
+    public void analyzeTable(final Session session, final int tableId) {
         delegate.analyzeTable(session, tableId);
     }
 
-    public void analyzeTable(final Session session, final int tableId, final int sampleSize) throws PersistitException {
+    public void analyzeTable(final Session session, final int tableId, final int sampleSize) {
         delegate.analyzeTable(session, tableId, sampleSize);
     }
 
-    public void flushIndexes(final Session session) throws PersistitException {
+    public void flushIndexes(final Session session) {
         delegate.flushIndexes(session);
     }
 
-    public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) throws RowDefNotFoundException, InvalidOperationException, PersistitException {
+    public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) {
         delegate.buildIndexes(session, indexes, defer);
     }
 
-    public void deleteIndexes(Session session, Collection<? extends Index> indexes) throws PersistitException {
+    public void deleteIndexes(Session session, Collection<? extends Index> indexes) {
         delegate.deleteIndexes(session, indexes);
     }
 
-    public void removeTrees(Session session, Table table) throws PersistitException {
+    public void removeTrees(Session session, Table table) {
         delegate.removeTrees(session, table);
     }
 
     @Override
-    public void buildAllIndexes(Session session, boolean deferIndexes) throws RowDefNotFoundException, InvalidOperationException, PersistitException {
+    public void buildAllIndexes(Session session, boolean deferIndexes) {
         delegate.buildAllIndexes(session, deferIndexes);
     }
 

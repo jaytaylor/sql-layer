@@ -21,15 +21,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.sql.pg.PostgresService;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.jmx.JmxManageable;
-import com.akiban.server.service.jmx.JmxManageable.JmxObjectInfo;
-import com.akiban.sql.pg.PostgresMXBean;
 import com.akiban.sql.pg.PostgresServer;
 import com.akiban.sql.pg.PostgresSessionTracer;
 
@@ -72,17 +71,6 @@ public class InstrumentationServiceImpl implements
         LOGGER.info("Query log file ready for writing.");
         return true;
     }
-    
-    // InstrumentationService interface
-    
-    public synchronized PostgresSessionTracer createSqlSessionTracer(int sessionId) {
-        PostgresSessionTracer ret = new PostgresSessionTracer(sessionId, pgServer.isInstrumentationEnabled());
-        return ret;
-    }
-    
-    public synchronized PostgresSessionTracer getSqlSessionTracer(int sessionId) {
-        return (PostgresSessionTracer)pgServer.getConnection(sessionId).getSessionTracer();
-    }
 
     // Service interface
     
@@ -97,57 +85,29 @@ public class InstrumentationServiceImpl implements
     }
 
     @Override
-    public void start() throws Exception {
-        this.serviceManager = ServiceManagerImpl.get();
-        pgServer = serviceManager.getPostgresService().getServer();
-        String enableLog = serviceManager.getConfigurationService().getProperty(QUERY_LOG_PROPERTY);
+    public void start() {
+        String enableLog = config.getProperty(QUERY_LOG_PROPERTY);
         this.queryLogEnabled = new AtomicBoolean(Boolean.parseBoolean(enableLog));
-        queryLogFileName = serviceManager.getConfigurationService().getProperty(QUERY_LOG_FILE_PROPERTY);
+        queryLogFileName = config.getProperty(QUERY_LOG_FILE_PROPERTY);
         if (isQueryLogEnabled()) {
             setUpQueryLog();
         }
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
         if (queryOut != null){
-            queryOut.close();
+            try {
+                queryOut.close();
+            } catch (IOException e) {
+                //TODO: Manage the queryOut#close IOException
+            }
         }
     }
 
     @Override
-    public void crash() throws Exception {
+    public void crash() {
         // anything to do?
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return pgServer.isInstrumentationEnabled();
-    }
-
-    @Override
-    public void enable() {
-        pgServer.enableInstrumentation();
-    }
-
-    @Override
-    public void disable() {
-        pgServer.disableInstrumentation();
-    }
-
-    @Override
-    public boolean isEnabled(int sessionId) {
-        return pgServer.isInstrumentationEnabled(sessionId);
-    }
-
-    @Override
-    public void enable(int sessionId) {
-        pgServer.enableInstrumentation(sessionId);
-    }
-
-    @Override
-    public void disable(int sessionId) {  
-        pgServer.disableInstrumentation(sessionId);
     }
 
     @Override
@@ -225,7 +185,15 @@ public class InstrumentationServiceImpl implements
     {
         return new JmxObjectInfo("Instrumentation", this, InstrumentationMXBean.class);
     }
-    
+
+    // InstrumentationServiceImpl interface
+
+    @Inject
+    public InstrumentationServiceImpl(ConfigurationService config) {
+        this.config = config;
+    }
+
+
     // state
     
     private static final String QUERY_LOG_PROPERTY = "akserver.querylog";
@@ -233,11 +201,11 @@ public class InstrumentationServiceImpl implements
     
     private static final Logger LOGGER = LoggerFactory.getLogger(InstrumentationServiceImpl.class);
             
-    private PostgresServer pgServer;
+//    private final PostgresServer pgServer;
+    private final ConfigurationService config;
     private AtomicBoolean queryLogEnabled;
     private String queryLogFileName;
     private File queryLogFile;
     private BufferedWriter queryOut;
-    private ServiceManager serviceManager;
     
 }

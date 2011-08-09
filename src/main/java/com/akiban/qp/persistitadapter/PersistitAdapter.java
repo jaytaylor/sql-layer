@@ -31,8 +31,8 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.PersistItErrorException;
@@ -120,7 +120,7 @@ public class PersistitAdapter extends StoreAdapter
         return transact(persistit.getExchange(session, (RowDef) table.rowDef()));
     }
 
-    public Exchange takeExchange(Index index) throws PersistitException
+    public Exchange takeExchange(Index index)
     {
         return transact(persistit.getExchange(session, index));
     }

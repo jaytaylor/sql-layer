@@ -15,8 +15,8 @@
 package com.akiban.server.error;
 
 import com.akiban.qp.exec.UpdateResult;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 
 public class TooManyRowsUpdatedException extends InvalidOperationException {
     public TooManyRowsUpdatedException (RowData rowData, RowDef rowDef, UpdateResult result) {

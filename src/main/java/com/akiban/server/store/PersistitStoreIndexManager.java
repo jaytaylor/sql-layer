@@ -21,16 +21,17 @@ import java.util.List;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.TableName;
+import com.akiban.server.rowdata.IndexDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.server.IndexDef;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.TableStatistics.Histogram;
 import com.akiban.server.TableStatistics.HistogramSample;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.PersistItErrorException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.persistit.Exchange;
@@ -89,10 +90,10 @@ public class PersistitStoreIndexManager implements IndexManager {
      * 
      * @see
      * com.akiban.server.store.IndexManager#analyzeTable(com.akiban.server.service
-     * .session.Session, com.akiban.server.RowDef)
+     * .session.Session, com.akiban.server.rowdata.RowDef)
      */
     @Override
-    public void analyzeTable(final Session session, final RowDef rowDef) throws PersistitException {
+    public void analyzeTable(final Session session, final RowDef rowDef) {
         analyzeTable(session, rowDef, DEFAULT_SAMPLE_SIZE - 1);
     }
 
@@ -101,12 +102,16 @@ public class PersistitStoreIndexManager implements IndexManager {
      * 
      * @see
      * com.akiban.server.store.IndexManager#analyzeTable(com.akiban.server.service
-     * .session.Session, com.akiban.server.RowDef, int)
+     * .session.Session, com.akiban.server.rowdata.RowDef, int)
      */
     @Override
-    public void analyzeTable(final Session session, final RowDef rowDef, final int sampleSize) throws PersistitException {
+    public void analyzeTable(final Session session, final RowDef rowDef, final int sampleSize) {
         for (Index index : rowDef.getIndexes()) {
-            analyzeIndex(session, index, sampleSize);
+            try {
+                analyzeIndex(session, index, sampleSize);
+            } catch (PersistitException e) {
+                throw new PersistItErrorException (e);
+            }
         }
     }
 
@@ -264,7 +269,7 @@ public class PersistitStoreIndexManager implements IndexManager {
                         analysisEx.getKey().cut();
                         analysisEx.remove(Key.GT);
                     } catch (PersistitException e) {
-                        throw e;
+                        throw new PersistItErrorException (e);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }

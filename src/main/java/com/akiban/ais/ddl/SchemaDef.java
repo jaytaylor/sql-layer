@@ -1242,7 +1242,7 @@ public class SchemaDef {
         return parseSchemaFromANTLRStream(new SDFileStream(fileName));
     }
 
-    public static SchemaDef parseSchemaFromStream(InputStream stream) throws IOException, RecognitionException {
+    public static SchemaDef parseSchemaFromStream(InputStream stream) throws RecognitionException, IOException {
         return parseSchemaFromANTLRStream(new SDInputStream(stream));
     }
 

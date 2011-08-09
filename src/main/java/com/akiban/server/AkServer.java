@@ -21,6 +21,7 @@ import com.akiban.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.akiban.server.error.TapBeanFailureException;
 import com.akiban.server.manage.ManageMXBean;
 import com.akiban.server.manage.ManageMXBeanImpl;
 import com.akiban.server.service.Service;
@@ -44,7 +45,6 @@ public class AkServer implements Service<AkServerEmptyInterface>, JmxManageable,
     public static final String VERSION_STRING = getVersionString();
 
     private static final Logger LOG = LoggerFactory.getLogger(AkServer.class.getName());
-    private static final ShutdownMXBeanImpl shutdownBean = new ShutdownMXBeanImpl();
     private static final String AKSERVER_NAME = System.getProperty("akserver.name");
     private static final String pidFileName = System.getProperty("akserver.pidfile");
 
@@ -55,20 +55,29 @@ public class AkServer implements Service<AkServerEmptyInterface>, JmxManageable,
     }
 
     @Override
-    public void start() throws Exception {
+    public void start() {
         LOG.info("Starting AkServer {}", AKSERVER_NAME);
-        Tap.registerMXBean();
+
+        try {
+            Tap.registerMXBean();
+        } catch (Exception e) {
+            throw new TapBeanFailureException (e.getMessage());
+        }
     }
 
     @Override
-    public void stop() throws Exception
+    public void stop() 
     {
         LOG.info("Stopping AkServer {}", AKSERVER_NAME);
-        Tap.unregisterMXBean();
+        try {
+            Tap.unregisterMXBean();
+        } catch (Exception e) {
+            throw new TapBeanFailureException(e.getMessage());
+        }
     }
     
     @Override
-    public void crash() throws Exception {
+    public void crash() {
         stop();
     }
 
@@ -110,14 +119,15 @@ public class AkServer implements Service<AkServerEmptyInterface>, JmxManageable,
 
     private static class ShutdownMXBeanImpl implements ShutdownMXBean {
         private static final String BEAN_NAME = "com.akiban:type=SHUTDOWN";
+        private final ServiceManager sm;
 
-        public ShutdownMXBeanImpl() {
+        public ShutdownMXBeanImpl(ServiceManager sm) {
+            this.sm = sm;
         }
 
         @Override
         public void shutdown() {
             try {
-                ServiceManager sm = ServiceManagerImpl.get();
                 if(sm != null) {
                     sm.stopServices();
                 }
@@ -132,6 +142,11 @@ public class AkServer implements Service<AkServerEmptyInterface>, JmxManageable,
      * @param args the command line arguments
      */
     public static void main(String[] args) throws Exception {
+        GuicedServiceManager.BindingsConfigurationProvider bindingsConfigurationProvider = GuicedServiceManager.standardUrls();
+        ServiceManager serviceManager = new GuicedServiceManager(bindingsConfigurationProvider);
+
+        final ShutdownMXBeanImpl shutdownBean = new ShutdownMXBeanImpl(serviceManager);
+
         // JVM shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
@@ -141,8 +156,6 @@ public class AkServer implements Service<AkServerEmptyInterface>, JmxManageable,
         }, "ShutdownHook"));
 
         // Bring system up
-        GuicedServiceManager.BindingsConfigurationProvider bindingsConfigurationProvider = GuicedServiceManager.standardUrls();
-        final ServiceManager serviceManager = new GuicedServiceManager(bindingsConfigurationProvider);
         serviceManager.startServices();
         
         // JMX shutdown method

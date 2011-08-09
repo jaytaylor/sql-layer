@@ -18,11 +18,9 @@ package com.akiban.server.encoding;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 import com.akiban.server.AkServerUtil;
-import com.akiban.server.FieldDef;
-import com.akiban.server.Quote;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
-import com.akiban.util.AkibanAppender;
+import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import com.persistit.Key;
 
 import java.math.BigInteger;

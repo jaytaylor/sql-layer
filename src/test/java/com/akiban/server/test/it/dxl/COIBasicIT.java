@@ -25,7 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 

@@ -15,7 +15,7 @@
 
 package com.akiban.server.service.dxl;
 
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.dml.ColumnSelector;

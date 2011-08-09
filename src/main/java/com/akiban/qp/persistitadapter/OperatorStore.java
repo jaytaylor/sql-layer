@@ -39,21 +39,21 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoRowsUpdatedException;
-import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.error.TooManyRowsUpdatedException;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
+import com.google.inject.Inject;
 import com.persistit.Exchange;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
@@ -108,7 +108,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
         Update_Default updateOp = new Update_Default(scanOp, updateFunction);
 
-        Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
+        Transaction transaction = treeService.getTransaction(session);
         for(int retryCount=0; ; ++retryCount) {
             try {
                 transaction.begin();
@@ -141,13 +141,13 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     @Override
     public void writeRow(Session session, RowData rowData) throws PersistitException {
-        Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
+        Transaction transaction = treeService.getTransaction(session);
         for(int retryCount=0; ; ++retryCount) {
             try {
                 transaction.begin();
                 super.writeRow(session, rowData);
 
-                AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
+                AkibanInformationSchema ais = aisHolder.getAis();
                 PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
                 UserTable uTable = ais.getUserTable(rowData.getRowDefId());
                 maintainGroupIndexes(
@@ -170,11 +170,11 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     @Override
     public void deleteRow(Session session, RowData rowData) throws PersistitException {
-        Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
+        Transaction transaction = treeService.getTransaction(session);
         for(int retryCount=0; ; ++retryCount) {
             try {
                 transaction.begin();
-                AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
+                AkibanInformationSchema ais = aisHolder.getAis();
                 PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
                 UserTable uTable = ais.getUserTable(rowData.getRowDefId());
                 maintainGroupIndexes(
@@ -196,7 +196,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     @Override
-    public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) throws RowDefNotFoundException, InvalidOperationException, PersistitException {
+    public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) {
         List<TableIndex> tableIndexes = new ArrayList<TableIndex>();
         List<GroupIndex> groupIndexes = new ArrayList<GroupIndex>();
         for(Index index : indexes) {
@@ -215,7 +215,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             super.buildIndexes(session, tableIndexes, defer);
         }
 
-        AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
+        AkibanInformationSchema ais = aisHolder.getAis();
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
         for(GroupIndex groupIndex : groupIndexes) {
             PhysicalOperator plan = OperatorStoreMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
@@ -233,8 +233,11 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // OperatorStore interface
 
-    public OperatorStore() {
-        super(new PersistitStore(false));
+    @Inject
+    public OperatorStore(AisHolder aisHolder, TreeService treeService) {
+        super(new PersistitStore(false, treeService));
+        this.aisHolder = aisHolder;
+        this.treeService = treeService;
     }
 
     public PersistitStore getPersistitStore() {
@@ -311,7 +314,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             OperatorStoreGIHandler.Action action,
             OperatorStoreMaintenancePlan maintenancePlan
     )
-    throws PersistitException
     {
         RowType invertActionRowType = maintenancePlan == null ? null : maintenancePlan.flattenedAncestorRowType();
         Cursor cursor = API.cursor(rootOperator, adapter);
@@ -402,7 +404,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
 
+    // object state
+    private final TreeService treeService;
+    private final AisHolder aisHolder;
+
     // consts
+
     private static final int MAX_RETRIES = 10;
 
     // nested classes

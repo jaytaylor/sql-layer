@@ -37,11 +37,7 @@ class PersistitIndexCursor implements Cursor
     public void open(Bindings bindings)
     {
         assert exchange == null;
-        try {
-            exchange = adapter.takeExchange(indexRowType.index()).clear().append(boundary);
-        } catch (PersistitException e) {
-            throw new PersistitAdapterException(e);
-        }
+        exchange = adapter.takeExchange(indexRowType.index()).clear().append(boundary);
         if (keyRange != null) {
             indexFilter = adapter.filterFactory.computeIndexFilter(exchange.getKey(), index(), keyRange, bindings);
         }

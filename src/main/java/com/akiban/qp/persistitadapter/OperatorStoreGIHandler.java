@@ -21,8 +21,12 @@ import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
-import com.akiban.server.FieldDef;
-import com.akiban.server.RowDef;
+import com.akiban.server.KeyConversionTarget;
+import com.akiban.server.types.ConversionSource;
+import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.types.Converters;
 import com.akiban.util.ArgumentValidation;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -33,7 +37,6 @@ class OperatorStoreGIHandler {
     // GroupIndexHandler interface
 
     public void handleRow(GroupIndex groupIndex, Row row, Action action)
-    throws PersistitException
     {
         assert Action.BULK_ADD.equals(action) == (sourceTable==null) : null;
         GroupIndexPosition sourceRowPosition = positionWithinBranch(groupIndex, sourceTable);
@@ -44,21 +47,23 @@ class OperatorStoreGIHandler {
         Exchange exchange = adapter.takeExchange(groupIndex);
         Key key = exchange.getKey();
         key.clear();
+        target.attach(key);
         IndexRowComposition irc = groupIndex.indexRowComposition();
 
         // nullPoint is the point at which we should stop nulling hkey values; needs a better name.
         // This is the last index of the hkey component that should be nulled.
         int nullPoint = -1;
+
         for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
             assert irc.isInRowData(i);
             assert ! irc.isInHKey(i);
 
             final int flattenedIndex = irc.getFieldPosition(i);
             Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
-            Object value = row.field(flattenedIndex, UndefBindings.only());
-            RowDef rowDef = (RowDef) column.getTable().rowDef();
-            FieldDef fieldDef = rowDef.getFieldDef(column.getPosition());
-            fieldDef.getEncoding().toKey(fieldDef, value, key);
+
+            ConversionSource source = row.conversionSource(flattenedIndex, UndefBindings.only());
+            Converters.convert(source, target.expectingType(column));
+
             boolean isHKeyComponent = i+1 > groupIndex.getColumns().size();
             if (sourceRowPosition.isAboveSegment() && isHKeyComponent && column.getTable().equals(sourceTable)) {
                 nullPoint = i;
@@ -121,15 +126,23 @@ class OperatorStoreGIHandler {
 
     // for use in this class
 
-    private void storeExchange(GroupIndex groupIndex, Exchange exchange) throws PersistitException {
-        exchange.store();
+    private void storeExchange(GroupIndex groupIndex, Exchange exchange) {
+        try {
+            exchange.store();
+        } catch (PersistitException e) {
+            throw new PersistItErrorException (e);
+        }
         if (giHandlerHook != null) {
             giHandlerHook.storeHook(groupIndex, exchange.getKey(), exchange.getValue().get());
         }
     }
 
-    private void removeExchange(GroupIndex groupIndex, Exchange exchange) throws PersistitException {
-        exchange.remove();
+    private void removeExchange(GroupIndex groupIndex, Exchange exchange) {
+        try {
+            exchange.remove();
+        } catch (PersistitException e) {
+            throw new PersistItErrorException (e);
+        }
         if (giHandlerHook != null) {
             giHandlerHook.removeHook(groupIndex, exchange.getKey());
         }
@@ -204,6 +217,7 @@ class OperatorStoreGIHandler {
 
     private final PersistitAdapter adapter;
     private final UserTable sourceTable;
+    private final KeyConversionTarget target = new KeyConversionTarget();
     private static volatile GIHandlerHook giHandlerHook;
 
     // nested classes

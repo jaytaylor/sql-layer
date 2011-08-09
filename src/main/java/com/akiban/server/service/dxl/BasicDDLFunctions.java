@@ -31,7 +31,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.dml.scan.Cursor;
@@ -48,7 +48,9 @@ import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.UnsupportedDropException;
 import com.akiban.server.service.session.Session;
 import com.persistit.exception.PersistitException;
-
+import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.SchemaManager;
+import com.akiban.server.store.Store;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,23 +98,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new UnsupportedDropException(table.getName());
         }
 
-        DMLFunctions dml = new BasicDMLFunctions(middleman(), this);
+
+        DMLFunctions dml = new BasicDMLFunctions(middleman(), schemaManager(), store(), treeService(), this);
         if(userTable.getParentJoin() == null) {
             // Root table and no child tables, can delete all associated trees
-            try {
-                store().removeTrees(session, table);
-            } catch (PersistitException ex) {
-                throw new PersistItErrorException (ex);
-            }
-        }
-        else {
+            store().removeTrees(session, table);
+        } else {
             dml.truncateTable(session, table.getTableId());
-            try {
-                store().deleteIndexes(session, userTable.getIndexesIncludingInternal());
-                store().deleteIndexes(session, userTable.getGroupIndexes());
-            } catch (PersistitException ex) {
-                throw new PersistItErrorException (ex);
-            }
+            store().deleteIndexes(session, userTable.getIndexesIncludingInternal());
+            store().deleteIndexes(session, userTable.getGroupIndexes());
         }
         schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
         checkCursorsForDDLModification(session, table);
@@ -300,8 +294,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 logger.error("Exception while rolling back failed createIndex: " + newIndexes, e2);
             }
             throw e;
-        } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
         }
     }
 
@@ -326,11 +318,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             indexes.add(index);
         }
         // Drop them from the Store before while IndexDefs still exist
-        try {
-            store().deleteIndexes(session, indexes);
-        } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
-        }
+        store().deleteIndexes(session, indexes);
             
         schemaManager().dropIndexes(session, indexes);
         checkCursorsForDDLModification(session, table);
@@ -358,12 +346,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         // Drop them from the Store before while IndexDefs still exist
-        try {
-            store().deleteIndexes(session, indexes);
-        } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
-        }
-            
+        store().deleteIndexes(session, indexes);
         schemaManager().dropIndexes(session, indexes);
         // TODO: checkCursorsForDDLModification ?
     }
@@ -399,7 +382,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
     }
 
-    BasicDDLFunctions(BasicDXLMiddleman middleman) {
-        super(middleman);
+    BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService) {
+        super(middleman, schemaManager, store, treeService);
     }
 }

@@ -14,8 +14,8 @@
  */
 package com.akiban.server.error;
 
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 
 public class NoRowsUpdatedException extends InvalidOperationException {
     public NoRowsUpdatedException (RowData rowData, RowDef rowDef) {

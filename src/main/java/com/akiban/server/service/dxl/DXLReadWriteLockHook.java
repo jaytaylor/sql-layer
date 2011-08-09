@@ -15,7 +15,6 @@
 
 package com.akiban.server.service.dxl;
 
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,11 +26,10 @@ final class DXLReadWriteLockHook implements DXLFunctionsHook {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DXLReadWriteLockHook.class);
     private static final Session.StackKey<Lock> LOCK_KEY = Session.StackKey.stackNamed("READWRITE_LOCK");
-    static final String IS_LOCK_FAIR_PROPERTY = "akserver.dxl.lock.fair";
     private static final Session.Key<Boolean> WRITE_LOCK_TAKEN = Session.Key.named("WRITE_LOCK_TAKEN");
     static final String WRITE_LOCK_TAKEN_MESSAGE = "Another thread has the write lock! Writes are supposed to be single-threaded";
 
-    private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock( isFair() );
+    private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock(true);
 
     private final static DXLReadWriteLockHook INSTANCE = new DXLReadWriteLockHook();
 
@@ -76,11 +74,6 @@ final class DXLReadWriteLockHook implements DXLFunctionsHook {
             throw new LockNotSetException(t);
         }
         lock.unlock();
-    }
-
-    private static boolean isFair() {
-        String isFairString = ServiceManagerImpl.get().getConfigurationService().getProperty(IS_LOCK_FAIR_PROPERTY);
-        return Boolean.parseBoolean(isFairString);
     }
 
     private static class LockNotSetException extends RuntimeException {

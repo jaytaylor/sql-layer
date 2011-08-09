@@ -106,10 +106,7 @@ public class BasicHapiSuccess extends HapiSuccess {
 
     @Override
     protected int spawnCount() {
-        String string = ServiceManagerImpl.get().getConfigurationService().getProperty(
-                "akserver.test.mt.spawncount",
-                "50000"
-        );
+        String string = ServiceManagerImpl.get().getConfigurationService().getProperty("akserver.test.mt.spawncount");
         return Integer.parseInt(string);
     }
 }

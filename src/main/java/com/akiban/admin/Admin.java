@@ -15,7 +15,6 @@
 
 package com.akiban.admin;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
@@ -30,7 +29,7 @@ public abstract class Admin
 {
     // Admin interface
 
-    public static synchronized Admin only() throws IOException
+    public static synchronized Admin only()
     {
         // The akiban.admin system property should be one of the following:
         // - HOSTNAME: Host name or IP address of the zookeeper service. Zookeeper must be running on its default
@@ -131,7 +130,7 @@ public abstract class Admin
 
     protected abstract boolean ensurePathExists(String leafPath, byte[] leafValue) throws InterruptedException;
 
-    protected Admin(String adminInitializer) throws IOException
+    protected Admin(String adminInitializer)
     {
         this.adminInitializer = adminInitializer;
     }

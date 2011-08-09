@@ -61,7 +61,7 @@ public class SchemaDefToAis {
      * @param akibandbOnly When <code>true</code>, only tables with the AKIBANDB engine are converted.
      * @throws Exception For any error encountered.
      */
-    public SchemaDefToAis(SchemaDef schemaDef, boolean akibandbOnly) throws Exception {
+    public SchemaDefToAis(SchemaDef schemaDef, boolean akibandbOnly) {
         this.schemaDef = schemaDef;
         this.builder = new AISBuilder();
         buildAISFromBuilder(akibandbOnly);

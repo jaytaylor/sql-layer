@@ -15,7 +15,7 @@
 
 package com.akiban.server.api.dml.scan;
 
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.dml.ColumnSelector;
 
 public interface ScanRange {

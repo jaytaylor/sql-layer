@@ -13,8 +13,15 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server;
+package com.akiban.server.types;
 
-public class CannotGrowBufferException extends RuntimeException
-{
+public final class SourceIsNullException extends RuntimeException {
+    public SourceIsNullException() {
+    }
+
+    static void checkNotNull(ConversionSource conversionSource) {
+        if (conversionSource.isNull()) {
+            throw new SourceIsNullException();
+        }
+    }
 }

@@ -17,19 +17,18 @@ package com.akiban.server.store;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
-import com.akiban.server.FieldDef;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
-import com.akiban.server.RowDefCache;
+import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.RollbackException;
 
 import java.util.Collection;
 
@@ -129,12 +128,11 @@ public interface Store extends Service<Store> {
     long getRowCount(final Session session, final boolean exact,
             final RowData start, final RowData end, final byte[] columnBitMap);
 
-    TableStatistics getTableStatistics(final Session session, final int tableId) throws PersistitException;
+    TableStatistics getTableStatistics(final Session session, final int tableId);
 
     void truncateGroup(final Session session, final int rowDefId) throws PersistitException;
 
-    void truncateTableStatus(Session session, int rowDefId)
-        throws PersistitException;
+    void truncateTableStatus(Session session, int rowDefId) throws RollbackException, PersistitException;
 
     /**
      * Analyze statistical information about a table. Specifically, construct
@@ -144,15 +142,15 @@ public interface Store extends Service<Store> {
      * @throws PersistitException 
      * @throws Exception 
      */
-    void analyzeTable(final Session session, int tableId) throws PersistitException;
-    void analyzeTable(final Session session, int tableId, int sampleSize) throws PersistitException;
+    void analyzeTable(final Session session, int tableId);
+    void analyzeTable(final Session session, int tableId, int sampleSize);
 
     boolean isDeferIndexes();
     void setDeferIndexes(final boolean b);
-    void flushIndexes(Session session) throws PersistitException;
-    void deleteIndexes(Session session, Collection<? extends Index> indexes) throws PersistitException;
-    void buildAllIndexes(Session session, boolean deferIndexes) throws RowDefNotFoundException, InvalidOperationException, PersistitException;
-    void buildIndexes(Session session, Collection<? extends Index> indexes, boolean deferIndexes) throws RowDefNotFoundException, InvalidOperationException, PersistitException;
+    void flushIndexes(Session session);
+    void deleteIndexes(Session session, Collection<? extends Index> indexes);
+    void buildAllIndexes(Session session, boolean deferIndexes);
+    void buildIndexes(Session session, Collection<? extends Index> indexes, boolean deferIndexes);
 
     /**
      * Remove all trees, and their contents, associated with the given table.
@@ -161,5 +159,5 @@ public interface Store extends Service<Store> {
      * @throws PersistitException 
      * @throws Exception 
      */
-    void removeTrees(Session session, Table table) throws PersistitException;
+    void removeTrees(Session session, Table table);
 }

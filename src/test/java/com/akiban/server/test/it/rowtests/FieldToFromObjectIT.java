@@ -15,20 +15,17 @@
 
 package com.akiban.server.test.it.rowtests;
 
-import com.akiban.server.FieldDef;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.test.it.ITBase;
 import junit.framework.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
-
-import static org.junit.Assert.assertNotNull;
 
 public class FieldToFromObjectIT extends ITBase {
     private final RowData rowData = new RowData(new byte[4096]);

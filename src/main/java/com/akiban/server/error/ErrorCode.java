@@ -126,8 +126,23 @@ public enum ErrorCode {
     NULL_REFERENCE       (22, 21, Importance.DEBUG, AISNullReferenceException.class),
     BAD_AIS_REFERENCE    (22, 22, Importance.DEBUG, BadAISReferenceException.class),
     BAD_INTERNAL_SETTING (22, 23, Importance.DEBUG, BadAISInternalSettingException.class),
+    TYPES_ARE_STATIC     (22, 24, Importance.DEBUG, TypesAreStaticException.class),
+    
+    // Configuration, Startup, & Shutdown errors
+    SERVICE_NOT_STARTED  (29, 1, Importance.ERROR, ServiceNotStartedException.class),
+    SERVICE_ALREADY_STARTED (29, 2, Importance.ERROR, ServiceStartupException.class),
+    SERVICE_CIRC_DEPEND  (29, 3, Importance.ERROR, CircularDependencyException.class),
+    BAD_ADMIN_DIRECTORY  (29, 4, Importance.ERROR, BadAdminDirectoryException.class),
+    ZOOKEEPER_INIT_FAIL  (29, 5, Importance.ERROR, ZooKeeperInitFailureException.class),
+    CONFIG_LOAD_FAILED   (29, 6, Importance.ERROR, ConfigurationPropertiesLoadException.class),
+    THREAD_START_INTR    (29, 7, Importance.ERROR, ThreadStartInterruptedException.class),
+    THREAD_STOP_INTR     (29, 8, Importance.DEBUG, ThreadStopInterruptedException.class),
+    NET_START_IO_ERROR   (29, 9, Importance.ERROR, NetworkStartIOException.class),
+    NET_STOP_IO_ERROR    (29, 10, Importance.ERROR, NetworkStopIOException.class),
+    TAP_BEAN_FAIL        (29, 11, Importance.ERROR, TapBeanFailureException.class),
+    SET_FILTER_FAIL      (29, 12, Importance.ERROR, DisplayFilterSetException.class),
+    
     // AkSserver errors
-
     MULTIGENERATIONAL_TABLE(30, 900, Importance.ERROR, null),
 
     // Bad AkSserver errors
@@ -139,8 +154,7 @@ public enum ErrorCode {
     NO_ACTIVE_CURSOR    (31, 5, Importance.ERROR, NoActiveCursorException.class),
     CURSOR_CLOSE_BAD    (31, 6, Importance.ERROR, CursorCloseBadException.class),
     PERSISTIT_ERROR     (31, 7, Importance.ERROR, PersistItErrorException.class),
-    SERVICE_NOT_STARTED (31, 8, Importance.ERROR, ServiceNotStartedException.class),
-    SERVICE_ALREADY_STARTED (31, 9, Importance.ERROR, ServiceStartupException.class)
+    INVALID_VOLUME      (31, 8, Importance.ERROR, InvalidVolumeException.class)
     ;
 
     private final short value;

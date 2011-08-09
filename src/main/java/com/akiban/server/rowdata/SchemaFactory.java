@@ -13,13 +13,15 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server;
+package com.akiban.server.rowdata;
 
 import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Table;
-import com.akiban.server.store.SchemaManager;
+import com.akiban.server.TableStatusCache;
+import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.rowdata.RowDefCache;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -52,7 +54,7 @@ public class SchemaFactory {
 
     private static class FakeRowDefCache extends RowDefCache {
         public FakeRowDefCache() {
-            super(new TableStatusCache(null, null));
+            super(new TableStatusCache(null, null, null));
         }
 
         @Override

@@ -17,6 +17,7 @@ package com.akiban.sql.aisddl;
 import java.util.Collection;
 import java.util.List;
 
+import com.akiban.server.rowdata.RowDef;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertTrue;
@@ -33,7 +34,6 @@ import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.RowDef;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.session.Session;

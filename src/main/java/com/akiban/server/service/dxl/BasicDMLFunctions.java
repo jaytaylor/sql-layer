@@ -36,9 +36,9 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServerUtil;
-import com.akiban.server.IndexDef;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.IndexDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
@@ -74,11 +74,14 @@ import com.akiban.server.error.ScanRetryAbandonedException;
 import com.akiban.server.error.TableDefinitionChangedException;
 import com.akiban.server.error.TableDefinitionMismatchException;
 import com.akiban.server.service.dxl.BasicDXLMiddleman.ScanData;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.RowCollector;
+import com.akiban.server.store.SchemaManager;
+import com.akiban.server.store.Store;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Tap;
+import com.google.inject.Inject;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
@@ -95,11 +98,12 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     private final Scanner scanner;
     private static final int SCAN_RETRY_COUNT = 10;
 
-    private static Tap SCAN_RETRY_COUNT_TAP = Tap.add(new Tap.Count("BasicDMLFunctions: scan retries"));
-    private static Tap SCAN_RETRY_ABANDON_TAP = Tap.add(new Tap.Count("BasicDMLFunctions: scan abandons"));
+    private static Tap.PointTap SCAN_RETRY_COUNT_TAP = Tap.createCount("BasicDMLFunctions: scan retries");
+    private static Tap.PointTap SCAN_RETRY_ABANDON_TAP = Tap.createCount("BasicDMLFunctions: scan abandons");
 
-    BasicDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions ddlFunctions) {
-        super(middleman);
+    @Inject
+    BasicDMLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService, DDLFunctions ddlFunctions) {
+        super(middleman, schemaManager, store, treeService);
         this.ddlFunctions = ddlFunctions;
         this.scanner = new Scanner();
     }
@@ -122,8 +126,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
         @Override
         public void retryHook() {
-            SCAN_RETRY_COUNT_TAP.in();
-            SCAN_RETRY_COUNT_TAP.out();
+            SCAN_RETRY_COUNT_TAP.hit();
         }
 
         @Override
@@ -136,14 +139,10 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             boolean updateFirst) 
     {
         logger.trace("stats for {} updating: {}", tableId, updateFirst);
-        try {
-            if (updateFirst) {
-                store().analyzeTable(session, tableId);
-            }
-            return store().getTableStatistics(session, tableId);
-        } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+        if (updateFirst) {
+            store().analyzeTable(session, tableId);
         }
+        return store().getTableStatistics(session, tableId);
     }
 
     @Override
@@ -316,7 +315,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             throw new CursorIsFinishedException(cursorId);
         }
         
-        Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
+        Transaction transaction = treeService().getTransaction(session);
         int retriesLeft = SCAN_RETRY_COUNT;
         while (true) {
             output.mark();
@@ -336,11 +335,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                     scanHooks.retryHook();
                     output.rewind();
                     if (--retriesLeft <= 0) {
-                        SCAN_RETRY_ABANDON_TAP.in();
-                        SCAN_RETRY_ABANDON_TAP.out();
+                        SCAN_RETRY_ABANDON_TAP.hit();
                         throw new ScanRetryAbandonedException(SCAN_RETRY_COUNT);
                     }
-
                     cursor = reopen(session, cursorId, cursor.getScanRequest(), false);
                 } catch (PersistitException e) {
                     throw new PersistItErrorException(e);
