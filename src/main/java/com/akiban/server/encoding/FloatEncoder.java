@@ -18,8 +18,8 @@ package com.akiban.server.encoding;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 import com.akiban.server.AkServerUtil;
-import com.akiban.server.FieldDef;
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.rowdata.RowData;
 import com.persistit.Key;
 
 public class FloatEncoder extends EncodingBase<Float> {

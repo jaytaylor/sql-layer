@@ -19,12 +19,12 @@ import static org.junit.Assert.assertEquals;
 
 import java.nio.ByteBuffer;
 
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.rowdata.RowDefCache;
+import com.akiban.server.rowdata.SchemaFactory;
 import org.junit.Test;
 
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
-import com.akiban.server.RowDefCache;
-import com.akiban.server.SchemaFactory;
 import com.akiban.server.TableStatistics;
 import com.persistit.Key;
 import com.persistit.Persistit;

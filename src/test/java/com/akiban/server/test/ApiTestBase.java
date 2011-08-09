@@ -38,6 +38,9 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.api.dml.scan.ScanFlag;
+import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.TestConfigService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
@@ -54,8 +57,6 @@ import org.junit.Before;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDefCache;
 import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.service.config.Property;
 import com.akiban.server.service.memcache.HapiProcessorFactory;
@@ -80,7 +81,6 @@ import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 
 /**
@@ -140,7 +140,7 @@ public class ApiTestBase {
         testServicesStarted = false;
         sm = createServiceManager( startupConfigProperties() );
         sm.startServices();
-        session = ServiceManagerImpl.newSession();
+        session = sm.getSessionService().createSession();
         testServicesStarted = true;
     }
 
@@ -186,7 +186,7 @@ public class ApiTestBase {
     public final void restartTestServices(Collection<Property> properties) throws Exception {
         sm = createServiceManager( properties );
         sm.startServices();
-        session = ServiceManagerImpl.newSession();
+        session = sm.getSessionService().createSession();
         ddl(); // loads up the schema manager et al
     }
 
@@ -207,11 +207,11 @@ public class ApiTestBase {
     }
     
     protected final DMLFunctions dml() {
-        return sm.getDXL().dmlFunctions();
+        return dxl().dmlFunctions();
     }
 
     protected final DDLFunctions ddl() {
-        return sm.getDXL().ddlFunctions();
+        return dxl().ddlFunctions();
     }
 
     protected final Store store() {
@@ -248,6 +248,14 @@ public class ApiTestBase {
 
     protected final ServiceManager serviceManager() {
         return sm;
+    }
+
+    protected final ConfigurationService configService() {
+        return sm.getConfigurationService();
+    }
+
+    protected final DXLService dxl() {
+        return sm.getDXL();
     }
 
     protected final int aisGeneration() {
@@ -322,12 +330,11 @@ public class ApiTestBase {
     }
 
     protected final List<NewRow> scanAll(ScanRequest request) throws InvalidOperationException {
-        Session session = ServiceManagerImpl.newSession();
         ListRowOutput output = new ListRowOutput();
-        CursorId cursorId = dml().openCursor(session, aisGeneration(), request);
+        CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
 
-        dml().scanSome(session, cursorId, output);
-        dml().closeCursor(session, cursorId);
+        dml().scanSome(session(), cursorId, output);
+        dml().closeCursor(session(), cursorId);
 
         return output.getRows();
     }

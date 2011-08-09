@@ -33,6 +33,11 @@ import com.akiban.ais.model.Table;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.ScanLimit;
+import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.rowdata.IndexDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.rowdata.RowDefCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,12 +47,7 @@ import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.UserTable;
 import com.akiban.message.ErrorCode;
 import com.akiban.server.AkServerUtil;
-import com.akiban.server.FieldDef;
-import com.akiban.server.IndexDef;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
-import com.akiban.server.RowDefCache;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.TableStatus;
 import com.akiban.server.TableStatusCache;
@@ -112,7 +112,7 @@ public class PersistitStore implements Store {
 
     RowDefCache rowDefCache;
 
-    TreeService treeService;
+    final TreeService treeService;
 
     TableStatusCache tableStatusCache;
 
@@ -126,12 +126,12 @@ public class PersistitStore implements Store {
 
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
 
-    public PersistitStore(boolean updateGroupIndexes) {
+    public PersistitStore(boolean updateGroupIndexes, TreeService treeService) {
         this.updateGroupIndexes = updateGroupIndexes;
+        this.treeService = treeService;
     }
 
     public synchronized void start() throws Exception {
-        treeService = ServiceManagerImpl.get().getTreeService();
         tableStatusCache = treeService.getTableStatusCache();
         indexManager = new PersistitStoreIndexManager(this, treeService);
         rowDefCache = new RowDefCache(tableStatusCache);
@@ -143,7 +143,6 @@ public class PersistitStore implements Store {
 
     public synchronized void stop() throws Exception {
         getDb().getManagement().setDisplayFilter(originalDisplayFilter);
-        treeService = null;
         indexManager = null;
         rowDefCache = null;
     }

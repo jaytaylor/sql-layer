@@ -18,15 +18,13 @@ package com.akiban.server.store;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.AkServerUtil;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.persistit.Exchange;
 import com.persistit.Key;
-import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 
 import java.util.HashMap;

@@ -13,10 +13,11 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server;
+package com.akiban.server.rowdata;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.encoding.EncoderFactory;
 import com.akiban.server.encoding.Encoding;
 

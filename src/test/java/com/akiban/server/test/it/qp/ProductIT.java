@@ -15,21 +15,16 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.IncompatibleRowException;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Set;
 
 import static com.akiban.qp.physicaloperator.API.*;

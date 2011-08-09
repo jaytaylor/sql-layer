@@ -16,7 +16,7 @@
 package com.akiban.server.test.it.keyupdate;
 
 import com.akiban.ais.model.Index;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.IndexKeyVisitor;

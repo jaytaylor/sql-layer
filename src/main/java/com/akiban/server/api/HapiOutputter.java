@@ -15,7 +15,7 @@
 
 package com.akiban.server.api;
 
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 
 import java.io.IOException;
 import java.io.OutputStream;

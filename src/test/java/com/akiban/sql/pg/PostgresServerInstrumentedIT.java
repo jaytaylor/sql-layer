@@ -25,12 +25,12 @@ public class PostgresServerInstrumentedIT extends PostgresServerSelectIT {
 
     @Before
     public void enableInstrumentation() throws Exception {
-        serviceManager().getInstrumentationService().enable();
+        serviceManager().getPostgresService().getServer().enableInstrumentation();
     }
     
     @After
     public void disableInstrumentation() throws Exception {
-        serviceManager().getInstrumentationService().disable();
+        serviceManager().getPostgresService().getServer().disableInstrumentation();
     }
     
     public PostgresServerInstrumentedIT(String caseName, 

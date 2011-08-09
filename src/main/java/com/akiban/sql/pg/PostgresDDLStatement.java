@@ -70,7 +70,7 @@ public class PostgresDDLStatement implements PostgresStatement
             throws IOException, StandardException {
         AkibanInformationSchema ais = server.getAIS();
         String schema = server.getDefaultSchemaName();
-        DDLFunctions ddlFunctions = server.getServiceManager().getDXL().ddlFunctions();
+        DDLFunctions ddlFunctions = server.getDXL().ddlFunctions();
         Session session = server.getSession();
 
         switch (ddl.getNodeType()) {

@@ -17,6 +17,8 @@ package com.akiban.server.test.it.hapi.randomdb;
 
 import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiRequestException;
+import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.memcache.ParsedHapiGetRequest;
 import com.akiban.server.service.memcache.hprocessor.Scanrows;
 
@@ -24,9 +26,11 @@ import java.io.ByteArrayOutputStream;
 
 class Actual
 {
-    public Actual(RCTortureIT test)
+    public Actual(RCTortureIT test, ConfigurationService config, DXLService dxl)
     {
         this.test = test;
+        this.config = config;
+        this.dxl = dxl;
     }
 
     public String queryResult(int rootTable,
@@ -39,7 +43,7 @@ class Actual
         test.print(test.query);
         test.request = ParsedHapiGetRequest.parse(test.query);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(10000);
-        Scanrows.instance().processRequest(test.testSession(), test.request, test.outputter, outputStream);
+        Scanrows.instance(config, dxl).processRequest(test.testSession(), test.request, test.outputter, outputStream);
         return new String(outputStream.toByteArray());
     }
 
@@ -68,5 +72,7 @@ class Actual
         return buffer.toString();
     }
 
-    private RCTortureIT test;
+    private final RCTortureIT test;
+    protected final ConfigurationService config;
+    private final DXLService dxl;
 }

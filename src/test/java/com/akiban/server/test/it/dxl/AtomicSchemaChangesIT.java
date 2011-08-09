@@ -18,7 +18,7 @@ package com.akiban.server.test.it.dxl;
 import com.akiban.ais.io.MessageTarget;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Assert;
@@ -207,7 +207,7 @@ public class AtomicSchemaChangesIT extends ITBase
 
     private Map<String, TableDefinition> createTableStatements(String schema) throws Exception
     {
-        return ServiceManagerImpl.get().getSchemaManager().getTableDefinitions(session(), schema);
+        return serviceManager().getServiceByClass(SchemaManager.class).getTableDefinitions(session(), schema);
     }
 
     private static final int BUFFER_SIZE = 100000; // 100K

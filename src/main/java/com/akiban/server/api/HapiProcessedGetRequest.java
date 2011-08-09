@@ -16,7 +16,7 @@
 package com.akiban.server.api;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowDef;
 
 import java.io.IOException;
 import java.util.Set;

@@ -32,7 +32,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.GenericInvalidOperationException;
@@ -59,6 +59,9 @@ import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.SchemaManager;
+import com.akiban.server.store.Store;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.message.ErrorCode;
 import org.slf4j.Logger;
@@ -175,7 +178,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         try {
-            DMLFunctions dml = new BasicDMLFunctions(middleman(), this);
+            DMLFunctions dml = new BasicDMLFunctions(middleman(), schemaManager(), store(), treeService(), this);
             if(userTable.getParentJoin() == null) {
                 // Root table and no child tables, can delete all associated trees
                 store().removeTrees(session, table);
@@ -498,7 +501,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
     }
 
-    BasicDDLFunctions(BasicDXLMiddleman middleman) {
-        super(middleman);
+    BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService) {
+        super(middleman, schemaManager, store, treeService);
     }
 }

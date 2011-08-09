@@ -22,6 +22,8 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
 import org.junit.Test;
 
 import java.io.InputStream;
@@ -80,6 +82,18 @@ public final class MessageTest {
         fooIndex.addColumn(new IndexColumn(fooIndex, cTable.getColumn("name"), 0, true, null));
         fooIndex.addColumn(new IndexColumn(fooIndex, oTable.getColumn("foo"), 1, true, null));
         ais.checkIntegrity();
+        serializeAndCompare(ais);
+    }
+
+    @Test
+    public void unicodeSchemaAndTableNames() throws Exception {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        AkibanInformationSchema ais =
+            builder
+            .userTable("test", "☃").colLong("id").pk("id")
+            .userTable("☂", "rain").colLong("id").pk("id")
+            .userTable("☾", "☽").colLong("id").pk("id")
+            .ais();
         serializeAndCompare(ais);
     }
 }

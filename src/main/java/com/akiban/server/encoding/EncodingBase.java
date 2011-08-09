@@ -15,9 +15,9 @@
 
 package com.akiban.server.encoding;
 
-import com.akiban.server.FieldDef;
+import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.Quote;
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 

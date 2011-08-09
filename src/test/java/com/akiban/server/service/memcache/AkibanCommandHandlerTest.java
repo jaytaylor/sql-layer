@@ -17,7 +17,7 @@ package com.akiban.server.service.memcache;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiPredicate;

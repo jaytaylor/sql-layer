@@ -17,11 +17,13 @@ package com.akiban.qp.row;
 
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types.ConversionSource;
 
 public interface RowBase
 {
     RowType rowType();
     Object field(int i, Bindings bindings);
+    ConversionSource conversionSource(int i, Bindings bindings);
     HKey hKey();
     boolean ancestorOf(RowBase that);
     int runId();

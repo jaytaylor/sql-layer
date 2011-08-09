@@ -13,8 +13,24 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server;
+package com.akiban.server.types;
 
-public class CannotGrowBufferException extends RuntimeException
-{
+public abstract class FloatConverter extends AbstractConverter {
+
+    // AbstractFloatConverter interface
+    
+    public abstract float getFloat(ConversionSource source);
+    
+    // defined in subclasses
+    
+    protected abstract void putFloat(ConversionTarget target, float value);
+    
+    // for use in this package
+
+    @Override
+    protected final void doConvert(ConversionSource source, ConversionTarget target) {
+        putFloat(target, getFloat(source));
+    }
+
+    FloatConverter() {}
 }
