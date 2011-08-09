@@ -18,6 +18,7 @@ package com.akiban.server.types;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
 
+import java.io.ObjectInput;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -47,6 +48,10 @@ public final class FromObjectConversionSource implements ConversionSource {
             asType = AkType.VARBINARY;
         else if (object instanceof BigInteger)
              asType = AkType.U_BIGINT;
+        else if (object instanceof Character) {
+            object = String.valueOf(object);
+            asType = AkType.VARCHAR;
+        }
         else throw new UnsupportedOperationException("can't reflectively set " + object.getClass() + ": " + object);
 
         set(object, asType);

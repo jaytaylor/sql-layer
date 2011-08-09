@@ -18,7 +18,9 @@ package com.akiban.server.test.it.qp;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
+import com.akiban.qp.row.RowValuesHolder;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types.ConversionSource;
 import com.akiban.util.ArgumentValidation;
 
 public class TestRow extends AbstractRow
@@ -34,7 +36,12 @@ public class TestRow extends AbstractRow
     @Override
     public Object field(int i, Bindings bindings)
     {
-        return fields[i];
+        return valuesHolder.objectAt(i);
+    }
+
+    @Override
+    public ConversionSource conversionSource(int i, Bindings bindings) {
+        return valuesHolder.conversionSourceAt(i);
     }
 
     @Override
@@ -45,18 +52,12 @@ public class TestRow extends AbstractRow
 
     // TestRow interface
 
-    public TestRow(RowType rowType, String hKeyString)
-    {
-        this.rowType = rowType;
-        this.fields = new Object[rowType.nFields()];
-        this.hKeyString = hKeyString;
-    }
-
     public TestRow(RowType rowType, Object[] fields, String hKeyString)
     {
-        this(rowType, hKeyString);
+        this.rowType = rowType;
+        this.hKeyString = hKeyString;
         ArgumentValidation.isEQ("rowType.nFields()", rowType.nFields(), "fields.length", fields.length);
-        System.arraycopy(fields, 0, this.fields, 0, fields.length);
+        this.valuesHolder = new RowValuesHolder(fields);
     }
 
     public TestRow(RowType rowType, Object[] fields) {
@@ -70,6 +71,6 @@ public class TestRow extends AbstractRow
     // Object state
 
     private final RowType rowType;
-    private final Object[] fields;
+    private final RowValuesHolder valuesHolder;
     private final String hKeyString;
 }

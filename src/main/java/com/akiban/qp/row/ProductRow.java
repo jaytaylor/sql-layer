@@ -16,9 +16,10 @@
 package com.akiban.qp.row;
 
 import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.NullConversionSource;
 
 public class ProductRow extends AbstractRow
 {
@@ -48,6 +49,17 @@ public class ProductRow extends AbstractRow
             field = right.isNull() ? null : right.get().field(i - nLeftFields, bindings);
         }
         return field;
+    }
+
+    @Override
+    public ConversionSource conversionSource(int i, Bindings bindings) {
+        ConversionSource source;
+        if (i < nLeftFields) {
+            source = left.isNull() ? NullConversionSource.only() : left.get().conversionSource(i, bindings);
+        } else {
+            source = right.isNull() ? NullConversionSource.only() : right.get().conversionSource(i - nLeftFields, bindings);
+        }
+        return source;
     }
 
     @Override

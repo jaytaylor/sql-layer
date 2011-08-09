@@ -30,10 +30,10 @@ public abstract class AbstractRow implements Row
     @Override
     public abstract Object field(int i, Bindings bindings);
 
-    @Override
-    public ConversionSource conversionSource(int i, Bindings bindings) {
-        throw new UnsupportedOperationException("not yet implemented: " + getClass().getName());
-    }
+//    @Override
+//    public ConversionSource conversionSource(int i, Bindings bindings) {
+//        throw new UnsupportedOperationException("not yet implemented: " + getClass().getName());
+//    }
 
     @Override
     public abstract HKey hKey();
