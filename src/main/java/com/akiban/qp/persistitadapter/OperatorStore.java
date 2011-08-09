@@ -43,6 +43,7 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDataExtractor;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.ConstantColumnSelector;
@@ -439,6 +440,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         private final RowData newRowData;
         private final ColumnSelector columnSelector;
         private final RowDef rowDef;
+        private final RowDataExtractor extractor = new RowDataExtractor();
 
         private InternalUpdateFunction(PersistitAdapter adapter, RowDef rowDef, RowData newRowData, ColumnSelector columnSelector) {
             this.newRowData = newRowData;
@@ -472,7 +474,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             NewRow newRow = new NiceRow(rowDef.getRowDefId());
             for (int i=0; i < original.rowType().nFields(); ++i) {
                 if (columnSelector.includesColumn(i)) {
-                    newRow.put(i, newRowData.toObject(rowDef, i));
+                    Object value = extractor.get(rowDef.getFieldDef(i), newRowData);
+                    newRow.put(i, value);
                 }
                 else {
                     newRow.put(i, original.field(i, bindings));

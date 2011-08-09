@@ -621,17 +621,6 @@ public class RowData {
         return sb.toString();
     }
 
-    public Object toObject(RowDef rowDef, int fieldIndex)
-    {
-        Object object = null;
-        long location = rowDef.fieldLocation(this, fieldIndex);
-        if (location != 0L) {
-            FieldDef field = rowDef.getFieldDef(fieldIndex);
-            object = field.getEncoding().toObject(field, this);
-        }
-        return object;
-    }
-
     public Object fromObject(RowDef rowDef, int fieldIndex, Object value)
     {
         // Not implemented yet

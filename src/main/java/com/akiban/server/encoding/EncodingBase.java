@@ -61,6 +61,14 @@ abstract class EncodingBase<T> implements Encoding<T> {
     // Deprecating methods
     
     abstract public boolean validate(Type type);
+
+    /**
+     * Converts the given field to a Java object.
+     * @param fieldDef the field within the rowdata to convert
+     * @param rowData the rowdata containing the data to decode
+     * @return a Java object
+     * @throws EncodingException if the rowdata couldn't be converted to the appropriate type
+     */
     abstract public T toObject(FieldDef fieldDef, RowData rowData) throws EncodingException;
 
     /**

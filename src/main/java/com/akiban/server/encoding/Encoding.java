@@ -51,15 +51,6 @@ public interface Encoding<T> {
     void toString(final FieldDef fieldDef, final RowData rowData, final AkibanAppender sb, final Quote quote);
 
     /**
-     * Converts the given field to a Java object.
-     * @param fieldDef the field within the rowdata to convert
-     * @param rowData the rowdata containing the data to decode
-     * @return a Java object
-     * @throws EncodingException if the rowdata couldn't be converted to the appropriate type
-     */
-    T toObject(final FieldDef fieldDef, final RowData rowData) throws EncodingException;
-
-    /**
      * Size in bytes required by the
      * {@link EncodingBase#fromObject(FieldDef, Object, byte[], int)} method. For
      * fixed-length fields this is the field width. For variable-length fields,
