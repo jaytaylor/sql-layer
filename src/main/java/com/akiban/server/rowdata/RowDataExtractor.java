@@ -23,8 +23,7 @@ public final class RowDataExtractor {
     public Object get(FieldDef fieldDef, RowData rowData) {
         source.bind(fieldDef, rowData);
         target.expectType(fieldDef.getType().akType());
-        Converters.convert(source, target);
-        return target.lastConvertedValue();
+        return Converters.convert(source, target).lastConvertedValue();
     }
 
 

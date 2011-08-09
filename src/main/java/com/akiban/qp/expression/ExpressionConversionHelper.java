@@ -36,8 +36,7 @@ public final class ExpressionConversionHelper {
     public static Object objectFromConversionSource(ConversionSource source) {
         ToObjectConversionTarget target = new ToObjectConversionTarget();
         target.expectType( source.getConversionType() );
-        Converters.convert(source, target);
-        return target.lastConvertedValue();
+        return Converters.convert(source, target).lastConvertedValue();
     }
 
     private ExpressionConversionHelper() {}

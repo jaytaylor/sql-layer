@@ -20,14 +20,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.FieldDefConversionSource;
 import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDataExtractor;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.SetColumnSelector;
-import com.akiban.server.types.Converters;
-import com.akiban.server.types.ToObjectConversionTarget;
 import com.akiban.util.ArgumentValidation;
 
 public class NiceRow extends NewRow {
@@ -97,15 +94,10 @@ public class NiceRow extends NewRow {
             }
         }
 
-        FieldDefConversionSource source = new FieldDefConversionSource();
-        ToObjectConversionTarget target = new ToObjectConversionTarget();
+        RowDataExtractor extractor = new RowDataExtractor();
         NewRow retval = new NiceRow(rowDef.getRowDefId(), rowDef);
         for (int pos : activeColumns) {
-            final FieldDef fieldDef = rowDef.getFieldDef(pos);
-            source.bind(fieldDef, origData);
-            target.expectType(fieldDef.getType().akType());
-            Converters.convert(source, target);
-            Object value = target.lastConvertedValue();
+            Object value = extractor.get(rowDef.getFieldDef(pos), origData);
             Object old = retval.put(pos, value);
             assert old == null : String.format("put(%s, %s) --> %s", pos, value, old);
         }

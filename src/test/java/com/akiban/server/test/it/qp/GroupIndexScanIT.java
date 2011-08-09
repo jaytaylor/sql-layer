@@ -34,7 +34,6 @@ import com.akiban.server.types.ToObjectConversionTarget;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import sun.misc.Sort;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -140,8 +139,7 @@ public final class GroupIndexScanIT extends ITBase {
                 for (int i=0; i < rowArray.length; ++i) {
                     ConversionSource source = row.conversionSource(i, UndefBindings.only());
                     target.expectType(source.getConversionType());
-                    Converters.convert(source, target);
-                    rowArray[i] = target.lastConvertedValue();
+                    rowArray[i] = Converters.convert(source, target).lastConvertedValue();
                 }
                 actualResults.add(Arrays.asList(rowArray));
             }
