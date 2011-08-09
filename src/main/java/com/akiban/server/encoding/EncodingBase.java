@@ -93,6 +93,18 @@ abstract class EncodingBase<T> implements Encoding<T> {
     abstract public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset);
 
     abstract public int widthFromObject(FieldDef fieldDef, Object value);
+
+    /**
+     * Append a value from a RowData into a Persistit {@link com.persistit.Key},
+     * converting the value from its MySQL form to Persistit's key encoding.
+     *
+     * @param fieldDef
+     *            description of the field
+     * @param rowData
+     *            MySQL data in RowData format
+     * @param key
+     *            Persistit Key to receive the value
+     */
     abstract public void toKey(FieldDef fieldDef, RowData rowData, Key key);
 
     /**

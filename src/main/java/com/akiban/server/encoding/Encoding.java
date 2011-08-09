@@ -68,19 +68,6 @@ public interface Encoding<T> {
     int widthFromObject(final FieldDef fieldDef, final Object value);
 
     /**
-     * Append a value from a RowData into a Persistit {@link com.persistit.Key},
-     * converting the value from its MySQL form to Persistit's key encoding.
-     *
-     * @param fieldDef
-     *            description of the field
-     * @param rowData
-     *            MySQL data in RowData format
-     * @param key
-     *            Persistit Key to receive the value
-     */
-    void toKey(final FieldDef fieldDef, final RowData rowData, final Key key);
-
-    /**
      * Calculate the maximum storage size a given column using this encoding
      * will take when stored in a {@link Key}.
      * @param column column instance

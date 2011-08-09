@@ -18,6 +18,8 @@ package com.akiban.server.store;
 import com.akiban.ais.model.Column;
 import com.akiban.server.PersistitKeyConversionTarget;
 import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.rowdata.FieldDefConversionSource;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.types.Converters;
 import com.akiban.server.types.FromObjectConversionSource;
 import com.persistit.Key;
@@ -33,23 +35,39 @@ public final class PersistitKeyAppender {
     }
 
     public void append(Object object, Column column) {
-        source.setReflectively(object);
+        fromObjectSource.setReflectively(object);
         target.expectingType(column);
-        Converters.convert(source, target);
+        Converters.convert(fromObjectSource, target);
     }
 
     public void append(Object object, FieldDef fieldDef) {
         append(object, fieldDef.column());
     }
 
+    public void append(FieldDef fieldDef, RowData rowData) {
+        fromRowDataSource.bind(fieldDef, rowData);
+        target.expectingType(fieldDef.column());
+        Converters.convert(fromRowDataSource, target);
+    }
+
+    public void appendNull() {
+        target.putNull();
+    }
+
+    public Key key() {
+        return key;
+    }
+
     public PersistitKeyAppender(Key key) {
         this.key = key;
-        source = new FromObjectConversionSource();
+        fromRowDataSource = new FieldDefConversionSource();
+        fromObjectSource = new FromObjectConversionSource();
         target = new PersistitKeyConversionTarget();
         target.attach(this.key);
     }
 
-    private final FromObjectConversionSource source;
+    private final FromObjectConversionSource fromObjectSource;
+    private final FieldDefConversionSource fromRowDataSource;
     private final PersistitKeyConversionTarget target;
     private final Key key;
 }
