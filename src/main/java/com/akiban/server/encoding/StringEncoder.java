@@ -18,7 +18,10 @@ package com.akiban.server.encoding;
 import com.akiban.server.rowdata.FieldDef;
 
 public class StringEncoder extends VariableWidthEncoding {
-    StringEncoder() {
+
+    public static final Encoding INSTANCE = new StringEncoder();
+
+    private StringEncoder() {
     }
 
     @Override

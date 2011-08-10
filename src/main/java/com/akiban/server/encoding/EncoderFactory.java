@@ -28,24 +28,24 @@ public final class EncoderFactory {
     private EncoderFactory() {
     }
 
-    public static final LongEncoder INT = new LongEncoder();
-    public static final LongEncoder U_INT = new LongEncoder();
-    public static final UBigIntEncoder U_BIGINT = new UBigIntEncoder();
-    public static final FloatEncoder FLOAT = new FloatEncoder();
-    public static final FloatEncoder U_FLOAT = new FloatEncoder();
-    public static final DoubleEncoder DOUBLE = new DoubleEncoder();
-    public static final DoubleEncoder U_DOUBLE = new DoubleEncoder();
-    public static final DecimalEncoder DECIMAL = new DecimalEncoder();
-    public static final DecimalEncoder U_DECIMAL = new DecimalEncoder();
-    public static final StringEncoder VARCHAR = new StringEncoder();
-    public static final VarBinaryEncoder VARBINARY = new VarBinaryEncoder();
-    public static final StringEncoder BLOB = new StringEncoder();  // TODO - temporarily we handle just like TEXT
-    public static final StringEncoder TEXT = new StringEncoder();
-    public static final LongEncoder DATE = new LongEncoder();
-    public static final LongEncoder TIME = new LongEncoder();
-    public static final LongEncoder DATETIME = new LongEncoder();
-    public static final LongEncoder TIMESTAMP = new LongEncoder();
-    public static final LongEncoder YEAR = new LongEncoder();
+    public static final Encoding INT = LongEncoder.INSTANCE;
+    public static final Encoding U_INT = LongEncoder.INSTANCE;
+    public static final Encoding U_BIGINT = UBigIntEncoder.INSTANCE;
+    public static final Encoding FLOAT = FloatEncoder.INSTANCE;
+    public static final Encoding U_FLOAT = FloatEncoder.INSTANCE;
+    public static final Encoding DOUBLE = DoubleEncoder.INSTANCE;
+    public static final Encoding U_DOUBLE = DoubleEncoder.INSTANCE;
+    public static final Encoding DECIMAL = DecimalEncoder.INSTANCE;
+    public static final Encoding U_DECIMAL = DecimalEncoder.INSTANCE;
+    public static final Encoding VARCHAR = StringEncoder.INSTANCE;
+    public static final Encoding VARBINARY = VarBinaryEncoder.INSTANCE;
+    public static final Encoding BLOB = StringEncoder.INSTANCE;  // TODO - temporarily we handle just like TEXT
+    public static final Encoding TEXT = StringEncoder.INSTANCE;
+    public static final Encoding DATE = LongEncoder.INSTANCE;
+    public static final Encoding TIME = LongEncoder.INSTANCE;
+    public static final Encoding DATETIME = LongEncoder.INSTANCE;
+    public static final Encoding TIMESTAMP = LongEncoder.INSTANCE;
+    public static final Encoding YEAR = LongEncoder.INSTANCE;
 
     private static final Object ENCODING_MAP_LOCK = EncoderFactory.class;
     private static Map<String,Encoding> encodingMap = null;

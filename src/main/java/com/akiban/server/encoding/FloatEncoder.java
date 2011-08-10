@@ -16,7 +16,10 @@
 package com.akiban.server.encoding;
 
 public class FloatEncoder extends FixedWidthEncoding {
-    FloatEncoder() {
+    
+    public static final Encoding INSTANCE = new FloatEncoder();
+
+    private FloatEncoder() {
         super(5);
     }
 }

@@ -16,7 +16,10 @@
 package com.akiban.server.encoding;
 
 public class LongEncoder extends FixedWidthEncoding {
-    LongEncoder() {
+    
+    public static final Encoding INSTANCE = new LongEncoder();
+
+    private LongEncoder() {
         super(9);
     }
 }

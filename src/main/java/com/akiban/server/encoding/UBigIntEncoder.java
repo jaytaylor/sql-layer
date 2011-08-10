@@ -16,7 +16,10 @@
 package com.akiban.server.encoding;
 
 public class UBigIntEncoder extends FixedWidthEncoding {
-    UBigIntEncoder() {
+    
+    public static final Encoding INSTANCE = new UBigIntEncoder();
+
+    private UBigIntEncoder() {
         super((65/24) + 1);
     }
 }

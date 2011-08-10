@@ -18,7 +18,10 @@ package com.akiban.server.encoding;
 import com.akiban.server.rowdata.FieldDef;
 
 public final class DecimalEncoder extends VariableWidthEncoding {
-    DecimalEncoder() {
+
+    public static final Encoding INSTANCE = new DecimalEncoder();
+
+    private DecimalEncoder() {
     }
 
     @Override

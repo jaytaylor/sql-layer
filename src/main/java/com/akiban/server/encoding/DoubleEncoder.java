@@ -16,7 +16,10 @@
 package com.akiban.server.encoding;
 
 public class DoubleEncoder extends FixedWidthEncoding {
-    DoubleEncoder() {
+
+    public static final Encoding INSTANCE = new DoubleEncoder();
+
+    private DoubleEncoder() {
         super(9);
     }
 }

@@ -20,7 +20,10 @@ import java.nio.ByteBuffer;
 import com.akiban.server.rowdata.FieldDef;
 
 public final class VarBinaryEncoder extends VariableWidthEncoding {
-    VarBinaryEncoder() {
+
+    public static final Encoding INSTANCE = new VarBinaryEncoder();
+
+    private VarBinaryEncoder() {
     }
 
     private static ByteBuffer toByteBuffer(Object value) {
