@@ -122,7 +122,10 @@ public final class NullConversionSource implements ConversionSource {
 
     @Override
     public void appendAsString(AkibanAppender appender, Quote quote) {
+        AkType type = getConversionType();
+        quote.quote(appender, type);
         appender.append("null");
+        quote.quote(appender, type);
     }
 
     @Override

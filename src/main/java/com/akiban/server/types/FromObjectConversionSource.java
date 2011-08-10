@@ -156,10 +156,13 @@ public final class FromObjectConversionSource implements ConversionSource {
 
     @Override
     public void appendAsString(AkibanAppender appender, Quote quote) {
-        if (akType == AkType.UNSUPPORTED) {
+        AkType type = getConversionType();
+        quote.quote(appender, type);
+        if (type == AkType.UNSUPPORTED) {
             throw new IllegalStateException("source object not set");
         }
         quote.append(appender, String.valueOf(object));
+        quote.quote(appender, type);
     }
 
     @Override

@@ -39,7 +39,20 @@ abstract class EncodingBase<T> implements Encoding<T> {
         return location;
     }
 
-    @Override
+    /**
+     * Append the value of a field in a RowData to a StringBuilder, optionally
+     * quoting string values.
+     *
+     * @param fieldDef
+     *            description of the field
+     * @param rowData
+     *            RowData containing the data to decode
+     * @param sb
+     *            The StringBuilder
+     * @param quote
+     *            Member of the {@link com.akiban.server.Quote} enum that specifies how to add
+     *            quotation marks: none, single-quote or double-quote symbols.
+     */
     public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
         try {
             sb.append(toObject(fieldDef,rowData));

@@ -134,7 +134,10 @@ public final class PersistitKeyConversionSource implements ConversionSource {
     @Override
     public void appendAsString(AkibanAppender appender, Quote quote) {
         // Can we optimize this at all?
+        AkType type = getConversionType();
+        quote.quote(appender, type);
         quote.append(appender, getString());
+        quote.quote(appender, type);
     }
 
     @Override

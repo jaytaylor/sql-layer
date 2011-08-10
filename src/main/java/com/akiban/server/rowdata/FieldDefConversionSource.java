@@ -133,7 +133,7 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
 
     @Override
     public long getYear() {
-        return extractLong(Signage.SIGNED);
+        return extractLong(Signage.SIGNED) & 0xFF;
     }
 
     @Override
@@ -152,6 +152,7 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
     @Override
     public void appendAsString(AkibanAppender appender, Quote quote) {
         AkType type = getConversionType();
+        quote.quote(appender, type);
         if (type == AkType.VARCHAR || type == AkType.TEXT) {
             appendStringField(appender, quote);
         }
@@ -159,8 +160,10 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
         // (I think quoting should really be selected at the Appender level, not externally)
         else if (type == AkType.DECIMAL) {
             ConversionHelperBigDecimal.decodeToString(fieldDef(), rowData(), appender);
+        } else {
+            Converters.convert(this, appender.asConversionTarget());
         }
-        Converters.convert(this, appender.asConversionTarget());
+        quote.quote(appender, type);
     }
 
     @Override

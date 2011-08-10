@@ -15,25 +15,34 @@
 
 package com.akiban.server;
 
+import com.akiban.server.types.AkType;
 import com.akiban.util.AkibanAppender;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Formatter;
+
+import static com.akiban.server.types.AkType.*;
 
 public enum Quote {
     NONE(null, false),
     SINGLE_QUOTE('\'', false),
     DOUBLE_QUOTE('"', false),
-    JSON_QUOTE('"', true)
+    JSON_QUOTE('"', true,
+            DATE, DATETIME, DECIMAL, VARCHAR, TEXT, TIME, TIMESTAMP, VARBINARY, YEAR)
     ;
 
     private final Character quoteChar;
     private final boolean escapeControlChars;
+    private final EnumSet<AkType> quotedTypes;
 
-    Quote(Character quoteChar, boolean escapeControlChars) {
+    Quote(Character quoteChar, boolean escapeControlChars, AkType... quotedTypes) {
         this.quoteChar = quoteChar;
         this.escapeControlChars = escapeControlChars;
+        this.quotedTypes = EnumSet.noneOf(AkType.class);
+        Collections.addAll(this.quotedTypes, quotedTypes);
     }
 
     private final static Charset ASCII = Charset.forName("US-ASCII");
@@ -48,8 +57,14 @@ public enum Quote {
         }
     }
 
+    public void quote(AkibanAppender appender, AkType type) {
+        if ((quoteChar != null) && (!quotedTypes.isEmpty()) && quotedTypes.contains(type)) {
+            appender.append(quoteChar.charValue());
+        }
+    }
+
     public void append(AkibanAppender sb, String s) {
-        doAppend(sb, s, quoteChar, escapeControlChars, true);
+        doAppend(sb, s, quoteChar, escapeControlChars);
     }
 
     public void append(AkibanAppender appender, ByteBuffer byteBuffer, String charset) {
@@ -67,7 +82,7 @@ public enum Quote {
         if ( (!appender.canAppendBytes()) || !writeBytesCharset(charset))
         {
             String string = new String(bytes, offset, length, charset);
-            doAppend(appender, string, quoteChar, escapeControlChars, true);
+            doAppend(appender, string, quoteChar, escapeControlChars);
             return;
         }
         writeBytes(appender, bytes, offset, length, charset, this);
@@ -78,17 +93,11 @@ public enum Quote {
         if (! writeBytesCharset(charset) ) {
             throw new IllegalArgumentException(charset.name());
         }
-        if (quote.quoteChar != null) {
-            appender.append(quote.quoteChar.charValue());
-        }
         int wrote = writeDirect(appender, bytes, offset, length, charset, quote.escapeControlChars);
         assert !(wrote > length) : "wrote " + wrote + " of " + length;
         if (wrote < length) {
             String string = new String(bytes, offset + wrote, length - wrote, charset);
-            doAppend(appender, string, quote.quoteChar, quote.escapeControlChars, false);
-        }
-        if (quote.quoteChar != null) {
-            appender.append(quote.quoteChar);
+            doAppend(appender, string, quote.quoteChar, quote.escapeControlChars);
         }
     }
 
@@ -128,7 +137,7 @@ public enum Quote {
         return Character.isISOControl(ch);
     }
 
-    static void doAppend(AkibanAppender sb, String s, Character quote, boolean escapeControlChars, boolean bookends) {
+    static void doAppend(AkibanAppender sb, String s, Character quote, boolean escapeControlChars) {
         if (s == null) {
             sb.append(null);
             return;
@@ -142,9 +151,6 @@ public enum Quote {
             return;
         }
 
-        if (bookends) {
-            sb.append(quote);
-        }
         for (int i = 0; i < s.length(); i++) {
             char ch = s.charAt(i);
             if (escapeControlChars && needsEscaping(ch)) {
@@ -156,9 +162,6 @@ public enum Quote {
                 }
                 sb.append(ch);
             }
-        }
-        if (bookends) {
-            sb.append(quote);
         }
     }
 }

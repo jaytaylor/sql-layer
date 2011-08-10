@@ -35,22 +35,6 @@ public interface Encoding<T> {
     boolean validate(final Type type);
 
     /**
-     * Append the value of a field in a RowData to a StringBuilder, optionally
-     * quoting string values.
-     *
-     * @param fieldDef
-     *            description of the field
-     * @param rowData
-     *            RowData containing the data to decode
-     * @param sb
-     *            The StringBuilder
-     * @param quote
-     *            Member of the {@link com.akiban.server.Quote} enum that specifies how to add
-     *            quotation marks: none, single-quote or double-quote symbols.
-     */
-    void toString(final FieldDef fieldDef, final RowData rowData, final AkibanAppender sb, final Quote quote);
-
-    /**
      * Size in bytes required by the
      * {@link EncodingBase#fromObject(FieldDef, Object, byte[], int)} method. For
      * fixed-length fields this is the field width. For variable-length fields,
