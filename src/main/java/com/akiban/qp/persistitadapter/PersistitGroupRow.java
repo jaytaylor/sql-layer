@@ -19,7 +19,7 @@ import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.FieldDefConversionSource;
+import com.akiban.server.rowdata.RowDataConversionSource;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
@@ -166,7 +166,7 @@ public class PersistitGroupRow extends AbstractRow
 
     // Object state
 
-    private final FieldDefConversionSource conversionSource = new FieldDefConversionSource();
+    private final RowDataConversionSource conversionSource = new RowDataConversionSource();
     private final PersistitAdapter adapter;
     private RowData rowData;
     private LegacyRowWrapper row;

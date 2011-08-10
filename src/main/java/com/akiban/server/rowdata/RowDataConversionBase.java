@@ -15,7 +15,7 @@
 
 package com.akiban.server.rowdata;
 
-abstract class FieldDefConversionBase {
+abstract class RowDataConversionBase {
 
     // FieldDefConversionBase interface
 

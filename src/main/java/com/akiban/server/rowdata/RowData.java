@@ -430,7 +430,7 @@ public class RowData {
         int vmax = 0;
 
         FromObjectConversionSource source = new FromObjectConversionSource();
-        FieldDefConversionTarget target = new FieldDefConversionTarget();
+        RowDataConversionTarget target = new RowDataConversionTarget();
         target.offset( createRowInit(rowDef, values, fieldCount) );
 
         for (int index = 0; index < values.length; index++) {
@@ -556,7 +556,7 @@ public class RowData {
 
     public String toString(final RowDef rowDef) {
         final AkibanAppender sb = AkibanAppender.of(new StringBuilder());
-        FieldDefConversionSource source = new FieldDefConversionSource();
+        RowDataConversionSource source = new RowDataConversionSource();
         try {
             if (rowDef == null) {
                 sb.append("RowData?(rowDefId=");
@@ -590,7 +590,7 @@ public class RowData {
     }
 
     public void toJSONString(final RowDef rowDef, AkibanAppender sb) throws IOException {
-        FieldDefConversionSource source = new FieldDefConversionSource();
+        RowDataConversionSource source = new RowDataConversionSource();
         for(int i = 0; i < getFieldCount(); i++) {
             final FieldDef fieldDef = rowDef.getFieldDef(i);
             final long location = fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());

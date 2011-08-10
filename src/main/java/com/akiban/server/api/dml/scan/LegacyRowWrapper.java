@@ -15,15 +15,11 @@
 
 package com.akiban.server.api.dml.scan;
 
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.FieldDefConversionSource;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataExtractor;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.DMLError;
-import com.akiban.server.types.Converters;
-import com.akiban.server.types.ToObjectConversionTarget;
 
 import java.util.Map;
 

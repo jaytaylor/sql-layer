@@ -22,8 +22,6 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.PersistitKeyConversionTarget;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.FieldDefConversionSource;
 import com.akiban.server.types.ConversionSource;
 import com.akiban.server.types.Converters;
 import com.persistit.Key;

@@ -29,7 +29,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
-public final class FieldDefConversionSource extends FieldDefConversionBase implements ConversionSource {
+public final class RowDataConversionSource extends RowDataConversionBase implements ConversionSource {
 
     // ConversionSource interface
 

@@ -24,7 +24,7 @@ import com.akiban.util.ByteSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public final class FieldDefConversionTarget extends FieldDefConversionBase implements ConversionTarget {
+public final class RowDataConversionTarget extends RowDataConversionBase implements ConversionTarget {
 
     public int offset() {
         return offset;

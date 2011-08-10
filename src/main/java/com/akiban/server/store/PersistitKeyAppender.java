@@ -18,7 +18,7 @@ package com.akiban.server.store;
 import com.akiban.ais.model.Column;
 import com.akiban.server.PersistitKeyConversionTarget;
 import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.FieldDefConversionSource;
+import com.akiban.server.rowdata.RowDataConversionSource;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.types.Converters;
 import com.akiban.server.types.FromObjectConversionSource;
@@ -60,14 +60,14 @@ public final class PersistitKeyAppender {
 
     public PersistitKeyAppender(Key key) {
         this.key = key;
-        fromRowDataSource = new FieldDefConversionSource();
+        fromRowDataSource = new RowDataConversionSource();
         fromObjectSource = new FromObjectConversionSource();
         target = new PersistitKeyConversionTarget();
         target.attach(this.key);
     }
 
     private final FromObjectConversionSource fromObjectSource;
-    private final FieldDefConversionSource fromRowDataSource;
+    private final RowDataConversionSource fromRowDataSource;
     private final PersistitKeyConversionTarget target;
     private final Key key;
 }
