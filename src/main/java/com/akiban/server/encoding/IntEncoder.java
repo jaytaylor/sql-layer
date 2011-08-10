@@ -20,10 +20,4 @@ import com.akiban.ais.model.Type;
 public final class IntEncoder extends LongEncoderBase {
     IntEncoder() {
     }
-
-    @Override
-    public boolean validate(Type type) {
-        long w = type.maxSizeBytes();
-        return type.fixedSize() && (w == 1 || w == 2 || w == 3 || w == 4 || w == 8);
-    }
 }

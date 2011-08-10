@@ -36,6 +36,13 @@ public final class Converters {
         return target;
     }
 
+    public static LongConverter getLongConverter(AkType type) {
+        AbstractConverter converter = get(type);
+        if (converter instanceof LongConverter)
+            return (LongConverter) converter;
+        return null;
+    }
+
     private static AbstractConverter get(AkType type) {
         return type.converter();
     }

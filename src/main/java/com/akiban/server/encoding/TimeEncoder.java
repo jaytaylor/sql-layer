@@ -15,12 +15,6 @@
 
 package com.akiban.server.encoding;
 
-import com.akiban.ais.model.Type;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.Quote;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.util.AkibanAppender;
-
 
 /**
  * Encoder for working with time when stored as a 3 byte int encoded as
@@ -31,63 +25,4 @@ import com.akiban.util.AkibanAppender;
 public final class TimeEncoder extends LongEncoderBase {
     TimeEncoder() {
     }
-    
-    @Override
-    public long encodeFromObject(Object obj) {
-        int value = 0;
-        if(obj instanceof String) {
-            // (-)HH:MM:SS
-            String str = (String)obj;
-            int mul = 1;
-            if(str.length() > 0 && str.charAt(0) == '-') {
-                mul = -1;
-                str = str.substring(1);
-            }
-            int hours = 0;
-            int minutes = 0;
-            int seconds = 0;
-            int offset = 0;
-            final String values[] = str.split(":");
-            switch(values.length) {
-                case 3: hours   = Integer.parseInt(values[offset++]); // fall
-                case 2: minutes = Integer.parseInt(values[offset++]); // fall
-                case 1: seconds = Integer.parseInt(values[offset]);   break;
-                default:
-                    throw new IllegalArgumentException("Invalid TIME string");
-            }
-            minutes += seconds/60;
-            seconds %= 60;
-            hours += minutes/60;
-            minutes %= 60;
-            value = mul * (hours* TIME_HOURS_SCALE + minutes* TIME_MINUTES_SCALE + seconds);
-        }else if(obj instanceof Number) {
-            value = ((Number)obj).intValue();
-        } else if(obj != null) {
-            throw new IllegalArgumentException("Requires String or Number");
-        }
-        return value;
-    }
-
-    @Override
-    public String decodeToString(long value) {
-        final int abs = Math.abs((int)value);
-        final int hour = abs / TIME_HOURS_SCALE;
-        final int minute = (abs - hour* TIME_HOURS_SCALE) / TIME_MINUTES_SCALE;
-        final int second = abs - hour* TIME_HOURS_SCALE - minute* TIME_MINUTES_SCALE;
-        return String.format("%s%02d:%02d:%02d", abs != value ? "-" : "", hour, minute, second);
-    }
-
-    @Override
-    public boolean validate(Type type) {
-        return type.fixedSize() && (type.maxSizeBytes() == 3);
-    }
-
-    @Override
-    public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
-        toStringQuoted(fieldDef, rowData, sb, quote);
-    }
-
-    
-    final static int TIME_HOURS_SCALE = 10000;
-    final static int TIME_MINUTES_SCALE = 100;
 }

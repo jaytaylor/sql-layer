@@ -15,17 +15,6 @@
 
 package com.akiban.server.encoding;
 
-import com.akiban.ais.model.Type;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.Quote;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.util.AkibanAppender;
-
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
-
 /**
  * Encoder for working with time when stored as a 4 byte int (standard
  * UNIX timestamp). This is how MySQL stores the SQL TIMESTAMP type.
@@ -33,48 +22,7 @@ import java.util.TimeZone;
  * and  http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
  */
 public final class TimestampEncoder extends LongEncoderBase {
-    final SimpleDateFormat SDF;
 
     TimestampEncoder() {
-        SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    }
-
-    void setTimezone(TimeZone timezone) {
-        SDF.setTimeZone(timezone);
-    }
-
-    @Override
-    public long encodeFromObject(Object obj) {
-        long value;
-        if(obj == null) {
-            value = 0;
-        } else if(obj instanceof String) {
-            final String s = (String)obj;
-            try {
-                value = SDF.parse(s).getTime() / 1000;
-            } catch(ParseException e) {
-                throw new IllegalArgumentException(e.getMessage());
-            }
-        } else if(obj instanceof Number) {
-            value = ((Number)obj).intValue();
-        } else {
-            throw new IllegalArgumentException("Requires String or Number");
-        }
-        return value;
-    }
-
-    @Override
-    public String decodeToString(long value) {
-        return SDF.format(new Date(value*1000));
-    }
-
-    @Override
-    public boolean validate(Type type) {
-        return type.fixedSize() && (type.maxSizeBytes() == 4);
-    }
-
-    @Override
-    public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
-        toStringQuoted(fieldDef, rowData, sb, quote);
     }
 }

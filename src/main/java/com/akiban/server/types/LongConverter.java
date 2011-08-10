@@ -20,6 +20,8 @@ public abstract class LongConverter extends AbstractConverter {
     // LongConverter interface
 
     public abstract long getLong(ConversionSource source);
+    public abstract String asString(long value);
+    public abstract long doParse(String string);
 
     // defined in subclasses
 

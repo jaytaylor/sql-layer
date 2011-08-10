@@ -28,10 +28,4 @@ public final class TextEncoder extends StringEncoder {
         final String s = value == null ? "" : value.toString();
         return s.length() + fieldDef.getPrefixSize();
     }
-
-    @Override
-    public boolean validate(Type type) {
-        long w = type.maxSizeBytes();
-        return !type.fixedSize();
-    }
 }

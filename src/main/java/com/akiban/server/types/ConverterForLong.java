@@ -60,6 +60,16 @@ abstract class ConverterForLong extends LongConverter {
     };
 
     @Override
+    public String asString(long value) {
+        return Long.toString(value);
+    }
+
+    @Override
+    public long doParse(String string) {
+        return Long.parseLong(string);
+    }
+
+    @Override
     public long getLong(ConversionSource source) {
         AkType type = source.getConversionType();
         switch (type) {
@@ -71,8 +81,6 @@ abstract class ConverterForLong extends LongConverter {
         default: throw unsupportedConversion(source);
         }
     }
-
-
 
     private ConverterForLong() {}
 }
