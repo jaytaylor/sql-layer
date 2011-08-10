@@ -23,7 +23,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
-abstract class EncodingBase<T> implements Encoding<T> {
+abstract class EncodingBase<T> implements Encoding {
     EncodingBase() {
     }
 

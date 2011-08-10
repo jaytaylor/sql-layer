@@ -236,7 +236,7 @@ public class PostgresType
         // TODO: For now, these are the only ones needing special treatment.
         // When we are better able to work with the encoder to get the
         // raw bytes, can use this for all.
-        Encoding<?> encoder = EncoderFactory.valueOf(encoding, aisType);
+        Encoding encoder = EncoderFactory.valueOf(encoding, aisType);
         if (encoder instanceof LongEncoderBase)
             result.encoder = (LongEncoderBase)encoder;
 

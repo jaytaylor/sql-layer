@@ -23,7 +23,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
-public interface Encoding<T> {
+public interface Encoding {
     /**
      * Verify that the Encoding enum element is appropriate for the specified
      * Type. Used to assert that the name of the Encoding specified in

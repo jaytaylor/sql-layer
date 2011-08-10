@@ -48,7 +48,7 @@ public final class EncoderFactory {
     public static final YearEncoder YEAR = new YearEncoder();
 
     private static final Object ENCODING_MAP_LOCK = EncoderFactory.class;
-    private static Map<String,Encoding<?>> encodingMap = null;
+    private static Map<String,Encoding> encodingMap = null;
 
     /**
      * Gets an encoding by name.
@@ -56,12 +56,12 @@ public final class EncoderFactory {
      * @return the encoding
      * @throws EncodingException if no such encoding exists
      */
-    private static Encoding<?> valueOf(String name) {
+    private static Encoding valueOf(String name) {
         synchronized (ENCODING_MAP_LOCK) {
             if (encodingMap == null) {
                 encodingMap = initializeEncodingMap();
             }
-            final Encoding<?> encoding = encodingMap.get(name);
+            final Encoding encoding = encodingMap.get(name);
             if (encoding == null) {
                 throw new EncodingException("Unknown encoding type: " + name);
             }
@@ -69,13 +69,13 @@ public final class EncoderFactory {
         }
     }
 
-    private static Map<String, Encoding<?>> initializeEncodingMap() {
-        final Map<String,Encoding<?>> tmp = new HashMap<String, Encoding<?>>();
+    private static Map<String, Encoding> initializeEncodingMap() {
+        final Map<String,Encoding> tmp = new HashMap<String, Encoding>();
         for (Field field : EncoderFactory.class.getDeclaredFields()) {
             final int m = field.getModifiers();
             if (Modifier.isFinal(m) && Modifier.isStatic(m) && Modifier.isPublic(m) && Encoding.class.isAssignableFrom(field.getType())) {
                 try {
-                    Encoding<?> encoding = (Encoding) field.get(null);
+                    Encoding encoding = (Encoding) field.get(null);
                     tmp.put(field.getName(), encoding);
                 } catch (IllegalAccessException e) {
                     throw new EncodingException("While constructing encodings map; at " + field.getName(), e);
@@ -92,8 +92,8 @@ public final class EncoderFactory {
      * @return the encoding
      * @throws EncodingException if the type is invalid for this encoding, or if the encoding doesn't exist
      */
-    public static Encoding<?> valueOf(String name, Type type) {
-        Encoding<?> encoding = valueOf(name);
+    public static Encoding valueOf(String name, Type type) {
+        Encoding encoding = valueOf(name);
 
         if (!encoding.validate(type)) {
             throw new EncodingException("Encoding " + encoding + " not valid for type " + type);
