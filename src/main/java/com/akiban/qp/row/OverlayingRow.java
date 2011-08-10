@@ -43,11 +43,6 @@ public final class OverlayingRow extends AbstractRow {
     }
 
     @Override
-    public Object field(int i, Bindings bindings) {
-        return Undef.isUndefined(overlays[i]) ? underlying.field(i, bindings) : overlays[i];
-    }
-
-    @Override
     public ConversionSource conversionSource(int i, Bindings bindings) {
         if (Undef.isUndefined(overlays[i])) {
             return underlying.conversionSource(i, bindings);

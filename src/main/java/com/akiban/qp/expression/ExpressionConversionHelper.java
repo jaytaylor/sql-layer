@@ -18,7 +18,6 @@ package com.akiban.qp.expression;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types.ConversionSource;
-import com.akiban.server.types.Converters;
 import com.akiban.server.types.FromObjectConversionSource;
 import com.akiban.server.types.ToObjectConversionTarget;
 
@@ -34,9 +33,7 @@ public final class ExpressionConversionHelper {
     }
 
     public static Object objectFromConversionSource(ConversionSource source) {
-        ToObjectConversionTarget target = new ToObjectConversionTarget();
-        target.expectType( source.getConversionType() );
-        return Converters.convert(source, target).lastConvertedValue();
+        return new ToObjectConversionTarget().convertFromSource(source);
     }
 
     private ExpressionConversionHelper() {}

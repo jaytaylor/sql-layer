@@ -24,6 +24,16 @@ public final class ToObjectConversionTarget implements ConversionTarget {
     
     // ToObjectConversionTarget interface
 
+    /**
+     * Convenience method for extracting an Object from a conversion source.
+     * @param source the incoming source
+     * @return the converted Object
+     */
+    public Object convertFromSource(ConversionSource source) {
+        expectType(source.getConversionType());
+        return Converters.convert(source, this).lastConvertedValue();
+    }
+
     public ToObjectConversionTarget expectType(AkType type) {
         this.akType = type;
         putPending = true;

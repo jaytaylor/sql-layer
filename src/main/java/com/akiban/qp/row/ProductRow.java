@@ -40,18 +40,6 @@ public class ProductRow extends AbstractRow
     }
 
     @Override
-    public Object field(int i, Bindings bindings)
-    {
-        Object field;
-        if (i < nLeftFields) {
-            field = left.isNull() ? null : left.get().field(i, bindings);
-        } else {
-            field = right.isNull() ? null : right.get().field(i - nLeftFields, bindings);
-        }
-        return field;
-    }
-
-    @Override
     public ConversionSource conversionSource(int i, Bindings bindings) {
         ConversionSource source;
         if (i < nLeftFields) {

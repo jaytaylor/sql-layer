@@ -20,13 +20,11 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.server.PersistitKeyConversionSource;
-import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.store.IndexVisitor;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.server.types.Converters;
 import com.akiban.server.types.ToObjectConversionTarget;
 import com.akiban.util.WrappingByteSource;
 import com.persistit.Key;
@@ -82,16 +80,14 @@ public class KeyToObjectIT extends ITBase {
                 for(IndexColumn indexColumn : index.getColumns()) {
                     Column column = indexColumn.getColumn();
                     int colPos = column.getPosition();
-                    FieldDef fieldDef = rowDef.getFieldDef(colPos);
                     Object objFromRow = row.get(colPos);
                     conversionSource.attach(key, indexColumn);
-                    conversionTarget.expectType(column.getType().akType());
+                    final Object lastConvertedValue;
                     try {
-                        Converters.convert(conversionSource, conversionTarget);
+                        lastConvertedValue = conversionTarget.convertFromSource(conversionSource);
                     } catch (Exception e) {
                         throw new RuntimeException("with AkType." + column.getType().akType(), e);
                     }
-                    Object lastConvertedValue = conversionTarget.lastConvertedValue();
 
                     // Work around for dropping of 0 value sigfigs from key.decode()
                     int compareValue = 1;

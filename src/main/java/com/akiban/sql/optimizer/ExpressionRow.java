@@ -45,16 +45,9 @@ public class ExpressionRow extends AbstractRow
     }
 
     @Override
-    public Object field(int i, Bindings bindings) {
-        if (expressions[i] == null)
-            return null;
-        else
-            return expressions[i].evaluate(null, bindings);
-    }
-
-    @Override
     public ConversionSource conversionSource(int i, Bindings bindings) {
-        source.setReflectively(field(i, bindings));
+        Object value = (expressions[i] == null) ? null : expressions[i].evaluate(null, bindings);
+        source.setReflectively(value);
         return source;
     }
 

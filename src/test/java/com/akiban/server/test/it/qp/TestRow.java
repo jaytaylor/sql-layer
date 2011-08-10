@@ -34,12 +34,6 @@ public class TestRow extends AbstractRow
     }
 
     @Override
-    public Object field(int i, Bindings bindings)
-    {
-        return valuesHolder.objectAt(i);
-    }
-
-    @Override
     public ConversionSource conversionSource(int i, Bindings bindings) {
         return valuesHolder.conversionSourceAt(i);
     }

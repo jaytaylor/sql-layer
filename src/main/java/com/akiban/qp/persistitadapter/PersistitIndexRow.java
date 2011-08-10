@@ -50,12 +50,6 @@ public class PersistitIndexRow extends AbstractRow
     }
 
     @Override
-    public Object field(int i, Bindings bindings)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public ConversionSource conversionSource(int i, Bindings bindings) {
         IndexColumn column = index().getColumns().get(i);
         conversionSource.attach(indexRow, column);

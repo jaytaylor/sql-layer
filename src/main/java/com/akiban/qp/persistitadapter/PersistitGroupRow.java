@@ -51,12 +51,6 @@ public class PersistitGroupRow extends AbstractRow
     }
 
     @Override
-    public Object field(int i, Bindings bindings)
-    {
-        return row.get(i);
-    }
-
-    @Override
     public ConversionSource conversionSource(int i, Bindings bindings) {
         FieldDef fieldDef = rowDef().getFieldDef(i);
         RowData rowData = rowData();

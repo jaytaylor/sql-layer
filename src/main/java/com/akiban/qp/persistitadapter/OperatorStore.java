@@ -57,6 +57,8 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ToObjectConversionTarget;
 import com.google.inject.Inject;
 import com.persistit.Exchange;
 import com.persistit.Transaction;
@@ -70,6 +72,7 @@ import java.util.List;
 
 import static com.akiban.qp.physicaloperator.API.ancestorLookup_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
+import static com.akiban.qp.physicaloperator.API.sort_InsertionLimited;
 
 public class OperatorStore extends DelegatingStore<PersistitStore> {
 
@@ -472,13 +475,15 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
             // Note: some encodings are untested except as necessary for mtr
             NewRow newRow = new NiceRow(rowDef.getRowDefId());
+            ToObjectConversionTarget target = new ToObjectConversionTarget();
             for (int i=0; i < original.rowType().nFields(); ++i) {
                 if (columnSelector.includesColumn(i)) {
                     Object value = extractor.get(rowDef.getFieldDef(i), newRowData);
                     newRow.put(i, value);
                 }
                 else {
-                    newRow.put(i, original.field(i, bindings));
+                    ConversionSource source = original.conversionSource(i, bindings);
+                    newRow.put(i, target.convertFromSource(source));
                 }
             }
             return PersistitGroupRow.newPersistitGroupRow(adapter, newRow.toRowData());
