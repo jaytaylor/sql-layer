@@ -41,7 +41,6 @@ public final class PersistitKeyConversionTarget implements ConversionTarget {
 
     @Override
     public void putNull() {
-        checkState();
         key.append(null);
         invalidate();
     }
