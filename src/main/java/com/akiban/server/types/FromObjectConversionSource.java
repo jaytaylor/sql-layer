@@ -26,10 +26,10 @@ public final class FromObjectConversionSource implements ConversionSource {
 
     // FromObjectConversionSource interface
 
-    public void setReflectively(Object object) {
+    public FromObjectConversionSource setReflectively(Object object) {
         if (object == null) {
             setNull();
-            return;
+            return this;
         }
         
         final AkType asType;
@@ -55,6 +55,7 @@ public final class FromObjectConversionSource implements ConversionSource {
         else throw new UnsupportedOperationException("can't reflectively set " + object.getClass() + ": " + object);
 
         set(object, asType);
+        return this;
     }
 
     public void setNull() {

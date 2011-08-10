@@ -18,6 +18,8 @@ package com.akiban.server.types;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicReference;
 
 abstract class ConvertersForDates extends LongConverter {
 
@@ -144,7 +146,7 @@ abstract class ConvertersForDates extends LongConverter {
         @Override
         public long doParse(String string) {
             try {
-                return SDF.parse(string).getTime() / 1000;
+                return TL_SDF.get().parse(string).getTime() / 1000;
             } catch(ParseException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -152,7 +154,7 @@ abstract class ConvertersForDates extends LongConverter {
 
         @Override
         public String asString(long value) {
-            return SDF.format(new Date(value*1000));
+            return TL_SDF.get().format(new Date(value*1000));
         }
     };
 
@@ -192,8 +194,16 @@ abstract class ConvertersForDates extends LongConverter {
         }
     }
 
+    // testing hooks
+
+    static void setTimestampTimezoneForThread(TimeZone timezone) {
+        TL_SDF.get().setTimeZone(timezone);
+    }
+
+    // hidden ctor
+
     private ConvertersForDates() {}
-    
+
     // consts
 
     private static final long DATETIME_DATE_SCALE = 1000000L;
@@ -207,5 +217,10 @@ abstract class ConvertersForDates extends LongConverter {
     private static final long TIME_HOURS_SCALE = 10000;
     private static final long TIME_MINUTES_SCALE = 100;
     
-    private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final ThreadLocal<SimpleDateFormat> TL_SDF = new ThreadLocal<SimpleDateFormat>() {
+        @Override
+        protected SimpleDateFormat initialValue() {
+            return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        }
+    };
 }
