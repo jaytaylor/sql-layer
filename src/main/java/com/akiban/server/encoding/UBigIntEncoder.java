@@ -15,30 +15,8 @@
 
 package com.akiban.server.encoding;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Type;
-import com.akiban.server.AkServerUtil;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
-import com.persistit.Key;
-
-import java.math.BigInteger;
-
-public class UBigIntEncoder extends EncodingBase<BigInteger> {
+public class UBigIntEncoder extends FixedWidthEncoding {
     UBigIntEncoder() {
-    }
-
-    @Override
-    public int widthFromObject(FieldDef fieldDef, Object value) {
-        return fieldDef.getMaxStorageSize();
-    }
-
-    /**
-     * See {@link Key#appendBigInteger(BigInteger)}
-     */
-    @Override
-    public long getMaxKeyStorageSize(Column column) {
-        return (65/24) + 1;
+        super((65/24) + 1);
     }
 }

@@ -15,27 +15,8 @@
 
 package com.akiban.server.encoding;
 
-import com.akiban.ais.model.Column;
-import com.akiban.server.rowdata.FieldDef;
-import com.persistit.Key;
-
-public class DoubleEncoder extends EncodingBase<Double> {
+public class DoubleEncoder extends FixedWidthEncoding {
     DoubleEncoder() {
+        super(9);
     }
-
-    @Override
-    public int widthFromObject(FieldDef fieldDef, Object value) {
-        return fieldDef.getMaxStorageSize();
-    }
-
-    /**
-     * See {@link Key#EWIDTH_LONG}
-     */
-    @Override
-    public long getMaxKeyStorageSize(Column column) {
-        return 9;
-    }
-
-    
-    protected static final int STORAGE_SIZE = 8;
 }

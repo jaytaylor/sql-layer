@@ -15,16 +15,10 @@
 
 package com.akiban.server.encoding;
 
-import com.akiban.ais.model.Column;
 import com.akiban.server.rowdata.FieldDef;
 
-public class StringEncoder extends EncodingBase<String> {
+public class StringEncoder extends VariableWidthEncoding {
     StringEncoder() {
-    }
-
-    @Override
-    public long getMaxKeyStorageSize(Column column) {
-        return column.getMaxStorageSize();
     }
 
     @Override

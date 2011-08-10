@@ -15,28 +15,10 @@
 
 package com.akiban.server.encoding;
 
-import java.math.BigDecimal;
-
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Type;
-import com.akiban.server.AkServerUtil;
 import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.Quote;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.util.AkibanAppender;
-import com.persistit.Key;
 
-public final class DecimalEncoder extends EncodingBase<BigDecimal> {
+public final class DecimalEncoder extends VariableWidthEncoding {
     DecimalEncoder() {
-    }
-
-    /**
-     * Note: Only a "good guess". No way to determine how much room
-     * key.append(BigDecimal) will take currently.
-     */
-    @Override
-    public long getMaxKeyStorageSize(final Column column) {
-        return column.getMaxStorageSize();
     }
 
     @Override

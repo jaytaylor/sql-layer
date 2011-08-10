@@ -15,24 +15,8 @@
 
 package com.akiban.server.encoding;
 
-import com.akiban.ais.model.Column;
-import com.akiban.server.rowdata.FieldDef;
-import com.persistit.Key;
-
-public class FloatEncoder extends EncodingBase<Float> {
+public class FloatEncoder extends FixedWidthEncoding {
     FloatEncoder() {
-    }
-
-    @Override
-    public int widthFromObject(FieldDef fieldDef, Object value) {
-        return fieldDef.getMaxStorageSize();
-    }
-
-    /**
-     * See {@link Key#EWIDTH_INT}
-     */
-    @Override
-    public long getMaxKeyStorageSize(Column column) {
-        return 5;
+        super(5);
     }
 }

@@ -15,29 +15,8 @@
 
 package com.akiban.server.encoding;
 
-import com.akiban.ais.model.Column;
-import com.akiban.server.AkServerUtil;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.Quote;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.util.AkibanAppender;
-import com.persistit.Key;
-
-public abstract class LongEncoderBase extends EncodingBase<Long> {
-    LongEncoderBase() {
-    }
-
-    @Override
-    public int widthFromObject(FieldDef fieldDef, Object value) {
-        return fieldDef.getMaxStorageSize();
-    }
-
-    /**
-     * See {@link Key#EWIDTH_LONG}
-     */
-    @Override
-    public long getMaxKeyStorageSize(Column column) {
-        return 9;
+public class LongEncoder extends FixedWidthEncoding {
+    LongEncoder() {
+        super(9);
     }
 }

@@ -28,24 +28,24 @@ public final class EncoderFactory {
     private EncoderFactory() {
     }
 
-    public static final IntEncoder INT = new IntEncoder();
-    public static final UIntEncoder U_INT = new UIntEncoder();
+    public static final LongEncoder INT = new LongEncoder();
+    public static final LongEncoder U_INT = new LongEncoder();
     public static final UBigIntEncoder U_BIGINT = new UBigIntEncoder();
     public static final FloatEncoder FLOAT = new FloatEncoder();
-    public static final UFloatEncoder U_FLOAT = new UFloatEncoder();
+    public static final FloatEncoder U_FLOAT = new FloatEncoder();
     public static final DoubleEncoder DOUBLE = new DoubleEncoder();
-    public static final UDoubleEncoder U_DOUBLE = new UDoubleEncoder();
+    public static final DoubleEncoder U_DOUBLE = new DoubleEncoder();
     public static final DecimalEncoder DECIMAL = new DecimalEncoder();
     public static final DecimalEncoder U_DECIMAL = new DecimalEncoder();
     public static final StringEncoder VARCHAR = new StringEncoder();
     public static final VarBinaryEncoder VARBINARY = new VarBinaryEncoder();
-    public static final TextEncoder BLOB = new TextEncoder();  // TODO - temporarily we handle just like TEXT
-    public static final TextEncoder TEXT = new TextEncoder();
-    public static final DateEncoder DATE = new DateEncoder();
-    public static final TimeEncoder TIME = new TimeEncoder();
-    public static final DateTimeEncoder DATETIME = new DateTimeEncoder();
-    public static final TimestampEncoder TIMESTAMP = new TimestampEncoder();
-    public static final YearEncoder YEAR = new YearEncoder();
+    public static final StringEncoder BLOB = new StringEncoder();  // TODO - temporarily we handle just like TEXT
+    public static final StringEncoder TEXT = new StringEncoder();
+    public static final LongEncoder DATE = new LongEncoder();
+    public static final LongEncoder TIME = new LongEncoder();
+    public static final LongEncoder DATETIME = new LongEncoder();
+    public static final LongEncoder TIMESTAMP = new LongEncoder();
+    public static final LongEncoder YEAR = new LongEncoder();
 
     private static final Object ENCODING_MAP_LOCK = EncoderFactory.class;
     private static Map<String,Encoding> encodingMap = null;

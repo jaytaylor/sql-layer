@@ -17,10 +17,9 @@ package com.akiban.server.encoding;
 
 import java.nio.ByteBuffer;
 
-import com.akiban.ais.model.Column;
 import com.akiban.server.rowdata.FieldDef;
 
-public final class VarBinaryEncoder extends EncodingBase<ByteBuffer>{
+public final class VarBinaryEncoder extends VariableWidthEncoding {
     VarBinaryEncoder() {
     }
 
@@ -39,11 +38,6 @@ public final class VarBinaryEncoder extends EncodingBase<ByteBuffer>{
             throw new IllegalArgumentException("Requires byte[] or ByteBuffer");
         }
         return buffer;
-    }
-
-    @Override
-    public long getMaxKeyStorageSize(Column column) {
-        return column.getMaxStorageSize();
     }
 
     @Override

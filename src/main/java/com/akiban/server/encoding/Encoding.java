@@ -16,18 +16,13 @@
 package com.akiban.server.encoding;
 
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Type;
 import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.Quote;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
 public interface Encoding {
 
     /**
-     * Size in bytes required by the
-     * {@link EncodingBase#fromObject(FieldDef, Object, byte[], int)} method. For
+     * Size in bytes required to store this value into a RowData. For
      * fixed-length fields this is the field width. For variable-length fields,
      * this is the number of bytes used to store the item, including the number
      * of prefix bytes used to encode its length. For example, a VARCHAR(300)
