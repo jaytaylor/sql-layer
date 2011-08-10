@@ -93,11 +93,6 @@ public final class EncoderFactory {
      * @throws EncodingException if the type is invalid for this encoding, or if the encoding doesn't exist
      */
     public static Encoding valueOf(String name, Type type) {
-        Encoding encoding = valueOf(name);
-
-        if (!encoding.validate(type)) {
-            throw new EncodingException("Encoding " + encoding + " not valid for type " + type);
-        }
-        return encoding;
+        return valueOf(name);
     }
 }

@@ -24,15 +24,6 @@ import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
 public interface Encoding {
-    /**
-     * Verify that the Encoding enum element is appropriate for the specified
-     * Type. Used to assert that the name of the Encoding specified in
-     * {@link com.akiban.ais.model.Types} is correct.
-     *
-     * @param type
-     * @return
-     */
-    boolean validate(final Type type);
 
     /**
      * Size in bytes required by the
