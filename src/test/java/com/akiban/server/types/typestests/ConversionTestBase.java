@@ -25,6 +25,7 @@ public abstract class ConversionTestBase<T> {
     public void putAndCheck() {
         linkedConversion.setUp(testCase.type());
         testCase.put(linkedConversion.target());
+        linkedConversion.syncConversions();
         linkedConversion.checkPut(testCase.expectedState());
         testCase.check(linkedConversion.source());
     }
@@ -33,6 +34,7 @@ public abstract class ConversionTestBase<T> {
     public void targetAlwaysAcceptsNull() {
         linkedConversion.setUp(testCase.type());
         linkedConversion.target().putNull();
+        linkedConversion.syncConversions();
         assertTrue("source shoudl be null", linkedConversion.source().isNull());
     }
 

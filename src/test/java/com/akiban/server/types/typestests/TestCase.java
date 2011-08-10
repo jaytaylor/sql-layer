@@ -23,6 +23,9 @@ import com.akiban.util.Undef;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 
 import static com.akiban.server.types.AkType.*;
 import static com.akiban.server.types.typestests.TestCase.TestCaseType.*;
@@ -30,6 +33,12 @@ import static com.akiban.server.types.typestests.TestCase.TestCaseType.*;
 import static org.junit.Assert.assertEquals;
 
 public final class TestCase<T> {
+
+    public static <T> Collection<TestCase<?>> collect(TestCase<?>... testCases) {
+        Collection<TestCase<?>> list = new ArrayList<TestCase<?>>();
+        Collections.addAll(list, testCases);
+        return list;
+    }
 
     public static <T> TestCase<T> forDate(long value, T expectedState) {
         return new TestCase<T>(DATE, value, TC_LONG, expectedState);
@@ -154,25 +163,59 @@ public final class TestCase<T> {
     AkType type() {
         return type;
     }
+    
+    // Object interface
 
-    TestCase(AkType type, double value, TestCaseType testCaseType, T expectedState) {
-        this(type, value, NO_FLOAT, NO_LONG, NO_OBJECT, expectedState);
+    @Override
+    public String toString() {
+        final Object value;
+        if (testCaseType == null) {
+            value = "<NULL TEST CASE TYPE>";
+        }
+        else {
+            switch (testCaseType) {
+            case TC_FLOAT:
+                value = valFloat;
+                break;
+            case TC_DOUBLE:
+                value = valDouble;
+                break;
+            case TC_LONG:
+                value = valLong;
+                break;
+            case TC_OBJECT:
+                value = valObject;
+                break;
+            default:
+                value = "<UNKNOWN TEST CASE TYPE: " + testCaseType + '>';
+                break;
+            }
+        }
+        return String.format("TestCase(%s -> %s, expected state %s)", type, value, expectedState);
+    }
+
+
+    // for use in this class
+
+    private TestCase(AkType type, double value, TestCaseType testCaseType, T expectedState) {
+        this(testCaseType, type, value, NO_FLOAT, NO_LONG, NO_OBJECT, expectedState);
         checkTestCaseType(TC_DOUBLE, testCaseType);
     }
-    TestCase(AkType type, float value, TestCaseType testCaseType, T expectedState) {
-        this(type, NO_DOUBLE, value, NO_LONG, NO_OBJECT, expectedState);
+    private TestCase(AkType type, float value, TestCaseType testCaseType, T expectedState) {
+        this(testCaseType, type, NO_DOUBLE, value, NO_LONG, NO_OBJECT, expectedState);
         checkTestCaseType(TC_FLOAT, testCaseType);
     }
-    TestCase(AkType type, long value, TestCaseType testCaseType, T expectedState) {
-        this(type, NO_DOUBLE, NO_FLOAT, value, NO_OBJECT, expectedState);
+    private TestCase(AkType type, long value, TestCaseType testCaseType, T expectedState) {
+        this(testCaseType, type, NO_DOUBLE, NO_FLOAT, value, NO_OBJECT, expectedState);
         checkTestCaseType(TC_LONG, testCaseType);
     }
-    TestCase(AkType type, Object value, TestCaseType testCaseType, T expectedState) {
-        this(type, NO_DOUBLE, NO_FLOAT, NO_LONG, value, expectedState);
+    private TestCase(AkType type, Object value, TestCaseType testCaseType, T expectedState) {
+        this(testCaseType, type, NO_DOUBLE, NO_FLOAT, NO_LONG, value, expectedState);
         checkTestCaseType(TC_OBJECT, testCaseType);
     }
 
-    TestCase(AkType type, double valDouble, float valFloat, long valLong, Object valObject, T expectedState) {
+    private TestCase(TestCaseType tct, AkType type, double valDouble, float valFloat, long valLong, Object valObject, T expectedState) {
+        this.testCaseType = tct;
         this.type = type;
         this.valDouble = valDouble;
         this.valFloat = valFloat;
@@ -186,6 +229,7 @@ public final class TestCase<T> {
     }
 
     // Object state
+    private final TestCaseType testCaseType;
     private final AkType type;
     private final double valDouble;
     private final float valFloat;

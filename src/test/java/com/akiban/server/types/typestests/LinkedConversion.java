@@ -25,4 +25,5 @@ public interface LinkedConversion<T> {
 
     void checkPut(T expected);
     void setUp(AkType type);
+    void syncConversions();
 }
