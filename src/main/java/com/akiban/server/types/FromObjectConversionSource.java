@@ -15,10 +15,10 @@
 
 package com.akiban.server.types;
 
+import com.akiban.server.Quote;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
 
-import java.io.ObjectInput;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -155,11 +155,11 @@ public final class FromObjectConversionSource implements ConversionSource {
     }
 
     @Override
-    public void appendAsString(AkibanAppender appender) {
+    public void appendAsString(AkibanAppender appender, Quote quote) {
         if (akType == AkType.UNSUPPORTED) {
             throw new IllegalStateException("source object not set");
         }
-        appender.append(object);
+        quote.append(appender, String.valueOf(object));
     }
 
     @Override

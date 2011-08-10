@@ -15,6 +15,7 @@
 
 package com.akiban.server.types;
 
+import com.akiban.server.Quote;
 import com.akiban.util.AkibanAppender;
 import com.persistit.exception.ConversionException;
 
@@ -34,7 +35,7 @@ abstract class AbstractConverter {
     protected final RuntimeException unsupportedConversion(ConversionSource source) {
         StringBuilder sb = new StringBuilder("can't convert to type ").append(nativeConversionType());
         sb.append(" from ").append(source.getConversionType()).append(": ");
-        source.appendAsString(AkibanAppender.of(sb));
+        source.appendAsString(AkibanAppender.of(sb), Quote.NONE);
         return new ConversionException(sb.toString());
     }
 }

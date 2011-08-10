@@ -129,7 +129,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
             key.append(null);
         } else {
             AkibanAppender sb = AkibanAppender.of(new StringBuilder());
-            toString(fieldDef, rowData, sb, Quote.NONE);
+            decodeToString(fieldDef, rowData, sb);
 
             BigDecimal decimal = new BigDecimal(sb.toString());
             key.append(decimal);

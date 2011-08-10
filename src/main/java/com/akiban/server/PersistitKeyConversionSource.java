@@ -132,9 +132,9 @@ public final class PersistitKeyConversionSource implements ConversionSource {
     }
 
     @Override
-    public void appendAsString(AkibanAppender appender) {
+    public void appendAsString(AkibanAppender appender, Quote quote) {
         // Can we optimize this at all?
-        appender.append(getString());
+        quote.append(appender, getString());
     }
 
     @Override

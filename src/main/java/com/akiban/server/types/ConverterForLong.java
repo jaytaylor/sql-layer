@@ -72,5 +72,7 @@ abstract class ConverterForLong extends LongConverter {
         }
     }
 
+
+
     private ConverterForLong() {}
 }

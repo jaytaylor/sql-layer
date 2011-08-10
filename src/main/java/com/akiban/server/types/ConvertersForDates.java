@@ -15,15 +15,13 @@
 
 package com.akiban.server.types;
 
-import com.persistit.exception.ConversionException;
-import com.sun.org.apache.bcel.internal.generic.Type;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 
 abstract class ConvertersForDates extends LongConverter {
 
-    final static LongConverter DATE = new ConvertersForDates() {
+    final static ConvertersForDates DATE = new ConvertersForDates() {
         @Override protected long doGetLong(ConversionSource source)             { return source.getDate(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putDate(value); }
         @Override protected AkType nativeConversionType() { return AkType.DATE; }
@@ -42,9 +40,17 @@ abstract class ConvertersForDates extends LongConverter {
             }
             return d + m*32 + y*512;
         }
+
+        @Override
+        String asString(long value) {
+            final long year = value / 512;
+            final long month = (value / 32) % 16;
+            final long day = value % 32;
+            return String.format("%04d-%02d-%02d", year, month, day);
+        }
     };
 
-    final static LongConverter DATETIME = new ConvertersForDates() {
+    final static ConvertersForDates DATETIME = new ConvertersForDates() {
         @Override protected long doGetLong(ConversionSource source)             { return source.getDateTime(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putDateTime(value); }
         @Override protected AkType nativeConversionType() { return AkType.DATETIME; }
@@ -73,9 +79,22 @@ abstract class ConvertersForDates extends LongConverter {
                     Long.parseLong(timeParts[1]) * DATETIME_MIN_SCALE +
                     Long.parseLong(timeParts[2]) * DATETIME_SEC_SCALE;
         }
+
+        @Override
+        String asString(long value) {
+
+            final long year = (value / DATETIME_YEAR_SCALE);
+            final long month = (value / DATETIME_MONTH_SCALE) % 100;
+            final long day = (value / DATETIME_DAY_SCALE) % 100;
+            final long hour = (value / DATETIME_HOUR_SCALE) % 100;
+            final long minute = (value / DATETIME_MIN_SCALE) % 100;
+            final long second = (value / DATETIME_SEC_SCALE) % 100;
+            return String.format("%04d-%02d-%02d %02d:%02d:%02d",
+                    year, month, day, hour, minute, second);
+        }
     };
 
-    final static LongConverter TIME = new ConvertersForDates() {
+    final static ConvertersForDates TIME = new ConvertersForDates() {
         @Override protected long doGetLong(ConversionSource source)             { return source.getTime(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putTime(value); }
         @Override protected AkType nativeConversionType() { return AkType.TIME; }
@@ -106,9 +125,18 @@ abstract class ConvertersForDates extends LongConverter {
             minutes %= 60;
             return mul * (hours* TIME_HOURS_SCALE + minutes* TIME_MINUTES_SCALE + seconds);
         }
+
+        @Override
+        String asString(long value) {
+            final long abs = Math.abs(value);
+            final long hour = abs / TIME_HOURS_SCALE;
+            final long minute = (abs - hour* TIME_HOURS_SCALE) / TIME_MINUTES_SCALE;
+            final long second = abs - hour* TIME_HOURS_SCALE - minute* TIME_MINUTES_SCALE;
+            return String.format("%s%02d:%02d:%02d", abs != value ? "-" : "", hour, minute, second);
+        }
     };
 
-    final static LongConverter TIMESTAMP = new ConvertersForDates() {
+    final static ConvertersForDates TIMESTAMP = new ConvertersForDates() {
         @Override protected long doGetLong(ConversionSource source)             { return source.getTimestamp(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putTimestamp(value); }
         @Override protected AkType nativeConversionType() { return AkType.TIMESTAMP; }
@@ -121,9 +149,14 @@ abstract class ConvertersForDates extends LongConverter {
                 throw new IllegalArgumentException(e);
             }
         }
+
+        @Override
+        String asString(long value) {
+            return SDF.format(new Date(value*1000));
+        }
     };
 
-    final static LongConverter YEAR = new ConvertersForDates() {
+    final static ConvertersForDates YEAR = new ConvertersForDates() {
         @Override protected long doGetLong(ConversionSource source)             { return source.getYear(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putYear(value); }
         @Override protected AkType nativeConversionType() { return AkType.YEAR; }
@@ -133,10 +166,17 @@ abstract class ConvertersForDates extends LongConverter {
             long value = Long.parseLong(string);
             return value == 0 ? 0 : (value - 1900);
         }
+
+        @Override
+        String asString(long value) {
+            final long year = (value == 0) ? 0 : (1900 + value);
+            return String.format("%04d", year);
+        }
     };
 
     protected abstract long doGetLong(ConversionSource source);
     protected abstract long doParse(String string);
+    abstract String asString(long value);
 
     @Override
     public long getLong(ConversionSource source) {
