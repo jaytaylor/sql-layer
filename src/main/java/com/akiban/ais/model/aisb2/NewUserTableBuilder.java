@@ -89,6 +89,9 @@ public interface NewUserTableBuilder extends NewAISBuilder {
      */
     NewUserTableBuilder colString(String name, int length, boolean nullable, String charset);
 
+    NewUserTableBuilder colDouble(String name);
+    NewUserTableBuilder colDouble(String name, boolean nullable);
+
     /**
      * Adds a PK
      * @param columns the columns that are in the PK

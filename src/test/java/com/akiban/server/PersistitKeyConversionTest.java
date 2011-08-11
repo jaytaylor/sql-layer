@@ -13,33 +13,37 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.types;
+package com.akiban.server;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ConversionTarget;
 import com.akiban.server.types.typestests.ConversionSuite;
 import com.akiban.server.types.typestests.ConversionTestBase;
 import com.akiban.server.types.typestests.LinkedConversion;
+import com.akiban.server.types.typestests.SimpleLinkedConversion;
+import com.persistit.Key;
+import com.persistit.Persistit;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
-import static org.junit.Assert.assertEquals;
-
 @RunWith(NamedParameterizedRunner.class)
-public final class ObjectConversionTest extends ConversionTestBase {
+public final class PersistitKeyConversionTest extends ConversionTestBase {
 
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() {
-        ConversionSuite<?> suite = ConversionSuite.build(new ObjectConversionLink()).suite();
+        ConversionSuite<?> suite = ConversionSuite.build(new KeyConversionPair()).suite();
         return params(suite);
     }
 
-    public ObjectConversionTest(ConversionSuite<?> suite, int i) {
-        super(suite, i);
+    public PersistitKeyConversionTest(ConversionSuite<?> suite, int indexWithinSuite) {
+        super(suite, indexWithinSuite);
     }
 
-    private static class ObjectConversionLink implements LinkedConversion<Object> {
+    private static final class KeyConversionPair extends SimpleLinkedConversion {
         @Override
         public ConversionSource linkedSource() {
             return source;
@@ -51,21 +55,15 @@ public final class ObjectConversionTest extends ConversionTestBase {
         }
 
         @Override
-        public void checkPut(Object expected) {
-            assertEquals("last converted object", expected, target.lastConvertedValue());
-        }
-
-        @Override
         public void setUp(AkType type) {
-            target.expectType(type);
+            key.clear();
+            target.attach(key);
+            target.expectingType(type);
+            source.attach(key, 0, type);
         }
 
-        @Override
-        public void syncConversions() {
-            source.setExplicitly(target.lastConvertedValue(), target.getConversionType());
-        }
-
-        private final FromObjectConversionSource source = new FromObjectConversionSource();
-        private final ToObjectConversionTarget target = new ToObjectConversionTarget();
+        private final Key key = new Key((Persistit)null);
+        private final PersistitKeyConversionTarget target = new PersistitKeyConversionTarget();
+        private final PersistitKeyConversionSource source = new PersistitKeyConversionSource();
     }
 }

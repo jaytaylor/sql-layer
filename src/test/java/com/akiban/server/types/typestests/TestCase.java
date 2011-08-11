@@ -196,6 +196,9 @@ public final class TestCase<T> {
                 break;
             }
         }
+        if (expectedState == NO_STATE) {
+            return String.format("TestCase(std %s -> %s)", type,  value);
+        }
         return String.format("TestCase(%s -> %s, expected state %s)", type, value, expectedState);
     }
 
@@ -243,6 +246,8 @@ public final class TestCase<T> {
     private final T expectedState;
 
     // consts
+    static final Object NO_STATE = new Object();
+
     private static final double EPSILON = 0;
     private static final double NO_DOUBLE = -1;
     private static final float NO_FLOAT = -1;

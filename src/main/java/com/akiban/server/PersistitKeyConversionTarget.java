@@ -32,9 +32,13 @@ public final class PersistitKeyConversionTarget implements ConversionTarget {
         this.key = key;
     }
 
-    public PersistitKeyConversionTarget expectingType(Column column) {
-        this.type = column.getType().akType();
+    public PersistitKeyConversionTarget expectingType(AkType type) {
+        this.type = type;
         return this;
+    }
+
+    public PersistitKeyConversionTarget expectingType(Column column) {
+        return expectingType(column.getType().akType());
     }
     
     // ConversionTarget interface

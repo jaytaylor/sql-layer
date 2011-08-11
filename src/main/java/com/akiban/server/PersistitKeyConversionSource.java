@@ -32,10 +32,7 @@ public final class PersistitKeyConversionSource implements ConversionSource {
     // PersistitKeyConversionSource interface
 
     public void attach(Key key, IndexColumn indexColumn) {
-        this.key = key;
-        this.key.indexTo(indexColumn.getPosition());
-        clear();
-        this.akType = indexColumn.getColumn().getType().akType();
+        attach(key, indexColumn.getPosition(), indexColumn.getColumn().getType().akType());
     }
 
     // ConversionSource interface
@@ -144,11 +141,21 @@ public final class PersistitKeyConversionSource implements ConversionSource {
     public AkType getConversionType() {
         return akType;
     }
-// object interface
+    
+    // object interface
 
     @Override
     public String toString() {
         return key.toString() + " bound to depth " + key.getDepth();
+    }
+
+    // for use in this package
+
+    void attach(Key key, int depth, AkType type) {
+        this.key = key;
+        this.key.indexTo(depth);
+        this.akType = type;
+        clear();
     }
 
     // for use by this class

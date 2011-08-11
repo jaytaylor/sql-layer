@@ -26,6 +26,14 @@ public final class FromObjectConversionSource implements ConversionSource {
 
     // FromObjectConversionSource interface
 
+    public FromObjectConversionSource setExplicitly(Object object, AkType type) {
+        setReflectively(object);
+        if (akType != AkType.NULL) {
+            akType = type;
+        }
+        return this;
+    }
+
     public FromObjectConversionSource setReflectively(Object object) {
         if (object == null) {
             setNull();

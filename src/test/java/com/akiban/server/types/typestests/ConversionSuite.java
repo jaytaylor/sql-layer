@@ -18,7 +18,7 @@ package com.akiban.server.types.typestests;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public final class ConversionSuite<T> {
 
@@ -47,7 +47,9 @@ public final class ConversionSuite<T> {
         converters.setUp(testCase.type());
         converters.linkedTarget().putNull();
         converters.syncConversions();
-        assertTrue("source shoudl be null", converters.linkedSource().isNull());
+        if (!converters.linkedSource().isNull()) {
+            fail("source should be null: " + converters.linkedSource());
+        }
     }
 
     List<String> testCaseNames() {
@@ -56,6 +58,10 @@ public final class ConversionSuite<T> {
             names.add(testCase.toString());
         }
         return names;
+    }
+
+    LinkedConversion<? super T> linkedConversion() {
+        return converters;
     }
 
     // Object state
@@ -67,7 +73,7 @@ public final class ConversionSuite<T> {
 
     public static class SuiteBuilder<T> {
 
-        public ConversionSuite<T> suite() {
+        public ConversionSuite<?> suite() {
             return new ConversionSuite<T>(converters, testCases);
         }
 

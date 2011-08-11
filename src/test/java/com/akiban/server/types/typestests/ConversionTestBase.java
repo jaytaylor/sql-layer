@@ -17,8 +17,12 @@ package com.akiban.server.types.typestests;
 
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ConversionTarget;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -36,10 +40,12 @@ public abstract class ConversionTestBase {
 
     protected static Collection<Parameterization> params(ConversionSuite<?>... suites) {
         ParameterizationBuilder builder = new ParameterizationBuilder();
-        for (ConversionSuite<?> suite : suites) {
+        int count = 0;
+        for (ConversionSuite<?> suite : normalize(suites)) {
             List<String> names = suite.testCaseNames();
             for (int i=0; i < names.size(); ++i) {
-                builder.add(names.get(i), suite, i);
+                builder.add(count + ": " + names.get(i), suite, i);
+                ++count;
             }
         }
         return builder.asList();
@@ -50,6 +56,55 @@ public abstract class ConversionTestBase {
         this.indexWithinSuite = indexWithinSuite;
     }
 
+    private static Collection<ConversionSuite<?>> normalize(ConversionSuite<?>[] suites) {
+        List<ConversionSuite<?>> list = new ArrayList<ConversionSuite<?>>();
+
+        for (ConversionSuite<?> suite : suites) {
+            list.add(suite);
+            NoCheckLinkedConversion noCheckConversion = new NoCheckLinkedConversion(suite.linkedConversion());
+            ConversionSuite.SuiteBuilder<Object> builder = ConversionSuite.build(noCheckConversion);
+            for (TestCase<?> testCase : StandardTestCases.get()) {
+                builder.add(testCase);
+            }
+            list.add(builder.suite());
+        }
+
+        return list;
+    }
+
     private final ConversionSuite<?> suite;
     private final int indexWithinSuite;
+
+    private static class NoCheckLinkedConversion implements LinkedConversion<Object> {
+        @Override
+        public ConversionSource linkedSource() {
+            return delegate.linkedSource();
+        }
+
+        @Override
+        public ConversionTarget linkedTarget() {
+            return delegate.linkedTarget();
+        }
+
+        @Override
+        public void checkPut(Object expected) {
+            // nothing
+        }
+
+        @Override
+        public void setUp(AkType type) {
+            delegate.setUp(type);
+        }
+
+        @Override
+        public void syncConversions() {
+            delegate.syncConversions();
+        }
+
+        NoCheckLinkedConversion(LinkedConversion<?> delegate) {
+            this.delegate = delegate;
+        }
+
+        private final LinkedConversion<?> delegate;
+    }
 }

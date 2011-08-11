@@ -31,7 +31,7 @@ public final class RowDataConversionTarget extends RowDataConversionBase impleme
     }
 
     public void offset(int offset) {
-        ArgumentValidation.isGT("offset", offset, 0);
+        ArgumentValidation.isGTE("offset", offset, 0);
         this.offset = offset;
     }
 
