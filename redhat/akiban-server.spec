@@ -5,7 +5,7 @@
 %define relname %{name}-%{version}-%{release}
 
 Name:           akiban-server
-Version:        0.5.1
+Version:        0.6.1
 Release:        REVISION%{?dist}
 Summary:        Akiban Server is the main server for the Akiban Orthogonal Architecture.
 
