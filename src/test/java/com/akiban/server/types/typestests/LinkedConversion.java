@@ -20,8 +20,8 @@ import com.akiban.server.types.ConversionSource;
 import com.akiban.server.types.ConversionTarget;
 
 public interface LinkedConversion<T> {
-    ConversionSource source();
-    ConversionTarget target();
+    ConversionSource linkedSource();
+    ConversionTarget linkedTarget();
 
     void checkPut(T expected);
     void setUp(AkType type);

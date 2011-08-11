@@ -24,6 +24,7 @@ import com.akiban.util.Undef;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -34,6 +35,10 @@ import static org.junit.Assert.assertEquals;
 
 public final class TestCase<T> {
 
+    public static <T> ConversionSuite<T> suite(LinkedConversion<? super T> conversion, TestCase<? extends T>... testCases) {
+        return new ConversionSuite<T>(conversion, Arrays.asList(testCases));
+    }
+    
     public static <T> Collection<TestCase<?>> collect(TestCase<?>... testCases) {
         Collection<TestCase<?>> list = new ArrayList<TestCase<?>>();
         Collections.addAll(list, testCases);

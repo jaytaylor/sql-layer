@@ -17,7 +17,7 @@ package com.akiban.server.types;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
-import com.akiban.junit.ParameterizationBuilder;
+import com.akiban.server.types.typestests.ConversionSuite;
 import com.akiban.server.types.typestests.ConversionTestBase;
 import com.akiban.server.types.typestests.LinkedConversion;
 import com.akiban.server.types.typestests.TestCase;
@@ -28,34 +28,29 @@ import java.util.Collection;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)
-public final class ObjectConversionTest extends ConversionTestBase<Object> {
+public final class ObjectConversionTest extends ConversionTestBase {
 
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() {
-        Collection<TestCase<?>> testCases =  TestCase.collect(
-                TestCase.<Object>forLong(1L, 1L),
-                TestCase.<Object>forString("foo", "bar")
-        );
-
-        ParameterizationBuilder builder = new ParameterizationBuilder();
-        for (TestCase<?> testCase : testCases) {
-            builder.add(testCase.toString(), testCase);
-        }
-        return builder.asList();
+        ConversionSuite<Object> suite = ConversionSuite.build(new ObjectConversionLink())
+                .add(TestCase.forLong(1L, 1L))
+                .add(TestCase.forString("foo", "bar"))
+                .suite();
+        return params(suite);
     }
 
-    public ObjectConversionTest(TestCase<Object> testCase) {
-        super(new ObjectConversionLink(), testCase);
+    public ObjectConversionTest(ConversionSuite<?> suite, int i) {
+        super(suite, i);
     }
 
     private static class ObjectConversionLink implements LinkedConversion<Object> {
         @Override
-        public ConversionSource source() {
+        public ConversionSource linkedSource() {
             return source;
         }
 
         @Override
-        public ConversionTarget target() {
+        public ConversionTarget linkedTarget() {
             return target;
         }
 

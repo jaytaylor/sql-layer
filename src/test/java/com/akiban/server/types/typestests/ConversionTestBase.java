@@ -15,34 +15,41 @@
 
 package com.akiban.server.types.typestests;
 
+import com.akiban.junit.Parameterization;
+import com.akiban.junit.ParameterizationBuilder;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
+import java.util.Collection;
+import java.util.List;
 
-public abstract class ConversionTestBase<T> {
+public abstract class ConversionTestBase {
 
     @Test
     public void putAndCheck() {
-        linkedConversion.setUp(testCase.type());
-        testCase.put(linkedConversion.target());
-        linkedConversion.syncConversions();
-        linkedConversion.checkPut(testCase.expectedState());
-        testCase.check(linkedConversion.source());
+        suite.putAndCheck(indexWithinSuite);
     }
 
     @Test
     public void targetAlwaysAcceptsNull() {
-        linkedConversion.setUp(testCase.type());
-        linkedConversion.target().putNull();
-        linkedConversion.syncConversions();
-        assertTrue("source shoudl be null", linkedConversion.source().isNull());
+        suite.targetAlwaysAcceptsNull(indexWithinSuite);
     }
 
-    protected ConversionTestBase(LinkedConversion<? super T> linkedConversion, TestCase<? extends T> testCase) {
-        this.linkedConversion = linkedConversion;
-        this.testCase = testCase;
+    protected static Collection<Parameterization> params(ConversionSuite<?>... suites) {
+        ParameterizationBuilder builder = new ParameterizationBuilder();
+        for (ConversionSuite<?> suite : suites) {
+            List<String> names = suite.testCaseNames();
+            for (int i=0; i < names.size(); ++i) {
+                builder.add(names.get(i), suite, i);
+            }
+        }
+        return builder.asList();
     }
 
-    private final LinkedConversion<? super T> linkedConversion;
-    private final TestCase<? extends T> testCase;
+    protected ConversionTestBase(ConversionSuite<?> suite, int indexWithinSuite) {
+        this.suite = suite;
+        this.indexWithinSuite = indexWithinSuite;
+    }
+
+    private final ConversionSuite<?> suite;
+    private final int indexWithinSuite;
 }
