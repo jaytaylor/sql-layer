@@ -15,9 +15,12 @@
 
 package com.akiban.server.types.typestests;
 
+import com.akiban.server.types.AkType;
+
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public final class ConversionSuite<T> {
@@ -50,6 +53,22 @@ public final class ConversionSuite<T> {
         if (!converters.linkedSource().isNull()) {
             fail("source should be null: " + converters.linkedSource());
         }
+    }
+
+    void getMismatch(int i) {
+        TestCase<? extends T> testCase = testCases.get(i);
+        AkType expectedType = testCase.type();
+        converters.setUp(expectedType);
+        testCase.put(converters.linkedTarget());
+        converters.syncConversions();
+        new MismatchedConversion.ForGet(expectedType).expectMismatch(converters.linkedSource());
+    }
+
+    void putMismatch(int i) {
+        TestCase<? extends T> testCase = testCases.get(i);
+        AkType expectedType = testCase.type();
+        converters.setUp(expectedType);
+        new MismatchedConversion.ForPut(expectedType).expectMismatch(converters.linkedTarget());
     }
 
     List<String> testCaseNames() {

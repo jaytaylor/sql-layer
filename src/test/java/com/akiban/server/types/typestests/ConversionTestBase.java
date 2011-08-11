@@ -38,6 +38,16 @@ public abstract class ConversionTestBase {
         suite.targetAlwaysAcceptsNull(indexWithinSuite);
     }
 
+    @Test
+    public void getMismatch() {
+        suite.getMismatch(indexWithinSuite);
+    }
+
+    @Test
+    public void putMismatch() {
+        suite.putMismatch(indexWithinSuite);
+    }
+
     protected static Collection<Parameterization> params(ConversionSuite<?>... suites) {
         ParameterizationBuilder builder = new ParameterizationBuilder();
         int count = 0;
