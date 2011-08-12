@@ -216,7 +216,7 @@ public final class RowDataConversionTarget extends RowDataConversionBase impleme
     private static final int INT_STORAGE_SIZE = 4;
 
     /**
-     * We want to encode BigInteger as long, so we require it to be smaller than (2^65) - 1
+     * We want to encode BigInteger as long, so we require it to be smaller than (2^64) + 1
      */
-    private static final BigInteger MAX_BIGINT = BigInteger.valueOf(2).pow(Long.SIZE+1).subtract(BigInteger.ONE);
+    private static final BigInteger MAX_BIGINT = BigInteger.valueOf(2).pow(Long.SIZE).add(BigInteger.ONE);
 }

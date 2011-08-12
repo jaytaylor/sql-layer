@@ -23,6 +23,12 @@ import java.util.concurrent.atomic.AtomicReference;
 
 abstract class ConvertersForDates extends LongConverter {
 
+    /**
+     * Encoder for working with dates when stored as a 3 byte int using
+     * the encoding of DD + MM x 32 + YYYY x 512. This is how MySQL stores the
+     * SQL DATE type.
+     * See: http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
+     */
     final static ConvertersForDates DATE = new ConvertersForDates() {
         @Override protected long doGetLong(ConversionSource source)             { return source.getDate(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putDate(value); }
@@ -52,6 +58,12 @@ abstract class ConvertersForDates extends LongConverter {
         }
     };
 
+    /**
+     * Encoder for working with dates and times when stored as an 8 byte int
+     * encoded as (YY*10000 MM*100 + DD)*1000000 + (HH*10000 + MM*100 + SS).
+     * This is how MySQL stores the SQL DATETIME type.
+     * See: http://dev.mysql.com/doc/refman/5.5/en/datetime.html
+     */
     final static ConvertersForDates DATETIME = new ConvertersForDates() {
         @Override protected long doGetLong(ConversionSource source)             { return source.getDateTime(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putDateTime(value); }
@@ -96,6 +108,12 @@ abstract class ConvertersForDates extends LongConverter {
         }
     };
 
+    /**
+     * Encoder for working with time when stored as a 3 byte int encoded as
+     * HH*10000 + MM*100 + SS. This is how MySQL stores the SQL TIME type.
+     * See: http://dev.mysql.com/doc/refman/5.5/en/time.html
+     * and  http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
+     */
     final static ConvertersForDates TIME = new ConvertersForDates() {
         @Override protected long doGetLong(ConversionSource source)             { return source.getTime(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putTime(value); }
@@ -138,6 +156,12 @@ abstract class ConvertersForDates extends LongConverter {
         }
     };
 
+    /**
+     * Encoder for working with time when stored as a 4 byte int (standard
+     * UNIX timestamp). This is how MySQL stores the SQL TIMESTAMP type.
+     * See: http://dev.mysql.com/doc/refman/5.5/en/timestamp.html
+     * and  http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
+     */
     final static ConvertersForDates TIMESTAMP = new ConvertersForDates() {
         @Override protected long doGetLong(ConversionSource source)             { return source.getTimestamp(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putTimestamp(value); }
@@ -158,6 +182,11 @@ abstract class ConvertersForDates extends LongConverter {
         }
     };
 
+    /**
+     * Encoder for working with years when stored as a 1 byte int in the
+     * range of 0, 1901-2155.  This is how MySQL stores the SQL YEAR type.
+     * See: http://dev.mysql.com/doc/refman/5.5/en/year.html
+     */
     final static ConvertersForDates YEAR = new ConvertersForDates() {
         @Override protected long doGetLong(ConversionSource source)             { return source.getYear(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putYear(value); }

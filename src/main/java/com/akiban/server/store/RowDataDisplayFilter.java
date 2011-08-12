@@ -55,7 +55,7 @@ class RowDataDisplayFilter implements DisplayFilter {
     public String toValueDisplayString(final Exchange exchange) {
         final String treeName = exchange.getTree().getName();
         final String volumeName = exchange.getVolume().getName();
-        boolean protectedTree = false && treeName.contains("$$");
+        boolean protectedTree = treeName.contains("$$");
         if (!protectedTree) {
             for (final String s : PROTECTED_VOLUME_NAMES) {
                 if (volumeName.equals(s)) {
