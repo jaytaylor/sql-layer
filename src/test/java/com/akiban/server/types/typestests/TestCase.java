@@ -214,10 +214,7 @@ public final class TestCase<T> {
                 break;
             }
         }
-        if (expectedState == NO_STATE) {
-            return String.format("TestCase(std %s -> %s)", type,  value);
-        }
-        return String.format("TestCase(%s -> %s, expected state %s)", type, value, expectedState);
+        return String.format("TestCase(%s = %s: %s)", type, value, expectedState == NO_STATE ? "std" : expectedState);
     }
 
 

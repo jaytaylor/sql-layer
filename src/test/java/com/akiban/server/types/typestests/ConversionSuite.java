@@ -21,7 +21,6 @@ import com.akiban.server.types.IllegalConversionException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public final class ConversionSuite<T> {
@@ -70,10 +69,14 @@ public final class ConversionSuite<T> {
         } catch (IllegalConversionException t) {
             gotError = true;
         }
-        assertTrue(
-                "expected ConversionSource error after setting up for " + expectedType + " but getting " + switched,
-                gotError
-        );
+        if (!gotError) {
+            fail(errorMessage("ConversionSource", "getting", expectedType, switched));
+        }
+    }
+
+    private String errorMessage(String failedClass, String action, AkType expectedType, TestCase<?> switched) {
+        return "expected " + failedClass + " error after " + action + ' ' + switched
+                + ": expected check for " + expectedType + " when " + action + ' ' + switched.type();
     }
 
     void putMismatch(int i) {
@@ -88,10 +91,9 @@ public final class ConversionSuite<T> {
         } catch (IllegalConversionException t) {
             gotError = true;
         }
-        assertTrue(
-                "expected ConversionTarget error after setting up for "+ expectedType + " but putting " + switched,
-                gotError
-        );
+        if (!gotError) {
+            fail(errorMessage("ConversionTarget", "putting", expectedType, switched));
+        }
     }
 
     private static TestCase<?> resolveSwitcher(TestCase<?> switcherTestCase) {

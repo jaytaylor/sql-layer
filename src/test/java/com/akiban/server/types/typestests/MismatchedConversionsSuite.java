@@ -52,7 +52,7 @@ public final class MismatchedConversionsSuite {
                 AkType switchTo = scratchPad.get(i);
                 TestCase<Switcher> switcherTC = TestCase.derive(
                         gettersAndPutters.get(expected),
-                        new Switcher(switchTo)
+                        new Switcher(switchTo, expected)
                 );
                 suiteBuilder.add(switcherTC);
             }
@@ -67,13 +67,18 @@ public final class MismatchedConversionsSuite {
         if (capProp.equalsIgnoreCase(ALL)) {
             return AkType.values().length;
         }
+        final int cap;
         try {
-            return Integer.parseInt(capProp);
+            cap = Integer.parseInt(capProp);
         } catch (NumberFormatException e) {
             throw new NumberFormatException(
                     MISMATCHED_CONVERSIONS_PROP + " must be an int or \"" + ALL + "\": was " + capProp
             );
         }
+        if (cap < 0) {
+            throw new RuntimeException(MISMATCHED_CONVERSIONS_PROP + " must be positive: was " + cap);
+        }
+        return cap;
     }
 
     private static Map<AkType,TestCase<?>> createGettersAndPutters() {
@@ -115,13 +120,16 @@ public final class MismatchedConversionsSuite {
             return switchTo;
         }
 
-        Switcher(AkType switchTo) {
-            this.switchTo = gettersAndPutters.get(switchTo);
-        }
-
         @Override
         public String toString() {
             return "switching to " + switchTo;
+        }
+
+        Switcher(AkType switchTo, AkType switchFrom) {
+            this.switchTo = TestCase.derive(
+                    gettersAndPutters.get(switchTo),
+                    "switched from " + switchFrom
+            );
         }
 
         private final TestCase<?> switchTo;
