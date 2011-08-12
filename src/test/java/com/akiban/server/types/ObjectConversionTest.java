@@ -20,7 +20,6 @@ import com.akiban.junit.Parameterization;
 import com.akiban.server.types.typestests.ConversionSuite;
 import com.akiban.server.types.typestests.ConversionTestBase;
 import com.akiban.server.types.typestests.LinkedConversion;
-import org.junit.runner.RunWith;
 
 import java.util.Collection;
 

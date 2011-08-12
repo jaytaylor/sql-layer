@@ -51,92 +51,92 @@ public final class ToObjectConversionTarget implements ConversionTarget {
 
     @Override
     public void putNull() {
-        internalPut(null);
+        internalPut(null, AkType.NULL);
     }
 
     @Override
     public void putDate(long value) {
-        internalPut(value);
+        internalPut(value, AkType.DATE);
     }
 
     @Override
     public void putDateTime(long value) {
-        internalPut(value);
+        internalPut(value, AkType.DATETIME);
     }
 
     @Override
     public void putDecimal(BigDecimal value) {
-        internalPut(value);
+        internalPut(value, AkType.DECIMAL);
     }
 
     @Override
     public void putDouble(double value) {
-        internalPut(value);
+        internalPut(value, AkType.DOUBLE);
     }
 
     @Override
     public void putFloat(float value) {
-        internalPut(value);
+        internalPut(value, AkType.FLOAT);
     }
 
     @Override
     public void putInt(long value) {
-        internalPut(value);
+        internalPut(value, AkType.INT);
     }
 
     @Override
     public void putLong(long value) {
-        internalPut(value);
+        internalPut(value, AkType.LONG);
     }
 
     @Override
     public void putString(String value) {
-        internalPut(value);
+        internalPut(value, AkType.VARCHAR);
     }
 
     @Override
     public void putText(String value) {
-        internalPut(value);
+        internalPut(value, AkType.TEXT);
     }
 
     @Override
     public void putTime(long value) {
-        internalPut(value);
+        internalPut(value, AkType.TIME);
     }
 
     @Override
     public void putTimestamp(long value) {
-        internalPut(value);
+        internalPut(value, AkType.TIMESTAMP);
     }
 
     @Override
     public void putUBigInt(BigInteger value) {
-        internalPut(value);
+        internalPut(value, AkType.U_BIGINT);
     }
 
     @Override
     public void putUDouble(double value) {
-        internalPut(value);
+        internalPut(value, AkType.U_DOUBLE);
     }
 
     @Override
     public void putUFloat(float value) {
-        internalPut(value);
+        internalPut(value, AkType.U_FLOAT);
     }
 
     @Override
     public void putUInt(long value) {
-        internalPut(value);
+        internalPut(value, AkType.U_INT);
     }
 
     @Override
     public void putVarBinary(ByteSource value) {
-        internalPut(value);
+        internalPut(value, AkType.VARBINARY);
     }
 
     @Override
     public void putYear(long value) {
-        internalPut(value);
+        internalPut(value, AkType.YEAR);
     }
 
     @Override
@@ -156,7 +156,8 @@ public final class ToObjectConversionTarget implements ConversionTarget {
 
     // for use in this class
     
-    private void internalPut(Object value) {
+    private void internalPut(Object value, AkType type) {
+        ConversionHelper.checkType(akType, type);
         if (!putPending) {
             throw new IllegalStateException("no put pending: " + toString());
         }

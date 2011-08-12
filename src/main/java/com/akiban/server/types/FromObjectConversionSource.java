@@ -189,10 +189,7 @@ public final class FromObjectConversionSource implements ConversionSource {
     // private methods
 
     private <T> T as(Class<T> castClass, AkType type) {
-        if (akType != type) {
-            throw new IllegalStateException("can't retrieve " + akType + " as " + type);
-        }
-
+        ConversionHelper.checkType(akType, type);
         try {
             return castClass.cast(object);
         } catch (ClassCastException e) {

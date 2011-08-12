@@ -17,6 +17,7 @@ package com.akiban.server;
 
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.ConversionHelper;
 import com.akiban.server.types.ConversionSource;
 import com.akiban.server.types.SourceIsNullException;
 import com.akiban.util.AkibanAppender;
@@ -175,12 +176,7 @@ public final class PersistitKeyConversionSource implements ConversionSource {
     }
 
     private <T> T as(Class<T> castClass, AkType type) {
-        if (type == AkType.NULL || type == AkType.UNSUPPORTED) {
-            throw new IllegalStateException("not a valid state: " + type);
-        }
-        if (!type.equals(akType)) {
-            throw new IllegalStateException("can't get " + type + ", expecting " + akType);
-        }
+        ConversionHelper.checkType(akType, type);
         Object o = decode();
         if (o == null) {
             throw new SourceIsNullException();

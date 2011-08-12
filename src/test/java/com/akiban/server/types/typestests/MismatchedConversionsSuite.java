@@ -63,7 +63,7 @@ public final class MismatchedConversionsSuite {
     }
 
     private static int cap() {
-        String capProp = System.getProperty(MISMATCHED_CONVERSIONS_PROP, ALL);
+        String capProp = System.getProperty(MISMATCHED_CONVERSIONS_PROP, DEFAULT_PERMUTATIONS);
         if (capProp.equalsIgnoreCase(ALL)) {
             return AkType.values().length;
         }
@@ -104,6 +104,7 @@ public final class MismatchedConversionsSuite {
 
     private static final String MISMATCHED_CONVERSIONS_PROP = "akserver.test.mismatched-conversions";
     private static final String ALL = "ALL";
+    private static final String DEFAULT_PERMUTATIONS = "1";
     private static final Object NO_STATE = "SWITCH";
     private static final Set<AkType> invalidTypes = EnumSet.of(NULL, UNSUPPORTED);
     private static final Map<AkType,TestCase<?>> gettersAndPutters = createGettersAndPutters();

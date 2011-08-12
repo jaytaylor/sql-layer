@@ -17,6 +17,7 @@ package com.akiban.server;
 
 import com.akiban.ais.model.Column;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.ConversionHelper;
 import com.akiban.server.types.ConversionTarget;
 import com.akiban.util.ByteSource;
 import com.persistit.Key;
@@ -188,17 +189,9 @@ public final class PersistitKeyConversionTarget implements ConversionTarget {
     }
     
     // private methods
-    
+
     private void checkState(AkType type) {
-        if (type == AkType.NULL) {
-            return;
-        }
-        if (type == AkType.UNSUPPORTED) {
-            throw new IllegalStateException("target AkType not set");
-        }
-        if (type != this.type) {
-            throw new IllegalStateException("can't put " + type + " because expecting " +  this.type);
-        }
+        ConversionHelper.checkType(this.type, type);
     }
 
     private void invalidate() {
