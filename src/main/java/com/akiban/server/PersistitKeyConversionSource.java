@@ -44,88 +44,88 @@ public final class PersistitKeyConversionSource implements ConversionSource {
 
     @Override
     public BigDecimal getDecimal() {
-        return as(BigDecimal.class);
+        return as(BigDecimal.class, AkType.DECIMAL);
     }
 
     @Override
     public BigInteger getUBigInt() {
-        return as(BigInteger.class);
+        return as(BigInteger.class, AkType.U_BIGINT);
     }
 
     @Override
     public ByteSource getVarBinary() {
-        byte[] bytes = as(byte[].class);
+        byte[] bytes = as(byte[].class, AkType.VARBINARY);
         return bytes == null ? null : byteSource.wrap(bytes);
     }
 
     @Override
     public double getDouble() {
-        return as(Double.class);
+        return as(Double.class, AkType.DOUBLE);
     }
 
     @Override
     public double getUDouble() {
-        return as(Double.class);
+        return as(Double.class, AkType.U_DOUBLE);
     }
 
     @Override
     public float getFloat() {
-        return as(Float.class);
+        return as(Float.class, AkType.FLOAT);
     }
 
     @Override
     public float getUFloat() {
-        return as(Float.class);
+        return as(Float.class, AkType.U_FLOAT);
     }
 
     @Override
     public long getDate() {
-        return as(Long.class);
+        return as(Long.class, AkType.DATE);
     }
 
     @Override
     public long getDateTime() {
-        return as(Long.class);
+        return as(Long.class, AkType.DATETIME);
     }
 
     @Override
     public long getInt() {
-        return as(Long.class);
+        return as(Long.class, AkType.INT);
     }
 
     @Override
     public long getLong() {
-        return as(Long.class);
+        return as(Long.class, AkType.LONG);
     }
 
     @Override
     public long getTime() {
-        return as(Long.class);
+        return as(Long.class, AkType.TIME);
     }
 
     @Override
     public long getTimestamp() {
-        return as(Long.class);
+        return as(Long.class, AkType.TIMESTAMP);
     }
 
     @Override
     public long getUInt() {
-        return as(Long.class);
+        return as(Long.class, AkType.U_INT);
     }
 
     @Override
     public long getYear() {
-        return as(Long.class);
+        return as(Long.class, AkType.YEAR);
     }
 
     @Override
     public String getString() {
-        return as(String.class);
+        return as(String.class, AkType.VARCHAR);
     }
 
     @Override
     public String getText() {
-        return as(String.class);
+        return as(String.class, AkType.TEXT);
     }
 
     @Override
@@ -174,7 +174,13 @@ public final class PersistitKeyConversionSource implements ConversionSource {
         needsDecoding = true;
     }
 
-    private <T> T as(Class<T> castClass) {
+    private <T> T as(Class<T> castClass, AkType type) {
+        if (type == AkType.NULL || type == AkType.UNSUPPORTED) {
+            throw new IllegalStateException("not a valid state: " + type);
+        }
+        if (!type.equals(akType)) {
+            throw new IllegalStateException("can't get " + type + ", expecting " + akType);
+        }
         Object o = decode();
         if (o == null) {
             throw new SourceIsNullException();

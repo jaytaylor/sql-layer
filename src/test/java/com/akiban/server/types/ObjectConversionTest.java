@@ -26,7 +26,6 @@ import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(NamedParameterizedRunner.class)
 public final class ObjectConversionTest extends ConversionTestBase {
 
     @NamedParameterizedRunner.TestParameters

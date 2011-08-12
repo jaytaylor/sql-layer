@@ -45,123 +45,126 @@ public final class PersistitKeyConversionTarget implements ConversionTarget {
 
     @Override
     public void putNull() {
+        checkState(AkType.NULL);
         key.append(null);
         invalidate();
     }
 
     @Override
     public void putDate(long value) {
-        checkState();
+        checkState(AkType.DATE);
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putDateTime(long value) {
-        checkState();
+        checkState(AkType.DATETIME);
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putDecimal(BigDecimal value) {
-        checkState();
+        checkState(AkType.DECIMAL);
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putDouble(double value) {
-        checkState();
+        checkState(AkType.DOUBLE);
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putFloat(float value) {
-        checkState();
+        checkState(AkType.FLOAT);
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putInt(long value) {
-        checkState();
+        checkState(AkType.INT);
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putLong(long value) {
-        checkState();
+        checkState(AkType.LONG);
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putString(String value) {
-        checkState();
+        checkState(AkType.VARCHAR);
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putText(String value) {
-        checkState();
+        checkState(AkType.TEXT);
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putTime(long value) {
-        checkState();
+        checkState(AkType.TIME);
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putTimestamp(long value) {
-        checkState();
+        checkState(AkType.TIMESTAMP);
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putUBigInt(BigInteger value) {
-        checkState();
+        checkState(AkType.U_BIGINT);
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putUDouble(double value) {
-        checkState();
+        checkState(AkType.U_DOUBLE);
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putUFloat(float value) {
-        checkState();
+        checkState(AkType.U_FLOAT);
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putUInt(long value) {
-        checkState();
+        checkState(AkType.U_INT);
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putVarBinary(ByteSource value) {
+        checkState(AkType.VARBINARY);
         key().appendByteArray(value.byteArray(), value.byteArrayOffset(), value.byteArrayLength());
+        invalidate();
     }
 
     @Override
     public void putYear(long value) {
-        checkState();
+        checkState(AkType.YEAR);
         key.append(value);
         invalidate();
     }
@@ -186,9 +189,15 @@ public final class PersistitKeyConversionTarget implements ConversionTarget {
     
     // private methods
     
-    private void checkState() {
+    private void checkState(AkType type) {
+        if (type == AkType.NULL) {
+            return;
+        }
         if (type == AkType.UNSUPPORTED) {
             throw new IllegalStateException("target AkType not set");
+        }
+        if (type != this.type) {
+            throw new IllegalStateException("can't put " + type + " because expecting " +  this.type);
         }
     }
 

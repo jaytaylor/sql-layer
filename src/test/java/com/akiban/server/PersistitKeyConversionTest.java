@@ -22,15 +22,12 @@ import com.akiban.server.types.ConversionSource;
 import com.akiban.server.types.ConversionTarget;
 import com.akiban.server.types.typestests.ConversionSuite;
 import com.akiban.server.types.typestests.ConversionTestBase;
-import com.akiban.server.types.typestests.LinkedConversion;
 import com.akiban.server.types.typestests.SimpleLinkedConversion;
 import com.persistit.Key;
 import com.persistit.Persistit;
-import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
-@RunWith(NamedParameterizedRunner.class)
 public final class PersistitKeyConversionTest extends ConversionTestBase {
 
     @NamedParameterizedRunner.TestParameters

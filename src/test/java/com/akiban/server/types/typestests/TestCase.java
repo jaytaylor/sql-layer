@@ -23,10 +23,7 @@ import com.akiban.util.Undef;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 
 import static com.akiban.server.types.AkType.*;
 import static com.akiban.server.types.typestests.TestCase.TestCaseType.*;
@@ -37,12 +34,6 @@ public final class TestCase<T> {
 
     public static <T> ConversionSuite<T> suite(LinkedConversion<? super T> conversion, TestCase<? extends T>... testCases) {
         return new ConversionSuite<T>(conversion, Arrays.asList(testCases));
-    }
-    
-    public static <T> Collection<TestCase<?>> collect(TestCase<?>... testCases) {
-        Collection<TestCase<?>> list = new ArrayList<TestCase<?>>();
-        Collections.addAll(list, testCases);
-        return list;
     }
 
     public static <T> TestCase<T> forDate(long value, T expectedState) {
@@ -113,6 +104,10 @@ public final class TestCase<T> {
         return new TestCase<T>(YEAR, value, TC_LONG, expectedState);
     }
 
+    static <T> TestCase<T> derive(TestCase<?> source, T newState) {
+        return new TestCase<T>(source, newState);
+    }
+
     // for use in this package
 
     void put(ConversionTarget target) {
@@ -157,6 +152,29 @@ public final class TestCase<T> {
         case U_INT: assertEquals(type.name(), valLong, source.getUInt()); break;
         case VARBINARY: assertEquals(type.name(), valObject, source.getVarBinary()); break;
         case YEAR: assertEquals(type.name(), valLong, source.getYear()); break;
+        default: throw new UnsupportedOperationException(type().name());
+        }
+    }
+
+    void get(ConversionSource source) {
+        switch (type) {
+        case DATE: source.getDate(); break;
+        case DATETIME: source.getDateTime(); break;
+        case DECIMAL: source.getDecimal(); break;
+        case DOUBLE: source.getDouble(); break;
+        case FLOAT: source.getFloat(); break;
+        case INT: source.getInt(); break;
+        case LONG: source.getLong(); break;
+        case VARCHAR: source.getString(); break;
+        case TEXT: source.getText(); break;
+        case TIME: source.getTime(); break;
+        case TIMESTAMP: source.getTimestamp(); break;
+        case U_BIGINT: source.getUBigInt(); break;
+        case U_DOUBLE: source.getUDouble(); break;
+        case U_FLOAT: source.getUFloat(); break;
+        case U_INT: source.getUInt(); break;
+        case VARBINARY: source.getVarBinary(); break;
+        case YEAR: source.getYear(); break;
         default: throw new UnsupportedOperationException(type().name());
         }
     }
@@ -220,6 +238,18 @@ public final class TestCase<T> {
     private TestCase(AkType type, Object value, TestCaseType testCaseType, T expectedState) {
         this(testCaseType, type, NO_DOUBLE, NO_FLOAT, NO_LONG, value, expectedState);
         checkTestCaseType(TC_OBJECT, testCaseType);
+    }
+
+    public TestCase(TestCase<?> source, T newState) {
+        this(
+                source.testCaseType,
+                source.type,
+                source.valDouble,
+                source.valFloat,
+                source.valLong,
+                source.valObject,
+                newState
+        );
     }
 
     private TestCase(TestCaseType tct, AkType type, double valDouble, float valFloat, long valLong, Object valObject, T expectedState) {

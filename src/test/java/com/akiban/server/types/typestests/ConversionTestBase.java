@@ -15,37 +15,51 @@
 
 package com.akiban.server.types.typestests;
 
+import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.OnlyIf;
+import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ConversionSource;
 import com.akiban.server.types.ConversionTarget;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+@RunWith(NamedParameterizedRunner.class)
 public abstract class ConversionTestBase {
 
     @Test
+    @OnlyIfNot("isMismatch()")
     public void putAndCheck() {
         suite.putAndCheck(indexWithinSuite);
     }
 
     @Test
+    @OnlyIfNot("isMismatch()")
     public void targetAlwaysAcceptsNull() {
         suite.targetAlwaysAcceptsNull(indexWithinSuite);
     }
 
     @Test
+    @OnlyIf("isMismatch()")
     public void getMismatch() {
         suite.getMismatch(indexWithinSuite);
     }
 
     @Test
+    @OnlyIf("isMismatch()")
     public void putMismatch() {
         suite.putMismatch(indexWithinSuite);
+    }
+
+    public boolean isMismatch() {
+        Class<?> linkedConversionClass = suite.linkedConversion().getClass();
+        return linkedConversionClass.equals(MismatchedConversionsSuite.DelegateLinkedConversion.class);
     }
 
     protected static Collection<Parameterization> params(ConversionSuite<?>... suites) {
@@ -70,13 +84,19 @@ public abstract class ConversionTestBase {
         List<ConversionSuite<?>> list = new ArrayList<ConversionSuite<?>>();
 
         for (ConversionSuite<?> suite : suites) {
+            // the suite itself
             list.add(suite);
+
+            // standard conversions
             NoCheckLinkedConversion noCheckConversion = new NoCheckLinkedConversion(suite.linkedConversion());
             ConversionSuite.SuiteBuilder<Object> builder = ConversionSuite.build(noCheckConversion);
             for (TestCase<?> testCase : StandardTestCases.get()) {
                 builder.add(testCase);
             }
             list.add(builder.suite());
+
+            // mismatched conversions
+            list.add(MismatchedConversionsSuite.basedOn(suite.linkedConversion()));
         }
 
         return list;
@@ -117,4 +137,6 @@ public abstract class ConversionTestBase {
 
         private final LinkedConversion<?> delegate;
     }
+
+
 }

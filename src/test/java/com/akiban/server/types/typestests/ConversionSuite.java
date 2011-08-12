@@ -61,14 +61,38 @@ public final class ConversionSuite<T> {
         converters.setUp(expectedType);
         testCase.put(converters.linkedTarget());
         converters.syncConversions();
-        new MismatchedConversion.ForGet(expectedType).expectMismatch(converters.linkedSource());
+
+        TestCase<?> switched = resolveSwitcher(testCase);
+        boolean gotError = false;
+        try {
+            switched.get(converters.linkedSource());
+        } catch (Throwable t) {
+            gotError = true;
+        }
+        assertTrue("expected error after setting up for " + expectedType + " but getting " + switched, gotError);
     }
 
     void putMismatch(int i) {
         TestCase<? extends T> testCase = testCases.get(i);
         AkType expectedType = testCase.type();
         converters.setUp(expectedType);
-        new MismatchedConversion.ForPut(expectedType).expectMismatch(converters.linkedTarget());
+
+        TestCase<?> switched = resolveSwitcher(testCase);
+        boolean gotError = false;
+        try {
+            switched.put(converters.linkedTarget());
+        } catch (Throwable t) {
+            gotError = true;
+        }
+        assertTrue("expected error after setting up for " + expectedType + " but putting " + switched, gotError);
+    }
+
+    private static TestCase<?> resolveSwitcher(TestCase<?> switcherTestCase) {
+        Object state = switcherTestCase.expectedState();
+        if (state instanceof MismatchedConversionsSuite.Switcher) {
+            return ((MismatchedConversionsSuite.Switcher)state).switchTo();
+        }
+        throw new UnsupportedOperationException("not a switcher state: " + state);
     }
 
     List<String> testCaseNames() {
