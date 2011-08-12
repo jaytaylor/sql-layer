@@ -13,23 +13,25 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.pg;
-
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.parser.ParameterNode;
+package com.akiban.server.error;
 
 import com.akiban.sql.StandardException;
+import com.akiban.sql.parser.QueryTreeNode;
 
-import java.util.List;
+import com.akiban.sql.unparser.NodeToString;
 
-/** Turn an SQL statement into something executable. */
-public interface PostgresStatementGenerator extends PostgresStatementParser
+public class UnsupportedSQLException extends InvalidOperationException
 {
+    public UnsupportedSQLException(String msg, QueryTreeNode sql) {
+        super(ErrorCode.UNSUPPORTED_SQL, msg, formatSQL(sql));
+    }
 
-    /** Return executable form of the given parsed statement or
-     * <code>null</code> if this generator cannot handle it. */
-    public PostgresStatement generate(PostgresServerSession server,
-                                      StatementNode stmt, 
-                                      List<ParameterNode> params, int[] paramTypes);
-
+    protected static String formatSQL(QueryTreeNode sql) {
+        try {
+            return new NodeToString().toString(sql);
+        }
+        catch (StandardException ex) {
+            return sql.toString();
+        }
+    }
 }

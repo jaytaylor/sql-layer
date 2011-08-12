@@ -36,6 +36,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.EventTypes;
 import com.akiban.server.service.instrumentation.SessionTracer;
 

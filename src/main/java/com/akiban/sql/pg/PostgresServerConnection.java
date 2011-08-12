@@ -27,10 +27,15 @@ import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.physicaloperator.StoreAdapter;
 import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoTransactionInProgressException;
+import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.EventTypes;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
+import com.google.inject.grapher.graphviz.EdgeStyle;
 
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
@@ -148,7 +153,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     protected enum ErrorMode { NONE, SIMPLE, EXTENDED };
 
-    protected void topLevel() throws IOException, StandardException {
+    protected void topLevel() throws IOException {
         logger.info("Connect from {}" + socket.getRemoteSocketAddress());
         boolean startupComplete = false;
         try {
@@ -205,6 +210,20 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                         throw new IOException("Unknown message type: " + (char)type);
                     }
                 }
+                catch (InvalidOperationException ex) {
+                    logger.warn("Error in query:", ex.getMessage());
+                    if (errorMode == ErrorMode.NONE) {
+                        messenger.beginMessage(PostgresMessenger.ERROR_RESPONSE_TYPE);
+                        messenger.write('S');
+                        messenger.writeString("ERROR");
+                        messenger.write('C');
+                        messenger.writeString(ex.getCode().getFormattedValue());
+                        messenger.write('M');
+                        messenger.writeString(ex.getShortMessage());
+                        messenger.write(0);
+                        messenger.sendMessage(true);
+                    }
+                }
                 catch (StandardException ex) {
                     logger.warn("Error in query", ex);
                     if (errorMode == ErrorMode.NONE) throw ex;
@@ -212,6 +231,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                         messenger.beginMessage(PostgresMessenger.ERROR_RESPONSE_TYPE);
                         messenger.write('S');
                         messenger.writeString("ERROR");
+                        
                         // TODO: Could dummy up an SQLSTATE, etc.
                         messenger.write('M');
                         messenger.writeString(ex.getMessage());
@@ -243,7 +263,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         messenger.sendMessage(true);
     }
 
-    protected boolean processStartupMessage() throws IOException, StandardException {
+    protected boolean processStartupMessage() throws IOException {
         int version = messenger.readInt();
         switch (version) {
         case PostgresMessenger.VERSION_CANCEL:
@@ -295,7 +315,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         stop();                                         // That's all for this connection.
     }
 
-    protected void processSSLMessage() throws IOException, StandardException {
+    protected void processSSLMessage() throws IOException {
         OutputStream raw = messenger.getOutputStream();
         raw.write('N');         // No SSL support.
         raw.flush();
@@ -332,7 +352,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         readyForQuery();
     }
 
-    protected void processQuery() throws IOException, StandardException {
+    protected void processQuery() throws IOException {
         long startTime = System.nanoTime();
         sql = messenger.readString();
         sessionTracer.setCurrentStatement(sql);
@@ -540,7 +560,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     // When the AIS changes, throw everything away, since it might
     // point to obsolete objects.
-    protected void updateAIS() throws StandardException {
+    protected void updateAIS() {
         DDLFunctions ddl = reqs.dxl().ddlFunctions();
         // TODO: This could be more reliable if the AIS object itself
         // also knew its generation. Right now, can get new generation
@@ -595,8 +615,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     protected PostgresStatement generateStatement(StatementNode stmt, 
                                                   List<ParameterNode> params,
-                                                  int[] paramTypes)
-            throws StandardException {
+                                                  int[] paramTypes) {
         try {
             sessionTracer.beginEvent(EventTypes.OPTIMIZE);
             for (PostgresStatementGenerator generator : parsedGenerators) {
@@ -608,7 +627,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         finally {
             sessionTracer.endEvent();
         }
-        throw new StandardException("Unsupported SQL statement");
+        throw new UnsupportedSQLException ("Statement", stmt);
     }
 
     /* PostgresServerSession */
@@ -717,8 +736,9 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         return socket.getInetAddress().getHostAddress();
     }
 
-    public void beginTransaction() throws StandardException {
+    public void beginTransaction() {
         if (transaction != null)
+            throw new 
             throw new StandardException("A transaction is already in progress.");
         transaction = reqs.treeService().getTransaction(session);
         try {
@@ -729,14 +749,14 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
     }
 
-    public void commitTransaction() throws StandardException {
+    public void commitTransaction() {
         if (transaction == null)
-            throw new StandardException("No transaction is in progress.");
+            throw new NoTransactionInProgressException ();
         try {
             transaction.commit();
         }
         catch (PersistitException ex) {
-            throw new StandardException(ex);
+            throw new PersistItErrorException (ex);
         }
         finally {
             transaction.end();
@@ -746,12 +766,12 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     public void rollbackTransaction() throws StandardException {
         if (transaction == null)
-            throw new StandardException("No transaction is in progress.");
+            throw new NoTransactionInProgressException ();
         try {
             transaction.rollback();
         }
         catch (PersistitException ex) {
-            throw new StandardException(ex);
+            throw new PersistItErrorException(ex);
         }
         catch (RollbackException ex) {
         }

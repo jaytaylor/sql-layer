@@ -18,15 +18,12 @@ package com.akiban.sql.optimizer;
 import com.akiban.sql.parser.*;
 
 import com.akiban.sql.StandardException;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
 
 import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.Type;
 
 import java.util.*;
 
