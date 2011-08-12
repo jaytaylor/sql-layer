@@ -24,7 +24,10 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.error.ParseException;
+import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
 
@@ -100,38 +103,43 @@ public interface DDLFunctions {
      * @param tableName the table to look up
      * @return the table's id
      * @throws NullPointerException if the tableName is null
+     * @throws NoSuchTableException if the tableName can not be found in the session list
      */
-    int getTableId(Session session, TableName tableName);
+    int getTableId(Session session, TableName tableName) throws NoSuchTableException;
 
     /**
      * Resolves the given table to its Table
      * @param session the session
      * @param tableId the table to look up
      * @return the Table
+     * @throws NoSuchTableIdException if the id can not be found in the session list
      */
-    public Table getTable(Session session, int tableId);
+    public Table getTable(Session session, int tableId) throws NoSuchTableIdException;
 
     /**
      * Resolves the given table to its Table
      * @param session the session
      * @param tableName the table to look up
      * @return the Table
+     * @throws NoSuchTableException if the tableName can not be found in the session list
      */
-    public Table getTable(Session session, TableName tableName);
+    public Table getTable(Session session, TableName tableName) throws NoSuchTableException;
     /**
      * Resolves the given table to its UserTable
      * @param session the session
      * @param tableName the table to look up
      * @return the Table
+     * @throws NoSuchTableException if the tableName can not be found in the session list
      */
-    public UserTable getUserTable(Session session, TableName tableName);
+    public UserTable getUserTable(Session session, TableName tableName) throws NoSuchTableException;
 
     /**
      * Resolves the given table ID to its RowDef
      * @param tableId the table to look up
      * @return the rowdef
+     * @throws RowDefNotFoundException if the tableID has no associated RowDef. 
      */
-    RowDef getRowDef(int tableId);
+    RowDef getRowDef(int tableId) throws RowDefNotFoundException;
 
     /**
      * Retrieves the "CREATE" DDLs for all Akiban tables, including tables in the <tt>akiban_information_schema</tt>

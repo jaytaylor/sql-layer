@@ -45,6 +45,7 @@ import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.error.PersistItErrorException;
 import com.akiban.server.error.ProtectedIndexException;
+import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.error.UnsupportedDropException;
 import com.akiban.server.service.session.Session;
 import com.persistit.exception.PersistitException;
@@ -97,7 +98,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         if(userTable == null || userTable.getChildJoins().isEmpty() == false) {
             throw new UnsupportedDropException(table.getName());
         }
-
 
         DMLFunctions dml = new BasicDMLFunctions(middleman(), schemaManager(), store(), treeService(), this);
         if(userTable.getParentJoin() == null) {
@@ -191,7 +191,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public int getTableId(Session session, TableName tableName) {
+    public int getTableId(Session session, TableName tableName) throws NoSuchTableException {
         logger.trace("getting table ID for {}", tableName);
         Table table = getAIS(session).getTable(tableName);
         if (table == null) {
@@ -201,7 +201,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public Table getTable(Session session, int tableId) {
+    public Table getTable(Session session, int tableId) throws NoSuchTableIdException {
         logger.trace("getting AIS Table for {}", tableId);
         for (Table userTable : getAIS(session).getUserTables().values()) {
             if (tableId == userTable.getTableId()) {
@@ -217,7 +217,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public Table getTable(Session session, TableName tableName) {
+    public Table getTable(Session session, TableName tableName) throws NoSuchTableException {
         logger.trace("getting AIS Table for {}", tableName);
         AkibanInformationSchema ais = getAIS(session);
         Table table = ais.getTable(tableName);
@@ -228,7 +228,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public UserTable getUserTable(Session session, TableName tableName) {
+    public UserTable getUserTable(Session session, TableName tableName) throws NoSuchTableException {
         logger.trace("getting AIS UserTable for {}", tableName);
         AkibanInformationSchema ais = getAIS(session);
         UserTable table = ais.getUserTable(tableName);
@@ -239,13 +239,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public TableName getTableName(Session session, int tableId) {
+    public TableName getTableName(Session session, int tableId) throws NoSuchTableException {
         logger.trace("getting table name for {}", tableId);
         return getTable(session, tableId).getName();
     }
 
     @Override
-    public RowDef getRowDef(int tableId) {
+    public RowDef getRowDef(int tableId) throws RowDefNotFoundException {
         logger.trace("getting RowDef for {}", tableId);
         return store().getRowDefCache().getRowDef(tableId);
     }
@@ -270,7 +270,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void createIndexes(Session session, Collection<Index> indexesToAdd) {
-    //public void createIndexes(final Session session, Collection<Index> indexesToAdd) {
         logger.trace("creating indexes {}", indexesToAdd);
         if (indexesToAdd.isEmpty() == true) {
             return;

@@ -20,8 +20,6 @@ import java.util.Set;
 
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.RowOutputException;
 
 /**
  * <p>A class that acts as a LegacyRowOutput and converts each row, as it's seen, to a NiceRow. That NiceRow
@@ -45,11 +43,7 @@ public final class LegacyOutputConverter implements BufferedLegacyOutputRouter.H
         RowData rowData = new RowData(bytes, offset, length);
         rowData.prepareRow(offset);
         final NewRow aNew;
-        //try {
-            aNew = converter.convertRowData(rowData);
-        //} catch (NoSuchTableException e) {
-        //    throw new RowOutputException(e);
-        //}
+        aNew = converter.convertRowData(rowData);
 
         if (columnsToScan != null) {
             final Set<Integer> colsToRemove = new HashSet<Integer>();

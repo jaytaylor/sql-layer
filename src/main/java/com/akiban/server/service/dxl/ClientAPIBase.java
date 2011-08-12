@@ -49,21 +49,6 @@ abstract class ClientAPIBase {
         return treeService;
     }
 
-    /**
-     * Returns an exception as an InvalidOperationException. If the given
-     * exception is one that we know how to turn into a specific
-     * InvalidOperationException (e.g., NoSuchRowException), the returned
-     * exception will be of that type. Otherwise, if the given exception is an
-     * InvalidOperationException, we'll just return it, and if not, we'll wrap
-     * it in a GenericInvalidOperationException.
-     * 
-     * @param e
-     *            the exception to wrap
-     * @return as specific an InvalidOperationException as we know how to make
-     */
-    //protected static InvalidOperationException launder(Exception e) {
-    //}
-
     BasicDXLMiddleman.ScanData putScanData(Session session, CursorId cursorId, BasicDXLMiddleman.ScanData scanData) {
         return middleman.putScanData(session, cursorId, scanData);
     }
