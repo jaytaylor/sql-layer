@@ -34,10 +34,10 @@ public interface PostgresStatement
     /** Send a description message. If <code>always</code>, do so even
      * if no result set. */
     public void sendDescription(PostgresServerSession server, boolean always) 
-            throws IOException;
+            throws IOException, StandardException;
 
     /** Execute statement and output results. Return number of rows processed. */
     public int execute(PostgresServerSession server, int maxrows)
-            throws IOException;
+            throws IOException, StandardException;
 
 }

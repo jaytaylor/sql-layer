@@ -30,6 +30,7 @@ public interface PostgresStatementGenerator extends PostgresStatementParser
      * <code>null</code> if this generator cannot handle it. */
     public PostgresStatement generate(PostgresServerSession server,
                                       StatementNode stmt, 
-                                      List<ParameterNode> params, int[] paramTypes);
+                                      List<ParameterNode> params, int[] paramTypes) 
+            throws StandardException;
 
 }

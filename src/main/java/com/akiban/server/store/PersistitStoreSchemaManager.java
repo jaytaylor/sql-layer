@@ -72,12 +72,12 @@ import com.akiban.server.error.JoinToWrongColumnsException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.ParseException;
 import com.akiban.server.error.PersistItErrorException;
 import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.ProtectedTableDDLException;
 import com.akiban.server.error.ReferencedTableException;
 import com.akiban.server.error.ScanRetryAbandonedException;
+import com.akiban.server.error.SchemaLoadIOException;
 import com.akiban.server.error.TableNotInGroupException;
 import com.akiban.server.error.UnsupportedCharsetException;
 import com.akiban.server.error.UnsupportedDataTypeException;
@@ -89,7 +89,6 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeLink;
 import com.google.inject.Inject;
 
-import org.antlr.runtime.RecognitionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -763,12 +762,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             afterStart();
         } catch (PersistitException e) {
             throw new PersistItErrorException(e);
-        } catch (RecognitionException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            throw new SchemaLoadIOException(e.getMessage());
         }
     }
 
@@ -792,9 +787,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * specifically, to be up and functional
      * @throws PersistitException 
      * @throws IOException 
-     * @throws RecognitionException 
      */
-    private void afterStart() throws PersistitException, RecognitionException, IOException {
+    private void afterStart() throws PersistitException, IOException {
         final Session session = sessionService.createSession();
         final Transaction transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;
@@ -871,14 +865,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     private SchemaDef parseTableStatement(String defaultSchemaName, String ddl) throws InvalidOperationException {
-        try {
-            SchemaDef def = new SchemaDef();
-            def.setMasterSchemaName(defaultSchemaName);
-            def.parseCreateTable(ddl);
-            return def;
-        } catch (Exception e1) {
-            throw new ParseException (defaultSchemaName, e1.getMessage(), ddl);
-        }
+        SchemaDef def = new SchemaDef();
+        def.setMasterSchemaName(defaultSchemaName);
+        def.parseCreateTable(ddl);
+        return def;
     }
 
     private void validateTableDefinition(final SchemaDef.UserTableDef tableDef) {

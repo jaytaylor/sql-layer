@@ -15,7 +15,6 @@
 
 package com.akiban.sql.optimizer;
 
-import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.parser.*;
 
 import com.akiban.ais.model.Column;

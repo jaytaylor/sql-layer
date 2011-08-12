@@ -36,8 +36,11 @@ import org.antlr.runtime.ANTLRInputStream;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonTokenStream;
+import org.antlr.runtime.Parser;
 
 import com.akiban.ais.model.Column;
+import com.akiban.server.error.ParseException;
+
 import org.antlr.runtime.RecognitionException;
 
 /**
@@ -1220,38 +1223,44 @@ public class SchemaDef {
      * @return
      * @throws Exception
      */
-    public UserTableDef parseCreateTable(final String createTableStatement)
-            throws Exception {
+    public UserTableDef parseCreateTable(final String createTableStatement) {
         DDLSourceLexer lex = new DDLSourceLexer(new SDStringStream(
                 createTableStatement));
         CommonTokenStream tokens = new CommonTokenStream(lex);
         final DDLSourceParser tsparser = new DDLSourceParser(tokens);
-        tsparser.table(this);
-        if (tsparser.getNumberOfSyntaxErrors() > 0) {
-            throw new RuntimeException("DDLSource reported a syntax error in: "
-                    + createTableStatement);
+        try {
+            tsparser.table(this);
+            if (tsparser.getNumberOfSyntaxErrors() > 0) {
+                throw new ParseException ("", "Syntax Error", createTableStatement);
+            }
+        } catch (RecognitionException e) {
+            throw new ParseException ("",  tsparser.getErrorHeader(e), createTableStatement);
         }
         return getCurrentTable();
     }
 
-    public static SchemaDef parseSchema(final String schema) throws RecognitionException {
+    public static SchemaDef parseSchema(final String schema) throws ParseException  {
         return parseSchemaFromANTLRStream(new SDStringStream(schema));
     }
 
-    public static SchemaDef parseSchemaFromFile(final String fileName) throws IOException, RecognitionException {
+    public static SchemaDef parseSchemaFromFile(final String fileName) throws IOException, ParseException {
         return parseSchemaFromANTLRStream(new SDFileStream(fileName));
     }
 
-    public static SchemaDef parseSchemaFromStream(InputStream stream) throws RecognitionException, IOException {
+    public static SchemaDef parseSchemaFromStream(InputStream stream)  throws ParseException, IOException {
         return parseSchemaFromANTLRStream(new SDInputStream(stream));
     }
 
-    private static SchemaDef parseSchemaFromANTLRStream(ANTLRStringStream stream) throws RecognitionException {
+    private static SchemaDef parseSchemaFromANTLRStream(ANTLRStringStream stream)  {
         DDLSourceLexer lex = new DDLSourceLexer(stream);
         CommonTokenStream tokens = new CommonTokenStream(lex);
         final DDLSourceParser tsparser = new DDLSourceParser(tokens);
         final SchemaDef schemaDef = new SchemaDef();
-        tsparser.schema(schemaDef);
+        try {
+            tsparser.schema(schemaDef);
+        } catch (RecognitionException e) {
+            throw new ParseException ("", tsparser.getErrorHeader(e), tsparser.getErrorMessage(e, tsparser.getTokenNames()));
+        }
         return schemaDef;
     }
 

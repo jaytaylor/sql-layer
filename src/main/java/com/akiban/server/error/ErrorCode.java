@@ -94,19 +94,17 @@ public enum ErrorCode {
     TOO_MANY_ROWS_UPDATED   (3, 16, Importance.DEBUG, TooManyRowsUpdatedException.class),  
     NO_SUCH_TABLEID         (3, 17, Importance.DEBUG, NoSuchTableIdException.class),
     SCAN_RETRY_ABANDONDED   (3, 18, Importance.ERROR, ScanRetryAbandonedException.class),
-    NO_TRANSACTION          (3, 19, Importance.DEBUG, NoTransactionInProgressException.class),
     
     
-    ROW_OUTPUT(4, 11, Importance.DEBUG, RowOutputException.class), 
-
+    ROW_OUTPUT              (4, 11, Importance.DEBUG, RowOutputException.class), 
+    
     // Messaging errors
-    MALFORMED_REQUEST    (21, 0, Importance.ERROR, null), 
-    BAD_STATISTICS_TYPE  (21, 4, Importance.ERROR, BadStatisticsTypeException.class),
-    UNSUPPORTED_SQL      (21, 5, Importance.ERROR, UnsupportedSQLException.class),
+    MALFORMED_REQUEST (21, 0, Importance.ERROR, null), 
+    BAD_STATISTICS_TYPE (21, 4, Importance.ERROR, BadStatisticsTypeException.class),
     
     // AIS Validation errors, Attempts to modify and build an AIS failed
     // due to missing or invalid information.
-    VALIDATION_FAILURE   (22, 0, Importance.DEBUG, null),
+    VALIDATION_FAILURE(22, 0, Importance.DEBUG, null),
     INTERNAL_REFERENCES_BROKEN(22, 1, Importance.DEBUG, null),
     GROUP_MULTIPLE_ROOTS (22,  2, Importance.DEBUG, GroupHasMultipleRootsException.class),
     JOIN_TYPE_MISMATCH   (22,  3, Importance.DEBUG, JoinColumnTypesMismatchException.class),
@@ -145,6 +143,7 @@ public enum ErrorCode {
     NET_STOP_IO_ERROR    (29, 10, Importance.ERROR, NetworkStopIOException.class),
     TAP_BEAN_FAIL        (29, 11, Importance.ERROR, TapBeanFailureException.class),
     SET_FILTER_FAIL      (29, 12, Importance.ERROR, DisplayFilterSetException.class),
+    SCHEMA_LOAD_IO_ERROR (29, 13, Importance.ERROR, SchemaLoadIOException.class),
     
     // AkSserver errors
     MULTIGENERATIONAL_TABLE(30, 900, Importance.ERROR, null),
@@ -185,7 +184,7 @@ public enum ErrorCode {
         this.importance = importance;
         //this.message = message;
         this.exceptionClass = exception;
-        this.formattedValue = String.format("%02d%03d", groupValue, subCode); 
+        this.formattedValue = String.format("%d%03d", groupValue, subCode); 
     }
 
     public static ErrorCode valueOf(short value)

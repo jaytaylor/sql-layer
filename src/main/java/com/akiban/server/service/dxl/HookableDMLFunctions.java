@@ -72,7 +72,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
             return delegate.openCursor(session, knownAIS, request);
         } catch (RuntimeException t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS, t);
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.OPEN_CURSOR, t);
             throw t;
         } catch (Throwable t) {
             thrown = t;
@@ -91,7 +91,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
             return delegate.getCursorState(session, cursorId);
         } catch (RuntimeException t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS, t);
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_CURSOR_STATE, t);
             throw t;
         } catch (Throwable t) {
             thrown = t;
@@ -110,11 +110,11 @@ public final class HookableDMLFunctions implements DMLFunctions {
             delegate.scanSome(session, cursorId, output);
         } catch (RuntimeException t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS, t);
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.SCAN_SOME, t);
             throw t;
         } catch (BufferFullException ex) {
             thrown = ex; 
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS, ex);
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.SCAN_SOME, ex);
             throw ex;
         } catch (Throwable t) {
             thrown = t;
@@ -133,7 +133,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
             delegate.scanSome(session, cursorId, output);
         } catch (RuntimeException t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS, t);
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.SCAN_SOME, t);
             throw t;
         } catch (Throwable t) {
             thrown = t;
@@ -152,7 +152,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
             delegate.closeCursor(session, cursorId);
         } catch (RuntimeException t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS, t);
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CLOSE_CURSOR, t);
             throw t;
         } catch (Throwable t) {
             thrown = t;
@@ -171,7 +171,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
             return delegate.getCursors(session);
         } catch (RuntimeException t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS, t);
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_CURSORS, t);
             throw t;
         } catch (Throwable t) {
             thrown = t;
@@ -191,7 +191,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
             return delegate.convertNewRow(row);
         } catch (RuntimeException t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS, t);
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_NEW_ROW, t);
             throw t;
         } catch (Throwable t) {
             thrown = t;
@@ -215,7 +215,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
             return delegate.convertRowData(rowData);
         } catch (RuntimeException t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS, t);
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATA, t);
             throw t;
         } catch (Throwable t) {
             thrown = t;
@@ -239,7 +239,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
             return delegate.convertRowDatas(rowDatas);
         } catch (RuntimeException t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS, t);
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATAS, t);
             throw t;
         } catch (Throwable t) {
             thrown = t;
@@ -262,7 +262,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
             return delegate.writeRow(session, row);
         } catch (RuntimeException t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS, t);
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.WRITE_ROW, t);
             throw t;
         } catch (Throwable t) {
             thrown = t;
@@ -281,7 +281,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
             delegate.deleteRow(session, row);
         } catch (RuntimeException t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS, t);
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.DELETE_ROW, t);
             throw t;
         } catch (Throwable t) {
             thrown = t;
@@ -300,7 +300,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
             delegate.updateRow(session, oldRow, newRow, columnSelector);
         } catch (RuntimeException t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS, t);
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.UPDATE_ROW, t);
             throw t;
         } catch (Throwable t) {
             thrown = t;
@@ -319,7 +319,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
             delegate.truncateTable(session, tableId);
         } catch (RuntimeException t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS, t);
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.TRUNCATE_TABLE, t);
             throw t;
         } catch (Throwable t) {
             thrown = t;
