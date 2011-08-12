@@ -15,9 +15,11 @@
 
 package com.akiban.server.rowdata;
 
+import com.akiban.server.Quote;
+import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ConversionSource;
-import com.akiban.server.types.ConversionSourceAppendHelper;
+import com.akiban.server.types.Converters;
 import com.akiban.server.types.SourceIsNullException;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
@@ -25,8 +27,9 @@ import com.akiban.util.WrappingByteSource;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 
-public final class FieldDefConversionSource extends FieldDefConversionBase implements ConversionSource {
+public final class RowDataConversionSource extends RowDataConversionBase implements ConversionSource {
 
     // ConversionSource interface
 
@@ -72,7 +75,7 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
 
     @Override
     public double getDouble() {
-        long asLong = extractLong();
+        long asLong = extractLong(Signage.SIGNED);
         return Double.longBitsToDouble(asLong);
     }
 
@@ -83,7 +86,7 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
 
     @Override
     public float getFloat() {
-        long asLong = extractLong();
+        long asLong = extractLong(Signage.SIGNED);
         int asInt = (int) asLong;
         return Float.intBitsToFloat(asInt);
     }
@@ -95,42 +98,42 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
 
     @Override
     public long getDate() {
-        return extractLong();
+        return extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getDateTime() {
-        return extractLong();
+        return extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getInt() {
-        return extractLong();
+        return extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getLong() {
-        return extractLong();
+        return extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getTime() {
-        return extractLong();
+        return extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getTimestamp() {
-        return extractLong();
+        return extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getUInt() {
-        return extractLong();
+        return extractLong(Signage.UNSIGNED);
     }
 
     @Override
     public long getYear() {
-        return extractLong();
+        return extractLong(Signage.SIGNED) & 0xFF;
     }
 
     @Override
@@ -147,8 +150,20 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
     }
 
     @Override
-    public void appendAsString(AkibanAppender appender) {
-        appendHelper.source(this).appendTo(appender);
+    public void appendAsString(AkibanAppender appender, Quote quote) {
+        AkType type = getConversionType();
+        quote.quote(appender, type);
+        if (type == AkType.VARCHAR || type == AkType.TEXT) {
+            appendStringField(appender, quote);
+        }
+        // TODO the rest of this method doesn't give Quote a crack at things.
+        // (I think quoting should really be selected at the Appender level, not externally)
+        else if (type == AkType.DECIMAL) {
+            ConversionHelperBigDecimal.decodeToString(fieldDef(), rowData(), appender);
+        } else {
+            Converters.convert(this, appender.asConversionTarget());
+        }
+        quote.quote(appender, type);
     }
 
     @Override
@@ -159,15 +174,36 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
     // for use within this class
     // Stolen from the Encoding classes
 
+    private void appendStringField(AkibanAppender appender, Quote quote) {
+        try {
+            final long location = getCheckedOffsetAndWidth();
+            if (appender.canAppendBytes()) {
+                ByteBuffer buff = rowData().byteBufferForStringValue((int) location, (int) (location >>> 32), fieldDef());
+                quote.append(appender, buff, fieldDef().column().getCharsetAndCollation().charset());
+            }
+            else {
+                String s = rowData().getStringValue((int) location, (int) (location >>> 32), fieldDef());
+                quote.append(appender, s);
+            }
+        } catch (EncodingException e) {
+            quote.append(appender, "<encoding exception! " + e.getMessage() + '>');
+        }
+    }
+
     private long getRawOffsetAndWidth() {
         return fieldDef().getRowDef().fieldLocation(rowData(), fieldDef().getFieldIndex());
     }
     
-    private long extractLong() {
+    private long extractLong(Signage signage) {
         long offsetAndWidth = getCheckedOffsetAndWidth();
         final int offset = (int)offsetAndWidth;
         final int width = (int)(offsetAndWidth >>> 32);
-        return rowData().getIntegerValue(offset, width);
+        if (signage == Signage.SIGNED) {
+            return rowData().getIntegerValue(offset, width);
+        } else {
+            assert signage == Signage.UNSIGNED;
+            return rowData().getUnsignedIntegerValue(offset, width);
+        }
     }
 
     private long getCheckedOffsetAndWidth() {
@@ -178,18 +214,9 @@ public final class FieldDefConversionSource extends FieldDefConversionBase imple
         return offsetAndWidth;
     }
 
-    // object state
-    private final ConversionSourceAppendHelper appendHelper = new ConversionSourceAppendHelper() {
-        @Override
-        protected AkType akType() {
-            return fieldDef().column().getType().akType();
-        }
-
-        @Override
-        protected void appendDecimal(AkibanAppender appender) {
-            ConversionHelperBigDecimal.decodeToString(fieldDef(), rowData(), appender);
-        }
-    };
-
     private final WrappingByteSource byteSource = new WrappingByteSource();
+
+    private enum Signage {
+        SIGNED, UNSIGNED
+    }
 }

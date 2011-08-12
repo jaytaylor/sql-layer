@@ -17,11 +17,33 @@ package com.akiban.server.types;
 
 public final class Converters {
 
-    public static void convert(ConversionSource source, ConversionTarget target) {
-        get(target.getConversionType()).convert(source, target);
+    /**
+     * Converts the source into the target. This method takes care of all internal conversions between the source's
+     * and target's type. For instance, if the source is pointing at a VARCHAR and the target requires a LONG,
+     * but the VARCHAR can be parsed into a Long, this method will take care of that parsing for you.
+     * @param source the conversion source
+     * @param target the conversion target
+     * @param <T> the conversion target's specific type
+     * @return the conversion target; this return value is provided as a convenience, so you can chain calls
+     */
+    public static <T extends ConversionTarget> T convert(ConversionSource source, T target) {
+        if (source.isNull()) {
+            target.putNull();
+        } else {
+            AkType conversionType = target.getConversionType();
+            get(conversionType).convert(source, target);
+        }
+        return target;
     }
 
-    public static AbstractConverter get(AkType type) {
+    public static LongConverter getLongConverter(AkType type) {
+        AbstractConverter converter = get(type);
+        if (converter instanceof LongConverter)
+            return (LongConverter) converter;
+        return null;
+    }
+
+    private static AbstractConverter get(AkType type) {
         return type.converter();
     }
 

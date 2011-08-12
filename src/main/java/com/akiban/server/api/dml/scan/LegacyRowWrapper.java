@@ -16,6 +16,7 @@
 package com.akiban.server.api.dml.scan;
 
 import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDataExtractor;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.DMLError;
@@ -80,7 +81,7 @@ public final class LegacyRowWrapper extends NewRow
             object =
                 niceRow != null
                 ? niceRow.get(columnId)
-                : rowData.toObject(rowDef, columnId);
+                : extractor.get(rowDef.getFieldDef(columnId), rowData);
         }
         return object;
     }
@@ -175,4 +176,6 @@ public final class LegacyRowWrapper extends NewRow
         rowDef = NewRow.rowDef(rowDefId);
         niceRow = null;
     }
+
+    private final RowDataExtractor extractor = new RowDataExtractor();
 }

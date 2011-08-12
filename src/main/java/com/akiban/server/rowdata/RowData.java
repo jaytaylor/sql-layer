@@ -24,6 +24,8 @@ import java.util.BitSet;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.Quote;
 import com.akiban.server.encoding.EncodingException;
+import com.akiban.server.types.Converters;
+import com.akiban.server.types.FromObjectConversionSource;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
@@ -424,29 +426,22 @@ public class RowData {
         if (values.length > rowDef.getFieldCount()) {
             throw new IllegalArgumentException("Too many values.");
         }
-        int offset = rowStart;
-        AkServerUtil.putShort(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
-        AkServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
-        AkServerUtil.putShort(bytes, offset + O_FIELD_COUNT, fieldCount);
-        offset = offset + O_NULL_MAP;
-        for (int index = 0; index < fieldCount; index += 8) {
-            int b = 0;
-            for (int j = index; j < index + 8 && j < fieldCount; j++) {
-                if (j >= values.length || values[j] == null) {
-                    b |= (1 << j - index);
-                }
-            }
-            bytes[offset++] = (byte) b;
-        }
         int vlength = 0;
         int vmax = 0;
+
+        FromObjectConversionSource source = new FromObjectConversionSource();
+        RowDataConversionTarget target = new RowDataConversionTarget();
+        target.offset( createRowInit(rowDef, values, fieldCount) );
+
         for (int index = 0; index < values.length; index++) {
             Object object = values[index];
             FieldDef fieldDef = rowDef.getFieldDef(index);
             if (fieldDef.isFixedSize()) {
                 if (object != null) {
                     try {
-                        offset += fieldDef.getEncoding().fromObject(fieldDef, object, bytes, offset);
+                        source.setReflectively(object);
+                        target.bind(fieldDef, this);
+                        Converters.convert(source, target);
                     } catch (Exception e) {
                         throw EncodingException.dueTo(e);
                     }
@@ -473,16 +468,16 @@ public class RowData {
                     case 0:
                         break;
                     case 1:
-                        AkServerUtil.putByte(bytes, offset, (byte) vlength);
+                        AkServerUtil.putByte(bytes, target.offset(), (byte) vlength);
                         break;
                     case 2:
-                        AkServerUtil.putShort(bytes, offset, (char) vlength);
+                        AkServerUtil.putShort(bytes, target.offset(), (char) vlength);
                         break;
                     case 3:
-                        AkServerUtil.putMediumInt(bytes, offset, (int) vlength);
+                        AkServerUtil.putMediumInt(bytes, target.offset(), (int) vlength);
                         break;
                     }
-                    offset += width;
+                    target.bumpOffset(width);
                 }
             }
         }
@@ -491,18 +486,38 @@ public class RowData {
             final FieldDef fieldDef = rowDef.getFieldDef(index);
             if (object != null && !fieldDef.isFixedSize()) {
                 try {
-                    offset += fieldDef.getEncoding().fromObject(fieldDef, values[index], bytes, offset);
+                    source.setReflectively(object);
+                    target.bind(fieldDef, this);
+                    Converters.convert(source, target);
                 } catch (Exception e) {
                     throw EncodingException.dueTo(e);
                 }
             }
         }
-        AkServerUtil.putShort(bytes, offset, SIGNATURE_B);
-        offset += 6;
-        final int length = offset - rowStart;
+        AkServerUtil.putShort(bytes, target.offset(), SIGNATURE_B);
+        target.bumpOffset(6);
+        final int length = target.offset() - rowStart;
         AkServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);
-        AkServerUtil.putInt(bytes, offset + O_LENGTH_B, length);
-        rowEnd = offset;
+        AkServerUtil.putInt(bytes, target.offset() + O_LENGTH_B, length);
+        rowEnd = target.offset();
+    }
+
+    private int createRowInit(RowDef rowDef, Object[] values, int fieldCount) {
+        int offset = rowStart;
+        AkServerUtil.putShort(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
+        AkServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
+        AkServerUtil.putShort(bytes, offset + O_FIELD_COUNT, fieldCount);
+        offset = offset + O_NULL_MAP;
+        for (int index = 0; index < fieldCount; index += 8) {
+            int b = 0;
+            for (int j = index; j < index + 8 && j < fieldCount; j++) {
+                if (j >= values.length || values[j] == null) {
+                    b |= (1 << j - index);
+                }
+            }
+            bytes[offset++] = (byte) b;
+        }
+        return offset;
     }
 
     public void updateNonNullLong(FieldDef fieldDef, long rowId)
@@ -541,6 +556,7 @@ public class RowData {
 
     public String toString(final RowDef rowDef) {
         final AkibanAppender sb = AkibanAppender.of(new StringBuilder());
+        RowDataConversionSource source = new RowDataConversionSource();
         try {
             if (rowDef == null) {
                 sb.append("RowData?(rowDefId=");
@@ -557,8 +573,8 @@ public class RowData {
                     if (location == 0) {
                        // sb.append("null");
                     } else {
-                        fieldDef.getEncoding().toString(fieldDef, this, sb,
-                                Quote.SINGLE_QUOTE);
+                        source.bind(fieldDef, this);
+                        source.appendAsString(sb, Quote.SINGLE_QUOTE);
                     }
                 }
                 sb.append(')');
@@ -574,6 +590,7 @@ public class RowData {
     }
 
     public void toJSONString(final RowDef rowDef, AkibanAppender sb) throws IOException {
+        RowDataConversionSource source = new RowDataConversionSource();
         for(int i = 0; i < getFieldCount(); i++) {
             final FieldDef fieldDef = rowDef.getFieldDef(i);
             final long location = fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());
@@ -592,7 +609,8 @@ public class RowData {
             sb.append("\":");
 
             if(location != 0) {
-                fieldDef.getEncoding().toString(fieldDef, this, sb, Quote.JSON_QUOTE);
+                source.bind(fieldDef, this);
+                source.appendAsString(sb, Quote.JSON_QUOTE);
             }
             else {
                 sb.append("null");
@@ -604,17 +622,6 @@ public class RowData {
 
         final StringBuilder sb = new StringBuilder();
         return sb.toString();
-    }
-
-    public Object toObject(RowDef rowDef, int fieldIndex)
-    {
-        Object object = null;
-        long location = rowDef.fieldLocation(this, fieldIndex);
-        if (location != 0L) {
-            FieldDef field = rowDef.getFieldDef(fieldIndex);
-            object = field.getEncoding().toObject(field, this);
-        }
-        return object;
     }
 
     public Object fromObject(RowDef rowDef, int fieldIndex, Object value)

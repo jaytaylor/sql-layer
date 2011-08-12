@@ -15,15 +15,21 @@
 
 package com.akiban.util;
 
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ConversionTarget;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 public abstract class AkibanAppender {
     public abstract void append(Object o);
     public abstract void append(char c);
     public abstract void append(String s);
     public abstract Appendable getAppendable();
+    public abstract ConversionTarget asConversionTarget();
 
     public boolean canAppendBytes() {
         return false;
@@ -45,7 +51,7 @@ public abstract class AkibanAppender {
         return new AkibanAppenderOS(outputStream, printWriter);
     }
 
-    private static class AkibanAppenderPW extends AkibanAppender
+    private static class AkibanAppenderPW extends AbstractAkibanAppender
     {
         private final PrintWriter pr;
 
@@ -102,7 +108,7 @@ public abstract class AkibanAppender {
         }
     }
 
-    private static class AkibanAppenderSB extends AkibanAppender
+    private static class AkibanAppenderSB extends AbstractAkibanAppender
     {
         private final StringBuilder sb;
 
@@ -133,6 +139,115 @@ public abstract class AkibanAppender {
         @Override
         public String toString() {
             return sb.toString();
+        }
+    }
+
+    private static abstract class AbstractAkibanAppender extends AkibanAppender implements ConversionTarget {
+
+        // AkibanAppender interface
+
+        @Override
+        public ConversionTarget asConversionTarget() {
+            return this;
+        }
+
+        // ConversionTarget interface (supported methods)
+
+        @Override
+        public AkType getConversionType() {
+            return AkType.VARCHAR;
+        }
+
+        @Override
+        public void putString(String value) {
+            append(value);
+        }
+
+        @Override
+        public void putNull() {
+            append(null);
+        }
+
+        // ConversionTarget interface (unsupported methods)
+
+        @Override
+        public void putDate(long value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putDateTime(long value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putDecimal(BigDecimal value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putDouble(double value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putFloat(float value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putInt(long value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putLong(long value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putText(String value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putTime(long value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putTimestamp(long value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putUBigInt(BigInteger value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putUDouble(double value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putUFloat(float value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putUInt(long value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putVarBinary(ByteSource value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putYear(long value) {
+            throw new UnsupportedOperationException();
         }
     }
 }

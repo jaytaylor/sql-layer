@@ -15,6 +15,9 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.Converters;
+import com.akiban.server.types.LongConverter;
 import com.akiban.sql.StandardException;
 
 import com.akiban.sql.types.DataTypeDescriptor;
@@ -23,10 +26,6 @@ import com.akiban.sql.types.TypeId;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Types;
-
-import com.akiban.server.encoding.EncoderFactory;
-import com.akiban.server.encoding.Encoding;
-import com.akiban.server.encoding.LongEncoderBase;
 
 import java.io.*;
 import java.text.*;
@@ -145,7 +144,7 @@ public class PostgresType
     private int oid;
     private short length;
     private int modifier;
-    private LongEncoderBase encoder;
+    private LongConverter converter;
 
     public PostgresType(int oid, short length, int modifier) {
         this.oid = oid;
@@ -236,9 +235,7 @@ public class PostgresType
         // TODO: For now, these are the only ones needing special treatment.
         // When we are better able to work with the encoder to get the
         // raw bytes, can use this for all.
-        Encoding<?> encoder = EncoderFactory.valueOf(encoding, aisType);
-        if (encoder instanceof LongEncoderBase)
-            result.encoder = (LongEncoderBase)encoder;
+        result.converter = Converters.getLongConverter(aisType.akType());
 
         return result;
     }
@@ -251,7 +248,7 @@ public class PostgresType
 
         TypeId typeId = type.getTypeId();
 
-        LongEncoderBase encoder = null;
+        LongConverter converter = null;
 
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.BIT_TYPE_ID:
@@ -265,7 +262,7 @@ public class PostgresType
             break;
         case TypeId.FormatIds.DATE_TYPE_ID:
             oid = DATE_TYPE_OID;
-            encoder = EncoderFactory.DATE;
+            converter = Converters.getLongConverter(AkType.DATE);
             break;
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
         case TypeId.FormatIds.NUMERIC_TYPE_ID:
@@ -276,11 +273,11 @@ public class PostgresType
             break;
         case TypeId.FormatIds.INT_TYPE_ID:
             oid = INT4_TYPE_OID;
-            encoder = EncoderFactory.INT;
+            converter = Converters.getLongConverter(AkType.INT);
             break;
         case TypeId.FormatIds.LONGINT_TYPE_ID:
             oid = INT8_TYPE_OID;
-            encoder = EncoderFactory.INT;
+            converter = Converters.getLongConverter(AkType.INT);
             break;
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
             oid = TEXT_TYPE_OID;
@@ -293,15 +290,15 @@ public class PostgresType
             break;
         case TypeId.FormatIds.SMALLINT_TYPE_ID:
             oid = INT2_TYPE_OID;
-            encoder = EncoderFactory.INT;
+            converter = Converters.getLongConverter(AkType.INT);
             break;
         case TypeId.FormatIds.TIME_TYPE_ID:
             oid = TIME_TYPE_OID;
-            encoder = EncoderFactory.TIME;
+            converter = Converters.getLongConverter(AkType.TIME);
             break;
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
             oid = TIMESTAMP_TYPE_OID;
-            encoder = EncoderFactory.TIMESTAMP;
+            converter = Converters.getLongConverter(AkType.TIMESTAMP);
             break;
         case TypeId.FormatIds.TINYINT_TYPE_ID:
             oid = BYTEA_TYPE_OID;
@@ -348,10 +345,10 @@ public class PostgresType
             length = (short)typeId.getMaximumMaximumWidth();
         }
         
-        PostgresType result = new PostgresType(oid, length, modifier);;
+        PostgresType result = new PostgresType(oid, length, modifier);
         
-        if (encoder != null)
-            result.encoder = encoder;
+        if (converter != null)
+            result.converter = converter;
 
         return result;
     }
@@ -368,8 +365,8 @@ public class PostgresType
             if (binary) {
                 throw new StandardException("Binary encoding not yet supported.");
             }
-            else if (encoder != null) {
-                value = encoder.decodeToString((Long)value);
+            else if (converter != null) {
+                value = converter.asString((Long)value);
             }
             else if (value instanceof Date) {
                 DateFormat format = null;
@@ -395,8 +392,8 @@ public class PostgresType
     }
 
     public Object decodeParameter(String value) throws StandardException {
-        if (encoder != null)
-            return encoder.encodeFromObject(value);
+        if (converter != null)
+            return converter.doParse(value);
         else
             return value;
     }

@@ -42,8 +42,8 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.KeyConversionTarget;
 import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDataExtractor;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.ConstantColumnSelector;
@@ -57,6 +57,8 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ToObjectConversionTarget;
 import com.google.inject.Inject;
 import com.persistit.Exchange;
 import com.persistit.Transaction;
@@ -70,6 +72,7 @@ import java.util.List;
 
 import static com.akiban.qp.physicaloperator.API.ancestorLookup_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
+import static com.akiban.qp.physicaloperator.API.sort_InsertionLimited;
 
 public class OperatorStore extends DelegatingStore<PersistitStore> {
 
@@ -440,6 +443,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         private final RowData newRowData;
         private final ColumnSelector columnSelector;
         private final RowDef rowDef;
+        private final RowDataExtractor extractor = new RowDataExtractor();
 
         private InternalUpdateFunction(PersistitAdapter adapter, RowDef rowDef, RowData newRowData, ColumnSelector columnSelector) {
             this.newRowData = newRowData;
@@ -471,12 +475,15 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
             // Note: some encodings are untested except as necessary for mtr
             NewRow newRow = new NiceRow(rowDef.getRowDefId());
+            ToObjectConversionTarget target = new ToObjectConversionTarget();
             for (int i=0; i < original.rowType().nFields(); ++i) {
                 if (columnSelector.includesColumn(i)) {
-                    newRow.put(i, newRowData.toObject(rowDef, i));
+                    Object value = extractor.get(rowDef.getFieldDef(i), newRowData);
+                    newRow.put(i, value);
                 }
                 else {
-                    newRow.put(i, original.field(i, bindings));
+                    ConversionSource source = original.conversionSource(i, bindings);
+                    newRow.put(i, target.convertFromSource(source));
                 }
             }
             return PersistitGroupRow.newPersistitGroupRow(adapter, newRow.toRowData());

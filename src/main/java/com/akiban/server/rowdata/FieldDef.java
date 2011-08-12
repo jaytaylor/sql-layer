@@ -156,10 +156,6 @@ public class FieldDef {
         this.columnName = name;
         this.type = type;
         this.encoding = EncoderFactory.valueOf(type.encoding(), type);
-        if (!encoding.validate(type)) {
-            throw new IllegalArgumentException("Encoding " + encoding
-                    + " not valid for type " + type);
-        }
         this.maxStorageSize = maxStorageSize;
         this.prefixSize = prefixSize;
         this.typeParameter1 = typeParameter1;

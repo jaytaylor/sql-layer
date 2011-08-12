@@ -21,7 +21,9 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.RowBase;
-import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.PersistitKeyConversionTarget;
+import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.Converters;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 
@@ -38,10 +40,13 @@ class PersistitFilterFactory
 
     public KeyFilter computeIndexFilter(Key key, Index index, IndexKeyRange keyRange, Bindings bindings)
     {
+        PersistitKeyConversionTarget target = new PersistitKeyConversionTarget();
+        target.attach(key);
+
         List<IndexColumn> indexColumns = index.getColumns();
         KeyFilter.Term[] terms = new KeyFilter.Term[indexColumns.size()];
         for (int i = 0; i < indexColumns.size(); ++i) {
-            terms[i] = computeKeyFilterTerm(key, indexColumns.get(i).getColumn(), i, keyRange, bindings);
+            terms[i] = computeKeyFilterTerm(target, key, indexColumns.get(i).getColumn(), i, keyRange, bindings);
         }
         key.clear();
         KeyFilter keyFilter = new KeyFilter(terms, terms.length, Integer.MAX_VALUE);
@@ -59,8 +64,8 @@ class PersistitFilterFactory
     // For use by this class
 
     // Returns a KeyFilter term if the specified field of either the start or
-    private KeyFilter.Term computeKeyFilterTerm(Key key, Column column, int position, IndexKeyRange keyRange,
-                                                Bindings bindings)
+    private KeyFilter.Term computeKeyFilterTerm(PersistitKeyConversionTarget tuple, Key key, Column column, int position,
+                                                IndexKeyRange keyRange, Bindings bindings)
     {
         boolean hasStart = (keyRange.lo() != null) && keyRange.lo().columnSelector().includesColumn(position);
         boolean hasEnd = (keyRange.hi() != null) && keyRange.hi().columnSelector().includesColumn(position);
@@ -70,13 +75,13 @@ class PersistitFilterFactory
         key.clear();
         key.reset();
         if (hasStart) {
-            appendKeyField(key, column, position, keyRange.lo().row(), bindings);
+            appendKeyField(tuple, column, position, keyRange.lo().row(), bindings);
         } else {
             key.append(Key.BEFORE);
             key.setEncodedSize(key.getEncodedSize() + 1);
         }
         if (hasEnd) {
-            appendKeyField(key, column, position, keyRange.hi().row(), bindings);
+            appendKeyField(tuple, column, position, keyRange.hi().row(), bindings);
         } else {
             key.append(Key.AFTER);
         }
@@ -87,11 +92,11 @@ class PersistitFilterFactory
         return KeyFilter.termFromKeySegments(key, key, keyRange.loInclusive(), keyRange.hiInclusive());
     }
 
-    private void appendKeyField(Key key, Column column, int position, RowBase row, Bindings bindings)
+    private void appendKeyField(PersistitKeyConversionTarget target, Column column, int position, RowBase row, Bindings bindings)
     {
-        FieldDef fieldDef = (FieldDef) column.getFieldDef();
-        Object value = row.field(position, bindings);
-        fieldDef.getEncoding().toKey(fieldDef, value, key);
+        target.expectingType(column);
+        ConversionSource source = row.conversionSource(position, bindings);
+        Converters.convert(source, target);
     }
 
 

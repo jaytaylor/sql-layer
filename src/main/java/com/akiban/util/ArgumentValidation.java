@@ -108,4 +108,10 @@ public final class ArgumentValidation {
             throw new IllegalArgumentException(String.format("%s(%s) != %s(%s)", oneName, one, twoName, two));
         }
     }
+
+    public static void isEQ(String message, int i, int requiredValue) {
+        if (i != requiredValue) {
+            throw new IllegalArgumentException(message + " required " + requiredValue + " but got " + i);
+        }
+    }
 }

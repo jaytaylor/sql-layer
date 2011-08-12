@@ -22,7 +22,6 @@ import com.akiban.server.types.ConversionSource;
 public interface RowBase
 {
     RowType rowType();
-    Object field(int i, Bindings bindings);
     ConversionSource conversionSource(int i, Bindings bindings);
     HKey hKey();
     boolean ancestorOf(RowBase that);

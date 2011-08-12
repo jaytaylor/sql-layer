@@ -38,6 +38,8 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ToObjectConversionTarget;
 import com.persistit.Exchange;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
@@ -106,11 +108,13 @@ public class PersistitAdapter extends StoreAdapter
         if (row instanceof PersistitGroupRow) {
             return ((PersistitGroupRow)row).rowData();
         }
-        
+
+        ToObjectConversionTarget target = new ToObjectConversionTarget();
         NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
 
         for(int i=0; i < row.rowType().nFields(); ++i) {
-            niceRow.put(i, row.field(i, bindings));
+            ConversionSource source = row.conversionSource(i, bindings);
+            niceRow.put(i, target.convertFromSource(source));
         }
         return niceRow.toRowData();
     }
