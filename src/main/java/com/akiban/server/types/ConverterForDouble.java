@@ -15,9 +15,21 @@
 
 package com.akiban.server.types;
 
-final class ConverterForDouble extends DoubleConverter {
+abstract class ConverterForDouble extends DoubleConverter {
 
-    static final DoubleConverter INSTANCE = new ConverterForDouble();
+    static final DoubleConverter SIGNED = new ConverterForDouble() {
+        @Override
+        protected void putDouble(ConversionTarget target, double value) {
+            target.putDouble(value);
+        }
+    };
+
+    static final DoubleConverter UNSIGNED = new ConverterForDouble() {
+        @Override
+        protected void putDouble(ConversionTarget target, double value) {
+            target.putUDouble(value);
+        }
+    };
 
     @Override
     public double getDouble(ConversionSource source) {
@@ -35,11 +47,6 @@ final class ConverterForDouble extends DoubleConverter {
         case VARCHAR:   return Double.parseDouble(source.getString());
         default: throw unsupportedConversion(source);
         }
-    }
-
-    @Override
-    protected void putDouble(ConversionTarget target, double value) {
-        target.putDouble(value);
     }
 
     // AbstractConverter interface

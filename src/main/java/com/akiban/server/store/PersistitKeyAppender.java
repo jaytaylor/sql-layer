@@ -20,6 +20,7 @@ import com.akiban.server.PersistitKeyConversionTarget;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowDataConversionSource;
 import com.akiban.server.rowdata.RowData;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.Converters;
 import com.akiban.server.types.FromObjectConversionSource;
 import com.persistit.Key;
@@ -51,7 +52,7 @@ public final class PersistitKeyAppender {
     }
 
     public void appendNull() {
-        target.putNull();
+        target.expectingType(AkType.NULL).putNull();
     }
 
     public Key key() {

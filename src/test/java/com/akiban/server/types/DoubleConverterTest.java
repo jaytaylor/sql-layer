@@ -56,8 +56,8 @@ public final class DoubleConverterTest {
     public void encodeToBits() {
         FromObjectConversionSource source = new FromObjectConversionSource();
         for(TestElement t : TEST_CASES) {
-            final double fromDouble = ConverterForDouble.INSTANCE.getDouble(source.setReflectively(t.dbl));
-            final double fromString = ConverterForDouble.INSTANCE.getDouble(source.setReflectively(t.str));
+            final double fromDouble = ConverterForDouble.SIGNED.getDouble(source.setReflectively(t.dbl));
+            final double fromString = ConverterForDouble.SIGNED.getDouble(source.setReflectively(t.str));
             assertEquals("float->bits: " + t, t.longBits, Double.doubleToLongBits(fromDouble));
             assertEquals("string->bits: " + t, t.longBits, Double.doubleToLongBits(fromString));
         }
@@ -78,6 +78,6 @@ public final class DoubleConverterTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void invalidNumber() {
-        ConverterForDouble.INSTANCE.getDouble(new FromObjectConversionSource().setReflectively("zebra"));
+        ConverterForDouble.SIGNED.getDouble(new FromObjectConversionSource().setReflectively("zebra"));
     }
 }
