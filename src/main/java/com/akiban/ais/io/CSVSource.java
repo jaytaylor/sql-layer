@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Source;
+import com.akiban.server.error.AisCSVErrorException;
 
 public class CSVSource extends Source
 {
@@ -35,7 +36,8 @@ public class CSVSource extends Source
         try {
         input.close();
         } catch (IOException ex) {
-            
+            LOG.error("IOException while closing CSV-formatted AIS source", ex);
+            throw new AisCSVErrorException ("CSVSource close", ex.getMessage());
         }
     }
 
@@ -101,7 +103,7 @@ public class CSVSource extends Source
             }
         } catch (IOException e) {
             LOG.error("IOException while reading CSV-formatted AIS source", e);
-            row = null;
+            throw new AisCSVErrorException ("CSVSource advance", e.getMessage());
         }
     }
 

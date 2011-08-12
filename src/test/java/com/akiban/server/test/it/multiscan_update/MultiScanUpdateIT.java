@@ -58,7 +58,6 @@ public class MultiScanUpdateIT extends ITBase {
     private static final TableName TABLE_NAME = new TableName(SCHEMA, TABLE);
     private static final int COL_WIDTH = 255; // must  be >= 11 for WhichIndex.updateInPlace
 
-    @SuppressWarnings("unused") // accessed via WhichIndex.values
     protected enum WhichIndex {
         PK {
             @Override

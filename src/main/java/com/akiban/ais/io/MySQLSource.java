@@ -26,6 +26,7 @@ import java.util.Map;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Source;
+import com.akiban.server.error.AisSQLErrorException;
 
 public class MySQLSource extends Source
 {
@@ -36,7 +37,7 @@ public class MySQLSource extends Source
         try {
         connection.close();
         } catch (SQLException ex) {
-            
+            throw new AisSQLErrorException ("MySQLSource close", ex.getMessage());
         }
     }
 
@@ -93,7 +94,7 @@ public class MySQLSource extends Source
             }
             stmt.close();
         } catch (SQLException ex) {
-            
+            throw new AisSQLErrorException ("MySQLSource read", ex.getMessage());
         }
     }
 

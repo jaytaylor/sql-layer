@@ -26,6 +26,7 @@ import java.util.Map;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Target;
+import com.akiban.server.error.AisSQLErrorException;
 
 public class MySQLTarget extends Target
 {
@@ -59,7 +60,7 @@ public class MySQLTarget extends Target
         connection.commit();
         connection.close();
         } catch (SQLException ex) {
-            
+            throw new AisSQLErrorException ("MySQLTarget close", ex.getMessage());
         }
     }
 
@@ -121,7 +122,7 @@ public class MySQLTarget extends Target
             }
             updateCount = stmt.executeUpdate();
         } catch (SQLException ex) {
-            
+            throw new AisSQLErrorException ("MySQLTarget write", ex.getMessage());
         }
         assert updateCount == 1;
     }

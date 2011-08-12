@@ -21,16 +21,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.akiban.server.error.QueryLogCloseException;
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.sql.pg.PostgresService;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
-import com.akiban.sql.pg.PostgresServer;
-import com.akiban.sql.pg.PostgresSessionTracer;
 
 public class InstrumentationServiceImpl implements
     InstrumentationService, 
@@ -100,7 +98,7 @@ public class InstrumentationServiceImpl implements
             try {
                 queryOut.close();
             } catch (IOException e) {
-                //TODO: Manage the queryOut#close IOException
+                throw new QueryLogCloseException (e.getMessage());
             }
         }
     }
@@ -161,6 +159,7 @@ public class InstrumentationServiceImpl implements
                 queryOut.close();
             } catch (IOException e) {
                 LOGGER.error("Failed to close query log output stream.", e);
+                throw new QueryLogCloseException (e.getMessage());
             }
         }
     }
