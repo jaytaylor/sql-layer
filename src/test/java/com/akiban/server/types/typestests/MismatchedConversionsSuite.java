@@ -101,6 +101,16 @@ public final class MismatchedConversionsSuite {
         map.put(U_INT, TestCase.forUInt(0, NO_STATE));
         map.put(VARBINARY, TestCase.forVarBinary(new WrappingByteSource().wrap(new byte[0]), NO_STATE));
         map.put(YEAR, TestCase.forYear(0, NO_STATE));
+
+        Set<AkType> allValidAkTypes = EnumSet.allOf(AkType.class);
+        allValidAkTypes.removeAll(invalidTypes);
+        Set<AkType> mappedTypes = map.keySet();
+        if (!allValidAkTypes.equals(mappedTypes)) {
+            allValidAkTypes.removeAll(mappedTypes);
+            throw new RuntimeException("Found unmapped but valid type(s). This isn't your fault; the error is in "
+                    + MismatchedConversionsSuite.class.getSimpleName() + ". Unmapped types: " + allValidAkTypes
+            );
+        }
         
         return map;
     }
