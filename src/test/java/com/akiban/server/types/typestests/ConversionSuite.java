@@ -41,6 +41,9 @@ public final class ConversionSuite<T> {
         converters.setUp(testCase.type());
         testCase.put(converters.linkedTarget());
         converters.syncConversions();
+        if (converters.linkedSource().isNull()) {
+            fail("source shouldn't be null: " + converters.linkedSource());
+        }
         converters.checkPut(testCase.expectedState());
         testCase.check(converters.linkedSource());
     }
