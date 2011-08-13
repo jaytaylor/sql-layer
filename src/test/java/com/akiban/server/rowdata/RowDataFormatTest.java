@@ -43,70 +43,70 @@ public final class RowDataFormatTest {
         // fixed length
         builder.add(
                 "id int => 1",
-                new AISLambda() { public void build(NewUserTableBuilder b) { b.colLong("id"); } },
+                new TableMaker() { public void make(NewUserTableBuilder b) { b.colLong("id"); } },
                 fields(1L),
                 "0x1B00 0000 4142 0200 0100 0000 0001 0000 0001 0000 0042 411B 0000 00"
         );
         builder.add(
                 "id int => null",
-                new AISLambda() { public void build(NewUserTableBuilder b) { b.colLong("id"); } },
+                new TableMaker() { public void make(NewUserTableBuilder b) { b.colLong("id"); } },
                 fields(NULL),
                 "0x1700 0000 4142 0200 0100 0000 0201 0000 0042 4117 0000 00"
         );
         // var length
         builder.add(
                 "name varchar(32) => str(1)",
-                new AISLambda() { public void build(NewUserTableBuilder b) { b.colString("name", 32); } },
+                new TableMaker() { public void make(NewUserTableBuilder b) { b.colString("name", 32); } },
                 fields(str(1)),
                 "0x1A00 0000 4142 0200 0100 0000 0001 0000 0002 0130 4241 1A00 0000"
         );
         builder.add(
                 "name varchar(32) => null",
-                new AISLambda() { public void build(NewUserTableBuilder b) { b.colString("name", 32); } },
+                new TableMaker() { public void make(NewUserTableBuilder b) { b.colString("name", 32); } },
                 fields(NULL),
                 "0x1700 0000 4142 0200 0100 0000 0201 0000 0042 4117 0000 00"
         );
         builder.add(
                 "name varchar(32) => str(32)",
-                new AISLambda() { public void build(NewUserTableBuilder b) { b.colString("name", 32); } },
+                new TableMaker() { public void make(NewUserTableBuilder b) { b.colString("name", 32); } },
                 fields(str(32)),
                 "0x3900 0000 4142 0200 0100 0000 0001 0000 0021 2030 3132 3334 3536 3738 3930 3132 3334 3536 3738 "
                         +"3930 3132 3334 3536 3738 3930 3142 4139 0000 00"
         );
         builder.add(
                 "name varchar(1024) => str(1)",
-                new AISLambda() { public void build(NewUserTableBuilder b) { b.colString("name", 1024); } },
+                new TableMaker() { public void make(NewUserTableBuilder b) { b.colString("name", 1024); } },
                 fields(str(1)),
                 "0x1C00 0000 4142 0200 0100 0000 0001 0000 0003 0001 0030 4241 1C00 0000"
         );
         // mixed
         builder.add(
                 "name varchar(32), id int => str(1), 1",
-                new AISLambda() { public void build(NewUserTableBuilder b) { b.colString("name", 32).colLong("id"); } },
+                new TableMaker() { public void make(NewUserTableBuilder b) { b.colString("name", 32).colLong("id"); } },
                 fields(str(1), 1L),
                 "0x1E00 0000 4142 0300 0100 0000 0001 0000 0002 0100 0000 0130 4241 1E00 0000"
         );
         builder.add(
                 "id int, name varchar(32) => 1, str(1)",
-                new AISLambda() { public void build(NewUserTableBuilder b) { b.colString("name", 32).colLong("id"); } },
+                new TableMaker() { public void make(NewUserTableBuilder b) { b.colString("name", 32).colLong("id"); } },
                 fields(str(1), 1L),
                 "0x1E00 0000 4142 0300 0100 0000 0001 0000 0002 0100 0000 0130 4241 1E00 0000"
         );
         builder.add(
                 "name varchar(32), id int => null, 1",
-                new AISLambda() { public void build(NewUserTableBuilder b) { b.colString("name", 32).colLong("id"); } },
+                new TableMaker() { public void make(NewUserTableBuilder b) { b.colString("name", 32).colLong("id"); } },
                 fields(NULL, 1L),
                 "0x1B00 0000 4142 0300 0100 0000 0201 0000 0001 0000 0042 411B 0000 00"
         );
         builder.add(
                 "id int, name varchar(32) => 1, null",
-                new AISLambda() { public void build(NewUserTableBuilder b) { b.colString("name", 32).colLong("id"); } },
+                new TableMaker() { public void make(NewUserTableBuilder b) { b.colString("name", 32).colLong("id"); } },
                 fields(NULL, 1L),
                 "0x1B00 0000 4142 0300 0100 0000 0201 0000 0001 0000 0042 411B 0000 00"
         );
         builder.add(
                 "id int, name varchar(32) => null, null",
-                new AISLambda() { public void build(NewUserTableBuilder b) { b.colString("name", 32).colLong("id"); } },
+                new TableMaker() { public void make(NewUserTableBuilder b) { b.colString("name", 32).colLong("id"); } },
                 fields(NULL, NULL),
                 "0x1700 0000 4142 0300 0100 0000 0601 0000 0042 4117 0000 00"
         );
@@ -122,10 +122,10 @@ public final class RowDataFormatTest {
         assertEquals("rowData bytes", bytesString, asHex);
     }
 
-    public RowDataFormatTest(AISLambda aisLambda, Object[] fields, String bytesString) {
+    public RowDataFormatTest(TableMaker tableMaker, Object[] fields, String bytesString) {
         NewAISBuilder aisBuilder = AISBBasedBuilder.create(SCHEMA);
         NewUserTableBuilder tableBuilder = aisBuilder.userTable(TABLE).colLong("pkid");
-        aisLambda.build(tableBuilder);
+        tableMaker.make(tableBuilder);
         tableBuilder.pk("pkid");
         AkibanInformationSchema ais = aisBuilder.ais();
         ais.getTable(SCHEMA, TABLE).setTableId(1);
@@ -179,7 +179,7 @@ public final class RowDataFormatTest {
     private static final Object NULL = new Object();
     private static final long ID = 1;
 
-    private interface AISLambda {
-        public void build(NewUserTableBuilder builder);
+    private interface TableMaker {
+        public void make(NewUserTableBuilder builder);
     }
 }
