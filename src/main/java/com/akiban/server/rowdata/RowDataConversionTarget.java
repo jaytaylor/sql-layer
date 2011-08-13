@@ -53,7 +53,6 @@ public final class RowDataConversionTarget implements ConversionTarget {
     @Override
     public void putNull() {
         checkState(AkType.NULL);
-        // TODO unwrap this loop!
         setNullBit();
         recordEncoded(0);
     }
@@ -216,15 +215,14 @@ public final class RowDataConversionTarget implements ConversionTarget {
     }
 
     private void setNullBit() {
+        // TODO unloop this
         int target = fieldDef.getFieldIndex();
         int fieldCount = fieldDef.getRowDef().getFieldCount();
         int offsetWithinMap = nullMapOffset;
         for (int index = 0; index < fieldCount; index += 8) {
-            int b = 0;
             for (int j = index; j < index + 8 && j < fieldCount; j++) {
                 if (j == target) {
-                    b |= (1 << j - index);
-                    bytes[offsetWithinMap] = (byte) b;
+                    bytes[offsetWithinMap] |= (1 << j - index);
                     return;
                 }
             }
