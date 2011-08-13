@@ -72,6 +72,7 @@ import com.akiban.server.error.JoinToWrongColumnsException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.ParseException;
 import com.akiban.server.error.PersistItErrorException;
 import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.ProtectedTableDDLException;
@@ -867,7 +868,11 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private SchemaDef parseTableStatement(String defaultSchemaName, String ddl) throws InvalidOperationException {
         SchemaDef def = new SchemaDef();
         def.setMasterSchemaName(defaultSchemaName);
-        def.parseCreateTable(ddl);
+        try {
+            def.parseCreateTable(ddl);
+        } catch (SchemaDef.SchemaDefException ex) {
+            throw new ParseException (defaultSchemaName, ex.getMessage(), ddl);
+        }
         return def;
     }
 

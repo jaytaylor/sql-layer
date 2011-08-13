@@ -38,10 +38,10 @@ import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.Parser;
 
+import org.antlr.runtime.RecognitionException;
+
 import com.akiban.ais.model.Column;
 import com.akiban.server.error.ParseException;
-
-import org.antlr.runtime.RecognitionException;
 
 /**
  * Structures used to hold the results of parsing DDL statements. DDLSource.g
@@ -1223,7 +1223,7 @@ public class SchemaDef {
      * @return
      * @throws Exception
      */
-    public UserTableDef parseCreateTable(final String createTableStatement) {
+    public UserTableDef parseCreateTable(final String createTableStatement) throws ParseException, SchemaDefException {
         DDLSourceLexer lex = new DDLSourceLexer(new SDStringStream(
                 createTableStatement));
         CommonTokenStream tokens = new CommonTokenStream(lex);
