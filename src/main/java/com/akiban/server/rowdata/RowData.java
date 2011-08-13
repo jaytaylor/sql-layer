@@ -426,80 +426,18 @@ public class RowData {
         if (values.length > rowDef.getFieldCount()) {
             throw new IllegalArgumentException("Too many values.");
         }
-        int vlength = 0;
-        int vmax = 0;
 
-        FromObjectConversionSource source = new FromObjectConversionSource();
-        RowDataConversionTarget target = new RowDataConversionTarget();
-        target.offset( createRowInit(rowDef, values, fieldCount) );
-
-        for (int index = 0; index < values.length; index++) {
-            Object object = values[index];
-            FieldDef fieldDef = rowDef.getFieldDef(index);
-            if (fieldDef.isFixedSize()) {
-                if (object != null) {
-                    try {
-                        source.setReflectively(object);
-                        target.bind(fieldDef, this);
-                        Converters.convert(source, target);
-                    } catch (Exception e) {
-                        throw EncodingException.dueTo(e);
-                    }
-
-                }
-            } else {
-                int fieldMax = fieldDef.getMaxStorageSize();
-                vmax += fieldMax;
-                if (object != null) {
-                    int fieldWidth;
-                    try {
-                        fieldWidth = fieldDef.getEncoding().widthFromObject(fieldDef, object);
-                        vlength += fieldWidth;
-                    } catch (Exception e) {
-                        throw EncodingException.dueTo(e);
-                    }
-                    if (fieldWidth > fieldMax) {
-                        throw new EncodingException(
-                            String.format("Value for field %s has size %s, exceeding maximum allowed: %s",
-                                          fieldDef.column(), fieldWidth, fieldMax));
-                    }
-                    final int width = AkServerUtil.varWidth(vmax);
-                    switch (width) {
-                    case 0:
-                        break;
-                    case 1:
-                        AkServerUtil.putByte(bytes, target.offset(), (byte) vlength);
-                        break;
-                    case 2:
-                        AkServerUtil.putShort(bytes, target.offset(), (char) vlength);
-                        break;
-                    case 3:
-                        AkServerUtil.putMediumInt(bytes, target.offset(), (int) vlength);
-                        break;
-                    }
-                    target.bumpOffset(width);
-                }
-            }
+        RowDataBuilder builder = new RowDataBuilder(rowDef, this);
+        builder.startAllocations();
+        for (int i=0; i < values.length; ++i) {
+            FieldDef fieldDef = rowDef.getFieldDef(i);
+            builder.allocate(fieldDef, values[i]);
         }
-        for (int index = 0; index < values.length; index++) {
-            Object object = values[index];
-            final FieldDef fieldDef = rowDef.getFieldDef(index);
-            if (object != null && !fieldDef.isFixedSize()) {
-                try {
-                    source.setReflectively(object);
-                    target.bind(fieldDef, this);
-                    Converters.convert(source, target);
-                } catch (Exception e) {
-                    throw EncodingException.dueTo(e);
-                }
-            }
+        builder.startPuts();
+        for (Object object : values) {
+            builder.putObject(object);
         }
-        AkServerUtil.putShort(bytes, target.offset(), SIGNATURE_B);
-        target.bumpOffset(6);
-        final int length = target.offset() - rowStart;
-        AkServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);
-        AkServerUtil.putInt(bytes, target.offset() + O_LENGTH_B, length);
-        rowEnd = target.offset();
+        rowEnd = builder.finalOffset();
     }
 
     private int createRowInit(RowDef rowDef, Object[] values, int fieldCount) {

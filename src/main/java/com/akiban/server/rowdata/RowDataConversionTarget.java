@@ -24,192 +24,222 @@ import com.akiban.util.ByteSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public final class RowDataConversionTarget extends RowDataConversionBase implements ConversionTarget {
+public final class RowDataConversionTarget implements ConversionTarget {
 
-    public int offset() {
-        return offset;
+    public void bind(FieldDef fieldDef, byte[] backingBytes, int nullMapOffset, int writeOffset) {
+        clear();
+        ArgumentValidation.notNull("fieldDef", fieldDef);
+        ArgumentValidation.withinArray("backing bytes", backingBytes, "nullMapOffset", nullMapOffset);
+        ArgumentValidation.withinArray("backing bytes", backingBytes, "writeOffset", writeOffset);
+        this.fieldDef = fieldDef;
+        this.bytes = backingBytes;
+        this.nullMapOffset = nullMapOffset;
+        this.writeSectionOffset = writeOffset;
     }
 
-    public void offset(int offset) {
-        ArgumentValidation.isGTE("offset", offset, 0);
-        this.offset = offset;
+    public int lastEncodedLength() {
+        if (lastEncodedLength < 0) {
+            throw new IllegalStateException("no last recorded length available");
+        }
+        return lastEncodedLength;
     }
 
-    public void bumpOffset(int delta) {
-        ArgumentValidation.isGT("offset delta", delta, 0);
-        offset += delta;
+    public RowDataConversionTarget() {
+        clear();
     }
 
     // ConversionTarget interface
 
     @Override
     public void putNull() {
-        checkState();
-        // nothing to do; the null bitmap will have been set externally
+        checkState(AkType.NULL);
+        // TODO unwrap this loop!
+        setNullBit();
+        recordEncoded(0);
     }
 
     @Override
     public void putDate(long value) {
-        checkState();
-        bumpOffset(encodeLong(value));
+        checkState(AkType.DATE);
+        recordEncoded(encodeLong(value));
     }
 
     @Override
     public void putDateTime(long value) {
-        checkState();
-        bumpOffset( encodeLong(value) );
+        checkState(AkType.DATETIME);
+        recordEncoded(encodeLong(value));
     }
 
     @Override
     public void putDecimal(BigDecimal value) {
-        checkState();
-        bumpOffset(ConversionHelperBigDecimal.fromObject(fieldDef(), value, bytes(), offset()));
+        checkState(AkType.DECIMAL);
+        recordEncoded(ConversionHelperBigDecimal.fromObject(fieldDef, value, bytes, writeSectionOffset));
     }
 
     @Override
     public void putDouble(double value) {
-        checkState();
-        bumpOffset( encodeLong(Double.doubleToLongBits(value)) );
+        checkState(AkType.DOUBLE);
+        recordEncoded(encodeLong(Double.doubleToLongBits(value)));
     }
 
     @Override
     public void putFloat(float value) {
-        checkState();
-        bumpOffset( encodeInt(Float.floatToIntBits(value)) );
+        checkState(AkType.FLOAT);
+        recordEncoded(encodeInt(Float.floatToIntBits(value)));
     }
 
     @Override
     public void putInt(long value) {
-        checkState();
-        bumpOffset( encodeLong(value) );
+        checkState(AkType.INT);
+        recordEncoded(encodeLong(value));
     }
 
     @Override
     public void putLong(long value) {
-        checkState();
-        bumpOffset( encodeLong(value) );
+        checkState(AkType.LONG);
+        recordEncoded(encodeLong(value));
     }
 
     @Override
     public void putString(String value) {
-        checkState();
-        bumpOffset( ConversionHelper.encodeString(value, bytes(), offset(), fieldDef()) );
+        checkState(AkType.VARCHAR);
+        recordEncoded(ConversionHelper.encodeString(value, bytes, writeSectionOffset, fieldDef));
     }
 
     @Override
     public void putText(String value) {
-        checkState();
-        bumpOffset( ConversionHelper.encodeString(value, bytes(), offset(), fieldDef()) );
+        checkState(AkType.TEXT);
+        recordEncoded(ConversionHelper.encodeString(value, bytes, writeSectionOffset, fieldDef));
     }
 
     @Override
     public void putTime(long value) {
-        checkState();
-        bumpOffset( encodeLong(value) );
+        checkState(AkType.TIME);
+        recordEncoded(encodeLong(value));
     }
 
     @Override
     public void putTimestamp(long value) {
-        checkState();
-        bumpOffset( encodeLong(value) );
+        checkState(AkType.TIMESTAMP);
+        recordEncoded(encodeLong(value));
     }
 
     @Override
     public void putUBigInt(BigInteger value) {
-        checkState();
+        checkState(AkType.U_BIGINT);
         assert encodableAsLong(value) : value;
         long asLong = value.longValue();
-        int width = fieldDef().getMaxStorageSize();
-        bumpOffset( AkServerUtil.putIntegerByWidth(bytes(), offset(), width, asLong));
+        int width = fieldDef.getMaxStorageSize();
+        recordEncoded(AkServerUtil.putIntegerByWidth(bytes, writeSectionOffset, width, asLong));
     }
 
     @Override
     public void putUDouble(double value) {
-        checkState();
+        checkState(AkType.U_DOUBLE);
         // TODO call to Math.max lifted from UDoubleEncoder.fromObject. Probably doesn't belong here.
         int longBits = Math.max(encodeLong(Double.doubleToLongBits(value)), 0);
-        bumpOffset(longBits);
+        recordEncoded(longBits);
     }
 
     @Override
     public void putUFloat(float value) {
-        checkState();
+        checkState(AkType.U_FLOAT);
         // TODO call to Math.max lifted from UFloatEncoder.fromObject. Probably doesn't belong here.
         int intBits = Math.max(encodeInt(Float.floatToIntBits(value)), 0);
-        bumpOffset(intBits);
+        recordEncoded(intBits);
     }
 
     @Override
     public void putUInt(long value) {
-        checkState();
-        bumpOffset( encodeLong(value) );
+        checkState(AkType.U_INT);
+        recordEncoded(encodeLong(value));
     }
 
     @Override
     public void putVarBinary(ByteSource value) {
-        checkState();
-        bumpOffset(
+        checkState(AkType.VARBINARY);
+        recordEncoded(
                 ConversionHelper.putByteArray(
                         value.byteArray(), value.byteArrayOffset(), value.byteArrayLength(),
-                        bytes(), offset(), fieldDef())
+                        bytes, writeSectionOffset, fieldDef)
         );
     }
 
     @Override
     public void putYear(long value) {
-        checkState();
-        bumpOffset( encodeLong(value) );
+        checkState(AkType.YEAR);
+        recordEncoded(encodeLong(value));
     }
 
     @Override
     public AkType getConversionType() {
-        checkState();
-        return fieldDef().getType().akType();
+        return fieldDef == null ? AkType.UNSUPPORTED : fieldDef.getType().akType();
     }
 
     // private methods
-
-    private byte[] bytes() {
-        return rowData().getBytes();
+    
+    private void recordEncoded(int encodedLength) {
+        clear();
+        lastEncodedLength = encodedLength;
     }
 
-    private void checkState() {
-        boolean badOffset = offset < 0;
-        boolean nullRowData = rowData() == null;
-        boolean nullFieldDef = fieldDef() == null;
-        if (badOffset || nullRowData || nullFieldDef) {
-            StringBuilder sb = new StringBuilder("bad state: ");
-            if (badOffset) {
-                sb.append("offset=").append(offset).append(", ");
+    private void checkState(AkType expectedType) {
+        if (expectedType == AkType.NULL) {
+            if (fieldDef == null) {
+                throw new IllegalStateException("target is not bound");
             }
-            if (nullRowData) {
-                sb.append("rowData is null, ");
-            }
-            if (nullFieldDef) {
-                sb.append("fieldDef is null, ");
-            }
-            sb.setLength( sb.length() - 2 );
-            throw new IllegalStateException(sb.toString());
+        }
+        else {
+            com.akiban.server.types.ConversionHelper.checkType(expectedType, getConversionType());
         }
     }
 
+    private void clear() {
+        lastEncodedLength = -1;
+        bytes = null;
+        nullMapOffset = -1;
+        writeSectionOffset = -1;
+    }
+
     private int encodeInt(int value) {
-        assert INT_STORAGE_SIZE == fieldDef().getMaxStorageSize() : fieldDef().getMaxStorageSize();
-        return AkServerUtil.putIntegerByWidth(bytes(), offset(), INT_STORAGE_SIZE, value);
+        assert INT_STORAGE_SIZE == fieldDef.getMaxStorageSize() : fieldDef.getMaxStorageSize();
+        return AkServerUtil.putIntegerByWidth(bytes, writeSectionOffset, INT_STORAGE_SIZE, value);
     }
 
     private int encodeLong(long value) {
-        int width = fieldDef().getMaxStorageSize();
-        return AkServerUtil.putIntegerByWidth(bytes(), offset(), width, value);
+        int width = fieldDef.getMaxStorageSize();
+        return AkServerUtil.putIntegerByWidth(bytes, writeSectionOffset, width, value);
     }
 
     private boolean encodableAsLong(BigInteger value) {
         return value.compareTo(MAX_BIGINT) <= 0;
     }
 
+    private void setNullBit() {
+        int target = fieldDef.getFieldIndex();
+        int fieldCount = fieldDef.getRowDef().getFieldCount();
+        int offsetWithinMap = nullMapOffset;
+        for (int index = 0; index < fieldCount; index += 8) {
+            int b = 0;
+            for (int j = index; j < index + 8 && j < fieldCount; j++) {
+                if (j == target) {
+                    b |= (1 << j - index);
+                    bytes[offsetWithinMap] = (byte) b;
+                    return;
+                }
+            }
+            ++offsetWithinMap;
+        }
+        throw new AssertionError("field not found! " + fieldDef);
+    }
+
     // object state
 
-    private int offset = -1;
+    private FieldDef fieldDef;
+    private int lastEncodedLength;
+    private byte bytes[];
+    private int nullMapOffset;
+    private int writeSectionOffset;
 
     // consts
 
