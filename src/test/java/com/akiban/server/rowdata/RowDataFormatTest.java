@@ -115,11 +115,23 @@ public final class RowDataFormatTest {
     }
 
     @Test
-    public void checkBytes() {
+    public void simple() {
         RowData rowData = new RowData(new byte[128]);
-        rowData.createRow(rowDef, fields);
-        String asHex = hex(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
-        assertEquals("rowData bytes", bytesString, asHex);
+        createAndCheck(rowData);
+    }
+
+    @Test
+    public void withOffset() {
+        RowData rowData = new RowData(new byte[128], 64, 128-64);
+        createAndCheck(rowData);
+    }
+
+    @Test
+    public void nonZeroBytes() {
+        byte[] bytes = new byte[128];
+        Arrays.fill(bytes, (byte)0xFF);
+        RowData rowData = new RowData(bytes);
+        createAndCheck(rowData);
     }
 
     public RowDataFormatTest(TableMaker tableMaker, Object[] fields, String bytesString) {
@@ -138,6 +150,12 @@ public final class RowDataFormatTest {
     private final RowDef rowDef;
     private final Object[] fields;
     private final String bytesString;
+
+    private void createAndCheck(RowData rowData) {
+        rowData.createRow(rowDef, fields);
+        String asHex = hex(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
+        assertEquals("rowData bytes", bytesString, asHex);
+    }
 
     private static Object[] fields(Object... args) {
         Object[] ret = new Object[args.length + 1];
