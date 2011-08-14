@@ -15,6 +15,7 @@
 package com.akiban.server.rowdata;
 
 import com.akiban.server.AkServerUtil;
+import com.akiban.server.api.dml.TableDefinitionMismatchException;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.types.ConversionSource;
 import com.akiban.server.types.Converters;
@@ -33,7 +34,7 @@ public final class RowDataBuilder {
         AkServerUtil.putShort(bytes, fixedWidthSectionOffset + RowData.O_FIELD_COUNT, rowDef.getFieldCount());
         fixedWidthSectionOffset = fixedWidthSectionOffset + RowData.O_NULL_MAP;
         nullMapOffset = fixedWidthSectionOffset;
-        // TODO unloop this
+        // TODO unloop this?
         for (int index = 0; index < rowDef.getFieldCount(); index += 8) {
             rowData.getBytes()[fixedWidthSectionOffset++] = 0;
         }
@@ -139,14 +140,14 @@ public final class RowDataBuilder {
             target.putNull();
         } else if (fieldDef.isFixedSize()) {
             target.bind(fieldDef, bytes, nullMapOffset, fixedWidthSectionOffset);
-            Converters.convert(source, target);
+            doConvert(source);
             if (target.lastEncodedLength() != currFixedWidth) {
                 throw new IllegalStateException("expected to write " + currFixedWidth
                         + " fixed-width byte(s), but wrote " + target.lastEncodedLength());
             }
         } else {
             target.bind(fieldDef, bytes, nullMapOffset, variableWidthSectionOffset);
-            Converters.convert(source, target);
+            doConvert(source);
             int varWidthExpected = readVarWidth(bytes, currFixedWidth);
             // the stored value (retrieved by readVarWidth) is actually the *cumulative* length; we want just
             // this field's length. So, we'll subtract from this cumulative value the previously-maintained sum of the
@@ -210,6 +211,14 @@ public final class RowDataBuilder {
         assert fieldIndex >= 0;
         if (fieldIndex >= rowDef.getFieldCount()) {
             throw new IllegalArgumentException("went past last field index of " + rowDef.getFieldCount());
+        }
+    }
+
+    private void doConvert(ConversionSource source) {
+        try {
+            Converters.convert(source, target);
+        } catch (Exception e) {
+            throw new TableDefinitionMismatchException("while converting " + source + " to " + target, e);
         }
     }
 
