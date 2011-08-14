@@ -29,7 +29,7 @@ public final class LegacyUtils {
         if (one.getRowDefId() == two.getRowDefId()) {
             return one.getRowDefId();
         }
-        throw new TableDefinitionMismatchException("Mismatched table ids: %d != %d",
-                one.getRowDefId(), two.getRowDefId());
+        throw new TableDefinitionMismatchException(String.format("Mismatched table ids: %d != %d",
+                one.getRowDefId(), two.getRowDefId()));
     }
 }

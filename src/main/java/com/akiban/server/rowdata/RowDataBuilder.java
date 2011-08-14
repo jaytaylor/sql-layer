@@ -217,6 +217,8 @@ public final class RowDataBuilder {
     private void doConvert(ConversionSource source) {
         try {
             Converters.convert(source, target);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw EncodingException.dueTo(e); // assumed to be during writing to the RowData's byte[]
         } catch (Exception e) {
             throw new TableDefinitionMismatchException("while converting " + source + " to " + target, e);
         }

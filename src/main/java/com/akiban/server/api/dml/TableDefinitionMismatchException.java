@@ -19,8 +19,12 @@ import com.akiban.server.encoding.EncodingException;
 import com.akiban.message.ErrorCode;
 
 public final class TableDefinitionMismatchException extends DMLException {
-    public TableDefinitionMismatchException(String formatter, Object... args) {
-        super(ErrorCode.TABLEDEF_MISMATCH, formatter, args);
+    public TableDefinitionMismatchException(String message, Throwable t) {
+        super(ErrorCode.TABLEDEF_MISMATCH, message, t);
+    }
+
+    public TableDefinitionMismatchException(String message) {
+        super(ErrorCode.TABLEDEF_MISMATCH, message);
     }
 
     public TableDefinitionMismatchException(EncodingException e) {
