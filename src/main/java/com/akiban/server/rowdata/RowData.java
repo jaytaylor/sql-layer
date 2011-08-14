@@ -422,7 +422,6 @@ public class RowData {
 
     public void createRow(final RowDef rowDef, final Object[] values)
     {
-        final int fieldCount = rowDef.getFieldCount();
         if (values.length > rowDef.getFieldCount()) {
             throw new IllegalArgumentException("Too many values.");
         }
@@ -438,24 +437,6 @@ public class RowData {
             builder.putObject(object);
         }
         rowEnd = builder.finalOffset();
-    }
-
-    private int createRowInit(RowDef rowDef, Object[] values, int fieldCount) {
-        int offset = rowStart;
-        AkServerUtil.putShort(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
-        AkServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
-        AkServerUtil.putShort(bytes, offset + O_FIELD_COUNT, fieldCount);
-        offset = offset + O_NULL_MAP;
-        for (int index = 0; index < fieldCount; index += 8) {
-            int b = 0;
-            for (int j = index; j < index + 8 && j < fieldCount; j++) {
-                if (j >= values.length || values[j] == null) {
-                    b |= (1 << j - index);
-                }
-            }
-            bytes[offset++] = (byte) b;
-        }
-        return offset;
     }
 
     public void updateNonNullLong(FieldDef fieldDef, long rowId)

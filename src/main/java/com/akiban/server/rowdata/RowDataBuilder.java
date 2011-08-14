@@ -35,10 +35,12 @@ public final class RowDataBuilder {
         nullMapOffset = fixedWidthSectionOffset;
         // TODO unloop this
         for (int index = 0; index < rowDef.getFieldCount(); index += 8) {
-            ++fixedWidthSectionOffset;
+            rowData.getBytes()[fixedWidthSectionOffset++] = 0;
         }
 
         fieldIndex = 0;
+        assert fixedWidthSectionOffset == rowData.getRowStartData()
+                : fixedWidthSectionOffset + " != " + rowData.getRowStartData();
         state = State.ALLOCATING;
     }
 
@@ -103,6 +105,7 @@ public final class RowDataBuilder {
 
     public void startPuts() {
         state.require(State.ALLOCATING);
+        vlength = 0;
         nullRemainingAllocations();
         variableWidthSectionOffset = fixedWidthSectionOffset;
         // rewind to the start of the fixed length portion
@@ -145,10 +148,18 @@ public final class RowDataBuilder {
             target.bind(fieldDef, bytes, nullMapOffset, variableWidthSectionOffset);
             Converters.convert(source, target);
             int varWidthExpected = readVarWidth(bytes, currFixedWidth);
+            // the stored value (retrieved by readVarWidth) is actually the *cumulative* length; we want just
+            // this field's length. So, we'll subtract from this cumulative value the previously-maintained sum of the
+            // previous variable-length fields, and use that for our comparison. Once that's done, we'll add this
+            // field's length to that cumulative sum.
+            varWidthExpected -= vlength;
             if (target.lastEncodedLength() != varWidthExpected) {
-                throw new IllegalStateException("expected to write " + currFixedWidth
-                        + " variable-width byte(s), but wrote " + target.lastEncodedLength());
+                throw new IllegalStateException("expected to write " + varWidthExpected
+                        + " variable-width byte(s), but wrote " + target.lastEncodedLength()
+                        + " (vlength=" + vlength + ')'
+                );
             }
+            vlength += varWidthExpected;
             variableWidthSectionOffset += varWidthExpected;
         }
         fixedWidthSectionOffset += currFixedWidth;
@@ -205,7 +216,7 @@ public final class RowDataBuilder {
     private void nullRemainingAllocations() {
         int fieldsCount = rowDef.getFieldCount();
         while ( fieldIndex < fieldsCount) {
-            allocate(rowDef.getFieldDef(fieldIndex++), null);
+            allocate(rowDef.getFieldDef(fieldIndex), null);
         }
     }
 
