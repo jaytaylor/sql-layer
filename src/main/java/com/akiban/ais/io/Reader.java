@@ -18,7 +18,6 @@ package com.akiban.ais.io;
 import java.util.Map;
 
 import com.akiban.ais.metamodel.MetaModel;
-import com.akiban.ais.metamodel.MetaModelVersionMismatchException;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
@@ -31,6 +30,8 @@ import com.akiban.ais.model.Source;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.MetaModelVersionMismatchException;
+import com.akiban.server.error.NoSuchTableException;
 
 public class Reader
 {
@@ -43,48 +44,40 @@ public class Reader
         this.source = source;
     }
 
-    private void loadGroups() throws Exception
+    private void loadGroups() 
     {
         source.readGroups(new Source.Receiver()
         {
             @Override
-            public void receive(Map<String, Object> map) throws Exception
+            public void receive(Map<String, Object> map)
             {
                 Group.create(ais, map);
             }
         });
     }
 
-    private void loadTables() throws Exception
+    private void loadTables() 
     {
         source.readTables(new Source.Receiver()
         {
             @Override
-            public void receive(Map<String, Object> map) throws Exception
+            public void receive(Map<String, Object> map)
             {
-                Table table = Table.create(ais, map);
-                if (table == null) {
-                    throw new ReaderException(String.format("invalid table type (%s) for %s.%s",
-                                                            map.get(table_tableType),
-                                                            map.get(table_schemaName),
-                                                            map.get(table_tableName)));
-                }
+                Table.create(ais, map);
             }
         });
     }
 
-    private void loadColumns() throws Exception
+    private void loadColumns() 
     {
         source.readColumns(new Source.Receiver()
         {
             @Override
-            public void receive(Map<String, Object> map) throws Exception
+            public void receive(Map<String, Object> map)
             {
                 Column column = Column.create(ais, map);
                 if (column == null) {
-                    throw new ReaderException(String.format("Unknown table %s.%s.",
-                                                            map.get(column_schemaName),
-                                                            map.get(column_tableName)));
+                    throw new NoSuchTableException ((String)map.get(column_schemaName), (String)map.get(column_tableName));
                 }
                 cache.addColumn(map);
             }
@@ -92,12 +85,12 @@ public class Reader
         loadUserGroupColumnConnections();
     }
 
-    private void loadUserGroupColumnConnections() throws Exception
+    private void loadUserGroupColumnConnections() 
     {
         cache.readColumns(new Source.Receiver()
         {
             @Override
-            public void receive(Map<String, Object> map) throws ReaderException
+            public void receive(Map<String, Object> map)
             {
                 String schemaName = (String) map.get(column_schemaName);
                 String tableName = (String) map.get(column_tableName);
@@ -119,7 +112,7 @@ public class Reader
         });
     }
 
-    private void loadJoins() throws Exception
+    private void loadJoins()
     {
         source.readJoins(new Source.Receiver()
         {
@@ -131,7 +124,7 @@ public class Reader
         });
     }
 
-    private void loadJoinColumns() throws Exception
+    private void loadJoinColumns() 
     {
         source.readJoinColumns(new Source.Receiver()
         {
@@ -143,51 +136,50 @@ public class Reader
         });
     }
 
-    private void loadIndexes() throws Exception
+    private void loadIndexes()
     {
         source.readIndexes(new Source.Receiver()
         {
             @Override
-            public void receive(Map<String, Object> map) throws ReaderException
+            public void receive(Map<String, Object> map)
             {
                 Index index = Index.create(ais, map);
                 if (index == null) {
-                    throw new ReaderException(String.format("No Table named %s.%s.",
-                                                            map.get(index_schemaName),
-                                                            map.get(index_tableName)));
+                    throw new NoSuchTableException ((String)map.get(index_schemaName), 
+                                                (String)map.get(index_tableName));
                 }
             }
         });
     }
 
-    private void loadIndexColumns() throws Exception
+    private void loadIndexColumns()
     {
         source.readIndexColumns(new Source.Receiver()
         {
             @Override
-            public void receive(Map<String, Object> map) throws ReaderException
+            public void receive(Map<String, Object> map)
             {
                 IndexColumn indexColumn = IndexColumn.create(ais, map);
                 if (indexColumn == null) {
-                    throw new ReaderException(String.format("Unable to find table, index or column while creating IndexColumn: %s", map));
+                    throw new NoSuchTableException ((String)map.get(indexColumn_schemaName), (String)map.get(indexColumn_tableName));
                 }
             }
         });
     }
 
-    private void loadTypes() throws Exception
+    private void loadTypes()
     {
         source.readTypes(new Source.Receiver()
         {
             @Override
-            public void receive(Map<String, Object> map) throws Exception
+            public void receive(Map<String, Object> map)
             {
                 Type.create(ais, map);
             }
         });
     }
     
-    private void loadVersion() throws Exception
+    private void loadVersion()
     {
         final int currentVersion = MetaModel.only().getModelVersion();
         final int sourceVersion = source.readVersion();
@@ -196,7 +188,7 @@ public class Reader
         }
     }
 
-    protected void close() throws Exception
+    protected void close()
     {
         // Need to call UserTable.endTable to get PKs created properly (in the case that no PK was declared). This isn't
         // so easy from DDLSource, at least with DDLSource in its current form. It should be harmless to call
@@ -208,13 +200,13 @@ public class Reader
         source.close();
     }
 
-    public AkibanInformationSchema load() throws Exception
+    public AkibanInformationSchema load()
     {
         load(new AkibanInformationSchema());
         return ais;
     }
 
-    public AkibanInformationSchema load(final AkibanInformationSchema ais) throws Exception
+    public AkibanInformationSchema load(final AkibanInformationSchema ais)
     {
     	this.ais = ais;
         try {
@@ -227,9 +219,6 @@ public class Reader
             loadJoinColumns();
             loadIndexes();
             loadIndexColumns();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw e;
         } finally {
             close();
         }

@@ -18,7 +18,7 @@ package com.akiban.ais.model.validation;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Types;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.TypesAreStaticException;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,8 +32,8 @@ class TypesAreFromStatic implements AISValidation {
             Type fromStatic = staticTypesByName.get(typeName);
             if (type != fromStatic) {
                 output.reportFailure(
-                        new AISValidationFailure(ErrorCode.INTERNAL_ERROR, "%s isn't from the static list", type)
-                );
+                        new AISValidationFailure(
+                                new TypesAreStaticException (type)));
             }
         }
     }

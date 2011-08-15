@@ -35,7 +35,7 @@ public abstract class TableSubsetWriter extends Writer
 
     public abstract boolean shouldSaveTable(Table table);
     
-    protected Collection<Group> getGroups(AkibanInformationSchema ais) throws Exception {
+    protected Collection<Group> getGroups(AkibanInformationSchema ais) {
         Collection<Group> groups = new HashSet<Group>();
         for (UserTable table : ais.getUserTables().values()) {
             if (shouldSaveTable(table)) {
@@ -45,7 +45,7 @@ public abstract class TableSubsetWriter extends Writer
         return groups;
     }
 
-    protected Collection<GroupTable> getGroupTables(AkibanInformationSchema ais) throws Exception {
+    protected Collection<GroupTable> getGroupTables(AkibanInformationSchema ais) {
         Collection<GroupTable> groupTables = new ArrayList<GroupTable>();
         for (GroupTable table : ais.getGroupTables().values()) {
             if (shouldSaveTable(table)) {
@@ -55,7 +55,7 @@ public abstract class TableSubsetWriter extends Writer
         return groupTables;
     }
 
-    protected Collection<UserTable> getUserTables(AkibanInformationSchema ais) throws Exception {
+    protected Collection<UserTable> getUserTables(AkibanInformationSchema ais) {
         Collection<UserTable> userTables = new ArrayList<UserTable>();
         for (UserTable table : ais.getUserTables().values()) {
             if (shouldSaveTable(table)) {
@@ -65,7 +65,7 @@ public abstract class TableSubsetWriter extends Writer
         return userTables;
     }
 
-    protected Collection<Join> getJoins(AkibanInformationSchema ais) throws Exception {
+    protected Collection<Join> getJoins(AkibanInformationSchema ais) {
         Collection<Join> joins = new ArrayList<Join>();
         for (Join join : ais.getJoins().values()) {
             // TODO: Should probably be || but join constructor doesn't handle missing table

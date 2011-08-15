@@ -27,7 +27,12 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 
 import org.slf4j.Logger;
@@ -351,10 +356,15 @@ public abstract class Tap {
      * Register an MXBean to make methods of this class available remotely from
      * JConsole or other JMX client. Does nothing if there already is a
      * registered MXBean.
+     * @throws NullPointerException 
+     * @throws MalformedObjectNameException 
+     * @throws NotCompliantMBeanException 
+     * @throws MBeanRegistrationException 
+     * @throws InstanceAlreadyExistsException 
      * 
      * @throws Exception
      */
-    public synchronized static void registerMXBean() throws Exception {
+    public synchronized static void registerMXBean() throws MalformedObjectNameException, NullPointerException, InstanceAlreadyExistsException, MBeanRegistrationException, NotCompliantMBeanException {
         if (!registered) {
             ObjectName mxbeanName = new ObjectName("com.akiban:type=Tap");
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
@@ -366,10 +376,14 @@ public abstract class Tap {
     /**
      * Unregister the MXBean created by {@link #registerMXBean()}. Does nothing
      * if there is no registered MXBean.
+     * @throws NullPointerException 
+     * @throws MalformedObjectNameException 
+     * @throws InstanceNotFoundException 
+     * @throws MBeanRegistrationException 
      * 
      * @throws Exception
      */
-    public synchronized static void unregisterMXBean() throws Exception {
+    public synchronized static void unregisterMXBean() throws MalformedObjectNameException, NullPointerException, MBeanRegistrationException, InstanceNotFoundException {
         if (registered) {
             ObjectName mxbeanName = new ObjectName("com.akiban:type=Tap");
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();

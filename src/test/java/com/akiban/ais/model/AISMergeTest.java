@@ -26,7 +26,7 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.server.InvalidOperationException;
+import com.akiban.server.error.InvalidOperationException;
 
 public class AISMergeTest {
 

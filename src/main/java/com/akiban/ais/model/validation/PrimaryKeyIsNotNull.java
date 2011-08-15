@@ -18,7 +18,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.PrimaryKeyNullColumnException;
 
 /**
  * Validates that the columns used in the primary key are all not null. 
@@ -35,9 +35,8 @@ class PrimaryKeyIsNotNull implements AISValidation {
             PrimaryKey index = table.getPrimaryKeyIncludingInternal();
             for (Column column : index.getColumns()) {
                 if (column.getNullable()) {
-                    output.reportFailure(new AISValidationFailure (ErrorCode.PK_NULL_COLUMN,
-                            "Table %s has a nullable column %s which must be not null to be part of the Primary Key",
-                            table.getName().toString(), column.getName()));
+                    output.reportFailure(new AISValidationFailure (
+                            new PrimaryKeyNullColumnException (table.getName(), column.getName())));
                 }
             }
         }

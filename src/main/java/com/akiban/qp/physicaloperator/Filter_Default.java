@@ -15,12 +15,8 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.*;

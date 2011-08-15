@@ -15,10 +15,10 @@
 
 package com.akiban.server.test.it.multiscan_update;
 
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.ConstantColumnSelector;
-import com.akiban.server.api.dml.scan.ConcurrentScanAndUpdateException;
 import com.akiban.server.api.dml.scan.CursorId;
+import com.akiban.server.error.ConcurrentScanAndUpdateException;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Before;
 import org.junit.Test;

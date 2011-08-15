@@ -26,9 +26,10 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.akiban.admin.Admin;
+import com.akiban.server.error.ConfigurationPropertiesLoadException;
+import com.akiban.server.error.ServiceNotStartedException;
+import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceNotStartedException;
-import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.jmx.JmxManageable;
 
 public class ConfigurationServiceImpl implements ConfigurationService,
@@ -80,7 +81,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     }
 
     @Override
-    public final void start() throws IOException, ServiceStartupException {
+    public final void start() throws ServiceStartupException {
         synchronized (INTERNAL_LOCK) {
             if (properties == null) {
                 properties = null;
@@ -101,7 +102,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     }
 
     @Override
-    public final void stop() throws IOException {
+    public final void stop() {
         try {
             unloadProperties();
         } finally {
@@ -113,7 +114,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     
     
     @Override
-    public void crash() throws Exception {
+    public void crash() {
         // Note: do not call unloadProperties().
         synchronized (INTERNAL_LOCK) {
             properties = null;
@@ -137,7 +138,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     }
 
     private Map<String, Property> internalLoadProperties()
-            throws IOException, ServiceStartupException {
+            throws ServiceStartupException {
         Map<String, Property> ret = loadProperties();
 
         Set<String> missingKeys = new HashSet<String>();
@@ -164,7 +165,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
      * @throws IOException if loading the properties throws an IO exception
      * @return the configuration properties
      */
-    protected Map<String, Property> loadProperties() throws IOException {
+    protected Map<String, Property> loadProperties() {
         Properties props = null;
 
         props = loadResourceProperties(props);
@@ -182,7 +183,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
      * override this method.
      * @throws IOException not thrown by the default implementation
      */
-    protected void unloadProperties() throws IOException {
+    protected void unloadProperties() {
 
     }
 
@@ -208,15 +209,21 @@ public class ConfigurationServiceImpl implements ConfigurationService,
         return defaults == null ? new Properties() : new Properties(defaults);
     }
 
-    private Properties loadResourceProperties(Properties defaults)
-            throws IOException {
+    private Properties loadResourceProperties(Properties defaults) {
         Properties resourceProps = chainProperties(defaults);
         InputStream resourceIs = ConfigurationServiceImpl.class
                 .getResourceAsStream(CONFIG_DEFAULTS_RESOURCE);
         try {
             resourceProps.load(resourceIs);
+        } catch (IOException e) {
+            throw new ConfigurationPropertiesLoadException(CONFIG_DEFAULTS_RESOURCE, e.getMessage());
         } finally {
-            resourceIs.close();
+            try {
+                resourceIs.close();
+            } catch (IOException e) {
+                //TODO: InputStream#close() doesn't do anything. 
+                // how to handle the "impossible" situation? 
+            }
         }
         stripRequiredProperties(resourceProps, requiredKeys);
         return resourceProps;
@@ -250,8 +257,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
         return loadedSystemProps;
     }
 
-    private static Properties loadAdminProperties(Properties defaults)
-            throws IOException {
+    private static Properties loadAdminProperties(Properties defaults) {
         Properties adminProps = chainProperties(defaults);
         final String akibanAdmin = adminProps.getProperty(AKIBAN_ADMIN);
         if (akibanAdmin != null && !"NONE".equals(akibanAdmin)) {
@@ -272,7 +278,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
             ret = properties;
         }
         if (ret == null) {
-            throw new ServiceNotStartedException();
+            throw new ServiceNotStartedException("Configuration");
         }
         return ret;
     }

@@ -28,7 +28,7 @@ public class MessageSource extends Source
     // Source interface
 
     @Override
-    public void close() throws Exception
+    public void close()
     {
     }
 
@@ -46,7 +46,7 @@ public class MessageSource extends Source
     }
     
     @Override
-    protected final void read(String typename, Receiver receiver) throws Exception
+    protected final void read(String typename, Receiver receiver)
     {
         ModelObject modelObject = MetaModel.only().definition(typename);
         int count = readInt();

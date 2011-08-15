@@ -32,6 +32,7 @@ import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
 import com.akiban.admin.state.AkServerState;
+import com.akiban.server.error.ZooKeeperInitFailureException;
 
 public class ZookeeperBasedAdmin extends Admin
 {
@@ -262,8 +263,7 @@ public class ZookeeperBasedAdmin extends Admin
 
     // For use by this package
 
-    ZookeeperBasedAdmin(String zookeeperLocation) throws IOException
-    {
+    ZookeeperBasedAdmin(String zookeeperLocation) {
         super(zookeeperLocation);
         if (zookeeperLocation.indexOf(':') < 0) {
             zookeeperLocation += ":" + ZOOKEEPER_DEFAULT_PORT;
@@ -271,7 +271,12 @@ public class ZookeeperBasedAdmin extends Admin
         AdminWatcher adminWatcher = new AdminWatcher(this);
         adminWatcher.setDaemon(true);
         adminWatcher.start();
-        zookeeper = new ZooKeeper(zookeeperLocation, ZOOKEEPER_SESSION_TIMEOUT_MSEC, adminWatcher);
+        try {
+            zookeeper = new ZooKeeper(zookeeperLocation, ZOOKEEPER_SESSION_TIMEOUT_MSEC, adminWatcher);
+        } catch (IOException e) {
+            throw new ZooKeeperInitFailureException (zookeeperLocation, e.getMessage());
+        }
+        
         logger.info(String.format("Started zookeeper-based admin using zookeeper at %s", zookeeperLocation));
     }
 

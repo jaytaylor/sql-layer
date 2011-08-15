@@ -176,14 +176,14 @@ public final class GuicerTest {
             = new Guicer.ServiceLifecycleActions<DummyInterfaces.DummyService>()
     {
         @Override
-        public void onStart(DummyInterfaces.DummyService service) throws Exception {
+        public void onStart(DummyInterfaces.DummyService service) {
             DummyInterfaces.addMessage("starting " + service.getClass().getSimpleName());
             service.start();
             DummyInterfaces.addMessage("started " + service.getClass().getSimpleName());
         }
 
         @Override
-        public void onShutdown(DummyInterfaces.DummyService service) throws Exception {
+        public void onShutdown(DummyInterfaces.DummyService service) {
             DummyInterfaces.addMessage("stopping " + service.getClass().getSimpleName());
             service.stop();
             DummyInterfaces.addMessage("stopped " + service.getClass().getSimpleName());

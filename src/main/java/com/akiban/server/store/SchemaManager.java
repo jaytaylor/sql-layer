@@ -23,7 +23,6 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.service.session.Session;
 
 public interface SchemaManager {
@@ -39,19 +38,21 @@ public interface SchemaManager {
      * @throws Exception If the statement is invalid, the table contains unsupported parts (e.g. data type), or
      * there is an internal error.
      * @return The name of the table that was created.
+     * @throws Exception 
      */
-    TableName createTableDefinition(Session session, String defaultSchemaName, String statement) throws Exception;
+    TableName createTableDefinition(Session session, String defaultSchemaName, String statement);
     
-    TableName createTableDefinition(Session session, UserTable newTable) throws Exception;
+    TableName createTableDefinition(Session session, UserTable newTable);
 
     /**
      * Rename an existing table.
      * @param session Session
      * @param currentName Current name of table
      * @param newName Desired name of table
+     * @throws Exception 
      * @throws Exception For any error
      */
-    void renameTable(Session session, TableName currentName, TableName newName) throws Exception;
+    void renameTable(Session session, TableName currentName, TableName newName);
 
     /**
      * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are
@@ -61,17 +62,19 @@ public interface SchemaManager {
      * @throws Exception If the request is invalid (e.g. duplicate index name, malformed Index) or there
      * was an internal error.
      * @return List of newly created indexes.
+     * @throws Exception 
      */
-    Collection<Index> createIndexes(Session session, Collection<Index> indexes) throws Exception;
+    Collection<Index> createIndexes(Session session, Collection<Index> indexes);
 
     /**
      * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are
      * supported through this interface.
      * @param session Session to operate under.
      * @param indexes List of indexes to drop.
+     * @throws Exception 
      * @throws Exception If there was an internal error.
      */
-    void dropIndexes(Session session, Collection<Index> indexes) throws Exception;
+    void dropIndexes(Session session, Collection<Index> indexes);
 
     /**
      * Delete the definition of the table with the given name. This method does nothing if
@@ -79,9 +82,10 @@ public interface SchemaManager {
      * @param session The session to operate under.
      * @param schemaName The name of the schema the table is in.
      * @param tableName The name of the table.
+     * @throws Exception 
      * @throws Exception If the definition cannot be deleted (e.g. table is referenced) or an internal error.
      */
-    void deleteTableDefinition(Session session, String schemaName, String tableName) throws Exception;
+    void deleteTableDefinition(Session session, String schemaName, String tableName);
 
     /**
      * Generate a TableDefinition, which includes a canonical 'create table' statement,
@@ -89,18 +93,18 @@ public interface SchemaManager {
      * @param session Session to operate under.
      * @param tableName The name of the requested table.
      * @return Filled in TableDefinition.
-     * @throws NoSuchTableException If the requested table does not exist.
      */
-    TableDefinition getTableDefinition(Session session, TableName tableName) throws NoSuchTableException;
+    TableDefinition getTableDefinition(Session session, TableName tableName);
 
     /**
      * Generate a 'create table' DDL statement for each table in the given schema.
      * @param session Session to operate under.
      * @param schemaName Schema to to query.
      * @return Map, keyed by table name, of all TableDefinitions.
+     * @throws Exception 
      * @throws Exception For an internal error.
      */
-    SortedMap<String, TableDefinition> getTableDefinitions(Session session, String schemaName) throws Exception;
+    SortedMap<String, TableDefinition> getTableDefinitions(Session session, String schemaName);
 
     /**
      * Returns the current and authoritative AIS, containing all metadata about
@@ -120,7 +124,7 @@ public interface SchemaManager {
      * @return List of every create statement request.
      * @throws Exception For any internal error.
      */
-    List<String> schemaStrings(Session session, boolean withGroupTables) throws Exception;
+    List<String> schemaStrings(Session session, boolean withGroupTables);
 
     /**
      * Return the last timestamp for the last successful change through the SchemaManager.

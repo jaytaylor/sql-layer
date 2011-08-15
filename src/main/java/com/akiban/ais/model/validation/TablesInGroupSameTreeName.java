@@ -17,7 +17,7 @@ package com.akiban.ais.model.validation;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.TreeNameMismatchException;
 
 /**
  * All UserTable's in a given Group must have the same tree name as that groups GroupTable.
@@ -33,10 +33,8 @@ class TablesInGroupSameTreeName implements AISValidation {
                 String groupTableTreeName = groupTable.getTreeName();
                 if(!userTableTreeName.equals(groupTableTreeName)) {
                     output.reportFailure(
-                        new AISValidationFailure(ErrorCode.VALIDATION_FAILURE,
-                                                 "Table %s tree name does not match group table tree name %s",
-                                                 userTableTreeName,
-                                                 groupTableTreeName));
+                        new AISValidationFailure(
+                                new TreeNameMismatchException(userTable.getName(), userTableTreeName, groupTableTreeName)));
                 }
             }
             // else: handled elsewhere, TablesInAGroup

@@ -25,7 +25,7 @@ public final class RowDataLegacyOutputRouter implements LegacyRowOutput {
     public interface Handler {
         void mark();
         void rewind();
-        void handleRow(RowData rowData) throws RowOutputException;
+        void handleRow(RowData rowData);
     }
 
     private final List<Handler> handlers = new ArrayList<Handler>();
@@ -45,17 +45,17 @@ public final class RowDataLegacyOutputRouter implements LegacyRowOutput {
     }
 
     @Override
-    public ByteBuffer getOutputBuffer() throws RowOutputException {
+    public ByteBuffer getOutputBuffer() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void wroteRow(boolean limitExceeded) throws RowOutputException {
+    public void wroteRow(boolean limitExceeded) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void addRow(RowData rowData)  throws RowOutputException {
+    public void addRow(RowData rowData) {
         for(Handler handler : handlers) {
             handler.handleRow(rowData);
         }

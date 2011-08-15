@@ -20,8 +20,9 @@ import java.util.TreeMap;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.DuplicateTableIdException;
 
 class TableIDsUnique implements AISValidation {
 
@@ -42,10 +43,10 @@ class TableIDsUnique implements AISValidation {
     
     private void checkTableID (Table table) {
         if (tableIDList.containsKey(table.getTableId())) {
-            failures.reportFailure(new AISValidationFailure (ErrorCode.DUPLICATE_TABLE, 
-                    "Table %s has a duplicate tableID to table %s",
-                    table.getName().toString(), 
-                    tableIDList.get(table.getTableId()).getName().toString()));
+            TableName name = tableIDList.get(table.getTableId()).getName();
+            
+            failures.reportFailure(new AISValidationFailure (
+                    new DuplicateTableIdException(table.getName(), name)));
         } else {
             tableIDList.put(table.getTableId(), table);
         }

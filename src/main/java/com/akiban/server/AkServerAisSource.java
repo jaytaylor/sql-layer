@@ -16,7 +16,6 @@
 package com.akiban.server;
 
 import java.nio.ByteBuffer;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,12 +36,12 @@ public class AkServerAisSource extends Source {
 
     private final Session session = ServiceManagerImpl.newSession();
     
-    public AkServerAisSource(final Store store) throws Exception {
+    public AkServerAisSource(final Store store) {
         this.store = store;
     }
 
     @Override
-    public void close() throws SQLException {
+    public void close() {
         session.close();
     }
 
@@ -52,8 +51,7 @@ public class AkServerAisSource extends Source {
         return MetaModel.only().getModelVersion();
     }
     @Override
-    protected final void read(String typename, Receiver receiver)
-            throws Exception {
+    protected final void read(String typename, Receiver receiver) {
         ModelObject modelObject = MetaModel.only().definition(typename);
         final RowDef rowDef = store.getRowDefCache().getRowDef(modelObject.tableName());
         if (rowDef == null) {
@@ -88,8 +86,7 @@ public class AkServerAisSource extends Source {
     }
 
     private void readRow(final RowDef rowDef, final RowData rowData,
-            final ModelObject modelObject, final Receiver receiver)
-            throws Exception {
+            final ModelObject modelObject, final Receiver receiver) {
         final Map<String, Object> values = new HashMap<String, Object>();
         for (int index = 0; index < rowDef.getFieldCount(); index++) {
             final FieldDef fieldDef = rowDef.getFieldDef(index);

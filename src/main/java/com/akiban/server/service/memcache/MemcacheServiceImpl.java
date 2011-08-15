@@ -48,8 +48,8 @@ import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.HapiRequestException;
+import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
@@ -183,7 +183,7 @@ public class MemcacheServiceImpl implements MemcacheService,
     }
     
     @Override
-    public void crash() throws Exception {
+    public void crash() {
         // Shutdown the network threads so a new instance can start up.
         stop();
     }

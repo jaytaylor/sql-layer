@@ -15,9 +15,9 @@
 
 package com.akiban.server.test.it.hapi;
 
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.config.Property;
 import com.akiban.server.service.memcache.ParsedHapiGetRequest;
 import com.akiban.server.service.memcache.hprocessor.Scanrows;

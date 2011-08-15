@@ -19,54 +19,54 @@ import java.util.Map;
 
 public abstract class Source implements ModelNames
 {
-    public void readTypes(Receiver typeReceiver) throws Exception
+    public void readTypes(Receiver typeReceiver)
     {
         read(type, typeReceiver);
     }
 
-    public void readTables(Receiver tableReceiver) throws Exception
+    public void readTables(Receiver tableReceiver)
     {
         read(table, tableReceiver);
     }
 
-    public void readGroups(Receiver groupReceiver) throws Exception
+    public void readGroups(Receiver groupReceiver)
     {
         read(group, groupReceiver);
     }
 
-    public void readColumns(Receiver columnReceiver) throws Exception
+    public void readColumns(Receiver columnReceiver)
     {
         read(column, columnReceiver);
     }
 
-    public void readJoins(Receiver joinReceiver) throws Exception
+    public void readJoins(Receiver joinReceiver)
     {
         read(join, joinReceiver);
     }
 
-    public void readJoinColumns(Receiver joinColumnReceiver) throws Exception
+    public void readJoinColumns(Receiver joinColumnReceiver)
     {
         read(joinColumn, joinColumnReceiver);
     }
 
-    public void readIndexes(Receiver indexReceiver) throws Exception
+    public void readIndexes(Receiver indexReceiver)
     {
         read(index, indexReceiver);
     }
 
-    public void readIndexColumns(Receiver indexColumnReceiver) throws Exception
+    public void readIndexColumns(Receiver indexColumnReceiver)
     {
         read(indexColumn, indexColumnReceiver);
     }
 
     public abstract int readVersion ();
     
-    protected abstract void read(final String typename, Receiver receiver) throws Exception;
+    protected abstract void read(final String typename, Receiver receiver);
 
-    public abstract void close() throws Exception;
+    public abstract void close();
 
     public static abstract class Receiver implements ModelNames
     {
-        public abstract void receive(Map<String, Object> map) throws Exception;
+        public abstract void receive(Map<String, Object> map);
     }
 }

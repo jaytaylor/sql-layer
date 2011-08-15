@@ -21,7 +21,7 @@ import com.akiban.qp.physicaloperator.GroupCursor;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
-import com.akiban.server.InvalidOperationException;
+import com.akiban.server.error.InvalidOperationException;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;

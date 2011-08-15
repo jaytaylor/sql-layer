@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
+import com.akiban.server.error.BadAdminDirectoryException;
+
 public class FileBasedAdmin extends Admin
 {
     // Admin interface
@@ -127,13 +129,12 @@ public class FileBasedAdmin extends Admin
 
     // For use by this package
 
-    FileBasedAdmin(String adminRootPath) throws IOException
+    FileBasedAdmin(String adminRootPath)
     {
         super(adminRootPath);
         adminRoot = new File(adminRootPath);
         if (!adminRoot.exists() || !adminRoot.isDirectory()) {
-            throw new RuntimeException
-                (String.format("Admin root directory %s does not exist or is not really a directory", adminRoot));
+            throw new BadAdminDirectoryException (adminRoot.getAbsolutePath());
         }
         logger.info(String.format("Started file-based admin using config at %s", adminRootPath));
     }

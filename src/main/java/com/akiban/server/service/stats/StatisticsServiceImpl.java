@@ -102,7 +102,7 @@ public final class StatisticsServiceImpl implements StatisticsService,
     }
 
     @Override
-    public void start() throws Exception {
+    public void start() {
         String stats_enable = config.getProperty(STATISTICS_PROPERTY);
 
         if (stats_enable.length() > 0) {
@@ -111,12 +111,12 @@ public final class StatisticsServiceImpl implements StatisticsService,
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
     }
     
     
     @Override
-    public void crash() throws Exception {
+    public void crash() {
     }
 
     private final ConfigurationService config;

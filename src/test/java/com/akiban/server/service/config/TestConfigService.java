@@ -16,6 +16,7 @@
 package com.akiban.server.service.config;
 
 import com.akiban.server.AkServerUtil;
+import com.akiban.server.error.ConfigurationPropertiesLoadException;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,7 +42,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
     }
 
     @Override
-    protected Map<String, Property> loadProperties() throws IOException {
+    protected Map<String, Property> loadProperties() {
         Map<String, Property> ret = new HashMap<String, Property>(super.loadProperties());
         tmpDir = makeTempDatapathDirectory();
         String datapathKey = "akserver.datapath";
@@ -58,7 +59,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
     }
 
     @Override
-    protected void unloadProperties() throws IOException {
+    protected void unloadProperties() {
         AkServerUtil.cleanUpDirectory(tmpDir);
     }
 
@@ -67,25 +68,29 @@ public class TestConfigService extends ConfigurationServiceImpl {
         return Collections.emptySet();
     }
 
-    private File makeTempDatapathDirectory() throws IOException {
+    private File makeTempDatapathDirectory() {
         if (TESTDIR.exists()) {
             if (!TESTDIR.isDirectory()) {
-                throw new IOException(TESTDIR
-                        + " exists but isn't a directory");
+                throw new ConfigurationPropertiesLoadException(TESTDIR.getName(), " it exists but isn't a directory");
             }
         } else {
             if (!TESTDIR.mkdir()) {
-                throw new IOException("Couldn't create dir: " + TESTDIR);
+                throw new ConfigurationPropertiesLoadException (TESTDIR.getName(), " it couldn't be created");
             }
             TESTDIR.deleteOnExit();
         }
 
-        File tmpFile = File.createTempFile("akserver-unitdata", "", TESTDIR);
+        File tmpFile;
+        try {
+            tmpFile = File.createTempFile("akserver-unitdata", "", TESTDIR);
+        } catch (IOException e) {
+            throw new ConfigurationPropertiesLoadException ("akserver-unitdata", "it could create the temp file");
+        }
         if (!tmpFile.delete()) {
-            throw new IOException("Couldn't delete file: " + tmpFile);
+            throw new ConfigurationPropertiesLoadException (tmpFile.getName(), "it couldn't be deleted");
         }
         if (!tmpFile.mkdir()) {
-            throw new IOException("Couldn't create dir: " + tmpFile);
+            throw new ConfigurationPropertiesLoadException (tmpFile.getName(), "it couldn't be created");
         }
         tmpFile.deleteOnExit();
         return tmpFile;

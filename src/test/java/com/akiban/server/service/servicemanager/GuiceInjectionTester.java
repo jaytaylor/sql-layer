@@ -122,11 +122,11 @@ public final class GuiceInjectionTester {
         }
 
         @Override
-        public void onStart(Object service) throws Exception {
+        public void onStart(Object service) {
         }
 
         @Override
-        public void onShutdown(Object service) throws Exception {
+        public void onShutdown(Object service) {
             stoppedClasses.add(service.getClass());
         }
 
