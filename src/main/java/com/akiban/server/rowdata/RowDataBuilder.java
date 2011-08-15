@@ -136,17 +136,20 @@ public final class RowDataBuilder {
             if (currFixedWidth != 0) {
                 throw new IllegalStateException("expected source to give null: " + source);
             }
-            target.bind(fieldDef, bytes, nullMapOffset, fixedWidthSectionOffset);
+            target.bind(fieldDef, bytes, nullMapOffset);
             target.putNull();
+            if (target.lastEncodedLength() != 0) {
+                throw new IllegalStateException("putting a null should have encoded 0 bytes");
+            }
         } else if (fieldDef.isFixedSize()) {
-            target.bind(fieldDef, bytes, nullMapOffset, fixedWidthSectionOffset);
+            target.bind(fieldDef, bytes, fixedWidthSectionOffset);
             doConvert(source);
             if (target.lastEncodedLength() != currFixedWidth) {
                 throw new IllegalStateException("expected to write " + currFixedWidth
                         + " fixed-width byte(s), but wrote " + target.lastEncodedLength());
             }
         } else {
-            target.bind(fieldDef, bytes, nullMapOffset, variableWidthSectionOffset);
+            target.bind(fieldDef, bytes, variableWidthSectionOffset);
             doConvert(source);
             int varWidthExpected = readVarWidth(bytes, currFixedWidth);
             // the stored value (retrieved by readVarWidth) is actually the *cumulative* length; we want just

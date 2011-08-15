@@ -26,15 +26,13 @@ import java.math.BigInteger;
 
 public final class RowDataConversionTarget implements ConversionTarget {
 
-    public void bind(FieldDef fieldDef, byte[] backingBytes, int nullMapOffset, int writeOffset) {
+    public void bind(FieldDef fieldDef, byte[] backingBytes, int offset) {
         clear();
         ArgumentValidation.notNull("fieldDef", fieldDef);
-        ArgumentValidation.withinArray("backing bytes", backingBytes, "nullMapOffset", nullMapOffset);
-        ArgumentValidation.withinArray("backing bytes", backingBytes, "writeOffset", writeOffset);
+        ArgumentValidation.withinArray("backing bytes", backingBytes, "offset", offset);
         this.fieldDef = fieldDef;
         this.bytes = backingBytes;
-        this.nullMapOffset = nullMapOffset;
-        this.writeSectionOffset = writeOffset;
+        this.offset = offset;
     }
 
     public int lastEncodedLength() {
@@ -72,7 +70,7 @@ public final class RowDataConversionTarget implements ConversionTarget {
     @Override
     public void putDecimal(BigDecimal value) {
         checkState(AkType.DECIMAL);
-        recordEncoded(ConversionHelperBigDecimal.fromObject(fieldDef, value, bytes, writeSectionOffset));
+        recordEncoded(ConversionHelperBigDecimal.fromObject(fieldDef, value, bytes, offset));
     }
 
     @Override
@@ -102,13 +100,13 @@ public final class RowDataConversionTarget implements ConversionTarget {
     @Override
     public void putString(String value) {
         checkState(AkType.VARCHAR);
-        recordEncoded(ConversionHelper.encodeString(value, bytes, writeSectionOffset, fieldDef));
+        recordEncoded(ConversionHelper.encodeString(value, bytes, offset, fieldDef));
     }
 
     @Override
     public void putText(String value) {
         checkState(AkType.TEXT);
-        recordEncoded(ConversionHelper.encodeString(value, bytes, writeSectionOffset, fieldDef));
+        recordEncoded(ConversionHelper.encodeString(value, bytes, offset, fieldDef));
     }
 
     @Override
@@ -129,7 +127,7 @@ public final class RowDataConversionTarget implements ConversionTarget {
         assert encodableAsLong(value) : value;
         long asLong = value.longValue();
         int width = fieldDef.getMaxStorageSize();
-        recordEncoded(AkServerUtil.putIntegerByWidth(bytes, writeSectionOffset, width, asLong));
+        recordEncoded(AkServerUtil.putIntegerByWidth(bytes, offset, width, asLong));
     }
 
     @Override
@@ -160,7 +158,7 @@ public final class RowDataConversionTarget implements ConversionTarget {
         recordEncoded(
                 ConversionHelper.putByteArray(
                         value.byteArray(), value.byteArrayOffset(), value.byteArrayLength(),
-                        bytes, writeSectionOffset, fieldDef)
+                        bytes, offset, fieldDef)
         );
     }
 
@@ -196,18 +194,17 @@ public final class RowDataConversionTarget implements ConversionTarget {
     private void clear() {
         lastEncodedLength = -1;
         bytes = null;
-        nullMapOffset = -1;
-        writeSectionOffset = -1;
+        offset = -1;
     }
 
     private int encodeInt(int value) {
         assert INT_STORAGE_SIZE == fieldDef.getMaxStorageSize() : fieldDef.getMaxStorageSize();
-        return AkServerUtil.putIntegerByWidth(bytes, writeSectionOffset, INT_STORAGE_SIZE, value);
+        return AkServerUtil.putIntegerByWidth(bytes, offset, INT_STORAGE_SIZE, value);
     }
 
     private int encodeLong(long value) {
         int width = fieldDef.getMaxStorageSize();
-        return AkServerUtil.putIntegerByWidth(bytes, writeSectionOffset, width, value);
+        return AkServerUtil.putIntegerByWidth(bytes, offset, width, value);
     }
 
     private boolean encodableAsLong(BigInteger value) {
@@ -218,7 +215,7 @@ public final class RowDataConversionTarget implements ConversionTarget {
         // TODO unloop this
         int target = fieldDef.getFieldIndex();
         int fieldCount = fieldDef.getRowDef().getFieldCount();
-        int offsetWithinMap = nullMapOffset;
+        int offsetWithinMap = offset;
         for (int index = 0; index < fieldCount; index += 8) {
             for (int j = index; j < index + 8 && j < fieldCount; j++) {
                 if (j == target) {
@@ -236,8 +233,7 @@ public final class RowDataConversionTarget implements ConversionTarget {
     private FieldDef fieldDef;
     private int lastEncodedLength;
     private byte bytes[];
-    private int nullMapOffset;
-    private int writeSectionOffset;
+    private int offset;
 
     // consts
 
