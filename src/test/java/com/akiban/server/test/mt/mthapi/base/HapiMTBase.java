@@ -16,10 +16,10 @@
 package com.akiban.server.test.mt.mthapi.base;
 
 import com.akiban.ais.model.Index;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.HapiGetRequest;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.test.mt.MTBase;
 import com.akiban.server.test.mt.mthapi.common.HapiValidationError;

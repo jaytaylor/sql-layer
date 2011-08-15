@@ -22,7 +22,6 @@ import com.akiban.sql.parser.SQLParser;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.physicaloperator.StoreAdapter;
-import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
 

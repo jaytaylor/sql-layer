@@ -16,8 +16,8 @@
 package com.akiban.server.test.it.bugs.bug701614;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.Strings;
 import org.junit.Test;

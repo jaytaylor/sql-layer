@@ -17,9 +17,9 @@ package com.akiban.server.service.dxl;
 
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.error.ServiceNotStartedException;
+import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceNotStartedException;
-import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
@@ -55,7 +55,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     }
 
     @Override
-    public void start() throws Exception {
+    public void start() {
         List<DXLFunctionsHook> hooks = getHooks();
         BasicDXLMiddleman middleman = BasicDXLMiddleman.create();
         DDLFunctions localDdlFunctions = new HookableDDLFunctions(createDDLFunctions(middleman), hooks);
@@ -78,10 +78,10 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
         synchronized (MONITOR) {
             if (ddlFunctions == null) {
-                throw new ServiceNotStartedException();
+                throw new ServiceNotStartedException("DDL Functions stop");
             }
             ddlFunctions = null;
             dmlFunctions = null;
@@ -93,7 +93,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     public DDLFunctions ddlFunctions() {
         final DDLFunctions ret = ddlFunctions;
         if (ret == null) {
-            throw new ServiceNotStartedException();
+            throw new ServiceNotStartedException("DDL Functions");
         }
         return ret;
     }
@@ -102,7 +102,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     public DMLFunctions dmlFunctions() {
         final DMLFunctions ret = dmlFunctions;
         if (ret == null) {
-            throw new ServiceNotStartedException();
+            throw new ServiceNotStartedException("DML Functions");
         }
         return ret;
     }
@@ -112,7 +112,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     }
     
     @Override
-    public void crash() throws Exception {
+    public void crash() {
         BasicDXLMiddleman.destroy();
     }
 

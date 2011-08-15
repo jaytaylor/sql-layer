@@ -15,6 +15,7 @@
 
 package com.akiban.server.types;
 
+import com.akiban.server.Quote;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
 
@@ -40,6 +41,6 @@ public interface ConversionSource {
     long getYear();
     String getString();
     String getText();
-    void appendAsString(AkibanAppender appender);
+    void appendAsString(AkibanAppender appender, Quote quote);
     AkType getConversionType();
 }

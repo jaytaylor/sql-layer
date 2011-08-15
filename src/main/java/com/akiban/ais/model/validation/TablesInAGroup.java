@@ -17,7 +17,7 @@ package com.akiban.ais.model.validation;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.TableNotInGroupException;
 /**
  * Validates that all tables belong to a group, 
  * All user tables should be in a group.
@@ -31,14 +31,14 @@ class TablesInAGroup implements AISValidation {
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         for (UserTable table : ais.getUserTables().values()) {
             if (table.getGroup() == null) {
-                output.reportFailure(new AISValidationFailure (ErrorCode.INTERNAL_REFERENCES_BROKEN,
-                        "Table %s does not connect to a group", table.getName().toString()));
+                output.reportFailure(new AISValidationFailure (
+                        new TableNotInGroupException (table.getName())));
             }
         }
         for (GroupTable table : ais.getGroupTables().values()) {
             if (table.getGroup() == null) {
-                output.reportFailure(new AISValidationFailure (ErrorCode.INTERNAL_REFERENCES_BROKEN,
-                        "Table %s does not connect to a group", table.getName().toString()));
+                output.reportFailure(new AISValidationFailure (
+                        new TableNotInGroupException(table.getName())));
             }
         }
     }

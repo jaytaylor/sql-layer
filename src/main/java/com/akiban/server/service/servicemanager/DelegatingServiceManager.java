@@ -16,8 +16,8 @@
 package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.AkServer;
+import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.instrumentation.InstrumentationService;
@@ -40,12 +40,12 @@ public abstract class DelegatingServiceManager implements ServiceManager {
     }
 
     @Override
-    public void stopServices() throws Exception {
+    public void stopServices() {
         throw new UnsupportedOperationException("can't start services via the static delegate");
     }
 
     @Override
-    public void crashServices() throws Exception {
+    public void crashServices() {
         throw new UnsupportedOperationException("can't start services via the static delegate");
     }
 

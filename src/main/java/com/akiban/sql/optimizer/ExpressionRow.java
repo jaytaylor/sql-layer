@@ -20,6 +20,8 @@ import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.FromObjectConversionSource;
 
 public class ExpressionRow extends AbstractRow
 {
@@ -43,11 +45,10 @@ public class ExpressionRow extends AbstractRow
     }
 
     @Override
-    public Object field(int i, Bindings bindings) {
-        if (expressions[i] == null)
-            return null;
-        else
-            return expressions[i].evaluate(null, bindings);
+    public ConversionSource conversionSource(int i, Bindings bindings) {
+        Object value = (expressions[i] == null) ? null : expressions[i].evaluate(null, bindings);
+        source.setReflectively(value);
+        return source;
     }
 
     @Override
@@ -72,4 +73,7 @@ public class ExpressionRow extends AbstractRow
         return str.toString();
     }
 
+    // object state
+
+    private final FromObjectConversionSource source = new FromObjectConversionSource();
 }

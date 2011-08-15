@@ -131,6 +131,18 @@ public class AISBBasedBuilder
         }
 
         @Override
+        public NewUserTableBuilder colDouble(String name) {
+            return colDouble(name, NULLABLE_DEFAULT);
+        }
+
+        @Override
+        public NewUserTableBuilder colDouble(String name, boolean nullable) {
+            checkUsable();
+            aisb.column(schema, userTable, name, uTableColumnPos++, "DOUBLE", null, null, nullable, false, null, null);
+            return this;
+        }
+
+        @Override
         public NewUserTableBuilder pk(String... columns) {
             return key(PRIMARY, columns, true, Index.PRIMARY_KEY_CONSTRAINT);
         }

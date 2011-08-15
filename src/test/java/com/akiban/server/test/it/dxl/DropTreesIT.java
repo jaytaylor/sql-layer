@@ -23,7 +23,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.api.ddl.UnsupportedDropException;
+import com.akiban.server.error.UnsupportedDropException;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Ignore;

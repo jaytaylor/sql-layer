@@ -18,7 +18,7 @@ import org.junit.Test;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.Index;
-import com.akiban.server.InvalidOperationException;
+import com.akiban.server.error.InvalidOperationException;
 
 public class AISInvariantsTest {
 

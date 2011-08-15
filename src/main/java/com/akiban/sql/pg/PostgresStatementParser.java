@@ -15,8 +15,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.parser.StatementNode;
-
 import com.akiban.sql.StandardException;
 
 /** Turn an SQL statement into something executable. */

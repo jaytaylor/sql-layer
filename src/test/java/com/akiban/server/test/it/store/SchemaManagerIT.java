@@ -36,7 +36,9 @@ import java.util.TreeSet;
 
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
-import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
@@ -47,8 +49,6 @@ import org.junit.Test;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
-import com.akiban.message.ErrorCode;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.service.config.Property;
 
 public final class SchemaManagerIT extends ITBase {
@@ -228,7 +228,7 @@ public final class SchemaManagerIT extends ITBase {
             deleteTableDef(SCHEMA, T1_NAME);
             Assert.fail("Exception expected!");
         } catch(InvalidOperationException e) {
-            assertEquals("error code", ErrorCode.UNSUPPORTED_MODIFICATION, e.getCode());
+            assertEquals("error code", ErrorCode.REFERENCED_TABLE, e.getCode());
         }
 
         assertTablesInSchema(SCHEMA, T1_NAME, T3_CHILD_T1_NAME);

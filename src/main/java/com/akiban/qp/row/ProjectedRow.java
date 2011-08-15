@@ -16,10 +16,11 @@
 package com.akiban.qp.row;
 
 import com.akiban.qp.expression.Expression;
+import com.akiban.qp.expression.ExpressionConversionHelper;
 import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types.ConversionSource;
 
 import java.util.List;
 
@@ -42,9 +43,8 @@ public class ProjectedRow extends AbstractRow
     }
 
     @Override
-    public Object field(int i, Bindings bindings)
-    {
-        return projections.get(i).evaluate(row.get(), bindings);
+    public ConversionSource conversionSource(int i, Bindings bindings) {
+        return ExpressionConversionHelper.asConversionSource(projections.get(i), row.get(), bindings);
     }
 
     @Override

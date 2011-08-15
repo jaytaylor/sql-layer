@@ -15,10 +15,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.StandardException;
-
-import java.io.IOException;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 

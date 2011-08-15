@@ -192,7 +192,7 @@ public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable
     }
     
     @Override
-    public void crash() throws Exception {
+    public void crash() {
         // Nice to unregister these so that a restarted instance can
         // register new instances.
         stop();

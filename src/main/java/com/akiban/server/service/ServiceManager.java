@@ -16,6 +16,7 @@
 package com.akiban.server.service;
 
 import com.akiban.server.AkServer;
+import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.instrumentation.InstrumentationService;

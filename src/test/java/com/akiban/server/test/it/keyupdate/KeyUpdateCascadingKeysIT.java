@@ -15,9 +15,9 @@
 
 package com.akiban.server.test.it.keyupdate;
 
-import com.akiban.server.InvalidOperationException;
+import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.message.ErrorCode;
 import org.junit.Test;
 
 import java.util.List;

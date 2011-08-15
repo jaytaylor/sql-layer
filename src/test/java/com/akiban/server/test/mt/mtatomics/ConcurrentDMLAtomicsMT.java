@@ -16,14 +16,11 @@
 package com.akiban.server.test.mt.mtatomics;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.api.dml.SetColumnSelector;
-import com.akiban.server.api.dml.NoSuchIndexException;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.BufferedLegacyOutputRouter;
-import com.akiban.server.api.dml.scan.ConcurrentScanAndUpdateException;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.LegacyOutputConverter;
 import com.akiban.server.api.dml.scan.LegacyRowOutput;
@@ -33,6 +30,9 @@ import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.WrappingRowOutput;
+import com.akiban.server.error.ConcurrentScanAndUpdateException;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.test.mt.mtutil.TimePoints;
 import com.akiban.server.test.mt.mtutil.TimePointsComparison;

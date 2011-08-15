@@ -92,7 +92,7 @@ public abstract class PostgresBaseStatement implements PostgresStatement
         ArrayBindings bindings = new ArrayBindings(parameters.length);
         for (int i = 0; i < parameters.length; i++) {
             PostgresType pgType = (parameterTypes == null) ? null : parameterTypes[i];
-            bindings.set(i, (pgType == null) ? parameters[i] 
+            bindings.set(i, (pgType == null) ? parameters[i]
                                              : pgType.decodeParameter(parameters[i]));
         }
         return bindings;

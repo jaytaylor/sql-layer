@@ -22,7 +22,17 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
-
+import com.akiban.server.error.NameIsNullException;
+import com.akiban.server.error.NoSuchColumnException;
+import com.akiban.server.error.NoSuchGroupException;
+import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.WrongNameFormatException;
+/**
+ * Builds an AIS Fragment of a GroupIndex to be merged into the full AIS by DDLFunctions
+ * 
+ *
+ * @author tjoneslo
+ */
 public class GroupIndexCreator {
     public static class GroupIndexCreatorException extends Exception {
         public GroupIndexCreatorException(String msg) {
@@ -34,6 +44,8 @@ public class GroupIndexCreator {
      * Helper function for converting a simple group index specification into an
      * actual, non-unique GroupIndex. This can then be passed to DDLFunctions.createGroupIndex().
      *
+     * TODO: This should be using AISInvariants for internal checking. 
+     * 
      * @param ais AIS that contains referenced group and tables.
      * @param groupName Name of the group to add index too
      * @param indexName Name of the new index to create
@@ -42,7 +54,7 @@ public class GroupIndexCreator {
      * @throws GroupIndexCreatorException For any error
      */
     public static GroupIndex createIndex(AkibanInformationSchema ais, String groupName, String indexName,
-                                         String tableColumnList) throws GroupIndexCreatorException {
+                                         String tableColumnList) {
         return createIndex(ais, groupName, indexName, false, tableColumnList);
     }
 
@@ -59,13 +71,13 @@ public class GroupIndexCreator {
      * @throws GroupIndexCreatorException For any error
      */
     public static GroupIndex createIndex(AkibanInformationSchema ais, String groupName, String indexName,
-                                         boolean unique, String tableColumnList) throws GroupIndexCreatorException {
+                                         boolean unique, String tableColumnList) {
         final Group group = ais.getGroup(groupName);
         if(group == null) {
-            throw new GroupIndexCreatorException("Unknown group: " + groupName);
+            throw new NoSuchGroupException (groupName);
         }
         if(indexName.isEmpty()) {
-            throw new GroupIndexCreatorException("No index name specified");
+            throw new NameIsNullException ("group index", "index name");
         }
 
         final String tableColPairs[] = tableColumnList.split(",");
@@ -75,17 +87,17 @@ public class GroupIndexCreator {
         for(String tableCol : tableColPairs) {
             int period = tableCol.indexOf('.');
             if(period == -1) {
-                throw new GroupIndexCreatorException("Expected table.column: " + tableCol);
+                throw new WrongNameFormatException (tableCol);
             }
             final String tableName = tableCol.substring(0, period).trim();
             final String columnName = tableCol.substring(period+1).trim();
             final UserTable table = findTableInGroup(ais, group, tableName);
             if(table == null) {
-                throw new GroupIndexCreatorException("Table does not exist in group: " + tableName);
+                throw new NoSuchTableException ("", tableName);
             }
             final Column column = table.getColumn(columnName);
             if(column == null) {
-                throw new GroupIndexCreatorException("Table does not contain column: " + columnName);
+                throw new NoSuchColumnException (columnName);
             }
             tmpIndex.addColumn(new IndexColumn(tmpIndex, column, pos++, true, null));
         }

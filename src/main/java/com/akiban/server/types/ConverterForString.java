@@ -22,12 +22,26 @@ abstract class ConverterForString extends ObjectConverter<String> {
         protected void putObject(ConversionTarget target, String value) {
             target.putString(value);
         }
+
+        // AbstractConverter interface
+
+        @Override
+        protected AkType nativeConversionType() {
+            return AkType.VARCHAR;
+        }
     };
 
     static final ObjectConverter<String> TEXT = new ConverterForString() {
         @Override
         protected void putObject(ConversionTarget target, String value) {
             target.putText(value);
+        }
+
+        // AbstractConverter interface
+
+        @Override
+        protected AkType nativeConversionType() {
+            return AkType.TEXT;
         }
     };
 
@@ -45,14 +59,19 @@ abstract class ConverterForString extends ObjectConverter<String> {
         case U_INT:     return Long.toString(source.getLong());
         case U_DOUBLE:  return Double.toString(source.getUDouble());
         case U_FLOAT:   return Float.toString(source.getFloat());
-        case U_BIGINT:  return source.getDecimal().toString();
-        case TIME:      // fall
-        case TIMESTAMP: // fall
-        case VARBINARY: // fall
-        case YEAR:      // fall
-        default: throw unsupportedConversion(type);
+        case U_BIGINT:  return String.valueOf(source.getDecimal());
+        case TIME:      return ConvertersForDates.TIME.asString(source.getTime());
+        case TIMESTAMP: return ConvertersForDates.TIMESTAMP.asString(source.getTimestamp());
+        case YEAR:      return ConvertersForDates.YEAR.asString(source.getYear());
+        case DATE:      return ConvertersForDates.DATE.asString(source.getDate());
+        case DATETIME:  return ConvertersForDates.DATETIME.asString(source.getDateTime());
+        case DECIMAL:   return String.valueOf(source.getDecimal());
+        case VARBINARY: return String.valueOf(source.getVarBinary());
+        default:
+            return "UNSUPPORTED CONVERSION TO " + type;
         }
     }
+
 
     private ConverterForString() {}
 }

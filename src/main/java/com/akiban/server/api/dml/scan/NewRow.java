@@ -21,7 +21,6 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.DMLError;
 import com.akiban.server.service.ServiceManagerImpl;
 
 /**
@@ -149,9 +148,6 @@ public abstract class NewRow {
     {
         RowDefCache rowDefCache = ServiceManagerImpl.get().getStore().getRowDefCache();
         RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-        if (rowDef == null) {
-            throw new DMLError(String.format("Couldn't find RowDef for rowDefId %s", rowDefId));
-        }
         return rowDef;
     }
 }

@@ -15,6 +15,7 @@
 
 package com.akiban.server.types;
 
+import com.akiban.server.Quote;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
 
@@ -120,8 +121,11 @@ public final class NullConversionSource implements ConversionSource {
     }
 
     @Override
-    public void appendAsString(AkibanAppender appender) {
+    public void appendAsString(AkibanAppender appender, Quote quote) {
+        AkType type = getConversionType();
+        quote.quote(appender, type);
         appender.append("null");
+        quote.quote(appender, type);
     }
 
     @Override

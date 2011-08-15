@@ -46,13 +46,13 @@ public class TestOperatorStore extends OperatorStore {
     // service overrides
 
     @Override
-    public void start() throws Exception {
+    public void start() {
         super.start();
         OperatorStoreGIHandler.setGiHandlerHook(hook);
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
         OperatorStoreGIHandler.setGiHandlerHook(null);
         clearHookStrings();
         super.stop();

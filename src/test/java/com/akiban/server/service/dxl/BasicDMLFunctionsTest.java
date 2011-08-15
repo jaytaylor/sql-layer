@@ -16,7 +16,6 @@
 package com.akiban.server.service.dxl;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -32,11 +31,11 @@ import com.persistit.exception.PersistitException;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.CursorIsFinishedException;
 import com.akiban.server.api.dml.scan.LegacyRowOutput;
+import com.akiban.server.error.CursorIsFinishedException;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.store.RowCollector;
 
 public final class BasicDMLFunctionsTest {
@@ -82,7 +81,7 @@ public final class BasicDMLFunctionsTest {
         }
 
         @Override
-        public RowData collectNextRow() throws Exception
+        public RowData collectNextRow()
         {
             Assert.fail();
             return null;

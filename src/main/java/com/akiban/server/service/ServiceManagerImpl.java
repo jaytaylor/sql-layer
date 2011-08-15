@@ -17,6 +17,7 @@ package com.akiban.server.service;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.akiban.server.error.ServiceNotStartedException;
 import com.akiban.server.service.servicemanager.DelegatingServiceManager;
 import com.akiban.server.service.session.Session;
 

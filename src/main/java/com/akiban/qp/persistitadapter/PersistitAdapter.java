@@ -33,11 +33,13 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.api.GenericInvalidOperationException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.error.PersistItErrorException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ToObjectConversionTarget;
 import com.persistit.Exchange;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
@@ -106,11 +108,13 @@ public class PersistitAdapter extends StoreAdapter
         if (row instanceof PersistitGroupRow) {
             return ((PersistitGroupRow)row).rowData();
         }
-        
+
+        ToObjectConversionTarget target = new ToObjectConversionTarget();
         NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
 
         for(int i=0; i < row.rowType().nFields(); ++i) {
-            niceRow.put(i, row.field(i, bindings));
+            ConversionSource source = row.conversionSource(i, bindings);
+            niceRow.put(i, target.convertFromSource(source));
         }
         return niceRow.toRowData();
     }
@@ -120,7 +124,7 @@ public class PersistitAdapter extends StoreAdapter
         return transact(persistit.getExchange(session, (RowDef) table.rowDef()));
     }
 
-    public Exchange takeExchange(Index index) throws PersistitException
+    public Exchange takeExchange(Index index)
     {
         return transact(persistit.getExchange(session, index));
     }
@@ -138,7 +142,7 @@ public class PersistitAdapter extends StoreAdapter
         try {
             persistit.updateRow(session, oldRowData, newRowData, null);
         } catch (PersistitException e) {
-            throw new GenericInvalidOperationException(e);
+            throw new PersistItErrorException(e);
         }
     }
 

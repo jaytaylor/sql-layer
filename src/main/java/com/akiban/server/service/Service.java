@@ -37,8 +37,8 @@ public interface Service<T>
      */
     Class<T> castClass();
 
-    void start() throws Exception;
-    void stop() throws Exception;
-    void crash() throws Exception;
+    void start();
+    void stop();
+    void crash();
 
 }

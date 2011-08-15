@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.akiban.admin.config.ClusterConfig;
+import com.akiban.server.error.BadAdminDirectoryException;
 
 public class AdminTest
 {
@@ -48,7 +49,7 @@ public class AdminTest
         try {
             Admin admin = Admin.only();
             Assert.fail();
-        } catch (Admin.RuntimeException e) {
+        } catch (BadAdminDirectoryException e) {
             // Expected
         }
     }

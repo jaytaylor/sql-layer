@@ -36,12 +36,12 @@ public class WrappingRowOutput implements LegacyRowOutput {
     }
 
     @Override
-    final public ByteBuffer getOutputBuffer() throws RowOutputException {
+    final public ByteBuffer getOutputBuffer() {
         return wrapped;
     }
 
     @Override
-    final public void wroteRow(boolean limitExceeded) throws RowOutputException {
+    final public void wroteRow(boolean limitExceeded) {
         if (!limitExceeded) {
             ++rows;
             postWroteRow();
@@ -54,7 +54,7 @@ public class WrappingRowOutput implements LegacyRowOutput {
         throw new UnsupportedOperationException("Shouldn't be using addRow for output to a ScanRowsResponse message");
     }
 
-    protected void postWroteRow() throws RowOutputException {
+    protected void postWroteRow() {
 
     }
 

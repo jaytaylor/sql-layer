@@ -26,17 +26,17 @@ public interface DXLMXBean {
 
     void createGroupIndex(String groupName, String indexName, String tableColumnList);
 
-    void dropTable(String tableName);
+    void dropTable(String tableName) ;
 
-    void dropGroupIndex(String groupName, String indexName);
+    void dropGroupIndex(String groupName, String indexName) ;
 
-    void dropGroup(String groupName);
+    void dropGroup(String groupName) ;
     
-    void dropGroupBySchema(String schemaName);
+    void dropGroupBySchema(String schemaName) ;
 
-    void dropAllGroups();
+    void dropAllGroups() ;
 
-    void writeRow(String table, String fields);
+    void writeRow(String table, String fields) ;
 
     List<String> getGrouping();
 
