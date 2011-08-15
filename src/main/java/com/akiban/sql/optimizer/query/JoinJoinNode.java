@@ -15,13 +15,18 @@
 
 package com.akiban.sql.optimizer.query;
 
+import com.akiban.ais.model.Join;
 import com.akiban.qp.physicaloperator.API.JoinType;
+
+import java.util.*;
 
 // A join between two tables / subjoins.
 public class JoinJoinNode extends BaseJoinNode 
 {
     private BaseJoinNode left, right;
     private JoinType joinType;
+    private Join groupJoin;
+    private List<BooleanExpression> joinConditions;
 
     public JoinJoinNode(BaseJoinNode left, BaseJoinNode right,
                         JoinType joinType) {
@@ -49,6 +54,20 @@ public class JoinJoinNode extends BaseJoinNode
 
     public boolean isInnerJoin() {
         return (joinType == JoinType.INNER_JOIN);
+    }
+
+    public Join getGroupJoin() {
+        return groupJoin;
+    }
+    public void setGroupJoin(Join groupJoin) {
+        this.groupJoin = groupJoin;
+    }
+
+    public List<BooleanExpression> getJoinConditions() {
+        return joinConditions;
+    }
+    public void setJoinConditions(List<BooleanExpression> joinConditions) {
+        this.joinConditions = joinConditions;
     }
 
     /** Reverse operands and outer join direction if necessary. */
