@@ -36,8 +36,8 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
 
     @Override
     public BigDecimal getDecimal() {
-        AkibanAppender appender = AkibanAppender.of(new StringBuilder(fieldDef.getMaxStorageSize()));
-        ConversionHelperBigDecimal.decodeToString(fieldDef, bytes, getRawOffsetAndWidth(), appender);
+        AkibanAppender appender = AkibanAppender.of(new StringBuilder(fieldDef().getMaxStorageSize()));
+        ConversionHelperBigDecimal.decodeToString(fieldDef(), bytes(), getRawOffsetAndWidth(), appender);
         String asString = appender.toString();
         assert ! asString.isEmpty();
         try {
@@ -54,7 +54,7 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
             return null;
         }
         int offset = (int)offsetAndWidth;
-        return AkServerUtil.getULong(bytes, offset);
+        return AkServerUtil.getULong(bytes(), offset);
     }
 
     @Override
@@ -63,9 +63,9 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
         if (offsetAndWidth == 0) {
             return null;
         }
-        int offset = (int) offsetAndWidth + fieldDef.getPrefixSize();
-        int size = (int) (offsetAndWidth >>> 32) - fieldDef.getPrefixSize();
-        return byteSource.wrap(bytes, offset, size);
+        int offset = (int) offsetAndWidth + fieldDef().getPrefixSize();
+        int size = (int) (offsetAndWidth >>> 32) - fieldDef().getPrefixSize();
+        return byteSource.wrap(bytes(), offset, size);
     }
 
     @Override
@@ -136,7 +136,7 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
         final long location = getRawOffsetAndWidth();
         return location == 0
                 ? null
-                : AkServerUtil.decodeMySQLString(bytes, (int)location, (int)(location >>> 32), fieldDef);
+                : AkServerUtil.decodeMySQLString(bytes(), (int)location, (int)(location >>> 32), fieldDef());
     }
 
     @Override
@@ -154,7 +154,7 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
         // TODO the rest of this method doesn't give Quote a crack at things.
         // (I think quoting should really be selected at the Appender level, not externally)
         else if (type == AkType.DECIMAL) {
-            ConversionHelperBigDecimal.decodeToString(fieldDef, bytes, getRawOffsetAndWidth(), appender);
+            ConversionHelperBigDecimal.decodeToString(fieldDef(), bytes(), getRawOffsetAndWidth(), appender);
         } else {
             Converters.convert(this, appender.asConversionTarget());
         }
@@ -163,11 +163,8 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
 
     // for subclasses
     protected abstract long getRawOffsetAndWidth();
-
-    protected void bind(byte[] bytes, FieldDef fieldDef) {
-        this.bytes = bytes;
-        this.fieldDef = fieldDef;
-    }
+    protected abstract byte[] bytes();
+    protected abstract FieldDef fieldDef();
 
     // for use within this class
     // Stolen from the Encoding classes
@@ -178,13 +175,13 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
             if (appender.canAppendBytes()) {
                 ByteBuffer buff = location == 0
                         ? null
-                        : AkServerUtil.byteBufferForMySQLString(bytes, (int)location, (int) (location >>> 32), fieldDef);
-                quote.append(appender, buff, fieldDef.column().getCharsetAndCollation().charset());
+                        : AkServerUtil.byteBufferForMySQLString(bytes(), (int)location, (int) (location >>> 32), fieldDef());
+                quote.append(appender, buff, fieldDef().column().getCharsetAndCollation().charset());
             }
             else {
                 String s = location == 0
                         ? null
-                        : AkServerUtil.decodeMySQLString(bytes, (int)location, (int) (location >>> 32), fieldDef);
+                        : AkServerUtil.decodeMySQLString(bytes(), (int)location, (int) (location >>> 32), fieldDef());
                 quote.append(appender, s);
             }
         } catch (EncodingException e) {
@@ -197,10 +194,10 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
         final int offset = (int)offsetAndWidth;
         final int width = (int)(offsetAndWidth >>> 32);
         if (signage == Signage.SIGNED) {
-            return AkServerUtil.getSignedIntegerByWidth(bytes, offset, width);
+            return AkServerUtil.getSignedIntegerByWidth(bytes(), offset, width);
         } else {
             assert signage == Signage.UNSIGNED;
-            return AkServerUtil.getUnsignedIntegerByWidth(bytes, offset, width);
+            return AkServerUtil.getUnsignedIntegerByWidth(bytes(), offset, width);
         }
     }
 
@@ -214,8 +211,6 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
 
     // object state
     private final WrappingByteSource byteSource = new WrappingByteSource();
-    private byte[] bytes;
-    private FieldDef fieldDef;
 
     private enum Signage {
         SIGNED, UNSIGNED

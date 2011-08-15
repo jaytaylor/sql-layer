@@ -28,15 +28,26 @@ public final class RowDataConversionSource extends AbstractRowDataConversionSour
 
     // AbstractRowDataConversionSource interface
 
+    @Override
+    public AkType getConversionType() {
+        return fieldDef().getType().akType();
+    }
+
+    @Override
     protected long getRawOffsetAndWidth() {
         return fieldDef().getRowDef().fieldLocation(rowData(), fieldDef().getFieldIndex());
     }
 
     @Override
-    public AkType getConversionType() {
-        return fieldDef().getType().akType();
+    protected byte[] bytes() {
+        return rowData.getBytes();
     }
-    
+
+    @Override
+    protected FieldDef fieldDef() {
+        return fieldDef;
+    }
+
     // ConversionSource interface
 
     @Override
@@ -51,13 +62,9 @@ public final class RowDataConversionSource extends AbstractRowDataConversionSour
         return String.format("ConversionSource( %s -> %s )", fieldDef, rowData.toString(fieldDef.getRowDef()));
     }
 
-    // package-private
-
-    FieldDef fieldDef() {
-        return fieldDef;
-    }
-
-    RowData rowData() {
+    // private
+    
+    private RowData rowData() {
         return rowData;
     }
 
