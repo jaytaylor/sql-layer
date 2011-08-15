@@ -161,6 +161,11 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
         quote.quote(appender, type);
     }
 
+    @Override
+    public AkType getConversionType() {
+        return isNull() ? AkType.NULL : fieldDef().getType().akType();
+    }
+
     // for subclasses
     protected abstract long getRawOffsetAndWidth();
     protected abstract byte[] bytes();

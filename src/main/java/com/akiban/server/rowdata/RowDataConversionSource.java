@@ -15,8 +15,6 @@
 
 package com.akiban.server.rowdata;
 
-import com.akiban.server.types.AkType;
-
 public final class RowDataConversionSource extends AbstractRowDataConversionSource {
 
     // FieldDefConversionBase interface
@@ -27,11 +25,6 @@ public final class RowDataConversionSource extends AbstractRowDataConversionSour
     }
 
     // AbstractRowDataConversionSource interface
-
-    @Override
-    public AkType getConversionType() {
-        return fieldDef().getType().akType();
-    }
 
     @Override
     protected long getRawOffsetAndWidth() {
