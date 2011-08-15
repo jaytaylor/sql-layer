@@ -118,6 +118,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                     logger.warn("Connection " + pid + " still running.");
             }
             catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
             }
             thread = null;
         }
