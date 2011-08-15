@@ -29,7 +29,14 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
-public final class RowDataConversionSource extends RowDataConversionBase implements ConversionSource {
+public final class RowDataConversionSource implements ConversionSource {
+
+    // FieldDefConversionBase interface
+
+    public void bind(FieldDef fieldDef, RowData rowData) {
+        this.fieldDef = fieldDef;
+        this.rowData = rowData;
+    }
 
     // ConversionSource interface
 
@@ -171,6 +178,23 @@ public final class RowDataConversionSource extends RowDataConversionBase impleme
         return fieldDef().getType().akType();
     }
 
+    // Object interface
+
+    @Override
+    public String toString() {
+        return String.format("ConversionSource( %s -> %s )", fieldDef, rowData.toString(fieldDef.getRowDef()));
+    }
+
+    // package-private
+
+    FieldDef fieldDef() {
+        return fieldDef;
+    }
+
+    RowData rowData() {
+        return rowData;
+    }
+
     // for use within this class
     // Stolen from the Encoding classes
 
@@ -214,6 +238,9 @@ public final class RowDataConversionSource extends RowDataConversionBase impleme
         return offsetAndWidth;
     }
 
+    // object state
+    private FieldDef fieldDef;
+    private RowData rowData;
     private final WrappingByteSource byteSource = new WrappingByteSource();
 
     private enum Signage {
