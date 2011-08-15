@@ -31,35 +31,35 @@ public class QuoteTest {
     private static final String TEST_STRING = "world\\ isn't this \" a quote?\u0001";
     @Test
     public void testNoneEncoding() {
-        StringBuilder sb = new StringBuilder("hello ");
+        StringBuilder sb = new StringBuilder();
         Quote.NONE.append(AkibanAppender.of(sb), TEST_STRING);
 
-        assertEquals("encoded string", "hello " + TEST_STRING, sb.toString());
+        assertEquals("encoded string", TEST_STRING, sb.toString());
 
     }
 
     @Test
     public void testDoubleEncoding() {
-        StringBuilder sb = new StringBuilder("hello ");
+        StringBuilder sb = new StringBuilder();
         Quote.DOUBLE_QUOTE.append(AkibanAppender.of(sb), TEST_STRING);
 
-        assertEquals("encoded string", "hello \"world\\\\ isn't this \\\" a quote?\u0001\"", sb.toString());
+        assertEquals("encoded string", "world\\\\ isn't this \\\" a quote?\u0001", sb.toString());
     }
 
     @Test
     public void testSingleEncoding() {
-        StringBuilder sb = new StringBuilder("hello ");
+        StringBuilder sb = new StringBuilder();
         Quote.SINGLE_QUOTE.append(AkibanAppender.of(sb), TEST_STRING);
 
-        assertEquals("encoded string", "hello 'world\\\\ isn\\'t this \" a quote?\u0001'", sb.toString());
+        assertEquals("encoded string", "world\\\\ isn\\'t this \" a quote?\u0001", sb.toString());
     }
 
     @Test
     public void testJSONEncoding() {
-        StringBuilder sb = new StringBuilder("hello ");
+        StringBuilder sb = new StringBuilder();
         Quote.JSON_QUOTE.append(AkibanAppender.of(sb), TEST_STRING);
 
-        assertEquals("encoded string", "hello \"world\\\\ isn't this \\\" a quote?\\u0001\"", sb.toString());
+        assertEquals("encoded string", "world\\\\ isn't this \\\" a quote?\\u0001", sb.toString());
     }
 
     @Test
@@ -73,7 +73,7 @@ public class QuoteTest {
     }
     @Test
     public void writeBytesBasicUTF8_DOUBLE() {
-        doWriteBytesTest("very basic string", "UTF-8", "\"very basic string\"", Quote.DOUBLE_QUOTE);
+        doWriteBytesTest("very basic string", "UTF-8", "very basic string", Quote.DOUBLE_QUOTE);
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -88,12 +88,12 @@ public class QuoteTest {
 
     @Test
     public void writeBytesWithSnowman_JSON() {
-        doWriteBytesTest("very wintery ☃ string", "UTF-8", "\"very wintery ☃ string\"", Quote.JSON_QUOTE);
+        doWriteBytesTest("very wintery ☃ string", "UTF-8", "very wintery ☃ string", Quote.JSON_QUOTE);
     }
 
     @Test
     public void writeBytesJSONControlChars() {
-        doWriteBytesTest("very newline \n string", "UTF-8", "\"very newline \\u000a string\"", Quote.JSON_QUOTE);
+        doWriteBytesTest("very newline \n string", "UTF-8", "very newline \\u000a string", Quote.JSON_QUOTE);
     }
 
     @Test

@@ -22,7 +22,9 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.PersistitKeyConversionSource;
+import com.akiban.server.store.PersistitKeyAppender;
+import com.akiban.server.types.ConversionSource;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
@@ -48,12 +50,10 @@ public class PersistitIndexRow extends AbstractRow
     }
 
     @Override
-    public Object field(int i, Bindings bindings)
-    {
-        IndexColumn indexColumn = index().getColumns().get(i);
-        FieldDef def = (FieldDef) indexColumn.getColumn().getFieldDef();
-        indexRow.indexTo(i);
-        return def.getEncoding().toObject(indexRow);
+    public ConversionSource conversionSource(int i, Bindings bindings) {
+        IndexColumn column = index().getColumns().get(i);
+        conversionSource.attach(indexRow, column);
+        return conversionSource;
     }
 
     @Override
@@ -67,9 +67,9 @@ public class PersistitIndexRow extends AbstractRow
     {
         this(adapter, indexRowType);
         Iterator<IndexColumn> columnIt = index().getColumns().iterator();
+        PersistitKeyAppender appender = new PersistitKeyAppender(indexRow);
         for(Object o : values) {
-            FieldDef def = (FieldDef) columnIt.next().getColumn().getFieldDef();
-            def.getEncoding().toKey(def, o, indexRow);
+            appender.append(o, columnIt.next().getColumn());
         }
     }
 
@@ -81,6 +81,7 @@ public class PersistitIndexRow extends AbstractRow
         this.indexRowType = indexRowType;
         this.indexRow = adapter.persistit.getKey(adapter.session);
         this.hKey = new PersistitHKey(adapter, index().hKey());
+        this.conversionSource = new PersistitKeyConversionSource();
     }
 
     // For use by this package
@@ -106,6 +107,7 @@ public class PersistitIndexRow extends AbstractRow
 
     private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
+    private final PersistitKeyConversionSource conversionSource;
     private final Key indexRow;
     private PersistitHKey hKey;
 }

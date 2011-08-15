@@ -19,6 +19,8 @@ import com.akiban.server.AkServerUtil;
 import com.akiban.server.types.SourceConversionException;
 import com.akiban.util.AkibanAppender;
 
+import java.math.BigDecimal;
+
 final class ConversionHelperBigDecimal {
 
     // "public" methods (though still only available within-package)
@@ -52,6 +54,120 @@ final class ConversionHelperBigDecimal {
             errSb.append(": ").append( e.getMessage() );
             throw new SourceConversionException(errSb.toString(), e);
         }
+    }
+
+
+    public static int fromObject(FieldDef fieldDef, BigDecimal value, byte[] dest, int offset) {
+        final String from = value.toPlainString();
+        final int mask = (from.charAt(0) == '-') ? -1 : 0;
+        int fromOff = 0;
+
+        if (mask != 0)
+            ++fromOff;
+
+        int signSize = mask == 0 ? 0 : 1;
+        int periodIndex = from.indexOf('.');
+        final int intCnt;
+        final int fracCnt;
+
+        if (periodIndex == -1) {
+            intCnt = from.length() - signSize;
+            fracCnt = 0;
+        }
+        else {
+            intCnt = periodIndex - signSize;
+            fracCnt = from.length() - intCnt - 1 - signSize;
+        }
+
+        final int intFull = intCnt / DECIMAL_DIGIT_PER;
+        final int intPart = intCnt % DECIMAL_DIGIT_PER;
+        final int fracFull = fracCnt / DECIMAL_DIGIT_PER;
+        final int fracPart = fracCnt % DECIMAL_DIGIT_PER;
+        final int intSize = calcBinSize(intCnt);
+
+        final int declPrec = fieldDef.getTypeParameter1().intValue();
+        final int declScale = fieldDef.getTypeParameter2().intValue();
+        final int declIntSize = calcBinSize(declPrec - declScale);
+        final int declFracSize = calcBinSize(declScale);
+
+        int toItOff = offset;
+        int toEndOff = offset + declIntSize + declFracSize;
+
+        for (int i = 0; (intSize + i) < declIntSize; ++i)
+            dest[toItOff++] = (byte) mask;
+
+        int sum = 0;
+
+        // Partial integer
+        if (intPart != 0) {
+            for (int i = 0; i < intPart; ++i) {
+                sum *= 10;
+                sum += (from.charAt(fromOff + i) - '0');
+            }
+
+            int count = DECIMAL_BYTE_DIGITS[intPart];
+            packIntegerByWidth(count, sum ^ mask, dest, toItOff);
+
+            toItOff += count;
+            fromOff += intPart;
+        }
+
+        // Full integers
+        for (int i = 0; i < intFull; ++i) {
+            sum = 0;
+
+            for (int j = 0; j < DECIMAL_DIGIT_PER; ++j) {
+                sum *= 10;
+                sum += (from.charAt(fromOff + j) - '0');
+            }
+
+            int count = DECIMAL_TYPE_SIZE;
+            packIntegerByWidth(count, sum ^ mask, dest, toItOff);
+
+            toItOff += count;
+            fromOff += DECIMAL_DIGIT_PER;
+        }
+
+        // Move past decimal point (or to end)
+        ++fromOff;
+
+        // Full fractions
+        for (int i = 0; i < fracFull; ++i) {
+            sum = 0;
+
+            for (int j = 0; j < DECIMAL_DIGIT_PER; ++j) {
+                sum *= 10;
+                sum += (from.charAt(fromOff + j) - '0');
+            }
+
+            int count = DECIMAL_TYPE_SIZE;
+            packIntegerByWidth(count, sum ^ mask, dest, toItOff);
+
+            toItOff += count;
+            fromOff += DECIMAL_DIGIT_PER;
+        }
+
+        // Fraction left over
+        if (fracPart != 0) {
+            sum = 0;
+
+            for (int i = 0; i < fracPart; ++i) {
+                sum *= 10;
+                sum += (from.charAt(fromOff + i) - '0');
+            }
+
+            int count = DECIMAL_BYTE_DIGITS[fracPart];
+            packIntegerByWidth(count, sum ^ mask, dest, toItOff);
+
+            toItOff += count;
+        }
+
+        while (toItOff < toEndOff)
+            dest[toItOff++] = (byte) mask;
+
+        dest[offset] ^= 0x80;
+
+        return declIntSize + declFracSize;
     }
 
     // for use within this package (for testing)
@@ -136,6 +252,40 @@ final class ConversionHelperBigDecimal {
     }
 
     // private methods
+
+
+    private static int calcBinSize(int digits) {
+        int full = digits / DECIMAL_DIGIT_PER;
+        int partial = digits % DECIMAL_DIGIT_PER;
+        return (full * DECIMAL_TYPE_SIZE) + DECIMAL_BYTE_DIGITS[partial];
+    }
+
+    /**
+     * Pack an integer, of a given length, in big endian order into a byte array.
+     * @param len length of integer
+     * @param val value to store in the buffer
+     * @param buf destination array to put bytes in
+     * @param offset position to start at in buf
+     */
+    private static void packIntegerByWidth(int len, int val, byte[] buf, int offset) {
+        if (len == 1) {
+            buf[offset] = (byte) (val);
+        } else if (len == 2) {
+            buf[offset + 1] = (byte) (val);
+            buf[offset]     = (byte) (val >> 8);
+        } else if (len == 3) {
+            buf[offset + 2] = (byte) (val);
+            buf[offset + 1] = (byte) (val >> 8);
+            buf[offset]     = (byte) (val >> 16);
+        } else if (len == 4) {
+            buf[offset + 3] = (byte) (val);
+            buf[offset + 2] = (byte) (val >> 8);
+            buf[offset + 1] = (byte) (val >> 16);
+            buf[offset]     = (byte) (val >> 24);
+        } else {
+            throw new IllegalArgumentException("Unexpected length " + len);
+        }
+    }
 
     /**
      * Unpack a big endian integer, of a given length, from a byte array.

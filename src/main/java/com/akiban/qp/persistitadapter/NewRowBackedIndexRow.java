@@ -23,6 +23,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.FromObjectConversionSource;
 
 public class NewRowBackedIndexRow implements RowBase
 {
@@ -50,18 +51,14 @@ public class NewRowBackedIndexRow implements RowBase
     }
 
     @Override
-    public Object field(int i, Bindings bindings) {
+    public ConversionSource conversionSource(int i, Bindings bindings) {
         FieldDef fieldDef = (FieldDef) index.getColumns().get(i).getColumn().getFieldDef();
         int fieldPos = fieldDef.getFieldIndex();
-        if(row.isColumnNull(fieldPos)) {
-            return null;
+        if (row.isColumnNull(fieldPos)) {
+            source.setNull();
         }
-        return row.get(fieldPos);
-    }
-
-    @Override
-    public ConversionSource conversionSource(int i, Bindings bindings) {
-        throw new UnsupportedOperationException();
+        source.setReflectively(row.get(fieldPos));
+        return source;
     }
 
     @Override
@@ -88,4 +85,5 @@ public class NewRowBackedIndexRow implements RowBase
     private final NewRow row;
     private final RowType rowType;
     private final TableIndex index;
+    private final FromObjectConversionSource source = new FromObjectConversionSource();
 }

@@ -1,29 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
- */
+* Copyright (C) 2011 Akiban Technologies Inc.
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU Affero General Public License, version 3,
+* as published by the Free Software Foundation.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU Affero General Public License for more details.
+*
+* You should have received a copy of the GNU Affero General Public License
+* along with this program.  If not, see http://www.gnu.org/licenses.
+*/
 
-package com.akiban.server.encoding;
+package com.akiban.server.types;
 
 import org.junit.Test;
 
-import java.math.BigInteger;
-
 import static org.junit.Assert.assertEquals;
 
-public class DateEncoderTest extends LongEncoderTestBase {
-    public DateEncoderTest() {
-        super(EncoderFactory.DATE,
+public class DateConverterTest extends LongConverterTestBase {
+    public DateConverterTest() {
+        super(ConvertersForDates.DATE,
               new TestElement[] {
                 new TestElement("0000-00-00", 0),
                 new TestElement("0000-00-31", 31),
@@ -32,11 +30,11 @@ public class DateEncoderTest extends LongEncoderTestBase {
                 new TestElement("1986-10-28", 1017180),
                 new TestElement("2011-04-07", 1029767),
                 new TestElement("1620-11-21", 829813),
-                new TestElement("0320-06-14", new Integer(164046)),
-                new TestElement("9999-12-25", new Long(5119897))
+                new TestElement("0320-06-14", 164046),
+                new TestElement("9999-12-25", 5119897L)
               });
     }
-    
+
 
     @Test
     public void partiallySpecified() {

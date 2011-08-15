@@ -1,27 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
- */
+* Copyright (C) 2011 Akiban Technologies Inc.
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU Affero General Public License, version 3,
+* as published by the Free Software Foundation.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU Affero General Public License for more details.
+*
+* You should have received a copy of the GNU Affero General Public License
+* along with this program.  If not, see http://www.gnu.org/licenses.
+*/
 
-package com.akiban.server.encoding;
+package com.akiban.server.types;
 
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class TimeEncoderTest extends LongEncoderTestBase {
-    public TimeEncoderTest() {
-        super(EncoderFactory.TIME,
+public class TimeConverterTest extends LongConverterTestBase {
+    public TimeConverterTest() {
+        super(ConvertersForDates.TIME,
               new TestElement[] {
                 new TestElement("00:00:00", 0),
                 new TestElement("00:00:01", 1),
@@ -33,7 +33,7 @@ public class TimeEncoderTest extends LongEncoderTestBase {
               });
     }
 
-    
+
     @Test
     public void partiallySpecified() {
         assertEquals("00:00:02", encodeAndDecode("2"));

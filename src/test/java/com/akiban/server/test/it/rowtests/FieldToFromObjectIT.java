@@ -16,11 +16,9 @@
 package com.akiban.server.test.it.rowtests;
 
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.test.it.ITBase;
-import junit.framework.Assert;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -36,24 +34,8 @@ public class FieldToFromObjectIT extends ITBase {
             rowData.createRow(rowDef, values);
         }
         catch(Exception e) {
-            Assert.fail(String.format("createRow() failed for table %s and values %s\n\n%s",
-                                      rowDef.table().getName(), Arrays.asList(values), e));
-        }
-
-        int curField = 0;
-        int maxField = rowDef.getFieldCount();
-        byte[] tmpArray = new byte[100];
-        try {
-            while(curField < maxField) {
-                Object value = rowData.toObject(rowDef, curField);
-                FieldDef fieldDef = rowDef.getFieldDef(curField);
-                fieldDef.getEncoding().fromObject(fieldDef, value,  tmpArray, 0);
-                ++curField;
-            }
-        }
-        catch(Exception e) {
-            Assert.fail(String.format("toObject/fromObject failed for table %s, field %s, original value %s\n\n%s",
-                                      rowDef.table().getName(), rowDef.getFieldDef(curField), values[curField], e));
+            throw new RuntimeException(String.format("createRow() failed for table %s and values %s",
+                    rowDef.table().getName(), Arrays.asList(values)), e);
         }
     }
 
@@ -72,16 +54,16 @@ public class FieldToFromObjectIT extends ITBase {
         final int tid = createTable("test", "t", "id int key", "c2 tinyint unsigned, c3 smallint unsigned",
                                     "c4 mediumint unsigned, c5 int unsigned, c6 bigint unsigned");
         final RowDef def = rowDefCache().getRowDef(tid);
-        testRow(def, 1, 0, 0, 0, 0, 0);                                                             // zero/min
+        testRow(def, 1, 0, 0, 0, 0, BigInteger.ZERO);                                               // zero/min
         testRow(def, 2, 255, 65535, 16777215, 4294967295L, new BigInteger("18446744073709551615")); // max
-        testRow(def, 3, 42, 9848, 2427090, 290174268L, 73957261119487228L);                         // other
+        testRow(def, 3, 42, 9848, 2427090, 290174268L, new BigInteger("73957261119487228"));        // other
     }
 
     @Test
     public void signedRealTypes() throws InvalidOperationException {
         final int tid = createTable("test", "t", "id int key", "c2 float, c3 double");
         final RowDef def = rowDefCache().getRowDef(tid);
-        testRow(def, 1, 0, 0);                              // zero
+        testRow(def, 1, 0f, 0d);                            // zero
         testRow(def, 2, Float.MIN_VALUE, Double.MIN_VALUE); // min
         testRow(def, 3, Float.MAX_VALUE, Double.MAX_VALUE); // max
         testRow(def, 4, -10f, -100d);                       // negative whole
@@ -94,7 +76,7 @@ public class FieldToFromObjectIT extends ITBase {
     public void unsignedRealTypes() throws InvalidOperationException {
         final int tid = createTable("test", "t", "id int key", "c2 float unsigned, c3 double unsigned");
         final RowDef def = rowDefCache().getRowDef(tid);
-        testRow(def, 1, 0, 0);                              // zero
+        testRow(def, 1, 0f, 0d);                            // zero
         testRow(def, 2, Float.MAX_VALUE, Double.MAX_VALUE); // max
         testRow(def, 3, 12345f, 9876543210d);               // positive whole
         testRow(def, 4, 7234.1321f, 3819476924.12342819d);  // positive fraction
@@ -157,9 +139,9 @@ public class FieldToFromObjectIT extends ITBase {
     public void dateAndTimeTypes() throws InvalidOperationException {
         final int tid = createTable("test", "t", "id int key", "c1 date, c2 time, c3 datetime, c4 timestamp, c5 year");
         final RowDef def = rowDefCache().getRowDef(tid);
-        testRow(def, 1, "0000-00-00", "00:00:00", "0000-00-00 00:00:00", 0, "0000");           // zero
-        testRow(def, 2, "1000-01-01", "-838:59:59", "1000-01-01 00:00:00", 0, "1901");         // min
-        testRow(def, 3, "9999-12-31", "838:59:59", "9999-12-31 23:59:59", 2147483647, "2155"); // max
-        testRow(def, 4, "2011-05-20", "17:34:20", "2011-05-20 17:35:01", 1305927301, "2011");  // other
+        testRow(def, 1, "0000-00-00", "00:00:00", "0000-00-00 00:00:00", 0L, "0000");           // zero
+        testRow(def, 2, "1000-01-01", "-838:59:59", "1000-01-01 00:00:00", 0L, "1901");         // min
+        testRow(def, 3, "9999-12-31", "838:59:59", "9999-12-31 23:59:59", 2147483647L, "2155"); // max
+        testRow(def, 4, "2011-05-20", "17:34:20", "2011-05-20 17:35:01", 1305927301L, "2011");  // other
     }
 }

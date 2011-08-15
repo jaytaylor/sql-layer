@@ -12,26 +12,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-
 package com.akiban.server.encoding;
 
-import com.akiban.ais.model.Type;
-import com.akiban.server.rowdata.FieldDef;
+import com.akiban.ais.model.Column;
 
-// TODO - temporarily we handle just like VARCHAR
-public final class TextEncoder extends StringEncoder {
-    TextEncoder() {
-    }
-
+abstract class VariableWidthEncoding implements Encoding {
+    /**
+     * Note: Only a "good guess" for BigDecimal. No way to determine how much room
+     * key.append(BigDecimal) will take currently.
+     */
     @Override
-    public int widthFromObject(final FieldDef fieldDef, final Object value) {
-        final String s = value == null ? "" : value.toString();
-        return s.length() + fieldDef.getPrefixSize();
+    public long getMaxKeyStorageSize(Column column) {
+        return column.getMaxStorageSize();
     }
 
-    @Override
-    public boolean validate(Type type) {
-        long w = type.maxSizeBytes();
-        return !type.fixedSize();
-    }
 }

@@ -15,9 +15,21 @@
 
 package com.akiban.server.types;
 
-final class ConverterForFloat extends FloatConverter {
+abstract class ConverterForFloat extends FloatConverter {
 
-    static final FloatConverter INSTANCE = new ConverterForFloat();
+    static final FloatConverter SIGNED = new ConverterForFloat() {
+        @Override
+        protected void putFloat(ConversionTarget target, float value) {
+            target.putFloat(value);
+        }
+    };
+
+    static final FloatConverter UNSIGNED = new ConverterForFloat() {
+        @Override
+        protected void putFloat(ConversionTarget target, float value) {
+            target.putUFloat(value);
+        }
+    };
 
     @Override
     public float getFloat(ConversionSource source) {
@@ -29,13 +41,19 @@ final class ConverterForFloat extends FloatConverter {
         case LONG:      return source.getLong();
         case INT:       return source.getInt();
         case U_INT:     return source.getUInt();
-        default: throw unsupportedConversion(type);
+        case U_FLOAT:   return source.getUFloat();
+        case U_DOUBLE:  return (float) source.getUDouble();
+        case TEXT:      return Float.parseFloat(source.getText());
+        case VARCHAR:   return Float.parseFloat(source.getString());
+        default: throw unsupportedConversion(source);
         }
     }
 
+    // AbstractConverter interface
+
     @Override
-    protected void putFloat(ConversionTarget target, float value) {
-        target.putFloat(value);
+    protected AkType nativeConversionType() {
+        return AkType.FLOAT;
     }
 
     private ConverterForFloat() {}

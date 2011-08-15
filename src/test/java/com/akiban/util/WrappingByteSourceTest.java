@@ -17,6 +17,7 @@ package com.akiban.util;
 
 import org.junit.Test;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
@@ -31,8 +32,20 @@ public final class WrappingByteSourceTest {
     }
 
     @Test
+    public void simpleWrap() {
+        byte[] bytes = new byte[10];
+        check(wrap(bytes), bytes, 0, 10);
+    }
+
+    @Test
     public void offsetAndLengthZero() {
         byte[] bytes = new byte[10];
+        check(wrap(bytes, 0, 0), bytes, 0, 0);
+    }
+
+    @Test
+    public void offsetSizeAndLengthZero() {
+        byte[] bytes = new byte[0];
         check(wrap(bytes, 0, 0), bytes, 0, 0);
     }
 
@@ -74,6 +87,15 @@ public final class WrappingByteSourceTest {
         wrap(new byte[10], 0, -1);
     }
 
+    @Test
+    public void byteBufferConversion() {
+        byte[] bytes = new byte[10];
+        ByteBuffer byteBuffer = ByteBuffer.wrap(bytes, 3, 4);
+        WrappingByteSource converted = WrappingByteSource.fromByteBuffer(byteBuffer);
+        WrappingByteSource manual = new WrappingByteSource().wrap(bytes, 3, 4);
+        assertEquals("converted WrappingByteSource", manual, converted);
+    }
+
     private static void check(ByteSource byteSource, byte[] expectedBytes, int expectedOffset, int expectedLength) {
         byte[] actualBytes = byteSource.byteArray();
         if (actualBytes != expectedBytes) {
@@ -85,6 +107,10 @@ public final class WrappingByteSourceTest {
 
     private static String stringify(byte[] bytes) {
         return Arrays.toString(bytes);
+    }
+
+    private static WrappingByteSource wrap(byte[] bytes) {
+        return new WrappingByteSource().wrap(bytes);
     }
 
     private static WrappingByteSource wrap(byte[] bytes, int offset, int length) {

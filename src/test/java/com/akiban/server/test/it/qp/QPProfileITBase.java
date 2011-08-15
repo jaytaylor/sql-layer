@@ -36,6 +36,7 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.types.ToObjectConversionTarget;
 import org.junit.Before;
 
 import java.util.ArrayList;
@@ -229,9 +230,10 @@ public class QPProfileITBase extends ITBase
     protected boolean equal(RowBase expected, RowBase actual)
     {
         boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
+        ToObjectConversionTarget target = new ToObjectConversionTarget();
         for (int i = 0; equal && i < actual.rowType().nFields(); i++) {
-            Object expectedField = expected.field(i, NO_BINDINGS);
-            Object actualField = actual.field(i, NO_BINDINGS);
+            Object expectedField = target.convertFromSource(expected.conversionSource(i, NO_BINDINGS));
+            Object actualField = target.convertFromSource(actual.conversionSource(i, NO_BINDINGS));
             equal =
                 expectedField == actualField || // handles case in which both are null
                 expectedField != null && actualField != null && expectedField.equals(actualField);

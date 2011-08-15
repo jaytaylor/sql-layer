@@ -13,17 +13,15 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.encoding;
+package com.akiban.server.types.typestests;
 
-import com.akiban.ais.model.Type;
+public abstract class SimpleLinkedConversion implements LinkedConversion<Void> {
 
-public final class IntEncoder extends LongEncoderBase {
-    IntEncoder() {
+    @Override
+    public final void checkPut(Void expected) {
     }
 
     @Override
-    public boolean validate(Type type) {
-        long w = type.maxSizeBytes();
-        return type.fixedSize() && (w == 1 || w == 2 || w == 3 || w == 4 || w == 8);
+    public final void syncConversions() {
     }
 }

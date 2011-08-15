@@ -13,29 +13,17 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.rowdata;
+package com.akiban.server.types.typestests;
 
-abstract class FieldDefConversionBase {
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ConversionTarget;
 
-    // public method
+public interface LinkedConversion<T> {
+    ConversionSource linkedSource();
+    ConversionTarget linkedTarget();
 
-    public void bind(FieldDef fieldDef, RowData rowData) {
-        this.fieldDef = fieldDef;
-        this.rowData = rowData;
-    }
-
-    // package-private
-
-    FieldDef fieldDef() {
-        return fieldDef;
-    }
-
-    RowData rowData() {
-        return rowData;
-    }
-
-    // object state
-
-    private FieldDef fieldDef;
-    private RowData rowData;
+    void checkPut(T expected);
+    void setUp(AkType type);
+    void syncConversions();
 }

@@ -40,18 +40,6 @@ public class FlattenedRow extends AbstractRow
     }
 
     @Override
-    public Object field(int i, Bindings bindings)
-    {
-        Object field;
-        if (i < nParentFields) {
-            field = parent.isNull() ? null : parent.get().field(i, bindings);
-        } else {
-            field = child.isNull() ? null : child.get().field(i - nParentFields, bindings);
-        }
-        return field;
-    }
-
-    @Override
     public ConversionSource conversionSource(int i, Bindings bindings) {
         ConversionSource source;
         if (i < nParentFields) {

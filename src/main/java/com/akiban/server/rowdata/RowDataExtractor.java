@@ -13,18 +13,20 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.encoding;
+package com.akiban.server.rowdata;
 
-import com.akiban.server.AkServerUtil;
-import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.types.Converters;
+import com.akiban.server.types.ToObjectConversionTarget;
 
-public final class UDoubleEncoder extends DoubleEncoder {
-    UDoubleEncoder() {
+public final class RowDataExtractor {
+
+    public Object get(FieldDef fieldDef, RowData rowData) {
+        source.bind(fieldDef, rowData);
+        target.expectType(fieldDef.getType().akType());
+        return Converters.convert(source, target).lastConvertedValue();
     }
 
-    @Override
-    public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
-        final long longBits = Math.max(encodeFromObject(value), 0);
-        return AkServerUtil.putIntegerByWidth(dest, offset, STORAGE_SIZE, longBits);
-    }
+
+    private final RowDataConversionSource source = new RowDataConversionSource();
+    private final ToObjectConversionTarget target = new ToObjectConversionTarget();
 }

@@ -15,6 +15,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.types.ToObjectConversionTarget;
 import com.akiban.sql.StandardException;
 
 import com.akiban.qp.physicaloperator.API;
@@ -71,6 +72,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             List<PostgresType> columnTypes = getColumnTypes();
             int ncols = columnTypes.size();
             Row row;
+            ToObjectConversionTarget target = new ToObjectConversionTarget();
             while ((row = cursor.next()) != null) {
                 assert (row.rowType() == resultRowType) : row;
                 if (nskip > 0) {
@@ -80,7 +82,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                 messenger.beginMessage(PostgresMessenger.DATA_ROW_TYPE);
                 messenger.writeShort(ncols);
                 for (int i = 0; i < ncols; i++) {
-                    Object field = row.field(i, bindings);
+                    Object field = target.convertFromSource(row.conversionSource(i, bindings));
                     PostgresType type = columnTypes.get(i);
                     byte[] value = type.encodeValue(field,
                                                     messenger.getEncoding(),

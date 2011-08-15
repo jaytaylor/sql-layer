@@ -28,27 +28,27 @@ public final class EncoderFactory {
     private EncoderFactory() {
     }
 
-    public static final IntEncoder INT = new IntEncoder();
-    public static final UIntEncoder U_INT = new UIntEncoder();
-    public static final UBigIntEncoder U_BIGINT = new UBigIntEncoder();
-    public static final FloatEncoder FLOAT = new FloatEncoder();
-    public static final UFloatEncoder U_FLOAT = new UFloatEncoder();
-    public static final DoubleEncoder DOUBLE = new DoubleEncoder();
-    public static final UDoubleEncoder U_DOUBLE = new UDoubleEncoder();
-    public static final DecimalEncoder DECIMAL = new DecimalEncoder();
-    public static final DecimalEncoder U_DECIMAL = new DecimalEncoder();
-    public static final StringEncoder VARCHAR = new StringEncoder();
-    public static final VarBinaryEncoder VARBINARY = new VarBinaryEncoder();
-    public static final TextEncoder BLOB = new TextEncoder();  // TODO - temporarily we handle just like TEXT
-    public static final TextEncoder TEXT = new TextEncoder();
-    public static final DateEncoder DATE = new DateEncoder();
-    public static final TimeEncoder TIME = new TimeEncoder();
-    public static final DateTimeEncoder DATETIME = new DateTimeEncoder();
-    public static final TimestampEncoder TIMESTAMP = new TimestampEncoder();
-    public static final YearEncoder YEAR = new YearEncoder();
+    public static final Encoding INT = LongEncoder.INSTANCE;
+    public static final Encoding U_INT = LongEncoder.INSTANCE;
+    public static final Encoding U_BIGINT = UBigIntEncoder.INSTANCE;
+    public static final Encoding FLOAT = FloatEncoder.INSTANCE;
+    public static final Encoding U_FLOAT = FloatEncoder.INSTANCE;
+    public static final Encoding DOUBLE = DoubleEncoder.INSTANCE;
+    public static final Encoding U_DOUBLE = DoubleEncoder.INSTANCE;
+    public static final Encoding DECIMAL = DecimalEncoder.INSTANCE;
+    public static final Encoding U_DECIMAL = DecimalEncoder.INSTANCE;
+    public static final Encoding VARCHAR = StringEncoder.INSTANCE;
+    public static final Encoding VARBINARY = VarBinaryEncoder.INSTANCE;
+    public static final Encoding BLOB = StringEncoder.INSTANCE;  // TODO - temporarily we handle just like TEXT
+    public static final Encoding TEXT = StringEncoder.INSTANCE;
+    public static final Encoding DATE = LongEncoder.INSTANCE;
+    public static final Encoding TIME = LongEncoder.INSTANCE;
+    public static final Encoding DATETIME = LongEncoder.INSTANCE;
+    public static final Encoding TIMESTAMP = LongEncoder.INSTANCE;
+    public static final Encoding YEAR = LongEncoder.INSTANCE;
 
     private static final Object ENCODING_MAP_LOCK = EncoderFactory.class;
-    private static Map<String,Encoding<?>> encodingMap = null;
+    private static Map<String,Encoding> encodingMap = null;
 
     /**
      * Gets an encoding by name.
@@ -56,12 +56,12 @@ public final class EncoderFactory {
      * @return the encoding
      * @throws EncodingException if no such encoding exists
      */
-    private static Encoding<?> valueOf(String name) {
+    private static Encoding valueOf(String name) {
         synchronized (ENCODING_MAP_LOCK) {
             if (encodingMap == null) {
                 encodingMap = initializeEncodingMap();
             }
-            final Encoding<?> encoding = encodingMap.get(name);
+            final Encoding encoding = encodingMap.get(name);
             if (encoding == null) {
                 throw new EncodingException("Unknown encoding type: " + name);
             }
@@ -69,13 +69,13 @@ public final class EncoderFactory {
         }
     }
 
-    private static Map<String, Encoding<?>> initializeEncodingMap() {
-        final Map<String,Encoding<?>> tmp = new HashMap<String, Encoding<?>>();
+    private static Map<String, Encoding> initializeEncodingMap() {
+        final Map<String,Encoding> tmp = new HashMap<String, Encoding>();
         for (Field field : EncoderFactory.class.getDeclaredFields()) {
             final int m = field.getModifiers();
             if (Modifier.isFinal(m) && Modifier.isStatic(m) && Modifier.isPublic(m) && Encoding.class.isAssignableFrom(field.getType())) {
                 try {
-                    Encoding<?> encoding = (Encoding) field.get(null);
+                    Encoding encoding = (Encoding) field.get(null);
                     tmp.put(field.getName(), encoding);
                 } catch (IllegalAccessException e) {
                     throw new EncodingException("While constructing encodings map; at " + field.getName(), e);
@@ -92,12 +92,7 @@ public final class EncoderFactory {
      * @return the encoding
      * @throws EncodingException if the type is invalid for this encoding, or if the encoding doesn't exist
      */
-    public static Encoding<?> valueOf(String name, Type type) {
-        Encoding<?> encoding = valueOf(name);
-
-        if (!encoding.validate(type)) {
-            throw new EncodingException("Encoding " + encoding + " not valid for type " + type);
-        }
-        return encoding;
+    public static Encoding valueOf(String name, Type type) {
+        return valueOf(name);
     }
 }

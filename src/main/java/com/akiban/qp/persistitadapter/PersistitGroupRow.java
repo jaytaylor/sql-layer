@@ -19,12 +19,11 @@ import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.FieldDefConversionSource;
+import com.akiban.server.rowdata.RowDataConversionSource;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.encoding.EncodingException;
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.types.ConversionSource;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
@@ -48,12 +47,6 @@ public class PersistitGroupRow extends AbstractRow
     public RowType rowType()
     {
         return adapter.schema().userTableRowType(rowDef().userTable());
-    }
-
-    @Override
-    public Object field(int i, Bindings bindings)
-    {
-        return row.get(i);
     }
 
     @Override
@@ -93,7 +86,7 @@ public class PersistitGroupRow extends AbstractRow
         throw new IllegalStateException("no active row");
     }
 
-    void copyFromExchange(Exchange exchange) throws InvalidOperationException, PersistitException
+    void copyFromExchange(Exchange exchange) throws PersistitException
     {
         this.row = new LegacyRowWrapper((RowDef) null);
         RuntimeException exception;
@@ -172,7 +165,7 @@ public class PersistitGroupRow extends AbstractRow
 
     // Object state
 
-    private final FieldDefConversionSource conversionSource = new FieldDefConversionSource();
+    private final RowDataConversionSource conversionSource = new RowDataConversionSource();
     private final PersistitAdapter adapter;
     private RowData rowData;
     private LegacyRowWrapper row;
