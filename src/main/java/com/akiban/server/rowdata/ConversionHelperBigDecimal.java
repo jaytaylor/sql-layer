@@ -28,17 +28,16 @@ final class ConversionHelperBigDecimal {
     /**
      * Decodes the field from the given RowData into the given StringBuilder.
      * @param fieldDef the fieldDef whose type is a decimal
-     * @param rowData the RowData from which to extract the BigDecimal
+     * @param from the underlying byte array
+     * @param locationAndOffset the byte's location and offset, packed as RowData packs them
      * @param appender the appender to use
      * @throws NullPointerException if any arguments are null
      * @throws SourceConversionException if the string can't be parsed to a BigDecimal
      */
-    public static void decodeToString(FieldDef fieldDef, RowData rowData, AkibanAppender appender) {
+    public static void decodeToString(FieldDef fieldDef, byte[] from, long locationAndOffset, AkibanAppender appender) {
         final int precision = fieldDef.getTypeParameter1().intValue();
         final int scale = fieldDef.getTypeParameter2().intValue();
-        final long locationAndOffset = fieldDef.getRowDef().fieldLocation(rowData, fieldDef.getFieldIndex());
         final int location = (int) locationAndOffset;
-        final byte[] from = rowData.getBytes();
 
         try {
             decodeToString(from, location, precision, scale, appender);
@@ -50,7 +49,7 @@ final class ConversionHelperBigDecimal {
             errSb.append(fieldDef.getTypeParameter1()).append(',').append(fieldDef.getTypeParameter2());
             errSb.append(")] 0x");
             final int bytesLen = (int) (locationAndOffset >>> 32);
-            AkServerUtil.hex(AkibanAppender.of(errSb), rowData.getBytes(), location, bytesLen);
+            AkServerUtil.hex(AkibanAppender.of(errSb), from, location, bytesLen);
             errSb.append(": ").append( e.getMessage() );
             throw new SourceConversionException(errSb.toString(), e);
         }

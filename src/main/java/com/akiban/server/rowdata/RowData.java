@@ -24,8 +24,6 @@ import java.util.BitSet;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.Quote;
 import com.akiban.server.encoding.EncodingException;
-import com.akiban.server.types.Converters;
-import com.akiban.server.types.FromObjectConversionSource;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
@@ -294,25 +292,12 @@ public class RowData {
         return AkServerUtil.getUnsignedIntegerByWidth(bytes, offset, width);
     }
 
-    public BigInteger getUnsignedLongValue(final int offset, final int width) {
-        checkOffsetAndWidth(offset, width);
-        return AkServerUtil.getULong(bytes, offset);
-    }
-
     public String getStringValue(final int offset, final int width, final FieldDef fieldDef) {
         if (offset == 0 && width == 0) {
             return null;
         }
         checkOffsetAndWidth(offset, width);
         return AkServerUtil.decodeMySQLString(bytes, offset, width, fieldDef);
-    }
-
-    public ByteBuffer byteBufferForStringValue(final int offset, final int width, final FieldDef fieldDef) {
-        if (offset == 0 && width == 0) {
-            return null;
-        }
-        checkOffsetAndWidth(offset, width);
-        return AkServerUtil.byteBufferForMySQLString(bytes, offset, width, fieldDef);
     }
 
     private void checkOffsetAndWidth(int offset, int width) {
