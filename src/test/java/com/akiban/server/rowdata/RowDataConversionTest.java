@@ -16,6 +16,9 @@
 package com.akiban.server.rowdata;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Type;
+import com.akiban.ais.model.Types;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
@@ -28,6 +31,7 @@ import com.akiban.server.types.typestests.LinkedConversion;
 import com.akiban.server.types.typestests.TestCase;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Field;
 import java.util.Collection;
 
 @RunWith(NamedParameterizedRunner.class)
@@ -87,11 +91,42 @@ public final class RowDataConversionTest extends ConversionTestBase {
             AkibanInformationSchema ais = AISBBasedBuilder.create("mySchema")
                     .userTable("testTable")
                     .colLong("id")
-                    .colDouble("c1", true)
-                    .ais();
+                    .pk("id")
+                    .ais(false);
+            Column col = Column.create(
+                    ais.getUserTable("mySchema", "testTable"),
+                    "c1",
+                    1,
+                    colType(type)
+            );
+            if (col.getType().equals(Types.VARCHAR) || col.getType().equals(Types.VARBINARY)) {
+                col.setTypeParameter1(32L);
+            }
             RowDefCache rdc = new SchemaFactory().rowDefCache(ais);
             RowDef rowDef = rdc.getRowDef("mySchema", "testTable");
             fieldDef = rowDef.getFieldDef(rowDef.getFieldIndex("c1"));
+        }
+
+        private Type colType(AkType akType) {
+            final String typeName;
+            switch (akType) {
+                case LONG:
+                    typeName = Types.BIGINT.name().toUpperCase();
+                    break;
+                default:
+                    typeName = akType.name();
+                    break;
+                case NULL:
+                case UNSUPPORTED:
+                    throw new UnsupportedOperationException(akType.name());
+            }
+
+            try {
+                Field typesField = Types.class.getField(typeName);
+                return (Type) typesField.get(null);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
 
         private final TestableRowDataConversionSource source = new TestableRowDataConversionSource();

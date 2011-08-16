@@ -68,7 +68,7 @@ public class Types {
 	// The basic numeric types, fixed length, implemented
 	// (except bigint unsigned fails for numbers larger than Long.MAX_VALUE).
 	//
-	public static Type BIGINT =       new Type("bigint", 0, true, 8L, "INT", AkType.INT);
+	public static Type BIGINT =       new Type("bigint", 0, true, 8L, "INT", AkType.LONG);
 	public static Type U_BIGINT = 	  new Type("bigint unsigned", 0, true, 8L, "U_BIGINT", AkType.U_BIGINT);
 	public static Type DOUBLE =       new Type("double", 0, true, 8L, "DOUBLE", AkType.DOUBLE);
 	public static Type U_DOUBLE =     new Type("double unsigned", 0, true, 8L, "U_DOUBLE", AkType.U_DOUBLE);

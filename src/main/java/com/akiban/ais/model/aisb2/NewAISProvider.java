@@ -22,7 +22,14 @@ public interface NewAISProvider {
      * Gets the AIS that's been built.
      * @return the AIS
      */
+
     AkibanInformationSchema ais();
+    /**
+     * Gets the AIS that's been built.
+     * @param freezeAIS whether to freeze the AIS before returning it
+     * @return the AIS
+     */
+    AkibanInformationSchema ais(boolean freezeAIS);
 
     /**
      * <p>Defines (but does not yet start building) a group index.</p>
