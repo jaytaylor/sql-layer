@@ -19,8 +19,9 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
 
 import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.error.DropSchemaNotAllowedException;
+import com.akiban.server.error.DuplicateSchemaException;
 import com.akiban.server.service.session.Session;
-import com.akiban.sql.StandardException;
 
 import com.akiban.sql.parser.CreateSchemaNode;
 import com.akiban.sql.parser.DropSchemaNode;
@@ -34,19 +35,18 @@ public class SchemaDDL {
     public static void createSchema (AkibanInformationSchema ais,
                                    String defaultSchemaName,
                                    CreateSchemaNode createSchema)
-        throws StandardException 
     {
         final String schemaName = createSchema.getSchemaName();
         
         for (TableName t : ais.getUserTables().keySet()) {
             if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
-                throw new StandardException ("Schema " + schemaName + " already exists");
+                throw new DuplicateSchemaException (schemaName);
             }
         }
         
         for (TableName t : ais.getGroupTables().keySet()) {
             if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
-                throw new StandardException ("Schema " + schemaName + " already exists");
+                throw new DuplicateSchemaException (schemaName);
             }
         }
         
@@ -58,7 +58,6 @@ public class SchemaDDL {
     public static void dropSchema (DDLFunctions ddlFunctions,
             Session session,
             DropSchemaNode dropSchema)
-    throws StandardException
     {
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         final String schemaName = dropSchema.getSchemaName();
@@ -68,22 +67,18 @@ public class SchemaDDL {
             dropSchema.getDropBehavior() == StatementType.DROP_DEFAULT) {
             for (TableName t : ais.getUserTables().keySet()) {
                 if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
-                    throw new StandardException ("Schema " + schemaName + " is in use");
+                    throw new DropSchemaNotAllowedException(schemaName);
                 }
             }
             for (TableName t : ais.getGroupTables().keySet()) {
                 if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
-                    throw new StandardException ("Schema " + schemaName + " is in use");
+                    throw new DropSchemaNotAllowedException (schemaName);
                 }
             }
             // If the schema isn't used by any existing tables, it has effectively 
             // been dropped, so the drop "succeeds".
         } else if (dropSchema.getDropBehavior() == StatementType.DROP_CASCADE) {
-            try {
-                ddlFunctions.dropSchema(session, schemaName);
-            } catch (Exception e) {
-                throw new StandardException (e.getMessage());
-            }
+            ddlFunctions.dropSchema(session, schemaName);
         }
     }
 }

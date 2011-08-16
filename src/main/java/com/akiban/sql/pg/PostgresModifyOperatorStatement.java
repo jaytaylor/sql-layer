@@ -17,16 +17,10 @@ package com.akiban.sql.pg;
 
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
-import com.akiban.sql.StandardException;
 
-import com.akiban.qp.physicaloperator.BindingNotSetException;
 import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.IncompatibleRowException;
-import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
-import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.UndefBindings;
 
-import java.util.*;
 import java.io.IOException;
 
 /**
@@ -47,30 +41,14 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
     }
     
     public int execute(PostgresServerSession server, int maxrows)
-        throws IOException, StandardException {
+        throws IOException {
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
         UpdateResult updateResult;
-        try {
-            updateResult = resultOperator.run(bindings, server.getStore());
-        }
-        catch (BindingNotSetException ex) {
-            throw new StandardException(ex);
-        }
-        catch (IncompatibleRowException ex) {
-            throw new StandardException(ex);
-        }
-        catch (StoreAdapterRuntimeException ex) {
-            throw new StandardException(ex);
-        }
-        catch (CursorUpdateException ex) {
-            throw new StandardException(ex);
-        }
-        {        
-            messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
-            messenger.writeString(statementType + " " + updateResult.rowsModified());
-            messenger.sendMessage();
-        }
+        updateResult = resultOperator.run(bindings, server.getStore());
+        messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+        messenger.writeString(statementType + " " + updateResult.rowsModified());
+        messenger.sendMessage();
         return 0;
     }
 
@@ -99,8 +77,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
     @Override
     public PostgresStatement getBoundStatement(String[] parameters,
                                                boolean[] columnBinary, 
-                                               boolean defaultColumnBinary) 
-            throws StandardException {
+                                               boolean defaultColumnBinary) {
         if (parameters == null)
             return this;        // Can be reused.
 

@@ -15,18 +15,27 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.server.error.AmbiguousColumNameException;
+import com.akiban.server.error.DuplicateTableNameException;
+import com.akiban.server.error.DuplicateViewException;
+import com.akiban.server.error.JoinNodeAdditionException;
+import com.akiban.server.error.MultipleJoinsToTableException;
+import com.akiban.server.error.NoSuchColumnException;
+import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.SelectExistsErrorException;
+import com.akiban.server.error.SubqueryOneColumnException;
+import com.akiban.server.error.SubqueryResultsSetupException;
+import com.akiban.server.error.TableIsBadSubqueryException;
+import com.akiban.server.error.UndefinedViewException;
+import com.akiban.server.error.ViewHasBadSubqueryException;
 import com.akiban.sql.parser.*;
 
 import com.akiban.sql.StandardException;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
-
 import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.Type;
 
 import java.util.*;
 
@@ -53,20 +62,20 @@ public class AISBinder implements Visitor
         this.defaultSchemaName = defaultSchemaName;
     }
 
-    public void addView(ViewDefinition view) throws StandardException {
+    public void addView(ViewDefinition view) {
         TableName name = view.getName();
         /**
            if (name.getSchemaName() == null)
            name.setSchemaName(defaultSchemaName);
         **/
         if (views.get(name) != null)
-            throw new StandardException("View already defined: " + name);
+            throw new DuplicateViewException (view.getName().toString());
         views.put(name, view);
     }
 
-    public void removeView(TableName name) throws StandardException {
+    public void removeView(TableName name) {
         if (views.remove(name) == null)
-            throw new StandardException("View not defined: " + name);
+            throw new UndefinedViewException (new com.akiban.ais.model.TableName(name.getSchemaName(), name.getTableName()));
     }
 
     public void bind(StatementNode stmt) throws StandardException {
@@ -83,7 +92,7 @@ public class AISBinder implements Visitor
     
     /* Hierarchical Visitor */
 
-    public boolean visitBefore(QueryTreeNode node) throws StandardException {
+    public boolean visitBefore(QueryTreeNode node)  {
         boolean first = visited.add(node);
 
         if (first) {
@@ -118,7 +127,7 @@ public class AISBinder implements Visitor
         return first;
     }
 
-    public void visitAfter(QueryTreeNode node) throws StandardException {
+    public void visitAfter(QueryTreeNode node) {
         switch (node.getNodeType()) {
         case NodeTypes.CURSOR_NODE:
         case NodeTypes.FROM_SUBQUERY:
@@ -133,17 +142,22 @@ public class AISBinder implements Visitor
 
     /* Specific node types */
 
-    protected void subqueryNode(SubqueryNode subqueryNode) throws StandardException {
+    protected void subqueryNode(SubqueryNode subqueryNode) {
         // The LHS of a subquery operator is bound in the outer context.
-        if (subqueryNode.getLeftOperand() != null)
-            subqueryNode.getLeftOperand().accept(this);
+        if (subqueryNode.getLeftOperand() != null) {
+            try {
+                subqueryNode.getLeftOperand().accept(this);
+            } catch (StandardException e) {
+                throw new com.akiban.server.error.ParseException ("", e.getMessage(), subqueryNode.toString());
+            }
+        }
 
         ResultSetNode resultSet = subqueryNode.getResultSet();
         ResultColumnList resultColumns = resultSet.getResultColumns();
         // The parser does not enforce the fact that a subquery can only
         // return a single column, so we must check here.
         if (resultColumns.size() != 1) {
-            throw new StandardException("Subquery must return single column");
+            throw new SubqueryOneColumnException ();
         }
 
         SubqueryNode.SubqueryType subqueryType = subqueryNode.getSubqueryType();
@@ -161,14 +175,17 @@ public class AISBinder implements Visitor
          *       get expanded.)
          */
         if (subqueryType == SubqueryNode.SubqueryType.EXISTS) {
-            resultSet = setResultToBooleanTrueNode(resultSet);
+            try {
+                resultSet = setResultToBooleanTrueNode(resultSet);
+            } catch (StandardException e) {
+                throw new SubqueryResultsSetupException (e.getMessage());
+            }
             subqueryNode.setResultSet(resultSet);
         }
     }
 
     protected void verifySelectStarSubquery(ResultSetNode resultSet, 
-                                            SubqueryNode.SubqueryType subqueryType)
-            throws StandardException {
+                                            SubqueryNode.SubqueryType subqueryType) {
         if (resultSet instanceof SetOperatorNode) {
             SetOperatorNode setOperatorNode = (SetOperatorNode)resultSet;
             verifySelectStarSubquery(setOperatorNode.getLeftResultSet(), subqueryType);
@@ -180,7 +197,7 @@ public class AISBinder implements Visitor
         }
         // Select * currently only valid for EXISTS/NOT EXISTS.
         if (subqueryType != SubqueryNode.SubqueryType.EXISTS) {
-            throw new StandardException("Cannot SELECT * in non-EXISTS subquery");
+            throw new SelectExistsErrorException ();
         }
     }
 
@@ -237,8 +254,7 @@ public class AISBinder implements Visitor
      *
      * @exception StandardException Thrown on error
      */
-    public ResultSetNode setResultToBooleanTrueNode(ResultSetNode resultSet)
-            throws StandardException {
+    public ResultSetNode setResultToBooleanTrueNode(ResultSetNode resultSet) throws StandardException {
         NodeFactory nodeFactory = resultSet.getNodeFactory();
         SQLParserContext parserContext = resultSet.getParserContext();
         if (resultSet instanceof SetOperatorNode) {
@@ -304,7 +320,7 @@ public class AISBinder implements Visitor
         return resultSet;
     }
 
-    protected void selectNode(SelectNode selectNode) throws StandardException {
+    protected void selectNode(SelectNode selectNode) {
         FromList fromList = selectNode.getFromList();
         int size = fromList.size();
         for (int i = 0; i < size; i++) {
@@ -320,7 +336,7 @@ public class AISBinder implements Visitor
     }
 
     // Process a FROM list table, finding the table binding.
-    protected FromTable fromTable(FromTable fromTable) throws StandardException {
+    protected FromTable fromTable(FromTable fromTable) {
         switch (fromTable.getNodeType()) {
         case NodeTypes.FROM_BASE_TABLE:
             return fromBaseTable((FromBaseTable)fromTable);
@@ -329,19 +345,23 @@ public class AISBinder implements Visitor
             return joinNode((JoinNode)fromTable);
         default:
             // Subqueries in SELECT don't see earlier FROM list tables.
-            return (FromTable)fromTable.accept(this);
+            try {
+                return (FromTable)fromTable.accept(this);
+            } catch (StandardException e) {
+                throw new TableIsBadSubqueryException (fromTable.getOrigTableName().getSchemaName(), fromTable.getOrigTableName().getTableName(), e.getMessage());
+            }
         }
     }
 
-    protected FromTable fromBaseTable(FromBaseTable fromBaseTable) 
-            throws StandardException {
+    protected FromTable fromBaseTable(FromBaseTable fromBaseTable)  {
         TableName tableName = fromBaseTable.getOrigTableName();
         ViewDefinition view = views.get(tableName);
         if (view != null)
-            // Splice in definition and bind it.
-            // For efficiency, bindings are computed on the definition and
-            // then remapped in the deep copy if gives out.
-            return fromTable(view.getSubquery(this));
+            try {
+                return fromTable(view.getSubquery(this));
+            } catch (StandardException e) {
+                throw new ViewHasBadSubqueryException(view.getName().toString(), e.getMessage());
+            }
 
         Table table = lookupTableName(tableName);
         tableName.setUserData(table);
@@ -349,15 +369,19 @@ public class AISBinder implements Visitor
         return fromBaseTable;
     }
     
-    protected FromTable joinNode(JoinNode joinNode) throws StandardException {
+    protected FromTable joinNode(JoinNode joinNode) {
         joinNode.setLeftResultSet(fromTable((FromTable)joinNode.getLeftResultSet()));
         joinNode.setRightResultSet(fromTable((FromTable)joinNode.getRightResultSet()));
         return joinNode;
     }
 
-    protected void addFromTable(FromTable fromTable) throws StandardException {
+    protected void addFromTable(FromTable fromTable) {
         if (fromTable instanceof JoinNode) {
-            addJoinNode((JoinNode)fromTable);
+            try {
+                addJoinNode((JoinNode)fromTable);
+            } catch (StandardException e) {
+                throw new JoinNodeAdditionException (fromTable.getOrigTableName().getSchemaName(), fromTable.getOrigTableName().getTableName(), e.getMessage());
+            }
             return;
         }
         BindingContext bindingContext = getBindingContext();
@@ -365,9 +389,7 @@ public class AISBinder implements Visitor
         if (fromTable.getCorrelationName() != null) {
             if (bindingContext.correlationNames.put(fromTable.getCorrelationName(), 
                                                     fromTable) != null) {
-                throw new StandardException("More than one use of " + 
-                                            fromTable.getCorrelationName() +
-                                            " as correlation name");
+                throw new MultipleJoinsToTableException(fromTable.getOrigTableName().getSchemaName(), fromTable.getOrigTableName().getTableName());
             }
         }
     }
@@ -386,12 +408,10 @@ public class AISBinder implements Visitor
                 String columnName = rc.getName();
                 ColumnBinding leftBinding = getColumnBinding(fromLeft, columnName);
                 if (leftBinding == null)
-                    throw new StandardException("Column " + columnName +
-                                                " not found in " + fromLeft.getExposedName());
+                    throw new NoSuchColumnException (columnName);
                 ColumnBinding rightBinding = getColumnBinding(fromRight, columnName);
                 if (rightBinding == null)
-                    throw new StandardException("Column " + columnName +
-                                                " not found in " + fromRight.getExposedName());
+                    throw new NoSuchColumnException (columnName);
                 ColumnReference leftCR = (ColumnReference)
                     nodeFactory.getNode(NodeTypes.COLUMN_REFERENCE,
                                         columnName, leftBinding.getFromTable().getTableName(),
@@ -429,8 +449,7 @@ public class AISBinder implements Visitor
             joinNode.getJoinClause().accept(this);
     }
 
-    protected void columnReference(ColumnReference columnReference) 
-            throws StandardException {
+    protected void columnReference(ColumnReference columnReference) {
         ColumnBinding columnBinding = (ColumnBinding)columnReference.getUserData();
         if (columnBinding != null)
             return;
@@ -440,8 +459,7 @@ public class AISBinder implements Visitor
             FromTable fromTable = findFromTable(columnReference.getTableNameNode());
             columnBinding = getColumnBinding(fromTable, columnName);
             if (columnBinding == null)
-                throw new StandardException("Column " + columnName +
-                                            " not found in " + fromTable.getExposedName());
+                throw new NoSuchColumnException(columnName);
         }
         else {
             for (BindingContext bindingContext : bindingContexts) {
@@ -449,31 +467,29 @@ public class AISBinder implements Visitor
                     ColumnBinding aColumnBinding = getColumnBinding(fromTable, columnName);
                     if (aColumnBinding != null) {
                         if (columnBinding != null)
-                            throw new StandardException("Column " + columnName + " is ambiguous");
+                            throw new AmbiguousColumNameException (columnName);
                         else
                             columnBinding = aColumnBinding;
                     }
                 }
             }
             if (columnBinding == null)
-                throw new StandardException("Column " + columnName + " not found");
+                throw new NoSuchColumnException (columnName);
         }
         columnReference.setUserData(columnBinding);
     }
 
-    protected Table lookupTableName(TableName tableName)
-            throws StandardException {
+    protected Table lookupTableName(TableName tableName) {
         String schemaName = tableName.getSchemaName();
         if (schemaName == null)
             schemaName = defaultSchemaName;
         Table result = ais.getUserTable(schemaName, tableName.getTableName());
         if (result == null)
-            throw new StandardException("Table " + tableName.getFullTableName() +
-                                        " not found");
+            throw new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName());
         return result;
     }
 
-    protected FromTable findFromTable(TableName tableNameNode) throws StandardException {
+    protected FromTable findFromTable(TableName tableNameNode){
         String schemaName = tableNameNode.getSchemaName();
         String tableName = tableNameNode.getTableName();
         if (schemaName == null) {
@@ -496,7 +512,7 @@ public class AISBinder implements Visitor
                         if (table.getName().getSchemaName().equalsIgnoreCase(schemaName) &&
                             table.getName().getTableName().equalsIgnoreCase(tableName)) {
                             if (result != null)
-                                throw new StandardException("Ambiguous table " + tableName);
+                                throw new DuplicateTableNameException (new com.akiban.ais.model.TableName(tableNameNode.getSchemaName(), tableNameNode.getTableName()));
                             else
                                 result = fromBaseTable;
                         }
@@ -504,12 +520,11 @@ public class AISBinder implements Visitor
             }
         }
         if (result == null)
-            throw new StandardException("Table " + tableNameNode + " not found");
+            throw new NoSuchTableException (tableNameNode.getSchemaName(), tableNameNode.getTableName());
         return result;
     }
 
-    protected ColumnBinding getColumnBinding(FromTable fromTable, String columnName)
-            throws StandardException {
+    protected ColumnBinding getColumnBinding(FromTable fromTable, String columnName) {
         if (fromTable instanceof FromBaseTable) {
             FromBaseTable fromBaseTable = (FromBaseTable)fromTable;
             TableBinding tableBinding = (TableBinding)fromBaseTable.getUserData();
@@ -551,8 +566,7 @@ public class AISBinder implements Visitor
      *
      * @exception StandardException                             Thrown on error
      */
-    public void expandAllsAndNameColumns(ResultColumnList rcl, FromList fromList) 
-            throws StandardException {
+    public void expandAllsAndNameColumns(ResultColumnList rcl, FromList fromList) {
         if (rcl == null) return;
 
         boolean expanded = false;
@@ -595,7 +609,7 @@ public class AISBinder implements Visitor
      *
      * @exception StandardException Thrown on error
      */
-    protected void guaranteeColumnName(ResultColumn rc) throws StandardException {
+    protected void guaranteeColumnName(ResultColumn rc) {
         if (rc.getName() == null) {
             rc.setName(((SQLParser)rc.getParserContext()).generateColumnName());
             rc.setNameGenerated(true);
@@ -616,8 +630,7 @@ public class AISBinder implements Visitor
      *
      * @exception StandardException Thrown on error
      */
-    protected ResultColumnList expandAll(TableName allTableName, FromList fromList)
-            throws StandardException {
+    protected ResultColumnList expandAll(TableName allTableName, FromList fromList) {
         ResultColumnList resultColumnList = null;
         ResultColumnList tempRCList = null;
 
@@ -643,26 +656,29 @@ public class AISBinder implements Visitor
 
         // Give an error if the qualification name did not match an exposed name.
         if (resultColumnList == null) {
-            throw new StandardException("Table not found: " + allTableName);
+            throw new NoSuchTableException (allTableName.getSchemaName(), allTableName.getTableName());
         }
 
         return resultColumnList;
     }
 
     protected ResultColumnList getAllResultColumns(TableName allTableName, 
-                                                   FromTable fromTable)
-            throws StandardException {
+                                                   FromTable fromTable) {
         switch (fromTable.getNodeType()) {
         case NodeTypes.FROM_BASE_TABLE:
-            return getAllResultColumns(allTableName, (FromBaseTable)fromTable);
+            try {
+                return getAllResultColumns(allTableName, (FromBaseTable)fromTable);
+            } catch (StandardException ex) {
+                throw new com.akiban.server.error.ParseException ("", ex.getMessage(), allTableName.getFullTableName());
+            }
         default:
             return null;
         }
     }
 
     protected ResultColumnList getAllResultColumns(TableName allTableName, 
-                                                   FromBaseTable fromTable)
-            throws StandardException {
+                                                   FromBaseTable fromTable) 
+        throws StandardException {
         TableName exposedName = fromTable.getExposedTableName();
         if ((allTableName != null) && !allTableName.equals(exposedName))
             return null;
@@ -693,8 +709,7 @@ public class AISBinder implements Visitor
         return rcList;
     }
 
-    protected void dmlModStatementNode(DMLModStatementNode node)
-            throws StandardException {
+    protected void dmlModStatementNode(DMLModStatementNode node) {
         TableName tableName = node.getTargetTableName();
         Table table = lookupTableName(tableName);
         tableName.setUserData(table);
@@ -710,8 +725,7 @@ public class AISBinder implements Visitor
                 String columnName = columnReference.getColumnName();
                 Column column = table.getColumn(columnName);
                 if (column == null)
-                    throw new StandardException("Target column " + columnName + 
-                                                " not found");
+                    throw new NoSuchColumnException (columnName);
                 ColumnBinding columnBinding = new ColumnBinding(null, column);
                 columnReference.setUserData(columnBinding);
             }
@@ -743,12 +757,12 @@ public class AISBinder implements Visitor
     */
 
     // To understand why this works, see QueryTreeNode.accept().
-    public Visitable visit(Visitable node) throws StandardException {
+    public Visitable visit(Visitable node) {
         visitAfter((QueryTreeNode)node);
         return node;
     }
 
-    public boolean skipChildren(Visitable node) throws StandardException {
+    public boolean skipChildren(Visitable node) {
         return ! visitBefore((QueryTreeNode)node);
     }
 

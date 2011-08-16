@@ -73,7 +73,14 @@ public enum ErrorCode {
     PROTECTED_INDEX         (2, 17, Importance.DEBUG, ProtectedIndexException.class),
     BRANCHING_GROUP_INDEX   (2, 18, Importance.DEBUG, BranchingGroupIndexException.class),
     WRONG_NAME_FORMAT       (2, 19, Importance.DEBUG, WrongNameFormatException.class),
-
+    DUPLICATE_VIEW          (2, 20, Importance.DEBUG, DuplicateViewException.class),
+    UNDEFINED_VIEW          (2, 21, Importance.DEBUG, UndefinedViewException.class),
+    SUBQUERY_ONE_COLUMN     (2, 22, Importance.DEBUG, SubqueryOneColumnException.class),
+    DUPLICATE_SCHEMA        (2, 23, Importance.DEBUG, DuplicateSchemaException.class),
+    DROP_SCHEMA_NOT_ALLOWED (2, 24, Importance.DEBUG, DropSchemaNotAllowedException.class),
+    WRONG_TABLE_FOR_INDEX   (2, 25, Importance.DEBUG, WrongTableForIndexException.class),
+    MISSING_DDL_PARAMETERS  (2, 26, Importance.DEBUG, MissingDDLParametersException.class),
+    
     // DML errors
     NO_REFERENCED_ROW       (3, 0, Importance.DEBUG, null),
     DUPLICATE_KEY           (3, 1, Importance.DEBUG, DuplicateKeyException.class),
@@ -94,19 +101,29 @@ public enum ErrorCode {
     TOO_MANY_ROWS_UPDATED   (3, 16, Importance.DEBUG, TooManyRowsUpdatedException.class),  
     NO_SUCH_TABLEID         (3, 17, Importance.DEBUG, NoSuchTableIdException.class),
     SCAN_RETRY_ABANDONDED   (3, 18, Importance.ERROR, ScanRetryAbandonedException.class),
-    
+    NO_TRANSACTION          (3, 19, Importance.DEBUG, NoTransactionInProgressException.class),
+    TRANSACTION_IN_PROGRESS (3, 20, Importance.DEBUG, TransactionInProgressException.class),
+    SELECT_EXISTS_ERROR     (3, 21, Importance.DEBUG, SelectExistsErrorException.class),
+    AMBIGUOUS_COLUMN_NAME   (3, 22, Importance.DEBUG, AmbiguousColumNameException.class),
+    UNABLE_TO_EXPLAIN       (3, 23, Importance.DEBUG, UnableToExplainException.class),
+    SUBQUERY_RESULT_FAIL    (3, 24, Importance.DEBUG, SubqueryResultsSetupException.class),
+    JOIN_NODE_ERROR         (3, 25, Importance.DEBUG, JoinNodeAdditionException.class),
+    MULTIPLE_JOINS          (3, 26, Importance.DEBUG, MultipleJoinsToTableException.class),
+    VIEW_BAD_SUBQUERY       (3, 27, Importance.DEBUG, ViewHasBadSubqueryException.class),
+    TABLE_BAD_SUBQUERY      (3, 28, Importance.DEBUG, TableIsBadSubqueryException.class),
     
     ROW_OUTPUT              (4, 11, Importance.DEBUG, RowOutputException.class), 
     AIS_MYSQL_SQL_EXCEPTION (4, 12, Importance.DEBUG, AisSQLErrorException.class),
     AIS_CSV_ERROR           (4, 13, Importance.DEBUG, AisCSVErrorException.class),
     
     // Messaging errors
-    MALFORMED_REQUEST (21, 0, Importance.ERROR, null), 
-    BAD_STATISTICS_TYPE (21, 4, Importance.ERROR, BadStatisticsTypeException.class),
+    MALFORMED_REQUEST       (21, 0, Importance.ERROR, null), 
+    BAD_STATISTICS_TYPE     (21, 4, Importance.ERROR, BadStatisticsTypeException.class),
+
     
     // AIS Validation errors, Attempts to modify and build an AIS failed
     // due to missing or invalid information.
-    VALIDATION_FAILURE(22, 0, Importance.DEBUG, null),
+    VALIDATION_FAILURE      (22, 0, Importance.DEBUG, null),
     INTERNAL_REFERENCES_BROKEN(22, 1, Importance.DEBUG, null),
     GROUP_MULTIPLE_ROOTS (22,  2, Importance.DEBUG, GroupHasMultipleRootsException.class),
     JOIN_TYPE_MISMATCH   (22,  3, Importance.DEBUG, JoinColumnTypesMismatchException.class),
@@ -131,6 +148,18 @@ public enum ErrorCode {
     BAD_AIS_REFERENCE    (22, 22, Importance.DEBUG, BadAISReferenceException.class),
     BAD_INTERNAL_SETTING (22, 23, Importance.DEBUG, BadAISInternalSettingException.class),
     TYPES_ARE_STATIC     (22, 24, Importance.DEBUG, TypesAreStaticException.class),
+    
+    // Bad Type errors
+    UNKNOWN_TYPE_SIZE    (22, 200, Importance.DEBUG, UnknownTypeSizeException.class),
+    UNKNOWN_TYPE         (22, 201, Importance.DEBUG, UnknownDataTypeException.class),
+    
+    // Unsupported Features Errors, Should be empty, but isn't
+    UNSUPPORTED_SQL         (28, 0, Importance.ERROR, UnsupportedSQLException.class),
+    UNSUPPORTED_PARAMETERS  (28, 1, Importance.ERROR, UnsupportedParametersException.class),
+    UNSUPPORTED_EXPLAIN     (28, 2, Importance.ERROR, UnsupportedExplainException.class),
+    UNSUPPORTED_CREATE_SELECT (28, 3, Importance.ERROR, UnsupportedCreateSelectException.class),
+    UNSUPPORTED_FK_INDEX    (28, 4, Importance.ERROR, UnsupportedFKIndexException.class),
+    UNSUPPORTED_CHECK       (28, 5, Importance.ERROR, UnsupportedCheckConstraintException.class),
     
     // Configuration, Startup, & Shutdown errors
     SERVICE_NOT_STARTED  (29, 1, Importance.ERROR, ServiceNotStartedException.class),
@@ -160,7 +189,8 @@ public enum ErrorCode {
     NO_ACTIVE_CURSOR    (31, 5, Importance.ERROR, NoActiveCursorException.class),
     CURSOR_CLOSE_BAD    (31, 6, Importance.ERROR, CursorCloseBadException.class),
     PERSISTIT_ERROR     (31, 7, Importance.ERROR, PersistItErrorException.class),
-    INVALID_VOLUME      (31, 8, Importance.ERROR, InvalidVolumeException.class)
+    INVALID_VOLUME      (31, 8, Importance.ERROR, InvalidVolumeException.class),
+    TABLE_NOT_BOUND     (31, 9, Importance.ERROR, TableNotBoundException.class),
     ;
 
     private final short value;
@@ -187,7 +217,7 @@ public enum ErrorCode {
         this.importance = importance;
         //this.message = message;
         this.exceptionClass = exception;
-        this.formattedValue = String.format("%d%03d", groupValue, subCode); 
+        this.formattedValue = String.format("%02d%03d", groupValue, subCode); 
     }
 
     public static ErrorCode valueOf(short value)

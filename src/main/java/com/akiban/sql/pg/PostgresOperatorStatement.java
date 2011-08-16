@@ -16,16 +16,11 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.types.ToObjectConversionTarget;
-import com.akiban.sql.StandardException;
 
 import com.akiban.qp.physicaloperator.API;
-import com.akiban.qp.physicaloperator.ArrayBindings;
-import com.akiban.qp.physicaloperator.BindingNotSetException;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.IncompatibleRowException;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -56,7 +51,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     }
     
     public int execute(PostgresServerSession server, int maxrows)
-        throws IOException, StandardException {
+        throws IOException {
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
         RowType resultRowType = resultOperator.rowType();
@@ -100,15 +95,6 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                 if ((maxrows > 0) && (nrows >= maxrows))
                     break;
             }
-        }
-        catch (BindingNotSetException ex) {
-            throw new StandardException(ex);
-        }
-        catch (IncompatibleRowException ex) {
-            throw new StandardException(ex);
-        }
-        catch (StoreAdapterRuntimeException ex) {
-            throw new StandardException(ex);
         }
         finally {
             cursor.close();
@@ -164,8 +150,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     @Override
     public PostgresStatement getBoundStatement(String[] parameters,
                                                boolean[] columnBinary, 
-                                               boolean defaultColumnBinary) 
-            throws StandardException {
+                                               boolean defaultColumnBinary)  {
         if ((parameters == null) && 
             (columnBinary == null) && (defaultColumnBinary == false))
             return this;        // Can be reused.

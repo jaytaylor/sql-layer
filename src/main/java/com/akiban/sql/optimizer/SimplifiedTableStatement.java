@@ -15,9 +15,8 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.server.error.NoSuchTableException;
 import com.akiban.sql.parser.*;
-
-import com.akiban.sql.StandardException;
 
 import com.akiban.ais.model.UserTable;
 
@@ -32,13 +31,12 @@ public class SimplifiedTableStatement extends SimplifiedQuery
     private TableNode targetTable;
 
     public SimplifiedTableStatement(DMLModStatementNode statement, 
-                                    Set<ValueNode> joinConditions)
-            throws StandardException {
+                                    Set<ValueNode> joinConditions) {
         super(statement, joinConditions);
 
         UserTable table = (UserTable)statement.getTargetTableName().getUserData();
         if (table == null)
-            throw new StandardException("Table not bound properly.");
+            throw new NoSuchTableException (statement.getTargetTableName().getSchemaName(), statement.getTargetTableName().getTableName());
         targetTable = getTables().addNode(table);
     }
 

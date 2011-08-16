@@ -15,17 +15,20 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.instrumentation.InstrumentationService;
-import com.akiban.server.service.session.SessionService;
-import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.store.Store;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.*;
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** The PostgreSQL server.

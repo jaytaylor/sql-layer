@@ -19,7 +19,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.UnsupportedCheckConstraintException;
+import com.akiban.server.error.UnsupportedCreateSelectException;
+import com.akiban.server.error.UnsupportedFKIndexException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.ColumnDefinitionNode;
 import com.akiban.sql.parser.ConstraintDefinitionNode;
@@ -31,8 +34,6 @@ import com.akiban.sql.parser.TableElementNode;
 
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId.FormatIds;
-
-import com.akiban.sql.StandardException;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -54,32 +55,21 @@ public class TableDDL
     public static void dropTable (DDLFunctions ddlFunctions,
                                   Session session, 
                                   String defaultSchemaName,
-                                  DropTableNode dropTable)
-            throws StandardException {
+                                  DropTableNode dropTable) {
         com.akiban.sql.parser.TableName parserName = dropTable.getObjectName();
         
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         TableName tableName = TableName.create(schemaName, parserName.getTableName());
         
-        try {
-            ddlFunctions.dropTable(session, tableName);
-        } catch (InvalidOperationException ex) {
-            logger.error(ex.getMessage(), ex.getStackTrace());
-            throw new StandardException (ex.getMessage());
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e.getStackTrace());
-            throw new StandardException (e.getMessage());
-        }
-        
+        ddlFunctions.dropTable(session, tableName);
     }
 
     public static void createTable(DDLFunctions ddlFunctions,
                                    Session session,
                                    String defaultSchemaName,
-                                   CreateTableNode createTable) 
-            throws StandardException {
+                                   CreateTableNode createTable) {
         if (createTable.getQueryExpression() != null)
-            throw new StandardException("Cannot CREATE TABLE from SELECT yet.");
+            throw new UnsupportedCreateSelectException();
 
         com.akiban.sql.parser.TableName parserName = createTable.getObjectName();
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
@@ -108,7 +98,7 @@ public class TableDDL
                     addParentTable(builder, ddlFunctions.getAIS(session), fkdn, schemaName);
                     addJoin (builder, fkdn, schemaName, tableName);
                 } else {
-                    throw new StandardException ("non-grouping Foreign keys not supported");
+                    throw new UnsupportedFKIndexException();
                 }
             }
             else if (tableElement instanceof ConstraintDefinitionNode) {
@@ -119,20 +109,11 @@ public class TableDDL
         builder.groupingIsComplete();
         UserTable table = builder.akibanInformationSchema().getUserTable(schemaName, tableName);
         
-        try {
-            ddlFunctions.createTable(session, table);
-        } catch (InvalidOperationException ex) {
-            logger.error(ex.getMessage(), ex.getStackTrace());
-            throw new StandardException (ex.getMessage());
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e.getStackTrace());
-            throw new StandardException (e.getMessage());
-        }
+        ddlFunctions.createTable(session, table);
     }
     
     private static void addColumn (final AISBuilder builder, final ColumnDefinitionNode cdn, 
-            final String schemaName, final String tableName, int colpos)
-            throws StandardException {
+            final String schemaName, final String tableName, int colpos) {
         DataTypeDescriptor type = cdn.getType();
         Long typeParameter1 = null, typeParameter2 = null;
         String typeName = type.getTypeName();
@@ -155,7 +136,6 @@ public class TableDDL
             break;
         }
         
-        try {
         builder.column(schemaName, tableName, 
                 cdn.getColumnName(), 
                 Integer.valueOf(colpos), 
@@ -164,10 +144,6 @@ public class TableDDL
                 type.isNullable(), 
                 cdn.isAutoincrementColumn(),
                 null, null);
-        } catch (InvalidOperationException ex) {
-            logger.error(ex.getMessage(), ex.getStackTrace());
-            throw new StandardException (ex);
-        }
         if (cdn.isAutoincrementColumn()) {
             builder.userTableInitialAutoIncrement(schemaName, tableName, 
                     cdn.getAutoincrementStart());
@@ -175,15 +151,14 @@ public class TableDDL
     }
 
     private static void addIndex (final AISBuilder builder, final ConstraintDefinitionNode cdn, 
-            final String schemaName, final String tableName) 
-            throws StandardException {
+            final String schemaName, final String tableName)  {
 
         NameGenerator namer = new DefaultNameGenerator();
         String constraint = null;
         String indexName = null;
         
         if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.CHECK) {
-            throw new StandardException ("Check constraints not supported (yet)");
+            throw new UnsupportedCheckConstraintException ();
         }
         else if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.PRIMARY_KEY) {
             constraint = Index.PRIMARY_KEY_CONSTRAINT;
@@ -193,27 +168,16 @@ public class TableDDL
         }
         indexName = namer.generateIndexName(cdn.getName(), cdn.getColumnList().get(0).getName(), constraint);
         
-        try {
-            builder.index(schemaName, tableName, indexName, true, constraint);
-        } catch (InvalidOperationException ex) {
-            logger.error(ex.getMessage(), ex.getStackTrace());
-            throw new StandardException (ex);                    
-        }
+        builder.index(schemaName, tableName, indexName, true, constraint);
         
         int colPos = 0;
         for (ResultColumn col : cdn.getColumnList()) {
-            try {
-                builder.indexColumn(schemaName, tableName, indexName, col.getName(), colPos++, true, 0);
-            }catch (InvalidOperationException ex) {
-                logger.error(ex.getMessage(), ex.getStackTrace());
-                throw new StandardException (ex);                        
-            }
+            builder.indexColumn(schemaName, tableName, indexName, col.getName(), colPos++, true, 0);
         }
     }
     
     private static void addJoin(final AISBuilder builder, final FKConstraintDefinitionNode fkdn, 
-            final String schemaName, final String tableName) 
-    throws StandardException {
+            final String schemaName, final String tableName)  {
 
  
         String parentSchemaName = fkdn.getRefTableName().hasSchema() ?
@@ -250,7 +214,7 @@ public class TableDDL
      */
     private static void addParentTable(final AISBuilder builder, 
             final AkibanInformationSchema ais, final FKConstraintDefinitionNode fkdn, 
-            final String schemaName) throws StandardException {
+            final String schemaName) {
 
         String parentSchemaName = fkdn.getRefTableName().hasSchema() ?
                 fkdn.getRefTableName().getSchemaName() : schemaName;
@@ -259,18 +223,10 @@ public class TableDDL
 
         UserTable parentTable = ais.getUserTable(parentSchemaName, parentTableName);
         if (parentTable == null) {
-            throw new StandardException ("Unable to find Foreign Key reference table " +
-                    parentSchemaName + "." + parentTableName + " in existing tables");
+            throw new NoSuchTableException (parentSchemaName, parentTableName);
         }
         
-            
-        try {
-            builder.userTable(parentSchemaName, parentTableName);
-        } catch (InvalidOperationException ex) {
-            // This happens because the userTable() AISInvariants check throws 
-            // DUPLICATE_TABLE error. We don't support two joins in the same table. 
-            throw new StandardException (ex.getMessage());
-        }
+        builder.userTable(parentSchemaName, parentTableName);
         
         builder.index(parentSchemaName, parentTableName, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         int colpos = 0;
