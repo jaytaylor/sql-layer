@@ -52,19 +52,27 @@ final class StandardTestCases {
         list.add(TestCase.forDouble(-0, NO_STATE));
         list.add(TestCase.forDouble(1, NO_STATE));
         list.add(TestCase.forDouble(-1, NO_STATE));
+        list.add(TestCase.forDouble(Double.MIN_VALUE, NO_STATE));
+        list.add(TestCase.forDouble(Double.MAX_VALUE, NO_STATE));
         
         list.add(TestCase.forFloat(0, NO_STATE));
         list.add(TestCase.forFloat(-0, NO_STATE));
         list.add(TestCase.forFloat(1, NO_STATE));
         list.add(TestCase.forFloat(-1, NO_STATE));
+        list.add(TestCase.forFloat(Float.MIN_VALUE, NO_STATE));
+        list.add(TestCase.forFloat(Float.MAX_VALUE, NO_STATE));
 
         list.add(TestCase.forInt(-1, NO_STATE));
         list.add(TestCase.forInt(0, NO_STATE));
         list.add(TestCase.forInt(1, NO_STATE));
+        list.add(TestCase.forInt(-1, Long.MAX_VALUE));
+        list.add(TestCase.forInt(-1, Long.MIN_VALUE));
 
         list.add(TestCase.forLong(-1, NO_STATE));
         list.add(TestCase.forLong(0, NO_STATE));
         list.add(TestCase.forLong(1, NO_STATE));
+        list.add(TestCase.forLong(-1, Long.MAX_VALUE));
+        list.add(TestCase.forLong(-1, Long.MIN_VALUE));
 
         list.add(TestCase.forString("", NO_STATE));
         list.add(TestCase.forString("word", NO_STATE));
@@ -91,15 +99,21 @@ final class StandardTestCases {
         list.add(TestCase.forUDouble(-0, NO_STATE));
         list.add(TestCase.forUDouble(1, NO_STATE));
         list.add(TestCase.forUDouble(-1, NO_STATE));
+        list.add(TestCase.forUDouble(Double.MIN_VALUE, NO_STATE));
+        list.add(TestCase.forUDouble(Double.MAX_VALUE, NO_STATE));
 
         list.add(TestCase.forUFloat(0, NO_STATE));
         list.add(TestCase.forUFloat(-0, NO_STATE));
         list.add(TestCase.forUFloat(1, NO_STATE));
         list.add(TestCase.forUFloat(-1, NO_STATE));
+        list.add(TestCase.forUFloat(Float.MIN_VALUE, NO_STATE));
+        list.add(TestCase.forUFloat(Float.MAX_VALUE, NO_STATE));
 
         list.add(TestCase.forUInt(-1, NO_STATE));
         list.add(TestCase.forUInt(0, NO_STATE));
         list.add(TestCase.forUInt(1, NO_STATE));
+        list.add(TestCase.forUInt(Long.MIN_VALUE, NO_STATE));
+        list.add(TestCase.forUInt(Long.MAX_VALUE, NO_STATE));
 
         list.add(TestCase.forVarBinary(wrap(), NO_STATE));
         list.add(TestCase.forVarBinary(wrap(Byte.MIN_VALUE, Byte.MAX_VALUE, 0), NO_STATE));
