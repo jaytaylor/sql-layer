@@ -18,10 +18,7 @@ package com.akiban.server.rowdata;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.Quote;
 import com.akiban.server.encoding.EncodingException;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ConversionSource;
-import com.akiban.server.types.Converters;
-import com.akiban.server.types.SourceIsNullException;
+import com.akiban.server.types.*;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
 import com.akiban.util.WrappingByteSource;
@@ -36,6 +33,7 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
 
     @Override
     public BigDecimal getDecimal() {
+        checkState(AkType.DECIMAL);
         AkibanAppender appender = AkibanAppender.of(new StringBuilder(fieldDef().getMaxStorageSize()));
         ConversionHelperBigDecimal.decodeToString(fieldDef(), bytes(), getRawOffsetAndWidth(), appender);
         String asString = appender.toString();
@@ -49,6 +47,7 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
 
     @Override
     public BigInteger getUBigInt() {
+        checkState(AkType.U_BIGINT);
         long offsetAndWidth = getRawOffsetAndWidth();
         if (offsetAndWidth == 0) {
             return null;
@@ -59,6 +58,7 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
 
     @Override
     public ByteSource getVarBinary() {
+        checkState(AkType.VARBINARY);
         long offsetAndWidth = getRawOffsetAndWidth();
         if (offsetAndWidth == 0) {
             return null;
@@ -70,17 +70,20 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
 
     @Override
     public double getDouble() {
+        checkState(AkType.DOUBLE);
         long asLong = extractLong(Signage.SIGNED);
         return Double.longBitsToDouble(asLong);
     }
 
     @Override
     public double getUDouble() {
+        checkState(AkType.U_DOUBLE);
         return getDouble();
     }
 
     @Override
     public float getFloat() {
+        checkState(AkType.FLOAT);
         long asLong = extractLong(Signage.SIGNED);
         int asInt = (int) asLong;
         return Float.intBitsToFloat(asInt);
@@ -88,51 +91,61 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
 
     @Override
     public float getUFloat() {
+        checkState(AkType.U_FLOAT);
         return getFloat();
     }
 
     @Override
     public long getDate() {
+        checkState(AkType.DATE);
         return extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getDateTime() {
+        checkState(AkType.DATETIME);
         return extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getInt() {
+        checkState(AkType.INT);
         return extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getLong() {
+        checkState(AkType.LONG);
         return extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getTime() {
+        checkState(AkType.TIME);
         return extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getTimestamp() {
+        checkState(AkType.TIMESTAMP);
         return extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getUInt() {
+        checkState(AkType.U_INT);
         return extractLong(Signage.UNSIGNED);
     }
 
     @Override
     public long getYear() {
+        checkState(AkType.YEAR);
         return extractLong(Signage.SIGNED) & 0xFF;
     }
 
     @Override
     public String getString() {
+        checkState(AkType.VARCHAR);
         final long location = getRawOffsetAndWidth();
         return location == 0
                 ? null
@@ -141,6 +154,7 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
 
     @Override
     public String getText() {
+        checkState(AkType.TEXT);
         return getString();
     }
 
@@ -172,7 +186,6 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
     protected abstract FieldDef fieldDef();
 
     // for use within this class
-    // Stolen from the Encoding classes
 
     private void appendStringField(AkibanAppender appender, Quote quote) {
         try {
@@ -192,6 +205,10 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
         } catch (EncodingException e) {
             quote.append(appender, "<encoding exception! " + e.getMessage() + '>');
         }
+    }
+
+    private void checkState(AkType type) {
+        com.akiban.server.types.ConversionHelper.checkType(type, getConversionType());
     }
     
     private long extractLong(Signage signage) {
