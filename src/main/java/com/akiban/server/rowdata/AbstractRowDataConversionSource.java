@@ -71,28 +71,25 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
     @Override
     public double getDouble() {
         checkState(AkType.DOUBLE);
-        long asLong = extractLong(Signage.SIGNED);
-        return Double.longBitsToDouble(asLong);
+        return doGetDouble();
     }
 
     @Override
     public double getUDouble() {
         checkState(AkType.U_DOUBLE);
-        return getDouble();
+        return doGetDouble();
     }
 
     @Override
     public float getFloat() {
         checkState(AkType.FLOAT);
-        long asLong = extractLong(Signage.SIGNED);
-        int asInt = (int) asLong;
-        return Float.intBitsToFloat(asInt);
+        return doGetFloat();
     }
 
     @Override
     public float getUFloat() {
         checkState(AkType.U_FLOAT);
-        return getFloat();
+        return doGetFloat();
     }
 
     @Override
@@ -146,16 +143,13 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
     @Override
     public String getString() {
         checkState(AkType.VARCHAR);
-        final long location = getRawOffsetAndWidth();
-        return location == 0
-                ? null
-                : AkServerUtil.decodeMySQLString(bytes(), (int)location, (int)(location >>> 32), fieldDef());
+        return doGetString();
     }
 
     @Override
     public String getText() {
         checkState(AkType.TEXT);
-        return getString();
+        return doGetString();
     }
 
     @Override
@@ -210,7 +204,25 @@ abstract class AbstractRowDataConversionSource implements ConversionSource {
     private void checkState(AkType type) {
         com.akiban.server.types.ConversionHelper.checkType(type, getConversionType());
     }
-    
+
+    private double doGetDouble() {
+        long asLong = extractLong(Signage.SIGNED);
+        return Double.longBitsToDouble(asLong);
+    }
+
+    private float doGetFloat() {
+        long asLong = extractLong(Signage.SIGNED);
+        int asInt = (int) asLong;
+        return Float.intBitsToFloat(asInt);
+    }
+
+    private String doGetString() {
+        final long location = getRawOffsetAndWidth();
+        return location == 0
+                ? null
+                : AkServerUtil.decodeMySQLString(bytes(), (int) location, (int) (location >>> 32), fieldDef());
+    }
+
     private long extractLong(Signage signage) {
         long offsetAndWidth = getCheckedOffsetAndWidth();
         final int offset = (int)offsetAndWidth;
