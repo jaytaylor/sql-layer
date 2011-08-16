@@ -28,6 +28,9 @@ import com.akiban.sql.RegexFilenameFilter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static junit.framework.Assert.*;
 
 import java.sql.Connection;
@@ -45,6 +48,7 @@ import java.util.List;
 @Ignore
 public class PostgresServerITBase extends ITBase
 {
+    private static final Logger LOG = LoggerFactory.getLogger(PostgresServerITBase.class);
     public static final File RESOURCE_DIR = 
         new File("src/test/resources/"
                  + PostgresServerITBase.class.getPackage().getName().replace('.', '/'));
@@ -212,14 +216,16 @@ public class PostgresServerITBase extends ITBase
         for (int i = 0; i < 6; i++) {
             if (server().isListening())
                 break;
-            if (i == 0)
-                System.err.println("Postgres server not listening. Waiting...");
+            if (i == 1)
+                LOG.warn("Postgres server not listening. Waiting...");
             else if (i == 5)
                 fail("Postgres server still not listening. Giving up.");
             try {
                 Thread.sleep(200);
             }
             catch (InterruptedException ex) {
+                LOG.warn("caught an interrupted exception; re-interrupting", ex);
+                Thread.currentThread().interrupt();
             }
         }
         connection = openConnection();

@@ -103,6 +103,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
                     logger.warn("Server still running.");
             }
             catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
             }
             thread = null;
         }

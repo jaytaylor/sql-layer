@@ -326,7 +326,12 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                         assert CursorState.FRESH.equals(cursor.getState()) : cursor.getState();
                         cursor.getRowCollector().open();
                     }
-                    scanner.doScan(cursor, cursorId, output, scanHooks);
+                    try {
+                        scanner.doScan(cursor, cursorId, output, scanHooks);
+                    } catch (BufferFullException e) {
+                        transaction.commit(); // if this fails, it'll be handled in one of the catches below
+                        throw e;
+                    }
                     transaction.commit();
                     scanHooks.scanSomeFinishedWellHook();
                     return;
