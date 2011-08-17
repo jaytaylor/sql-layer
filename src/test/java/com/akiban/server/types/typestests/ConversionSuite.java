@@ -38,7 +38,7 @@ public final class ConversionSuite<T> {
 
     void putAndCheck(int i) {
         TestCase<? extends T> testCase = testCases.get(i);
-        converters.setUp(testCase.type());
+        converters.setUp(testCase);
         testCase.put(converters.linkedTarget());
         converters.syncConversions();
         if (converters.linkedSource().isNull()) {
@@ -50,7 +50,7 @@ public final class ConversionSuite<T> {
 
     void targetAlwaysAcceptsNull(int i) {
         TestCase<? extends T> testCase = testCases.get(i);
-        converters.setUp(testCase.type());
+        converters.setUp(testCase);
         converters.linkedTarget().putNull();
         converters.syncConversions();
         if (!converters.linkedSource().isNull()) {
@@ -61,7 +61,7 @@ public final class ConversionSuite<T> {
     void getMismatch(int i) {
         TestCase<? extends T> testCase = testCases.get(i);
         AkType expectedType = testCase.type();
-        converters.setUp(expectedType);
+        converters.setUp(testCase);
         testCase.put(converters.linkedTarget());
         converters.syncConversions();
 
@@ -85,7 +85,7 @@ public final class ConversionSuite<T> {
     void putMismatch(int i) {
         TestCase<? extends T> testCase = testCases.get(i);
         AkType expectedType = testCase.type();
-        converters.setUp(expectedType);
+        converters.setUp(testCase);
 
         TestCase<?> switched = resolveSwitcher(testCase);
         boolean gotError = false;

@@ -15,8 +15,6 @@
 
 package com.akiban.util;
 
-import com.sun.javaws.jnl.ResourcesDesc;
-
 import java.nio.ByteBuffer;
 
 public final class WrappingByteSource implements ByteSource {
@@ -69,6 +67,14 @@ public final class WrappingByteSource implements ByteSource {
         this.offset = offset;
         this.length = length;
         return this;
+    }
+
+    public WrappingByteSource() {
+        // nothing
+    }
+
+    public WrappingByteSource(byte[] bytes) {
+        wrap(bytes);
     }
 
     // ByteSource interface

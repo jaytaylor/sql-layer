@@ -24,6 +24,6 @@ public interface LinkedConversion<T> {
     ConversionTarget linkedTarget();
 
     void checkPut(T expected);
-    void setUp(AkType type);
+    void setUp(TestCase<?> testCase);
     void syncConversions();
 }

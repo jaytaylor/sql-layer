@@ -152,4 +152,25 @@ public abstract class Strings {
     public static String hex(ByteSource byteSource) {
         return hex(byteSource.byteArray(), byteSource.byteArrayOffset(), byteSource.byteArrayLength());
     }
+
+    public static ByteSource parseHex(String string) {
+        if (!string.startsWith("0x")) {
+            throw new RuntimeException("not a hex string");
+        }
+
+        byte[] ret = new byte[ (string.length()-2) / 2 ];
+
+        int resultIndex = 0;
+        for (int strIndex=2; strIndex < string.length(); ++strIndex) {
+            final char strChar = string.charAt(strIndex);
+            if (!Character.isWhitespace(strChar)) {
+                int high = (Character.digit(strChar, 16)) << 4;
+                char lowChar = string.charAt(++strIndex);
+                int low = (Character.digit(lowChar, 16));
+                ret[resultIndex++] = (byte) (low + high);
+            }
+        }
+
+        return new WrappingByteSource().wrap(ret, 0, resultIndex);
+    }
 }

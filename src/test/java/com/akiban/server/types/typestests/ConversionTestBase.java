@@ -20,7 +20,6 @@ import com.akiban.junit.OnlyIf;
 import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.server.types.AkType;
 import com.akiban.server.types.ConversionSource;
 import com.akiban.server.types.ConversionTarget;
 import org.junit.Test;
@@ -122,8 +121,8 @@ public abstract class ConversionTestBase {
         }
 
         @Override
-        public void setUp(AkType type) {
-            delegate.setUp(type);
+        public void setUp(TestCase<?> testCase) {
+            delegate.setUp(testCase);
         }
 
         @Override

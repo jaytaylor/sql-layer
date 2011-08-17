@@ -47,10 +47,10 @@ final class StandardTestCases {
         list.add(TestCase.forDateTime(0, NO_STATE));
         list.add(TestCase.forDateTime(99991231235959L, NO_STATE));
         
-        list.add(TestCase.forDecimal(BigDecimal.ZERO, NO_STATE));
-        list.add(TestCase.forDecimal(BigDecimal.ONE, NO_STATE));
-        list.add(TestCase.forDecimal(BigDecimal.TEN, NO_STATE));
-        list.add(TestCase.forDecimal(BigDecimal.valueOf(-10), NO_STATE));
+        list.add(TestCase.forDecimal(BigDecimal.ZERO, 1, 0, NO_STATE));
+        list.add(TestCase.forDecimal(BigDecimal.ONE, 1, 0, NO_STATE));
+        list.add(TestCase.forDecimal(new BigDecimal("10.0"), 3, 1, NO_STATE));
+        list.add(TestCase.forDecimal(BigDecimal.valueOf(-10), 10, 0, NO_STATE));
         
         list.add(TestCase.forDouble(0, NO_STATE));
         list.add(TestCase.forDouble(-0, NO_STATE));
@@ -78,15 +78,15 @@ final class StandardTestCases {
         list.add(TestCase.forLong(-1, Long.MAX_VALUE));
         list.add(TestCase.forLong(-1, Long.MIN_VALUE));
 
-        list.add(TestCase.forString("", NO_STATE));
-        list.add(TestCase.forString("word", NO_STATE));
-        list.add(TestCase.forString("☃", NO_STATE));
-        list.add(TestCase.forString("a ☃ is cold", NO_STATE));
+        list.add(TestCase.forString("", 32, "UTF-8", NO_STATE));
+        list.add(TestCase.forString("word", 32, "UTF-8", NO_STATE));
+        list.add(TestCase.forString("☃", 32, "UTF-8", NO_STATE));
+        list.add(TestCase.forString("a ☃ is cold", 32, "UTF-8", NO_STATE));
 
-        list.add(TestCase.forText("", NO_STATE));
-        list.add(TestCase.forText("word", NO_STATE));
-        list.add(TestCase.forText("☃", NO_STATE));
-        list.add(TestCase.forText("a ☃ is cold", NO_STATE));
+        list.add(TestCase.forText("", 32, "UTF-8", NO_STATE));
+        list.add(TestCase.forText("word", 32, "UTF-8", NO_STATE));
+        list.add(TestCase.forText("☃", 32, "UTF-8", NO_STATE));
+        list.add(TestCase.forText("a ☃ is cold", 32, "UTF-8", NO_STATE));
 
         list.add(TestCase.forTime(-1, NO_STATE));
         list.add(TestCase.forTime(0, NO_STATE));
@@ -122,8 +122,8 @@ final class StandardTestCases {
         list.add(TestCase.forUInt(Integer.MAX_VALUE, NO_STATE));
         list.add(TestCase.forUInt(((long)Math.pow(2, 32))-1, NO_STATE));
 
-        list.add(TestCase.forVarBinary(wrap(), NO_STATE));
-        list.add(TestCase.forVarBinary(wrap(Byte.MIN_VALUE, Byte.MAX_VALUE, 0), NO_STATE));
+        list.add(TestCase.forVarBinary(wrap(), 0, NO_STATE));
+        list.add(TestCase.forVarBinary(wrap(Byte.MIN_VALUE, Byte.MAX_VALUE, 0), 2, NO_STATE));
 
         LongConverter yearConverter = Converters.getLongConverter(AkType.YEAR);
         list.add(TestCase.forYear(yearConverter.doParse("0000"), NO_STATE));

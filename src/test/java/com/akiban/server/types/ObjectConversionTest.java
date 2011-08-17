@@ -20,6 +20,7 @@ import com.akiban.junit.Parameterization;
 import com.akiban.server.types.typestests.ConversionSuite;
 import com.akiban.server.types.typestests.ConversionTestBase;
 import com.akiban.server.types.typestests.LinkedConversion;
+import com.akiban.server.types.typestests.TestCase;
 
 import java.util.Collection;
 
@@ -54,8 +55,8 @@ public final class ObjectConversionTest extends ConversionTestBase {
         }
 
         @Override
-        public void setUp(AkType type) {
-            target.expectType(type);
+        public void setUp(TestCase<?> testCase) {
+            target.expectType(testCase.type());
         }
 
         @Override

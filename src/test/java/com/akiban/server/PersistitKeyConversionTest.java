@@ -17,12 +17,12 @@ package com.akiban.server;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
-import com.akiban.server.types.AkType;
 import com.akiban.server.types.ConversionSource;
 import com.akiban.server.types.ConversionTarget;
 import com.akiban.server.types.typestests.ConversionSuite;
 import com.akiban.server.types.typestests.ConversionTestBase;
 import com.akiban.server.types.typestests.SimpleLinkedConversion;
+import com.akiban.server.types.typestests.TestCase;
 import com.persistit.Key;
 import com.persistit.Persistit;
 
@@ -52,11 +52,11 @@ public final class PersistitKeyConversionTest extends ConversionTestBase {
         }
 
         @Override
-        public void setUp(AkType type) {
+        public void setUp(TestCase<?> testCase) {
             key.clear();
             target.attach(key);
-            target.expectingType(type);
-            source.attach(key, 0, type);
+            target.expectingType(testCase.type());
+            source.attach(key, 0, testCase.type());
         }
 
         private final Key key = new Key((Persistit)null);

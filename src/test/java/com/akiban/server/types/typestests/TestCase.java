@@ -46,8 +46,8 @@ public final class TestCase<T> {
         return new TestCase<T>(DATETIME, value, TC_LONG, expectedState);
     }
 
-    public static <T> TestCase<T> forDecimal(BigDecimal value, T expectedState) {
-        return new TestCase<T>(DECIMAL, value, TC_OBJECT, expectedState);
+    public static <T> TestCase<T> forDecimal(BigDecimal value, long precision, long scale, T expectedState) {
+        return new TestCase<T>(DECIMAL, value, TC_OBJECT, precision, scale, expectedState);
     }
 
     public static <T> TestCase<T> forDouble(double value, T expectedState) {
@@ -66,12 +66,12 @@ public final class TestCase<T> {
         return new TestCase<T>(LONG, value, TC_LONG, expectedState);
     }
 
-    public static <T> TestCase<T> forString(String value, T expectedState) {
-        return new TestCase<T>(VARCHAR, value, TC_OBJECT, expectedState);
+    public static <T> TestCase<T> forString(String value, long maxWidth, String charset, T expectedState) {
+        return new TestCase<T>(VARCHAR, value, TC_OBJECT, maxWidth, charset, expectedState);
     }
 
-    public static <T> TestCase<T> forText(String value, T expectedState) {
-        return new TestCase<T>(TEXT, value, TC_OBJECT, expectedState);
+    public static <T> TestCase<T> forText(String value, long maxWidth, String charset, T expectedState) {
+        return new TestCase<T>(TEXT, value, TC_OBJECT, maxWidth, charset, expectedState);
     }
 
     public static <T> TestCase<T> forTime(long value, T expectedState) {
@@ -98,8 +98,8 @@ public final class TestCase<T> {
         return new TestCase<T>(U_INT, value, TC_LONG, expectedState);
     }
 
-    public static <T> TestCase<T> forVarBinary(ByteSource value, T expectedState) {
-        return new TestCase<T>(VARBINARY, value, TC_OBJECT, expectedState);
+    public static <T> TestCase<T> forVarBinary(ByteSource value, long maxWidth, T expectedState) {
+        return new TestCase<T>(VARBINARY, value, TC_OBJECT, maxWidth, expectedState);
     }
 
     public static <T> TestCase<T> forYear(long value, T expectedState) {
@@ -108,6 +108,22 @@ public final class TestCase<T> {
 
     static <T> TestCase<T> derive(TestCase<?> source, T newState) {
         return new TestCase<T>(source, newState);
+    }
+
+    public AkType type() {
+        return type;
+    }
+
+    public Long param1() {
+        return param1;
+    }
+
+    public Long param2() {
+        return param2;
+    }
+
+    public String charset() {
+        return charset;
     }
 
     // for use in this package
@@ -193,10 +209,6 @@ public final class TestCase<T> {
     T expectedState() {
         return expectedState;
     }
-
-    AkType type() {
-        return type;
-    }
     
     // Object interface
 
@@ -232,19 +244,31 @@ public final class TestCase<T> {
     // for use in this class
 
     private TestCase(AkType type, double value, TestCaseType testCaseType, T expectedState) {
-        this(testCaseType, type, value, NO_FLOAT, NO_LONG, NO_OBJECT, expectedState);
+        this(testCaseType, type, value, NO_FLOAT, NO_LONG, NO_OBJECT, null, null, null, expectedState);
         checkTestCaseType(TC_DOUBLE, testCaseType);
     }
     private TestCase(AkType type, float value, TestCaseType testCaseType, T expectedState) {
-        this(testCaseType, type, NO_DOUBLE, value, NO_LONG, NO_OBJECT, expectedState);
+        this(testCaseType, type, NO_DOUBLE, value, NO_LONG, NO_OBJECT, null, null, null, expectedState);
         checkTestCaseType(TC_FLOAT, testCaseType);
     }
     private TestCase(AkType type, long value, TestCaseType testCaseType, T expectedState) {
-        this(testCaseType, type, NO_DOUBLE, NO_FLOAT, value, NO_OBJECT, expectedState);
+        this(testCaseType, type, NO_DOUBLE, NO_FLOAT, value, NO_OBJECT, null, null, null, expectedState);
         checkTestCaseType(TC_LONG, testCaseType);
     }
     private TestCase(AkType type, Object value, TestCaseType testCaseType, T expectedState) {
-        this(testCaseType, type, NO_DOUBLE, NO_FLOAT, NO_LONG, value, expectedState);
+        this(testCaseType, type, NO_DOUBLE, NO_FLOAT, NO_LONG, value, null, null, null, expectedState);
+        checkTestCaseType(TC_OBJECT, testCaseType);
+    }
+    private TestCase(AkType type, Object value, TestCaseType testCaseType, long param1, T expectedState) {
+        this(testCaseType, type, NO_DOUBLE, NO_FLOAT, NO_LONG, value, param1, null, null, expectedState);
+        checkTestCaseType(TC_OBJECT, testCaseType);
+    }
+    private TestCase(AkType type, Object value, TestCaseType testCaseType, long param1, long param2, T expectedState) {
+        this(testCaseType, type, NO_DOUBLE, NO_FLOAT, NO_LONG, value, param1, param2, null, expectedState);
+        checkTestCaseType(TC_OBJECT, testCaseType);
+    }
+    private TestCase(AkType type, Object value, TestCaseType testCaseType, long param1, String charset, T expectedState) {
+        this(testCaseType, type, NO_DOUBLE, NO_FLOAT, NO_LONG, value, param1, null, charset, expectedState);
         checkTestCaseType(TC_OBJECT, testCaseType);
     }
 
@@ -256,11 +280,17 @@ public final class TestCase<T> {
                 source.valFloat,
                 source.valLong,
                 source.valObject,
+                source.param1,
+                source.param2,
+                source.charset,
                 newState
         );
     }
 
-    private TestCase(TestCaseType tct, AkType type, double valDouble, float valFloat, long valLong, Object valObject, T expectedState) {
+    private TestCase(TestCaseType tct,
+                     AkType type, double valDouble, float valFloat, long valLong, Object valObject,
+                     Long param1, Long param2, String charset,
+                     T expectedState) {
         this.testCaseType = tct;
         this.type = type;
         this.valDouble = valDouble;
@@ -268,6 +298,9 @@ public final class TestCase<T> {
         this.valLong = valLong;
         this.valObject = valObject;
         this.expectedState = expectedState;
+        this.param1 = param1;
+        this.param2 = param2;
+        this.charset = charset;
     }
 
     private static void checkTestCaseType(TestCaseType expected, TestCaseType actual) {
@@ -282,6 +315,9 @@ public final class TestCase<T> {
     private final long valLong;
     private final Object valObject;
     private final T expectedState;
+    private final Long param1;
+    private final Long param2;
+    private final String charset;
 
     // consts
     static final Object NO_STATE = new Object();

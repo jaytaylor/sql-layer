@@ -86,20 +86,20 @@ public final class MismatchedConversionsSuite {
         
         map.put(DATE, TestCase.forDate(0, NO_STATE));
         map.put(DATETIME, TestCase.forDateTime(0, NO_STATE));
-        map.put(DECIMAL, TestCase.forDecimal(BigDecimal.ONE, NO_STATE));
+        map.put(DECIMAL, TestCase.forDecimal(BigDecimal.ONE, 1, 0, NO_STATE));
         map.put(DOUBLE, TestCase.forDouble(0, NO_STATE));
         map.put(FLOAT, TestCase.forFloat(0, NO_STATE));
         map.put(INT, TestCase.forInt(0, NO_STATE));
         map.put(LONG, TestCase.forLong(0, NO_STATE));
-        map.put(VARCHAR, TestCase.forString("world", NO_STATE));
-        map.put(TEXT, TestCase.forText("world", NO_STATE));
+        map.put(VARCHAR, TestCase.forString("world", 5, "US-ASCII", NO_STATE));
+        map.put(TEXT, TestCase.forText("world", 5, "US-ASCII", NO_STATE));
         map.put(TIME, TestCase.forTime(0, NO_STATE));
         map.put(TIMESTAMP, TestCase.forTimestamp(0, NO_STATE));
         map.put(U_BIGINT, TestCase.forUBigInt(BigInteger.TEN, NO_STATE));
         map.put(U_DOUBLE, TestCase.forUDouble(0, NO_STATE));
         map.put(U_FLOAT, TestCase.forUFloat(0, NO_STATE));
         map.put(U_INT, TestCase.forUInt(0, NO_STATE));
-        map.put(VARBINARY, TestCase.forVarBinary(new WrappingByteSource().wrap(new byte[0]), NO_STATE));
+        map.put(VARBINARY, TestCase.forVarBinary(new WrappingByteSource().wrap(new byte[0]), 0, NO_STATE));
         map.put(YEAR, TestCase.forYear(0, NO_STATE));
 
         Set<AkType> allValidAkTypes = EnumSet.allOf(AkType.class);
@@ -157,8 +157,8 @@ public final class MismatchedConversionsSuite {
         }
 
         @Override
-        public void setUp(AkType type) {
-            delegate.setUp(type);
+        public void setUp(TestCase<?> testCase) {
+            delegate.setUp(testCase);
         }
 
         @Override
