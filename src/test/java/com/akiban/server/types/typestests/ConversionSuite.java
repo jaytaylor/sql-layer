@@ -29,6 +29,10 @@ public final class ConversionSuite<T> {
         return new SuiteBuilder<T>(converters);
     }
 
+    public TestCase<?> testCaseAt(int index) {
+        return testCases.get(index);
+    }
+
     public ConversionSuite(LinkedConversion<? super T> converters, List<TestCase<? extends T>> testCases) {
         this.testCases = new ArrayList<TestCase<? extends T>>(testCases);
         this.converters = converters;

@@ -126,9 +126,7 @@ public final class TestCase<T> {
         return charset;
     }
 
-    // for use in this package
-
-    void put(ConversionTarget target) {
+    public void put(ConversionTarget target) {
         switch (type) {
         case DATE: target.putDate(valLong); break;
         case DATETIME: target.putDateTime(valLong); break;
@@ -150,6 +148,8 @@ public final class TestCase<T> {
         default: throw new UnsupportedOperationException(type().name());
         }
     }
+
+    // for use in this package
 
     void check(ConversionSource source) {
         switch (type) {
