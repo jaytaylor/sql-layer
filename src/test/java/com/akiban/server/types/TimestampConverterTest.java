@@ -17,8 +17,6 @@ package com.akiban.server.types;
 
 import org.junit.Test;
 
-import java.util.TimeZone;
-
 public class TimestampConverterTest extends LongConverterTestBase {
     public TimestampConverterTest() {
         super(ConvertersForDates.TIMESTAMP,
