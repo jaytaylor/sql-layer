@@ -15,6 +15,9 @@
 
 package com.akiban.server.types.typestests;
 
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.Converters;
+import com.akiban.server.types.LongConverter;
 import com.akiban.util.ByteSource;
 import com.akiban.util.WrappingByteSource;
 
@@ -118,11 +121,11 @@ final class StandardTestCases {
         list.add(TestCase.forVarBinary(wrap(), NO_STATE));
         list.add(TestCase.forVarBinary(wrap(Byte.MIN_VALUE, Byte.MAX_VALUE, 0), NO_STATE));
 
-        list.add(TestCase.forYear(0, NO_STATE));
-        list.add(TestCase.forYear(1, NO_STATE));
-        list.add(TestCase.forYear(86, NO_STATE));
-        list.add(TestCase.forYear(128, NO_STATE));
-        list.add(TestCase.forYear(2155, NO_STATE));
+        LongConverter yearConverter = Converters.getLongConverter(AkType.YEAR);
+        list.add(TestCase.forYear(yearConverter.doParse("0000"), NO_STATE));
+        list.add(TestCase.forYear(yearConverter.doParse("1901"), NO_STATE));
+        list.add(TestCase.forYear(yearConverter.doParse("1983"), NO_STATE));
+        list.add(TestCase.forYear(yearConverter.doParse("2155"), NO_STATE));
 
         return Collections.unmodifiableCollection(list);
     }
