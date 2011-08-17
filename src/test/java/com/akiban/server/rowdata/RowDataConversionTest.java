@@ -99,8 +99,9 @@ public final class RowDataConversionTest extends ConversionTestBase {
                     1,
                     colType(type)
             );
-            if (col.getType().equals(Types.VARCHAR) || col.getType().equals(Types.VARBINARY)) {
+            if (col.getType().equals(Types.VARCHAR) || col.getType().equals(Types.TEXT)|| col.getType().equals(Types.VARBINARY)) {
                 col.setTypeParameter1(32L);
+                col.setCharset("UTF-8");
             }
             RowDefCache rdc = new SchemaFactory().rowDefCache(ais);
             RowDef rowDef = rdc.getRowDef("mySchema", "testTable");

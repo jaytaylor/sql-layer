@@ -80,11 +80,13 @@ final class StandardTestCases {
 
         list.add(TestCase.forString("", NO_STATE));
         list.add(TestCase.forString("word", NO_STATE));
-        list.add(TestCase.forString("a snowman says ☃", NO_STATE));
+        list.add(TestCase.forString("☃", NO_STATE));
+        list.add(TestCase.forString("a ☃ is cold", NO_STATE));
 
         list.add(TestCase.forText("", NO_STATE));
         list.add(TestCase.forText("word", NO_STATE));
-        list.add(TestCase.forText("a snowman says ☃", NO_STATE));
+        list.add(TestCase.forText("☃", NO_STATE));
+        list.add(TestCase.forText("a ☃ is cold", NO_STATE));
 
         list.add(TestCase.forTime(-1, NO_STATE));
         list.add(TestCase.forTime(0, NO_STATE));
