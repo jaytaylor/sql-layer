@@ -18,6 +18,8 @@ package com.akiban.server.types.typestests;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ConversionSource;
 import com.akiban.server.types.ConversionTarget;
+import com.akiban.server.types.Converters;
+import com.akiban.server.types.LongConverter;
 import com.akiban.util.ByteSource;
 import com.akiban.util.Undef;
 
@@ -135,25 +137,34 @@ public final class TestCase<T> {
 
     void check(ConversionSource source) {
         switch (type) {
-        case DATE: assertEquals(type.name(), valLong, source.getDate()); break;
-        case DATETIME: assertEquals(type.name(), valLong, source.getDateTime()); break;
-        case DECIMAL: assertEquals(type.name(), valObject, source.getDecimal()); break;
-        case DOUBLE: assertEquals(type.name(), valDouble, source.getDouble(), EPSILON); break;
-        case FLOAT: assertEquals(type.name(), valFloat, source.getFloat(), EPSILON); break;
-        case INT: assertEquals(type.name(), valLong, source.getInt()); break;
-        case LONG: assertEquals(type.name(), valLong, source.getLong()); break;
-        case VARCHAR: assertEquals(type.name(), valObject, source.getString()); break;
-        case TEXT: assertEquals(type.name(), valObject, source.getText()); break;
-        case TIME: assertEquals(type.name(), valLong, source.getTime()); break;
-        case TIMESTAMP: assertEquals(type.name(), valLong, source.getTimestamp()); break;
-        case U_BIGINT: assertEquals(type.name(), valObject, source.getUBigInt()); break;
-        case U_DOUBLE: assertEquals(type.name(), valDouble, source.getUDouble(), EPSILON); break;
-        case U_FLOAT: assertEquals(type.name(), valFloat, source.getUFloat(), EPSILON); break;
-        case U_INT: assertEquals(type.name(), valLong, source.getUInt()); break;
-        case VARBINARY: assertEquals(type.name(), valObject, source.getVarBinary()); break;
-        case YEAR: assertEquals(type.name(), valLong, source.getYear()); break;
+        case DATE: assertEquals(niceString(), valLong, source.getDate()); break;
+        case DATETIME: assertEquals(niceString(), valLong, source.getDateTime()); break;
+        case DECIMAL: assertEquals(niceString(), valObject, source.getDecimal()); break;
+        case DOUBLE: assertEquals(niceString(), valDouble, source.getDouble(), EPSILON); break;
+        case FLOAT: assertEquals(niceString(), valFloat, source.getFloat(), EPSILON); break;
+        case INT: assertEquals(niceString(), valLong, source.getInt()); break;
+        case LONG: assertEquals(niceString(), valLong, source.getLong()); break;
+        case VARCHAR: assertEquals(niceString(), valObject, source.getString()); break;
+        case TEXT: assertEquals(niceString(), valObject, source.getText()); break;
+        case TIME: assertEquals(niceString(), valLong, source.getTime()); break;
+        case TIMESTAMP: assertEquals(niceString(), valLong, source.getTimestamp()); break;
+        case U_BIGINT: assertEquals(niceString(), valObject, source.getUBigInt()); break;
+        case U_DOUBLE: assertEquals(niceString(), valDouble, source.getUDouble(), EPSILON); break;
+        case U_FLOAT: assertEquals(niceString(), valFloat, source.getUFloat(), EPSILON); break;
+        case U_INT: assertEquals(niceString(), valLong, source.getUInt()); break;
+        case VARBINARY: assertEquals(niceString(), valObject, source.getVarBinary()); break;
+        case YEAR: assertEquals(niceString(), valLong, source.getYear()); break;
         default: throw new UnsupportedOperationException(type().name());
         }
+    }
+
+    private String niceString() {
+        String result = type.name();
+        LongConverter longConverter = Converters.getLongConverter(type);
+        if (longConverter != null) {
+            result = result + " (" + longConverter.asString(valLong) + ')';
+        }
+        return result;
     }
 
     void get(ConversionSource source) {

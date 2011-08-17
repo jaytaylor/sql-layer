@@ -16,6 +16,7 @@
 package com.akiban.server.types.typestests;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.ConverterTestUtils;
 import com.akiban.server.types.Converters;
 import com.akiban.server.types.LongConverter;
 import com.akiban.util.ByteSource;
@@ -89,14 +90,16 @@ final class StandardTestCases {
         list.add(TestCase.forTime(0, NO_STATE));
         list.add(TestCase.forTime(1, NO_STATE));
 
-        list.add(TestCase.forTimestamp(0, NO_STATE));
-        list.add(TestCase.forTimestamp(Long.MAX_VALUE, NO_STATE));
-        list.add(TestCase.forTimestamp(Long.MIN_VALUE, NO_STATE));
+        LongConverter timestampConverter = Converters.getLongConverter(AkType.TIMESTAMP);
+        ConverterTestUtils.setTimestampTimezoneForThread("GMT");
+        list.add(TestCase.forTimestamp(timestampConverter.doParse("0000-00-00 00:00:00"), NO_STATE));
+        list.add(TestCase.forTimestamp(timestampConverter.doParse("1970-01-01 00:00:01"), NO_STATE));
+        list.add(TestCase.forTimestamp(timestampConverter.doParse("2011-08-18 15:09:00"), NO_STATE));
+        list.add(TestCase.forTimestamp(timestampConverter.doParse("2038-01-19 03:14:06"), NO_STATE));
 
         list.add(TestCase.forUBigInt(BigInteger.ZERO, NO_STATE));
         list.add(TestCase.forUBigInt(BigInteger.ONE, NO_STATE));
         list.add(TestCase.forUBigInt(BigInteger.TEN, NO_STATE));
-        list.add(TestCase.forUBigInt(BigInteger.valueOf(-1), NO_STATE));
 
         list.add(TestCase.forUDouble(0, NO_STATE));
         list.add(TestCase.forUDouble(-0, NO_STATE));
@@ -112,11 +115,10 @@ final class StandardTestCases {
         list.add(TestCase.forUFloat(Float.MIN_VALUE, NO_STATE));
         list.add(TestCase.forUFloat(Float.MAX_VALUE, NO_STATE));
 
-        list.add(TestCase.forUInt(-1, NO_STATE));
         list.add(TestCase.forUInt(0, NO_STATE));
         list.add(TestCase.forUInt(1, NO_STATE));
-        list.add(TestCase.forUInt(Long.MIN_VALUE, NO_STATE));
-        list.add(TestCase.forUInt(Long.MAX_VALUE, NO_STATE));
+        list.add(TestCase.forUInt(Integer.MAX_VALUE, NO_STATE));
+        list.add(TestCase.forUInt(((long)Math.pow(2, 32))-1, NO_STATE));
 
         list.add(TestCase.forVarBinary(wrap(), NO_STATE));
         list.add(TestCase.forVarBinary(wrap(Byte.MIN_VALUE, Byte.MAX_VALUE, 0), NO_STATE));

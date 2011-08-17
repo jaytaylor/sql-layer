@@ -32,7 +32,7 @@ public class TimestampConverterTest extends LongConverterTestBase {
               });
 
         // Make expected output deterministic
-        ConvertersForDates.setTimestampTimezoneForThread(TimeZone.getTimeZone("GMT"));
+        ConverterTestUtils.setTimestampTimezoneForThread("GMT");
     }
 
 
