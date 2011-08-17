@@ -25,7 +25,9 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Formatter;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * String utils.
@@ -130,5 +132,24 @@ public abstract class Strings {
         printWriter.flush();
         stringWriter.flush();
         return stringWriter.toString().split("\\n");
+    }
+
+    public static String hex(byte[] bytes, int start, int length) {
+        ArgumentValidation.isGTE("start", start, 0);
+        ArgumentValidation.isGTE("length", length, 0);
+
+        StringBuilder sb = new StringBuilder("0x");
+        Formatter formatter = new Formatter(sb, Locale.US);
+        for (int i=start; i < start+length; ++i) {
+            formatter.format("%02X", bytes[i]);
+            if ((i-start) % 2 == 1) {
+                sb.append(' ');
+            }
+        }
+        return sb.toString().trim();
+    }
+
+    public static String hex(ByteSource byteSource) {
+        return hex(byteSource.byteArray(), byteSource.byteArrayOffset(), byteSource.byteArrayLength());
     }
 }

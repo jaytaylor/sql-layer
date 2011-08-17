@@ -22,14 +22,12 @@ import com.akiban.ais.model.aisb2.NewUserTableBuilder;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.util.ArgumentValidation;
+import com.akiban.util.Strings;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Formatter;
-import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
 
@@ -153,7 +151,7 @@ public final class RowDataFormatTest {
 
     private void createAndCheck(RowData rowData) {
         rowData.createRow(rowDef, fields);
-        String asHex = hex(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
+        String asHex = Strings.hex(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
         assertEquals("rowData bytes", bytesString, asHex);
     }
 
@@ -167,21 +165,6 @@ public final class RowDataFormatTest {
         }
         ret[0] = ID;
         return ret;
-    }
-
-    private static String hex(byte[] bytes, int start, int length) {
-        ArgumentValidation.isGTE("start", start, 0);
-        ArgumentValidation.isGTE("length", length, 0);
-
-        StringBuilder sb = new StringBuilder("0x");
-        Formatter formatter = new Formatter(sb, Locale.US);
-        for (int i=start; i < start+length; ++i) {
-            formatter.format("%02X", bytes[i]);
-            if ((i-start) % 2 == 1) {
-                sb.append(' ');
-            }
-        }
-        return sb.toString().trim();
     }
 
     private static String str(int length) {
