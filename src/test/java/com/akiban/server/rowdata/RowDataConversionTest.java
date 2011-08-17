@@ -97,7 +97,7 @@ public final class RowDataConversionTest extends ConversionTestBase {
                 .add(TestCase.forDecimal(d("0.0"), 8, 1, parseHex("0x8000000000")))
                 .add(TestCase.forDecimal(d("0.00"), 8, 2, parseHex("0x80000000")))
                 .add(TestCase.forDecimal(d("0.0000"), 10, 4, parseHex("0x8000000000")))
-                .add(TestCase.forDecimal(d("0.00000000"), 10, 8, parseHex("0x8000000000000000000000000000")))
+                .add(TestCase.forDecimal(d("0.00000000"), 10, 8, parseHex("0x8000000000")))
                 
                 .suite();
         return params(suite);
