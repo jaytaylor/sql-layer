@@ -19,7 +19,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
-import java.util.concurrent.atomic.AtomicReference;
 
 abstract class ConvertersForDates extends LongConverter {
 
@@ -169,6 +168,8 @@ abstract class ConvertersForDates extends LongConverter {
 
         @Override
         public long doParse(String string) {
+            if (TIMESTAMP_ZERO_STRING.equals(string))
+                return 0;
             try {
                 return TL_SDF.get().parse(string).getTime() / 1000;
             } catch(ParseException e) {
@@ -178,7 +179,9 @@ abstract class ConvertersForDates extends LongConverter {
 
         @Override
         public String asString(long value) {
-            return TL_SDF.get().format(new Date(value*1000));
+            return value == 0
+                    ? TIMESTAMP_ZERO_STRING
+                    : TL_SDF.get().format(new Date(value*1000));
         }
     };
 
@@ -242,6 +245,8 @@ abstract class ConvertersForDates extends LongConverter {
     private static final long DATETIME_HOUR_SCALE = 10000L;
     private static final long DATETIME_MIN_SCALE = 100L;
     private static final long DATETIME_SEC_SCALE = 1L;
+
+    private static final String TIMESTAMP_ZERO_STRING = "0000-00-00 00:00:00";
 
     private static final long TIME_HOURS_SCALE = 10000;
     private static final long TIME_MINUTES_SCALE = 100;
