@@ -213,7 +213,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                     }
                 }
                 catch (InvalidOperationException ex) {
-                    logger.warn("Error in query:", ex.getMessage());
+                    logger.warn("Error in query:" + ex.getMessage());
                     if (errorMode == ErrorMode.NONE) {
                         messenger.beginMessage(PostgresMessenger.ERROR_RESPONSE_TYPE);
                         messenger.write('S');
