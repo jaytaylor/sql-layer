@@ -15,13 +15,15 @@
 
 package com.akiban.sql.aisddl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.UnsupportedCheckConstraintException;
 import com.akiban.server.error.UnsupportedCreateSelectException;
+import com.akiban.server.error.UnsupportedDataTypeException;
 import com.akiban.server.error.UnsupportedFKIndexException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.ColumnDefinitionNode;
@@ -33,7 +35,7 @@ import com.akiban.sql.parser.ResultColumn;
 import com.akiban.sql.parser.TableElementNode;
 
 import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId.FormatIds;
+import com.akiban.sql.types.TypeId;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -41,6 +43,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.NameGenerator;
+import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
@@ -48,7 +51,7 @@ import com.akiban.ais.model.Types;
 /** DDL operations on Tables */
 public class TableDDL
 {
-    private final static Logger logger = LoggerFactory.getLogger(TableDDL.class);
+    //private final static Logger logger = LoggerFactory.getLogger(TableDDL.class);
     private TableDDL() {
     }
 
@@ -116,30 +119,23 @@ public class TableDDL
             final String schemaName, final String tableName, int colpos) {
         DataTypeDescriptor type = cdn.getType();
         Long typeParameter1 = null, typeParameter2 = null;
-        String typeName = type.getTypeName();
-        switch (type.getTypeId().getTypeFormatId()) {
-        case FormatIds.INT_TYPE_ID:
-            typeName = Types.INT.name();
-            break;
-        case FormatIds.LONGVARCHAR_TYPE_ID:
-            typeName = Types.BLOB.name();
-            break;
-        case FormatIds.CHAR_TYPE_ID:
-        case FormatIds.VARCHAR_TYPE_ID:
-        case FormatIds.BLOB_TYPE_ID:
-        case FormatIds.CLOB_TYPE_ID:
+        
+        Type builderType = typeMap.get(type.getTypeId());
+        if (builderType == null) {
+            throw new UnsupportedDataTypeException (new TableName(schemaName, tableName), cdn.getColumnName(), type.getTypeName());
+        }
+        
+        if (builderType.nTypeParameters() == 1) {
             typeParameter1 = (long)type.getMaximumWidth();
-            break;
-        case FormatIds.DECIMAL_TYPE_ID:
+        } else if (builderType.nTypeParameters() == 2) {
             typeParameter1 = (long)type.getPrecision();
             typeParameter2 = (long)type.getScale();
-            break;
         }
         
         builder.column(schemaName, tableName, 
                 cdn.getColumnName(), 
                 Integer.valueOf(colpos), 
-                typeName, 
+                builderType.name(), 
                 typeParameter1, typeParameter2, 
                 type.isNullable(), 
                 cdn.isAutoincrementColumn(),
@@ -248,4 +244,46 @@ public class TableDDL
         builder.addTableToGroup(parentTableName, parentSchemaName, parentTableName);
         //builder.groupingIsComplete();
     }
+    
+    private final static Map<TypeId, Type> typeMap  = typeMapping();
+    
+    private static Map<TypeId, Type> typeMapping() {
+        HashMap<TypeId, Type> types = new HashMap<TypeId, Type>();
+        types.put (TypeId.BOOLEAN_ID, Types.TINYINT);
+        types.put (TypeId.TINYINT_ID, Types.TINYINT);
+        types.put (TypeId.SMALLINT_ID, Types.SMALLINT);
+        types.put (TypeId.INTEGER_ID, Types.INT);
+        types.put (TypeId.BIGINT_ID, Types.BIGINT);
+        
+        types.put(TypeId.TINYINT_UNSIGNED_ID, Types.U_TINYINT);
+        types.put(TypeId.SMALLINT_UNSIGNED_ID, Types.U_SMALLINT);
+        types.put(TypeId.INTEGER_UNSIGNED_ID, Types.U_INT);
+        types.put(TypeId.BIGINT_UNSIGNED_ID, Types.U_BIGINT);
+        
+        types.put(TypeId.REAL_ID, Types.FLOAT);
+        types.put(TypeId.DOUBLE_ID, Types.DOUBLE);
+        types.put(TypeId.DECIMAL_ID, Types.DECIMAL);
+        types.put(TypeId.NUMERIC_ID, Types.DECIMAL);
+        
+        types.put(TypeId.REAL_UNSIGNED_ID, Types.U_FLOAT);
+        types.put(TypeId.DOUBLE_UNSIGNED_ID, Types.U_DOUBLE);
+        types.put(TypeId.DECIMAL_UNSIGNED_ID, Types.U_DECIMAL);
+        types.put(TypeId.NUMERIC_UNSIGNED_ID, Types.U_DECIMAL);
+        
+        types.put(TypeId.CHAR_ID, Types.CHAR);
+        types.put(TypeId.VARCHAR_ID, Types.VARCHAR);
+        types.put(TypeId.LONGVARCHAR_ID, Types.VARCHAR);
+        types.put(TypeId.BIT_ID, Types.BINARY);
+        types.put(TypeId.VARBIT_ID, Types.VARBINARY);
+        types.put(TypeId.LONGVARBIT_ID, Types.VARBINARY);
+        
+        types.put(TypeId.DATE_ID, Types.DATE);
+        types.put(TypeId.TIME_ID, Types.TIME);
+        types.put(TypeId.TIMESTAMP_ID, Types.DATETIME);
+        
+        types.put(TypeId.BLOB_ID, Types.LONGBLOB);
+        types.put(TypeId.CLOB_ID, Types.LONGTEXT);
+        return Collections.unmodifiableMap(types);
+        
+    }        
 }
