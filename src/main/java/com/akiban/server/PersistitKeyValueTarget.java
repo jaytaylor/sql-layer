@@ -27,7 +27,7 @@ import java.math.BigInteger;
 
 public final class PersistitKeyValueTarget implements ValueTarget {
 
-    // PersistitKeyConversionTarget interface
+    // PersistitKeyValueTarget interface
 
     public void attach(Key key) {
         this.key = key;
@@ -42,7 +42,7 @@ public final class PersistitKeyValueTarget implements ValueTarget {
         return expectingType(column.getType().akType());
     }
     
-    // ConversionTarget interface
+    // ValueTarget interface
 
     @Override
     public void putNull() {

@@ -164,7 +164,7 @@ abstract class AbstractRowDataValueSource implements ValueSource {
         else if (type == AkType.DECIMAL) {
             ConversionHelperBigDecimal.decodeToString(fieldDef(), bytes(), getRawOffsetAndWidth(), appender);
         } else {
-            Converters.convert(this, appender.asConversionTarget());
+            Converters.convert(this, appender.asValueTarget());
         }
         quote.quote(appender, type);
     }

@@ -46,7 +46,7 @@ public final class RowDataValueTarget implements ValueTarget {
         clear();
     }
 
-    // ConversionTarget interface
+    // ValueTarget interface
 
     @Override
     public void putNull() {

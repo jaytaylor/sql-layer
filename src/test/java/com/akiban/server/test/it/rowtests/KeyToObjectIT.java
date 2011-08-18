@@ -75,7 +75,7 @@ public class KeyToObjectIT extends ITBase {
                 key.indexTo(0);
 
                 PersistitKeyValueSource valueSource = new PersistitKeyValueSource();
-                ToObjectValueTarget conversionTarget = new ToObjectValueTarget();
+                ToObjectValueTarget valueTarget = new ToObjectValueTarget();
                 
                 for(IndexColumn indexColumn : index.getColumns()) {
                     Column column = indexColumn.getColumn();
@@ -84,7 +84,7 @@ public class KeyToObjectIT extends ITBase {
                     valueSource.attach(key, indexColumn);
                     final Object lastConvertedValue;
                     try {
-                        lastConvertedValue = conversionTarget.convertFromSource(valueSource);
+                        lastConvertedValue = valueTarget.convertFromSource(valueSource);
                     } catch (Exception e) {
                         throw new RuntimeException("with AkType." + column.getType().akType(), e);
                     }
