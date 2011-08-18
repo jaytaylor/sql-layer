@@ -22,7 +22,7 @@ import com.akiban.server.types.ValueSource;
 public interface RowBase
 {
     RowType rowType();
-    ValueSource conversionSource(int i, Bindings bindings);
+    ValueSource bindSource(int i, Bindings bindings);
     HKey hKey();
     boolean ancestorOf(RowBase that);
     int runId();

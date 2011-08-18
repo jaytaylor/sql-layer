@@ -29,7 +29,7 @@ public abstract class AkibanAppender {
     public abstract void append(char c);
     public abstract void append(String s);
     public abstract Appendable getAppendable();
-    public abstract ValueTarget asConversionTarget();
+    public abstract ValueTarget asValueTarget();
 
     public boolean canAppendBytes() {
         return false;
@@ -147,11 +147,11 @@ public abstract class AkibanAppender {
         // AkibanAppender interface
 
         @Override
-        public ValueTarget asConversionTarget() {
+        public ValueTarget asValueTarget() {
             return this;
         }
 
-        // ConversionTarget interface (supported methods)
+        // ValueTarget interface (supported methods)
 
         @Override
         public AkType getConversionType() {
@@ -168,7 +168,7 @@ public abstract class AkibanAppender {
             append(null);
         }
 
-        // ConversionTarget interface (unsupported methods)
+        // ValueTarget interface (unsupported methods)
 
         @Override
         public void putDate(long value) {

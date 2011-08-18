@@ -24,7 +24,7 @@ public final class RowDataValueSource extends AbstractRowDataValueSource {
         this.rowData = rowData;
     }
 
-    // AbstractRowDataConversionSource interface
+    // AbstractRowDataValueSource interface
 
     @Override
     protected long getRawOffsetAndWidth() {
@@ -41,7 +41,7 @@ public final class RowDataValueSource extends AbstractRowDataValueSource {
         return fieldDef;
     }
 
-    // ConversionSource interface
+    // ValueSource interface
 
     @Override
     public boolean isNull() {
@@ -52,7 +52,7 @@ public final class RowDataValueSource extends AbstractRowDataValueSource {
 
     @Override
     public String toString() {
-        return String.format("ConversionSource( %s -> %s )", fieldDef, rowData.toString(fieldDef.getRowDef()));
+        return String.format("ValueSource( %s -> %s )", fieldDef, rowData.toString(fieldDef.getRowDef()));
     }
 
     // private

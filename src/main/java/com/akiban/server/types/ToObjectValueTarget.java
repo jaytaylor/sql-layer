@@ -22,7 +22,7 @@ import java.math.BigInteger;
 
 public final class ToObjectValueTarget implements ValueTarget {
     
-    // ToObjectConversionTarget interface
+    // ToObjectValueTarget interface
 
     /**
      * Convenience method for extracting an Object from a conversion source.
@@ -47,7 +47,7 @@ public final class ToObjectValueTarget implements ValueTarget {
         return result;
     }
     
-    // ConversionTarget interface
+    // ValueTarget interface
 
     @Override
     public void putNull() {

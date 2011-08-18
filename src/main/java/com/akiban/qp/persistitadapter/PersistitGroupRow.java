@@ -50,11 +50,11 @@ public class PersistitGroupRow extends AbstractRow
     }
 
     @Override
-    public ValueSource conversionSource(int i, Bindings bindings) {
+    public ValueSource bindSource(int i, Bindings bindings) {
         FieldDef fieldDef = rowDef().getFieldDef(i);
         RowData rowData = rowData();
-        conversionSource.bind(fieldDef, rowData);
-        return conversionSource;
+        valueSource.bind(fieldDef, rowData);
+        return valueSource;
     }
 
     public PersistitHKey hKey()
@@ -165,7 +165,7 @@ public class PersistitGroupRow extends AbstractRow
 
     // Object state
 
-    private final RowDataValueSource conversionSource = new RowDataValueSource();
+    private final RowDataValueSource valueSource = new RowDataValueSource();
     private final PersistitAdapter adapter;
     private RowData rowData;
     private LegacyRowWrapper row;

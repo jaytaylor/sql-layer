@@ -40,12 +40,12 @@ public class ProductRow extends AbstractRow
     }
 
     @Override
-    public ValueSource conversionSource(int i, Bindings bindings) {
+    public ValueSource bindSource(int i, Bindings bindings) {
         ValueSource source;
         if (i < nLeftFields) {
-            source = left.isNull() ? NullValueSource.only() : left.get().conversionSource(i, bindings);
+            source = left.isNull() ? NullValueSource.only() : left.get().bindSource(i, bindings);
         } else {
-            source = right.isNull() ? NullValueSource.only() : right.get().conversionSource(i - nLeftFields, bindings);
+            source = right.isNull() ? NullValueSource.only() : right.get().bindSource(i - nLeftFields, bindings);
         }
         return source;
     }

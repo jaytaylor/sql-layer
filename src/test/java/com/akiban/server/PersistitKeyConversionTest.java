@@ -41,15 +41,15 @@ public final class PersistitKeyConversionTest extends ConversionTestBase {
 
         // Persistit truncates trailing 0s from BigDecimals, which reduces their precision.
         // This is wrong, but that's what we have to deal with. So we'll ignore all such test cases.
-        ToObjectValueTarget conversionTarget = new ToObjectValueTarget();
+        ToObjectValueTarget valueTarget = new ToObjectValueTarget();
         for (Parameterization param : params) {
             ConversionSuite<?> paramSuite = (ConversionSuite<?>) param.getArgsAsList().get(0);
             int indexWithinSuite = (Integer) param.getArgsAsList().get(1);
             TestCase<?> testCase = paramSuite.testCaseAt(indexWithinSuite);
             if (testCase.type().equals(AkType.DECIMAL)) {
-                conversionTarget.expectType(AkType.DECIMAL);
-                testCase.put(conversionTarget);
-                BigDecimal expected = (BigDecimal) conversionTarget.lastConvertedValue();
+                valueTarget.expectType(AkType.DECIMAL);
+                testCase.put(valueTarget);
+                BigDecimal expected = (BigDecimal) valueTarget.lastConvertedValue();
                 String asString = expected.toPlainString();
                 if (asString.contains(".") && asString.charAt(asString.length() - 1) == '0') {
                     param.setExpectedToPass(false);

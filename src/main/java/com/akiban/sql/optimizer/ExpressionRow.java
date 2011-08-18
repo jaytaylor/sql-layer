@@ -45,7 +45,7 @@ public class ExpressionRow extends AbstractRow
     }
 
     @Override
-    public ValueSource conversionSource(int i, Bindings bindings) {
+    public ValueSource bindSource(int i, Bindings bindings) {
         Object value = (expressions[i] == null) ? null : expressions[i].evaluate(null, bindings);
         source.setReflectively(value);
         return source;

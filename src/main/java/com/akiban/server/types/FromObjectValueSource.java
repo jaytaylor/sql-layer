@@ -24,7 +24,7 @@ import java.math.BigInteger;
 
 public final class FromObjectValueSource implements ValueSource {
 
-    // FromObjectConversionSource interface
+    // FromObjectValueSource interface
 
     public FromObjectValueSource setExplicitly(Object object, AkType type) {
         setReflectively(object);
@@ -71,7 +71,7 @@ public final class FromObjectValueSource implements ValueSource {
         this.object = null;
     }
 
-    // ConversionSource interface
+    // ValueSource interface
 
     @Override
     public boolean isNull() {
@@ -183,7 +183,7 @@ public final class FromObjectValueSource implements ValueSource {
 
     @Override
     public String toString() {
-        return String.format("ConversionSource(%s %s)", akType, object);
+        return String.format("ValueSource(%s %s)", akType, object);
     }
 
     // private methods

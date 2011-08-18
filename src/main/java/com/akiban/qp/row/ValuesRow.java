@@ -39,8 +39,8 @@ public class ValuesRow extends AbstractRow
     }
 
     @Override
-    public ValueSource conversionSource(int i, Bindings bindings) {
-        return valuesHolder.conversionSourceAt(i);
+    public ValueSource bindSource(int i, Bindings bindings) {
+        return valuesHolder.valueSourceAt(i);
     }
 
     @Override

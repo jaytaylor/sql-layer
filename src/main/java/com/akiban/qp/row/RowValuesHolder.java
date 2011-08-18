@@ -27,7 +27,7 @@ public final class RowValuesHolder {
         return values[i];
     }
 
-    public ValueSource conversionSourceAt(int i) {
+    public ValueSource valueSourceAt(int i) {
         return sources[i];
     }
 

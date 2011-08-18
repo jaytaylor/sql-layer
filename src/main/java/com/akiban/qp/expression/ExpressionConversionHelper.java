@@ -25,14 +25,14 @@ public final class ExpressionConversionHelper {
 
     // ExpressionConversionHelper interface
 
-    public static ValueSource asConversionSource(Expression expression, Row row, Bindings bindings) {
+    public static ValueSource asValueSource(Expression expression, Row row, Bindings bindings) {
         Object evaluated = expression.evaluate(row, bindings);
         FromObjectValueSource source = new FromObjectValueSource();
         source.setReflectively(evaluated);
         return source;
     }
 
-    public static Object objectFromConversionSource(ValueSource source) {
+    public static Object objectFromValueSource(ValueSource source) {
         return new ToObjectValueTarget().convertFromSource(source);
     }
 

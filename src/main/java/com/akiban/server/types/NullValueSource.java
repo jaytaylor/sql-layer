@@ -28,7 +28,7 @@ public final class NullValueSource implements ValueSource {
         return INSTANCE;
     }
     
-    // ConversionSource interface
+    // ValueSource interface
 
     @Override
     public boolean isNull() {
