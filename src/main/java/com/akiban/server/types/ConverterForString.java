@@ -58,7 +58,7 @@ abstract class ConverterForString extends ObjectConverter<String> {
         case LONG:      return Long.toString(source.getLong());
         case U_INT:     return Long.toString(source.getLong());
         case U_DOUBLE:  return Double.toString(source.getUDouble());
-        case U_FLOAT:   return Float.toString(source.getFloat());
+        case U_FLOAT:   return Float.toString(source.getUFloat());
         case U_BIGINT:  return String.valueOf(source.getDecimal());
         case TIME:      return ConvertersForDates.TIME.asString(source.getTime());
         case TIMESTAMP: return ConvertersForDates.TIMESTAMP.asString(source.getTimestamp());
