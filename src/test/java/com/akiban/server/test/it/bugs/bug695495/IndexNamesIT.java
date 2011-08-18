@@ -16,8 +16,8 @@
 package com.akiban.server.test.it.bugs.bug695495;
 
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.InvalidOperationException;
-import com.akiban.server.api.ddl.ParseException;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.ParseException;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.Strings;
 import org.junit.After;

@@ -37,7 +37,7 @@ public class ArraySource extends Source
     }
     
     @Override
-    protected final void read(String typename, Receiver receiver) throws Exception
+    protected final void read(String typename, Receiver receiver)
     {
         for (Map<String, Object> map : columns) {
             receiver.receive(map);

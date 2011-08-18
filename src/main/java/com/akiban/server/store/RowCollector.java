@@ -44,9 +44,9 @@ public interface RowCollector {
      * @return true if a row was placed into payload, false otherwise
      * @throws Exception
      */
-    public boolean collectNextRow(ByteBuffer payload) throws Exception;
+    public boolean collectNextRow(ByteBuffer payload);
 
-    public RowData collectNextRow() throws Exception;
+    public RowData collectNextRow();
 
     public boolean hasMore();
 

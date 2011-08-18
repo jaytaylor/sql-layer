@@ -15,8 +15,8 @@
 
 package com.akiban.server.test.it.hapi.randomdb;
 
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.test.ApiTestBase;
 
 class Database

@@ -16,10 +16,10 @@
 package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.AkServer;
+import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
-import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.instrumentation.InstrumentationService;
@@ -275,9 +275,8 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
                 = Collections.synchronizedMap(new HashMap<Class<? extends JmxManageable>, ObjectName>());
 
         @Override
-        public void onStart(Service<?> service) throws Exception {
+        public void onStart(Service<?> service) {
             service.start();
-
             if (service instanceof JmxManageable && isRequired(JmxRegistryService.class)) {
                 JmxRegistryService registry = (service instanceof JmxRegistryService)
                         ? (JmxRegistryService) service
@@ -295,7 +294,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         }
 
         @Override
-        public void onShutdown(Service<?> service) throws Exception {
+        public void onShutdown(Service<?> service) {
             if (service instanceof JmxManageable && isRequired(JmxRegistryService.class)) {
                 JmxRegistryService registry = (service instanceof JmxRegistryService)
                         ? (JmxRegistryService) service
@@ -323,12 +322,12 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     private static final Guicer.ServiceLifecycleActions<Service<?>> CRASH_SERVICES
             = new Guicer.ServiceLifecycleActions<Service<?>>() {
         @Override
-        public void onStart(Service<?> service) throws Exception {
+        public void onStart(Service<?> service) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void onShutdown(Service<?> service) throws Exception {
+        public void onShutdown(Service<?> service){
             service.crash();
         }
 

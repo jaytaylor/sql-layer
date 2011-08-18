@@ -16,8 +16,8 @@
 package com.akiban.server.test.it.pstraverse;
 
 import com.akiban.ais.model.Index;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.keyupdate.CollectingIndexKeyVisitor;
 import org.junit.Before;

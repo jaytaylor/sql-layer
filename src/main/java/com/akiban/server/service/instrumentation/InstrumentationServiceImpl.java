@@ -21,16 +21,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.akiban.server.error.QueryLogCloseException;
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.sql.pg.PostgresService;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
-import com.akiban.sql.pg.PostgresServer;
-import com.akiban.sql.pg.PostgresSessionTracer;
 
 public class InstrumentationServiceImpl implements
     InstrumentationService, 
@@ -85,7 +83,7 @@ public class InstrumentationServiceImpl implements
     }
 
     @Override
-    public void start() throws Exception {
+    public void start() {
         String enableLog = config.getProperty(QUERY_LOG_PROPERTY);
         this.queryLogEnabled = new AtomicBoolean(Boolean.parseBoolean(enableLog));
         queryLogFileName = config.getProperty(QUERY_LOG_FILE_PROPERTY);
@@ -95,14 +93,18 @@ public class InstrumentationServiceImpl implements
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
         if (queryOut != null){
-            queryOut.close();
+            try {
+                queryOut.close();
+            } catch (IOException e) {
+                throw new QueryLogCloseException (e.getMessage());
+            }
         }
     }
 
     @Override
-    public void crash() throws Exception {
+    public void crash() {
         // anything to do?
     }
 
@@ -157,6 +159,7 @@ public class InstrumentationServiceImpl implements
                 queryOut.close();
             } catch (IOException e) {
                 LOGGER.error("Failed to close query log output stream.", e);
+                throw new QueryLogCloseException (e.getMessage());
             }
         }
     }

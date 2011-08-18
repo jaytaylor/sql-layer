@@ -16,7 +16,6 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.sql.compiler.ASTTransformTestBase;
-
 import com.akiban.sql.compiler.BooleanNormalizer;
 import com.akiban.sql.optimizer.AISBinder;
 import com.akiban.sql.optimizer.AISTypeComputer;

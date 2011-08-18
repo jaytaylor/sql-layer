@@ -24,7 +24,9 @@ import java.util.BitSet;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.Quote;
 import com.akiban.server.encoding.EncodingException;
-import com.akiban.server.util.RowDefNotFoundException;
+import com.akiban.server.error.RowDefNotFoundException;
+import com.akiban.server.types.Converters;
+import com.akiban.server.types.FromObjectConversionSource;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 

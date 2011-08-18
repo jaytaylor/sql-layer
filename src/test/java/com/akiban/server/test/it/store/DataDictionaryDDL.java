@@ -15,8 +15,8 @@
 
 package com.akiban.server.test.it.store;
 
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.session.Session;
 
 public class DataDictionaryDDL {

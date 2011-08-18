@@ -15,6 +15,7 @@
 
 package com.akiban.server.service.servicemanager;
 
+import com.akiban.server.error.CircularDependencyException;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Exceptions;
@@ -34,7 +35,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.FileNameMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -229,14 +229,13 @@ public final class Guicer {
     }
 
     private CircularDependencyException circularDependencyInjection(Class<?> forClass, Object instance, Deque<Object> dependents) {
-        final CircularDependencyException exception;
         String forClassName = forClass.getSimpleName();
         List<String> classNames = new ArrayList<String>();
         for (Object o : dependents) {
             classNames.add(o.getClass().getSimpleName());
         }
         classNames.add(instance.getClass().getSimpleName());
-        return new CircularDependencyException("circular dependency at " + forClassName + ": " + classNames);
+        return new CircularDependencyException (forClassName, classNames);
     }
 
     private <T,S> T startService(Class<T> serviceClass, T instance, ServiceLifecycleActions<S> withActions) {
@@ -396,8 +395,8 @@ public final class Guicer {
     }
 
     static interface ServiceLifecycleActions<T> {
-        void onStart(T service) throws Exception;
-        void onShutdown(T service) throws Exception;
+        void onStart(T service);
+        void onShutdown(T service);
 
         /**
          * Cast the given object to the actionable type if possible, or return {@code null} otherwise.
@@ -406,5 +405,4 @@ public final class Guicer {
          */
         T castIfActionable(Object object);
     }
-
 }

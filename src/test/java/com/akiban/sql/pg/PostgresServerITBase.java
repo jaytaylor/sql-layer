@@ -15,20 +15,23 @@
 
 package com.akiban.sql.pg;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.sql.RegexFilenameFilter;
 
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.RowOutput;
-import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanFlag;
+import com.akiban.server.error.RowOutputException;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.sql.RegexFilenameFilter;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static junit.framework.Assert.*;
 
 import java.sql.Connection;
@@ -46,6 +49,7 @@ import java.util.List;
 @Ignore
 public class PostgresServerITBase extends ITBase
 {
+    private static final Logger LOG = LoggerFactory.getLogger(PostgresServerITBase.class);
     public static final File RESOURCE_DIR = 
         new File("src/test/resources/"
                  + PostgresServerITBase.class.getPackage().getName().replace('.', '/'));
@@ -169,7 +173,7 @@ public class PostgresServerITBase extends ITBase
                                            EnumSet.of(ScanFlag.DEEP)));
         dml().scanSome(session(), cursorId,
                        new RowOutput() {
-                           public void output(NewRow row) throws RowOutputException {
+                           public void output(NewRow row) {
                                RowDef rowDef = row.getRowDef();
                                str.append(rowDef.table().getName().getTableName());
                                for (int i = 0; i < rowDef.getFieldCount(); i++) {
@@ -213,14 +217,16 @@ public class PostgresServerITBase extends ITBase
         for (int i = 0; i < 6; i++) {
             if (server().isListening())
                 break;
-            if (i == 0)
-                System.err.println("Postgres server not listening. Waiting...");
+            if (i == 1)
+                LOG.warn("Postgres server not listening. Waiting...");
             else if (i == 5)
                 fail("Postgres server still not listening. Giving up.");
             try {
                 Thread.sleep(200);
             }
             catch (InterruptedException ex) {
+                LOG.warn("caught an interrupted exception; re-interrupting", ex);
+                Thread.currentThread().interrupt();
             }
         }
         connection = openConnection();

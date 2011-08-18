@@ -25,7 +25,7 @@ import org.junit.Test;
 import com.akiban.ais.model.validation.AISValidationFailure;
 import com.akiban.ais.model.validation.AISValidationResults;
 import com.akiban.ais.model.validation.AISValidations;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.ErrorCode;
 
 public class AISBuilderTest
 {
@@ -423,9 +423,9 @@ public class AISBuilderTest
         Assert.assertEquals(3,results.failures().size());
         Iterator<AISValidationFailure> failures = results.failures().iterator();
         
-        Assert.assertEquals("Table schema.customer does not connect to a group", failures.next().message());
-        Assert.assertEquals("Table schema.item does not connect to a group", failures.next().message());
-        Assert.assertEquals("Table schema.order does not connect to a group", failures.next().message());
+        Assert.assertEquals("Table `schema`.`customer` does not belong to any group", failures.next().message());
+        Assert.assertEquals("Table `schema`.`item` does not belong to any group", failures.next().message());
+        Assert.assertEquals("Table `schema`.`order` does not belong to any group", failures.next().message());
         
     }
 

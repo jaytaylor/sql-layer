@@ -32,8 +32,8 @@ import java.util.Set;
 
 import org.junit.Test;
 
-import com.akiban.server.service.ServiceNotStartedException;
-import com.akiban.server.service.ServiceStartupException;
+import com.akiban.server.error.ServiceNotStartedException;
+import com.akiban.server.error.ServiceStartupException;
 
 public final class ConfigurationServiceImplTest {
 
@@ -47,7 +47,7 @@ public final class ConfigurationServiceImplTest {
         }
 
         @Override
-        protected Map<String, Property> loadProperties() throws IOException {
+        protected Map<String, Property> loadProperties() {
             Map<String,Property> ret = new HashMap<String, Property>(properties.length);
             for (Property property : properties) {
                 ret.put(property.getKey(), property);

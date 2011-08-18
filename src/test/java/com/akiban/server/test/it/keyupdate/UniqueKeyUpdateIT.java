@@ -15,15 +15,15 @@
 
 package com.akiban.server.test.it.keyupdate;
 
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.ConstantColumnSelector;
-import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.api.dml.scan.ScanRequest;
+import com.akiban.server.error.DuplicateKeyException;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 

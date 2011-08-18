@@ -20,7 +20,7 @@ import java.util.Set;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.JoinToMultipleParentsException;
 
 
 /**
@@ -36,9 +36,8 @@ public class JoinToOneParent implements AISValidation {
         
         for (Join join : ais.getJoins().values()) {
             if (childTables.contains(join.getChild())) {
-                output.reportFailure(new AISValidationFailure (ErrorCode.JOIN_TO_MULTIPLE_PARENTS,
-                        "Table %s has joins to two parents",
-                        join.getChild().getName().toString()));
+                output.reportFailure(new AISValidationFailure (
+                        new JoinToMultipleParentsException (join.getChild().getName())));
             } else {
                 childTables.add(join.getChild());
             }

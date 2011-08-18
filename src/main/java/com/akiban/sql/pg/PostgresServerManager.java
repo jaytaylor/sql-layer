@@ -15,8 +15,8 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.instrumentation.InstrumentationService;
@@ -25,10 +25,6 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.google.inject.Inject;
-
-import java.net.*;
-import java.io.*;
-import java.util.*;
 
 /** The PostgreSQL server service.
  * @see PostgresServer
@@ -73,14 +69,14 @@ public class PostgresServerManager implements PostgresService, Service<PostgresS
         }
     }
 
-    public void stop() throws Exception {
+    public void stop() {
         if (server != null) {
             server.stop();
             server = null;
         }
     }
 
-    public void crash() throws Exception {
+    public void crash() {
         stop();
     }
 

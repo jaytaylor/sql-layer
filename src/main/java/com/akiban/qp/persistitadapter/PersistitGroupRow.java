@@ -19,7 +19,7 @@ import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.InvalidOperationException;
+import com.akiban.server.rowdata.RowDataConversionSource;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataConversionSource;
 import com.akiban.server.rowdata.RowDef;
@@ -87,7 +87,7 @@ public class PersistitGroupRow extends AbstractRow
         throw new IllegalStateException("no active row");
     }
 
-    void copyFromExchange(Exchange exchange) throws InvalidOperationException, PersistitException
+    void copyFromExchange(Exchange exchange) throws PersistitException
     {
         this.row = new LegacyRowWrapper((RowDef) null);
         RuntimeException exception;

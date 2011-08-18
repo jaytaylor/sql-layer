@@ -17,7 +17,7 @@ package com.akiban.ais.model.validation;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.GroupHasMultipleRootsException;
 
 class GroupTableSingleRoot implements AISValidation {
 
@@ -36,10 +36,8 @@ class GroupTableSingleRoot implements AISValidation {
                     if (root == null) {
                         root = userTable;
                     } else {
-                        output.reportFailure(new AISValidationFailure (ErrorCode.GROUP_MULTIPLE_ROOTS,
-                                "Group %s has mulitple root tables: %s and %s",
-                                root.getName().toString(), 
-                                userTable.getName().toString()));
+                        output.reportFailure(new AISValidationFailure (
+                                new GroupHasMultipleRootsException (group.getName(), root.getName(),userTable.getName())));
                     }
                 }
             }

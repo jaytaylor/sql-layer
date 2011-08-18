@@ -17,6 +17,8 @@ package com.akiban.server.service.servicemanager;
 
 import org.junit.Test;
 
+import com.akiban.server.error.CircularDependencyException;
+
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;

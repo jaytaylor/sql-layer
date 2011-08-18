@@ -25,6 +25,8 @@ import java.util.List;
 
 import org.junit.Test;
 
+import com.akiban.server.error.RowOutputException;
+
 public final class BufferedLegacyOutputRouterTest {
     private final static int bytesPerInt = Integer.SIZE / 8;
 
@@ -32,9 +34,9 @@ public final class BufferedLegacyOutputRouterTest {
         private final List<Integer> integers = new ArrayList<Integer>();
 
         @Override
-        public void handleRow(byte[] bytes, int offset, int length) throws RowOutputException {
+        public void handleRow(byte[] bytes, int offset, int length) {
             if ( (length % bytesPerInt) != 0) {
-                throw new RowOutputException("Bad length: " + length);
+                throw new RowOutputException(length);
             }
             ByteBuffer wrap = ByteBuffer.wrap(bytes, offset, length);
             for (int i=0; i < length / bytesPerInt; ++i) {

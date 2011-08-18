@@ -20,8 +20,6 @@ import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.server.InvalidOperationException;
-
 public class AISValidationResults {
     private static final Logger LOG = LoggerFactory.getLogger(AISValidationResults.class);
 
@@ -45,7 +43,7 @@ public class AISValidationResults {
                 LOG.info(String.format("Validation failure %s : %s", fail.errorCode(), fail.message()));
             }
             AISValidationFailure fail = failureList.iterator().next();
-            throw new InvalidOperationException(fail.errorCode(), fail.message());
+            fail.generateException();
         }
     }
  

@@ -79,7 +79,11 @@ public class SchemaDDL {
             // If the schema isn't used by any existing tables, it has effectively 
             // been dropped, so the drop "succeeds".
         } else if (dropSchema.getDropBehavior() == StatementType.DROP_CASCADE) {
-            ddlFunctions.dropSchema(session, schemaName);
+            try {
+                ddlFunctions.dropSchema(session, schemaName);
+            } catch (Exception e) {
+                throw new StandardException (e.getMessage());
+            }
         }
     }
 }

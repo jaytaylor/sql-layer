@@ -23,6 +23,7 @@ import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyConversionTarget;
 import com.akiban.server.types.ConversionSource;
+import com.akiban.server.error.PersistItErrorException;
 import com.akiban.server.types.Converters;
 import com.akiban.util.ArgumentValidation;
 import com.persistit.Exchange;
@@ -34,7 +35,6 @@ class OperatorStoreGIHandler {
     // GroupIndexHandler interface
 
     public void handleRow(GroupIndex groupIndex, Row row, Action action)
-    throws PersistitException
     {
         assert Action.BULK_ADD.equals(action) == (sourceTable==null) : null;
         GroupIndexPosition sourceRowPosition = positionWithinBranch(groupIndex, sourceTable);
@@ -124,15 +124,23 @@ class OperatorStoreGIHandler {
 
     // for use in this class
 
-    private void storeExchange(GroupIndex groupIndex, Exchange exchange) throws PersistitException {
-        exchange.store();
+    private void storeExchange(GroupIndex groupIndex, Exchange exchange) {
+        try {
+            exchange.store();
+        } catch (PersistitException e) {
+            throw new PersistItErrorException (e);
+        }
         if (giHandlerHook != null) {
             giHandlerHook.storeHook(groupIndex, exchange.getKey(), exchange.getValue().get());
         }
     }
 
-    private void removeExchange(GroupIndex groupIndex, Exchange exchange) throws PersistitException {
-        exchange.remove();
+    private void removeExchange(GroupIndex groupIndex, Exchange exchange) {
+        try {
+            exchange.remove();
+        } catch (PersistitException e) {
+            throw new PersistItErrorException (e);
+        }
         if (giHandlerHook != null) {
             giHandlerHook.removeHook(groupIndex, exchange.getKey());
         }

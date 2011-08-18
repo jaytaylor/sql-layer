@@ -31,7 +31,8 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.Visitor;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.JoinToProtectedTableException;
+import com.akiban.server.error.ProtectedTableDDLException;
 
 /**
  * Verifies the only tables in the akiban_information_schema are 
@@ -54,9 +55,8 @@ class ProtectedTables implements AISValidation,Visitor {
     public void visitUserTable(UserTable userTable) {
         if (userTable.getName().getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA) &&
             !PROTECT_LIST.contains(userTable.getName().getTableName())) {
-            output.reportFailure(new AISValidationFailure(ErrorCode.PROTECTED_TABLE,
-                    "Unsupported user table %s in %s",
-                    userTable.getName().toString(), TableName.AKIBAN_INFORMATION_SCHEMA));
+            output.reportFailure(new AISValidationFailure(
+                    new ProtectedTableDDLException (userTable.getName())));
         }
     }
 
@@ -64,9 +64,8 @@ class ProtectedTables implements AISValidation,Visitor {
     public void visitGroupTable(GroupTable groupTable) {
         if (groupTable.getName().getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA) &&
                 !PROTECT_LIST.contains(groupTable.getName().getTableName())) {
-            output.reportFailure(new AISValidationFailure (ErrorCode.PROTECTED_TABLE,
-                    "Unsupported group table %s in %s",
-                    groupTable.getName().toString(), TableName.AKIBAN_INFORMATION_SCHEMA));
+            output.reportFailure(new AISValidationFailure (
+                    new ProtectedTableDDLException(groupTable.getName())));
         }
     }
 
@@ -74,9 +73,9 @@ class ProtectedTables implements AISValidation,Visitor {
     public void visitJoin(Join join) {
         if (join.getParent().getName().getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA) &&
             !PROTECT_LIST.contains(join.getParent().getName().getTableName())) {
-            output.reportFailure(new AISValidationFailure (ErrorCode.JOIN_TO_PROTECTED_TABLE, 
-                    "Table %s joins to protected table %s",
-                    join.getChild().getName().toString(), join.getParent().getName().toString()));
+            
+            output.reportFailure(new AISValidationFailure (
+                    new JoinToProtectedTableException (join.getChild().getName(), join.getParent().getName())));
         }
     }
 

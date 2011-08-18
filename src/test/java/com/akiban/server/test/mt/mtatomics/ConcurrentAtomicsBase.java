@@ -15,8 +15,8 @@
 
 package com.akiban.server.test.mt.mtatomics;
 
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.mt.MTBase;
 import com.akiban.server.test.mt.mtutil.TimePointsComparison;
