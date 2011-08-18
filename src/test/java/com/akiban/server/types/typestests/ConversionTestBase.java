@@ -22,6 +22,7 @@ import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.types.ConversionSource;
 import com.akiban.server.types.ConversionTarget;
+import com.akiban.server.types.ConverterTestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -75,6 +76,7 @@ public abstract class ConversionTestBase {
     }
 
     protected ConversionTestBase(ConversionSuite<?> suite, int indexWithinSuite) {
+        ConverterTestUtils.setGlobalTimezone("UTC");
         this.suite = suite;
         this.indexWithinSuite = indexWithinSuite;
     }

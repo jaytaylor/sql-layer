@@ -15,11 +15,9 @@
 
 package com.akiban.server.types;
 
-import java.util.TimeZone;
-
 public final class ConverterTestUtils {
-    public static void setTimestampTimezoneForThread(String timezone) {
-        ConvertersForDates.setTimestampTimezoneForThread(TimeZone.getTimeZone(timezone));
+    public static void setGlobalTimezone(String timezone) {
+        ConvertersForDates.setGlobalTimezone(timezone);
     }
 
     private ConverterTestUtils() {}

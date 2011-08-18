@@ -46,6 +46,7 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.types.ConverterTestUtils;
 import com.akiban.server.util.GroupIndexCreator;
 import com.akiban.util.Strings;
 import com.akiban.util.Undef;
@@ -137,6 +138,7 @@ public class ApiTestBase {
 
     @Before
     public final void startTestServices() throws Exception {
+        ConverterTestUtils.setGlobalTimezone("UTC");
         testServicesStarted = false;
         sm = createServiceManager( startupConfigProperties() );
         sm.startServices();

@@ -93,7 +93,7 @@ final class StandardTestCases {
         list.add(TestCase.forTime(1, NO_STATE));
 
         LongConverter timestampConverter = Converters.getLongConverter(AkType.TIMESTAMP);
-        ConverterTestUtils.setTimestampTimezoneForThread("GMT");
+        ConverterTestUtils.setGlobalTimezone("UTC");
         list.add(TestCase.forTimestamp(timestampConverter.doParse("0000-00-00 00:00:00"), NO_STATE));
         list.add(TestCase.forTimestamp(timestampConverter.doParse("1970-01-01 00:00:01"), NO_STATE));
         list.add(TestCase.forTimestamp(timestampConverter.doParse("2011-08-18 15:09:00"), NO_STATE));

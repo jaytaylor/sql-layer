@@ -56,7 +56,6 @@ public final class RowDataConversionTest extends ConversionTestBase {
         LongConverter year = Converters.getLongConverter(AkType.YEAR);
         LongConverter timestamp = Converters.getLongConverter(AkType.TIMESTAMP);
         LongConverter time = Converters.getLongConverter(AkType.TIME);
-        ConverterTestUtils.setTimestampTimezoneForThread("UTC");
 
         ConversionSuite<?> suite = ConversionSuite.build(new ConversionPair())
                 // Double values

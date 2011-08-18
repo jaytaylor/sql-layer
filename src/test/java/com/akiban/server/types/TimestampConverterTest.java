@@ -31,7 +31,7 @@ public class TimestampConverterTest extends LongConverterTestBase {
               });
 
         // Make expected output deterministic
-        ConverterTestUtils.setTimestampTimezoneForThread("GMT");
+        ConverterTestUtils.setGlobalTimezone("UTC");
     }
 
 
