@@ -15,7 +15,9 @@
 
 package com.akiban.server.rowdata;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.server.AkServerUtil;
+import com.akiban.server.error.UnsupportedCharsetException;
 
 import java.io.UnsupportedEncodingException;
 
@@ -35,7 +37,14 @@ final class ConversionHelper {
      */
     public static int encodeString(String string, final byte[] bytes, final int offset, final FieldDef fieldDef) {
         assert string != null;
-        final byte b[] = stringBytes(string, fieldDef.column().getCharsetAndCollation().charset());
+        final byte[] b;
+        String charsetName = fieldDef.column().getCharsetAndCollation().charset();
+        try {
+            b = string.getBytes(charsetName);
+        } catch (UnsupportedEncodingException e) {
+            TableName table = fieldDef.column().getTable().getName();
+            throw new UnsupportedCharsetException(table.getSchemaName(), table.getTableName(), charsetName);
+        }
         return putByteArray(b, 0, b.length, bytes, offset, fieldDef);
     }
 
@@ -49,14 +58,6 @@ final class ConversionHelper {
     }
 
     // for use in this class
-
-    private static byte[] stringBytes(final String s, String charsetName) {
-        try {
-            return s.getBytes(charsetName);
-        } catch (UnsupportedEncodingException e) {
-            throw new UnsupportedOperationException("can't decode charset " + charsetName, e);
-        }
-    }
 
     private ConversionHelper() {}
 }
