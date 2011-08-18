@@ -96,6 +96,39 @@ public final class WrappingByteSourceTest {
         assertEquals("converted WrappingByteSource", manual, converted);
     }
 
+    @Test
+    public void equality() {
+        byte[] bytes = new byte[4*11];
+        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        for(int i=0; i < 5; ++i) {
+            buffer.putInt(i);
+        }
+        buffer.putInt(-1); // space
+        for(int i=0; i < 5; ++i) {
+            buffer.putInt(i);
+        }
+        WrappingByteSource one = new WrappingByteSource().wrap(bytes, 0, 4*5);
+        WrappingByteSource two = new WrappingByteSource().wrap(bytes, 6*4, 4*5);
+        assertEquals("equality", one, two);
+        assertEquals("hash codes", one.hashCode(), two.hashCode());
+    }
+
+    @Test
+    public void equalityShort() {
+        WrappingByteSource one = new WrappingByteSource().wrap(new byte[]{(byte)0xAB});
+        WrappingByteSource two = new WrappingByteSource().wrap(new byte[]{(byte)0xAB});
+        assertEquals("equality", one, two);
+        assertEquals("hash codes", one.hashCode(), two.hashCode());
+    }
+
+    @Test
+    public void equalityEmpty() {
+        WrappingByteSource one = new WrappingByteSource().wrap(new byte[0]);
+        WrappingByteSource two = new WrappingByteSource().wrap(new byte[0]);
+        assertEquals("equality", one, two);
+        assertEquals("hash codes", one.hashCode(), two.hashCode());
+    }
+
     private static void check(ByteSource byteSource, byte[] expectedBytes, int expectedOffset, int expectedLength) {
         byte[] actualBytes = byteSource.byteArray();
         if (actualBytes != expectedBytes) {

@@ -21,6 +21,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowDataConversionSource;
 import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDataConversionSource;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.encoding.EncodingException;

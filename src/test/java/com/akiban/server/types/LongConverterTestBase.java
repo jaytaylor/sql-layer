@@ -48,17 +48,6 @@ abstract public class LongConverterTestBase {
         return ENCODER.asString(val);
     }
 
-//TODO nix?
-//    @Test
-//    public void encodingToLong() {
-//        for(TestElement t : testCases) {
-//            final long encodeFromNum = converter.encodeFromObject(t.number);
-//            final long encodeFromStr = converter.encodeFromObject(t.string);
-//            assertEquals("Number->long: " + t, t.longVal, encodeFromNum);
-//            assertEquals("String->long: " + t, t.longVal, encodeFromStr);
-//        }
-//    }
-
     @Test
     public void decodingToString() {
         int count = 0;
@@ -68,9 +57,4 @@ abstract public class LongConverterTestBase {
             ++count;
         }
     }
-//TODO nix?
-//    @Test
-//    public void nullIsZero() {
-//        assertEquals(0, converter.encodeFromObject(null));
-//    }
 }

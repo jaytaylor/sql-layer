@@ -15,6 +15,8 @@
 
 package com.akiban.server.types;
 
+import java.util.TimeZone;
+
 public final class Converters {
 
     /**

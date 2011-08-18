@@ -13,37 +13,12 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.rowdata;
+package com.akiban.server.types;
 
-abstract class RowDataConversionBase {
-
-    // FieldDefConversionBase interface
-
-    public void bind(FieldDef fieldDef, RowData rowData) {
-        this.fieldDef = fieldDef;
-        this.rowData = rowData;
+public final class ConverterTestUtils {
+    public static void setGlobalTimezone(String timezone) {
+        ConvertersForDates.setGlobalTimezone(timezone);
     }
 
-    // Object interface
-
-    @Override
-    public String toString() {
-        return String.format("ConversionSource( %s -> %s )", fieldDef, rowData.toString(fieldDef.getRowDef()));
-    }
-
-
-    // package-private
-
-    FieldDef fieldDef() {
-        return fieldDef;
-    }
-
-    RowData rowData() {
-        return rowData;
-    }
-
-    // object state
-
-    private FieldDef fieldDef;
-    private RowData rowData;
+    private ConverterTestUtils() {}
 }

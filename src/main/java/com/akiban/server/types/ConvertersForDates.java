@@ -15,6 +15,7 @@
 
 package com.akiban.server.types;
 
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -169,8 +170,10 @@ abstract class ConvertersForDates extends LongConverter {
 
         @Override
         public long doParse(String string) {
+            if (TIMESTAMP_ZERO_STRING.equals(string))
+                return 0;
             try {
-                return TL_SDF.get().parse(string).getTime() / 1000;
+                return timestampFormat().parse(string).getTime() / 1000;
             } catch(ParseException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -178,7 +181,9 @@ abstract class ConvertersForDates extends LongConverter {
 
         @Override
         public String asString(long value) {
-            return TL_SDF.get().format(new Date(value*1000));
+            return value == 0
+                    ? TIMESTAMP_ZERO_STRING
+                    : timestampFormat().format(new Date(value * 1000));
         }
     };
 
@@ -225,13 +230,22 @@ abstract class ConvertersForDates extends LongConverter {
 
     // testing hooks
 
-    static void setTimestampTimezoneForThread(TimeZone timezone) {
-        TL_SDF.get().setTimeZone(timezone);
+    static void setGlobalTimezone(String timezone) {
+        dateFormatProvider.set(new DateFormatProvider(timezone));
     }
 
-    // hidden ctor
+    private static DateFormat timestampFormat() {
+        return dateFormatProvider.get().get();
+    }
+
+    // for use in this method
 
     private ConvertersForDates() {}
+
+    // class state
+
+    private static final AtomicReference<DateFormatProvider> dateFormatProvider
+            = new AtomicReference<DateFormatProvider>(new DateFormatProvider(TimeZone.getDefault().getID()));
 
     // consts
 
@@ -243,13 +257,32 @@ abstract class ConvertersForDates extends LongConverter {
     private static final long DATETIME_MIN_SCALE = 100L;
     private static final long DATETIME_SEC_SCALE = 1L;
 
+    private static final String TIMESTAMP_ZERO_STRING = "0000-00-00 00:00:00";
+
     private static final long TIME_HOURS_SCALE = 10000;
     private static final long TIME_MINUTES_SCALE = 100;
-    
-    private static final ThreadLocal<SimpleDateFormat> TL_SDF = new ThreadLocal<SimpleDateFormat>() {
-        @Override
-        protected SimpleDateFormat initialValue() {
-            return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+    // nested class
+
+    private static class DateFormatProvider {
+
+        public DateFormatProvider(final String timezoneName) {
+            this.dateFormatRef = new ThreadLocal<DateFormat>() {
+                @Override
+                protected DateFormat initialValue() {
+                    DateFormat result = new SimpleDateFormat(TIMEZONE_FORMAT);
+                    result.setTimeZone(TimeZone.getTimeZone(timezoneName));
+                    return result;
+                }
+            };
         }
-    };
+
+        public DateFormat get() {
+            return dateFormatRef.get();
+        }
+
+        private final ThreadLocal<DateFormat> dateFormatRef;
+
+        private static final String TIMEZONE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    }
 }

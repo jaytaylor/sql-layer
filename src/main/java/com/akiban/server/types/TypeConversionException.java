@@ -12,18 +12,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+package com.akiban.server.types;
 
-package com.akiban.server.types.typestests;
-
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ConversionSource;
-import com.akiban.server.types.ConversionTarget;
-
-public interface LinkedConversion<T> {
-    ConversionSource linkedSource();
-    ConversionTarget linkedTarget();
-
-    void checkPut(T expected);
-    void setUp(TestCase<?> testCase);
-    void syncConversions();
+public final class TypeConversionException extends RuntimeException {
+    TypeConversionException(String message) {
+        super(message);
+    }
 }

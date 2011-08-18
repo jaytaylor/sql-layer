@@ -15,6 +15,10 @@
 
 package com.akiban.server.types.typestests;
 
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ConverterTestUtils;
+import com.akiban.server.types.Converters;
+import com.akiban.server.types.LongConverter;
 import com.akiban.util.ByteSource;
 import com.akiban.util.WrappingByteSource;
 
@@ -43,72 +47,89 @@ final class StandardTestCases {
         list.add(TestCase.forDateTime(0, NO_STATE));
         list.add(TestCase.forDateTime(99991231235959L, NO_STATE));
         
-        list.add(TestCase.forDecimal(BigDecimal.ZERO, NO_STATE));
-        list.add(TestCase.forDecimal(BigDecimal.ONE, NO_STATE));
-        list.add(TestCase.forDecimal(BigDecimal.TEN, NO_STATE));
-        list.add(TestCase.forDecimal(BigDecimal.valueOf(-10), NO_STATE));
+        list.add(TestCase.forDecimal(BigDecimal.ZERO, 1, 0, NO_STATE));
+        list.add(TestCase.forDecimal(BigDecimal.ONE, 1, 0, NO_STATE));
+        list.add(TestCase.forDecimal(new BigDecimal("10.0"), 3, 1, NO_STATE));
+        list.add(TestCase.forDecimal(BigDecimal.valueOf(-10), 10, 0, NO_STATE));
         
         list.add(TestCase.forDouble(0, NO_STATE));
         list.add(TestCase.forDouble(-0, NO_STATE));
         list.add(TestCase.forDouble(1, NO_STATE));
         list.add(TestCase.forDouble(-1, NO_STATE));
+        list.add(TestCase.forDouble(Double.MIN_VALUE, NO_STATE));
+        list.add(TestCase.forDouble(Double.MAX_VALUE, NO_STATE));
         
         list.add(TestCase.forFloat(0, NO_STATE));
         list.add(TestCase.forFloat(-0, NO_STATE));
         list.add(TestCase.forFloat(1, NO_STATE));
         list.add(TestCase.forFloat(-1, NO_STATE));
+        list.add(TestCase.forFloat(Float.MIN_VALUE, NO_STATE));
+        list.add(TestCase.forFloat(Float.MAX_VALUE, NO_STATE));
 
         list.add(TestCase.forInt(-1, NO_STATE));
         list.add(TestCase.forInt(0, NO_STATE));
         list.add(TestCase.forInt(1, NO_STATE));
+        list.add(TestCase.forInt(-1, Long.MAX_VALUE));
+        list.add(TestCase.forInt(-1, Long.MIN_VALUE));
 
         list.add(TestCase.forLong(-1, NO_STATE));
         list.add(TestCase.forLong(0, NO_STATE));
         list.add(TestCase.forLong(1, NO_STATE));
+        list.add(TestCase.forLong(-1, Long.MAX_VALUE));
+        list.add(TestCase.forLong(-1, Long.MIN_VALUE));
 
-        list.add(TestCase.forString("", NO_STATE));
-        list.add(TestCase.forString("word", NO_STATE));
-        list.add(TestCase.forString("a snowman says ☃", NO_STATE));
+        list.add(TestCase.forString("", 32, "UTF-8", NO_STATE));
+        list.add(TestCase.forString("word", 32, "UTF-8", NO_STATE));
+        list.add(TestCase.forString("☃", 32, "UTF-8", NO_STATE));
+        list.add(TestCase.forString("a ☃ is cold", 32, "UTF-8", NO_STATE));
 
-        list.add(TestCase.forText("", NO_STATE));
-        list.add(TestCase.forText("word", NO_STATE));
-        list.add(TestCase.forText("a snowman says ☃", NO_STATE));
+        list.add(TestCase.forText("", 32, "UTF-8", NO_STATE));
+        list.add(TestCase.forText("word", 32, "UTF-8", NO_STATE));
+        list.add(TestCase.forText("☃", 32, "UTF-8", NO_STATE));
+        list.add(TestCase.forText("a ☃ is cold", 32, "UTF-8", NO_STATE));
 
         list.add(TestCase.forTime(-1, NO_STATE));
         list.add(TestCase.forTime(0, NO_STATE));
         list.add(TestCase.forTime(1, NO_STATE));
 
-        list.add(TestCase.forTimestamp(0, NO_STATE));
-        list.add(TestCase.forTimestamp(Long.MAX_VALUE, NO_STATE));
-        list.add(TestCase.forTimestamp(Long.MIN_VALUE, NO_STATE));
+        LongConverter timestampConverter = Converters.getLongConverter(AkType.TIMESTAMP);
+        ConverterTestUtils.setGlobalTimezone("UTC");
+        list.add(TestCase.forTimestamp(timestampConverter.doParse("0000-00-00 00:00:00"), NO_STATE));
+        list.add(TestCase.forTimestamp(timestampConverter.doParse("1970-01-01 00:00:01"), NO_STATE));
+        list.add(TestCase.forTimestamp(timestampConverter.doParse("2011-08-18 15:09:00"), NO_STATE));
+        list.add(TestCase.forTimestamp(timestampConverter.doParse("2038-01-19 03:14:06"), NO_STATE));
 
         list.add(TestCase.forUBigInt(BigInteger.ZERO, NO_STATE));
         list.add(TestCase.forUBigInt(BigInteger.ONE, NO_STATE));
         list.add(TestCase.forUBigInt(BigInteger.TEN, NO_STATE));
-        list.add(TestCase.forUBigInt(BigInteger.valueOf(-1), NO_STATE));
 
         list.add(TestCase.forUDouble(0, NO_STATE));
         list.add(TestCase.forUDouble(-0, NO_STATE));
         list.add(TestCase.forUDouble(1, NO_STATE));
         list.add(TestCase.forUDouble(-1, NO_STATE));
+        list.add(TestCase.forUDouble(Double.MIN_VALUE, NO_STATE));
+        list.add(TestCase.forUDouble(Double.MAX_VALUE, NO_STATE));
 
         list.add(TestCase.forUFloat(0, NO_STATE));
         list.add(TestCase.forUFloat(-0, NO_STATE));
         list.add(TestCase.forUFloat(1, NO_STATE));
         list.add(TestCase.forUFloat(-1, NO_STATE));
+        list.add(TestCase.forUFloat(Float.MIN_VALUE, NO_STATE));
+        list.add(TestCase.forUFloat(Float.MAX_VALUE, NO_STATE));
 
-        list.add(TestCase.forUInt(-1, NO_STATE));
         list.add(TestCase.forUInt(0, NO_STATE));
         list.add(TestCase.forUInt(1, NO_STATE));
+        list.add(TestCase.forUInt(Integer.MAX_VALUE, NO_STATE));
+        list.add(TestCase.forUInt(((long)Math.pow(2, 32))-1, NO_STATE));
 
-        list.add(TestCase.forVarBinary(wrap(), NO_STATE));
-        list.add(TestCase.forVarBinary(wrap(Byte.MIN_VALUE, Byte.MAX_VALUE, 0), NO_STATE));
+        list.add(TestCase.forVarBinary(wrap(), 0, NO_STATE));
+        list.add(TestCase.forVarBinary(wrap(Byte.MIN_VALUE, Byte.MAX_VALUE, 0), 2, NO_STATE));
 
-        list.add(TestCase.forYear(0, NO_STATE));
-        list.add(TestCase.forYear(1, NO_STATE));
-        list.add(TestCase.forYear(86, NO_STATE));
-        list.add(TestCase.forYear(128, NO_STATE));
-        list.add(TestCase.forYear(2155, NO_STATE));
+        LongConverter yearConverter = Converters.getLongConverter(AkType.YEAR);
+        list.add(TestCase.forYear(yearConverter.doParse("0000"), NO_STATE));
+        list.add(TestCase.forYear(yearConverter.doParse("1901"), NO_STATE));
+        list.add(TestCase.forYear(yearConverter.doParse("1983"), NO_STATE));
+        list.add(TestCase.forYear(yearConverter.doParse("2155"), NO_STATE));
 
         return Collections.unmodifiableCollection(list);
     }
