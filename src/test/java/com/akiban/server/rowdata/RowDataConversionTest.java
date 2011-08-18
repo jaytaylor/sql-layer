@@ -25,6 +25,9 @@ import com.akiban.junit.Parameterization;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ConversionSource;
 import com.akiban.server.types.ConversionTarget;
+import com.akiban.server.types.ConverterTestUtils;
+import com.akiban.server.types.Converters;
+import com.akiban.server.types.LongConverter;
 import com.akiban.server.types.typestests.ConversionSuite;
 import com.akiban.server.types.typestests.ConversionTestBase;
 import com.akiban.server.types.typestests.LinkedConversion;
@@ -50,29 +53,34 @@ public final class RowDataConversionTest extends ConversionTestBase {
 
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() {
+        LongConverter year = Converters.getLongConverter(AkType.YEAR);
+        LongConverter timestamp = Converters.getLongConverter(AkType.TIMESTAMP);
+        LongConverter time = Converters.getLongConverter(AkType.TIME);
+        ConverterTestUtils.setTimestampTimezoneForThread("UTC");
+
         ConversionSuite<?> suite = ConversionSuite.build(new ConversionPair())
                 // Double values
                 .add(TestCase.forDouble(-0.0d, b(0x8000000000000000L)))
                 .add(TestCase.forDouble(0.0d, b(0x0000000000000000L)))
-                .add(TestCase.forDouble(                       -1.0d, b(0xBFF0000000000000L)))
-                .add(TestCase.forDouble(                        1.0d, b(0x3FF0000000000000L)))
-                .add(TestCase.forDouble(   839573957392.29575739275d, b(0x42686F503D620977L)))
+                .add(TestCase.forDouble(-1.0d, b(0xBFF0000000000000L)))
+                .add(TestCase.forDouble(1.0d, b(0x3FF0000000000000L)))
+                .add(TestCase.forDouble(839573957392.29575739275d, b(0x42686F503D620977L)))
                 .add(TestCase.forDouble(            -0.986730586093d, b(0xBFEF934C05A76F64L)))
                 .add(TestCase.forDouble(428732459843.84344482421875d, b(0x4258F49C8AD0F5FBL)))
-                .add(TestCase.forDouble(               2.7182818284d, b(0x4005BF0A8B12500BL)))
-                .add(TestCase.forDouble(          -9007199250000000d, b(0xC33FFFFFFFB7A880L)))
+                .add(TestCase.forDouble(2.7182818284d, b(0x4005BF0A8B12500BL)))
+                .add(TestCase.forDouble(-9007199250000000d, b(0xC33FFFFFFFB7A880L)))
                 .add(TestCase.forDouble(        7385632847582937583d, b(0x43D99FC27C6C68D0L)))
 
                 // BigDecimal -- values that were in the c_discount decimal(4,2) field
                 .add(TestCase.forDecimal(d("0.38"), 4, 2, parseHex("0x8026")))
-                .add(TestCase.forDecimal(d("0.44"), 4, 2,  parseHex("0x802C")))
-                .add(TestCase.forDecimal(d("0.01"), 4, 2,  parseHex("0x8001")))
-                .add(TestCase.forDecimal(d("0.33"), 4, 2,  parseHex("0x8021")))
-                .add(TestCase.forDecimal(d("0.04"), 4, 2,  parseHex("0x8004")))
-                .add(TestCase.forDecimal(d("0.50"), 4, 2,  parseHex("0x8032")))
-                .add(TestCase.forDecimal(d("0.45"), 4, 2,  parseHex("0x802D")))
-                .add(TestCase.forDecimal(d("0.14"), 4, 2,  parseHex("0x800E")))
-                .add(TestCase.forDecimal(d("0.03"), 4, 2,  parseHex("0x8003")))
+                .add(TestCase.forDecimal(d("0.44"), 4, 2, parseHex("0x802C")))
+                .add(TestCase.forDecimal(d("0.01"), 4, 2, parseHex("0x8001")))
+                .add(TestCase.forDecimal(d("0.33"), 4, 2, parseHex("0x8021")))
+                .add(TestCase.forDecimal(d("0.04"), 4, 2, parseHex("0x8004")))
+                .add(TestCase.forDecimal(d("0.50"), 4, 2, parseHex("0x8032")))
+                .add(TestCase.forDecimal(d("0.45"), 4, 2, parseHex("0x802D")))
+                .add(TestCase.forDecimal(d("0.14"), 4, 2, parseHex("0x800E")))
+                .add(TestCase.forDecimal(d("0.03"), 4, 2, parseHex("0x8003")))
                 // -- values that were in the c_balance decimal(12,2) field
                 .add(TestCase.forDecimal(d("4673.96"), 12, 2, parseHex("0x800000124160")))
                 .add(TestCase.forDecimal(d("8028.00"), 12, 2, parseHex("0x8000001F5C00")))
@@ -98,6 +106,31 @@ public final class RowDataConversionTest extends ConversionTestBase {
                 .add(TestCase.forDecimal(d("0.00"), 8, 2, parseHex("0x80000000")))
                 .add(TestCase.forDecimal(d("0.0000"), 10, 4, parseHex("0x8000000000")))
                 .add(TestCase.forDecimal(d("0.00000000"), 10, 8, parseHex("0x8000000000")))
+
+                // Year
+                .add(TestCase.forYear(year.doParse("0000"), b(0, 1)))
+                .add(TestCase.forYear(year.doParse("1902"), b(2, 1)))
+                .add(TestCase.forYear(year.doParse("1986"), b(86, 1)))
+                .add(TestCase.forYear(year.doParse("2011"), b(111, 1)))
+                .add(TestCase.forYear(year.doParse("2155"), b(255, 1)))
+                
+                // Timestamp
+                .add(TestCase.forTimestamp(timestamp.doParse("0000-00-00 00:00:00"), b(0, 4)))
+                .add(TestCase.forTimestamp(timestamp.doParse("1970-01-01 00:00:01"), b(1, 4)))
+                .add(TestCase.forTimestamp(timestamp.doParse("2009-02-13 23:31:30"), b(1234567890, 4)))
+                .add(TestCase.forTimestamp(timestamp.doParse("2009-02-13 23:31:30"), b(1234567890, 4)))
+                .add(TestCase.forTimestamp(timestamp.doParse("2038-01-19 03:14:07"), b(2147483647, 4)))
+                .add(TestCase.forTimestamp(timestamp.doParse("1986-10-28 00:00:00"), b(530841600, 4)))
+                .add(TestCase.forTimestamp(timestamp.doParse("2011-04-10 18:34:00"), b(1302460440, 4)))
+
+                // Time
+                .add(TestCase.forTime(time.doParse("00:00:00"), b(0, 3)))
+                .add(TestCase.forTime(time.doParse("00:00:01"), b(1, 3)))
+                .add(TestCase.forTime(time.doParse("-00:00:01"), b(-1, 3)))
+                .add(TestCase.forTime(time.doParse("838:59:59"), b(8385959, 3)))
+                .add(TestCase.forTime(time.doParse("-838:59:59"), b(-8385959, 3)))
+                .add(TestCase.forTime(time.doParse("14:20:32"), b(142032, 3)))
+                .add(TestCase.forTime(time.doParse("-147:21:01"), b(-1472101, 3)))
                 
                 .suite();
         return params(suite);
@@ -230,10 +263,15 @@ public final class RowDataConversionTest extends ConversionTestBase {
     }
     
     private static ByteSource b(long value) {
+        return b(value, 8);
+    }
+
+    private static ByteSource b(long value, int bytes) {
+        assert bytes > 0 && bytes <= 8 : bytes;
         ByteBuffer buffer = ByteBuffer.allocate(8);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.putLong(value);
-        return new WrappingByteSource().wrap(buffer.array());
+        return new WrappingByteSource().wrap(buffer.array(), 0, bytes);
     }
 
     private static BigDecimal d(String asString) {

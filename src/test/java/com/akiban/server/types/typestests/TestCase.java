@@ -176,11 +176,16 @@ public final class TestCase<T> {
 
     private String niceString() {
         String result = type.name();
+        result += niceLongValue();
+        return result;
+    }
+
+    private String niceLongValue() {
         LongConverter longConverter = Converters.getLongConverter(type);
         if (longConverter != null) {
-            result = result + " (" + longConverter.asString(valLong) + ')';
+            return "(" + valLong + "->\"" + longConverter.asString(valLong) + "\")";
         }
-        return result;
+        return "ERR";
     }
 
     void get(ConversionSource source) {
@@ -227,7 +232,7 @@ public final class TestCase<T> {
                 value = valDouble;
                 break;
             case TC_LONG:
-                value = valLong;
+                value = niceLongValue();
                 break;
             case TC_OBJECT:
                 value = valObject;

@@ -63,19 +63,6 @@ public final class DoubleConverterTest {
         }
     }
 
-//    @Test
-//    public void decodeToDouble() {
-//        for(TestElement t : TEST_CASES) {
-//            final double decodeFromBits = DoubleEncoder.decodeFromBits(t.longBits);
-//            assertEquals("bits->float: " + t, t.dbl, decodeFromBits, EPSILON);
-//        }
-//    }
-
-//    @Test
-//    public void nullIsZero() {
-//        assertEquals("null not encoded to 0", 0, DoubleEncoder.encodeFromObject(null), EPSILON);
-//    }
-
     @Test(expected=IllegalArgumentException.class)
     public void invalidNumber() {
         ConverterForDouble.SIGNED.getDouble(new FromObjectConversionSource().setReflectively("zebra"));
