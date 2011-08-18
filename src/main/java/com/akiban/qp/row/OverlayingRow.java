@@ -47,8 +47,8 @@ public final class OverlayingRow extends AbstractRow {
         if (Undef.isUndefined(overlays[i])) {
             return underlying.bindSource(i, bindings);
         } else {
-            conversionSource.setReflectively(overlays[i]);
-            return conversionSource;
+            valueSource.setReflectively(overlays[i]);
+            return valueSource;
         }
     }
 
@@ -57,5 +57,5 @@ public final class OverlayingRow extends AbstractRow {
         return underlying.hKey();
     }
 
-    private final FromObjectValueSource conversionSource = new FromObjectValueSource();
+    private final FromObjectValueSource valueSource = new FromObjectValueSource();
 }

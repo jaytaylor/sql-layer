@@ -52,8 +52,8 @@ public class PersistitIndexRow extends AbstractRow
     @Override
     public ValueSource bindSource(int i, Bindings bindings) {
         IndexColumn column = index().getColumns().get(i);
-        conversionSource.attach(indexRow, column);
-        return conversionSource;
+        valueSource.attach(indexRow, column);
+        return valueSource;
     }
 
     @Override
@@ -81,7 +81,7 @@ public class PersistitIndexRow extends AbstractRow
         this.indexRowType = indexRowType;
         this.indexRow = adapter.persistit.getKey(adapter.session);
         this.hKey = new PersistitHKey(adapter, index().hKey());
-        this.conversionSource = new PersistitKeyValueSource();
+        this.valueSource = new PersistitKeyValueSource();
     }
 
     // For use by this package
@@ -107,7 +107,7 @@ public class PersistitIndexRow extends AbstractRow
 
     private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
-    private final PersistitKeyValueSource conversionSource;
+    private final PersistitKeyValueSource valueSource;
     private final Key indexRow;
     private PersistitHKey hKey;
 }

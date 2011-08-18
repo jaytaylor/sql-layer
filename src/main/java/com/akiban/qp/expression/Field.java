@@ -27,7 +27,7 @@ class Field implements Expression
     public Object evaluate(Row row, Bindings bindings)
     {
         ValueSource source = row.bindSource(position, bindings);
-        return ExpressionConversionHelper.objectFromConversionSource(source);
+        return ExpressionConversionHelper.objectFromValueSource(source);
     }
 
     @Override

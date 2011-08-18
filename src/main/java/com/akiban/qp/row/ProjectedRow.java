@@ -44,7 +44,7 @@ public class ProjectedRow extends AbstractRow
 
     @Override
     public ValueSource bindSource(int i, Bindings bindings) {
-        return ExpressionConversionHelper.asConversionSource(projections.get(i), row.get(), bindings);
+        return ExpressionConversionHelper.asValueSource(projections.get(i), row.get(), bindings);
     }
 
     @Override

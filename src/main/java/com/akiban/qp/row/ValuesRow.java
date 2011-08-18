@@ -40,7 +40,7 @@ public class ValuesRow extends AbstractRow
 
     @Override
     public ValueSource bindSource(int i, Bindings bindings) {
-        return valuesHolder.conversionSourceAt(i);
+        return valuesHolder.valueSourceAt(i);
     }
 
     @Override

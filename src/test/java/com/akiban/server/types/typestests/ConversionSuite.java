@@ -77,7 +77,7 @@ public final class ConversionSuite<T> {
             gotError = true;
         }
         if (!gotError) {
-            fail(errorMessage("ConversionSource", "getting", expectedType, switched));
+            fail(errorMessage("ValueSource", "getting", expectedType, switched));
         }
     }
 

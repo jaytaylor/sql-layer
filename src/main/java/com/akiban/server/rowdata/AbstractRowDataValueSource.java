@@ -29,7 +29,7 @@ import java.nio.ByteBuffer;
 
 abstract class AbstractRowDataValueSource implements ValueSource {
 
-    // ConversionSource interface
+    // ValueSource interface
 
     @Override
     public BigDecimal getDecimal() {

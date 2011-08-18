@@ -74,17 +74,17 @@ public class KeyToObjectIT extends ITBase {
                 final NewRow row = rowIt.next();
                 key.indexTo(0);
 
-                PersistitKeyValueSource conversionSource = new PersistitKeyValueSource();
+                PersistitKeyValueSource valueSource = new PersistitKeyValueSource();
                 ToObjectValueTarget conversionTarget = new ToObjectValueTarget();
                 
                 for(IndexColumn indexColumn : index.getColumns()) {
                     Column column = indexColumn.getColumn();
                     int colPos = column.getPosition();
                     Object objFromRow = row.get(colPos);
-                    conversionSource.attach(key, indexColumn);
+                    valueSource.attach(key, indexColumn);
                     final Object lastConvertedValue;
                     try {
-                        lastConvertedValue = conversionTarget.convertFromSource(conversionSource);
+                        lastConvertedValue = conversionTarget.convertFromSource(valueSource);
                     } catch (Exception e) {
                         throw new RuntimeException("with AkType." + column.getType().akType(), e);
                     }

@@ -30,13 +30,13 @@ import java.math.BigInteger;
 
 public final class PersistitKeyValueSource implements ValueSource {
 
-    // PersistitKeyConversionSource interface
+    // PersistitKeyValueSource interface
 
     public void attach(Key key, IndexColumn indexColumn) {
         attach(key, indexColumn.getPosition(), indexColumn.getColumn().getType().akType());
     }
 
-    // ConversionSource interface
+    // ValueSource interface
 
     @Override
     public boolean isNull() {
