@@ -20,7 +20,7 @@ import com.akiban.util.ByteSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public interface ConversionTarget {
+public interface ValueTarget {
     void putNull();
     void putDate(long value);
     void putDateTime(long value);

@@ -24,7 +24,7 @@ import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ConversionTarget;
+import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.Converters;
 import com.akiban.server.types.LongConverter;
 import com.akiban.server.types.typestests.ConversionSuite;
@@ -145,7 +145,7 @@ public final class RowDataConversionTest extends ConversionTestBase {
         }
 
         @Override
-        public ConversionTarget linkedTarget() {
+        public ValueTarget linkedTarget() {
             return target;
         }
 
@@ -214,7 +214,7 @@ public final class RowDataConversionTest extends ConversionTestBase {
         }
 
         private final TestableRowDataValueSource source = new TestableRowDataValueSource();
-        private final RowDataConversionTarget target = new RowDataConversionTarget();
+        private final RowDataValueTarget target = new RowDataValueTarget();
         private FieldDef fieldDef;
     }
 

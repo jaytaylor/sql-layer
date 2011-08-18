@@ -16,7 +16,7 @@
 package com.akiban.util;
 
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ConversionTarget;
+import com.akiban.server.types.ValueTarget;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -29,7 +29,7 @@ public abstract class AkibanAppender {
     public abstract void append(char c);
     public abstract void append(String s);
     public abstract Appendable getAppendable();
-    public abstract ConversionTarget asConversionTarget();
+    public abstract ValueTarget asConversionTarget();
 
     public boolean canAppendBytes() {
         return false;
@@ -142,12 +142,12 @@ public abstract class AkibanAppender {
         }
     }
 
-    private static abstract class AbstractAkibanAppender extends AkibanAppender implements ConversionTarget {
+    private static abstract class AbstractAkibanAppender extends AkibanAppender implements ValueTarget {
 
         // AkibanAppender interface
 
         @Override
-        public ConversionTarget asConversionTarget() {
+        public ValueTarget asConversionTarget() {
             return this;
         }
 

@@ -19,7 +19,7 @@ abstract class ConverterForString extends ObjectConverter<String> {
 
     static final ObjectConverter<String> STRING = new ConverterForString() {
         @Override
-        protected void putObject(ConversionTarget target, String value) {
+        protected void putObject(ValueTarget target, String value) {
             target.putString(value);
         }
 
@@ -33,7 +33,7 @@ abstract class ConverterForString extends ObjectConverter<String> {
 
     static final ObjectConverter<String> TEXT = new ConverterForString() {
         @Override
-        protected void putObject(ConversionTarget target, String value) {
+        protected void putObject(ValueTarget target, String value) {
             target.putText(value);
         }
 

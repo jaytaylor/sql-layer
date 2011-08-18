@@ -26,7 +26,7 @@ public final class Converters {
      * @param <T> the conversion target's specific type
      * @return the conversion target; this return value is provided as a convenience, so you can chain calls
      */
-    public static <T extends ConversionTarget> T convert(ValueSource source, T target) {
+    public static <T extends ValueTarget> T convert(ValueSource source, T target) {
         if (source.isNull()) {
             target.putNull();
         } else {

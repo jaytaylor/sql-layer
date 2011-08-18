@@ -21,7 +21,7 @@ import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ConversionTarget;
+import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.ConverterTestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -113,7 +113,7 @@ public abstract class ConversionTestBase {
         }
 
         @Override
-        public ConversionTarget linkedTarget() {
+        public ValueTarget linkedTarget() {
             return delegate.linkedTarget();
         }
 

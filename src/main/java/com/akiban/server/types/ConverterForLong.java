@@ -19,7 +19,7 @@ abstract class ConverterForLong extends LongConverter {
 
     static final LongConverter LONG = new ConverterForLong() {
         @Override
-        protected void putLong(ConversionTarget target, long value) {
+        protected void putLong(ValueTarget target, long value) {
             target.putLong(value);
         }
 
@@ -33,7 +33,7 @@ abstract class ConverterForLong extends LongConverter {
 
     static final LongConverter INT = new ConverterForLong() {
         @Override
-        protected void putLong(ConversionTarget target, long value) {
+        protected void putLong(ValueTarget target, long value) {
             target.putInt(value);
         }
 
@@ -47,7 +47,7 @@ abstract class ConverterForLong extends LongConverter {
 
     static final LongConverter U_INT = new ConverterForLong() {
         @Override
-        protected void putLong(ConversionTarget target, long value) {
+        protected void putLong(ValueTarget target, long value) {
             target.putUInt(value);
         }
 

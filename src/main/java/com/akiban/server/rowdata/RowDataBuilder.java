@@ -196,7 +196,7 @@ public final class RowDataBuilder {
         this.fieldWidths = new int[rowDef.getFieldCount()];
     }
 
-    private final RowDataConversionTarget target = new RowDataConversionTarget();
+    private final RowDataValueTarget target = new RowDataValueTarget();
     private FromObjectValueSource source = null; // lazy-loaded
     private final RowDef rowDef;
     private final RowData rowData;

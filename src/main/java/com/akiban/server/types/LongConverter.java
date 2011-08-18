@@ -25,12 +25,12 @@ public abstract class LongConverter extends AbstractConverter {
 
     // defined in subclasses
 
-    protected abstract void putLong(ConversionTarget target, long value);
+    protected abstract void putLong(ValueTarget target, long value);
 
     // for use in this package
 
     @Override
-    protected final void doConvert(ValueSource source, ConversionTarget target) {
+    protected final void doConvert(ValueSource source, ValueTarget target) {
         putLong(target, getLong(source));
     }
 

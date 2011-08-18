@@ -23,12 +23,12 @@ public abstract class ObjectConverter<T> extends AbstractConverter {
 
     // defined in subclasses
 
-    protected abstract void putObject(ConversionTarget target, T value);
+    protected abstract void putObject(ValueTarget target, T value);
 
     // for use in this package
 
     @Override
-    protected final void doConvert(ValueSource source, ConversionTarget target) {
+    protected final void doConvert(ValueSource source, ValueTarget target) {
         putObject(target, getObject(source));
     }
 

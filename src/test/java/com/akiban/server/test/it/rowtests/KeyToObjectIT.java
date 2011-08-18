@@ -25,7 +25,7 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.UnsupportedIndexDataTypeException;
 import com.akiban.server.store.IndexVisitor;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.server.types.ToObjectConversionTarget;
+import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.util.WrappingByteSource;
 import com.persistit.Key;
 import com.persistit.Value;
@@ -75,7 +75,7 @@ public class KeyToObjectIT extends ITBase {
                 key.indexTo(0);
 
                 PersistitKeyValueSource conversionSource = new PersistitKeyValueSource();
-                ToObjectConversionTarget conversionTarget = new ToObjectConversionTarget();
+                ToObjectValueTarget conversionTarget = new ToObjectValueTarget();
                 
                 for(IndexColumn indexColumn : index.getColumns()) {
                     Column column = indexColumn.getColumn();

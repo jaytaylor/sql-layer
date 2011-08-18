@@ -19,7 +19,7 @@ import com.akiban.server.Quote;
 import com.akiban.util.AkibanAppender;
 
 abstract class AbstractConverter {
-    public final void convert(ValueSource source, ConversionTarget target) {
+    public final void convert(ValueSource source, ValueTarget target) {
         if (source.isNull()) {
             target.putNull();
         }
@@ -28,7 +28,7 @@ abstract class AbstractConverter {
         }
     }
 
-    protected abstract void doConvert(ValueSource source, ConversionTarget target);
+    protected abstract void doConvert(ValueSource source, ValueTarget target);
     protected abstract AkType nativeConversionType();
 
     protected final RuntimeException unsupportedConversion(ValueSource source) {

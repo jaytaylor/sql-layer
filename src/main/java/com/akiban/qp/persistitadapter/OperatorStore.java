@@ -54,8 +54,8 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ToObjectConversionTarget;
 import com.google.inject.Inject;
 import com.persistit.Exchange;
 import com.persistit.Transaction;
@@ -454,7 +454,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
             // Note: some encodings are untested except as necessary for mtr
             NewRow newRow = new NiceRow(rowDef.getRowDefId());
-            ToObjectConversionTarget target = new ToObjectConversionTarget();
+            ToObjectValueTarget target = new ToObjectValueTarget();
             for (int i=0; i < original.rowType().nFields(); ++i) {
                 if (columnSelector.includesColumn(i)) {
                     Object value = extractor.get(rowDef.getFieldDef(i), newRowData);

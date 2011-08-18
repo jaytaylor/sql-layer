@@ -19,14 +19,14 @@ abstract class ConverterForDouble extends DoubleConverter {
 
     static final DoubleConverter SIGNED = new ConverterForDouble() {
         @Override
-        protected void putDouble(ConversionTarget target, double value) {
+        protected void putDouble(ValueTarget target, double value) {
             target.putDouble(value);
         }
     };
 
     static final DoubleConverter UNSIGNED = new ConverterForDouble() {
         @Override
-        protected void putDouble(ConversionTarget target, double value) {
+        protected void putDouble(ValueTarget target, double value) {
             target.putUDouble(value);
         }
     };

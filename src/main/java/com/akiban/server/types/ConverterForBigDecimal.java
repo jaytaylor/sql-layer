@@ -38,7 +38,7 @@ final class ConverterForBigDecimal extends ObjectConverter<BigDecimal> {
     }
 
     @Override
-    protected void putObject(ConversionTarget target, BigDecimal value) {
+    protected void putObject(ValueTarget target, BigDecimal value) {
         target.putDecimal(value);
     }
 

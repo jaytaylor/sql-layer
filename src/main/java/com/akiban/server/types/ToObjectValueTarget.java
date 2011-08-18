@@ -20,7 +20,7 @@ import com.akiban.util.ByteSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public final class ToObjectConversionTarget implements ConversionTarget {
+public final class ToObjectValueTarget implements ValueTarget {
     
     // ToObjectConversionTarget interface
 
@@ -34,7 +34,7 @@ public final class ToObjectConversionTarget implements ConversionTarget {
         return Converters.convert(source, this).lastConvertedValue();
     }
 
-    public ToObjectConversionTarget expectType(AkType type) {
+    public ToObjectValueTarget expectType(AkType type) {
         this.akType = type;
         putPending = true;
         return this;

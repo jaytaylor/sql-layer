@@ -33,7 +33,7 @@ final class ConverterForBigInteger extends ObjectConverter<BigInteger> {
     }
 
     @Override
-    protected void putObject(ConversionTarget target, BigInteger value) {
+    protected void putObject(ValueTarget target, BigInteger value) {
         target.putUBigInt(value);
     }
 

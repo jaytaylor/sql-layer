@@ -17,7 +17,7 @@ package com.akiban.server.types.typestests;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ConversionTarget;
+import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.Converters;
 import com.akiban.server.types.LongConverter;
 import com.akiban.util.ByteSource;
@@ -126,7 +126,7 @@ public final class TestCase<T> {
         return charset;
     }
 
-    public void put(ConversionTarget target) {
+    public void put(ValueTarget target) {
         switch (type) {
         case DATE: target.putDate(valLong); break;
         case DATETIME: target.putDateTime(valLong); break;

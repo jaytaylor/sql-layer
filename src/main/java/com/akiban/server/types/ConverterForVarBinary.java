@@ -31,7 +31,7 @@ final class ConverterForVarBinary extends ObjectConverter<ByteSource> {
     }
 
     @Override
-    protected void putObject(ConversionTarget target, ByteSource value) {
+    protected void putObject(ValueTarget target, ByteSource value) {
         target.putVarBinary(value);
     }
 

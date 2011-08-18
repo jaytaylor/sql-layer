@@ -18,14 +18,14 @@ package com.akiban.server;
 import com.akiban.ais.model.Column;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ConversionHelper;
-import com.akiban.server.types.ConversionTarget;
+import com.akiban.server.types.ValueTarget;
 import com.akiban.util.ByteSource;
 import com.persistit.Key;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public final class PersistitKeyConversionTarget implements ConversionTarget {
+public final class PersistitKeyValueTarget implements ValueTarget {
 
     // PersistitKeyConversionTarget interface
 
@@ -33,12 +33,12 @@ public final class PersistitKeyConversionTarget implements ConversionTarget {
         this.key = key;
     }
 
-    public PersistitKeyConversionTarget expectingType(AkType type) {
+    public PersistitKeyValueTarget expectingType(AkType type) {
         this.type = type;
         return this;
     }
 
-    public PersistitKeyConversionTarget expectingType(Column column) {
+    public PersistitKeyValueTarget expectingType(Column column) {
         return expectingType(column.getType().akType());
     }
     

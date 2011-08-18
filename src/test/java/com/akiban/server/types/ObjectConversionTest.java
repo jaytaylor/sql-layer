@@ -45,7 +45,7 @@ public final class ObjectConversionTest extends ConversionTestBase {
         }
 
         @Override
-        public ConversionTarget linkedTarget() {
+        public ValueTarget linkedTarget() {
             return target;
         }
 
@@ -65,6 +65,6 @@ public final class ObjectConversionTest extends ConversionTestBase {
         }
 
         private final FromObjectValueSource source = new FromObjectValueSource();
-        private final ToObjectConversionTarget target = new ToObjectConversionTarget();
+        private final ToObjectValueTarget target = new ToObjectValueTarget();
     }
 }
