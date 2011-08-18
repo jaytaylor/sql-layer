@@ -15,8 +15,8 @@
 package com.akiban.server.rowdata;
 
 import com.akiban.server.AkServerUtil;
-import com.akiban.server.api.dml.TableDefinitionMismatchException;
 import com.akiban.server.encoding.EncodingException;
+import com.akiban.server.error.TableDefinitionMismatchException;
 import com.akiban.server.types.ConversionSource;
 import com.akiban.server.types.Converters;
 import com.akiban.server.types.FromObjectConversionSource;
@@ -223,7 +223,7 @@ public final class RowDataBuilder {
         } catch (ArrayIndexOutOfBoundsException e) {
             throw EncodingException.dueTo(e); // assumed to be during writing to the RowData's byte[]
         } catch (Exception e) {
-            throw new TableDefinitionMismatchException("while converting " + source + " to " + target, e);
+            throw new TableDefinitionMismatchException(rowDef.getRowDefId(), null);
         }
     }
 
