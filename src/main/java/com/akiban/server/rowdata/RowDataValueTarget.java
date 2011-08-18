@@ -17,14 +17,14 @@ package com.akiban.server.rowdata;
 
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ConversionTarget;
+import com.akiban.server.types.ValueTarget;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ByteSource;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public final class RowDataConversionTarget implements ConversionTarget {
+public final class RowDataValueTarget implements ValueTarget {
 
     public void bind(FieldDef fieldDef, byte[] backingBytes, int offset) {
         clear();
@@ -42,7 +42,7 @@ public final class RowDataConversionTarget implements ConversionTarget {
         return lastEncodedLength;
     }
 
-    public RowDataConversionTarget() {
+    public RowDataValueTarget() {
         clear();
     }
 

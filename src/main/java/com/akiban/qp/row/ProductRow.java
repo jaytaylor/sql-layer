@@ -18,8 +18,8 @@ package com.akiban.qp.row;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.ConversionSource;
-import com.akiban.server.types.NullConversionSource;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.NullValueSource;
 
 public class ProductRow extends AbstractRow
 {
@@ -40,12 +40,12 @@ public class ProductRow extends AbstractRow
     }
 
     @Override
-    public ConversionSource conversionSource(int i, Bindings bindings) {
-        ConversionSource source;
+    public ValueSource conversionSource(int i, Bindings bindings) {
+        ValueSource source;
         if (i < nLeftFields) {
-            source = left.isNull() ? NullConversionSource.only() : left.get().conversionSource(i, bindings);
+            source = left.isNull() ? NullValueSource.only() : left.get().conversionSource(i, bindings);
         } else {
-            source = right.isNull() ? NullConversionSource.only() : right.get().conversionSource(i - nLeftFields, bindings);
+            source = right.isNull() ? NullValueSource.only() : right.get().conversionSource(i - nLeftFields, bindings);
         }
         return source;
     }

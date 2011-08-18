@@ -19,16 +19,16 @@ public abstract class ObjectConverter<T> extends AbstractConverter {
 
     // AbstractLongConverter interface
 
-    public abstract T getObject(ConversionSource source);
+    public abstract T getObject(ValueSource source);
 
     // defined in subclasses
 
-    protected abstract void putObject(ConversionTarget target, T value);
+    protected abstract void putObject(ValueTarget target, T value);
 
     // for use in this package
 
     @Override
-    protected final void doConvert(ConversionSource source, ConversionTarget target) {
+    protected final void doConvert(ValueSource source, ValueTarget target) {
         putObject(target, getObject(source));
     }
 

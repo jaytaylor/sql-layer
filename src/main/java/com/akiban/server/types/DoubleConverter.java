@@ -19,16 +19,16 @@ public abstract class DoubleConverter extends AbstractConverter {
 
     // AbstractDoubleConverter interface
     
-    public abstract double getDouble(ConversionSource source);
+    public abstract double getDouble(ValueSource source);
     
     // defined in subclasses
     
-    protected abstract void putDouble(ConversionTarget target, double value);
+    protected abstract void putDouble(ValueTarget target, double value);
     
     // for use in this package
 
     @Override
-    protected final void doConvert(ConversionSource source, ConversionTarget target) {
+    protected final void doConvert(ValueSource source, ValueTarget target) {
         putDouble(target, getDouble(source));
     }
 

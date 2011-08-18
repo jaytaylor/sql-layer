@@ -15,8 +15,7 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.types.ToObjectConversionTarget;
-
+import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
@@ -67,7 +66,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             List<PostgresType> columnTypes = getColumnTypes();
             int ncols = columnTypes.size();
             Row row;
-            ToObjectConversionTarget target = new ToObjectConversionTarget();
+            ToObjectValueTarget target = new ToObjectValueTarget();
             while ((row = cursor.next()) != null) {
                 assert (row.rowType() == resultRowType) : row;
                 if (nskip > 0) {

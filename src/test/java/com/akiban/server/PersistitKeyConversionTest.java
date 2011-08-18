@@ -18,9 +18,9 @@ package com.akiban.server;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ConversionSource;
-import com.akiban.server.types.ConversionTarget;
-import com.akiban.server.types.ToObjectConversionTarget;
+import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.typestests.ConversionSuite;
 import com.akiban.server.types.typestests.ConversionTestBase;
 import com.akiban.server.types.typestests.SimpleLinkedConversion;
@@ -41,7 +41,7 @@ public final class PersistitKeyConversionTest extends ConversionTestBase {
 
         // Persistit truncates trailing 0s from BigDecimals, which reduces their precision.
         // This is wrong, but that's what we have to deal with. So we'll ignore all such test cases.
-        ToObjectConversionTarget conversionTarget = new ToObjectConversionTarget();
+        ToObjectValueTarget conversionTarget = new ToObjectValueTarget();
         for (Parameterization param : params) {
             ConversionSuite<?> paramSuite = (ConversionSuite<?>) param.getArgsAsList().get(0);
             int indexWithinSuite = (Integer) param.getArgsAsList().get(1);
@@ -65,12 +65,12 @@ public final class PersistitKeyConversionTest extends ConversionTestBase {
 
     private static final class KeyConversionPair extends SimpleLinkedConversion {
         @Override
-        public ConversionSource linkedSource() {
+        public ValueSource linkedSource() {
             return source;
         }
 
         @Override
-        public ConversionTarget linkedTarget() {
+        public ValueTarget linkedTarget() {
             return target;
         }
 
@@ -83,7 +83,7 @@ public final class PersistitKeyConversionTest extends ConversionTestBase {
         }
 
         private final Key key = new Key((Persistit)null);
-        private final PersistitKeyConversionTarget target = new PersistitKeyConversionTarget();
-        private final PersistitKeyConversionSource source = new PersistitKeyConversionSource();
+        private final PersistitKeyValueTarget target = new PersistitKeyValueTarget();
+        private final PersistitKeyValueSource source = new PersistitKeyValueSource();
     }
 }

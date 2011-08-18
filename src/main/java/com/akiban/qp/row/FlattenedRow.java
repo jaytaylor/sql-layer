@@ -18,8 +18,8 @@ package com.akiban.qp.row;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.ConversionSource;
-import com.akiban.server.types.NullConversionSource;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.NullValueSource;
 
 public class FlattenedRow extends AbstractRow
 {
@@ -40,12 +40,12 @@ public class FlattenedRow extends AbstractRow
     }
 
     @Override
-    public ConversionSource conversionSource(int i, Bindings bindings) {
-        ConversionSource source;
+    public ValueSource conversionSource(int i, Bindings bindings) {
+        ValueSource source;
         if (i < nParentFields) {
-            source = parent.isNull() ? NullConversionSource.only() : parent.get().conversionSource(i, bindings);
+            source = parent.isNull() ? NullValueSource.only() : parent.get().conversionSource(i, bindings);
         } else {
-            source = child.isNull() ? NullConversionSource.only() : child.get().conversionSource(i - nParentFields, bindings);
+            source = child.isNull() ? NullValueSource.only() : child.get().conversionSource(i - nParentFields, bindings);
         }
         return source;
     }

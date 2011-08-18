@@ -13,34 +13,69 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server;
+package com.akiban.server.types;
 
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ConversionHelper;
-import com.akiban.server.types.ConversionSource;
-import com.akiban.server.types.SourceIsNullException;
+import com.akiban.server.Quote;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
-import com.akiban.util.WrappingByteSource;
-import com.persistit.Key;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public final class PersistitKeyConversionSource implements ConversionSource {
+public final class FromObjectValueSource implements ValueSource {
 
-    // PersistitKeyConversionSource interface
+    // FromObjectConversionSource interface
 
-    public void attach(Key key, IndexColumn indexColumn) {
-        attach(key, indexColumn.getPosition(), indexColumn.getColumn().getType().akType());
+    public FromObjectValueSource setExplicitly(Object object, AkType type) {
+        setReflectively(object);
+        if (akType != AkType.NULL) {
+            akType = type;
+        }
+        return this;
+    }
+
+    public FromObjectValueSource setReflectively(Object object) {
+        if (object == null) {
+            setNull();
+            return this;
+        }
+        
+        final AkType asType;
+
+        if (object instanceof Integer || object instanceof Long)
+            asType = AkType.LONG;
+        else if (object instanceof String)
+            asType = AkType.VARCHAR;
+        else if (object instanceof Double)
+            asType = AkType.DOUBLE;
+        else if (object instanceof Float)
+            asType = AkType.FLOAT;
+        else if (object instanceof BigDecimal)
+            asType = AkType.DECIMAL;
+        else if (object instanceof ByteSource || object instanceof byte[])
+            asType = AkType.VARBINARY;
+        else if (object instanceof BigInteger)
+             asType = AkType.U_BIGINT;
+        else if (object instanceof Character) {
+            object = String.valueOf(object);
+            asType = AkType.VARCHAR;
+        }
+        else throw new UnsupportedOperationException("can't reflectively set " + object.getClass() + ": " + object);
+
+        set(object, asType);
+        return this;
+    }
+
+    public void setNull() {
+        this.akType = AkType.NULL;
+        this.object = null;
     }
 
     // ConversionSource interface
 
     @Override
     public boolean isNull() {
-        return decode() == null;
+        return AkType.NULL.equals(akType);
     }
 
     @Override
@@ -55,8 +90,7 @@ public final class PersistitKeyConversionSource implements ConversionSource {
 
     @Override
     public ByteSource getVarBinary() {
-        byte[] bytes = as(byte[].class, AkType.VARBINARY);
-        return bytes == null ? null : byteSource.wrap(bytes);
+        return as(ByteSource.class, AkType.VARBINARY);
     }
 
     @Override
@@ -131,10 +165,12 @@ public final class PersistitKeyConversionSource implements ConversionSource {
 
     @Override
     public void appendAsString(AkibanAppender appender, Quote quote) {
-        // Can we optimize this at all?
         AkType type = getConversionType();
         quote.quote(appender, type);
-        quote.append(appender, getString());
+        if (type == AkType.UNSUPPORTED) {
+            throw new IllegalStateException("source object not set");
+        }
+        quote.append(appender, String.valueOf(object));
         quote.quote(appender, type);
     }
 
@@ -142,57 +178,41 @@ public final class PersistitKeyConversionSource implements ConversionSource {
     public AkType getConversionType() {
         return akType;
     }
-    
-    // object interface
+
+    // Object interface
 
     @Override
     public String toString() {
-        return key.toString() + " bound to depth " + key.getDepth();
+        return String.format("ConversionSource(%s %s)", akType, object);
     }
 
-    // for use in this package
-
-    void attach(Key key, int depth, AkType type) {
-        this.key = key;
-        this.key.indexTo(depth);
-        this.akType = type;
-        clear();
-    }
-
-    // for use by this class
-    
-    private Object decode() {
-        if (needsDecoding) {
-            int oldIndex = key.getIndex();
-            decoded = key.decode();
-            key.indexTo(oldIndex);
-            needsDecoding = false;
-        }
-        return decoded;
-    }
-    
-    private void clear() {
-        needsDecoding = true;
-    }
+    // private methods
 
     private <T> T as(Class<T> castClass, AkType type) {
         ConversionHelper.checkType(akType, type);
-        Object o = decode();
-        if (o == null) {
-            throw new SourceIsNullException();
-        }
         try {
-            return castClass.cast(o);
+            return castClass.cast(object);
         } catch (ClassCastException e) {
-            throw new ClassCastException("casting " + o.getClass() + " to " + castClass);
+            String className = object == null ? "null" : object.getClass().getName();
+            throw new ClassCastException("casting " + className + " to " + castClass);
+        }
+    }
+
+    private void set(Object object, AkType asType) {
+        if (asType.equals(AkType.UNSUPPORTED)) {
+            throw new IllegalArgumentException("can't set to UNSUPPORTED");
+        }
+        if (object == null) {
+            setNull();
+        }
+        else {
+            this.akType = asType;
+            this.object = LegacyTransformations.TRIVIAL_TRANSFORMATIONS.tryTransformations(asType, object);
         }
     }
 
     // object state
 
-    private Key key;
+    private Object object;
     private AkType akType = AkType.UNSUPPORTED;
-    private Object decoded;
-    private boolean needsDecoding = true;
-    private final WrappingByteSource byteSource = new WrappingByteSource();
 }

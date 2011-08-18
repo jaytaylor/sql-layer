@@ -16,8 +16,6 @@
 package com.akiban.server.rowdata;
 
 import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
 
@@ -25,8 +23,6 @@ import com.akiban.server.AkServerUtil;
 import com.akiban.server.Quote;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.error.RowDefNotFoundException;
-import com.akiban.server.types.Converters;
-import com.akiban.server.types.FromObjectConversionSource;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
@@ -462,7 +458,7 @@ public class RowData {
 
     public String toString(final RowDef rowDef) {
         final AkibanAppender sb = AkibanAppender.of(new StringBuilder());
-        RowDataConversionSource source = new RowDataConversionSource();
+        RowDataValueSource source = new RowDataValueSource();
         try {
             if (rowDef == null) {
                 sb.append("RowData?(rowDefId=");
@@ -496,7 +492,7 @@ public class RowData {
     }
 
     public void toJSONString(final RowDef rowDef, AkibanAppender sb) throws IOException {
-        RowDataConversionSource source = new RowDataConversionSource();
+        RowDataValueSource source = new RowDataValueSource();
         for(int i = 0; i < getFieldCount(); i++) {
             final FieldDef fieldDef = rowDef.getFieldDef(i);
             final long location = fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());

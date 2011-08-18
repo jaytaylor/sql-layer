@@ -19,7 +19,7 @@ import com.akiban.server.Quote;
 import com.akiban.util.AkibanAppender;
 
 abstract class AbstractConverter {
-    public final void convert(ConversionSource source, ConversionTarget target) {
+    public final void convert(ValueSource source, ValueTarget target) {
         if (source.isNull()) {
             target.putNull();
         }
@@ -28,10 +28,10 @@ abstract class AbstractConverter {
         }
     }
 
-    protected abstract void doConvert(ConversionSource source, ConversionTarget target);
+    protected abstract void doConvert(ValueSource source, ValueTarget target);
     protected abstract AkType nativeConversionType();
 
-    protected final RuntimeException unsupportedConversion(ConversionSource source) {
+    protected final RuntimeException unsupportedConversion(ValueSource source) {
         StringBuilder sb = new StringBuilder("can't convert to type ").append(nativeConversionType());
         sb.append(" from ").append(source.getConversionType()).append(": ");
         source.appendAsString(AkibanAppender.of(sb), Quote.NONE);

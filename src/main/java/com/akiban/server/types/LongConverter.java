@@ -19,18 +19,18 @@ public abstract class LongConverter extends AbstractConverter {
 
     // LongConverter interface
 
-    public abstract long getLong(ConversionSource source);
+    public abstract long getLong(ValueSource source);
     public abstract String asString(long value);
     public abstract long doParse(String string);
 
     // defined in subclasses
 
-    protected abstract void putLong(ConversionTarget target, long value);
+    protected abstract void putLong(ValueTarget target, long value);
 
     // for use in this package
 
     @Override
-    protected final void doConvert(ConversionSource source, ConversionTarget target) {
+    protected final void doConvert(ValueSource source, ValueTarget target) {
         putLong(target, getLong(source));
     }
 

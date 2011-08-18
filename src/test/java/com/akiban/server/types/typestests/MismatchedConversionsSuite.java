@@ -15,8 +15,8 @@
 package com.akiban.server.types.typestests;
 
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ConversionSource;
-import com.akiban.server.types.ConversionTarget;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueTarget;
 import com.akiban.util.WrappingByteSource;
 
 import java.math.BigDecimal;
@@ -147,12 +147,12 @@ public final class MismatchedConversionsSuite {
 
     static class DelegateLinkedConversion implements LinkedConversion<Switcher> {
         @Override
-        public ConversionSource linkedSource() {
+        public ValueSource linkedSource() {
             return delegate.linkedSource();
         }
 
         @Override
-        public ConversionTarget linkedTarget() {
+        public ValueTarget linkedTarget() {
             return delegate.linkedTarget();
         }
 

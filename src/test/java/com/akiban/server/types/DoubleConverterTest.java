@@ -54,7 +54,7 @@ public final class DoubleConverterTest {
 
     @Test
     public void encodeToBits() {
-        FromObjectConversionSource source = new FromObjectConversionSource();
+        FromObjectValueSource source = new FromObjectValueSource();
         for(TestElement t : TEST_CASES) {
             final double fromDouble = ConverterForDouble.SIGNED.getDouble(source.setReflectively(t.dbl));
             final double fromString = ConverterForDouble.SIGNED.getDouble(source.setReflectively(t.str));
@@ -65,6 +65,6 @@ public final class DoubleConverterTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void invalidNumber() {
-        ConverterForDouble.SIGNED.getDouble(new FromObjectConversionSource().setReflectively("zebra"));
+        ConverterForDouble.SIGNED.getDouble(new FromObjectValueSource().setReflectively("zebra"));
     }
 }
