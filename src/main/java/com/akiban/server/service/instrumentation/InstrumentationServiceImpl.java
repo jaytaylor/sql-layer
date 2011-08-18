@@ -19,6 +19,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.akiban.server.error.QueryLogCloseException;
@@ -86,6 +87,7 @@ public class InstrumentationServiceImpl implements
     public void start() {
         String enableLog = config.getProperty(QUERY_LOG_PROPERTY);
         this.queryLogEnabled = new AtomicBoolean(Boolean.parseBoolean(enableLog));
+        this.execTimeThreshold = Integer.parseInt(config.getProperty(QUERY_LOG_THRESHOLD));
         queryLogFileName = config.getProperty(QUERY_LOG_FILE_PROPERTY);
         if (isQueryLogEnabled()) {
             setUpQueryLog();
@@ -108,26 +110,60 @@ public class InstrumentationServiceImpl implements
         // anything to do?
     }
 
+    // InstrumentationService interface
+    
     @Override
     public boolean isQueryLogEnabled()
     {
         return queryLogEnabled.get();
     }
+
     
     @Override
-    public void logQuery(int sessionId, String sql, long duration)
+    public void logQuery(int sessionId, String sql, long duration, int rowsProcessed)
     {
         /*
+         * If an execution time threshold has been specified but the query
+         * to be logged is not larger than that execution time threshold
+         * than we don't log anything.
+         */
+        if (execTimeThreshold > 0 && duration < execTimeThreshold)
+        {
+            return;
+        }
+        /*
          * format of each query log entry is:
-         * sessionID    SQL text    Exec time in ns
+         * #
+         * # timestamp
+         * # session_id=sessionID
+         * # execution_time=xxxx
+         * SQL text
+         * #
+         * For example:
+         * # 2011-08-18 15:08:11.071
+         * # session_id=2
+         * # execution_time=69824520
+         * select * from tables;
+         * #
+         * # 2011-08-18 15:08:18.224
+         * # session_id=2
+         * # execution_time=3132589
+         * select * from groups;
+         * #
+         * Execution time is output in nano-seconds
          */
         StringBuilder buffer = new StringBuilder();
+        buffer.append("# ");
+        buffer.append(new Timestamp(System.currentTimeMillis()));
+        buffer.append("\n");
+        buffer.append("# session_id=");
         buffer.append(sessionId);
-        buffer.append('\t');
-        buffer.append(sql);
-        buffer.append('\t');
+        buffer.append("\n");
+        buffer.append("# execution_time=");
         buffer.append(duration);
-        buffer.append('\n');
+        buffer.append("\n");
+        buffer.append(sql);
+        buffer.append("\n#\n");
         try {
             synchronized(this) {
                 queryOut.write(buffer.toString());
@@ -177,6 +213,18 @@ public class InstrumentationServiceImpl implements
         return queryLogFileName;
     }
     
+    @Override
+    public synchronized void setExecutionTimeThreshold(long threshold)
+    {
+        execTimeThreshold = threshold;
+    }
+    
+    @Override
+    public synchronized long getExecutionTimeThreshold()
+    {
+        return execTimeThreshold;
+    }
+    
     // JmxManageable interface
     
     @Override
@@ -195,8 +243,9 @@ public class InstrumentationServiceImpl implements
 
     // state
     
-    private static final String QUERY_LOG_PROPERTY = "akserver.querylog";
-    private static final String QUERY_LOG_FILE_PROPERTY = "akserver.querylogfile";
+    private static final String QUERY_LOG_PROPERTY = "akserver.querylog.enabled";
+    private static final String QUERY_LOG_FILE_PROPERTY = "akserver.querylog.filename";
+    private static final String QUERY_LOG_THRESHOLD = "akserver.querylog.exec_time_threshold";
     
     private static final Logger LOGGER = LoggerFactory.getLogger(InstrumentationServiceImpl.class);
             
@@ -206,5 +255,6 @@ public class InstrumentationServiceImpl implements
     private String queryLogFileName;
     private File queryLogFile;
     private BufferedWriter queryOut;
+    private long execTimeThreshold;
     
 }

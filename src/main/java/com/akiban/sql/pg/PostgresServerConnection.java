@@ -335,6 +335,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     protected void processQuery() throws IOException, StandardException {
         long startTime = System.nanoTime();
+        int rowsProcessed = 0;
         sql = messenger.readString();
         sessionTracer.setCurrentStatement(sql);
         logger.info("Query: {}", sql);
@@ -357,7 +358,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             pstmt.sendDescription(this, false);
             try {
                 sessionTracer.beginEvent(EventTypes.EXECUTE);
-                pstmt.execute(this, -1);
+                rowsProcessed = pstmt.execute(this, -1);
             }
             finally {
                 sessionTracer.endEvent();
@@ -380,7 +381,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 pstmt.sendDescription(this, false);
                 try {
                     sessionTracer.beginEvent(EventTypes.EXECUTE);
-                    pstmt.execute(this, -1);
+                    rowsProcessed = pstmt.execute(this, -1);
                 }
                 finally {
                     sessionTracer.endEvent();
@@ -390,7 +391,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         readyForQuery();
         logger.debug("Query complete");
         if (reqs.instrumentation().isQueryLogEnabled()) {
-            reqs.instrumentation().logQuery(pid, sql, (System.nanoTime() - startTime));
+            reqs.instrumentation().logQuery(pid, sql, (System.nanoTime() - startTime), rowsProcessed);
         }
     }
 
@@ -501,19 +502,20 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     protected void processExecute() throws IOException, StandardException {
         long startTime = System.nanoTime();
+        int rowsProcessed = 0;
         String portalName = messenger.readString();
         int maxrows = messenger.readInt();
         PostgresStatement pstmt = boundPortals.get(portalName);
         try {
             sessionTracer.beginEvent(EventTypes.EXECUTE);
-            pstmt.execute(this, maxrows);
+            rowsProcessed = pstmt.execute(this, maxrows);
         }
         finally {
             sessionTracer.endEvent();
         }
         logger.debug("Execute complete");
         if (reqs.instrumentation().isQueryLogEnabled()) {
-            reqs.instrumentation().logQuery(pid, sql, (System.nanoTime() - startTime));
+            reqs.instrumentation().logQuery(pid, sql, (System.nanoTime() - startTime), rowsProcessed);
         }
     }
 

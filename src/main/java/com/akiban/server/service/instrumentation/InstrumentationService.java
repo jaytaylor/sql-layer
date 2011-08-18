@@ -15,14 +15,12 @@
 
 package com.akiban.server.service.instrumentation;
 
-import com.akiban.sql.pg.PostgresSessionTracer;
-
 public interface InstrumentationService {
     
     /*
      * query log related functions
      */
     boolean isQueryLogEnabled();
-    void logQuery(int sessionId, String sqlText, long duration);
+    void logQuery(int sessionId, String sqlText, long duration, int rowsProcessed);
     
 }

@@ -21,4 +21,6 @@ public interface InstrumentationMXBean
     void disableQueryLog();
     void setQueryLogFileName(String fileName);
     String getQueryLogFileName();
+    void setExecutionTimeThreshold(long threshold);
+    long getExecutionTimeThreshold();
 }
