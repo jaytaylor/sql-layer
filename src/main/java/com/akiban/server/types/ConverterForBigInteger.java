@@ -22,7 +22,7 @@ final class ConverterForBigInteger extends ObjectConverter<BigInteger> {
     static final ObjectConverter<BigInteger> INSTANCE = new ConverterForBigInteger();
 
     @Override
-    public BigInteger getObject(ConversionSource source) {
+    public BigInteger getObject(ValueSource source) {
         AkType type = source.getConversionType();
         switch (type) {
         case U_BIGINT:  return source.getUBigInt();

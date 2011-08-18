@@ -46,7 +46,7 @@ abstract class ConverterForString extends ObjectConverter<String> {
     };
 
     @Override
-    public String getObject(ConversionSource source) {
+    public String getObject(ValueSource source) {
         AkType type = source.getConversionType();
         switch (type) {
         case TEXT:      return source.getText();

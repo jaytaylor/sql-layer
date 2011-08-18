@@ -38,7 +38,7 @@ import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.PersistItErrorException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ToObjectConversionTarget;
 import com.persistit.Exchange;
 import com.persistit.Transaction;
@@ -113,7 +113,7 @@ public class PersistitAdapter extends StoreAdapter
         NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
 
         for(int i=0; i < row.rowType().nFields(); ++i) {
-            ConversionSource source = row.conversionSource(i, bindings);
+            ValueSource source = row.conversionSource(i, bindings);
             niceRow.put(i, target.convertFromSource(source));
         }
         return niceRow.toRowData();

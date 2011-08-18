@@ -15,12 +15,11 @@
 
 package com.akiban.server.types.typestests;
 
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ConversionTarget;
 
 public interface LinkedConversion<T> {
-    ConversionSource linkedSource();
+    ValueSource linkedSource();
     ConversionTarget linkedTarget();
 
     void checkPut(T expected);

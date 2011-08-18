@@ -19,7 +19,7 @@ public abstract class FloatConverter extends AbstractConverter {
 
     // AbstractFloatConverter interface
     
-    public abstract float getFloat(ConversionSource source);
+    public abstract float getFloat(ValueSource source);
     
     // defined in subclasses
     
@@ -28,7 +28,7 @@ public abstract class FloatConverter extends AbstractConverter {
     // for use in this package
 
     @Override
-    protected final void doConvert(ConversionSource source, ConversionTarget target) {
+    protected final void doConvert(ValueSource source, ConversionTarget target) {
         putFloat(target, getFloat(source));
     }
 

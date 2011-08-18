@@ -22,7 +22,7 @@ final class ConverterForVarBinary extends ObjectConverter<ByteSource> {
     static final ObjectConverter<ByteSource> INSTANCE = new ConverterForVarBinary();
 
     @Override
-    public ByteSource getObject(ConversionSource source) {
+    public ByteSource getObject(ValueSource source) {
         AkType type = source.getConversionType();
         switch (type) {
         case VARBINARY:   return source.getVarBinary();

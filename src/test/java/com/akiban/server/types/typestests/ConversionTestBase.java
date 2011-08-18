@@ -20,7 +20,7 @@ import com.akiban.junit.OnlyIf;
 import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ConversionTarget;
 import com.akiban.server.types.ConverterTestUtils;
 import org.junit.Test;
@@ -108,7 +108,7 @@ public abstract class ConversionTestBase {
 
     private static class NoCheckLinkedConversion implements LinkedConversion<Object> {
         @Override
-        public ConversionSource linkedSource() {
+        public ValueSource linkedSource() {
             return delegate.linkedSource();
         }
 

@@ -18,9 +18,7 @@ package com.akiban.qp.row;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.ValuesRowType;
-import com.akiban.server.types.ConversionSource;
-
-import java.util.Arrays;
+import com.akiban.server.types.ValueSource;
 
 public class ValuesRow extends AbstractRow
 {
@@ -41,7 +39,7 @@ public class ValuesRow extends AbstractRow
     }
 
     @Override
-    public ConversionSource conversionSource(int i, Bindings bindings) {
+    public ValueSource conversionSource(int i, Bindings bindings) {
         return valuesHolder.conversionSourceAt(i);
     }
 

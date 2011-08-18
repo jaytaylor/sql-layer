@@ -19,8 +19,8 @@ public final class SourceIsNullException extends RuntimeException {
     public SourceIsNullException() {
     }
 
-    static void checkNotNull(ConversionSource conversionSource) {
-        if (conversionSource.isNull()) {
+    static void checkNotNull(ValueSource valueSource) {
+        if (valueSource.isNull()) {
             throw new SourceIsNullException();
         }
     }

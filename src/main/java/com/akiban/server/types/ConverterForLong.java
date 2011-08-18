@@ -70,7 +70,7 @@ abstract class ConverterForLong extends LongConverter {
     }
 
     @Override
-    public long getLong(ConversionSource source) {
+    public long getLong(ValueSource source) {
         AkType type = source.getConversionType();
         switch (type) {
         case LONG:      return source.getLong();

@@ -22,7 +22,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyConversionTarget;
-import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.error.PersistItErrorException;
 import com.akiban.server.types.Converters;
 import com.akiban.util.ArgumentValidation;
@@ -59,7 +59,7 @@ class OperatorStoreGIHandler {
             final int flattenedIndex = irc.getFieldPosition(i);
             Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
 
-            ConversionSource source = row.conversionSource(flattenedIndex, UndefBindings.only());
+            ValueSource source = row.conversionSource(flattenedIndex, UndefBindings.only());
             Converters.convert(source, target.expectingType(column));
 
             boolean isHKeyComponent = i+1 > groupIndex.getColumns().size();
@@ -197,7 +197,7 @@ class OperatorStoreGIHandler {
             else {
                 final int flattenedIndex = irc.getFieldPosition(i);
                 Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
-                ConversionSource source = row.conversionSource(flattenedIndex, UndefBindings.only());
+                ValueSource source = row.conversionSource(flattenedIndex, UndefBindings.only());
                 Converters.convert(source, target.expectingType(column));
             }
         }

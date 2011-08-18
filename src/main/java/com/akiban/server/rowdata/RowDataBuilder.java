@@ -17,10 +17,10 @@ package com.akiban.server.rowdata;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.error.TableDefinitionMismatchException;
-import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.Converters;
-import com.akiban.server.types.FromObjectConversionSource;
-import com.akiban.server.types.NullConversionSource;
+import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types.NullValueSource;
 
 public final class RowDataBuilder {
 
@@ -119,13 +119,13 @@ public final class RowDataBuilder {
 
     public void putObject(Object o) {
         if (source == null) {
-            source = new FromObjectConversionSource();
+            source = new FromObjectValueSource();
         }
         source.setReflectively(o);
         convert(source);
     }
 
-    public void convert(ConversionSource source) {
+    public void convert(ValueSource source) {
         state.require(State.PUTTING);
 
         FieldDef fieldDef = rowDef.getFieldDef(fieldIndex);
@@ -197,7 +197,7 @@ public final class RowDataBuilder {
     }
 
     private final RowDataConversionTarget target = new RowDataConversionTarget();
-    private FromObjectConversionSource source = null; // lazy-loaded
+    private FromObjectValueSource source = null; // lazy-loaded
     private final RowDef rowDef;
     private final RowData rowData;
     private final int[] fieldWidths;
@@ -217,7 +217,7 @@ public final class RowDataBuilder {
         }
     }
 
-    private void doConvert(ConversionSource source) {
+    private void doConvert(ValueSource source) {
         try {
             Converters.convert(source, target);
         } catch (ArrayIndexOutOfBoundsException e) {
@@ -237,7 +237,7 @@ public final class RowDataBuilder {
     private void nullRemainingPuts() {
         int fieldsCount = rowDef.getFieldCount();
         while ( fieldIndex < fieldsCount) {
-            convert(NullConversionSource.only());
+            convert(NullValueSource.only());
         }
     }
 

@@ -22,7 +22,7 @@ final class ConverterForBigDecimal extends ObjectConverter<BigDecimal> {
     static final ObjectConverter<BigDecimal> INSTANCE = new ConverterForBigDecimal();
 
     @Override
-    public BigDecimal getObject(ConversionSource source) {
+    public BigDecimal getObject(ValueSource source) {
         AkType type = source.getConversionType();
         switch (type) {
         case DECIMAL:   return source.getDecimal();

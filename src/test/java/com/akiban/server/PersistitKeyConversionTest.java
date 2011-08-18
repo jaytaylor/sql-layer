@@ -18,7 +18,7 @@ package com.akiban.server;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ConversionTarget;
 import com.akiban.server.types.ToObjectConversionTarget;
 import com.akiban.server.types.typestests.ConversionSuite;
@@ -65,7 +65,7 @@ public final class PersistitKeyConversionTest extends ConversionTestBase {
 
     private static final class KeyConversionPair extends SimpleLinkedConversion {
         @Override
-        public ConversionSource linkedSource() {
+        public ValueSource linkedSource() {
             return source;
         }
 
@@ -84,6 +84,6 @@ public final class PersistitKeyConversionTest extends ConversionTestBase {
 
         private final Key key = new Key((Persistit)null);
         private final PersistitKeyConversionTarget target = new PersistitKeyConversionTarget();
-        private final PersistitKeyConversionSource source = new PersistitKeyConversionSource();
+        private final PersistitKeyValueSource source = new PersistitKeyValueSource();
     }
 }

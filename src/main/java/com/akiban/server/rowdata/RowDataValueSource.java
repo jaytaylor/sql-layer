@@ -15,7 +15,7 @@
 
 package com.akiban.server.rowdata;
 
-public final class RowDataConversionSource extends AbstractRowDataConversionSource {
+public final class RowDataValueSource extends AbstractRowDataValueSource {
 
     // FieldDefConversionBase interface
 

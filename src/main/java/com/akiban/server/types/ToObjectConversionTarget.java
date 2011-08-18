@@ -29,7 +29,7 @@ public final class ToObjectConversionTarget implements ConversionTarget {
      * @param source the incoming source
      * @return the converted Object
      */
-    public Object convertFromSource(ConversionSource source) {
+    public Object convertFromSource(ValueSource source) {
         expectType(source.getConversionType());
         return Converters.convert(source, this).lastConvertedValue();
     }

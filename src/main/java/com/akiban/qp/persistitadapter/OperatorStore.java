@@ -54,7 +54,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ToObjectConversionTarget;
 import com.google.inject.Inject;
 import com.persistit.Exchange;
@@ -69,7 +69,6 @@ import java.util.List;
 
 import static com.akiban.qp.physicaloperator.API.ancestorLookup_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
-import static com.akiban.qp.physicaloperator.API.sort_InsertionLimited;
 
 public class OperatorStore extends DelegatingStore<PersistitStore> {
 
@@ -462,7 +461,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     newRow.put(i, value);
                 }
                 else {
-                    ConversionSource source = original.conversionSource(i, bindings);
+                    ValueSource source = original.conversionSource(i, bindings);
                     newRow.put(i, target.convertFromSource(source));
                 }
             }

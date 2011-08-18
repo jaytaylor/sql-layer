@@ -19,7 +19,7 @@ public abstract class LongConverter extends AbstractConverter {
 
     // LongConverter interface
 
-    public abstract long getLong(ConversionSource source);
+    public abstract long getLong(ValueSource source);
     public abstract String asString(long value);
     public abstract long doParse(String string);
 
@@ -30,7 +30,7 @@ public abstract class LongConverter extends AbstractConverter {
     // for use in this package
 
     @Override
-    protected final void doConvert(ConversionSource source, ConversionTarget target) {
+    protected final void doConvert(ValueSource source, ConversionTarget target) {
         putLong(target, getLong(source));
     }
 

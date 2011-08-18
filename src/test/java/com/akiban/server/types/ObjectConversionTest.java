@@ -40,7 +40,7 @@ public final class ObjectConversionTest extends ConversionTestBase {
 
     private static class ObjectConversionLink implements LinkedConversion<Object> {
         @Override
-        public ConversionSource linkedSource() {
+        public ValueSource linkedSource() {
             return source;
         }
 
@@ -64,7 +64,7 @@ public final class ObjectConversionTest extends ConversionTestBase {
             source.setExplicitly(target.lastConvertedValue(), target.getConversionType());
         }
 
-        private final FromObjectConversionSource source = new FromObjectConversionSource();
+        private final FromObjectValueSource source = new FromObjectValueSource();
         private final ToObjectConversionTarget target = new ToObjectConversionTarget();
     }
 }

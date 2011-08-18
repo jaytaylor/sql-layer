@@ -32,7 +32,7 @@ abstract class ConverterForFloat extends FloatConverter {
     };
 
     @Override
-    public float getFloat(ConversionSource source) {
+    public float getFloat(ValueSource source) {
         AkType type = source.getConversionType();
         switch (type) {
         case DOUBLE:    return (float) source.getDouble();

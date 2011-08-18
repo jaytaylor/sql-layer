@@ -31,7 +31,7 @@ abstract class ConvertersForDates extends LongConverter {
      * See: http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
      */
     final static ConvertersForDates DATE = new ConvertersForDates() {
-        @Override protected long doGetLong(ConversionSource source)             { return source.getDate(); }
+        @Override protected long doGetLong(ValueSource source)             { return source.getDate(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putDate(value); }
         @Override protected AkType nativeConversionType() { return AkType.DATE; }
 
@@ -66,7 +66,7 @@ abstract class ConvertersForDates extends LongConverter {
      * See: http://dev.mysql.com/doc/refman/5.5/en/datetime.html
      */
     final static ConvertersForDates DATETIME = new ConvertersForDates() {
-        @Override protected long doGetLong(ConversionSource source)             { return source.getDateTime(); }
+        @Override protected long doGetLong(ValueSource source)             { return source.getDateTime(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putDateTime(value); }
         @Override protected AkType nativeConversionType() { return AkType.DATETIME; }
 
@@ -116,7 +116,7 @@ abstract class ConvertersForDates extends LongConverter {
      * and  http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
      */
     final static ConvertersForDates TIME = new ConvertersForDates() {
-        @Override protected long doGetLong(ConversionSource source)             { return source.getTime(); }
+        @Override protected long doGetLong(ValueSource source)             { return source.getTime(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putTime(value); }
         @Override protected AkType nativeConversionType() { return AkType.TIME; }
 
@@ -164,7 +164,7 @@ abstract class ConvertersForDates extends LongConverter {
      * and  http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
      */
     final static ConvertersForDates TIMESTAMP = new ConvertersForDates() {
-        @Override protected long doGetLong(ConversionSource source)             { return source.getTimestamp(); }
+        @Override protected long doGetLong(ValueSource source)             { return source.getTimestamp(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putTimestamp(value); }
         @Override protected AkType nativeConversionType() { return AkType.TIMESTAMP; }
 
@@ -193,7 +193,7 @@ abstract class ConvertersForDates extends LongConverter {
      * See: http://dev.mysql.com/doc/refman/5.5/en/year.html
      */
     final static ConvertersForDates YEAR = new ConvertersForDates() {
-        @Override protected long doGetLong(ConversionSource source)             { return source.getYear(); }
+        @Override protected long doGetLong(ValueSource source)             { return source.getYear(); }
         @Override protected void putLong(ConversionTarget target, long value)   { target.putYear(value); }
         @Override protected AkType nativeConversionType() { return AkType.YEAR; }
 
@@ -210,10 +210,10 @@ abstract class ConvertersForDates extends LongConverter {
         }
     };
 
-    protected abstract long doGetLong(ConversionSource source);
+    protected abstract long doGetLong(ValueSource source);
 
     @Override
-    public long getLong(ConversionSource source) {
+    public long getLong(ValueSource source) {
         AkType type = source.getConversionType();
         if (type == nativeConversionType()) {
             return doGetLong(source);

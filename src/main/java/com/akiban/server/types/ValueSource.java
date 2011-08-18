@@ -22,7 +22,7 @@ import com.akiban.util.ByteSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public interface ConversionSource {
+public interface ValueSource {
     boolean isNull();
     BigDecimal getDecimal();
     BigInteger getUBigInt();

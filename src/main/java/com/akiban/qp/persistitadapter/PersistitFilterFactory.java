@@ -22,7 +22,7 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.PersistitKeyConversionTarget;
-import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.Converters;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
@@ -95,7 +95,7 @@ class PersistitFilterFactory
     private void appendKeyField(PersistitKeyConversionTarget target, Column column, int position, RowBase row, Bindings bindings)
     {
         target.expectingType(column);
-        ConversionSource source = row.conversionSource(position, bindings);
+        ValueSource source = row.conversionSource(position, bindings);
         Converters.convert(source, target);
     }
 

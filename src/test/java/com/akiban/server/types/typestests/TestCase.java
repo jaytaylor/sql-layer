@@ -16,7 +16,7 @@
 package com.akiban.server.types.typestests;
 
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ConversionTarget;
 import com.akiban.server.types.Converters;
 import com.akiban.server.types.LongConverter;
@@ -151,7 +151,7 @@ public final class TestCase<T> {
 
     // for use in this package
 
-    void check(ConversionSource source) {
+    void check(ValueSource source) {
         switch (type) {
         case DATE: assertEquals(niceString(), valLong, source.getDate()); break;
         case DATETIME: assertEquals(niceString(), valLong, source.getDateTime()); break;
@@ -188,7 +188,7 @@ public final class TestCase<T> {
         return "ERR";
     }
 
-    void get(ConversionSource source) {
+    void get(ValueSource source) {
         switch (type) {
         case DATE: source.getDate(); break;
         case DATETIME: source.getDateTime(); break;

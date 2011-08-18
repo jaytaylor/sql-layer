@@ -32,7 +32,7 @@ abstract class ConverterForDouble extends DoubleConverter {
     };
 
     @Override
-    public double getDouble(ConversionSource source) {
+    public double getDouble(ValueSource source) {
         AkType type = source.getConversionType();
         switch (type) {
         case DOUBLE:    return source.getDouble();

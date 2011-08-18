@@ -20,7 +20,7 @@ import com.akiban.qp.expression.ExpressionConversionHelper;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ValueSource;
 
 import java.util.List;
 
@@ -43,7 +43,7 @@ public class ProjectedRow extends AbstractRow
     }
 
     @Override
-    public ConversionSource conversionSource(int i, Bindings bindings) {
+    public ValueSource conversionSource(int i, Bindings bindings) {
         return ExpressionConversionHelper.asConversionSource(projections.get(i), row.get(), bindings);
     }
 

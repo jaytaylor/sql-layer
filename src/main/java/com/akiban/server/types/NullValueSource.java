@@ -22,9 +22,9 @@ import com.akiban.util.ByteSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public final class NullConversionSource implements ConversionSource {
+public final class NullValueSource implements ValueSource {
 
-    public static ConversionSource only() {
+    public static ValueSource only() {
         return INSTANCE;
     }
     
@@ -135,9 +135,9 @@ public final class NullConversionSource implements ConversionSource {
 
     // hidden ctor
 
-    private NullConversionSource() {}
+    private NullValueSource() {}
     
     // class state
 
-    private static final NullConversionSource INSTANCE = new NullConversionSource();
+    private static final NullValueSource INSTANCE = new NullValueSource();
 }

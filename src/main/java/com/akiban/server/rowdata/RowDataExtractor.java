@@ -27,6 +27,6 @@ public final class RowDataExtractor {
     }
 
 
-    private final RowDataConversionSource source = new RowDataConversionSource();
+    private final RowDataValueSource source = new RowDataValueSource();
     private final ToObjectConversionTarget target = new ToObjectConversionTarget();
 }

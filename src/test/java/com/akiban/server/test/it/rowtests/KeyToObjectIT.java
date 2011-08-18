@@ -19,7 +19,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
-import com.akiban.server.PersistitKeyConversionSource;
+import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.UnsupportedIndexDataTypeException;
@@ -74,7 +74,7 @@ public class KeyToObjectIT extends ITBase {
                 final NewRow row = rowIt.next();
                 key.indexTo(0);
 
-                PersistitKeyConversionSource conversionSource = new PersistitKeyConversionSource();
+                PersistitKeyValueSource conversionSource = new PersistitKeyValueSource();
                 ToObjectConversionTarget conversionTarget = new ToObjectConversionTarget();
                 
                 for(IndexColumn indexColumn : index.getColumns()) {

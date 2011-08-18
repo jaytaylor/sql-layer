@@ -27,7 +27,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
-abstract class AbstractRowDataConversionSource implements ConversionSource {
+abstract class AbstractRowDataValueSource implements ValueSource {
 
     // ConversionSource interface
 

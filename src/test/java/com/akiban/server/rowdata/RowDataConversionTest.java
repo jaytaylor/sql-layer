@@ -23,9 +23,8 @@ import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ConversionTarget;
-import com.akiban.server.types.ConverterTestUtils;
 import com.akiban.server.types.Converters;
 import com.akiban.server.types.LongConverter;
 import com.akiban.server.types.typestests.ConversionSuite;
@@ -141,7 +140,7 @@ public final class RowDataConversionTest extends ConversionTestBase {
 
     private static final class ConversionPair implements LinkedConversion<ByteSource> {
         @Override
-        public ConversionSource linkedSource() {
+        public ValueSource linkedSource() {
             return source;
         }
 
@@ -214,12 +213,12 @@ public final class RowDataConversionTest extends ConversionTestBase {
             }
         }
 
-        private final TestableRowDataConversionSource source = new TestableRowDataConversionSource();
+        private final TestableRowDataValueSource source = new TestableRowDataValueSource();
         private final RowDataConversionTarget target = new RowDataConversionTarget();
         private FieldDef fieldDef;
     }
 
-    private static class TestableRowDataConversionSource extends AbstractRowDataConversionSource {
+    private static class TestableRowDataValueSource extends AbstractRowDataValueSource {
         @Override
         protected long getRawOffsetAndWidth() {
             return width;
