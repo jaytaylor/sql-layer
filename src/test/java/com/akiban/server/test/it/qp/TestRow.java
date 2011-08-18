@@ -34,7 +34,7 @@ public class TestRow extends AbstractRow
     }
 
     @Override
-    public ValueSource conversionSource(int i, Bindings bindings) {
+    public ValueSource bindSource(int i, Bindings bindings) {
         return valuesHolder.conversionSourceAt(i);
     }
 

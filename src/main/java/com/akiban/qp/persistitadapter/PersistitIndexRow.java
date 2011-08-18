@@ -50,7 +50,7 @@ public class PersistitIndexRow extends AbstractRow
     }
 
     @Override
-    public ValueSource conversionSource(int i, Bindings bindings) {
+    public ValueSource bindSource(int i, Bindings bindings) {
         IndexColumn column = index().getColumns().get(i);
         conversionSource.attach(indexRow, column);
         return conversionSource;

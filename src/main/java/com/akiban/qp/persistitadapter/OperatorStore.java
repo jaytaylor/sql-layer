@@ -461,7 +461,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     newRow.put(i, value);
                 }
                 else {
-                    ValueSource source = original.conversionSource(i, bindings);
+                    ValueSource source = original.bindSource(i, bindings);
                     newRow.put(i, target.convertFromSource(source));
                 }
             }

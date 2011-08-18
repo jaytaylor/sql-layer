@@ -59,7 +59,7 @@ class OperatorStoreGIHandler {
             final int flattenedIndex = irc.getFieldPosition(i);
             Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
 
-            ValueSource source = row.conversionSource(flattenedIndex, UndefBindings.only());
+            ValueSource source = row.bindSource(flattenedIndex, UndefBindings.only());
             Converters.convert(source, target.expectingType(column));
 
             boolean isHKeyComponent = i+1 > groupIndex.getColumns().size();
@@ -197,7 +197,7 @@ class OperatorStoreGIHandler {
             else {
                 final int flattenedIndex = irc.getFieldPosition(i);
                 Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
-                ValueSource source = row.conversionSource(flattenedIndex, UndefBindings.only());
+                ValueSource source = row.bindSource(flattenedIndex, UndefBindings.only());
                 Converters.convert(source, target.expectingType(column));
             }
         }

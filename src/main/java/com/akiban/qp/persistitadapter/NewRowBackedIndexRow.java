@@ -51,7 +51,7 @@ public class NewRowBackedIndexRow implements RowBase
     }
 
     @Override
-    public ValueSource conversionSource(int i, Bindings bindings) {
+    public ValueSource bindSource(int i, Bindings bindings) {
         FieldDef fieldDef = (FieldDef) index.getColumns().get(i).getColumn().getFieldDef();
         int fieldPos = fieldDef.getFieldIndex();
         if (row.isColumnNull(fieldPos)) {

@@ -232,8 +232,8 @@ public class QPProfileITBase extends ITBase
         boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
         ToObjectValueTarget target = new ToObjectValueTarget();
         for (int i = 0; equal && i < actual.rowType().nFields(); i++) {
-            Object expectedField = target.convertFromSource(expected.conversionSource(i, NO_BINDINGS));
-            Object actualField = target.convertFromSource(actual.conversionSource(i, NO_BINDINGS));
+            Object expectedField = target.convertFromSource(expected.bindSource(i, NO_BINDINGS));
+            Object actualField = target.convertFromSource(actual.bindSource(i, NO_BINDINGS));
             equal =
                 expectedField == actualField || // handles case in which both are null
                 expectedField != null && actualField != null && expectedField.equals(actualField);

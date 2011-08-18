@@ -50,7 +50,7 @@ public class PersistitGroupRow extends AbstractRow
     }
 
     @Override
-    public ValueSource conversionSource(int i, Bindings bindings) {
+    public ValueSource bindSource(int i, Bindings bindings) {
         FieldDef fieldDef = rowDef().getFieldDef(i);
         RowData rowData = rowData();
         conversionSource.bind(fieldDef, rowData);

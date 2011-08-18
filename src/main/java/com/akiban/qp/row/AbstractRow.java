@@ -80,7 +80,7 @@ public abstract class AbstractRow implements Row
         final int fieldsCount = rowType().nFields();
         AkibanAppender appender = AkibanAppender.of(builder);
         for (int i=0; i < fieldsCount; ++i) {
-            conversionSource(i, UndefBindings.only()).appendAsString(appender, Quote.SINGLE_QUOTE);
+            bindSource(i, UndefBindings.only()).appendAsString(appender, Quote.SINGLE_QUOTE);
             if(i+1 < fieldsCount) {
                 builder.append(',').append(' ');
             }
