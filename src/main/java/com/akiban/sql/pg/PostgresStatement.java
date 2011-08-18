@@ -15,8 +15,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.StandardException;
-
 import java.io.IOException;
 
 /**
@@ -28,16 +26,15 @@ public interface PostgresStatement
     /** Get the bound version of this statement with the given parameters. */
     public PostgresStatement getBoundStatement(String[] parameters,
                                                boolean[] columnBinary, 
-                                               boolean defaultColumnBinary)
-            throws StandardException;
+                                               boolean defaultColumnBinary);
 
     /** Send a description message. If <code>always</code>, do so even
      * if no result set. */
     public void sendDescription(PostgresServerSession server, boolean always) 
-            throws IOException, StandardException;
+            throws IOException;
 
     /** Execute statement and output results. Return number of rows processed. */
     public int execute(PostgresServerSession server, int maxrows)
-            throws IOException, StandardException;
+            throws IOException;
 
 }

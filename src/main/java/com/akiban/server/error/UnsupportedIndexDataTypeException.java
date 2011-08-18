@@ -15,8 +15,6 @@
 
 package com.akiban.server.error;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 
 public class UnsupportedIndexDataTypeException extends InvalidOperationException {

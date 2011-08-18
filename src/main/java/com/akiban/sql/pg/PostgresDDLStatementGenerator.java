@@ -15,11 +15,10 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.error.MissingDDLParametersException;
 import com.akiban.sql.parser.DDLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.ParameterNode;
-
-import com.akiban.sql.StandardException;
 
 import java.util.List;
 
@@ -33,13 +32,11 @@ public class PostgresDDLStatementGenerator extends PostgresBaseStatementGenerato
     public PostgresStatement generate(PostgresServerSession server,
                                       StatementNode stmt, 
                                       List<ParameterNode> params,
-                                      int[] paramTypes) 
-            throws StandardException {
+                                      int[] paramTypes) {
         if (!(stmt instanceof DDLStatementNode))
             return null;
         if ((params != null) && !params.isEmpty())
-            throw new StandardException("No parameters to DDL");
+            throw new MissingDDLParametersException ();
         return new PostgresDDLStatement((DDLStatementNode)stmt);
     }
-
 }

@@ -15,13 +15,11 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.StandardException;
-
 import com.akiban.qp.physicaloperator.ArrayBindings;
 import com.akiban.qp.physicaloperator.Bindings;
 
-import java.util.*;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * An ordinary SQL statement.
@@ -48,7 +46,7 @@ public abstract class PostgresBaseStatement implements PostgresStatement
         return columnNames;
     }
 
-    public List<PostgresType> getColumnTypes() throws StandardException {
+    public List<PostgresType> getColumnTypes() {
         return columnTypes;
     }
 
@@ -56,12 +54,12 @@ public abstract class PostgresBaseStatement implements PostgresStatement
         return false;
     }
 
-    public PostgresType[] getParameterTypes() throws StandardException {
+    public PostgresType[] getParameterTypes() {
         return parameterTypes;
     }
 
     public void sendDescription(PostgresServerSession server, boolean always) 
-            throws IOException, StandardException {
+            throws IOException {
         PostgresMessenger messenger = server.getMessenger();
         List<PostgresType> columnTypes = getColumnTypes();
         if (columnTypes == null) {
@@ -87,8 +85,7 @@ public abstract class PostgresBaseStatement implements PostgresStatement
         messenger.sendMessage();
     }
 
-    protected Bindings getParameterBindings(String[] parameters) 
-            throws StandardException {
+    protected Bindings getParameterBindings(String[] parameters) {
         ArrayBindings bindings = new ArrayBindings(parameters.length);
         for (int i = 0; i < parameters.length; i++) {
             PostgresType pgType = (parameterTypes == null) ? null : parameterTypes[i];
@@ -97,5 +94,4 @@ public abstract class PostgresBaseStatement implements PostgresStatement
         }
         return bindings;
     }
-
 }

@@ -16,6 +16,9 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.error.ParseException;
+import com.akiban.server.error.UnsupportedParametersException;
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.aisddl.*;
 
@@ -49,16 +52,15 @@ public class PostgresDDLStatement implements PostgresStatement
     @Override
     public PostgresStatement getBoundStatement(String[] parameters,
                                                boolean[] columnBinary, 
-                                               boolean defaultColumnBinary) 
-            throws StandardException {
+                                               boolean defaultColumnBinary){
         if (parameters != null)
-            throw new StandardException("Parameters not supported.");
+            throw new UnsupportedParametersException ();
         return this;
     }
 
     @Override
     public void sendDescription(PostgresServerSession server, boolean always) 
-            throws IOException, StandardException {
+            throws IOException {
         if (always) {
             PostgresMessenger messenger = server.getMessenger();
             messenger.beginMessage(PostgresMessenger.NO_DATA_TYPE);
@@ -67,7 +69,7 @@ public class PostgresDDLStatement implements PostgresStatement
     }
 
     public int execute(PostgresServerSession server, int maxrows)
-            throws IOException, StandardException {
+            throws IOException {
         AkibanInformationSchema ais = server.getAIS();
         String schema = server.getDefaultSchemaName();
         DDLFunctions ddlFunctions = server.getDXL().ddlFunctions();
@@ -88,7 +90,11 @@ public class PostgresDDLStatement implements PostgresStatement
             break;
         case NodeTypes.CREATE_VIEW_NODE:
             // TODO: Need to store persistently in AIS (or its extension).
-            ((AISBinder)server.getAttribute("aisBinder")).addView(new ViewDefinition(ddl, server.getParser()));
+            try {
+                ((AISBinder)server.getAttribute("aisBinder")).addView(new ViewDefinition(ddl, server.getParser()));
+            } catch (StandardException ex) {
+                throw new ParseException ("", ex.getMessage(), ddl.toString());
+            }
             break;
         case NodeTypes.DROP_VIEW_NODE:
             ((AISBinder)server.getAttribute("aisBinder")).removeView(((DropViewNode)ddl).getObjectName());
@@ -100,7 +106,7 @@ public class PostgresDDLStatement implements PostgresStatement
         case NodeTypes.ALTER_TABLE_NODE:
         case NodeTypes.REVOKE_NODE:
         default:
-            throw new StandardException(ddl.statementToString() + " not supported yet");
+            throw new UnsupportedSQLException (ddl.statementToString(), ddl);
         }
 
         {        

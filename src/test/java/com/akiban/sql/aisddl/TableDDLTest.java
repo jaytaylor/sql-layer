@@ -36,12 +36,13 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.DropTableNode;
 import com.akiban.sql.parser.CreateTableNode;
-import com.akiban.sql.StandardException;
+
 
 public class TableDDLTest {
 
@@ -132,7 +133,7 @@ public class TableDDLTest {
         TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt);
     }
 
-    @Test (expected=StandardException.class)
+    @Test (expected=DuplicateIndexException.class)
     public void createTable2PKs() throws Exception {
         String sql = "CREATE TABLE test.t1 (c1 int primary key, c2 int NOT NULL, primary key (c2))";
         

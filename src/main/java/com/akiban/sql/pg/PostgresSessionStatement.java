@@ -15,9 +15,8 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.error.UnsupportedParametersException;
 import com.akiban.sql.parser.StatementNode;
-
-import com.akiban.sql.StandardException;
 
 import java.io.IOException;
 
@@ -40,16 +39,15 @@ public class PostgresSessionStatement implements PostgresStatement
     @Override
     public PostgresStatement getBoundStatement(String[] parameters,
                                                boolean[] columnBinary, 
-                                               boolean defaultColumnBinary) 
-            throws StandardException {
+                                               boolean defaultColumnBinary)  {
         if (parameters != null)
-            throw new StandardException("Parameters not supported.");
+            throw new UnsupportedParametersException();
         return this;
     }
 
     @Override
     public void sendDescription(PostgresServerSession server, boolean always) 
-            throws IOException, StandardException {
+            throws IOException {
         if (always) {
             PostgresMessenger messenger = server.getMessenger();
             messenger.beginMessage(PostgresMessenger.NO_DATA_TYPE);
@@ -59,7 +57,7 @@ public class PostgresSessionStatement implements PostgresStatement
 
     @Override
     public int execute(PostgresServerSession server, int maxrows)
-            throws IOException, StandardException {
+            throws IOException {
         doOperation(server);
         {        
             PostgresMessenger messenger = server.getMessenger();
@@ -70,7 +68,7 @@ public class PostgresSessionStatement implements PostgresStatement
         return 0;
     }
 
-    protected void doOperation(PostgresServerSession server) throws StandardException {
+    protected void doOperation(PostgresServerSession server) {
         switch (operation) {
         case USE:
             // TODO: From the appropriate kind of statement, which

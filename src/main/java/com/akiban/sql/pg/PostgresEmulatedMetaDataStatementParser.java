@@ -17,10 +17,6 @@ package com.akiban.sql.pg;
 
 import com.akiban.sql.pg.PostgresEmulatedMetaDataStatement.Query;
 
-import com.akiban.sql.parser.StatementNode;
-
-import com.akiban.sql.StandardException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,8 +43,7 @@ public class PostgresEmulatedMetaDataStatementParser implements PostgresStatemen
 
     @Override
     public PostgresStatement parse(PostgresServerSession server,
-                                   String sql, int[] paramTypes) 
-        throws StandardException {
+                                   String sql, int[] paramTypes)  {
         if (!possiblePattern.matcher(sql).find())
             return null;
         for (Query query : Query.values()) {

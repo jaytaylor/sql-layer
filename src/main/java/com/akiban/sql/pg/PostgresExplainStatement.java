@@ -15,10 +15,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.parser.StatementNode;
-
-import com.akiban.sql.StandardException;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -44,14 +40,13 @@ public class PostgresExplainStatement implements PostgresStatement
     @Override
     public PostgresStatement getBoundStatement(String[] parameters,
                                                boolean[] columnBinary, 
-                                               boolean defaultColumnBinary) 
-            throws StandardException {
+                                               boolean defaultColumnBinary)  {
         return this;
     }
 
     @Override
     public void sendDescription(PostgresServerSession server, boolean always) 
-            throws IOException, StandardException {
+            throws IOException {
         PostgresMessenger messenger = server.getMessenger();
         messenger.beginMessage(PostgresMessenger.ROW_DESCRIPTION_TYPE);
         messenger.writeShort(1);
@@ -67,7 +62,7 @@ public class PostgresExplainStatement implements PostgresStatement
 
     @Override
     public int execute(PostgresServerSession server, int maxrows)
-            throws IOException, StandardException {
+            throws IOException {
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
         for (String row : explanation) {

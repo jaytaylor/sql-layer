@@ -15,14 +15,10 @@
 
 package com.akiban.sql.optimizer;
 
-import com.akiban.sql.StandardException;
 
 import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupTable;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 public abstract class TableTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
@@ -38,9 +34,9 @@ public abstract class TableTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
         return map.get(table);
     }
 
-    protected abstract T createNode(UserTable table) throws StandardException;
+    protected abstract T createNode(UserTable table) ;
 
-    public T addNode(UserTable table) throws StandardException {
+    public T addNode(UserTable table) {
         T node = getNode(table);
         if (node != null)
             return node;

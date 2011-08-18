@@ -20,8 +20,6 @@ import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.TransactionControlNode;
 
-import com.akiban.sql.StandardException;
-
 import java.util.List;
 
 /** SQL statements that affect session / environment state. */
@@ -33,8 +31,7 @@ public class PostgresSessionStatementGenerator extends PostgresBaseStatementGene
     @Override
     public PostgresStatement generate(PostgresServerSession server,
                                       StatementNode stmt, 
-                                      List<ParameterNode> params, int[] paramTypes) 
-            throws StandardException {
+                                      List<ParameterNode> params, int[] paramTypes)  {
         switch (stmt.getNodeType()) {
         case NodeTypes.TRANSACTION_CONTROL_NODE:
             {

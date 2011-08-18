@@ -27,6 +27,8 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.CreateSchemaNode;
 import com.akiban.sql.parser.DropSchemaNode;
+import com.akiban.server.error.DuplicateSchemaException;
+import com.akiban.server.error.DropSchemaNotAllowedException;
 
 
 public class SchemaDDLTest {
@@ -48,7 +50,7 @@ public class SchemaDDLTest {
         SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt);
     }
     
-    @Test (expected=com.akiban.sql.StandardException.class)
+    @Test (expected=DuplicateSchemaException.class)
     public void createSchemaUsed() throws Exception
     {
         String sql = "CREATE SCHEMA S";
@@ -76,7 +78,7 @@ public class SchemaDDLTest {
         SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)stmt);
     }
 
-    @Test(expected=com.akiban.sql.StandardException.class)
+    @Test(expected=DropSchemaNotAllowedException.class)
     public void dropSchemaUsed() throws Exception
     {
         String sql = "DROP SCHEMA S RESTRICT";
