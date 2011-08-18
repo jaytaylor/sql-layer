@@ -19,9 +19,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.UnsupportedCheckConstraintException;
@@ -39,7 +36,6 @@ import com.akiban.sql.parser.TableElementNode;
 
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
-import com.akiban.sql.types.TypeId.FormatIds;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -55,7 +51,7 @@ import com.akiban.ais.model.Types;
 /** DDL operations on Tables */
 public class TableDDL
 {
-    private final static Logger logger = LoggerFactory.getLogger(TableDDL.class);
+    //private final static Logger logger = LoggerFactory.getLogger(TableDDL.class);
     private TableDDL() {
     }
 
@@ -289,38 +285,5 @@ public class TableDDL
         types.put(TypeId.CLOB_ID, Types.LONGTEXT);
         return Collections.unmodifiableMap(types);
         
-    }
-/*
- *     public static final TypeId BOOLEAN_ID = new TypeId(FormatIds.BOOLEAN_TYPE_ID);
-    public static final TypeId SMALLINT_ID = new TypeId(FormatIds.SMALLINT_TYPE_ID);
-    public static final TypeId INTEGER_ID = new TypeId(FormatIds.INT_TYPE_ID);
-    public static final TypeId CHAR_ID = new TypeId(FormatIds.CHAR_TYPE_ID);
-    public static final TypeId TINYINT_ID = new TypeId(FormatIds.TINYINT_TYPE_ID);
-    public static final TypeId BIGINT_ID = new TypeId(FormatIds.LONGINT_TYPE_ID);
-    public static final TypeId REAL_ID = new TypeId(FormatIds.REAL_TYPE_ID);
-    public static final TypeId DOUBLE_ID = new TypeId(FormatIds.DOUBLE_TYPE_ID);
-    public static final TypeId DECIMAL_ID =    new TypeId(FormatIds.DECIMAL_TYPE_ID);
-    public static final TypeId NUMERIC_ID =    new TypeId(FormatIds.NUMERIC_TYPE_ID);
-    private static final TypeId VARCHAR_ID = new TypeId(FormatIds.VARCHAR_TYPE_ID);
-    private static final TypeId DATE_ID = new TypeId(FormatIds.DATE_TYPE_ID);
-    private static final TypeId TIME_ID = new TypeId(FormatIds.TIME_TYPE_ID);
-    private static final TypeId TIMESTAMP_ID = new TypeId(FormatIds.TIMESTAMP_TYPE_ID);
-    private static final TypeId BIT_ID = new TypeId(FormatIds.BIT_TYPE_ID);
-    private static final TypeId VARBIT_ID = new TypeId(FormatIds.VARBIT_TYPE_ID);
-    private static final TypeId REF_ID = new TypeId(FormatIds.REF_TYPE_ID);
-    private static final TypeId LONGVARCHAR_ID = new TypeId(FormatIds.LONGVARCHAR_TYPE_ID);
-    private static final TypeId LONGVARBIT_ID = new TypeId(FormatIds.LONGVARBIT_TYPE_ID);
-    private static final TypeId BLOB_ID = new TypeId(FormatIds.BLOB_TYPE_ID);
-    private static final TypeId CLOB_ID = new TypeId(FormatIds.CLOB_TYPE_ID);
-    private static final TypeId XML_ID = new TypeId(FormatIds.XML_TYPE_ID);
-
-    public static final TypeId SMALLINT_UNSIGNED_ID = new TypeId(FormatIds.SMALLINT_TYPE_ID, true);
-    public static final TypeId INTEGER_UNSIGNED_ID = new TypeId(FormatIds.INT_TYPE_ID, true);
-    public static final TypeId TINYINT_UNSIGNED_ID = new TypeId(FormatIds.TINYINT_TYPE_ID, true);
-    public static final TypeId BIGINT_UNSIGNED_ID = new TypeId(FormatIds.LONGINT_TYPE_ID, true);
-    public static final TypeId REAL_UNSIGNED_ID = new TypeId(FormatIds.REAL_TYPE_ID, true);
-    public static final TypeId DOUBLE_UNSIGNED_ID = new TypeId(FormatIds.DOUBLE_TYPE_ID, true);
-    public static final TypeId DECIMAL_UNSIGNED_ID =    new TypeId(FormatIds.DECIMAL_TYPE_ID, true);
-    public static final TypeId NUMERIC_UNSIGNED_ID =    new TypeId(FormatIds.NUMERIC_TYPE_ID, true);
-*/        
+    }        
 }
