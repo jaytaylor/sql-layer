@@ -189,7 +189,7 @@ public final class FromObjectValueSource implements ValueSource {
     // private methods
 
     private <T> T as(Class<T> castClass, AkType type) {
-        ConversionHelper.checkType(akType, type);
+        ValueSourceHelper.checkType(akType, type);
         try {
             return castClass.cast(object);
         } catch (ClassCastException e) {

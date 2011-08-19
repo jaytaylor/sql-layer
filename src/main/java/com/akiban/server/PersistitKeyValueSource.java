@@ -17,7 +17,7 @@ package com.akiban.server;
 
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ConversionHelper;
+import com.akiban.server.types.ValueSourceHelper;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.SourceIsNullException;
 import com.akiban.util.AkibanAppender;
@@ -176,7 +176,7 @@ public final class PersistitKeyValueSource implements ValueSource {
     }
 
     private <T> T as(Class<T> castClass, AkType type) {
-        ConversionHelper.checkType(akType, type);
+        ValueSourceHelper.checkType(akType, type);
         Object o = decode();
         if (o == null) {
             throw new SourceIsNullException();
