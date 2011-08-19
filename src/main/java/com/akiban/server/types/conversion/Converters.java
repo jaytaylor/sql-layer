@@ -15,12 +15,15 @@
 
 package com.akiban.server.types.conversion;
 
+import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.Map;
+import java.util.Set;
 
 public final class Converters {
 
@@ -38,6 +41,9 @@ public final class Converters {
             target.putNull();
         } else {
             AkType conversionType = target.getConversionType();
+            if (conversionType == null || conversionType == AkType.UNSUPPORTED || conversionType == AkType.NULL) {
+                throw new InconvertibleTypesException(source.getConversionType(), conversionType);
+            }
             get(conversionType).convert(source, target);
         }
         return target;
@@ -48,6 +54,14 @@ public final class Converters {
         if (converter instanceof LongConverter)
             return (LongConverter) converter;
         return null;
+    }
+
+    public static boolean isConversionAllowed(AkType sourceType, AkType targetType) {
+        if (sourceType.equals(targetType)) {
+            return true;
+        }
+        Set<AkType> allowedTargets = readOnlyLegalConversions.get(sourceType);
+        return allowedTargets != null && allowedTargets.contains(targetType);
     }
 
     // for use in this class
@@ -77,6 +91,23 @@ public final class Converters {
         result.put(AkType.YEAR, ConvertersForDates.YEAR);
         return result;
     }
+
+    private static Map<AkType,Set<AkType>> createLegalConversionsMap() {
+        Map<AkType,Set<AkType>> result = new EnumMap<AkType, Set<AkType>>(AkType.class);
+
+        return result;
+    }
+
+    private void legalConversion(Map<AkType,Set<AkType>> addTo, AkType sourceType, AkType targetType) {
+        Set<AkType> previousTargets = addTo.get(sourceType);
+        if (previousTargets == null) {
+            addTo.put(sourceType, EnumSet.of(targetType));
+        }
+        else {
+            boolean added = previousTargets.add(targetType);
+            assert added : "added twice: " + targetType;
+        }
+    }
     
     private Converters() {}
     
@@ -86,4 +117,9 @@ public final class Converters {
      * thread safety comes solely from the happens-before relationship of the class instantiation.
      */
     private static final Map<AkType,AbstractConverter> readOnlyConvertersMap = createConvertersMap();
+
+    /**
+     * Mapping of each source AkType to the set of AkTypes it can be converted to. Unsynchronized, so read only.
+     */
+    private static final Map<AkType,Set<AkType>> readOnlyLegalConversions = createLegalConversionsMap();
 }
