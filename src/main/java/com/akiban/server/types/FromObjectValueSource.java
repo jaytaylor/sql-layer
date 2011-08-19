@@ -207,7 +207,7 @@ public final class FromObjectValueSource implements ValueSource {
         }
         else {
             this.akType = asType;
-            this.object = LegacyTransformations.TRIVIAL_TRANSFORMATIONS.tryTransformations(asType, object);
+            this.object = FromObjectTransformations.TRIVIAL_TRANSFORMATIONS.tryTransformations(asType, object);
         }
     }
 
