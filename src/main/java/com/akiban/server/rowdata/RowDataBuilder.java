@@ -18,7 +18,7 @@ import com.akiban.server.AkServerUtil;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.error.TableDefinitionMismatchException;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.Converters;
+import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.NullValueSource;
 

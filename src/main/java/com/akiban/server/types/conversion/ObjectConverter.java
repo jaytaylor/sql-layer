@@ -13,12 +13,27 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.types;
+package com.akiban.server.types.conversion;
 
-public final class ConverterTestUtils {
-    public static void setGlobalTimezone(String timezone) {
-        ConvertersForDates.setGlobalTimezone(timezone);
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueTarget;
+
+abstract class ObjectConverter<T> extends AbstractConverter {
+
+    // AbstractLongConverter interface
+
+    public abstract T getObject(ValueSource source);
+
+    // defined in subclasses
+
+    protected abstract void putObject(ValueTarget target, T value);
+
+    // for use in this package
+
+    @Override
+    protected final void doConvert(ValueSource source, ValueTarget target) {
+        putObject(target, getObject(source));
     }
 
-    private ConverterTestUtils() {}
+    ObjectConverter() {}
 }

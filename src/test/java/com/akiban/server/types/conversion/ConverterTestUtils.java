@@ -12,10 +12,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package com.akiban.server.types;
 
-public final class TypeConversionException extends RuntimeException {
-    TypeConversionException(String message) {
-        super(message);
+package com.akiban.server.types.conversion;
+
+public final class ConverterTestUtils {
+    public static void setGlobalTimezone(String timezone) {
+        ConvertersForDates.setGlobalTimezone(timezone);
     }
+
+    private ConverterTestUtils() {}
 }

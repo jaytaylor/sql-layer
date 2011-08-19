@@ -13,8 +13,9 @@
 * along with this program.  If not, see http://www.gnu.org/licenses.
 */
 
-package com.akiban.server.types;
+package com.akiban.server.types.conversion;
 
+import com.akiban.server.types.FromObjectValueSource;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

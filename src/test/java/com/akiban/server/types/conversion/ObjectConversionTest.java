@@ -13,14 +13,19 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.types;
+package com.akiban.server.types.conversion;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
+import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.typestests.ConversionSuite;
 import com.akiban.server.types.typestests.ConversionTestBase;
 import com.akiban.server.types.typestests.LinkedConversion;
 import com.akiban.server.types.typestests.TestCase;
+import org.junit.Assert;
 
 import java.util.Collection;
 
@@ -51,7 +56,7 @@ public final class ObjectConversionTest extends ConversionTestBase {
 
         @Override
         public void checkPut(Object expected) {
-            assertEquals("last converted object", expected, target.lastConvertedValue());
+            Assert.assertEquals("last converted object", expected, target.lastConvertedValue());
         }
 
         @Override

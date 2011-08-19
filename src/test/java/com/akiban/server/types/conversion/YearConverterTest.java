@@ -13,36 +13,34 @@
 * along with this program.  If not, see http://www.gnu.org/licenses.
 */
 
-package com.akiban.server.types;
+package com.akiban.server.types.conversion;
 
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class TimeConverterTest extends LongConverterTestBase {
-    public TimeConverterTest() {
-        super(ConvertersForDates.TIME,
+public class YearConverterTest extends LongConverterTestBase {
+    public YearConverterTest() {
+        super(ConvertersForDates.YEAR,
               new TestElement[] {
-                new TestElement("00:00:00", 0),
-                new TestElement("00:00:01", 1),
-                new TestElement("-00:00:01", -1),
-                new TestElement("838:59:59", 8385959),
-                new TestElement("-838:59:59", -8385959),
-                new TestElement("14:20:32", 142032),
-                new TestElement("-147:21:01", -1472101L)
+                new TestElement("0000", 0),
+                new TestElement("1901", 1),
+                new TestElement("1950", 50),
+                new TestElement("2000", 100),
+                new TestElement("2028", 128),
+                new TestElement("2029", 129),
+                new TestElement("2155", 255),
+                new TestElement("2011", new Integer(111)),
+                new TestElement("1986", new Long(86))
               });
     }
 
-
     @Test
     public void partiallySpecified() {
-        assertEquals("00:00:02", encodeAndDecode("2"));
-        assertEquals("00:00:20", encodeAndDecode("20"));
-        assertEquals("00:03:21", encodeAndDecode("201"));
-        assertEquals("00:33:31", encodeAndDecode("2011"));
-        assertEquals("00:05:42", encodeAndDecode("5:42"));
-        assertEquals("-00:00:42", encodeAndDecode("-42"));
-        assertEquals("-00:10:02", encodeAndDecode("-10:02"));
+        assertEquals("0002", encodeAndDecode("2"));
+        assertEquals("0020", encodeAndDecode("20"));
+        assertEquals("0201", encodeAndDecode("201"));
+        assertEquals("2011", encodeAndDecode("2011"));
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -53,10 +51,5 @@ public class TimeConverterTest extends LongConverterTestBase {
     @Test(expected=IllegalArgumentException.class)
     public void noNumbers() {
         encodeAndDecode("zebra");
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void tooManyParts() {
-        encodeAndDecode("01:02:03:04");
     }
 }

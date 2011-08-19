@@ -19,8 +19,8 @@ import com.akiban.server.error.UnknownDataTypeException;
 import com.akiban.server.error.UnknownTypeSizeException;
 import com.akiban.server.error.UnsupportedCharsetException;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.Converters;
-import com.akiban.server.types.LongConverter;
+import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types.conversion.LongConverter;
 
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;

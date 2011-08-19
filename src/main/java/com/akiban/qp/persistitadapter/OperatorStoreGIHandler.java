@@ -24,7 +24,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.error.PersistItErrorException;
-import com.akiban.server.types.Converters;
+import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.ArgumentValidation;
 import com.persistit.Exchange;
 import com.persistit.Key;

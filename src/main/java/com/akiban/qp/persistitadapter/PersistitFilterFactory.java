@@ -23,7 +23,7 @@ import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.Converters;
+import com.akiban.server.types.conversion.Converters;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 

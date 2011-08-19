@@ -13,24 +13,27 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.types;
+package com.akiban.server.types.conversion;
 
-public abstract class ObjectConverter<T> extends AbstractConverter {
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueTarget;
 
-    // AbstractLongConverter interface
+abstract class DoubleConverter extends AbstractConverter {
 
-    public abstract T getObject(ValueSource source);
-
+    // AbstractDoubleConverter interface
+    
+    public abstract double getDouble(ValueSource source);
+    
     // defined in subclasses
-
-    protected abstract void putObject(ValueTarget target, T value);
-
+    
+    protected abstract void putDouble(ValueTarget target, double value);
+    
     // for use in this package
 
     @Override
     protected final void doConvert(ValueSource source, ValueTarget target) {
-        putObject(target, getObject(source));
+        putDouble(target, getDouble(source));
     }
 
-    ObjectConverter() {}
+    DoubleConverter() {}
 }
