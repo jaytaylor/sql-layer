@@ -30,7 +30,7 @@ abstract class ConverterForLong extends LongConverter {
         // AbstractConverter interface
 
         @Override
-        protected AkType nativeConversionType() {
+        protected AkType targetConversionType() {
             return AkType.LONG;
         }
     };
@@ -44,7 +44,7 @@ abstract class ConverterForLong extends LongConverter {
         // AbstractConverter interface
 
         @Override
-        protected AkType nativeConversionType() {
+        protected AkType targetConversionType() {
             return AkType.INT;
         }
     };
@@ -58,7 +58,7 @@ abstract class ConverterForLong extends LongConverter {
         // AbstractConverter interface
 
         @Override
-        protected AkType nativeConversionType() {
+        protected AkType targetConversionType() {
             return AkType.U_INT;
         }
     };
@@ -82,7 +82,7 @@ abstract class ConverterForLong extends LongConverter {
         case U_INT:     return source.getUInt();
         case TEXT:      return Long.parseLong(source.getText());
         case VARCHAR:   return Long.parseLong(source.getString());
-        default: throw unsupportedConversion(source);
+        default: throw unsupportedConversion(type);
         }
     }
 

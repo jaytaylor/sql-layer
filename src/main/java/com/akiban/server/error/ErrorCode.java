@@ -152,6 +152,7 @@ public enum ErrorCode {
     // Bad Type errors
     UNKNOWN_TYPE_SIZE    (22, 200, Importance.DEBUG, UnknownTypeSizeException.class),
     UNKNOWN_TYPE         (22, 201, Importance.DEBUG, UnknownDataTypeException.class),
+    INCONVERTIBLE_TYPES  (22, 202, Importance.DEBUG, InconvertibleTypesException.class),
     
     // Unsupported Features Errors, Should be empty, but isn't
     UNSUPPORTED_SQL         (28, 0, Importance.ERROR, UnsupportedSQLException.class),

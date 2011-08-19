@@ -30,7 +30,7 @@ abstract class ConverterForString extends ObjectConverter<String> {
         // AbstractConverter interface
 
         @Override
-        protected AkType nativeConversionType() {
+        protected AkType targetConversionType() {
             return AkType.VARCHAR;
         }
     };
@@ -44,7 +44,7 @@ abstract class ConverterForString extends ObjectConverter<String> {
         // AbstractConverter interface
 
         @Override
-        protected AkType nativeConversionType() {
+        protected AkType targetConversionType() {
             return AkType.TEXT;
         }
     };

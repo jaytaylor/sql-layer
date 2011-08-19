@@ -32,7 +32,7 @@ final class ConverterForBigInteger extends ObjectConverter<BigInteger> {
         case U_BIGINT:  return source.getUBigInt();
         case TEXT:      return new BigInteger(source.getText());
         case VARCHAR:   return new BigInteger(source.getString());
-        default: throw unsupportedConversion(source);
+        default: throw unsupportedConversion(type);
         }
     }
 
@@ -44,7 +44,7 @@ final class ConverterForBigInteger extends ObjectConverter<BigInteger> {
     // AbstractConverter interface
 
     @Override
-    protected AkType nativeConversionType() {
+    protected AkType targetConversionType() {
         return AkType.U_BIGINT;
     }
 

@@ -37,7 +37,7 @@ final class ConverterForBigDecimal extends ObjectConverter<BigDecimal> {
         case U_INT:     return BigDecimal.valueOf(source.getUInt());
         case FLOAT:     return BigDecimal.valueOf(source.getFloat());
         case DOUBLE:    return BigDecimal.valueOf(source.getDouble());
-        default: throw unsupportedConversion(source);
+        default: throw unsupportedConversion(type);
         }
     }
 
@@ -49,7 +49,7 @@ final class ConverterForBigDecimal extends ObjectConverter<BigDecimal> {
     // AbstractConverter interface
 
     @Override
-    protected AkType nativeConversionType() {
+    protected AkType targetConversionType() {
         return AkType.DECIMAL;
     }
 

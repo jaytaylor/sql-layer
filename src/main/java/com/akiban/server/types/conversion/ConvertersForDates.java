@@ -37,7 +37,7 @@ abstract class ConvertersForDates extends LongConverter {
     final static ConvertersForDates DATE = new ConvertersForDates() {
         @Override protected long doGetLong(ValueSource source)             { return source.getDate(); }
         @Override protected void putLong(ValueTarget target, long value)   { target.putDate(value); }
-        @Override protected AkType nativeConversionType() { return AkType.DATE; }
+        @Override protected AkType targetConversionType() { return AkType.DATE; }
 
         @Override
         public long doParse(String string) {
@@ -72,7 +72,7 @@ abstract class ConvertersForDates extends LongConverter {
     final static ConvertersForDates DATETIME = new ConvertersForDates() {
         @Override protected long doGetLong(ValueSource source)             { return source.getDateTime(); }
         @Override protected void putLong(ValueTarget target, long value)   { target.putDateTime(value); }
-        @Override protected AkType nativeConversionType() { return AkType.DATETIME; }
+        @Override protected AkType targetConversionType() { return AkType.DATETIME; }
 
         @Override
         public long doParse(String string) {
@@ -122,7 +122,7 @@ abstract class ConvertersForDates extends LongConverter {
     final static ConvertersForDates TIME = new ConvertersForDates() {
         @Override protected long doGetLong(ValueSource source)             { return source.getTime(); }
         @Override protected void putLong(ValueTarget target, long value)   { target.putTime(value); }
-        @Override protected AkType nativeConversionType() { return AkType.TIME; }
+        @Override protected AkType targetConversionType() { return AkType.TIME; }
 
         @Override
         public long doParse(String string) {
@@ -170,7 +170,7 @@ abstract class ConvertersForDates extends LongConverter {
     final static ConvertersForDates TIMESTAMP = new ConvertersForDates() {
         @Override protected long doGetLong(ValueSource source)             { return source.getTimestamp(); }
         @Override protected void putLong(ValueTarget target, long value)   { target.putTimestamp(value); }
-        @Override protected AkType nativeConversionType() { return AkType.TIMESTAMP; }
+        @Override protected AkType targetConversionType() { return AkType.TIMESTAMP; }
 
         @Override
         public long doParse(String string) {
@@ -199,7 +199,7 @@ abstract class ConvertersForDates extends LongConverter {
     final static ConvertersForDates YEAR = new ConvertersForDates() {
         @Override protected long doGetLong(ValueSource source)             { return source.getYear(); }
         @Override protected void putLong(ValueTarget target, long value)   { target.putYear(value); }
-        @Override protected AkType nativeConversionType() { return AkType.YEAR; }
+        @Override protected AkType targetConversionType() { return AkType.YEAR; }
 
         @Override
         public long doParse(String string) {
@@ -219,7 +219,7 @@ abstract class ConvertersForDates extends LongConverter {
     @Override
     public long getLong(ValueSource source) {
         AkType type = source.getConversionType();
-        if (type == nativeConversionType()) {
+        if (type == targetConversionType()) {
             return doGetLong(source);
         }
         switch (type) {
@@ -228,7 +228,7 @@ abstract class ConvertersForDates extends LongConverter {
         case LONG:      return source.getLong();
         case INT:       return source.getInt();
         case U_INT:     return source.getUInt();
-        default: throw unsupportedConversion(source);
+        default: throw unsupportedConversion(type);
         }
     }
 
