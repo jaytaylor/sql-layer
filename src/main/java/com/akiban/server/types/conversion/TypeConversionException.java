@@ -12,25 +12,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+package com.akiban.server.types.conversion;
 
-package com.akiban.server.types;
-
-public abstract class FloatConverter extends AbstractConverter {
-
-    // AbstractFloatConverter interface
-    
-    public abstract float getFloat(ValueSource source);
-    
-    // defined in subclasses
-    
-    protected abstract void putFloat(ValueTarget target, float value);
-    
-    // for use in this package
-
-    @Override
-    protected final void doConvert(ValueSource source, ValueTarget target) {
-        putFloat(target, getFloat(source));
+public final class TypeConversionException extends RuntimeException {
+    TypeConversionException(String message) {
+        super(message);
     }
-
-    FloatConverter() {}
 }

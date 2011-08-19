@@ -25,8 +25,9 @@ import com.akiban.junit.Parameterization;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
-import com.akiban.server.types.Converters;
-import com.akiban.server.types.LongConverter;
+import com.akiban.server.types.conversion.ConverterTestUtils;
+import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types.conversion.LongConverter;
 import com.akiban.server.types.typestests.ConversionSuite;
 import com.akiban.server.types.typestests.ConversionTestBase;
 import com.akiban.server.types.typestests.LinkedConversion;
@@ -55,6 +56,7 @@ public final class RowDataConversionTest extends ConversionTestBase {
         LongConverter year = Converters.getLongConverter(AkType.YEAR);
         LongConverter timestamp = Converters.getLongConverter(AkType.TIMESTAMP);
         LongConverter time = Converters.getLongConverter(AkType.TIME);
+        ConverterTestUtils.setGlobalTimezone("UTC");
 
         ConversionSuite<?> suite = ConversionSuite.build(new ConversionPair())
                 // Double values

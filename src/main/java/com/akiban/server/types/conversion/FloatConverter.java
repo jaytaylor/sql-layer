@@ -13,26 +13,27 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.types;
+package com.akiban.server.types.conversion;
 
-public abstract class LongConverter extends AbstractConverter {
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueTarget;
 
-    // LongConverter interface
+abstract class FloatConverter extends AbstractConverter {
 
-    public abstract long getLong(ValueSource source);
-    public abstract String asString(long value);
-    public abstract long doParse(String string);
-
+    // AbstractFloatConverter interface
+    
+    public abstract float getFloat(ValueSource source);
+    
     // defined in subclasses
-
-    protected abstract void putLong(ValueTarget target, long value);
-
+    
+    protected abstract void putFloat(ValueTarget target, float value);
+    
     // for use in this package
 
     @Override
     protected final void doConvert(ValueSource source, ValueTarget target) {
-        putLong(target, getLong(source));
+        putFloat(target, getFloat(source));
     }
 
-    LongConverter() {}
+    FloatConverter() {}
 }

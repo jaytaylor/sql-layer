@@ -14,6 +14,8 @@
  */
 package com.akiban.server.types;
 
+import com.akiban.server.types.AkType;
+
 public final class IllegalConversionException extends RuntimeException {
     IllegalConversionException(AkType expectedType, AkType actualType) {
         super("expected to put or get " + expectedType + " but saw " + actualType);

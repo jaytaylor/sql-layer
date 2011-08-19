@@ -31,7 +31,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.Converters;
+import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.ToObjectValueTarget;
 import org.junit.Before;
 import org.junit.Test;

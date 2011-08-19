@@ -15,6 +15,7 @@
 
 package com.akiban.server.types;
 
+import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.ByteSource;
 
 import java.math.BigDecimal;

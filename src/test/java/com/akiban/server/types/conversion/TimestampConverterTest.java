@@ -13,35 +13,27 @@
 * along with this program.  If not, see http://www.gnu.org/licenses.
 */
 
-package com.akiban.server.types;
+package com.akiban.server.types.conversion;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-
-public class YearConverterTest extends LongConverterTestBase {
-    public YearConverterTest() {
-        super(ConvertersForDates.YEAR,
+public class TimestampConverterTest extends LongConverterTestBase {
+    public TimestampConverterTest() {
+        super(ConvertersForDates.TIMESTAMP,
               new TestElement[] {
-                new TestElement("0000", 0),
-                new TestElement("1901", 1),
-                new TestElement("1950", 50),
-                new TestElement("2000", 100),
-                new TestElement("2028", 128),
-                new TestElement("2029", 129),
-                new TestElement("2155", 255),
-                new TestElement("2011", new Integer(111)),
-                new TestElement("1986", new Long(86))
+                new TestElement("0000-00-00 00:00:00", 0),
+                new TestElement("1970-01-01 00:00:01", 1),
+                new TestElement("2009-02-13 23:31:30", 1234567890),
+                new TestElement("2009-02-13 23:31:30", 1234567890),
+                new TestElement("2038-01-19 03:14:07", 2147483647),
+                new TestElement("1986-10-28 00:00:00", 530841600),
+                new TestElement("2011-04-10 18:34:00", 1302460440L)
               });
+
+        // Make expected output deterministic
+        ConverterTestUtils.setGlobalTimezone("UTC");
     }
 
-    @Test
-    public void partiallySpecified() {
-        assertEquals("0002", encodeAndDecode("2"));
-        assertEquals("0020", encodeAndDecode("20"));
-        assertEquals("0201", encodeAndDecode("201"));
-        assertEquals("2011", encodeAndDecode("2011"));
-    }
 
     @Test(expected=IllegalArgumentException.class)
     public void invalidNumber() {

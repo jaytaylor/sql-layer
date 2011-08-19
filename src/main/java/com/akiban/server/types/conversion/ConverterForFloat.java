@@ -13,38 +13,42 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.types;
+package com.akiban.server.types.conversion;
 
-abstract class ConverterForDouble extends DoubleConverter {
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueTarget;
 
-    static final DoubleConverter SIGNED = new ConverterForDouble() {
+abstract class ConverterForFloat extends FloatConverter {
+
+    static final FloatConverter SIGNED = new ConverterForFloat() {
         @Override
-        protected void putDouble(ValueTarget target, double value) {
-            target.putDouble(value);
+        protected void putFloat(ValueTarget target, float value) {
+            target.putFloat(value);
         }
     };
 
-    static final DoubleConverter UNSIGNED = new ConverterForDouble() {
+    static final FloatConverter UNSIGNED = new ConverterForFloat() {
         @Override
-        protected void putDouble(ValueTarget target, double value) {
-            target.putUDouble(value);
+        protected void putFloat(ValueTarget target, float value) {
+            target.putUFloat(value);
         }
     };
 
     @Override
-    public double getDouble(ValueSource source) {
+    public float getFloat(ValueSource source) {
         AkType type = source.getConversionType();
         switch (type) {
-        case DOUBLE:    return source.getDouble();
+        case DOUBLE:    return (float) source.getDouble();
         case FLOAT:     return source.getFloat();
-        case DECIMAL:   return source.getDecimal().doubleValue();
+        case DECIMAL:   return source.getDecimal().floatValue();
         case LONG:      return source.getLong();
         case INT:       return source.getInt();
         case U_INT:     return source.getUInt();
-        case U_FLOAT:   return source.getFloat();
-        case U_DOUBLE:  return source.getUDouble();
-        case TEXT:      return Double.parseDouble(source.getText());
-        case VARCHAR:   return Double.parseDouble(source.getString());
+        case U_FLOAT:   return source.getUFloat();
+        case U_DOUBLE:  return (float) source.getUDouble();
+        case TEXT:      return Float.parseFloat(source.getText());
+        case VARCHAR:   return Float.parseFloat(source.getString());
         default: throw unsupportedConversion(source);
         }
     }
@@ -53,8 +57,8 @@ abstract class ConverterForDouble extends DoubleConverter {
 
     @Override
     protected AkType nativeConversionType() {
-        return AkType.DOUBLE;
+        return AkType.FLOAT;
     }
 
-    private ConverterForDouble() {}
+    private ConverterForFloat() {}
 }

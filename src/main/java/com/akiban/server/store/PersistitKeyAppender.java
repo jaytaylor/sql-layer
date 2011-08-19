@@ -21,7 +21,7 @@ import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataValueSource;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.Converters;
+import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.FromObjectValueSource;
 import com.persistit.Key;
 

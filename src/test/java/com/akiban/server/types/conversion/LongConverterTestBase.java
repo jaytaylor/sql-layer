@@ -13,7 +13,7 @@
 * along with this program.  If not, see http://www.gnu.org/licenses.
 */
 
-package com.akiban.server.types;
+package com.akiban.server.types.conversion;
 
 import org.junit.Test;
 
