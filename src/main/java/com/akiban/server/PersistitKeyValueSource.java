@@ -19,7 +19,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSourceHelper;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.SourceIsNullException;
+import com.akiban.server.types.ValueSourceIsNullException;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
 import com.akiban.util.WrappingByteSource;
@@ -179,7 +179,7 @@ public final class PersistitKeyValueSource implements ValueSource {
         ValueSourceHelper.checkType(akType, type);
         Object o = decode();
         if (o == null) {
-            throw new SourceIsNullException();
+            throw new ValueSourceIsNullException();
         }
         try {
             return castClass.cast(o);

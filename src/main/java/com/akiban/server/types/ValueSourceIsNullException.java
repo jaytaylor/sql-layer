@@ -15,13 +15,13 @@
 
 package com.akiban.server.types;
 
-public final class SourceIsNullException extends ValueSourceException {
-    public SourceIsNullException() {
+public final class ValueSourceIsNullException extends ValueSourceException {
+    public ValueSourceIsNullException() {
     }
 
     static void checkNotNull(ValueSource valueSource) {
         if (valueSource.isNull()) {
-            throw new SourceIsNullException();
+            throw new ValueSourceIsNullException();
         }
     }
 }

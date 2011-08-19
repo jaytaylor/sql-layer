@@ -240,7 +240,7 @@ abstract class AbstractRowDataValueSource implements ValueSource {
     private long getCheckedOffsetAndWidth() {
         long offsetAndWidth = getRawOffsetAndWidth();
         if (offsetAndWidth == 0) {
-            throw new SourceIsNullException();
+            throw new ValueSourceIsNullException();
         }
         return offsetAndWidth;
     }
