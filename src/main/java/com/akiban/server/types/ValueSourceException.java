@@ -15,12 +15,15 @@
 
 package com.akiban.server.types;
 
-public final class SourceConversionException extends RuntimeException {
-    public SourceConversionException(String message) {
+public class ValueSourceException extends RuntimeException {
+    ValueSourceException() {
+    }
+    
+    public ValueSourceException(String message) {
         super(message);
     }
 
-    public SourceConversionException(String message, Throwable cause) {
+    public ValueSourceException(String message, Throwable cause) {
         super(message, cause);
     }
 }

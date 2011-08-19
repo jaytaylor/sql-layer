@@ -15,7 +15,7 @@
 
 package com.akiban.server.types;
 
-public final class SourceIsNullException extends RuntimeException {
+public final class SourceIsNullException extends ValueSourceException {
     public SourceIsNullException() {
     }
 

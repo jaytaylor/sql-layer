@@ -30,7 +30,7 @@ public final class ConversionHelper {
             return; // always valid!
         }
         if (expected != actual) {
-            throw new IllegalConversionException(expected, actual);
+            throw new WrongValueGetException(expected, actual);
         }
     }
 
