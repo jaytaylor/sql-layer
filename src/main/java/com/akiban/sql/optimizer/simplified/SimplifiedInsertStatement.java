@@ -17,8 +17,6 @@ package com.akiban.sql.optimizer.simplified;
 
 import com.akiban.sql.parser.*;
 
-import com.akiban.sql.StandardException;
-
 import com.akiban.ais.model.Column;
 
 import java.util.*;
@@ -31,8 +29,7 @@ public class SimplifiedInsertStatement extends SimplifiedTableStatement
 {
     private List<Column> targetColumns;
     
-    public SimplifiedInsertStatement(InsertNode insert, Set<ValueNode> joinConditions)
-            throws StandardException {
+    public SimplifiedInsertStatement(InsertNode insert, Set<ValueNode> joinConditions) {
         super(insert, joinConditions);
 
         if (insert.getTargetColumnList() != null)
@@ -54,8 +51,7 @@ public class SimplifiedInsertStatement extends SimplifiedTableStatement
         return targetColumns;
     }
 
-    protected void fillTargetColumns(ResultColumnList rcl) 
-            throws StandardException {
+    protected void fillTargetColumns(ResultColumnList rcl) {
         targetColumns = new ArrayList<Column>(rcl.size());
         for (ResultColumn resultColumn : rcl) {
             Column column = getColumnReferenceColumn(resultColumn.getReference(),

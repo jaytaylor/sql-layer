@@ -21,9 +21,9 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.RowBase;
-import com.akiban.server.PersistitKeyConversionTarget;
-import com.akiban.server.types.ConversionSource;
-import com.akiban.server.types.Converters;
+import com.akiban.server.PersistitKeyValueTarget;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.conversion.Converters;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 
@@ -40,7 +40,7 @@ class PersistitFilterFactory
 
     public KeyFilter computeIndexFilter(Key key, Index index, IndexKeyRange keyRange, Bindings bindings)
     {
-        PersistitKeyConversionTarget target = new PersistitKeyConversionTarget();
+        PersistitKeyValueTarget target = new PersistitKeyValueTarget();
         target.attach(key);
 
         List<IndexColumn> indexColumns = index.getColumns();
@@ -64,7 +64,7 @@ class PersistitFilterFactory
     // For use by this class
 
     // Returns a KeyFilter term if the specified field of either the start or
-    private KeyFilter.Term computeKeyFilterTerm(PersistitKeyConversionTarget tuple, Key key, Column column, int position,
+    private KeyFilter.Term computeKeyFilterTerm(PersistitKeyValueTarget tuple, Key key, Column column, int position,
                                                 IndexKeyRange keyRange, Bindings bindings)
     {
         boolean hasStart = (keyRange.lo() != null) && keyRange.lo().columnSelector().includesColumn(position);
@@ -92,10 +92,10 @@ class PersistitFilterFactory
         return KeyFilter.termFromKeySegments(key, key, keyRange.loInclusive(), keyRange.hiInclusive());
     }
 
-    private void appendKeyField(PersistitKeyConversionTarget target, Column column, int position, RowBase row, Bindings bindings)
+    private void appendKeyField(PersistitKeyValueTarget target, Column column, int position, RowBase row, Bindings bindings)
     {
         target.expectingType(column);
-        ConversionSource source = row.conversionSource(position, bindings);
+        ValueSource source = row.bindSource(position, bindings);
         Converters.convert(source, target);
     }
 

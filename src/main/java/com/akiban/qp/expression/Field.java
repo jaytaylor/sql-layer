@@ -17,7 +17,7 @@ package com.akiban.qp.expression;
 
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.Row;
-import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ValueSource;
 
 class Field implements Expression
 {
@@ -26,8 +26,8 @@ class Field implements Expression
     @Override
     public Object evaluate(Row row, Bindings bindings)
     {
-        ConversionSource source = row.conversionSource(position, bindings);
-        return ExpressionConversionHelper.objectFromConversionSource(source);
+        ValueSource source = row.bindSource(position, bindings);
+        return ExpressionConversionHelper.objectFromValueSource(source);
     }
 
     @Override

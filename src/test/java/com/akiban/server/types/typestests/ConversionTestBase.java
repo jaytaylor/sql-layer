@@ -20,9 +20,9 @@ import com.akiban.junit.OnlyIf;
 import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ConversionSource;
-import com.akiban.server.types.ConversionTarget;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueTarget;
+import com.akiban.server.types.conversion.ConverterTestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -76,6 +76,7 @@ public abstract class ConversionTestBase {
     }
 
     protected ConversionTestBase(ConversionSuite<?> suite, int indexWithinSuite) {
+        ConverterTestUtils.setGlobalTimezone("UTC");
         this.suite = suite;
         this.indexWithinSuite = indexWithinSuite;
     }
@@ -107,12 +108,12 @@ public abstract class ConversionTestBase {
 
     private static class NoCheckLinkedConversion implements LinkedConversion<Object> {
         @Override
-        public ConversionSource linkedSource() {
+        public ValueSource linkedSource() {
             return delegate.linkedSource();
         }
 
         @Override
-        public ConversionTarget linkedTarget() {
+        public ValueTarget linkedTarget() {
             return delegate.linkedTarget();
         }
 
@@ -122,8 +123,8 @@ public abstract class ConversionTestBase {
         }
 
         @Override
-        public void setUp(AkType type) {
-            delegate.setUp(type);
+        public void setUp(TestCase<?> testCase) {
+            delegate.setUp(testCase);
         }
 
         @Override

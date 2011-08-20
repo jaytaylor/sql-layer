@@ -16,7 +16,6 @@
 package com.akiban.util;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 public final class WrappingByteSource implements ByteSource {
 
@@ -70,6 +69,14 @@ public final class WrappingByteSource implements ByteSource {
         return this;
     }
 
+    public WrappingByteSource() {
+        // nothing
+    }
+
+    public WrappingByteSource(byte[] bytes) {
+        wrap(bytes);
+    }
+
     // ByteSource interface
 
     @Override
@@ -101,14 +108,26 @@ public final class WrappingByteSource implements ByteSource {
 
         WrappingByteSource that = (WrappingByteSource) o;
 
-        return length == that.length && offset == that.offset && Arrays.equals(bytes, that.bytes);
+        if (length != that.length)
+            return false;
+        if (offset == that.offset && bytes == that.bytes)
+            return true;
+        for(int i=0; i < length; ++i) {
+            if (bytes[offset+i] != that.bytes[that.offset+i])
+                return false;
+        }
+        return true;
 
     }
 
     @Override
     public int hashCode() {
-        int result = Arrays.hashCode(bytes);
-        result = 31 * result + offset;
+        // this isn't the greatest hash, but it should be good enough.
+        // it relies on offset, length, and the first HASH_BYTES bytes (or as many bytes as are available).
+        int result = 1;
+        for (int i=0; i< length; ++i) {
+            result = 31 * result + bytes[offset+i];
+        }
         result = 31 * result + length;
         return result;
     }
@@ -118,4 +137,12 @@ public final class WrappingByteSource implements ByteSource {
     private byte[] bytes;
     private int offset;
     private int length;
+
+    // consts
+
+    /**
+     * The maximum number of bytes that will contribute to the object's hashCode
+     */
+    private final int HASH_BYTES = 5;
+
 }

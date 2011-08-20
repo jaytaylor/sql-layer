@@ -22,9 +22,9 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.PersistitKeyConversionSource;
+import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.store.PersistitKeyAppender;
-import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ValueSource;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
@@ -50,10 +50,10 @@ public class PersistitIndexRow extends AbstractRow
     }
 
     @Override
-    public ConversionSource conversionSource(int i, Bindings bindings) {
+    public ValueSource bindSource(int i, Bindings bindings) {
         IndexColumn column = index().getColumns().get(i);
-        conversionSource.attach(indexRow, column);
-        return conversionSource;
+        valueSource.attach(indexRow, column);
+        return valueSource;
     }
 
     @Override
@@ -81,7 +81,7 @@ public class PersistitIndexRow extends AbstractRow
         this.indexRowType = indexRowType;
         this.indexRow = adapter.persistit.getKey(adapter.session);
         this.hKey = new PersistitHKey(adapter, index().hKey());
-        this.conversionSource = new PersistitKeyConversionSource();
+        this.valueSource = new PersistitKeyValueSource();
     }
 
     // For use by this package
@@ -107,7 +107,7 @@ public class PersistitIndexRow extends AbstractRow
 
     private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
-    private final PersistitKeyConversionSource conversionSource;
+    private final PersistitKeyValueSource valueSource;
     private final Key indexRow;
     private PersistitHKey hKey;
 }

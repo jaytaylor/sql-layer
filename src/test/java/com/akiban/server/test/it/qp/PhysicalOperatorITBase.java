@@ -37,7 +37,7 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.server.types.ToObjectConversionTarget;
+import com.akiban.server.types.ToObjectValueTarget;
 import com.persistit.exception.PersistitException;
 import com.akiban.util.Strings;
 import org.junit.Before;
@@ -285,11 +285,11 @@ public class PhysicalOperatorITBase extends ITBase
 
     protected boolean equal(RowBase expected, RowBase actual)
     {
-        ToObjectConversionTarget target = new ToObjectConversionTarget();
+        ToObjectValueTarget target = new ToObjectValueTarget();
         boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
         for (int i = 0; equal && i < actual.rowType().nFields(); i++) {
-            Object expectedField = target.convertFromSource(expected.conversionSource(i, NO_BINDINGS));
-            Object actualField = target.convertFromSource(actual.conversionSource(i, NO_BINDINGS));
+            Object expectedField = target.convertFromSource(expected.bindSource(i, NO_BINDINGS));
+            Object actualField = target.convertFromSource(actual.bindSource(i, NO_BINDINGS));
             equal =
                 expectedField == actualField || // handles case in which both are null
                 expectedField != null && actualField != null && expectedField.equals(actualField);

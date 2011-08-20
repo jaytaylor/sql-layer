@@ -20,7 +20,7 @@ import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.RowValuesHolder;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ValueSource;
 import com.akiban.util.ArgumentValidation;
 
 public class TestRow extends AbstractRow
@@ -34,8 +34,8 @@ public class TestRow extends AbstractRow
     }
 
     @Override
-    public ConversionSource conversionSource(int i, Bindings bindings) {
-        return valuesHolder.conversionSourceAt(i);
+    public ValueSource bindSource(int i, Bindings bindings) {
+        return valuesHolder.valueSourceAt(i);
     }
 
     @Override

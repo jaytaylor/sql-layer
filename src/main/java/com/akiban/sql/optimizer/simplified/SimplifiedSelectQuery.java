@@ -15,15 +15,12 @@
 
 package com.akiban.sql.optimizer.simplified;
 
-import com.akiban.sql.optimizer.UnsupportedSQLException;
+import java.util.Set;
 
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.parser.*;
 
 import com.akiban.ais.model.Column;
-
-import com.akiban.sql.StandardException;
-
-import java.util.*;
 
 /**
  * An SQL SELECT statement turned into a simpler form for the interim
@@ -32,8 +29,7 @@ import java.util.*;
 public class SimplifiedSelectQuery extends SimplifiedQuery
 {
     // Turn the given SELECT statement into its simplified form.
-    public SimplifiedSelectQuery(CursorNode cursor, Set<ValueNode> joinConditions)
-            throws StandardException {
+    public SimplifiedSelectQuery(CursorNode cursor, Set<ValueNode> joinConditions) {
         super(cursor, joinConditions);
 
         if (cursor.getOrderByList() != null)
@@ -43,7 +39,7 @@ public class SimplifiedSelectQuery extends SimplifiedQuery
         if (cursor.getFetchFirstClause() != null)
             fillLimit(cursor.getFetchFirstClause());
         if (cursor.getUpdateMode() == CursorNode.UpdateMode.UPDATE)
-            throw new UnsupportedSQLException("Unsupported FOR UPDATE");
+            throw new UnsupportedSQLException("FOR UPDATE", cursor);
     }
 
     public String toString() {

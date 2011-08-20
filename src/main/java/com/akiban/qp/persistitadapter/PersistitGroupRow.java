@@ -19,12 +19,12 @@ import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.RowDataConversionSource;
+import com.akiban.server.rowdata.RowDataValueSource;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.encoding.EncodingException;
-import com.akiban.server.types.ConversionSource;
+import com.akiban.server.types.ValueSource;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
@@ -50,11 +50,11 @@ public class PersistitGroupRow extends AbstractRow
     }
 
     @Override
-    public ConversionSource conversionSource(int i, Bindings bindings) {
+    public ValueSource bindSource(int i, Bindings bindings) {
         FieldDef fieldDef = rowDef().getFieldDef(i);
         RowData rowData = rowData();
-        conversionSource.bind(fieldDef, rowData);
-        return conversionSource;
+        valueSource.bind(fieldDef, rowData);
+        return valueSource;
     }
 
     public PersistitHKey hKey()
@@ -165,7 +165,7 @@ public class PersistitGroupRow extends AbstractRow
 
     // Object state
 
-    private final RowDataConversionSource conversionSource = new RowDataConversionSource();
+    private final RowDataValueSource valueSource = new RowDataValueSource();
     private final PersistitAdapter adapter;
     private RowData rowData;
     private LegacyRowWrapper row;

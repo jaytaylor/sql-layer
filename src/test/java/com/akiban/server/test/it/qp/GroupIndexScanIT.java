@@ -28,8 +28,8 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.server.types.ConversionSource;
-import com.akiban.server.types.ToObjectConversionTarget;
+import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.types.ValueSource;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -132,11 +132,11 @@ public final class GroupIndexScanIT extends ITBase {
         Cursor cursor =  API.cursor(plan, adapter);
         cursor.open(UndefBindings.only());
         try {
-            ToObjectConversionTarget target = new ToObjectConversionTarget();
+            ToObjectValueTarget target = new ToObjectValueTarget();
             for (Row row = cursor.next(); row != null; row = cursor.next()) {
                 Object[] rowArray = new Object[row.rowType().nFields()];
                 for (int i=0; i < rowArray.length; ++i) {
-                    ConversionSource source = row.conversionSource(i, UndefBindings.only());
+                    ValueSource source = row.bindSource(i, UndefBindings.only());
                     rowArray[i] = target.convertFromSource(source);
                 }
                 actualResults.add(Arrays.asList(rowArray));

@@ -38,6 +38,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.EventTypes;
 import com.akiban.server.service.instrumentation.SessionTracer;
 
@@ -102,8 +103,7 @@ public class OperatorCompiler
         }
     }
 
-    public ResultColumnBase getResultColumn(SimpleSelectColumn selectColumn) 
-            throws StandardException {
+    public ResultColumnBase getResultColumn(SimpleSelectColumn selectColumn) {
         String name = selectColumn.getName();
         if (selectColumn.isNameDefaulted() && selectColumn.getExpression().isColumn())
             // Prefer the case stored in AIS to parser's standardized form.
@@ -190,7 +190,7 @@ public class OperatorCompiler
         }
     }
 
-    public Result compile(SessionTracer tracer, DMLStatementNode stmt, List<ParameterNode> params) throws StandardException {
+    public Result compile(SessionTracer tracer, DMLStatementNode stmt, List<ParameterNode> params) {
         switch (stmt.getNodeType()) {
         case NodeTypes.CURSOR_NODE:
             return compileSelect(tracer, (CursorNode)stmt, params);
@@ -201,27 +201,28 @@ public class OperatorCompiler
         case NodeTypes.DELETE_NODE:
             return compileDelete((DeleteNode)stmt, params);
         default:
-            throw new UnsupportedSQLException("Unsupported statement type: " + 
-                                              stmt.statementToString());
+            throw new UnsupportedSQLException (stmt.statementToString(), stmt);
         }
     }
 
-    protected DMLStatementNode bindAndGroup(DMLStatementNode stmt) 
-            throws StandardException {
-        binder.bind(stmt);
-        stmt = (DMLStatementNode)booleanNormalizer.normalize(stmt);
-        typeComputer.compute(stmt);
-        stmt = subqueryFlattener.flatten(stmt);
-        grouper.group(stmt);
-        return stmt;
+    protected DMLStatementNode bindAndGroup(DMLStatementNode stmt)  {
+        try {
+            binder.bind(stmt);
+            stmt = (DMLStatementNode)booleanNormalizer.normalize(stmt);
+            typeComputer.compute(stmt);
+            stmt = subqueryFlattener.flatten(stmt);
+            grouper.group(stmt);
+            return stmt;
+        } catch (StandardException ex) {
+            throw new com.akiban.server.error.ParseException ("", ex.getMessage(), stmt.toString());
+        }
     }
 
     enum ProductMethod { HKEY_ORDERED, BY_RUN };
 
     static final int INSERTION_SORT_MAX_LIMIT = 100;
 
-    public Result compileSelect(SessionTracer tracer, CursorNode cursor, List<ParameterNode> params) 
-            throws StandardException {
+    public Result compileSelect(SessionTracer tracer, CursorNode cursor, List<ParameterNode> params)  {
         try {
             // Get into standard form.
             tracer.beginEvent(EventTypes.BIND_AND_GROUP);
@@ -409,7 +410,8 @@ public class OperatorCompiler
                             throw new UnsupportedSQLException("Need " + productMethod + 
                                                               " product of " +
                                                               resultRowType + " and " +
-                                                              flr.getResultRowType());
+                                                              flr.getResultRowType(), 
+                                                              cursor);
                         }
                         resultRowType = resultOperator.rowType();
                         fll.mergeTables(flr);
@@ -444,7 +446,7 @@ public class OperatorCompiler
             !((index != null) && index.isSorting())) {
             int limit = squery.getLimit();
             if ((limit < 0) || (limit > INSERTION_SORT_MAX_LIMIT))
-                throw new UnsupportedSQLException("Unsupported ORDER BY: no suitable index on " + squery.getSortColumns());
+                throw new UnsupportedSQLException ("ORDER BY without index for " + squery.getSortColumns(), cursor);
             int nsorts = squery.getSortColumns().size();
             List<Expression> sortExpressions = new ArrayList<Expression>(nsorts);
             List<Boolean> sortDescendings = new ArrayList<Boolean>(nsorts);
@@ -491,8 +493,7 @@ public class OperatorCompiler
                           offset, limit);
     }
 
-    public Result compileUpdate(UpdateNode update, List<ParameterNode> params) 
-            throws StandardException {
+    public Result compileUpdate(UpdateNode update, List<ParameterNode> params)  {
         update = (UpdateNode)bindAndGroup(update);
         SimplifiedUpdateStatement supdate = 
             new SimplifiedUpdateStatement(update, grouper.getJoinConditions());
@@ -548,22 +549,18 @@ public class OperatorCompiler
         return new Result(updatePlan, getParameterTypes(params));
     }
 
-    public Result compileInsert(InsertNode insert, List<ParameterNode> params) 
-            throws StandardException {
+    public Result compileInsert(InsertNode insert, List<ParameterNode> params) {
         insert = (InsertNode)bindAndGroup(insert);
         SimplifiedInsertStatement sstmt = 
             new SimplifiedInsertStatement(insert, grouper.getJoinConditions());
-
-        throw new UnsupportedSQLException("No Insert operators yet");
+        throw new UnsupportedSQLException ("INSERT", insert);
     }
 
-    public Result compileDelete(DeleteNode delete, List<ParameterNode> params) 
-            throws StandardException {
+    public Result compileDelete(DeleteNode delete, List<ParameterNode> params)  {
         delete = (DeleteNode)bindAndGroup(delete);
         SimplifiedDeleteStatement sstmt = 
             new SimplifiedDeleteStatement(delete, grouper.getJoinConditions());
-
-        throw new UnsupportedSQLException("No Delete operators yet");
+        throw new UnsupportedSQLException ("DELETE", delete);
     }
 
     // A possible index.
@@ -818,7 +815,7 @@ public class OperatorCompiler
         }
 
         // Generate key range bounds.
-        public IndexKeyRange getIndexKeyRange() throws StandardException {
+        public IndexKeyRange getIndexKeyRange() {
             if ((equalityConditions == null) &&
                 (lowCondition == null) && (highCondition == null))
                 return new IndexKeyRange(null, false, null, false);
@@ -1068,8 +1065,7 @@ public class OperatorCompiler
     
     protected PhysicalOperator maybeAddTableConditions(PhysicalOperator resultOperator,
                                                        SimplifiedQuery squery, 
-                                                       Iterable<TableNode> tables)
-            throws StandardException {
+                                                       Iterable<TableNode> tables) {
         for (TableNode table : tables) {
             // isRequired() because a WHERE condition (as opposed to
             // an JOIN ON condition) is for the whole flattened

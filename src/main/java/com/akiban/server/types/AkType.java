@@ -16,38 +16,23 @@
 package com.akiban.server.types;
 
 public enum AkType {
-    DATE (ConvertersForDates.DATE),
-    DATETIME (ConvertersForDates.DATETIME),
-    DECIMAL (ConverterForBigDecimal.INSTANCE),
-    DOUBLE (ConverterForDouble.SIGNED),
-    FLOAT (ConverterForFloat.SIGNED),
-    INT (ConverterForLong.INT),
-    LONG (ConverterForLong.LONG),
-    VARCHAR (ConverterForString.STRING),
-    TEXT (ConverterForString.TEXT),
-    TIME (ConvertersForDates.TIME),
-    TIMESTAMP (ConvertersForDates.TIMESTAMP),
-    U_BIGINT (ConverterForBigInteger.INSTANCE),
-    U_DOUBLE (ConverterForDouble.UNSIGNED),
-    U_FLOAT (ConverterForFloat.UNSIGNED),
-    U_INT (ConverterForLong.U_INT),
-    VARBINARY (ConverterForVarBinary.INSTANCE),
-    YEAR (ConvertersForDates.YEAR),
-    NULL (null),
-    UNSUPPORTED (null),
-    ;
-
-
-    AbstractConverter converter() {
-        if (converter == null) {
-            throw new UnsupportedOperationException("no converter for " + name());
-        }
-        return converter;
-    }
-
-    AkType(AbstractConverter converter) {
-        this.converter = converter;
-    }
-
-    private final AbstractConverter converter;
+    DATE,
+    DATETIME,
+    DECIMAL,
+    DOUBLE,
+    FLOAT,
+    INT,
+    LONG,
+    VARCHAR,
+    TEXT,
+    TIME,
+    TIMESTAMP,
+    U_BIGINT,
+    U_DOUBLE,
+    U_FLOAT,
+    U_INT,
+    VARBINARY,
+    YEAR,
+    NULL,
+    UNSUPPORTED,
 }

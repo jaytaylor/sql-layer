@@ -17,23 +17,23 @@ package com.akiban.qp.expression;
 
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.Row;
-import com.akiban.server.types.ConversionSource;
-import com.akiban.server.types.FromObjectConversionSource;
-import com.akiban.server.types.ToObjectConversionTarget;
+import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.FromObjectValueSource;
 
 public final class ExpressionConversionHelper {
 
     // ExpressionConversionHelper interface
 
-    public static ConversionSource asConversionSource(Expression expression, Row row, Bindings bindings) {
+    public static ValueSource asValueSource(Expression expression, Row row, Bindings bindings) {
         Object evaluated = expression.evaluate(row, bindings);
-        FromObjectConversionSource source = new FromObjectConversionSource();
+        FromObjectValueSource source = new FromObjectValueSource();
         source.setReflectively(evaluated);
         return source;
     }
 
-    public static Object objectFromConversionSource(ConversionSource source) {
-        return new ToObjectConversionTarget().convertFromSource(source);
+    public static Object objectFromValueSource(ValueSource source) {
+        return new ToObjectValueTarget().convertFromSource(source);
     }
 
     private ExpressionConversionHelper() {}

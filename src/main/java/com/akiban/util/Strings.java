@@ -25,7 +25,9 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Formatter;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * String utils.
@@ -130,5 +132,45 @@ public abstract class Strings {
         printWriter.flush();
         stringWriter.flush();
         return stringWriter.toString().split("\\n");
+    }
+
+    public static String hex(byte[] bytes, int start, int length) {
+        ArgumentValidation.isGTE("start", start, 0);
+        ArgumentValidation.isGTE("length", length, 0);
+
+        StringBuilder sb = new StringBuilder("0x");
+        Formatter formatter = new Formatter(sb, Locale.US);
+        for (int i=start; i < start+length; ++i) {
+            formatter.format("%02X", bytes[i]);
+            if ((i-start) % 2 == 1) {
+                sb.append(' ');
+            }
+        }
+        return sb.toString().trim();
+    }
+
+    public static String hex(ByteSource byteSource) {
+        return hex(byteSource.byteArray(), byteSource.byteArrayOffset(), byteSource.byteArrayLength());
+    }
+
+    public static ByteSource parseHex(String string) {
+        if (!string.startsWith("0x")) {
+            throw new RuntimeException("not a hex string");
+        }
+
+        byte[] ret = new byte[ (string.length()-2) / 2 ];
+
+        int resultIndex = 0;
+        for (int strIndex=2; strIndex < string.length(); ++strIndex) {
+            final char strChar = string.charAt(strIndex);
+            if (!Character.isWhitespace(strChar)) {
+                int high = (Character.digit(strChar, 16)) << 4;
+                char lowChar = string.charAt(++strIndex);
+                int low = (Character.digit(lowChar, 16));
+                ret[resultIndex++] = (byte) (low + high);
+            }
+        }
+
+        return new WrappingByteSource().wrap(ret, 0, resultIndex);
     }
 }

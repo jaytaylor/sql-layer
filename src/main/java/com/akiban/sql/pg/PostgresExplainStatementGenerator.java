@@ -15,6 +15,8 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.error.UnableToExplainException;
+import com.akiban.server.error.UnsupportedExplainException;
 import com.akiban.sql.optimizer.OperatorCompiler;
 
 import com.akiban.sql.parser.DMLStatementNode;
@@ -22,8 +24,6 @@ import com.akiban.sql.parser.ExplainStatementNode;
 import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.ParameterNode;
-
-import com.akiban.sql.StandardException;
 
 import java.util.List;
 
@@ -40,15 +40,14 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
     public PostgresStatement generate(PostgresServerSession server,
                                       StatementNode stmt, 
                                       List<ParameterNode> params,
-                                      int[] paramTypes) 
-            throws StandardException {
+                                      int[] paramTypes)  {
         if (stmt.getNodeType() != NodeTypes.EXPLAIN_STATEMENT_NODE)
             return null;
         StatementNode innerStmt = ((ExplainStatementNode)stmt).getStatement();
         if (compiler == null)
-            throw new StandardException("Optimizer does not support EXPLAIN");
+            throw new UnsupportedExplainException();
         if (!(innerStmt instanceof DMLStatementNode))
-            throw new StandardException("Cannot EXPLAIN this statement");
+            throw new UnableToExplainException ();
         OperatorCompiler.Result result = compiler.compile(server.getSessionTracer(),
                                                           (DMLStatementNode)innerStmt,
                                                           params);

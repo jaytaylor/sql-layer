@@ -15,8 +15,7 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.StandardException;
-
+import com.akiban.server.error.UnsupportedParametersException;
 import java.io.IOException;
 
 /**
@@ -50,10 +49,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     @Override
     public PostgresStatement getBoundStatement(String[] parameters,
                                                boolean[] columnBinary, 
-                                               boolean defaultColumnBinary) 
-            throws StandardException {
+                                               boolean defaultColumnBinary)  {
         if (parameters != null)
-            throw new StandardException("Parameters not supported.");
+            throw new UnsupportedParametersException();
         return this;
     }
 
@@ -62,7 +60,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
 
     @Override
     public void sendDescription(PostgresServerSession server, boolean always) 
-            throws IOException, StandardException {
+            throws IOException {
         int ncols;
         String[] names;
         PostgresType[] types;
@@ -94,7 +92,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
 
     @Override
     public int execute(PostgresServerSession server, int maxrows)
-        throws IOException, StandardException {
+        throws IOException {
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
         switch (query) {

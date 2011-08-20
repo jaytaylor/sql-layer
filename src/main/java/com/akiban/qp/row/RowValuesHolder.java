@@ -15,9 +15,8 @@
 
 package com.akiban.qp.row;
 
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.server.types.ConversionSource;
-import com.akiban.server.types.FromObjectConversionSource;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.FromObjectValueSource;
 
 import java.util.Arrays;
 
@@ -28,7 +27,7 @@ public final class RowValuesHolder {
         return values[i];
     }
 
-    public ConversionSource conversionSourceAt(int i) {
+    public ValueSource valueSourceAt(int i) {
         return sources[i];
     }
 
@@ -48,10 +47,10 @@ public final class RowValuesHolder {
 
     // for use in this class
 
-    private static FromObjectConversionSource[] createSources(Object[] values) {
-        FromObjectConversionSource[] sources = new FromObjectConversionSource[values.length];
+    private static FromObjectValueSource[] createSources(Object[] values) {
+        FromObjectValueSource[] sources = new FromObjectValueSource[values.length];
         for (int i=0; i < values.length; ++i) {
-            FromObjectConversionSource source = new FromObjectConversionSource();
+            FromObjectValueSource source = new FromObjectValueSource();
             source.setReflectively(values[i]);
             sources[i] = source;
         }
@@ -61,5 +60,5 @@ public final class RowValuesHolder {
     // object state
 
     private final Object[] values;
-    private final FromObjectConversionSource[] sources;
+    private final FromObjectValueSource[] sources;
 }

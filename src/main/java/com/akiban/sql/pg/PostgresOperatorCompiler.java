@@ -33,6 +33,7 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.ais.model.Column;
 
+import com.akiban.server.error.ParseException;
 import com.akiban.server.service.EventTypes;
 
 import org.slf4j.Logger;
@@ -57,12 +58,15 @@ public class PostgresOperatorCompiler extends OperatorCompiler
 
     @Override
     public PostgresStatement parse(PostgresServerSession server,
-                                   String sql, int[] paramTypes) 
-            throws StandardException {
+                                   String sql, int[] paramTypes)  {
         // This very inefficient reparsing by every generator is actually avoided.
         SQLParser parser = server.getParser();
-        return generate(server, parser.parseStatement(sql), 
-                        parser.getParameterList(), paramTypes);
+        try {
+            return generate(server, parser.parseStatement(sql), 
+                            parser.getParameterList(), paramTypes);
+        } catch (StandardException e) {
+            throw new ParseException ("", e.getMessage(), sql);
+        }
     }
 
     @Override
@@ -84,8 +88,7 @@ public class PostgresOperatorCompiler extends OperatorCompiler
     }
 
     @Override
-    public ResultColumnBase getResultColumn(SimpleSelectColumn selectColumn) 
-            throws StandardException {
+    public ResultColumnBase getResultColumn(SimpleSelectColumn selectColumn)  {
         String name = selectColumn.getName();
         PostgresType type = null;
         SimpleExpression selectExpr = selectColumn.getExpression();
@@ -105,8 +108,7 @@ public class PostgresOperatorCompiler extends OperatorCompiler
     @Override
     public PostgresStatement generate(PostgresServerSession session,
                                       StatementNode stmt, 
-                                      List<ParameterNode> params, int[] paramTypes)
-            throws StandardException {
+                                      List<ParameterNode> params, int[] paramTypes) {
         if (!(stmt instanceof DMLStatementNode))
             return null;
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;

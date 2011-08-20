@@ -31,8 +31,8 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.Converters;
-import com.akiban.server.types.ToObjectConversionTarget;
+import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types.ToObjectValueTarget;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -65,9 +65,9 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
 
             @Override
             public Row evaluate(Row original, Bindings bindings) {
-                ToObjectConversionTarget target = new ToObjectConversionTarget();
+                ToObjectValueTarget target = new ToObjectValueTarget();
                 target.expectType(AkType.VARCHAR);
-                Object obj = Converters.convert(original.conversionSource(1, bindings), target).lastConvertedValue();
+                Object obj = Converters.convert(original.bindSource(1, bindings), target).lastConvertedValue();
                 String name = (String) obj; // TODO eventually use Expression for this
                 name = name.toUpperCase();
                 name = name + name;

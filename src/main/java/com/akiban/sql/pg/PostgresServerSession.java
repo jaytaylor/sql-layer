@@ -16,7 +16,6 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.service.dxl.DXLService;
-import com.akiban.sql.StandardException;
 
 import com.akiban.sql.parser.SQLParser;
 
@@ -81,12 +80,12 @@ public interface PostgresServerSession
     public StoreAdapter getStore();
 
     /** Begin a new transaction. */
-    public void beginTransaction() throws StandardException;
+    public void beginTransaction();
 
     /** Commit the current transaction. */
-    public void commitTransaction() throws StandardException;
+    public void commitTransaction();
 
     /** Rollback the current transaction. */
-    public void rollbackTransaction() throws StandardException;
+    public void rollbackTransaction();
 
 }

@@ -17,8 +17,6 @@ package com.akiban.sql.optimizer.simplified;
 
 import com.akiban.sql.parser.*;
 
-import com.akiban.sql.StandardException;
-
 import com.akiban.ais.model.Column;
 
 import java.util.*;
@@ -48,8 +46,7 @@ public class SimplifiedUpdateStatement extends SimplifiedTableStatement
 
     private List<UpdateColumn> updateColumns;
 
-    public SimplifiedUpdateStatement(UpdateNode update, Set<ValueNode> joinConditions)
-            throws StandardException {
+    public SimplifiedUpdateStatement(UpdateNode update, Set<ValueNode> joinConditions) {
         super(update, joinConditions);
     }
     
@@ -58,18 +55,16 @@ public class SimplifiedUpdateStatement extends SimplifiedTableStatement
     }
 
     @Override
-    protected void fillFromSelect(SelectNode select, Set<ValueNode> joinConditions) 
-            throws StandardException {
+    protected void fillFromSelect(SelectNode select, Set<ValueNode> joinConditions)  {
         super.fillFromSelect(select, joinConditions);
         fillUpdateColumns(select.getResultColumns());
     }
 
-    protected void fillUpdateColumns(ResultColumnList resultColumns)
-            throws StandardException {
+    protected void fillUpdateColumns(ResultColumnList resultColumns) {
         updateColumns = new ArrayList<UpdateColumn>(resultColumns.size());
         for (ResultColumn result : resultColumns) {
             Column column = getColumnReferenceColumn(result.getReference(),
-                                                     "Unsupported result column");
+                                                     "result column");
             SimpleExpression value = getSimpleExpression(result.getExpression());
             updateColumns.add(new UpdateColumn(column, value));
         }

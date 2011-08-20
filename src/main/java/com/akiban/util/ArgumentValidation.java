@@ -114,4 +114,13 @@ public final class ArgumentValidation {
             throw new IllegalArgumentException(message + " required " + requiredValue + " but got " + i);
         }
     }
+
+    public static void withinArray(String arrayDescription, byte[] array, String offsetDescription, int offset) {
+        if (offset < 0 || offset >= array.length) {
+            throw new IllegalArgumentException(
+                    offsetDescription + " (" + offset + ") not within bounds of array "
+                            + arrayDescription + " (length=" + array.length+')'
+            );
+        }
+    }
 }

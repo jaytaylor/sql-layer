@@ -15,8 +15,8 @@
 
 package com.akiban.server.rowdata;
 
-import com.akiban.server.types.Converters;
-import com.akiban.server.types.ToObjectConversionTarget;
+import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types.ToObjectValueTarget;
 
 public final class RowDataExtractor {
 
@@ -27,6 +27,6 @@ public final class RowDataExtractor {
     }
 
 
-    private final RowDataConversionSource source = new RowDataConversionSource();
-    private final ToObjectConversionTarget target = new ToObjectConversionTarget();
+    private final RowDataValueSource source = new RowDataValueSource();
+    private final ToObjectValueTarget target = new ToObjectValueTarget();
 }

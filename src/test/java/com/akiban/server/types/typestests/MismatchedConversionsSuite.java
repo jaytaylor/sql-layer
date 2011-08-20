@@ -15,8 +15,8 @@
 package com.akiban.server.types.typestests;
 
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ConversionSource;
-import com.akiban.server.types.ConversionTarget;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueTarget;
 import com.akiban.util.WrappingByteSource;
 
 import java.math.BigDecimal;
@@ -86,20 +86,20 @@ public final class MismatchedConversionsSuite {
         
         map.put(DATE, TestCase.forDate(0, NO_STATE));
         map.put(DATETIME, TestCase.forDateTime(0, NO_STATE));
-        map.put(DECIMAL, TestCase.forDecimal(BigDecimal.ONE, NO_STATE));
+        map.put(DECIMAL, TestCase.forDecimal(BigDecimal.ONE, 1, 0, NO_STATE));
         map.put(DOUBLE, TestCase.forDouble(0, NO_STATE));
         map.put(FLOAT, TestCase.forFloat(0, NO_STATE));
         map.put(INT, TestCase.forInt(0, NO_STATE));
         map.put(LONG, TestCase.forLong(0, NO_STATE));
-        map.put(VARCHAR, TestCase.forString("world", NO_STATE));
-        map.put(TEXT, TestCase.forText("world", NO_STATE));
+        map.put(VARCHAR, TestCase.forString("world", 5, "US-ASCII", NO_STATE));
+        map.put(TEXT, TestCase.forText("world", 5, "US-ASCII", NO_STATE));
         map.put(TIME, TestCase.forTime(0, NO_STATE));
         map.put(TIMESTAMP, TestCase.forTimestamp(0, NO_STATE));
         map.put(U_BIGINT, TestCase.forUBigInt(BigInteger.TEN, NO_STATE));
         map.put(U_DOUBLE, TestCase.forUDouble(0, NO_STATE));
         map.put(U_FLOAT, TestCase.forUFloat(0, NO_STATE));
         map.put(U_INT, TestCase.forUInt(0, NO_STATE));
-        map.put(VARBINARY, TestCase.forVarBinary(new WrappingByteSource().wrap(new byte[0]), NO_STATE));
+        map.put(VARBINARY, TestCase.forVarBinary(new WrappingByteSource().wrap(new byte[0]), 0, NO_STATE));
         map.put(YEAR, TestCase.forYear(0, NO_STATE));
 
         Set<AkType> allValidAkTypes = EnumSet.allOf(AkType.class);
@@ -147,18 +147,18 @@ public final class MismatchedConversionsSuite {
 
     static class DelegateLinkedConversion implements LinkedConversion<Switcher> {
         @Override
-        public ConversionSource linkedSource() {
+        public ValueSource linkedSource() {
             return delegate.linkedSource();
         }
 
         @Override
-        public ConversionTarget linkedTarget() {
+        public ValueTarget linkedTarget() {
             return delegate.linkedTarget();
         }
 
         @Override
-        public void setUp(AkType type) {
-            delegate.setUp(type);
+        public void setUp(TestCase<?> testCase) {
+            delegate.setUp(testCase);
         }
 
         @Override

@@ -17,8 +17,6 @@ package com.akiban.sql.optimizer.simplified;
 
 import com.akiban.sql.parser.*;
 
-import com.akiban.sql.StandardException;
-
 import java.util.*;
 
 /**
@@ -28,8 +26,7 @@ import java.util.*;
 public class SimplifiedDeleteStatement extends SimplifiedTableStatement
 {
 
-    public SimplifiedDeleteStatement(DeleteNode delete, Set<ValueNode> joinConditions)
-            throws StandardException {
+    public SimplifiedDeleteStatement(DeleteNode delete, Set<ValueNode> joinConditions) {
         super(delete, joinConditions);
     }
 
