@@ -25,8 +25,9 @@ public class JoinJoinNode extends BaseJoinNode
 {
     private BaseJoinNode left, right;
     private JoinType joinType;
-    private Join groupJoin;
     private List<BooleanExpression> joinConditions;
+    private Join groupJoin;
+    private BooleanExpression groupJoinCondition;
 
     public JoinJoinNode(BaseJoinNode left, BaseJoinNode right,
                         JoinType joinType) {
@@ -56,6 +57,13 @@ public class JoinJoinNode extends BaseJoinNode
         return (joinType == JoinType.INNER_JOIN);
     }
 
+    public List<BooleanExpression> getJoinConditions() {
+        return joinConditions;
+    }
+    public void setJoinConditions(List<BooleanExpression> joinConditions) {
+        this.joinConditions = joinConditions;
+    }
+
     public Join getGroupJoin() {
         return groupJoin;
     }
@@ -63,11 +71,11 @@ public class JoinJoinNode extends BaseJoinNode
         this.groupJoin = groupJoin;
     }
 
-    public List<BooleanExpression> getJoinConditions() {
-        return joinConditions;
+    public BooleanExpression getGroupJoinCondition() {
+        return groupJoinCondition;
     }
-    public void setJoinConditions(List<BooleanExpression> joinConditions) {
-        this.joinConditions = joinConditions;
+    public void setGroupJoinCondition(BooleanExpression groupJoinCondition) {
+        this.groupJoinCondition = groupJoinCondition;
     }
 
     /** Reverse operands and outer join direction if necessary. */
