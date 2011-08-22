@@ -228,6 +228,9 @@ abstract class ConvertersForDates extends LongConverter {
         switch (type) {
         case TEXT:      return doParse(source.getText());
         case VARCHAR:   return doParse(source.getString());
+        case INT:       return source.getInt();
+        case U_INT:     return source.getUInt();
+        case LONG:      return source.getLong();
         default: throw unsupportedConversion(type);
         }
     }

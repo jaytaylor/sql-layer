@@ -143,19 +143,24 @@ public final class Converters {
                 VARCHAR
         );
         builder.legalConversions(DATE,
-                VARCHAR
+                VARCHAR,
+                LONG
         );
         builder.legalConversions(DATETIME,
-                VARCHAR
+                VARCHAR,
+                LONG
         );
         builder.legalConversions(TIME,
-                VARCHAR
+                VARCHAR,
+                LONG
         );
         builder.legalConversions(TIMESTAMP,
-                VARCHAR
+                VARCHAR,
+                LONG
         );
         builder.legalConversions(YEAR,
-                VARCHAR
+                VARCHAR,
+                LONG
         );
 
         return builder.result();
