@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer.query;
 
+/** A statement that modifies the database and returns row counts.
+ */
 public class BaseUpdateStatement extends BaseStatement
 {
     private TableReference targetTable;

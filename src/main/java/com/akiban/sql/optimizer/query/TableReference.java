@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.query;
 
+/* TODO: Figure this out. */
 public class TableReference
 {
 }

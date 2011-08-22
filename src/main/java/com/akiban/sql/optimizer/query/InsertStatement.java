@@ -19,6 +19,7 @@ import com.akiban.ais.model.Column;
 
 import java.util.*;
 
+/** A SQL INSERT statement. */
 public class InsertStatement extends BaseUpdateStatement
 {
     private List<Column> targetColumns;

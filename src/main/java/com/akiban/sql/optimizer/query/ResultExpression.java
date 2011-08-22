@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.query;
 
+/** An expression in a SELECT list. */
 public class ResultExpression
 {
     private BaseExpression expression;

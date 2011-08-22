@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.query;
 
+/** A node in the tree of tables and their joins. */
 public abstract class BaseJoinNode 
 {
     public boolean isTable() {

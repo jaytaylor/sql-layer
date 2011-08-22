@@ -20,6 +20,8 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.expression.Expression;
 
+/** Cast the result of expression evaluation to a given type.
+ */
 public class CastExpression extends BaseExpression 
 {
     private BaseExpression inner;

@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer.query;
 
+/** A key expression in a GROUP BY clause.
+ */
 public class GroupByExpression
 {
     private BaseExpression expression;

@@ -22,6 +22,9 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.Comparison;
 
+/** A condition involving rows from a subquery.
+ * May also include a [in]equality condition with the outer query.
+ */
 public class SubqueryCondition extends BooleanExpression
 {
     public static enum Kind {

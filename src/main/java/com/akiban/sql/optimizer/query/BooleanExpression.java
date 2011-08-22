@@ -17,6 +17,9 @@ package com.akiban.sql.optimizer.query;
 
 import com.akiban.sql.types.DataTypeDescriptor;
 
+/** An expression returning a Boolean answer.
+ * Used in conditions of various sorts.
+ */
 public abstract class BooleanExpression extends BaseExpression 
 {
     protected BooleanExpression(DataTypeDescriptor type) {

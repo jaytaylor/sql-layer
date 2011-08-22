@@ -17,6 +17,9 @@ package com.akiban.sql.optimizer.query;
 
 import java.util.List;
 
+/** A join node explicitly enumerating rows.
+ * From VALUES or IN.
+ */
 public class ExpressionsJoinNode extends BaseJoinNode
 {
     private List<List<BaseExpression>> expressions;

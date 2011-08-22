@@ -20,6 +20,8 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.expression.Expression;
 
+/** An expression for ordinary binary arithmetic.
+ */
 public class ArithmeticExpression extends BaseExpression 
 {
     public static enum Operation {

@@ -23,6 +23,8 @@ import com.akiban.qp.expression.API;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.Comparison;
 
+/** A binary comparison (equality / inequality) between two expressions.
+ */
 public class ComparisonExpression extends BooleanExpression 
 {
     private BaseExpression left, right;

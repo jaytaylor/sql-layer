@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.query;
 
 import java.util.*;
 
+/** A SQL UPDATE statement. */
 public class UpdateStatement extends BaseUpdateStatement
 {
     private List<UpdateColumn> updateColumns;

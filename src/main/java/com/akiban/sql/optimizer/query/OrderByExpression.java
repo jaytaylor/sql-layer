@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.query;
 
+/** A key expression in an ORDER BY clause. */
 public class OrderByExpression
 {
     private BaseExpression expression;

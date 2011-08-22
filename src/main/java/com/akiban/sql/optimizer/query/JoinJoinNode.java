@@ -20,7 +20,7 @@ import com.akiban.qp.physicaloperator.API.JoinType;
 
 import java.util.*;
 
-// A join between two tables / subjoins.
+/** A join between two tables / subjoins. */
 public class JoinJoinNode extends BaseJoinNode 
 {
     private BaseJoinNode left, right;

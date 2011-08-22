@@ -23,6 +23,8 @@ import com.akiban.qp.expression.Expression;
 
 import java.util.List;
 
+/** A call to a function.
+ */
 public class FunctionCallExpression extends BaseExpression 
 {
     private BaseExpression operand;

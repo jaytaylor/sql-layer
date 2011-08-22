@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer.query;
 
+/** A top-level (executable) query or statement.
+ */
 public class BaseStatement
 {
     private Query query;

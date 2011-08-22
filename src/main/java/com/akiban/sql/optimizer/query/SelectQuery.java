@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.query;
 
+/** A top-level SQL SELECT statement. */
 public class SelectQuery extends BaseStatement
 {
     public SelectQuery(Query query) {

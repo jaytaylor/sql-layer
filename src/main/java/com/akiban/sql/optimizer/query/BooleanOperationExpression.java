@@ -21,6 +21,8 @@ import com.akiban.qp.expression.Expression;
 
 import com.akiban.sql.StandardException;
 
+/** An operation on boolean expressions.
+ */
 public class BooleanOperationExpression extends BooleanExpression
 {
     public static enum Operation {

@@ -21,6 +21,9 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.expression.Expression;
 
+/** An expression evaluated by a subquery.
+ * TODO: Think about nested result sets.
+ */
 public class SubqueryExpression extends BaseExpression 
 {
     private Query subquery;

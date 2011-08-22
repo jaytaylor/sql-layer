@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer.query;
 
+/** A SQL DELETE statement.
+ */
 public class DeleteStatement extends BaseUpdateStatement
 {
     public DeleteStatement(Query query, TableReference targetTable) {

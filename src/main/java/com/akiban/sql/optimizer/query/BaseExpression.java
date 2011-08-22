@@ -21,7 +21,9 @@ import com.akiban.sql.StandardException;
 
 import com.akiban.sql.types.DataTypeDescriptor;
 
-/** An evaluated value. */
+/** An evaluated value. 
+ * Usually part of a larger expression tree.
+*/
 public abstract class BaseExpression 
 {
     // TODO: Maybe AkType here once that's stable.

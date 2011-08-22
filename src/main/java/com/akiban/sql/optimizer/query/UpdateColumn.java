@@ -17,6 +17,8 @@ package com.akiban.sql.optimizer.query;
 
 import com.akiban.ais.model.Column;
 
+/** One of the SET clauses of an UPDATE statement.
+ */
 public class UpdateColumn {
     private Column column;
     private BaseExpression value;

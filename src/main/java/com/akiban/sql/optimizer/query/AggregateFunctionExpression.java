@@ -20,6 +20,8 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.expression.Expression;
 
+/** An expression representing the result (total) of an aggregate function.
+ */
 public class AggregateFunctionExpression extends BaseExpression 
 {
     public static enum Operation {
