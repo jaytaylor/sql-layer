@@ -24,6 +24,7 @@ import com.akiban.server.Quote;
 import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueSourceIsNullException;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
@@ -57,18 +58,31 @@ public final class AllowedConversionsTest {
         Converters.convert(source, target);
     }
 
-    @Test(expected=InconvertibleTypesException.class) @OnlyIfNot("conversionAllowed()")
+    @Test(expected=InconvertibleTypesException.class) @OnlyIf("conversionShouldFail()")
     public void conversionFails() {
         Converters.convert(source, target);
     }
 
+    @Test(expected = ValueSourceIsNullException.class) @OnlyIf("valueSourceIsNull()")
+    public void convertingFromNull() {
+        Converters.convert(source, target);
+    }
+
     public AllowedConversionsTest(AkType sourceType, AkType targetType) {
-        this.source = new AlwaysWorkingSource(sourceType);
+        this.source = new AlwaysWorkingSource(sourceType, targetType);
         this.target = new BlackHoleTarget(targetType);
     }
 
     public boolean conversionAllowed() {
         return Converters.isConversionAllowed(source.getConversionType(), target.getConversionType());
+    }
+
+    public boolean valueSourceIsNull() {
+        return source.isNull();
+    }
+
+    public boolean conversionShouldFail() {
+        return !conversionAllowed() && !valueSourceIsNull();
     }
 
     private final ValueSource source;
@@ -160,17 +174,17 @@ public final class AllowedConversionsTest {
 
         @Override
         public String getString() {
-            return "ski";
+            return stringValue;
         }
 
         @Override
         public String getText() {
-            return "snowboard";
+            return stringValue;
         }
 
         @Override
         public void appendAsString(AkibanAppender appender, Quote quote) {
-            appender.append("ski");
+            appender.append(stringValue);
         }
 
         @Override
@@ -178,11 +192,43 @@ public final class AllowedConversionsTest {
             return akType;
         }
 
-        private AlwaysWorkingSource(AkType akType) {
+        private AlwaysWorkingSource(AkType akType, AkType targetType) {
             this.akType = akType;
+            switch (targetType) {
+            case DATE:
+                stringValue = "2001-01-01";
+                break;
+            case DATETIME:
+                stringValue = "2002-02-02 22:22:22";
+                break;
+            case TIME:
+                stringValue = "33:33:33";
+                break;
+            case TIMESTAMP:
+                stringValue = "2003-03-03 33:33:33";
+                break;
+            case YEAR:
+                stringValue = "2004";
+                break;
+            case DECIMAL:
+            case DOUBLE:
+            case FLOAT:
+            case INT:
+            case LONG:
+            case U_BIGINT:
+            case U_DOUBLE:
+            case U_FLOAT:
+            case U_INT:
+                stringValue = "1234";
+                break;
+            default:
+                stringValue = null;
+                break;
+            }
         }
 
         private final AkType akType;
+        private final String stringValue;
     }
     
     private static class BlackHoleTarget implements ValueTarget {
