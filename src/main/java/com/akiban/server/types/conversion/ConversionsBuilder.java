@@ -63,7 +63,8 @@ final class ConversionsBuilder {
         Collections.addAll(this.disallowed, disallowed);
         // identities
         for (AkType type : AkType.values()) {
-            result.put(type, EnumSet.of(type));
+            if (!this.disallowed.contains(type))
+                result.put(type, EnumSet.of(type));
         }
     }
 

@@ -17,6 +17,7 @@ package com.akiban.server.types.conversion;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueSourceIsNullException;
 import com.akiban.server.types.ValueTarget;
 
 import java.text.DateFormat;
@@ -218,6 +219,8 @@ abstract class ConvertersForDates extends LongConverter {
 
     @Override
     public long getLong(ValueSource source) {
+        if (source.isNull())
+            throw new ValueSourceIsNullException();
         AkType type = source.getConversionType();
         if (type == targetConversionType()) {
             return doGetLong(source);

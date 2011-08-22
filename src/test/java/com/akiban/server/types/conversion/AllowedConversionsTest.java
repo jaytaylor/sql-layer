@@ -24,7 +24,7 @@ import com.akiban.server.Quote;
 import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueSourceIsNullException;
+import com.akiban.server.types.ValueSourceHelper;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
@@ -58,13 +58,8 @@ public final class AllowedConversionsTest {
         Converters.convert(source, target);
     }
 
-    @Test(expected=InconvertibleTypesException.class) @OnlyIf("conversionShouldFail()")
+    @Test(expected=InconvertibleTypesException.class) @OnlyIfNot("conversionAllowed()")
     public void conversionFails() {
-        Converters.convert(source, target);
-    }
-
-    @Test(expected = ValueSourceIsNullException.class) @OnlyIf("valueSourceIsNull()")
-    public void convertingFromNull() {
         Converters.convert(source, target);
     }
 
@@ -75,14 +70,6 @@ public final class AllowedConversionsTest {
 
     public boolean conversionAllowed() {
         return Converters.isConversionAllowed(source.getConversionType(), target.getConversionType());
-    }
-
-    public boolean valueSourceIsNull() {
-        return source.isNull();
-    }
-
-    public boolean conversionShouldFail() {
-        return !conversionAllowed() && !valueSourceIsNull();
     }
 
     private final ValueSource source;
@@ -99,92 +86,109 @@ public final class AllowedConversionsTest {
 
         @Override
         public BigDecimal getDecimal() {
+            checkType(AkType.DECIMAL);
             return BigDecimal.ONE;
         }
 
         @Override
         public BigInteger getUBigInt() {
+            checkType(AkType.U_BIGINT);
             return BigInteger.ONE;
         }
 
         @Override
         public ByteSource getVarBinary() {
+            checkType(AkType.VARBINARY);
             return new WrappingByteSource(new byte[1]);
         }
 
         @Override
         public double getDouble() {
+            checkType(AkType.DOUBLE);
             return 0;
         }
 
         @Override
         public double getUDouble() {
+            checkType(AkType.U_DOUBLE);
             return 0;
         }
 
         @Override
         public float getFloat() {
+            checkType(AkType.FLOAT);
             return 0;
         }
 
         @Override
         public float getUFloat() {
+            checkType(AkType.U_FLOAT);
             return 0;
         }
 
         @Override
         public long getDate() {
+            checkType(AkType.DATE);
             return 0;
         }
 
         @Override
         public long getDateTime() {
+            checkType(AkType.DATETIME);
             return 0;
         }
 
         @Override
         public long getInt() {
+            checkType(AkType.INT);
             return 0;
         }
 
         @Override
         public long getLong() {
+            checkType(AkType.LONG);
             return 0;
         }
 
         @Override
         public long getTime() {
+            checkType(AkType.TIME);
             return 0;
         }
 
         @Override
         public long getTimestamp() {
+            checkType(AkType.TIMESTAMP);
             return 0;
         }
 
         @Override
         public long getUInt() {
+            checkType(AkType.U_INT);
             return 0;
         }
 
         @Override
         public long getYear() {
+            checkType(AkType.YEAR);
             return 0;
         }
 
         @Override
         public String getString() {
+            checkType(AkType.VARCHAR);
             return stringValue;
         }
 
         @Override
         public String getText() {
+            checkType(AkType.TEXT);
             return stringValue;
         }
 
         @Override
         public void appendAsString(AkibanAppender appender, Quote quote) {
-            appender.append(stringValue);
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -225,6 +229,10 @@ public final class AllowedConversionsTest {
                 stringValue = null;
                 break;
             }
+        }
+
+        private void checkType(AkType expected) {
+            ValueSourceHelper.checkType(expected, akType);
         }
 
         private final AkType akType;

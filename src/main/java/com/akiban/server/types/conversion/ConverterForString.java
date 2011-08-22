@@ -60,10 +60,10 @@ abstract class ConverterForString extends ObjectConverter<String> {
         case FLOAT:     return Float.toString(source.getFloat());
         case INT:       return Long.toString(source.getInt());
         case LONG:      return Long.toString(source.getLong());
-        case U_INT:     return Long.toString(source.getLong());
+        case U_INT:     return Long.toString(source.getUInt());
         case U_DOUBLE:  return Double.toString(source.getUDouble());
         case U_FLOAT:   return Float.toString(source.getUFloat());
-        case U_BIGINT:  return String.valueOf(source.getDecimal());
+        case U_BIGINT:  return String.valueOf(source.getUBigInt());
         case TIME:      return ConvertersForDates.TIME.asString(source.getTime());
         case TIMESTAMP: return ConvertersForDates.TIMESTAMP.asString(source.getTimestamp());
         case YEAR:      return ConvertersForDates.YEAR.asString(source.getYear());
@@ -72,7 +72,7 @@ abstract class ConverterForString extends ObjectConverter<String> {
         case DECIMAL:   return String.valueOf(source.getDecimal());
         case VARBINARY: return String.valueOf(source.getVarBinary());
         default:
-            return "UNSUPPORTED CONVERSION TO " + type;
+            throw unsupportedConversion(type);
         }
     }
 

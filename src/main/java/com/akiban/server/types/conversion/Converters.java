@@ -59,7 +59,8 @@ public final class Converters {
     }
 
     public static boolean isConversionAllowed(AkType sourceType, AkType targetType) {
-        if (sourceType.equals(targetType)) {
+        // NULL -> * is always allowed, UNSUPPORTED -> * is always disallowed, else A -> A is allowed
+        if (sourceType == AkType.NULL || (sourceType != AkType.UNSUPPORTED && sourceType.equals(targetType))) {
             return true;
         }
         Set<AkType> allowedTargets = readOnlyLegalConversions.get(sourceType);
