@@ -24,7 +24,6 @@ import com.akiban.server.Quote;
 import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueSourceHelper;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
@@ -40,7 +39,8 @@ import java.util.Collection;
 public final class AllowedConversionsTest {
 
     @NamedParameterizedRunner.TestParameters
-    public static Collection<Parameterization> params() {
+    public static Collection<Parameterization> params() throws ClassNotFoundException {
+        Class.forName(Converters.class.getCanonicalName()); // load the converters class (in case there are errors)
         ParameterizationBuilder builder = new ParameterizationBuilder();
 
         for (AkType source : AkType.values()) {

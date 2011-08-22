@@ -20,10 +20,12 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 
+import java.util.Collection;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
+
+import static com.akiban.server.types.AkType.*;
 
 public final class Converters {
 
@@ -41,7 +43,7 @@ public final class Converters {
             target.putNull();
         } else {
             AkType conversionType = target.getConversionType();
-            if (conversionType == null || conversionType == AkType.UNSUPPORTED || conversionType == AkType.NULL) {
+            if (conversionType == null || conversionType == UNSUPPORTED || conversionType == NULL) {
                 throw new InconvertibleTypesException(source.getConversionType(), conversionType);
             }
             get(conversionType).convert(source, target);
@@ -72,41 +74,98 @@ public final class Converters {
 
     private static Map<AkType,AbstractConverter> createConvertersMap() {
         Map<AkType,AbstractConverter> result = new EnumMap<AkType, AbstractConverter>(AkType.class);
-        result.put(AkType.DATE, ConvertersForDates.DATE);
-        result.put(AkType.DATETIME, ConvertersForDates.DATETIME);
-        result.put(AkType.DECIMAL, ConverterForBigDecimal.INSTANCE);
-        result.put(AkType.DOUBLE, ConverterForDouble.SIGNED);
-        result.put(AkType.FLOAT, ConverterForFloat.SIGNED);
-        result.put(AkType.INT, ConverterForLong.INT);
-        result.put(AkType.LONG, ConverterForLong.LONG);
-        result.put(AkType.VARCHAR, ConverterForString.STRING);
-        result.put(AkType.TEXT, ConverterForString.TEXT);
-        result.put(AkType.TIME, ConvertersForDates.TIME);
-        result.put(AkType.TIMESTAMP, ConvertersForDates.TIMESTAMP);
-        result.put(AkType.U_BIGINT, ConverterForBigInteger.INSTANCE);
-        result.put(AkType.U_DOUBLE, ConverterForDouble.UNSIGNED);
-        result.put(AkType.U_FLOAT, ConverterForFloat.UNSIGNED);
-        result.put(AkType.U_INT, ConverterForLong.U_INT);
-        result.put(AkType.VARBINARY, ConverterForVarBinary.INSTANCE);
-        result.put(AkType.YEAR, ConvertersForDates.YEAR);
+        result.put(DATE, ConvertersForDates.DATE);
+        result.put(DATETIME, ConvertersForDates.DATETIME);
+        result.put(DECIMAL, ConverterForBigDecimal.INSTANCE);
+        result.put(DOUBLE, ConverterForDouble.SIGNED);
+        result.put(FLOAT, ConverterForFloat.SIGNED);
+        result.put(INT, ConverterForLong.INT);
+        result.put(LONG, ConverterForLong.LONG);
+        result.put(VARCHAR, ConverterForString.STRING);
+        result.put(TEXT, ConverterForString.TEXT);
+        result.put(TIME, ConvertersForDates.TIME);
+        result.put(TIMESTAMP, ConvertersForDates.TIMESTAMP);
+        result.put(U_BIGINT, ConverterForBigInteger.INSTANCE);
+        result.put(U_DOUBLE, ConverterForDouble.UNSIGNED);
+        result.put(U_FLOAT, ConverterForFloat.UNSIGNED);
+        result.put(U_INT, ConverterForLong.U_INT);
+        result.put(VARBINARY, ConverterForVarBinary.INSTANCE);
+        result.put(YEAR, ConvertersForDates.YEAR);
         return result;
     }
 
     private static Map<AkType,Set<AkType>> createLegalConversionsMap() {
-        Map<AkType,Set<AkType>> result = new EnumMap<AkType, Set<AkType>>(AkType.class);
+        
+        ConversionsBuilder builder = new ConversionsBuilder(NULL, UNSUPPORTED);
+        
+        builder.alias(VARCHAR, TEXT);
+        builder.alias(DOUBLE, U_DOUBLE);
+        builder.alias(FLOAT, U_FLOAT);
+        builder.alias(LONG, INT);
+        builder.alias(LONG, U_INT);
+        
+        builder.legalConversions(VARCHAR,
+                DOUBLE,
+                FLOAT,
+                LONG,
+                U_BIGINT,
+                TIME,
+                TIMESTAMP,
+                YEAR,
+                DATE,
+                DATETIME,
+                DECIMAL,
+                VARBINARY
+        );
+        builder.legalConversions(U_BIGINT,
+                VARCHAR
+        );
+        builder.legalConversions(DECIMAL,
+                VARCHAR,
+                LONG,
+                FLOAT,
+                DOUBLE
+        );
+        builder.legalConversions(DOUBLE,
+                FLOAT,
+                DECIMAL,
+                LONG,
+                VARCHAR
+        );
+        builder.legalConversions(FLOAT,
+                DOUBLE,
+                DECIMAL,
+                LONG,
+                VARCHAR
+        );
+        builder.legalConversions(LONG,
+                VARCHAR
+        );
+        builder.legalConversions(DATE,
+                VARCHAR
+        );
+        builder.legalConversions(DATETIME,
+                VARCHAR
+        );
+        builder.legalConversions(TIME,
+                VARCHAR
+        );
+        builder.legalConversions(TIMESTAMP,
+                VARCHAR
+        );
+        builder.legalConversions(YEAR,
+                VARCHAR
+        );
 
-        return result;
+        return builder.result();
     }
 
-    private void legalConversion(Map<AkType,Set<AkType>> addTo, AkType sourceType, AkType targetType) {
-        Set<AkType> previousTargets = addTo.get(sourceType);
-        if (previousTargets == null) {
-            addTo.put(sourceType, EnumSet.of(targetType));
+    private static <T> boolean hasIntersection(Collection<? extends T> one, Collection<? extends T> two) {
+        for (T elem : one) {
+            if (two.contains(elem))
+                return true;
         }
-        else {
-            boolean added = previousTargets.add(targetType);
-            assert added : "added twice: " + targetType;
-        }
+        return false;
     }
     
     private Converters() {}
