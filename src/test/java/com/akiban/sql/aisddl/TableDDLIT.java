@@ -28,12 +28,19 @@ import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.sql.pg.PostgresServerITBase;
+import org.postgresql.util.PSQLException;
 
 
 public class TableDDLIT extends PostgresServerITBase {
 
     private static final String DROP_T1 = "DROP TABLE test.t1";
     private static final String DROP_T2 = "DROP TABLE test.t2";
+    
+    @Test (expected=PSQLException.class)
+    public void testDropFail() throws Exception {
+        String sql = "DROP TABLE test.not_here";
+        connection.createStatement().execute(sql);
+    }
     
     @Test
     public void testCreateSimple() throws Exception {
@@ -236,7 +243,7 @@ public class TableDDLIT extends PostgresServerITBase {
 
         
     }
-
+   
     protected DDLFunctions ddlServer() {
         return serviceManager().getDXL().ddlFunctions();
     }

@@ -64,6 +64,10 @@ public class TableDDL
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         TableName tableName = TableName.create(schemaName, parserName.getTableName());
         
+        if (ddlFunctions.getAIS(session).getUserTable(tableName) == null && 
+                ddlFunctions.getAIS(session).getGroupTable(tableName) == null) {
+            throw new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName());
+        }
         ddlFunctions.dropTable(session, tableName);
     }
 

@@ -15,8 +15,12 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.error.NoSuchSchemaException;
 import com.akiban.server.error.UnsupportedParametersException;
+import com.akiban.sql.aisddl.SchemaDDL;
 import com.akiban.sql.parser.StatementNode;
+import com.akiban.sql.parser.SetSchemaNode;
+import com.akiban.sql.parser.StatementType;
 
 import java.io.IOException;
 
@@ -71,10 +75,15 @@ public class PostgresSessionStatement implements PostgresStatement
     protected void doOperation(PostgresServerSession server) {
         switch (operation) {
         case USE:
-            // TODO: From the appropriate kind of statement, which
-            // does not exist in the parser yet, although <CONNECT> is
-            // known to be a reserved word.
-            server.setDefaultSchemaName("...");
+            final SetSchemaNode node = (SetSchemaNode)statement;
+            
+            final String schemaName = (node.statementType() == StatementType.SET_SCHEMA_USER ? 
+                    server.getProperty("user") : node.getSchemaName());
+            if (SchemaDDL.checkSchema(server.getAIS(), schemaName)) {
+                server.setDefaultSchemaName(schemaName);
+            } else {
+                throw new NoSuchSchemaException (schemaName);
+            }
             break;
         case BEGIN_TRANSACTION:
             server.beginTransaction();
