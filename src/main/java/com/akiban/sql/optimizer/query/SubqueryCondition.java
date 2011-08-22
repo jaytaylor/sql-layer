@@ -19,68 +19,55 @@ import com.akiban.sql.StandardException;
 
 import com.akiban.sql.types.DataTypeDescriptor;
 
-import com.akiban.qp.expression.API;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.Comparison;
 
-public class ComparisonExpression extends BooleanExpression 
+public class SubqueryCondition extends BooleanExpression
 {
-    private BaseExpression left, right;
+    public static enum Kind {
+        EXISTS, NOT_EXISTS, ANY, ALL
+    }
+    
+    private Kind kind;
+    private BaseExpression left;
     private Comparison operation;
+    private Query subquery;
 
-    public ComparisonExpression(BaseExpression left, BaseExpression right,
-                                Comparison operation, DataTypeDescriptor type) {
+    public SubqueryCondition(Kind kind, BaseExpression left, 
+                             Comparison operation, Query subquery, 
+                             DataTypeDescriptor type) {
         super(type);
+        this.kind = kind;
         this.left = left;
-        this.right = right;
         this.operation = operation;
+        this.subquery = subquery;
+    }
+
+    public Kind getKind() {
+        return kind;
     }
 
     public BaseExpression getLeft() {
         return left;
     }
-    public BaseExpression getRight() {
-        return right;
-    }
+
     public Comparison getOperation() {
         return operation;
     }
 
-    public static Comparison reverseComparison(Comparison operation) {
-        switch (operation) {
-        case EQ:
-        case NE:
-            return operation;
-        case LT:
-            return Comparison.GT;
-        case LE:
-            return Comparison.GE;
-        case GT:
-            return Comparison.LT;
-        case GE:
-            return Comparison.LE;
-        default:
-            assert false : operation;
-            return null;
-        }
+    public Query getSubquery() {
+        return subquery;
     }
 
     public String toString() {
-        return left + " " + operation + " " + right;
+        if (operation != null)
+            return left + " " + operation + " " + kind + " " + subquery;
+        else
+            return kind + " " + subquery;
     }
 
     public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) 
             throws StandardException {
-        return API.compare(left.generateExpression(fieldOffsets),
-                           operation,
-                           right.generateExpression(fieldOffsets));
+        throw new StandardException("NIY");
     }
-
-    public void reverse() {
-        BaseExpression temp = left;
-        left = right;
-        right = temp;
-        operation = reverseComparison(operation);
-    }
-
 }
