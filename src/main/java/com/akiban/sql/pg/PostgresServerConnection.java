@@ -27,6 +27,7 @@ import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.physicaloperator.StoreAdapter;
 import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoTransactionInProgressException;
 import com.akiban.server.error.ParseException;
@@ -155,7 +156,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     protected enum ErrorMode { NONE, SIMPLE, EXTENDED };
 
-    protected void topLevel() throws IOException {
+    protected void topLevel() throws IOException, Exception {
         logger.info("Connect from {}" + socket.getRemoteSocketAddress());
         boolean startupComplete = false;
         try {
@@ -214,7 +215,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 }
                 catch (InvalidOperationException ex) {
                     logger.warn("Error in query: {}",ex.getMessage());
-                    if (errorMode == ErrorMode.NONE) {
+                    if (errorMode == ErrorMode.NONE ) throw ex;
+                    else {
                         messenger.beginMessage(PostgresMessenger.ERROR_RESPONSE_TYPE);
                         messenger.write('S');
                         messenger.writeString("ERROR");
@@ -229,7 +231,22 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                         ignoreUntilSync = true;
                     else
                         readyForQuery();
+                } catch (Exception e) {
+                    logger.warn("Unexpected error in query: {}", e.getMessage());
+                    if (errorMode == ErrorMode.NONE) throw e;
+                    else {
+                        messenger.beginMessage(PostgresMessenger.ERROR_RESPONSE_TYPE);
+                        messenger.write('S');
+                        messenger.writeString("ERROR");
+                        messenger.write('C');
+                        messenger.writeString(ErrorCode.UNEXPECTED_EXCEPTION.getFormattedValue());
+                        messenger.write('M');
+                        messenger.writeString(e.getMessage());
+                        messenger.write(0);
+                        messenger.sendMessage(true);
+                    }
                 }
+                
                 finally {
                     sessionTracer.endEvent();
                 }
@@ -516,6 +533,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         String portalName = messenger.readString();
         int maxrows = messenger.readInt();
         PostgresStatement pstmt = boundPortals.get(portalName);
+        logger.info("Execute: {}", pstmt.toString());
         try {
             sessionTracer.beginEvent(EventTypes.EXECUTE);
             rowsProcessed = pstmt.execute(this, maxrows);

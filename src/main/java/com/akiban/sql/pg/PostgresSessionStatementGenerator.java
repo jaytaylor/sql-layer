@@ -52,9 +52,10 @@ public class PostgresSessionStatementGenerator extends PostgresBaseStatementGene
                 }
                 return new PostgresSessionStatement(operation, stmt);
             }
+        case NodeTypes.SET_SCHEMA_NODE:
+            return new PostgresSessionStatement (PostgresSessionStatement.Operation.USE, stmt);
         default:
             return null;
         }
     }
-
 }

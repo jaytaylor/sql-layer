@@ -37,6 +37,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.DuplicateIndexException;
+import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
@@ -58,16 +59,16 @@ public class TableDDLTest {
     @Before
     public void before() throws Exception {
         parser = new SQLParser();
-        ddlFunctions = new DDLFunctionsMock();
         ais = new AkibanInformationSchema();
         builder = new AISBuilder(ais);
+        ddlFunctions = new DDLFunctionsMock(ais);
     }
     
     @Test
     public void dropTableSimple() throws Exception {
         String sql = "DROP TABLE t1";
-        
         dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
+        createTableSimpleGenerateAIS ();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof DropTableNode);
         
@@ -75,20 +76,37 @@ public class TableDDLTest {
     }
 
     @Test
+    public void dropTableSchemaTrue() throws Exception {
+        String sql = "DROP TABLE test.t1";
+        dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
+        createTableSimpleGenerateAIS ();
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue (stmt instanceof DropTableNode);
+        
+        TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)stmt);
+    }
+
+    @Test (expected=NoSuchTableException.class)
     public void dropTableSchema() throws Exception {
         String sql = "DROP TABLE foo.t1";
-        
+
+        createTableSimpleGenerateAIS ();
+
         dropTable = TableName.create("foo", DEFAULT_TABLE);
+
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof DropTableNode);
         TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)stmt);
     }
     
-    @Test
+    @Test (expected=NoSuchTableException.class)
     public void dropTableQuoted() throws Exception {
         String sql = "DROP TABLE \"T1\"";
         
         dropTable = TableName.create(DEFAULT_SCHEMA, "T1");
+
+        createTableSimpleGenerateAIS ();
+        
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof DropTableNode);
         TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)stmt);

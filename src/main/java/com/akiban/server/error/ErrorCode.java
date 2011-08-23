@@ -153,6 +153,8 @@ public enum ErrorCode {
     UNKNOWN_TYPE_SIZE    (22, 200, Importance.DEBUG, UnknownTypeSizeException.class),
     UNKNOWN_TYPE         (22, 201, Importance.DEBUG, UnknownDataTypeException.class),
     
+    // Session state errors 
+    NO_SUCH_SCHEMA          (23,  1, Importance.DEBUG, NoSuchSchemaException.class),
     // Unsupported Features Errors, Should be empty, but isn't
     UNSUPPORTED_SQL         (28, 0, Importance.ERROR, UnsupportedSQLException.class),
     UNSUPPORTED_PARAMETERS  (28, 1, Importance.ERROR, UnsupportedParametersException.class),

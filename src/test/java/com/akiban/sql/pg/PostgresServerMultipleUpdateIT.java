@@ -25,7 +25,6 @@ import org.junit.runner.RunWith;
 import com.akiban.sql.TestBase;
 
 import java.sql.Statement;
-import java.sql.SQLException;
 
 import java.io.File;
 import java.util.Collection;
