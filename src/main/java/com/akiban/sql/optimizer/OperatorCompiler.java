@@ -947,7 +947,7 @@ public class OperatorCompiler
             // {A(offset 0, nfields 3), B(offset 3, nfields 3), C(offset 6, nfields 2), D(offset 8, nfields 2),
             // E(offset 10, nfields 2)}, with tables B and D also occurring in this. In this
             // case, C shifts down by 3, and E by 5.
-            List<TableNode> retained = new ArrayList<TableNode>(other.tables);
+            Set<TableNode> retained = new HashSet<TableNode>(other.tables);
             if (tables != null) {
                 retained.removeAll(tables);
                 tables.addAll(retained);
