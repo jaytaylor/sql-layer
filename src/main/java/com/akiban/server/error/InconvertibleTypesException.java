@@ -12,16 +12,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+package com.akiban.server.error;
 
-package com.akiban.server.types;
+import com.akiban.server.types.AkType;
 
-public final class SourceIsNullException extends RuntimeException {
-    public SourceIsNullException() {
-    }
-
-    static void checkNotNull(ValueSource valueSource) {
-        if (valueSource.isNull()) {
-            throw new SourceIsNullException();
-        }
+public final class InconvertibleTypesException extends InvalidOperationException {
+    public InconvertibleTypesException(AkType sourceType, AkType targetType) {
+        super(ErrorCode.INCONVERTIBLE_TYPES, sourceType, targetType);
     }
 }

@@ -17,6 +17,7 @@ package com.akiban.server.types.conversion;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueSourceIsNullException;
 import com.akiban.server.types.ValueTarget;
 
 abstract class ConverterForLong extends LongConverter {
@@ -30,7 +31,7 @@ abstract class ConverterForLong extends LongConverter {
         // AbstractConverter interface
 
         @Override
-        protected AkType nativeConversionType() {
+        protected AkType targetConversionType() {
             return AkType.LONG;
         }
     };
@@ -44,7 +45,7 @@ abstract class ConverterForLong extends LongConverter {
         // AbstractConverter interface
 
         @Override
-        protected AkType nativeConversionType() {
+        protected AkType targetConversionType() {
             return AkType.INT;
         }
     };
@@ -58,7 +59,7 @@ abstract class ConverterForLong extends LongConverter {
         // AbstractConverter interface
 
         @Override
-        protected AkType nativeConversionType() {
+        protected AkType targetConversionType() {
             return AkType.U_INT;
         }
     };
@@ -75,6 +76,8 @@ abstract class ConverterForLong extends LongConverter {
 
     @Override
     public long getLong(ValueSource source) {
+        if (source.isNull())
+            throw new ValueSourceIsNullException();
         AkType type = source.getConversionType();
         switch (type) {
         case LONG:      return source.getLong();
@@ -82,7 +85,7 @@ abstract class ConverterForLong extends LongConverter {
         case U_INT:     return source.getUInt();
         case TEXT:      return Long.parseLong(source.getText());
         case VARCHAR:   return Long.parseLong(source.getString());
-        default: throw unsupportedConversion(source);
+        default: throw unsupportedConversion(type);
         }
     }
 

@@ -12,15 +12,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-
 package com.akiban.server.types;
 
-public final class SourceConversionException extends RuntimeException {
-    public SourceConversionException(String message) {
-        super(message);
-    }
-
-    public SourceConversionException(String message, Throwable cause) {
-        super(message, cause);
+public final class WrongValueGetException extends ValueSourceException {
+    WrongValueGetException(AkType expectedType, AkType actualType) {
+        super("expected to put or get " + expectedType + " but saw " + actualType);
     }
 }

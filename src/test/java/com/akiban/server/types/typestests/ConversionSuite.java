@@ -16,7 +16,7 @@
 package com.akiban.server.types.typestests;
 
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.IllegalConversionException;
+import com.akiban.server.types.WrongValueGetException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,7 +73,7 @@ public final class ConversionSuite<T> {
         boolean gotError = false;
         try {
             switched.get(converters.linkedSource());
-        } catch (IllegalConversionException t) {
+        } catch (WrongValueGetException t) {
             gotError = true;
         }
         if (!gotError) {
@@ -95,7 +95,7 @@ public final class ConversionSuite<T> {
         boolean gotError = false;
         try {
             switched.put(converters.linkedTarget());
-        } catch (IllegalConversionException t) {
+        } catch (WrongValueGetException t) {
             gotError = true;
         }
         if (!gotError) {

@@ -17,6 +17,7 @@ package com.akiban.server.rowdata;
 
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSourceHelper;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ByteSource;
@@ -187,7 +188,7 @@ public final class RowDataValueTarget implements ValueTarget {
             }
         }
         else {
-            com.akiban.server.types.ConversionHelper.checkType(expectedType, getConversionType());
+            ValueSourceHelper.checkType(expectedType, getConversionType());
         }
     }
 

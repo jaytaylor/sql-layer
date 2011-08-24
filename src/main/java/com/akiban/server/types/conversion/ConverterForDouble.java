@@ -45,18 +45,18 @@ abstract class ConverterForDouble extends DoubleConverter {
         case LONG:      return source.getLong();
         case INT:       return source.getInt();
         case U_INT:     return source.getUInt();
-        case U_FLOAT:   return source.getFloat();
+        case U_FLOAT:   return source.getUFloat();
         case U_DOUBLE:  return source.getUDouble();
         case TEXT:      return Double.parseDouble(source.getText());
         case VARCHAR:   return Double.parseDouble(source.getString());
-        default: throw unsupportedConversion(source);
+        default: throw unsupportedConversion(type);
         }
     }
 
     // AbstractConverter interface
 
     @Override
-    protected AkType nativeConversionType() {
+    protected AkType targetConversionType() {
         return AkType.DOUBLE;
     }
 

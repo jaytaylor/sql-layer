@@ -21,11 +21,11 @@ import com.akiban.util.WrappingByteSource;
 import java.util.EnumMap;
 import java.util.Map;
 
-final class LegacyTransformations {
+final class FromObjectTransformations {
 
     // public interface
 
-    public static final LegacyTransformations TRIVIAL_TRANSFORMATIONS = new LegacyTransformations(getTransformers());
+    public static final FromObjectTransformations TRIVIAL_TRANSFORMATIONS = new FromObjectTransformations(getTransformers());
 
     /**
      * Tries to transform the given object to a suitable equivalent. This method exists to ease
@@ -57,7 +57,7 @@ final class LegacyTransformations {
     }
 
 
-    private LegacyTransformations(Map<AkType, Transformer> transformers) {
+    private FromObjectTransformations(Map<AkType, Transformer> transformers) {
         this.transformers = transformers;
     }
 

@@ -12,10 +12,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package com.akiban.server.types.conversion;
 
-public final class TypeConversionException extends RuntimeException {
-    TypeConversionException(String message) {
+package com.akiban.server.types;
+
+public class ValueSourceException extends RuntimeException {
+    ValueSourceException() {
+    }
+    
+    public ValueSourceException(String message) {
         super(message);
+    }
+
+    public ValueSourceException(String message, Throwable cause) {
+        super(message, cause);
     }
 }
