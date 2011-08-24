@@ -36,6 +36,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.EventTypes;
 import com.akiban.server.service.instrumentation.SessionTracer;
 
@@ -100,8 +101,7 @@ public class OperatorCompiler
         }
     }
 
-    public ResultColumnBase getResultColumn(SimpleSelectColumn selectColumn) 
-            throws StandardException {
+    public ResultColumnBase getResultColumn(SimpleSelectColumn selectColumn) {
         String name = selectColumn.getName();
         if (selectColumn.isNameDefaulted() && selectColumn.getExpression().isColumn())
             // Prefer the case stored in AIS to parser's standardized form.
@@ -188,7 +188,7 @@ public class OperatorCompiler
         }
     }
 
-    public Result compile(SessionTracer tracer, DMLStatementNode stmt, List<ParameterNode> params) throws StandardException {
+    public Result compile(SessionTracer tracer, DMLStatementNode stmt, List<ParameterNode> params) {
         switch (stmt.getNodeType()) {
         case NodeTypes.CURSOR_NODE:
             return compileSelect(tracer, (CursorNode)stmt, params);
@@ -199,27 +199,28 @@ public class OperatorCompiler
         case NodeTypes.DELETE_NODE:
             return compileDelete((DeleteNode)stmt, params);
         default:
-            throw new UnsupportedSQLException("Unsupported statement type: " + 
-                                              stmt.statementToString());
+            throw new UnsupportedSQLException (stmt.statementToString(), stmt);
         }
     }
 
-    protected DMLStatementNode bindAndGroup(DMLStatementNode stmt) 
-            throws StandardException {
-        binder.bind(stmt);
-        stmt = (DMLStatementNode)booleanNormalizer.normalize(stmt);
-        typeComputer.compute(stmt);
-        stmt = subqueryFlattener.flatten(stmt);
-        grouper.group(stmt);
-        return stmt;
+    protected DMLStatementNode bindAndGroup(DMLStatementNode stmt)  {
+        try {
+            binder.bind(stmt);
+            stmt = (DMLStatementNode)booleanNormalizer.normalize(stmt);
+            typeComputer.compute(stmt);
+            stmt = subqueryFlattener.flatten(stmt);
+            grouper.group(stmt);
+            return stmt;
+        } catch (StandardException ex) {
+            throw new com.akiban.server.error.ParseException ("", ex.getMessage(), stmt.toString());
+        }
     }
 
     enum ProductMethod { HKEY_ORDERED, BY_RUN };
 
     static final int INSERTION_SORT_MAX_LIMIT = 100;
 
-    public Result compileSelect(SessionTracer tracer, CursorNode cursor, List<ParameterNode> params) 
-            throws StandardException {
+    public Result compileSelect(SessionTracer tracer, CursorNode cursor, List<ParameterNode> params)  {
         try {
             // Get into standard form.
             tracer.beginEvent(EventTypes.BIND_AND_GROUP);
@@ -407,10 +408,11 @@ public class OperatorCompiler
                             throw new UnsupportedSQLException("Need " + productMethod + 
                                                               " product of " +
                                                               resultRowType + " and " +
-                                                              flr.getResultRowType());
+                                                              flr.getResultRowType(), 
+                                                              cursor);
                         }
                         resultRowType = resultOperator.rowType();
-                        fll.mergeTables(flr);
+                        fll.mergeTablesForProduct(flr);
                     }
                 }
                 fieldOffsets = new TableNodeOffsets(fll.getFieldOffsets());
@@ -442,7 +444,7 @@ public class OperatorCompiler
             !((index != null) && index.isSorting())) {
             int limit = squery.getLimit();
             if ((limit < 0) || (limit > INSERTION_SORT_MAX_LIMIT))
-                throw new UnsupportedSQLException("Unsupported ORDER BY: no suitable index on " + squery.getSortColumns());
+                throw new UnsupportedSQLException ("ORDER BY without index for " + squery.getSortColumns(), cursor);
             int nsorts = squery.getSortColumns().size();
             List<Expression> sortExpressions = new ArrayList<Expression>(nsorts);
             List<Boolean> sortDescendings = new ArrayList<Boolean>(nsorts);
@@ -489,8 +491,7 @@ public class OperatorCompiler
                           offset, limit);
     }
 
-    public Result compileUpdate(UpdateNode update, List<ParameterNode> params) 
-            throws StandardException {
+    public Result compileUpdate(UpdateNode update, List<ParameterNode> params)  {
         update = (UpdateNode)bindAndGroup(update);
         SimplifiedUpdateStatement supdate = 
             new SimplifiedUpdateStatement(update, grouper.getJoinConditions());
@@ -546,22 +547,18 @@ public class OperatorCompiler
         return new Result(updatePlan, getParameterTypes(params));
     }
 
-    public Result compileInsert(InsertNode insert, List<ParameterNode> params) 
-            throws StandardException {
+    public Result compileInsert(InsertNode insert, List<ParameterNode> params) {
         insert = (InsertNode)bindAndGroup(insert);
         SimplifiedInsertStatement sstmt = 
             new SimplifiedInsertStatement(insert, grouper.getJoinConditions());
-
-        throw new UnsupportedSQLException("No Insert operators yet");
+        throw new UnsupportedSQLException ("INSERT", insert);
     }
 
-    public Result compileDelete(DeleteNode delete, List<ParameterNode> params) 
-            throws StandardException {
+    public Result compileDelete(DeleteNode delete, List<ParameterNode> params)  {
         delete = (DeleteNode)bindAndGroup(delete);
         SimplifiedDeleteStatement sstmt = 
             new SimplifiedDeleteStatement(delete, grouper.getJoinConditions());
-
-        throw new UnsupportedSQLException("No Delete operators yet");
+        throw new UnsupportedSQLException ("DELETE", delete);
     }
 
     // A possible index.
@@ -816,7 +813,7 @@ public class OperatorCompiler
         }
 
         // Generate key range bounds.
-        public IndexKeyRange getIndexKeyRange() throws StandardException {
+        public IndexKeyRange getIndexKeyRange() {
             if ((equalityConditions == null) &&
                 (lowCondition == null) && (highCondition == null))
                 return new IndexKeyRange(null, false, null, false);
@@ -933,13 +930,46 @@ public class OperatorCompiler
         }
 
         
-        public void mergeTables(FlattenState other) {
+        public void mergeTablesForFlatten(FlattenState other) {
             if (tables != null)
                 tables.addAll(other.tables);
             for (TableNode table : other.fieldOffsets.keySet()) {
                 fieldOffsets.put(table, other.fieldOffsets.get(table) + nfields);
             }
             nfields += other.nfields;
+        }
+
+        public void mergeTablesForProduct(final FlattenState other) {
+            // this and other have some tables in common. The result of the merge keeps the tables from this
+            // and just the unique tables in other. The field offsets from other need to be "shifted down".
+            // There could conceivably be multiple tables in common, all of which need to be removed, resulting in
+            // different shift amounts for different offsets in other. For example, other could have tables
+            // {A(offset 0, nfields 3), B(offset 3, nfields 3), C(offset 6, nfields 2), D(offset 8, nfields 2),
+            // E(offset 10, nfields 2)}, with tables B and D also occurring in this. In this
+            // case, C shifts down by 3, and E by 5.
+            List<TableNode> retained = new ArrayList<TableNode>(other.tables);
+            if (tables != null) {
+                retained.removeAll(tables);
+                tables.addAll(retained);
+            }
+            // Arrange other's tables in order of offset. This will simplify shifting later.
+            List<TableNode> otherTables = new ArrayList<TableNode>(other.tables);
+            Collections.sort(otherTables,
+                             new Comparator<TableNode>() {
+                                 @Override
+                                 public int compare(TableNode x, TableNode y) {
+                                     return other.fieldOffsets.get(x) - other.fieldOffsets.get(y);
+                                 }
+                             });
+            // Compute new offsets of retained tables
+            int accumulatedShift = 0;
+            for (TableNode otherTable : otherTables) {
+                if (retained.contains(otherTable))
+                    fieldOffsets.put(otherTable, other.fieldOffsets.get(otherTable) + nfields - accumulatedShift);
+                else
+                    accumulatedShift += otherTable.getNFields();
+            }
+            nfields += other.nfields - accumulatedShift;
         }
 
         @Override
@@ -1041,7 +1071,7 @@ public class OperatorCompiler
                     }
                 }
                 fleft.setResultRowType(flattenedType);
-                fleft.mergeTables(fright);
+                fleft.mergeTablesForFlatten(fright);
                 return fleft;
             }
         }
@@ -1066,8 +1096,7 @@ public class OperatorCompiler
     
     protected PhysicalOperator maybeAddTableConditions(PhysicalOperator resultOperator,
                                                        SimplifiedQuery squery, 
-                                                       Iterable<TableNode> tables)
-            throws StandardException {
+                                                       Iterable<TableNode> tables) {
         for (TableNode table : tables) {
             // isRequired() because a WHERE condition (as opposed to
             // an JOIN ON condition) is for the whole flattened

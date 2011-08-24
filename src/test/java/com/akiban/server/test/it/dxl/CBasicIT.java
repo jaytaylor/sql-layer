@@ -17,14 +17,17 @@ package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.FixedCountLimit;
-import com.akiban.server.api.common.NoSuchTableException;
-import com.akiban.server.api.dml.NoSuchRowException;
-import com.akiban.server.api.dml.TableDefinitionMismatchException;
 import com.akiban.server.api.dml.scan.*;
+import com.akiban.server.error.CursorIsFinishedException;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchRowException;
+import com.akiban.server.error.OldAISException;
+import com.akiban.server.error.TableDefinitionMismatchException;
+import com.akiban.server.error.RowDefNotFoundException;
+import com.akiban.server.error.NoRowsUpdatedException;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
@@ -195,7 +198,7 @@ public final class CBasicIT extends ITBase {
         assertEquals("rows scanned", expectedRows, converted);
     }
     
-    @Test(expected=NoSuchTableException.class)
+    @Test(expected=RowDefNotFoundException.class)
     public void dropTable() throws InvalidOperationException {
         final int tableId1;
         try {
@@ -212,7 +215,7 @@ public final class CBasicIT extends ITBase {
         dml().openCursor(session(), ddl().getGeneration(), new ScanAllRequest(tableId1, ColumnSet.ofPositions(0)));
     }
 
-    @Test(expected=NoSuchTableException.class)
+    @Test(expected=RowDefNotFoundException.class)
     public void dropGroup() throws InvalidOperationException {
         final int tid;
         try {
@@ -327,7 +330,7 @@ public final class CBasicIT extends ITBase {
         expectRows(request, createNewRow(tableId, 1L, "goodbye cruel world") );
     }
 
-    @Test(expected=NoSuchRowException.class)
+    @Test(expected=NoRowsUpdatedException.class)
     public void updateOldNotById() throws InvalidOperationException {
         final int tableId;
         try {

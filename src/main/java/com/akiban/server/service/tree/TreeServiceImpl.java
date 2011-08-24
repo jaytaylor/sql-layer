@@ -28,12 +28,16 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import com.akiban.server.error.ConfigurationPropertiesLoadException;
+import com.akiban.server.error.InvalidVolumeException;
+import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.service.session.SessionService;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.TableStatusCache;
 import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
@@ -68,7 +72,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
     static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
-    private ConfigurationService configService;
+    private final ConfigurationService configService;
 
     private static int instanceCount = 0;
 
@@ -82,7 +86,15 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
     private final Map<String, TreeLink> statusLinkMap = new HashMap<String, TreeLink>();
 
+    private final SessionService sessionService;
+
     private TableStatusCache tableStatusCache;
+
+    @Inject
+    public TreeServiceImpl(SessionService sessionService, ConfigurationService configService) {
+        this.sessionService = sessionService;
+        this.configService = configService;
+    }
 
     private final TreeServiceMXBean bean = new TreeServiceMXBean() {
         @Override
@@ -122,26 +134,32 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         }
     }
 
-    public synchronized void start() throws Exception {
-        configService = ServiceManagerImpl.get().getConfigurationService();
-
+    public synchronized void start() {
         assert getDb() == null;
         // TODO - remove this when sure we don't need it
         ++instanceCount;
         assert instanceCount == 1 : instanceCount;
-
-        final Properties properties = setupPersistitProperties(configService);
-        final int bufferSize = Integer.parseInt(properties
-                .getProperty(BUFFER_SIZE_PROP_NAME));
+        Properties properties;
+        int bufferSize;
+        try {
+            properties = setupPersistitProperties(configService);
+            bufferSize = Integer.parseInt(properties.getProperty(BUFFER_SIZE_PROP_NAME));
+        } catch (FileNotFoundException e) {
+            throw new ConfigurationPropertiesLoadException ("Persistit Properties", e.getMessage());
+        }
 
         Persistit db = new Persistit();
         dbRef.set(db);
 
-        tableStatusCache = new TableStatusCache(db, this);
+        tableStatusCache = new TableStatusCache(sessionService, db, this);
         tableStatusCache.register();
 
         db.setPersistitLogger(new Slf4jAdapter(LOG));
-        db.initialize(properties);
+        try {
+            db.initialize(properties);
+        } catch (PersistitException e1) {
+            throw new PersistItErrorException (e1);
+        }
         buildSchemaMap();
 
         if (LOG.isDebugEnabled()) {
@@ -153,7 +171,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         }
     }
 
-    final Properties setupPersistitProperties(
+    static Properties setupPersistitProperties(
             final ConfigurationService configService)
             throws FileNotFoundException {
         //
@@ -224,11 +242,15 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         }
     }
 
-    public void stop() throws Exception {
+    public void stop() {
         Persistit db = getDb();
         if (db != null) {
             db.shutdownGUI();
-            db.close();
+            try {
+                db.close();
+            } catch (PersistitException e) {
+                throw new PersistItErrorException (e);
+            }
             dbRef.set(null);
         }
         synchronized (this) {
@@ -256,7 +278,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     @Override
-    public void crash() throws Exception {
+    public void crash() {
         Persistit db = getDb();
         if (db != null) {
             db.shutdownGUI();
@@ -268,21 +290,23 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     @Override
-    public Exchange getExchange(final Session session, final TreeLink link)
-            throws PersistitException {
-        final TreeCache cache = populateTreeCache(link);
-        Tree tree = cache.getTree();
-        return getExchange(session, tree);
+    public Exchange getExchange(final Session session, final TreeLink link) {
+        try {
+            final TreeCache cache = populateTreeCache(link);
+            final Tree tree = cache.getTree();
+            return getExchange(session, tree);
+        } catch (PersistitException e) {
+            throw new PersistItErrorException (e);
+        }
     }
 
     @Override
-    public Key getKey(Session session) throws PersistitException {
+    public Key getKey(Session session) {
         return new Key(getDb());
     }
 
     @Override
-    public Exchange getExchange(final Session session, final Tree tree)
-            throws PersistitException {
+    public Exchange getExchange(final Session session, final Tree tree) {
         final List<Exchange> list = exchangeList(session, tree);
         if (list.isEmpty()) {
             return new Exchange(tree);
@@ -321,7 +345,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
     @Override
     public void visitStorage(final Session session, final TreeVisitor visitor,
-            final String treeName) throws Exception {
+            final String treeName) throws PersistitException {
         Persistit db = getDb();
         final Volume sysVol = db.getSystemVolume();
         final Volume txnVol = db.getTransactionVolume();
@@ -341,34 +365,43 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     @Override
-    public boolean isContainer(final Exchange exchange, final TreeLink link)
-            throws PersistitException {
-        final TreeCache treeCache = populateTreeCache(link);
-        return exchange.getVolume().equals(treeCache.getTree().getVolume());
+    public boolean isContainer(final Exchange exchange, final TreeLink link){
+        try {
+            final TreeCache treeCache = populateTreeCache(link);
+            return exchange.getVolume().equals(treeCache.getTree().getVolume());
+        } catch (PersistitException e) {
+            throw new PersistItErrorException (e);
+        }
     }
 
     @Override
-    public int aisToStore(final TreeLink link, final int tableId)
-            throws PersistitException {
-        final TreeCache cache = populateTreeCache(link);
-        int offset = cache.getTableIdOffset();
-        if (offset < 0) {
-            offset = tableIdOffset(link);
-            cache.setTableIdOffset(offset);
+    public int aisToStore(final TreeLink link, final int tableId) {
+        try {
+            final TreeCache cache = populateTreeCache(link);
+            int offset = cache.getTableIdOffset();
+            if (offset < 0) {
+                offset = tableIdOffset(link);
+                cache.setTableIdOffset(offset);
+            }
+            return tableId - offset;
+        } catch (PersistitException e) {
+            throw new PersistItErrorException (e);
         }
-        return tableId - offset;
     }
 
     @Override
-    public int storeToAis(final TreeLink link, final int tableId)
-            throws PersistitException {
-        final TreeCache cache = populateTreeCache(link);
-        int offset = cache.getTableIdOffset();
-        if (offset < 0) {
-            offset = tableIdOffset(link);
-            cache.setTableIdOffset(offset);
+    public int storeToAis(final TreeLink link, final int tableId) {
+        try {
+            final TreeCache cache = populateTreeCache(link);
+            int offset = cache.getTableIdOffset();
+            if (offset < 0) {
+                offset = tableIdOffset(link);
+                cache.setTableIdOffset(offset);
+            }
+            return tableId + offset;
+        } catch (PersistitException e) {
+            throw new PersistItErrorException (e);
         }
-        return tableId + offset;
     }
 
     @Override
@@ -377,8 +410,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         return tableId + offset;
     }
 
-    private TreeCache populateTreeCache(final TreeLink link)
-            throws PersistitException {
+    private TreeCache populateTreeCache(final TreeLink link) throws PersistitException  {
         TreeCache cache = (TreeCache) link.getTreeCache();
         if (cache == null || !cache.getTree().isValid()) {
             Volume volume = mappedVolume(link.getSchemaName(),
@@ -422,7 +454,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
             }
             return volume;
         } catch (InvalidVolumeSpecificationException e) {
-            throw new IllegalStateException(e);
+            throw new InvalidVolumeException (e);
         }
     }
 
@@ -488,11 +520,14 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     @Override
-    public boolean treeExists(final String schemaName, final String treeName)
-            throws PersistitException {
-        final Volume volume = mappedVolume(schemaName, treeName);
-        final Tree tree = volume.getTree(treeName, false);
-        return tree != null;
+    public boolean treeExists(final String schemaName, final String treeName) {
+        try {
+            final Volume volume = mappedVolume(schemaName, treeName);
+            final Tree tree = volume.getTree(treeName, false);
+            return tree != null;
+        } catch (PersistitException e) {
+            throw new PersistItErrorException (e);
+        }
     }
 
     public TreeLink treeLink(final String schemaName, final String treeName) {

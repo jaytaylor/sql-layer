@@ -15,8 +15,8 @@
 
 package com.akiban.server.store;
 
-import com.akiban.server.IndexDef;
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.IndexDef;
+import com.akiban.server.rowdata.RowData;
 
 import java.nio.ByteBuffer;
 
@@ -44,9 +44,9 @@ public interface RowCollector {
      * @return true if a row was placed into payload, false otherwise
      * @throws Exception
      */
-    public boolean collectNextRow(ByteBuffer payload) throws Exception;
+    public boolean collectNextRow(ByteBuffer payload);
 
-    public RowData collectNextRow() throws Exception;
+    public RowData collectNextRow();
 
     public boolean hasMore();
 

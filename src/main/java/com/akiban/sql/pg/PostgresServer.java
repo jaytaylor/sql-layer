@@ -18,9 +18,17 @@ package com.akiban.sql.pg;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.*;
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** The PostgreSQL server.
@@ -30,6 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 */
 public class PostgresServer implements Runnable, PostgresMXBean {
     private final int port;
+    private final PostgresServiceRequirements reqs;
     private PostgresStatementCache statementCache;
     private ServerSocket socket = null;
     private boolean running = false;
@@ -37,15 +46,15 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private Map<Integer,PostgresServerConnection> connections =
         new HashMap<Integer,PostgresServerConnection>();
     private Thread thread;
-    private AtomicBoolean instrumentationEnabled;
+    private final AtomicBoolean instrumentationEnabled = new AtomicBoolean(false);
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
-    public PostgresServer(int port, int statementCacheCapacity) {
+    public PostgresServer(int port, int statementCacheCapacity, PostgresServiceRequirements reqs) {
         this.port = port;
         if (statementCacheCapacity > 0)
             statementCache = new PostgresStatementCache(statementCacheCapacity);
-        instrumentationEnabled = new AtomicBoolean(false);
+        this.reqs = reqs;
     }
 
     public int getPort() {
@@ -94,6 +103,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
                     logger.warn("Server still running.");
             }
             catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
             }
             thread = null;
         }
@@ -114,7 +124,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
                 pid++;
                 int secret = rand.nextInt();
                 PostgresServerConnection connection = 
-                    new PostgresServerConnection(this, sock, pid, secret);
+                    new PostgresServerConnection(this, sock, pid, secret, reqs);
                 connections.put(pid, connection);
                 connection.start();
             }

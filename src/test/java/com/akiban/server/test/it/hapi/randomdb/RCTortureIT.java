@@ -15,16 +15,17 @@
 
 package com.akiban.server.test.it.hapi.randomdb;
 
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.memcache.outputter.jsonoutputter.JsonOutputter;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.test.it.ITBase;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
@@ -36,6 +37,11 @@ import static org.junit.Assert.*;
 
 public class RCTortureIT extends ITBase
 {
+    @Before
+    public void setUp() {
+        actual = new Actual(this, configService(), dxl());
+    }
+
     @Test
     public void testRepeatedly() throws Exception
     {
@@ -219,7 +225,7 @@ public class RCTortureIT extends ITBase
     String query;
     HapiGetRequest request;
     private Expected expected = new Expected(this);
-    private Actual actual = new Actual(this);
+    private Actual actual;
     private Database database = new Database(this);
 
 }

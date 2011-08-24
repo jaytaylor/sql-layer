@@ -28,15 +28,15 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanLimit;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.types.ToObjectValueTarget;
 import org.junit.Before;
 
 import java.util.ArrayList;
@@ -230,9 +230,10 @@ public class QPProfileITBase extends ITBase
     protected boolean equal(RowBase expected, RowBase actual)
     {
         boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
+        ToObjectValueTarget target = new ToObjectValueTarget();
         for (int i = 0; equal && i < actual.rowType().nFields(); i++) {
-            Object expectedField = expected.field(i, NO_BINDINGS);
-            Object actualField = actual.field(i, NO_BINDINGS);
+            Object expectedField = target.convertFromSource(expected.bindSource(i, NO_BINDINGS));
+            Object actualField = target.convertFromSource(actual.bindSource(i, NO_BINDINGS));
             equal =
                 expectedField == actualField || // handles case in which both are null
                 expectedField != null && actualField != null && expectedField.equals(actualField);

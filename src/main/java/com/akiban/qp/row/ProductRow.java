@@ -16,9 +16,16 @@
 package com.akiban.qp.row;
 
 import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.rowtype.FlattenedRowType;
+import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types.ConversionHelper;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.NullValueSource;
+import com.akiban.server.types.ValueTarget;
+import com.akiban.server.types.conversion.Converters;
+import com.akiban.util.AkibanAppender;
+import com.akiban.util.Undef;
 
 public class ProductRow extends AbstractRow
 {
@@ -27,16 +34,16 @@ public class ProductRow extends AbstractRow
     @Override
     public String toString()
     {
-        StringBuilder buffer = new StringBuilder();
-        buffer.append('(');
+        ValueTarget buffer = AkibanAppender.of(new StringBuilder()).asValueTarget();
+        buffer.putString("(");
         int nFields = rowType.leftType().nFields() + rowType.rightType().nFields() - rowType.branchType().nFields();
         for (int i = 0; i < nFields; i++) {
             if (i > 0) {
-                buffer.append(", ");
+                buffer.putString(", ");
             }
-            buffer.append(field(i, null));
+            Converters.convert(bindSource(i, UndefBindings.only()), buffer);
         }
-        buffer.append(')');
+        buffer.putString(")");
         return buffer.toString();
     }
 
@@ -49,15 +56,14 @@ public class ProductRow extends AbstractRow
     }
 
     @Override
-    public Object field(int i, Bindings bindings)
-    {
-        Object field;
+    public ValueSource bindSource(int i, Bindings bindings) {
+        ValueSource source;
         if (i < nLeftFields) {
-            field = left.isNull() ? null : left.get().field(i, bindings);
+            source = left.isNull() ? NullValueSource.only() : left.get().bindSource(i, bindings);
         } else {
-            field = right.isNull() ? null : right.get().field(i - firstRightFieldOffset, bindings);
+            source = right.isNull() ? NullValueSource.only() : right.get().bindSource(i - firstRightFieldOffset, bindings);
         }
-        return field;
+        return source;
     }
 
     @Override

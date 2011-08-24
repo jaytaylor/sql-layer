@@ -16,10 +16,11 @@
 package com.akiban.sql.aisddl;
 
 import com.akiban.ais.model.TableIndex;
+import com.akiban.server.error.NoSuchColumnException;
+import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.WrongTableForIndexException;
 import com.akiban.sql.parser.CreateIndexNode;
 import com.akiban.sql.parser.TableName;
-
-import com.akiban.sql.StandardException;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
@@ -34,8 +35,7 @@ public class IndexDDL
 
     public static void createIndex(AkibanInformationSchema ais,
                                    String defaultSchemaName,
-                                   CreateIndexNode createIndex) 
-            throws StandardException {
+                                   CreateIndexNode createIndex)  {
         TableName indexName = createIndex.getObjectName();
         TableName tableName = createIndex.getIndexTableName();
         String schemaName = tableName.getSchemaName();
@@ -43,7 +43,7 @@ public class IndexDDL
             schemaName = defaultSchemaName;
         UserTable table = ais.getUserTable(schemaName, tableName.getTableName());
         if (table == null)
-            throw new StandardException("Table not found: " + tableName);
+            throw new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName());
         // TODO: What about indexName schemaName?
         Index index = new TableIndex(table,
                                 // TODO: Any case issues?
@@ -78,8 +78,7 @@ public class IndexDDL
     protected static Column getColumn(AkibanInformationSchema ais, 
                                       String defaultSchemaName,
                                       UserTable defaultTable, 
-                                      TableName tableName, String columnName) 
-            throws StandardException {
+                                      TableName tableName, String columnName) {
         UserTable table = defaultTable;
         if (tableName != null) {
             String schemaName = tableName.getSchemaName();
@@ -87,14 +86,13 @@ public class IndexDDL
                 schemaName = defaultSchemaName;
             table = ais.getUserTable(schemaName, tableName.getTableName());
             if (table == null)
-                throw new StandardException("Table not found: " + tableName);
+                throw new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName());
         }
         if (!isAccessible(table, defaultTable))
-            throw new StandardException("Cannot index " + table + 
-                                        " which is not an ancestor of " + defaultTable);
+            throw new WrongTableForIndexException (defaultTable.getName());
         Column column = table.getColumn(columnName);
         if (column == null)
-            throw new StandardException("Column not found: " + columnName);
+            throw new NoSuchColumnException (columnName);
         return column;
     }
 

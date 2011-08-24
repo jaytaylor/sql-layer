@@ -21,8 +21,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.service.tree.TreeVisitor;
@@ -38,9 +39,10 @@ public class TableStatusCache extends TransactionalCache {
 
     private final TreeService treeService;
 
-    public TableStatusCache(final Persistit db, final TreeService treeService) {
+    public TableStatusCache(SessionService sessionService, final Persistit db, final TreeService treeService) {
         super(db);
         this.treeService = treeService;
+        this.sessionService = sessionService;
     }
     
     private TableStatusCache(final TableStatusCache tsc) {
@@ -51,7 +53,7 @@ public class TableStatusCache extends TransactionalCache {
             tableStatusMap.put(entry.getKey(),
                     new TableStatus(entry.getValue()));
         }
-
+        this.sessionService = tsc.sessionService;
     }
 
     private static final long serialVersionUID = 2823468378367226075L;
@@ -66,6 +68,7 @@ public class TableStatusCache extends TransactionalCache {
 
     private final Map<Integer, TableStatus> tableStatusMap = new HashMap<Integer, TableStatus>(
             INITIAL_MAP_SIZE);
+    private final SessionService sessionService;
 
     static class IncrementRowCount extends UpdateInt {
 
@@ -332,7 +335,7 @@ public class TableStatusCache extends TransactionalCache {
 
     @Override
     public void save() throws PersistitException {
-        final Session session = ServiceManagerImpl.newSession();
+        final Session session = sessionService.createSession();
         try {
             removeAll(session);
             for (final TableStatus ts : tableStatusMap.values()) {
@@ -360,20 +363,16 @@ public class TableStatusCache extends TransactionalCache {
 
     @Override
     public void load() throws PersistitException {
-        final Session session = ServiceManagerImpl.newSession();
+        final Session session = sessionService.createSession();
         try {
             treeService.visitStorage(session, new TreeVisitor() {
 
                 @Override
-                public void visit(Exchange exchange) throws Exception {
+                public void visit(Exchange exchange) throws PersistitException {
                     loadOneVolume(exchange);
                 }
 
             }, STATUS_TREE_NAME);
-        } catch (PersistitException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         } finally {
             session.close();
         }
@@ -399,20 +398,14 @@ public class TableStatusCache extends TransactionalCache {
     }
 
     private void removeAll(final Session session) throws PersistitException {
-        try {
-            treeService.visitStorage(session, new TreeVisitor() {
+        treeService.visitStorage(session, new TreeVisitor() {
 
-                @Override
-                public void visit(Exchange exchange) throws Exception {
-                    exchange.removeAll();
-                }
+            @Override
+            public void visit(Exchange exchange) throws PersistitException  {
+                exchange.removeAll();
+            }
 
-            }, STATUS_TREE_NAME);
-        } catch (PersistitException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        }, STATUS_TREE_NAME);
     }
 
     // ====

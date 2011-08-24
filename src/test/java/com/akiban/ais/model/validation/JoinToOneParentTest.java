@@ -24,7 +24,7 @@ import org.junit.Test;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.Index;
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.ErrorCode;
 
 
 

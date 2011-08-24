@@ -23,8 +23,12 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.FieldDef;
-import com.akiban.util.Undef;
+import com.akiban.server.PersistitKeyValueSource;
+import com.akiban.server.store.PersistitKeyAppender;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueTarget;
+import com.akiban.server.types.conversion.Converters;
+import com.akiban.util.AkibanAppender;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
@@ -38,16 +42,16 @@ public class PersistitIndexRow extends AbstractRow
     @Override
     public String toString()
     {
-        StringBuilder buffer = new StringBuilder();
-        buffer.append('(');
+        ValueTarget buffer = AkibanAppender.of(new StringBuilder()).asValueTarget();
+        buffer.putString("(");
         for (int i = 0; i < indexRowType.nFields(); i++) {
             if (i > 0) {
-                buffer.append(", ");
+                buffer.putString(", ");
             }
-            buffer.append(field(i, UndefBindings.only()).toString());
+            Converters.convert(bindSource(i, UndefBindings.only()), buffer);
         }
-        buffer.append(")->");
-        buffer.append(hKey);
+        buffer.putString(")->");
+        buffer.putString(hKey.toString());
         return buffer.toString();
     }
 
@@ -60,12 +64,10 @@ public class PersistitIndexRow extends AbstractRow
     }
 
     @Override
-    public Object field(int i, Bindings bindings)
-    {
-        IndexColumn indexColumn = index().getColumns().get(i);
-        FieldDef def = (FieldDef) indexColumn.getColumn().getFieldDef();
-        indexRow.indexTo(i);
-        return def.getEncoding().toObject(indexRow);
+    public ValueSource bindSource(int i, Bindings bindings) {
+        IndexColumn column = index().getColumns().get(i);
+        valueSource.attach(indexRow, column);
+        return valueSource;
     }
 
     @Override
@@ -79,9 +81,9 @@ public class PersistitIndexRow extends AbstractRow
     {
         this(adapter, indexRowType);
         Iterator<IndexColumn> columnIt = index().getColumns().iterator();
+        PersistitKeyAppender appender = new PersistitKeyAppender(indexRow);
         for(Object o : values) {
-            FieldDef def = (FieldDef) columnIt.next().getColumn().getFieldDef();
-            def.getEncoding().toKey(def, o, indexRow);
+            appender.append(o, columnIt.next().getColumn());
         }
     }
 
@@ -93,6 +95,7 @@ public class PersistitIndexRow extends AbstractRow
         this.indexRowType = indexRowType;
         this.indexRow = adapter.persistit.getKey(adapter.session);
         this.hKey = new PersistitHKey(adapter, index().hKey());
+        this.valueSource = new PersistitKeyValueSource();
     }
 
     // For use by this package
@@ -118,6 +121,7 @@ public class PersistitIndexRow extends AbstractRow
 
     private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
+    private final PersistitKeyValueSource valueSource;
     private final Key indexRow;
     private PersistitHKey hKey;
 }

@@ -24,9 +24,8 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.HapiGetRequest;
@@ -34,11 +33,13 @@ import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.HapiRequestException;
-import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.*;
-import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.session.Session;
 
 import java.io.IOException;
@@ -57,8 +58,13 @@ import java.util.TreeMap;
 import static com.akiban.server.api.HapiRequestException.ReasonCode.*;
 
 public class Scanrows implements HapiProcessor {
-    public static Scanrows instance() {
-        return new Scanrows();
+    public static Scanrows instance(ConfigurationService config, DXLService dxl) {
+        return new Scanrows(config, dxl);
+    }
+
+    public Scanrows(ConfigurationService config, DXLService dxl) {
+        this.config = config;
+        this.dxl = dxl;
     }
 
     private static class RowDataStruct {
@@ -225,7 +231,7 @@ public class Scanrows implements HapiProcessor {
         }
     }
 
-    private static Table getTable(AkibanInformationSchema ais, int tableId) throws NoSuchTableException {
+    private static Table getTable(AkibanInformationSchema ais, int tableId) {
         Table table = ais.getUserTable(tableId);
         if (table != null) {
             return table;
@@ -236,7 +242,7 @@ public class Scanrows implements HapiProcessor {
                 return groupTable;
             }
         }
-        throw new NoSuchTableException(tableId);
+        throw new NoSuchTableIdException(tableId);
     }
 
     @Override
@@ -276,11 +282,9 @@ public class Scanrows implements HapiProcessor {
         }
     }
 
-    private ScanLimit configureLimit(AkibanInformationSchema ais, HapiGetRequest request) throws NoSuchTableException
-    {
+    private ScanLimit configureLimit(AkibanInformationSchema ais, HapiGetRequest request) {
         ScanLimit limit;
         // Message size limit
-        ConfigurationService config = ServiceManagerImpl.get().getConfigurationService();
         int maxMessageSize = Integer.parseInt(config.getProperty("akserver.hapi.scanrows.messageSizeBytes"));
         ScanLimit messageSizeLimit = null;
         if (maxMessageSize >= 0) {
@@ -336,7 +340,7 @@ public class Scanrows implements HapiProcessor {
     }
 
     private RowDataStruct getScanRange(AkibanInformationSchema ais, HapiGetRequest request)
-            throws HapiRequestException, NoSuchTableException
+            throws HapiRequestException
     {
         Index index = findHapiRequestIndex(ais, request);
         RowDataStruct ret = new RowDataStruct(ais, index, request);
@@ -611,11 +615,14 @@ public class Scanrows implements HapiProcessor {
         return indexColumns;
     }
 
-    private static DDLFunctions ddlFunctions() {
-        return ServiceManagerImpl.get().getDXL().ddlFunctions();
+    private DDLFunctions ddlFunctions() {
+        return dxl.ddlFunctions();
     }
 
-    private static DMLFunctions dmlFunctions() {
-        return ServiceManagerImpl.get().getDXL().dmlFunctions();
+    private DMLFunctions dmlFunctions() {
+        return dxl.dmlFunctions();
     }
+
+    private final ConfigurationService config;
+    private final DXLService dxl;
 }

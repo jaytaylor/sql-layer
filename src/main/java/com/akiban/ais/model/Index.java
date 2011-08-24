@@ -195,7 +195,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
 
     public void indexDef(Object indexDef)
     {
-        assert indexDef.getClass().getName().equals("com.akiban.server.IndexDef") : indexDef.getClass();
+        assert indexDef.getClass().getName().equals("com.akiban.server.rowdata.IndexDef") : indexDef.getClass();
         this.indexDef = indexDef;
     }
 

@@ -21,8 +21,10 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDataExtractor;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ByteArrayColumnSelector;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NiceRow;
@@ -75,13 +77,12 @@ public class TwoTableRowCollector extends OperatorBasedRowCollector
                             (String.format("Restriction on at least two tables: %s, %s",
                                            predicateTable, userTable));
                     }
+                    FieldDef fieldDef = rowDef.getFieldDef(groupColumn.getPosition());
                     if (userTableStart != null) {
-                        userTableStart.put(userColumn.getPosition(),
-                                           start.toObject(rowDef, groupColumn.getPosition()));
+                        userTableStart.put(userColumn.getPosition(), extractor.get(fieldDef, start));
                     }
                     if (userTableEnd != null) {
-                        userTableEnd.put(userColumn.getPosition(),
-                                         end.toObject(rowDef, groupColumn.getPosition()));
+                        userTableEnd.put(userColumn.getPosition(), extractor.get(fieldDef, end));
                     }
                 }
             }
@@ -133,4 +134,6 @@ public class TwoTableRowCollector extends OperatorBasedRowCollector
         }
         return new ByteArrayColumnSelector(columnBitMap);
     }
+
+    private final RowDataExtractor extractor = new RowDataExtractor();
 }

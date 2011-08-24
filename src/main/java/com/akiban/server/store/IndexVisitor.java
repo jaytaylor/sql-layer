@@ -15,7 +15,7 @@
 
 package com.akiban.server.store;
 
-import com.akiban.server.InvalidOperationException;
+import com.akiban.server.error.InvalidOperationException;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Value;

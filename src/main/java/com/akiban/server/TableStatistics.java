@@ -15,6 +15,8 @@
 
 package com.akiban.server;
 
+import com.akiban.server.rowdata.RowData;
+
 import java.util.ArrayList;
 import java.util.List;
 

@@ -29,17 +29,17 @@ public class CSVTarget extends Target
     // Target interface
 
     @Override
-    public void deleteAll() throws Exception
+    public void deleteAll()
     {
     }
 
     @Override
-    public void writeCount(int count) throws Exception
+    public void writeCount(int count)
     {
     }
 
     @Override
-    public void close() throws Exception
+    public void close()
     {
         output.close();
     }
@@ -60,7 +60,7 @@ public class CSVTarget extends Target
     }
 
     @Override
-    protected final void write(String typename, Map<String, Object> map) throws Exception
+    protected final void write(String typename, Map<String, Object> map)
     {
         output.print(quote(typename));
         ModelObject modelObject = MetaModel.only().definition(typename);

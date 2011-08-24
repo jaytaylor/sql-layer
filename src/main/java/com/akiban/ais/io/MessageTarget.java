@@ -27,18 +27,18 @@ public class MessageTarget extends Target
     // Target interface
 
     @Override
-    public void deleteAll() throws Exception
+    public void deleteAll() 
     {
     }
 
     @Override
-    public void writeCount(int count) throws Exception
+    public void writeCount(int count)
     {
         writeInt(count);
     }
 
     @Override
-    public void close() throws Exception
+    public void close()
     {
     }
 
@@ -58,7 +58,7 @@ public class MessageTarget extends Target
     }
 
     @Override
-    protected final void write(String typename, Map<String, Object> map) throws Exception
+    protected final void write(String typename, Map<String, Object> map)
     {
         ModelObject modelObject = MetaModel.only().definition(typename);
         for (ModelObject.Attribute attribute : modelObject.attributes()) {
@@ -84,8 +84,9 @@ public class MessageTarget extends Target
         if (s == null) {
             payload.putInt(NULL_STRING);
         } else {
-            payload.putInt(s.length());
-            payload.put(s.getBytes());
+            byte[] bytes = s.getBytes();
+            payload.putInt(bytes.length);
+            payload.put(bytes);
         }
     }
 

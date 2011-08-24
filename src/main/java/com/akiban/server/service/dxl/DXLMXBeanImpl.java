@@ -15,10 +15,7 @@
 
 package com.akiban.server.service.dxl;
 
-import com.akiban.ais.io.AISTarget;
-import com.akiban.ais.io.TableSubsetWriter;
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -27,10 +24,10 @@ import com.akiban.ais.model.staticgrouping.Grouping;
 import com.akiban.ais.model.staticgrouping.GroupingVisitorStub;
 import com.akiban.ais.model.staticgrouping.GroupsBuilder;
 import com.akiban.ais.util.AISPrinter;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.util.GroupIndexCreator;
@@ -68,8 +65,6 @@ class DXLMXBeanImpl implements DXLMXBean {
         Session session = ServiceManagerImpl.newSession();
         try {
             dxlService.ddlFunctions().createTable(session, schema, ddl);
-        } catch (InvalidOperationException e) {
-            throw new RuntimeException(e);
         } finally {
             session.close();
         }
@@ -89,17 +84,10 @@ class DXLMXBeanImpl implements DXLMXBean {
             Index index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnList);
             ddlFunctions.createIndexes(session, Collections.singleton(index));
         }
-        catch(GroupIndex.GroupIndexCreationException e) {
-            LOG.debug(String.format(CREATE_GROUP_INDEX_LOG_FORMAT, groupName, indexName, tableColumnList), e);
-            throw new RuntimeException(e.getMessage());
-        }
-        catch(GroupIndexCreator.GroupIndexCreatorException e) {
-            LOG.debug(String.format(CREATE_GROUP_INDEX_LOG_FORMAT, groupName, indexName, tableColumnList), e);
-            throw new RuntimeException(e.getMessage());
-        }
-        catch(Exception e) {
-            LOG.error(String.format(CREATE_GROUP_INDEX_LOG_FORMAT, groupName, indexName, tableColumnList), e);
-            throw new RuntimeException(e.getMessage());
+        catch (InvalidOperationException e) {
+            LOG.debug(e.getMessage());
+            LOG.debug(String.format(CREATE_GROUP_INDEX_LOG_FORMAT, groupName, indexName, tableColumnList));
+            throw e;
         }
         finally {
             session.close();
@@ -110,8 +98,6 @@ class DXLMXBeanImpl implements DXLMXBean {
         Session session = ServiceManagerImpl.newSession();
         try {
             dxlService.ddlFunctions().dropTable(session, new TableName(schema, tableName));
-        } catch (InvalidOperationException e) {
-            throw new RuntimeException(e);
         } finally {
             session.close();
         }
@@ -127,8 +113,6 @@ class DXLMXBeanImpl implements DXLMXBean {
         Session session = ServiceManagerImpl.newSession();
         try {
             dxlService.ddlFunctions().dropGroupIndexes(session, groupName, Collections.singleton(indexName));
-        } catch (InvalidOperationException e) {
-            throw new RuntimeException(e);
         } finally {
             session.close();
         }
@@ -143,11 +127,7 @@ class DXLMXBeanImpl implements DXLMXBean {
             for(com.akiban.ais.model.Group group: ais.getGroups().values()) {
                 final String groupTableSchema = group.getGroupTable().getName().getSchemaName();
                 if(groupTableSchema.equals(schemaName)) {
-                    try {
-                        dxlService.ddlFunctions().dropGroup(session, group.getName());
-                    } catch(InvalidOperationException e) {
-                        throw new RuntimeException(e);
-                    }
+                    dxlService.ddlFunctions().dropGroup(session, group.getName());
                 }
             }
         } finally {
@@ -160,8 +140,6 @@ class DXLMXBeanImpl implements DXLMXBean {
         Session session = ServiceManagerImpl.newSession();
         try {
             dxlService.ddlFunctions().dropGroup(session, groupName);
-        } catch (InvalidOperationException e) {
-            throw new RuntimeException(e);
         } finally {
             session.close();
         }
@@ -210,9 +188,6 @@ class DXLMXBeanImpl implements DXLMXBean {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
             return AISPrinter.toString(ais);
         }
-        catch(Exception e) {
-            throw new RuntimeException(e);
-        }
         finally {
             session.close();
         }
@@ -244,8 +219,6 @@ class DXLMXBeanImpl implements DXLMXBean {
                 row.put(i, field);
             }
             dxlService.dmlFunctions().writeRow(session, row);
-        } catch (InvalidOperationException e) {
-            throw new RuntimeException(e.getMessage());
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e.getMessage());
         } finally {

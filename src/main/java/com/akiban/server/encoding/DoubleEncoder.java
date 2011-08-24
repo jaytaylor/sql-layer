@@ -15,99 +15,14 @@
 
 package com.akiban.server.encoding;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Type;
-import com.akiban.server.AkServerUtil;
-import com.akiban.server.FieldDef;
-import com.akiban.server.RowData;
-import com.persistit.Key;
+public class DoubleEncoder extends FixedWidthEncoding {
 
-public class DoubleEncoder extends EncodingBase<Double> {
-    DoubleEncoder() {
-    }
-
-    @Override
-    public Class<Double> getToObjectClass() {
-        return Double.class;
-    }
-
-    public static long encodeFromObject(Object obj) {
-        final double d;
-        if(obj == null) {
-            d = 0d;
-        } else if(obj instanceof Number) {
-            d = ((Number)obj).doubleValue();
-        } else if (obj instanceof String) {
-            d = Double.parseDouble((String)obj);
-        } else {
-            throw new IllegalArgumentException("Requires Number or String");
-        }
-        return Double.doubleToLongBits(d);
-    }
-
-    public static double decodeFromBits(long bits) {
-        return Double.longBitsToDouble(bits);
-    }
-
-    private static long fromRowData(RowData rowData, long offsetAndWidth) {
-        final int offset = (int)offsetAndWidth;
-        final int width = (int)(offsetAndWidth >>> 32);
-        return rowData.getIntegerValue(offset, width);
-    }
-    
-
-    @Override
-    public boolean validate(Type type) {
-        return type.fixedSize() && (type.maxSizeBytes() == STORAGE_SIZE);
-    }
-
-    @Override
-    public Double toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
-        final long offsetAndWidth = getCheckedOffsetAndWidth(fieldDef, rowData);
-        final long value = fromRowData(rowData, offsetAndWidth);
-        return Double.longBitsToDouble(value);
-    }
-
-    @Override
-    public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
-        final long longBits = encodeFromObject(value);
-        return AkServerUtil.putIntegerByWidth(dest, offset, STORAGE_SIZE, longBits);
-    }
-
-    @Override
-    public int widthFromObject(FieldDef fieldDef, Object value) {
-        return fieldDef.getMaxStorageSize();
-    }
-
-    @Override
-    public void toKey(FieldDef fieldDef, RowData rowData, Key key) {
-        if(rowData.isNull(fieldDef.getFieldIndex())) {
-            key.append(null);
-        } else {
-            final double d = toObject(fieldDef, rowData);
-            key.append(d);
-        }
-    }
-
-    @Override
-    public void toKey(FieldDef fieldDef, Object value, Key key) {
-        if(value == null) {
-            key.append(null);
-        } else {
-            final long longBits = encodeFromObject(value);
-            final double d = decodeFromBits(longBits);
-            key.append(d);
-        }
-    }
+    public static final Encoding INSTANCE = new DoubleEncoder();
 
     /**
-     * See {@link Key#EWIDTH_LONG}
+     * See {@link com.persistit.Key#EWIDTH_LONG}
      */
-    @Override
-    public long getMaxKeyStorageSize(Column column) {
-        return 9;
+    private DoubleEncoder() {
+        super(9);
     }
-
-    
-    protected static final int STORAGE_SIZE = 8;
 }

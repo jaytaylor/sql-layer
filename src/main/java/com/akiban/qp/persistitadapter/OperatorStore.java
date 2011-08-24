@@ -21,7 +21,6 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
-import com.akiban.message.ErrorCode;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.expression.IndexBound;
@@ -30,7 +29,6 @@ import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.ArrayBindings;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.physicaloperator.UpdateFunction;
@@ -41,20 +39,24 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDataExtractor;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.ConstantColumnSelector;
-import com.akiban.server.api.dml.DuplicateKeyException;
-import com.akiban.server.api.dml.NoSuchRowException;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.error.NoRowsUpdatedException;
+import com.akiban.server.error.TooManyRowsUpdatedException;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.types.ValueSource;
+import com.google.inject.Inject;
 import com.persistit.Exchange;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
@@ -73,8 +75,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // Store interface
 
     @Override
-    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector)
-            throws Exception
+    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector) throws PersistitException
     {
         PersistitStore persistitStore = getPersistitStore();
         AkibanInformationSchema ais = persistitStore.getRowDefCache().ais();
@@ -110,7 +111,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
         Update_Default updateOp = new Update_Default(scanOp, updateFunction);
 
-        Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
+        Transaction transaction = treeService.getTransaction(session);
         for(int retryCount=0; ; ++retryCount) {
             try {
                 transaction.begin();
@@ -142,14 +143,14 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     @Override
-    public void writeRow(Session session, RowData rowData) throws Exception {
-        Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
+    public void writeRow(Session session, RowData rowData) throws PersistitException {
+        Transaction transaction = treeService.getTransaction(session);
         for(int retryCount=0; ; ++retryCount) {
             try {
                 transaction.begin();
                 super.writeRow(session, rowData);
 
-                AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
+                AkibanInformationSchema ais = aisHolder.getAis();
                 PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
                 UserTable uTable = ais.getUserTable(rowData.getRowDefId());
                 maintainGroupIndexes(
@@ -171,12 +172,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     @Override
-    public void deleteRow(Session session, RowData rowData) throws Exception {
-        Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
+    public void deleteRow(Session session, RowData rowData) throws PersistitException {
+        Transaction transaction = treeService.getTransaction(session);
         for(int retryCount=0; ; ++retryCount) {
             try {
                 transaction.begin();
-                AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
+                AkibanInformationSchema ais = aisHolder.getAis();
                 PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
                 UserTable uTable = ais.getUserTable(rowData.getRowDefId());
                 maintainGroupIndexes(
@@ -198,7 +199,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     @Override
-    public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) throws Exception {
+    public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) {
         List<TableIndex> tableIndexes = new ArrayList<TableIndex>();
         List<GroupIndex> groupIndexes = new ArrayList<GroupIndex>();
         for(Index index : indexes) {
@@ -217,7 +218,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             super.buildIndexes(session, tableIndexes, defer);
         }
 
-        AkibanInformationSchema ais = ServiceManagerImpl.get().getDXL().ddlFunctions().getAIS(session);
+        AkibanInformationSchema ais = aisHolder.getAis();
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
         for(GroupIndex groupIndex : groupIndexes) {
             PhysicalOperator plan = OperatorStoreMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
@@ -235,8 +236,11 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // OperatorStore interface
 
-    public OperatorStore() {
-        super(new PersistitStore(false));
+    @Inject
+    public OperatorStore(AisHolder aisHolder, TreeService treeService) {
+        super(new PersistitStore(false, treeService));
+        this.aisHolder = aisHolder;
+        this.treeService = treeService;
     }
 
     public PersistitStore getPersistitStore() {
@@ -313,7 +317,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             OperatorStoreGIHandler.Action action,
             OperatorStoreMaintenancePlan maintenancePlan
     )
-    throws PersistitException
     {
         RowType invertActionRowType = maintenancePlan == null ? null : maintenancePlan.flattenedAncestorRowType();
         Cursor cursor = API.cursor(rootOperator, adapter);
@@ -381,45 +384,35 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     private static void runCursor(RowData oldRowData, RowDef rowDef, UpdatePlannable plannable, PersistitAdapter adapter)
-            throws DuplicateKeyException, NoSuchRowException
     {
         final UpdateResult result;
-        try {
+        //try {
             result = plannable.run(UndefBindings.only(), adapter);
-        } catch (CursorUpdateException e) {
-            Throwable cause = e.getCause();
-            if ( (cause instanceof InvalidOperationException)
-                    && ErrorCode.DUPLICATE_KEY.equals(((InvalidOperationException) cause).getCode()))
-            {
-                throw new DuplicateKeyException((InvalidOperationException)cause);
-            }
-            throw e;
-        }
+        // Currently CursorUpdateException isn't thrown from anywhere. TODO: implement or remove    
+        //} catch (CursorUpdateException e) {
+        //    Throwable cause = e.getCause();
+        //    if ( (cause instanceof InvalidOperationException)
+        //            && ErrorCode.DUPLICATE_KEY.equals(((InvalidOperationException) cause).getCode()))
+        //    {
+        //        throw new DuplicateKeyException((InvalidOperationException)cause);
+        //    }
+        //    throw e;
+        //}
 
         if (result.rowsModified() == 0 || result.rowsTouched() == 0) {
-            throw new NoSuchRowException(describeRow(oldRowData, rowDef));
+            throw new NoRowsUpdatedException (oldRowData, rowDef);
         }
         else if(result.rowsModified() != 1 || result.rowsTouched() != 1) {
-            throw new RuntimeException(String.format(
-                    "%s: %d touched, %d modified",
-                    describeRow(oldRowData, rowDef),
-                    result.rowsTouched(),
-                    result.rowsModified()
-            ));
+            throw new TooManyRowsUpdatedException (oldRowData, rowDef, result);
         }
     }
 
-    private static String describeRow(RowData oldRowData, RowDef rowDef) {
-        String rowDescription;
-        try {
-            rowDescription = oldRowData.toString(rowDef);
-        } catch (Exception e) {
-            rowDescription = "error in generating RowData.toString";
-        }
-        return rowDescription;
-    }
+    // object state
+    private final TreeService treeService;
+    private final AisHolder aisHolder;
 
     // consts
+
     private static final int MAX_RETRIES = 10;
 
     // nested classes
@@ -429,6 +422,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         private final RowData newRowData;
         private final ColumnSelector columnSelector;
         private final RowDef rowDef;
+        private final RowDataExtractor extractor = new RowDataExtractor();
 
         private InternalUpdateFunction(PersistitAdapter adapter, RowDef rowDef, RowData newRowData, ColumnSelector columnSelector) {
             this.newRowData = newRowData;
@@ -460,12 +454,15 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
             // Note: some encodings are untested except as necessary for mtr
             NewRow newRow = new NiceRow(rowDef.getRowDefId());
+            ToObjectValueTarget target = new ToObjectValueTarget();
             for (int i=0; i < original.rowType().nFields(); ++i) {
                 if (columnSelector.includesColumn(i)) {
-                    newRow.put(i, newRowData.toObject(rowDef, i));
+                    Object value = extractor.get(rowDef.getFieldDef(i), newRowData);
+                    newRow.put(i, value);
                 }
                 else {
-                    newRow.put(i, original.field(i, bindings));
+                    ValueSource source = original.bindSource(i, bindings);
+                    newRow.put(i, target.convertFromSource(source));
                 }
             }
             return PersistitGroupRow.newPersistitGroupRow(adapter, newRow.toRowData());

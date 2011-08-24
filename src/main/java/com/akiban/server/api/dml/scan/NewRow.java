@@ -17,11 +17,10 @@ package com.akiban.server.api.dml.scan;
 
 import java.util.Map;
 
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
-import com.akiban.server.RowDefCache;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.DMLError;
 import com.akiban.server.service.ServiceManagerImpl;
 
 /**
@@ -149,9 +148,6 @@ public abstract class NewRow {
     {
         RowDefCache rowDefCache = ServiceManagerImpl.get().getStore().getRowDefCache();
         RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-        if (rowDef == null) {
-            throw new DMLError(String.format("Couldn't find RowDef for rowDefId %s", rowDefId));
-        }
         return rowDef;
     }
 }

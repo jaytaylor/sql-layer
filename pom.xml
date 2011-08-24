@@ -4,7 +4,7 @@
     <groupId>com.akiban</groupId>
     <artifactId>akiban-server</artifactId>
     <packaging>jar</packaging>
-    <version>0.5.1-SNAPSHOT</version>
+    <version>0.6.1-SNAPSHOT</version>
     <name>akiban-server</name>
     <properties>
         <!-- this is the default version number, hudson job sets this to the official number -->
@@ -77,7 +77,12 @@
         <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
-            <version>2.0</version>
+            <version>3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.inject.extensions</groupId>
+            <artifactId>guice-grapher</artifactId>
+            <version>3.0</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -120,7 +125,7 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-persistit-core</artifactId>
-            <version>2.5.1-SNAPSHOT</version>
+            <version>2.5.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.akiban</groupId>

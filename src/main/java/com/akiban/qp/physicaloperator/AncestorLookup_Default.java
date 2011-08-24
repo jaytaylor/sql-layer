@@ -29,8 +29,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static java.lang.Math.max;
-
 class AncestorLookup_Default extends PhysicalOperator
 {
     // Object interface

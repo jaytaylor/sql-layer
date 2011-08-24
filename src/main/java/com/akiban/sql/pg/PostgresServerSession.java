@@ -15,13 +15,12 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.StandardException;
+import com.akiban.server.service.dxl.DXLService;
 
 import com.akiban.sql.parser.SQLParser;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.physicaloperator.StoreAdapter;
-import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
 
@@ -57,7 +56,7 @@ public interface PostgresServerSession
     public void setAttribute(String key, Object attr);
 
     /** Return Akiban Server manager. */
-    public ServiceManager getServiceManager();
+    public DXLService getDXL();
 
     /** Return Akiban Server session. */
     public Session getSession();
@@ -81,12 +80,12 @@ public interface PostgresServerSession
     public StoreAdapter getStore();
 
     /** Begin a new transaction. */
-    public void beginTransaction() throws StandardException;
+    public void beginTransaction();
 
     /** Commit the current transaction. */
-    public void commitTransaction() throws StandardException;
+    public void commitTransaction();
 
     /** Rollback the current transaction. */
-    public void rollbackTransaction() throws StandardException;
+    public void rollbackTransaction();
 
 }

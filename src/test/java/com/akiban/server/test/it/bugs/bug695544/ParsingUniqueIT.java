@@ -15,9 +15,9 @@
 
 package com.akiban.server.test.it.bugs.bug695544;
 
-import com.akiban.server.InvalidOperationException;
-import com.akiban.server.api.ddl.ParseException;
-import com.akiban.server.api.dml.DuplicateKeyException;
+import com.akiban.server.error.DuplicateKeyException;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.ParseException;
 import com.akiban.server.test.it.ITBase;
 import org.junit.After;
 import org.junit.Test;

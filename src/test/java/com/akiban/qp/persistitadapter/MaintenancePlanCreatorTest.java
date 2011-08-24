@@ -21,9 +21,8 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.SchemaFactory;
+import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.util.Strings;
 import org.junit.Test;
 

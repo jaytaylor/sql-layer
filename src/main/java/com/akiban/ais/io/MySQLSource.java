@@ -26,14 +26,19 @@ import java.util.Map;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Source;
+import com.akiban.server.error.AisSQLErrorException;
 
 public class MySQLSource extends Source
 {
     // Source interface
 
-    public void close() throws SQLException
+    public void close()
     {
+        try {
         connection.close();
+        } catch (SQLException ex) {
+            throw new AisSQLErrorException ("MySQLSource close", ex.getMessage());
+        }
     }
 
     // MySQLSource interface
@@ -55,38 +60,42 @@ public class MySQLSource extends Source
     }
 
     @Override
-    protected final void read(String typename, Receiver receiver) throws Exception
+    protected final void read(String typename, Receiver receiver)
     {
         ModelObject modelObject = MetaModel.only().definition(typename);
-        Statement stmt = connection.createStatement();
-        ResultSet resultSet = stmt.executeQuery(modelObject.readQuery());
-        while (resultSet.next()) {
-            Map<String, Object> map = new HashMap<String, Object>();
-            int c = 0;
-            for (ModelObject.Attribute attribute : modelObject.attributes()) {
-                Object value = null;
-                c++;
-                switch (attribute.type()) {
-                    case INTEGER:
-                        value = integerOrNull(resultSet.getString(c));
-                        break;
-                    case LONG:
-                        value = longOrNull(resultSet.getString(c));
-                        break;
-                    case BOOLEAN:
-                        value = resultSet.getInt(c) != 0;
-                        break;
-                    case STRING:
-                        value = resultSet.getString(c);
-                        break;
-                    default:
-                        assert false;
+        try {
+            Statement stmt = connection.createStatement();
+            ResultSet resultSet = stmt.executeQuery(modelObject.readQuery());
+            while (resultSet.next()) {
+                Map<String, Object> map = new HashMap<String, Object>();
+                int c = 0;
+                for (ModelObject.Attribute attribute : modelObject.attributes()) {
+                    Object value = null;
+                    c++;
+                    switch (attribute.type()) {
+                        case INTEGER:
+                            value = integerOrNull(resultSet.getString(c));
+                            break;
+                        case LONG:
+                            value = longOrNull(resultSet.getString(c));
+                            break;
+                        case BOOLEAN:
+                            value = resultSet.getInt(c) != 0;
+                            break;
+                        case STRING:
+                            value = resultSet.getString(c);
+                            break;
+                        default:
+                            assert false;
+                    }
+                    map.put(attribute.name(), value);
                 }
-                map.put(attribute.name(), value);
+                receiver.receive(map);
             }
-            receiver.receive(map);
+            stmt.close();
+        } catch (SQLException ex) {
+            throw new AisSQLErrorException ("MySQLSource read", ex.getMessage());
         }
-        stmt.close();
     }
 
     private Integer integerOrNull(String s)

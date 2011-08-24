@@ -15,68 +15,13 @@
 
 package com.akiban.server.encoding;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Type;
-import com.akiban.server.FieldDef;
-import com.akiban.server.Quote;
-import com.akiban.server.RowData;
-import com.akiban.util.AkibanAppender;
-import com.persistit.Key;
+import com.akiban.server.rowdata.FieldDef;
 
-import java.nio.ByteBuffer;
+public class StringEncoder extends VariableWidthEncoding {
 
-public class StringEncoder extends EncodingBase<String> {
-    StringEncoder() {
-    }
+    public static final Encoding INSTANCE = new StringEncoder();
 
-    @Override
-    public Class<String> getToObjectClass() {
-        return String.class;
-    }
-
-    @Override
-    public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
-                          int offset) {
-        return EncodingUtils.objectToString(value, dest, offset, fieldDef);
-    }
-
-    @Override
-    public void toKey(FieldDef fieldDef, RowData rowData, Key key) {
-        EncodingUtils.toKeyStringEncoding(fieldDef, rowData, key);
-    }
-
-    @Override
-    public void toKey(FieldDef fieldDef, Object value, Key key) {
-        key.append(value);
-    }
-
-    @Override
-    public long getMaxKeyStorageSize(Column column) {
-        return column.getMaxStorageSize();
-    }
-
-    @Override
-    public String toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
-        final long location = getCheckedOffsetAndWidth(fieldDef, rowData);
-        return rowData.getStringValue((int) location, (int) (location >>> 32), fieldDef);
-    }
-
-    @Override
-    public void toString(FieldDef fieldDef, RowData rowData,
-                         AkibanAppender sb, final Quote quote) {
-        try {
-            final long location = getCheckedOffsetAndWidth(fieldDef, rowData);
-            if (sb.canAppendBytes()) {
-                ByteBuffer buff = rowData.byteBufferForStringValue((int) location, (int) (location >>> 32), fieldDef);
-                quote.append(sb, buff, fieldDef.column().getCharsetAndCollation().charset());
-            }
-            else {
-                String s = rowData.getStringValue((int) location, (int) (location >>> 32), fieldDef);
-                quote.append(sb, s);
-            }
-        } catch (EncodingException e) {
-            sb.append("null");
-        }
+    private StringEncoder() {
     }
 
     @Override
@@ -84,11 +29,5 @@ public class StringEncoder extends EncodingBase<String> {
         int prefixWidth = fieldDef.getPrefixSize();
         final String s = value == null ? "" : value.toString();
         return EncodingUtils.stringByteLength(s) + prefixWidth;
-    }
-
-    @Override
-    public boolean validate(Type type) {
-        long w = type.maxSizeBytes();
-        return !type.fixedSize() && w < 65536 * 3;
     }
 }

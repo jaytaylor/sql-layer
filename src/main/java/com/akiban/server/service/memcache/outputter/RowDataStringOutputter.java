@@ -15,7 +15,7 @@
 
 package com.akiban.server.service.memcache.outputter;
 
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiProcessedGetRequest;
 

@@ -26,8 +26,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.ModelNames;
-import com.akiban.ais.model.Table;
 import com.akiban.ais.model.Target;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
@@ -38,42 +36,42 @@ public class Writer
         this.target = target;
     }
 
-    protected int getVersion() throws Exception {
+    protected int getVersion() {
         return MetaModel.only().getModelVersion();
     }
 
-    protected Collection<Type> getTypes(AkibanInformationSchema ais) throws Exception {
+    protected Collection<Type> getTypes(AkibanInformationSchema ais) {
         return ais.getTypes();
     }
 
-    protected Collection<Group> getGroups(AkibanInformationSchema ais) throws Exception {
+    protected Collection<Group> getGroups(AkibanInformationSchema ais) {
         return ais.getGroups().values();
     }
 
-    protected Collection<GroupTable> getGroupTables(AkibanInformationSchema ais) throws Exception {
+    protected Collection<GroupTable> getGroupTables(AkibanInformationSchema ais) {
         return ais.getGroupTables().values();
     }
 
-    protected Collection<UserTable> getUserTables(AkibanInformationSchema ais) throws Exception {
+    protected Collection<UserTable> getUserTables(AkibanInformationSchema ais) {
         return ais.getUserTables().values();
     }
 
-    protected Collection<Join> getJoins(AkibanInformationSchema ais) throws Exception {
+    protected Collection<Join> getJoins(AkibanInformationSchema ais) {
         return ais.getJoins().values();
     }
     
-    private void saveVersion(int version) throws Exception {
+    private void saveVersion(int version) {
         target.writeVersion(version);
     }
 
-    private void saveTypes(Collection<Type> types) throws Exception {
+    private void saveTypes(Collection<Type> types) {
         target.writeCount(types.size());
         for (Type type : types) {
             target.writeType(type.map());
         }
     }
 
-    private void saveGroups(Collection<Group> groups) throws Exception {
+    private void saveGroups(Collection<Group> groups) {
         target.writeCount(groups.size());
         for (Group group : groups) {
             target.writeGroup(group.map());
@@ -81,7 +79,7 @@ public class Writer
         }
     }
 
-    private void saveTables(Collection<GroupTable> groupTables, Collection<UserTable> userTables) throws Exception {
+    private void saveTables(Collection<GroupTable> groupTables, Collection<UserTable> userTables) {
         target.writeCount(groupTables.size() + userTables.size());
         for (GroupTable groupTable : groupTables) {
             target.writeTable(groupTable.map());
@@ -96,7 +94,7 @@ public class Writer
         }
     }
 
-    private void saveColumns(Collection<GroupTable> groupTables, Collection<UserTable> userTables) throws Exception {
+    private void saveColumns(Collection<GroupTable> groupTables, Collection<UserTable> userTables) {
         target.writeCount(nColumns);
         for (GroupTable groupTable : groupTables) {
             for (Column column : groupTable.getColumns()) {
@@ -110,7 +108,7 @@ public class Writer
         }
     }
 
-    private void saveJoins(Collection<Join> joins) throws Exception {
+    private void saveJoins(Collection<Join> joins)  {
         target.writeCount(joins.size());
         for (Join join : joins) {
             target.writeJoin(join.map());
@@ -118,7 +116,7 @@ public class Writer
         }
     }
 
-    private void saveJoinColumns(Collection<Join> joins) throws Exception {
+    private void saveJoinColumns(Collection<Join> joins) {
         target.writeCount(nJoinColumns);
         for (Join join : joins) {
             for (JoinColumn joinColumn : join.getJoinColumns()) {
@@ -128,7 +126,7 @@ public class Writer
     }
 
     private void saveIndexes(Collection<Group> groups, Collection<GroupTable> groupTables,
-                             Collection<UserTable> userTables) throws Exception {
+                             Collection<UserTable> userTables) {
         target.writeCount(nIndexes);
         for (Group group : groups) {
             for (Index index : group.getIndexes()) {
@@ -151,7 +149,7 @@ public class Writer
     }
 
     private void saveIndexColumns(Collection<Group> groups, Collection<GroupTable> groupTables,
-                                  Collection<UserTable> userTables) throws Exception {
+                                  Collection<UserTable> userTables) {
         target.writeCount(nIndexColumns);
         for (Group group : groups) {
             for (Index index : group.getIndexes()) {
@@ -176,7 +174,7 @@ public class Writer
         }
     }
 
-    public final void save(AkibanInformationSchema ais) throws Exception {
+    public final void save(AkibanInformationSchema ais) {
         final int version = getVersion();
         final Collection<Type> types = getTypes(ais);
         final Collection<Group> groups = getGroups(ais);

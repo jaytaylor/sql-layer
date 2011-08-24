@@ -47,12 +47,19 @@ public class AISBBasedBuilder
 
         @Override
         public AkibanInformationSchema ais() {
+            return ais(true);
+        }
+
+        @Override
+        public AkibanInformationSchema ais(boolean freezeAIS) {
             usable = false;
             aisb.basicSchemaIsComplete();
             aisb.groupingIsComplete();
             AISValidationResults results = aisb.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS);
             results.throwIfNecessary();
-            aisb.akibanInformationSchema().freeze();
+            if (freezeAIS) {
+                aisb.akibanInformationSchema().freeze();
+            }
             return aisb.akibanInformationSchema();
         }
 
@@ -127,6 +134,18 @@ public class AISBBasedBuilder
         public NewUserTableBuilder colString(String name, int length, boolean nullable, String charset) {
             checkUsable();
             aisb.column(schema, userTable, name, uTableColumnPos++, "VARCHAR", (long)length, null, nullable, false, charset, null);
+            return this;
+        }
+
+        @Override
+        public NewUserTableBuilder colDouble(String name) {
+            return colDouble(name, NULLABLE_DEFAULT);
+        }
+
+        @Override
+        public NewUserTableBuilder colDouble(String name, boolean nullable) {
+            checkUsable();
+            aisb.column(schema, userTable, name, uTableColumnPos++, "DOUBLE", null, null, nullable, false, null, null);
             return this;
         }
 
@@ -247,6 +266,11 @@ public class AISBBasedBuilder
     private static class ActualGroupIndexBuilder implements NewAISGroupIndexStarter, NewAISGroupIndexBuilder {
 
         // NewAISProvider interface
+
+        @Override
+        public AkibanInformationSchema ais(boolean freezeAIS) {
+            return ais();
+        }
 
         @Override
         public AkibanInformationSchema ais() {

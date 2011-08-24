@@ -21,10 +21,11 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.server.error.NoSuchGroupException;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.akiban.server.util.GroupIndexCreator.GroupIndexCreatorException;
+
 import static org.junit.Assert.assertEquals;
 
 public class GroupIndexCreatorTest {
@@ -39,7 +40,7 @@ public class GroupIndexCreatorTest {
                 .ais();
     }
 
-    @Test(expected=GroupIndexCreatorException.class)
+    @Test(expected=NoSuchGroupException.class)
     public void unknownGroup() throws Exception {
         GroupIndexCreator.createIndex(ais, "foobar", "name_date", "c.name");
     }

@@ -38,11 +38,15 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.api.dml.scan.ScanFlag;
+import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.TestConfigService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.types.conversion.ConverterTestUtils;
 import com.akiban.server.util.GroupIndexCreator;
 import com.akiban.util.Strings;
 import com.akiban.util.Undef;
@@ -54,8 +58,6 @@ import org.junit.Before;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDefCache;
 import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.service.config.Property;
 import com.akiban.server.service.memcache.HapiProcessorFactory;
@@ -67,20 +69,19 @@ import com.akiban.util.ListUtils;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.HapiProcessor;
-import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanRequest;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 
 /**
@@ -137,10 +138,11 @@ public class ApiTestBase {
 
     @Before
     public final void startTestServices() throws Exception {
+        ConverterTestUtils.setGlobalTimezone("UTC");
         testServicesStarted = false;
         sm = createServiceManager( startupConfigProperties() );
         sm.startServices();
-        session = ServiceManagerImpl.newSession();
+        session = sm.getSessionService().createSession();
         testServicesStarted = true;
     }
 
@@ -186,7 +188,7 @@ public class ApiTestBase {
     public final void restartTestServices(Collection<Property> properties) throws Exception {
         sm = createServiceManager( properties );
         sm.startServices();
-        session = ServiceManagerImpl.newSession();
+        session = sm.getSessionService().createSession();
         ddl(); // loads up the schema manager et al
     }
 
@@ -207,11 +209,11 @@ public class ApiTestBase {
     }
     
     protected final DMLFunctions dml() {
-        return sm.getDXL().dmlFunctions();
+        return dxl().dmlFunctions();
     }
 
     protected final DDLFunctions ddl() {
-        return sm.getDXL().ddlFunctions();
+        return dxl().ddlFunctions();
     }
 
     protected final Store store() {
@@ -248,6 +250,14 @@ public class ApiTestBase {
 
     protected final ServiceManager serviceManager() {
         return sm;
+    }
+
+    protected final ConfigurationService configService() {
+        return sm.getConfigurationService();
+    }
+
+    protected final DXLService dxl() {
+        return sm.getDXL();
     }
 
     protected final int aisGeneration() {
@@ -287,11 +297,7 @@ public class ApiTestBase {
             throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
         final Index index;
-        try {
-            index = GroupIndexCreator.createIndex(ais, groupName, indexName, unique, tableColumnPairs);
-        } catch(GroupIndexCreator.GroupIndexCreatorException e) {
-            throw new InvalidOperationException(e);
-        }
+        index = GroupIndexCreator.createIndex(ais, groupName, indexName, unique, tableColumnPairs);
         ddl().createIndexes(session(), Collections.singleton(index));
         return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
     }
@@ -322,12 +328,11 @@ public class ApiTestBase {
     }
 
     protected final List<NewRow> scanAll(ScanRequest request) throws InvalidOperationException {
-        Session session = ServiceManagerImpl.newSession();
         ListRowOutput output = new ListRowOutput();
-        CursorId cursorId = dml().openCursor(session, aisGeneration(), request);
+        CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
 
-        dml().scanSome(session, cursorId, output);
-        dml().closeCursor(session, cursorId);
+        dml().scanSome(session(), cursorId, output);
+        dml().closeCursor(session(), cursorId);
 
         return output.getRows();
     }
@@ -351,7 +356,7 @@ public class ApiTestBase {
         assertEquals("rows scanned", Arrays.asList(expectedRows), scanAll(request));
     }
 
-    protected final ScanAllRequest scanAllRequest(int tableId) throws NoSuchTableException {
+    protected final ScanAllRequest scanAllRequest(int tableId) {
         Table uTable = ddl().getTable(session(), tableId);
         Set<Integer> allCols = new HashSet<Integer>();
         for (int i=0, MAX=uTable.getColumns().size(); i < MAX; ++i) {
@@ -424,7 +429,7 @@ public class ApiTestBase {
         expectRowCount(tableId, expectedRows.length);
     }
 
-    protected final List<NewRow> convertRowDatas(List<RowData> rowDatas) throws NoSuchTableException {
+    protected final List<NewRow> convertRowDatas(List<RowData> rowDatas) {
         List<NewRow> ret = new ArrayList<NewRow>(rowDatas.size());
         for(RowData rowData : rowDatas) {
             NewRow newRow = NiceRow.fromRowData(rowData, ddl().getRowDef(rowData.getRowDefId()));
@@ -524,7 +529,7 @@ public class ApiTestBase {
         return new TableName(schema, table);
     }
 
-    protected final UserTable getUserTable(String schema, String name) throws NoSuchTableException {
+    protected final UserTable getUserTable(String schema, String name) {
         return ddl().getUserTable(session(), tableName(schema, name));
     }
 

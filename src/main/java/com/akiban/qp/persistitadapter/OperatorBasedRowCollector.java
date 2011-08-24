@@ -27,9 +27,9 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.IndexDef;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.IndexDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.service.memcache.hprocessor.PredicateLimit;
@@ -63,7 +63,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     }
 
     @Override
-    public boolean collectNextRow(ByteBuffer payload) throws Exception
+    public boolean collectNextRow(ByteBuffer payload)
     {
          // The handling of currentRow is slightly tricky: If writing to the payload results in BufferOverflowException,
          // then there is likely to be another call of this method, expecting to get the same row and write it into
@@ -94,7 +94,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     }
 
     @Override
-    public RowData collectNextRow() throws Exception
+    public RowData collectNextRow()
     {
         RowData rowData = null;
         PersistitGroupRow row = (PersistitGroupRow) cursor.next();

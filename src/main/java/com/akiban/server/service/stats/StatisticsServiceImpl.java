@@ -16,18 +16,20 @@
 package com.akiban.server.service.stats;
 
 import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.util.Tap;
 import com.akiban.util.TapReport;
+import com.google.inject.Inject;
 
 public final class StatisticsServiceImpl implements StatisticsService,
         Service<StatisticsService>, JmxManageable {
 
     private static final String STATISTICS_PROPERTY = "akserver.statistics";
 
-    public StatisticsServiceImpl() {
+    @Inject
+    public StatisticsServiceImpl(ConfigurationService config) {
+        this.config = config;
     }
 
     @Override
@@ -100,9 +102,7 @@ public final class StatisticsServiceImpl implements StatisticsService,
     }
 
     @Override
-    public void start() throws Exception {
-        ConfigurationService config = ServiceManagerImpl.get()
-                .getConfigurationService();
+    public void start() {
         String stats_enable = config.getProperty(STATISTICS_PROPERTY);
 
         if (stats_enable.length() > 0) {
@@ -111,12 +111,13 @@ public final class StatisticsServiceImpl implements StatisticsService,
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
     }
     
     
     @Override
-    public void crash() throws Exception {
+    public void crash() {
     }
 
+    private final ConfigurationService config;
 }

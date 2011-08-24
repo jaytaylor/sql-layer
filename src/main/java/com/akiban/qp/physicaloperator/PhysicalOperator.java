@@ -18,7 +18,7 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.RowDef;
 
 import java.util.Collections;
 import java.util.List;

@@ -15,10 +15,10 @@
 
 package com.akiban.server.api.dml.scan;
 
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.LegacyUtils;
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.TableDefinitionMismatchException;
+import com.akiban.server.error.TableDefinitionMismatchException;
 
 public class LegacyScanRange implements ScanRange {
     final RowData start;
@@ -30,12 +30,10 @@ public class LegacyScanRange implements ScanRange {
 
     public LegacyScanRange(Integer tableId, RowData start, ColumnSelector startColumns,
                            RowData end, ColumnSelector endColumns, byte[] columnBitMap)
-            throws TableDefinitionMismatchException
     {
         Integer rowsTableId = LegacyUtils.matchRowDatas(start, end);
         if ( (rowsTableId != null) && (tableId != null) && (!rowsTableId.equals(tableId)) ) {
-            throw new TableDefinitionMismatchException(String.format(
-                    "ID<%d> from RowData didn't match given ID <%d>", rowsTableId, tableId));
+            throw new TableDefinitionMismatchException (rowsTableId, tableId);
         }
         this.tableId = tableId == null ? -1 : tableId;
         this.start = start;

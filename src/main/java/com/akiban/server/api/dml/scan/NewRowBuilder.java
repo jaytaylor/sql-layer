@@ -15,9 +15,9 @@
 
 package com.akiban.server.api.dml.scan;
 
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.error.NoSuchTableException;
 
 /**
  * Convenience class for building NewRows. Primarily useful for debugging.
@@ -84,9 +84,8 @@ public final class NewRowBuilder {
      * converts that RowData back, and throws a runtime exception if the two rows are not equal.
      * @param dml the DMLFunctions that is responsible for the conversion
      * @return this builder
-     * @throws NoSuchTableException if thrown by either conversion
      */
-    public NewRowBuilder check(DMLFunctions dml) throws NoSuchTableException {
+    public NewRowBuilder check(DMLFunctions dml) {
         final RowData rowData = dml.convertNewRow(row);
         final NewRow back = dml.convertRowData(rowData);
         if (!row.equals(back)) {

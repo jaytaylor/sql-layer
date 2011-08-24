@@ -1,0 +1,64 @@
+/**
+ * Copyright (C) 2011 Akiban Technologies Inc.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses.
+ */
+
+package com.akiban.server.types.conversion;
+
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueTarget;
+
+abstract class ConverterForDouble extends DoubleConverter {
+
+    static final DoubleConverter SIGNED = new ConverterForDouble() {
+        @Override
+        protected void putDouble(ValueTarget target, double value) {
+            target.putDouble(value);
+        }
+    };
+
+    static final DoubleConverter UNSIGNED = new ConverterForDouble() {
+        @Override
+        protected void putDouble(ValueTarget target, double value) {
+            target.putUDouble(value);
+        }
+    };
+
+    @Override
+    public double getDouble(ValueSource source) {
+        AkType type = source.getConversionType();
+        switch (type) {
+        case DOUBLE:    return source.getDouble();
+        case FLOAT:     return source.getFloat();
+        case DECIMAL:   return source.getDecimal().doubleValue();
+        case LONG:      return source.getLong();
+        case INT:       return source.getInt();
+        case U_INT:     return source.getUInt();
+        case U_FLOAT:   return source.getFloat();
+        case U_DOUBLE:  return source.getUDouble();
+        case TEXT:      return Double.parseDouble(source.getText());
+        case VARCHAR:   return Double.parseDouble(source.getString());
+        default: throw unsupportedConversion(source);
+        }
+    }
+
+    // AbstractConverter interface
+
+    @Override
+    protected AkType nativeConversionType() {
+        return AkType.DOUBLE;
+    }
+
+    private ConverterForDouble() {}
+}

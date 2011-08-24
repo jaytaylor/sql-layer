@@ -15,19 +15,15 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.StandardException;
-
+import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.qp.physicaloperator.API;
-import com.akiban.qp.physicaloperator.ArrayBindings;
-import com.akiban.qp.physicaloperator.BindingNotSetException;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.IncompatibleRowException;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.util.Command;
 
 import java.util.*;
 import java.io.IOException;
@@ -55,7 +51,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     }
     
     public int execute(PostgresServerSession server, int maxrows)
-        throws IOException, StandardException {
+        throws IOException {
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
         RowType resultRowType = resultOperator.rowType();
@@ -71,6 +67,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             List<PostgresType> columnTypes = getColumnTypes();
             int ncols = columnTypes.size();
             Row row;
+            ToObjectValueTarget target = new ToObjectValueTarget();
             while ((row = cursor.next()) != null) {
                 assert (row.rowType() == resultRowType) : row;
                 if (nskip > 0) {
@@ -80,7 +77,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                 messenger.beginMessage(PostgresMessenger.DATA_ROW_TYPE);
                 messenger.writeShort(ncols);
                 for (int i = 0; i < ncols; i++) {
-                    Object field = row.field(i, bindings);
+                    Object field = target.convertFromSource(row.bindSource(i, bindings));
                     PostgresType type = columnTypes.get(i);
                     byte[] value = type.encodeValue(field,
                                                     messenger.getEncoding(),
@@ -99,14 +96,8 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                     break;
             }
         }
-        catch (BindingNotSetException ex) {
-            throw new StandardException(ex);
-        }
-        catch (IncompatibleRowException ex) {
-            throw new StandardException(ex);
-        }
-        catch (StoreAdapterRuntimeException ex) {
-            throw new StandardException(ex);
+        catch (Exception e) {
+            e.printStackTrace();
         }
         finally {
             cursor.close();
@@ -162,8 +153,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     @Override
     public PostgresStatement getBoundStatement(String[] parameters,
                                                boolean[] columnBinary, 
-                                               boolean defaultColumnBinary) 
-            throws StandardException {
+                                               boolean defaultColumnBinary)  {
         if ((parameters == null) && 
             (columnBinary == null) && (defaultColumnBinary == false))
             return this;        // Can be reused.

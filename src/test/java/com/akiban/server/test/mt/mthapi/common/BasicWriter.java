@@ -16,10 +16,10 @@
 package com.akiban.server.test.mt.mthapi.common;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.test.mt.mthapi.base.WriteThread;
 import com.akiban.server.test.mt.mthapi.base.sais.SaisTable;

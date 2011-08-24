@@ -15,7 +15,12 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.StandardException;
+import com.akiban.server.error.UnknownDataTypeException;
+import com.akiban.server.error.UnknownTypeSizeException;
+import com.akiban.server.error.UnsupportedCharsetException;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types.conversion.LongConverter;
 
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
@@ -23,10 +28,6 @@ import com.akiban.sql.types.TypeId;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Types;
-
-import com.akiban.server.encoding.EncoderFactory;
-import com.akiban.server.encoding.Encoding;
-import com.akiban.server.encoding.LongEncoderBase;
 
 import java.io.*;
 import java.text.*;
@@ -145,7 +146,7 @@ public class PostgresType
     private int oid;
     private short length;
     private int modifier;
-    private LongEncoderBase encoder;
+    private LongConverter converter;
 
     public PostgresType(int oid, short length, int modifier) {
         this.oid = oid;
@@ -163,12 +164,11 @@ public class PostgresType
         return modifier;
     }
 
-    public static PostgresType fromAIS(Column aisColumn) throws StandardException {
+    public static PostgresType fromAIS(Column aisColumn) {
         return fromAIS(aisColumn.getType(), aisColumn);
     }
         
-    public static PostgresType fromAIS(Type aisType, Column aisColumn) 
-            throws StandardException {
+    public static PostgresType fromAIS(Type aisType, Column aisColumn)  {
         int oid;
         short length = -1;
         int modifier = -1;
@@ -193,7 +193,7 @@ public class PostgresType
                 oid = INT8_TYPE_OID;
                 break;
             default:
-                throw new StandardException("Don't know size for " + aisType);
+                throw new UnknownTypeSizeException (aisType);
             }
         }
         else if ("DATE".equals(encoding))
@@ -218,7 +218,7 @@ public class PostgresType
                  "U_DOUBLE".equals(encoding))
             oid = FLOAT8_TYPE_OID;
         else
-            throw new StandardException("Don't know type for " + encoding);
+            throw new UnknownDataTypeException (encoding);
 
         if (aisType.fixedSize())
             length = aisType.maxSizeBytes().shortValue();
@@ -236,22 +236,19 @@ public class PostgresType
         // TODO: For now, these are the only ones needing special treatment.
         // When we are better able to work with the encoder to get the
         // raw bytes, can use this for all.
-        Encoding<?> encoder = EncoderFactory.valueOf(encoding, aisType);
-        if (encoder instanceof LongEncoderBase)
-            result.encoder = (LongEncoderBase)encoder;
+        result.converter = Converters.getLongConverter(aisType.akType());
 
         return result;
     }
 
-    public static PostgresType fromDerby(DataTypeDescriptor type) 
-            throws StandardException {
+    public static PostgresType fromDerby(DataTypeDescriptor type)  {
         int oid;
         short length = -1;
         int modifier = -1;
 
         TypeId typeId = type.getTypeId();
 
-        LongEncoderBase encoder = null;
+        LongConverter converter = null;
 
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.BIT_TYPE_ID:
@@ -265,7 +262,7 @@ public class PostgresType
             break;
         case TypeId.FormatIds.DATE_TYPE_ID:
             oid = DATE_TYPE_OID;
-            encoder = EncoderFactory.DATE;
+            converter = Converters.getLongConverter(AkType.DATE);
             break;
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
         case TypeId.FormatIds.NUMERIC_TYPE_ID:
@@ -276,11 +273,11 @@ public class PostgresType
             break;
         case TypeId.FormatIds.INT_TYPE_ID:
             oid = INT4_TYPE_OID;
-            encoder = EncoderFactory.INT;
+            converter = Converters.getLongConverter(AkType.INT);
             break;
         case TypeId.FormatIds.LONGINT_TYPE_ID:
             oid = INT8_TYPE_OID;
-            encoder = EncoderFactory.INT;
+            converter = Converters.getLongConverter(AkType.INT);
             break;
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
             oid = TEXT_TYPE_OID;
@@ -293,15 +290,15 @@ public class PostgresType
             break;
         case TypeId.FormatIds.SMALLINT_TYPE_ID:
             oid = INT2_TYPE_OID;
-            encoder = EncoderFactory.INT;
+            converter = Converters.getLongConverter(AkType.INT);
             break;
         case TypeId.FormatIds.TIME_TYPE_ID:
             oid = TIME_TYPE_OID;
-            encoder = EncoderFactory.TIME;
+            converter = Converters.getLongConverter(AkType.TIME);
             break;
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
             oid = TIMESTAMP_TYPE_OID;
-            encoder = EncoderFactory.TIMESTAMP;
+            converter = Converters.getLongConverter(AkType.TIMESTAMP);
             break;
         case TypeId.FormatIds.TINYINT_TYPE_ID:
             oid = BYTEA_TYPE_OID;
@@ -334,7 +331,7 @@ public class PostgresType
             }
             /* falls through */
         default:
-            throw new StandardException("Don't know type for " + type);
+            throw new UnknownDataTypeException(type.toString());
         }
 
         if (typeId.isDecimalTypeId() || typeId.isNumericTypeId()) {
@@ -348,10 +345,10 @@ public class PostgresType
             length = (short)typeId.getMaximumMaximumWidth();
         }
         
-        PostgresType result = new PostgresType(oid, length, modifier);;
+        PostgresType result = new PostgresType(oid, length, modifier);
         
-        if (encoder != null)
-            result.encoder = encoder;
+        if (converter != null)
+            result.converter = converter;
 
         return result;
     }
@@ -361,15 +358,15 @@ public class PostgresType
     public static final DateFormat datetimeFormatter = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 
     public byte[] encodeValue(Object value, String encoding, boolean binary) 
-            throws IOException, StandardException {
+            throws IOException {
         if (value == null)
             return null;
         try {
             if (binary) {
-                throw new StandardException("Binary encoding not yet supported.");
+                throw new UnsupportedCharsetException ("", "", "BINARY");
             }
-            else if (encoder != null) {
-                value = encoder.decodeToString((Long)value);
+            else if (converter != null) {
+                value = converter.asString((Long)value);
             }
             else if (value instanceof Date) {
                 DateFormat format = null;
@@ -390,13 +387,13 @@ public class PostgresType
             return value.toString().getBytes(encoding);
         }
         catch (UnsupportedEncodingException ex) {
-            throw new StandardException(ex);
+            throw new UnsupportedCharsetException ("", "", encoding);
         }
     }
 
-    public Object decodeParameter(String value) throws StandardException {
-        if (encoder != null)
-            return encoder.encodeFromObject(value);
+    public Object decodeParameter(String value) {
+        if (converter != null)
+            return converter.doParse(value);
         else
             return value;
     }

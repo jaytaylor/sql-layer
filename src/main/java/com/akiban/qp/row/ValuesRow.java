@@ -15,10 +15,10 @@
 
 package com.akiban.qp.row;
 
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.ValuesRowType;
+import com.akiban.server.types.ValueSource;
 
 public class ValuesRow extends AbstractRow
 {
@@ -27,7 +27,7 @@ public class ValuesRow extends AbstractRow
     @Override
     public String toString()
     {
-        return values.toString();
+        return valuesHolder.toString();
     }
 
     // Row interface
@@ -39,9 +39,8 @@ public class ValuesRow extends AbstractRow
     }
 
     @Override
-    public Object field(int i, Bindings bindings)
-    {
-        return values[i];
+    public ValueSource bindSource(int i, Bindings bindings) {
+        return valuesHolder.valueSourceAt(i);
     }
 
     @Override
@@ -55,11 +54,11 @@ public class ValuesRow extends AbstractRow
     public ValuesRow(ValuesRowType rowType, Object[] values)
     {
         this.rowType = rowType;
-        this.values = values;
+        this.valuesHolder = new RowValuesHolder(values);
     }
 
     // Object state
 
     private final ValuesRowType rowType;
-    private final Object[] values;
+    private final RowValuesHolder valuesHolder;
 }

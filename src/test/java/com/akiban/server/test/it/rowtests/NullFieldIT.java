@@ -15,7 +15,7 @@
 
 package com.akiban.server.test.it.rowtests;
 
-import com.akiban.server.InvalidOperationException;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 

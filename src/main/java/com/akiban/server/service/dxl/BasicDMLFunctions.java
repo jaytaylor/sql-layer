@@ -36,24 +36,19 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServerUtil;
-import com.akiban.server.IndexDef;
-import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
+import com.akiban.server.rowdata.IndexDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.api.GenericInvalidOperationException;
 import com.akiban.server.api.LegacyUtils;
-import com.akiban.server.api.common.NoSuchTableException;
-import com.akiban.server.api.dml.*;
+import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.ColumnSet;
-import com.akiban.server.api.dml.scan.ConcurrentScanAndUpdateException;
 import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.CursorIsFinishedException;
-import com.akiban.server.api.dml.scan.CursorIsUnknownException;
 import com.akiban.server.api.dml.scan.CursorState;
 import com.akiban.server.api.dml.scan.LegacyOutputConverter;
 import com.akiban.server.api.dml.scan.BufferedLegacyOutputRouter;
@@ -61,29 +56,37 @@ import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.api.dml.scan.OldAISException;
 import com.akiban.server.api.dml.scan.RowDataLegacyOutputRouter;
 import com.akiban.server.api.dml.scan.RowOutput;
-import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.ScanRequest;
-import com.akiban.server.api.dml.scan.TableDefinitionChangedException;
 import com.akiban.server.encoding.EncodingException;
+import com.akiban.server.error.ConcurrentScanAndUpdateException;
+import com.akiban.server.error.CursorIsFinishedException;
+import com.akiban.server.error.CursorIsUnknownException;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.OldAISException;
+import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.RowOutputException;
+import com.akiban.server.error.ScanRetryAbandonedException;
+import com.akiban.server.error.TableDefinitionChangedException;
+import com.akiban.server.error.TableDefinitionMismatchException;
 import com.akiban.server.service.dxl.BasicDXLMiddleman.ScanData;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.RowCollector;
-import com.akiban.server.util.RowDefNotFoundException;
+import com.akiban.server.store.SchemaManager;
+import com.akiban.server.store.Store;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Tap;
+import com.google.inject.Inject;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.akiban.util.Exceptions.throwIfInstanceOf;
 
 class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
@@ -98,8 +101,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     private static Tap.PointTap SCAN_RETRY_COUNT_TAP = Tap.createCount("BasicDMLFunctions: scan retries");
     private static Tap.PointTap SCAN_RETRY_ABANDON_TAP = Tap.createCount("BasicDMLFunctions: scan abandons");
 
-    BasicDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions ddlFunctions) {
-        super(middleman);
+    @Inject
+    BasicDMLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService, DDLFunctions ddlFunctions) {
+        super(middleman, schemaManager, store, treeService);
         this.ddlFunctions = ddlFunctions;
         this.scanner = new Scanner();
     }
@@ -132,25 +136,17 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public TableStatistics getTableStatistics(Session session, int tableId,
-            boolean updateFirst) throws NoSuchTableException,
-            GenericInvalidOperationException
+            boolean updateFirst) 
     {
         logger.trace("stats for {} updating: {}", tableId, updateFirst);
-        try {
-            if (updateFirst) {
-                store().analyzeTable(session, tableId);
-            }
-            return store().getTableStatistics(session, tableId);
-        } catch (Exception e) {
-            InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(ioe, NoSuchTableException.class);
-            throw new GenericInvalidOperationException(e);
+        if (updateFirst) {
+            store().analyzeTable(session, tableId);
         }
+        return store().getTableStatistics(session, tableId);
     }
 
     @Override
     public CursorId openCursor(Session session, int knownAIS, ScanRequest request)
-            throws NoSuchTableException, NoSuchColumnException, NoSuchIndexException, GenericInvalidOperationException, OldAISException
     {
         checkAISGeneration(knownAIS);
         logger.trace("opening scan:    {} -> {}", System.identityHashCode(request), request);
@@ -170,11 +166,8 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         try {
             checkAISGeneration(knownGeneration);
         } catch (OldAISException e) {
-            try {
-                closeCursor(session, cursorId);
-            } catch (CursorIsUnknownException e1) {
-                throw new RuntimeException("error closing cursor after AIS generation mismatch: " + e.getMessage(), e1);
-            }
+            closeCursor(session, cursorId);
+            throw e;
         }
     }
 
@@ -186,8 +179,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     private Cursor reopen(Session session, CursorId cursorId, ScanRequest request, boolean mustBeFresh)
-            throws NoSuchTableException, NoSuchColumnException,
-            NoSuchIndexException, GenericInvalidOperationException
     {
         final RowCollector rc = getRowCollector(session, request);
         final Cursor cursor = new Cursor(rc, request.getScanLimit(), request);
@@ -199,7 +190,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         return cursor;
     }
 
-    private ScanRequest scanAllColumns(final Session session, final ScanRequest request) throws NoSuchTableException {
+    private ScanRequest scanAllColumns(final Session session, final ScanRequest request) {
         Table table = ddlFunctions.getAIS(session).getTable(
                 ddlFunctions.getTableName(session, request.getTableId())
         );
@@ -221,8 +212,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             }
 
             @Override
-            public RowData getStart()
-                    throws NoSuchTableException {
+            public RowData getStart() {
                 return request.getStart();
             }
 
@@ -232,8 +222,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             }
 
             @Override
-            public RowData getEnd()
-                    throws NoSuchTableException {
+            public RowData getEnd() {
                 return request.getEnd();
             }
 
@@ -248,8 +237,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             }
 
             @Override
-            public int getTableId()
-                    throws NoSuchTableException {
+            public int getTableId() {
                 return request.getTableId();
             }
 
@@ -269,31 +257,21 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         };
     }
 
-    protected RowCollector getRowCollector(Session session, ScanRequest request)
-            throws NoSuchTableException, NoSuchColumnException,
-            NoSuchIndexException, GenericInvalidOperationException {
-        try {
-            RowCollector rowCollector = store().newRowCollector(session,
-                                                                request.getScanFlags(),
-                                                                request.getTableId(),
-                                                                request.getIndexId(),
-                                                                request.getColumnBitMap(),
-                                                                request.getStart(),
-                                                                request.getStartColumns(),
-                                                                request.getEnd(),
-                                                                request.getEndColumns(),
-                                                                request.getScanLimit());
-            if (rowCollector.checksLimit()) {
-                request.dropScanLimit();
-            }
-            return rowCollector;
-        } catch (RowDefNotFoundException e) {
-            throw new NoSuchTableException(request.getTableId(), e);
-        } catch (Exception e) {
-            InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(ioe, NoSuchIndexException.class);
-            throw new GenericInvalidOperationException(ioe);
+    protected RowCollector getRowCollector(Session session, ScanRequest request) {
+        RowCollector rowCollector = store().newRowCollector(session,
+                                                            request.getScanFlags(),
+                                                            request.getTableId(),
+                                                            request.getIndexId(),
+                                                            request.getColumnBitMap(),
+                                                            request.getStart(),
+                                                            request.getStartColumns(),
+                                                            request.getEnd(),
+                                                            request.getEndColumns(),
+                                                            request.getScanLimit());
+        if (rowCollector.checksLimit()) {
+            request.dropScanLimit();
         }
+        return rowCollector;
     }
 
     protected CursorId newUniqueCursor(int tableId) {
@@ -311,28 +289,13 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
 
     @Override
-    public void scanSome(Session session, CursorId cursorId, LegacyRowOutput output)
-            throws CursorIsFinishedException,
-            CursorIsUnknownException,
-            RowOutputException,
-            BufferFullException,
-            ConcurrentScanAndUpdateException,
-            TableDefinitionChangedException,
-            GenericInvalidOperationException
-
+    public void scanSome(Session session, CursorId cursorId, LegacyRowOutput output) throws BufferFullException
     {
         scanSome(session, cursorId, output, DEFAULT_SCAN_HOOK);
     }
 
-    void scanSome(Session session, CursorId cursorId, LegacyRowOutput output, ScanHooks scanHooks)
-            throws CursorIsFinishedException,
-                   CursorIsUnknownException,
-                   RowOutputException,
-                   BufferFullException,
-                   ConcurrentScanAndUpdateException,
-                   TableDefinitionChangedException,
-                   GenericInvalidOperationException
-
+    void scanSome(Session session, CursorId cursorId, LegacyRowOutput output, ScanHooks scanHooks) 
+        throws BufferFullException
     {
         logger.trace("scanning from {}", cursorId);
         ArgumentValidation.notNull("cursor", cursorId);
@@ -340,19 +303,19 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
         Cursor cursor = getScanData(session, cursorId).getCursor();
         if (cursor == null) {
-            throw new CursorIsUnknownException(cursorId);
+            throw new CursorIsUnknownException(cursorId.getTableId());
         }
         if (CursorState.CONCURRENT_MODIFICATION.equals(cursor.getState())) {
-            throw new ConcurrentScanAndUpdateException("for cursor " + cursorId);
+            throw new ConcurrentScanAndUpdateException(cursorId);
         }
         if (CursorState.DDL_MODIFICATION.equals(cursor.getState())) {
-            throw new TableDefinitionChangedException("a table's definition has changed!");
+            throw new TableDefinitionChangedException(cursorId);
         }
         if (cursor.isFinished()) {
             throw new CursorIsFinishedException(cursorId);
         }
         
-        Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
+        Transaction transaction = treeService().getTransaction(session);
         int retriesLeft = SCAN_RETRY_COUNT;
         while (true) {
             output.mark();
@@ -363,7 +326,12 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                         assert CursorState.FRESH.equals(cursor.getState()) : cursor.getState();
                         cursor.getRowCollector().open();
                     }
-                    scanner.doScan(cursor, cursorId, output, scanHooks);
+                    try {
+                        scanner.doScan(cursor, cursorId, output, scanHooks);
+                    } catch (BufferFullException e) {
+                        transaction.commit(); // if this fails, it'll be handled in one of the catches below
+                        throw e;
+                    }
                     transaction.commit();
                     scanHooks.scanSomeFinishedWellHook();
                     return;
@@ -373,20 +341,16 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                     output.rewind();
                     if (--retriesLeft <= 0) {
                         SCAN_RETRY_ABANDON_TAP.hit();
-                        throw new GenericInvalidOperationException(e);
+                        throw new ScanRetryAbandonedException(SCAN_RETRY_COUNT);
                     }
-                    try {
-                        cursor = reopen(session, cursorId, cursor.getScanRequest(), false);
-                    } catch (InvalidOperationException e1) {
-                        throw new GenericInvalidOperationException(e1);
-                    }
+                    cursor = reopen(session, cursorId, cursor.getScanRequest(), false);
                 } catch (PersistitException e) {
-                    throw new GenericInvalidOperationException(e);
+                    throw new PersistItErrorException(e);
                 } finally {
                     transaction.end();
                 }
             } catch (PersistitException e) {
-                throw new GenericInvalidOperationException(e);
+                throw new PersistItErrorException(e);
             }
         }
     }
@@ -405,8 +369,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             return router;
         }
 
-        public void setConverter(RowOutput output, Set<Integer> columns)
-                throws NoSuchTableException {
+        public void setConverter(RowOutput output, Set<Integer> columns) {
             converter.setOutput(output);
             converter.setColumnsToScan(columns);
         }
@@ -414,8 +377,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     private final BlockingQueue<PooledConverter> convertersPool = new LinkedBlockingDeque<PooledConverter>();
 
-    private PooledConverter getPooledConverter(RowOutput output, Set<Integer> columns)
-        throws NoSuchTableException {
+    private PooledConverter getPooledConverter(RowOutput output, Set<Integer> columns) {
         PooledConverter converter = convertersPool.poll();
         if (converter == null) {
             logger.debug("Allocating new PooledConverter");
@@ -445,25 +407,11 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public void scanSome(Session session, CursorId cursorId, RowOutput output)
-            throws CursorIsFinishedException,
-            CursorIsUnknownException,
-            RowOutputException,
-            NoSuchTableException,
-            ConcurrentScanAndUpdateException,
-            TableDefinitionChangedException,
-            GenericInvalidOperationException
     {
         scanSome(session, cursorId, output, DEFAULT_SCAN_HOOK);
     }
 
     public void scanSome(Session session, CursorId cursorId, RowOutput output, ScanHooks scanHooks)
-        throws CursorIsFinishedException,
-               CursorIsUnknownException,
-               RowOutputException,
-               NoSuchTableException,
-               ConcurrentScanAndUpdateException,
-               TableDefinitionChangedException,
-               GenericInvalidOperationException
     {
         logger.trace("scanning from {}", cursorId);
         final ScanData scanData = getScanData(session, cursorId);
@@ -474,7 +422,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             scanSome(session, cursorId, converter.getLegacyOutput(), scanHooks);
         }
         catch (BufferFullException e) {
-            throw new RowOutputException(e);
+            throw new RowOutputException(converter.getLegacyOutput().getRowsCount());
         } finally {
             releasePooledConverter(converter);
         }
@@ -493,31 +441,14 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
          *            the output; see
          *            {@link #scanSome(Session, CursorId, LegacyRowOutput)}
          * @param scanHooks the scan hooks to use
-         * @throws CursorIsFinishedException
-         *             see
-         *             {@link #scanSome(Session, CursorId, LegacyRowOutput)}
-         * @throws RowOutputException
-         *             see
-         *             {@link #scanSome(Session, CursorId, LegacyRowOutput)}
-         * @throws GenericInvalidOperationException
-         *             see
-         *             {@link #scanSome(Session, CursorId, LegacyRowOutput)}
-         * @throws BufferFullException
-         *             see
-         *             {@link #scanSome(Session, CursorId, LegacyRowOutput)}
-         * @throws RollbackException
-         *             if scanning results in a RollbackException
+         * @throws Exception 
          * @see #scanSome(Session, CursorId, LegacyRowOutput)
          */
         protected void doScan(Cursor cursor,
                                         CursorId cursorId,
                                         LegacyRowOutput output,
                                         ScanHooks scanHooks)
-                throws CursorIsFinishedException,
-                       RowOutputException,
-                       GenericInvalidOperationException,
-                       BufferFullException,
-                       RollbackException
+            throws BufferFullException
         {
             assert cursor != null;
             assert cursorId != null;
@@ -546,16 +477,15 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 throw e; // Don't want this to be handled as an Exception
             } catch (RollbackException e) {
                 throw e; // Pass this up to be handled in scanSome
-            }
-            catch (Exception e) {
+            } catch (InvalidOperationException e) {
                 cursor.setFinished();
-                throw new GenericInvalidOperationException(e);
+                throw e;
             }
         }
 
         // Returns true if cursor ran out of rows before reaching the limit, false otherwise.
         private void collectRowsIntoBuffer(Cursor cursor, LegacyRowOutput output, ScanLimit limit, ScanHooks scanHooks)
-            throws Exception
+            throws BufferFullException
         {
             RowCollector rc = cursor.getRowCollector();
             rc.outputToMessage(true);
@@ -594,7 +524,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
         // Returns true if cursor ran out of rows before reaching the limit, false otherwise.
         private void collectRows(Cursor cursor, LegacyRowOutput output, ScanLimit limit, ScanHooks scanHooks)
-            throws Exception
         {
             RowCollector rc = cursor.getRowCollector();
             rc.outputToMessage(false);
@@ -620,7 +549,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         ArgumentValidation.notNull("cursor ID", cursorId);
         final ScanData scanData = removeScanData(session, cursorId);
         if (scanData == null) {
-            throw new CursorIsUnknownException(cursorId);
+            throw new CursorIsUnknownException(cursorId.getTableId());
         }
 
         Cursor removedCursor = scanData.getCursor();
@@ -637,13 +566,13 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public RowData convertNewRow(NewRow row) throws NoSuchTableException {
+    public RowData convertNewRow(NewRow row) {
         logger.trace("converting to RowData: {}", row);
         return row.toRowData();
     }
 
     @Override
-    public NewRow convertRowData(RowData rowData) throws NoSuchTableException {
+    public NewRow convertRowData(RowData rowData) {
         logger.trace("converting to NewRow: {}", rowData);
         RowDef rowDef = ddlFunctions.getRowDef(rowData.getRowDefId());
         return NiceRow.fromRowData(rowData, rowDef);
@@ -651,7 +580,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public List<NewRow> convertRowDatas(List<RowData> rowDatas)
-            throws NoSuchTableException
     {
         logger.trace("converting {} RowData(s) to NewRow", rowDatas.size());
         if (rowDatas.isEmpty()) {
@@ -674,41 +602,30 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public Long writeRow(Session session, NewRow row)
-            throws NoSuchTableException, UnsupportedModificationException,
-            TableDefinitionMismatchException, DuplicateKeyException,
-            GenericInvalidOperationException
     {
         logger.trace("writing a row");
         final RowData rowData = niceRowToRowData(row);
         try {
             store().writeRow(session, rowData);
-            return null;
-        } catch (Exception e) {
-            InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(ioe, DuplicateKeyException.class);
-            throw new GenericInvalidOperationException(e);
+        } catch (PersistitException ex) {
+            throw new PersistItErrorException (ex);
         }
+        return null;
     }
 
     @Override
     public void deleteRow(Session session, NewRow row)
-            throws NoSuchTableException, UnsupportedModificationException,
-            ForeignKeyConstraintDMLException, NoSuchRowException,
-            TableDefinitionMismatchException, GenericInvalidOperationException
     {
         logger.trace("deleting a row");
         final RowData rowData = niceRowToRowData(row);
         try {
             store().deleteRow(session, rowData);
-        } catch (Exception e) {
-            InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(ioe, NoSuchRowException.class);
-            throw new GenericInvalidOperationException(e);
+        } catch (PersistitException ex) {
+            throw new PersistItErrorException (ex);
         }
     }
 
-    private RowData niceRowToRowData(NewRow row) throws NoSuchTableException,
-            TableDefinitionMismatchException
+    private RowData niceRowToRowData(NewRow row) 
     {
         try {
             return row.toRowData();
@@ -719,10 +636,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public void updateRow(Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector)
-            throws NoSuchTableException, DuplicateKeyException,
-            TableDefinitionMismatchException, UnsupportedModificationException,
-            ForeignKeyConstraintDMLException, NoSuchRowException,
-            GenericInvalidOperationException
     {
         logger.trace("updating a row");
         final RowData oldData = niceRowToRowData(oldRow);
@@ -738,20 +651,14 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
         try {
             store().updateRow(session, oldData, newData, columnSelector);
-        } catch (Exception e) {
-            final InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(ioe,
-                    NoSuchRowException.class,
-                    DuplicateKeyException.class
-            );
-            throw new GenericInvalidOperationException(ioe);
+        } catch (PersistitException ex) {
+            throw new PersistItErrorException (ex);
         }
+            
     }
 
     private void checkForModifiedCursors(
-            Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector, int tableId)
-            throws NoSuchTableException
-    {
+            Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector, int tableId) {
         boolean hKeyIsModified = isHKeyModified(session, oldRow, newRow, columnSelector, tableId);
 
         Map<CursorId,ScanData> cursorsMap = getScanDataMap(session);
@@ -821,9 +728,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
      * @param session Session to operation on
      * @param userTable UserTable to determine if a fast truncate is possible on
      * @return true if store.truncateGroup() used, false otherwise
+     * @throws Exception 
      */
-    private boolean canFastTruncate(Session session, UserTable userTable)
-            throws GenericInvalidOperationException, NoSuchTableException {
+    private boolean canFastTruncate(Session session, UserTable userTable) {
         UserTable rootTable = userTable.getGroup().getGroupTable().getRoot();
         for(Join join : rootTable.getChildJoins()) {
             UserTable childTable = join.getChild();
@@ -841,8 +748,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public void truncateTable(final Session session, final int tableId)
-            throws NoSuchTableException, UnsupportedModificationException,
-            ForeignKeyConstraintDMLException, GenericInvalidOperationException
     {
         logger.trace("truncating tableId={}", tableId);
         final int knownAIS = ddlFunctions.getGeneration();
@@ -853,11 +758,11 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             final RowDef rowDef = ddlFunctions.getRowDef(table.getTableId());
             try {
                 store().truncateGroup(session, rowDef.getRowDefId());
-                return;
+            } catch (PersistitException ex) {
+                throw new PersistItErrorException (ex);
             }
-            catch(Exception e) {
-                throw new GenericInvalidOperationException(e);
-            }
+                
+            return;
         }
 
         // We can't do a "fast truncate" for whatever reason, so we have to delete row by row
@@ -877,13 +782,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             private LegacyRowWrapper rowWrapper = new LegacyRowWrapper();
 
             @Override
-            public void handleRow(RowData rowData) throws RowOutputException {
-                try {
-                    rowWrapper.setRowData(rowData);
-                    deleteRow(session, rowWrapper);
-                } catch (InvalidOperationException e) {
-                    throw new RowOutputException(e);
-                }
+            public void handleRow(RowData rowData) {
+                rowWrapper.setRowData(rowData);
+                deleteRow(session, rowWrapper);
             }
 
             @Override
@@ -899,18 +800,14 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
 
         final CursorId cursorId;
-        try {
-            ScanRequest all = new ScanAllRequest(tableId, keyColumns);
-            cursorId = openCursor(session, knownAIS, all);
-        } catch (InvalidOperationException e) {
-            throw new RuntimeException("Internal error", e);
-        }
+        ScanRequest all = new ScanAllRequest(tableId, keyColumns);
+        cursorId = openCursor(session, knownAIS, all);
 
         InvalidOperationException thrown = null;
         try {
             scanSome(session, cursorId, output);
         } catch (InvalidOperationException e) {
-            throw new RuntimeException("Internal error", e);
+            throw e; 
         } catch (BufferFullException e) {
             throw new RuntimeException("Internal error, buffer full: " + e);
         } finally {
@@ -922,11 +819,11 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         }
         try {
             store().truncateTableStatus(session, tableId);
-        } catch(Exception e) {
-            throw new GenericInvalidOperationException(e);
+        } catch (PersistitException ex) {
+            throw new PersistItErrorException (ex);
         }
         if (thrown != null) {
-            throw new RuntimeException("Internal error", thrown);
+            throw thrown;
         }
     }
 }

@@ -36,7 +36,7 @@ public class SqlTextTarget extends Target {
 	}
 
 	@Override
-	public void deleteAll() throws Exception {
+	public void deleteAll() {
 //        prepareStatement(MetaModel.only().definition(type).cleanupQuery()).executeUpdate();
 //        prepareStatement(MetaModel.only().definition(group).cleanupQuery()).executeUpdate();
 //        prepareStatement(MetaModel.only().definition(table).cleanupQuery()).executeUpdate();
@@ -48,13 +48,13 @@ public class SqlTextTarget extends Target {
 	}
 
 	@Override
-	public void writeCount(int count) throws Exception {
+	public void writeCount(int count) {
 	}
 
-	public void close() throws Exception {
+	public void close() {
 	}
 	
-    public void writeType(Map<String, Object> map) throws Exception
+    public void writeType(Map<String, Object> map)
     {
     	// Don't write the Types table inserts
     }
@@ -72,8 +72,7 @@ public class SqlTextTarget extends Target {
         writer.println(sb);
     }
 	@Override
-	protected void write(String typename, Map<String, Object> map)
-			throws Exception {
+	protected void write(String typename, Map<String, Object> map) {
 		ModelObject modelObject = MetaModel.only().definition(typename);
 		FakePreparedStatement stmt = prepareStatement(modelObject.writeQuery());
 		int c = 0;
@@ -281,8 +280,7 @@ public class SqlTextTarget extends Target {
 		return new FakePreparedStatement(string);
 	}
 
-	private void bind(FakePreparedStatement stmt, int position, Object value)
-			throws Exception {
+	private void bind(FakePreparedStatement stmt, int position, Object value) {
 		stmt.bind(value);
 	}
 

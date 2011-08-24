@@ -15,21 +15,25 @@
 
 package com.akiban.server.test.it.rowtests;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
-import com.akiban.server.FieldDef;
-import com.akiban.server.RowDef;
-import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
+import com.akiban.server.PersistitKeyValueSource;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.error.UnsupportedIndexDataTypeException;
 import com.akiban.server.store.IndexVisitor;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.util.WrappingByteSource;
 import com.persistit.Key;
 import com.persistit.Value;
 import junit.framework.Assert;
 import org.junit.Test;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.List;
 
@@ -69,20 +73,31 @@ public class KeyToObjectIT extends ITBase {
 
                 final NewRow row = rowIt.next();
                 key.indexTo(0);
+
+                PersistitKeyValueSource valueSource = new PersistitKeyValueSource();
+                ToObjectValueTarget valueTarget = new ToObjectValueTarget();
                 
                 for(IndexColumn indexColumn : index.getColumns()) {
-                    int colPos = indexColumn.getColumn().getPosition();
-                    FieldDef fieldDef = rowDef.getFieldDef(colPos);
+                    Column column = indexColumn.getColumn();
+                    int colPos = column.getPosition();
                     Object objFromRow = row.get(colPos);
-                    Object objFromKey = fieldDef.getEncoding().toObject(key);
+                    valueSource.attach(key, indexColumn);
+                    final Object lastConvertedValue;
+                    try {
+                        lastConvertedValue = valueTarget.convertFromSource(valueSource);
+                    } catch (Exception e) {
+                        throw new RuntimeException("with AkType." + column.getType().akType(), e);
+                    }
+
                     // Work around for dropping of 0 value sigfigs from key.decode()
                     int compareValue = 1;
-                    if(objFromRow instanceof BigDecimal && objFromKey instanceof BigDecimal) {
-                        compareValue = ((BigDecimal)objFromRow).compareTo(((BigDecimal)objFromKey));
+                    if(objFromRow instanceof BigDecimal && lastConvertedValue instanceof BigDecimal) {
+                        compareValue = ((BigDecimal)objFromRow).compareTo(((BigDecimal)lastConvertedValue));
                     }
                     if(compareValue != 0) {
-                        assertEquals(String.format("column %d of row %d, row value vs index entry", colPos, rowCounter),
-                                     objFromRow, objFromKey);
+                        if (objFromRow instanceof ByteBuffer) {
+                            objFromRow = WrappingByteSource.fromByteBuffer((ByteBuffer)objFromRow);
+                        }
                     }
                     ++rowCounter;
                 }

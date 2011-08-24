@@ -15,9 +15,7 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
-import com.akiban.server.RowDef;
 import com.persistit.Key;
 
 class PersistitHKey implements HKey

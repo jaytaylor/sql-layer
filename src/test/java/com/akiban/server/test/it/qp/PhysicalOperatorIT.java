@@ -30,6 +30,9 @@ import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types.ToObjectValueTarget;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -62,7 +65,10 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
 
             @Override
             public Row evaluate(Row original, Bindings bindings) {
-                String name = (String) original.field(1, bindings); // TODO eventually use Expression for this
+                ToObjectValueTarget target = new ToObjectValueTarget();
+                target.expectType(AkType.VARCHAR);
+                Object obj = Converters.convert(original.bindSource(1, bindings), target).lastConvertedValue();
+                String name = (String) obj; // TODO eventually use Expression for this
                 name = name.toUpperCase();
                 name = name + name;
                 return new OverlayingRow(original).overlay(1, name);

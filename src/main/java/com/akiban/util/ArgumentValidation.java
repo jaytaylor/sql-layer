@@ -108,4 +108,19 @@ public final class ArgumentValidation {
             throw new IllegalArgumentException(String.format("%s(%s) != %s(%s)", oneName, one, twoName, two));
         }
     }
+
+    public static void isEQ(String message, int i, int requiredValue) {
+        if (i != requiredValue) {
+            throw new IllegalArgumentException(message + " required " + requiredValue + " but got " + i);
+        }
+    }
+
+    public static void withinArray(String arrayDescription, byte[] array, String offsetDescription, int offset) {
+        if (offset < 0 || offset >= array.length) {
+            throw new IllegalArgumentException(
+                    offsetDescription + " (" + offset + ") not within bounds of array "
+                            + arrayDescription + " (length=" + array.length+')'
+            );
+        }
+    }
 }

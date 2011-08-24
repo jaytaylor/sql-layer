@@ -15,7 +15,7 @@
 
 package com.akiban.server.test.it.hapi.randomdb;
 
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.dml.scan.NewRow;

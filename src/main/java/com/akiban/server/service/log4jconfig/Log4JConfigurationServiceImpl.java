@@ -41,15 +41,15 @@ public final class Log4JConfigurationServiceImpl
     }
 
     @Override
-    public void start() throws Exception {
+    public void start() {
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
     }
     
     @Override
-    public void crash() throws Exception {
+    public void crash() {
     }
     
 }

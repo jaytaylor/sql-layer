@@ -19,19 +19,17 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.akiban.server.error.QueryLogCloseException;
+import com.akiban.server.service.config.ConfigurationService;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.jmx.JmxManageable;
-import com.akiban.server.service.jmx.JmxManageable.JmxObjectInfo;
-import com.akiban.sql.pg.PostgresMXBean;
-import com.akiban.sql.pg.PostgresServer;
-import com.akiban.sql.pg.PostgresSessionTracer;
 
 public class InstrumentationServiceImpl implements
     InstrumentationService, 
@@ -72,17 +70,6 @@ public class InstrumentationServiceImpl implements
         LOGGER.info("Query log file ready for writing.");
         return true;
     }
-    
-    // InstrumentationService interface
-    
-    public synchronized PostgresSessionTracer createSqlSessionTracer(int sessionId) {
-        PostgresSessionTracer ret = new PostgresSessionTracer(sessionId, pgServer.isInstrumentationEnabled());
-        return ret;
-    }
-    
-    public synchronized PostgresSessionTracer getSqlSessionTracer(int sessionId) {
-        return (PostgresSessionTracer)pgServer.getConnection(sessionId).getSessionTracer();
-    }
 
     // Service interface
     
@@ -97,79 +84,86 @@ public class InstrumentationServiceImpl implements
     }
 
     @Override
-    public void start() throws Exception {
-        this.serviceManager = ServiceManagerImpl.get();
-        pgServer = serviceManager.getPostgresService().getServer();
-        String enableLog = serviceManager.getConfigurationService().getProperty(QUERY_LOG_PROPERTY);
+    public void start() {
+        String enableLog = config.getProperty(QUERY_LOG_PROPERTY);
         this.queryLogEnabled = new AtomicBoolean(Boolean.parseBoolean(enableLog));
-        queryLogFileName = serviceManager.getConfigurationService().getProperty(QUERY_LOG_FILE_PROPERTY);
+        this.execTimeThreshold = Integer.parseInt(config.getProperty(QUERY_LOG_THRESHOLD));
+        queryLogFileName = config.getProperty(QUERY_LOG_FILE_PROPERTY);
         if (isQueryLogEnabled()) {
             setUpQueryLog();
         }
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
         if (queryOut != null){
-            queryOut.close();
+            try {
+                queryOut.close();
+            } catch (IOException e) {
+                throw new QueryLogCloseException (e.getMessage());
+            }
         }
     }
 
     @Override
-    public void crash() throws Exception {
+    public void crash() {
         // anything to do?
     }
 
-    @Override
-    public boolean isEnabled() {
-        return pgServer.isInstrumentationEnabled();
-    }
-
-    @Override
-    public void enable() {
-        pgServer.enableInstrumentation();
-    }
-
-    @Override
-    public void disable() {
-        pgServer.disableInstrumentation();
-    }
-
-    @Override
-    public boolean isEnabled(int sessionId) {
-        return pgServer.isInstrumentationEnabled(sessionId);
-    }
-
-    @Override
-    public void enable(int sessionId) {
-        pgServer.enableInstrumentation(sessionId);
-    }
-
-    @Override
-    public void disable(int sessionId) {  
-        pgServer.disableInstrumentation(sessionId);
-    }
-
+    // InstrumentationService interface
+    
     @Override
     public boolean isQueryLogEnabled()
     {
         return queryLogEnabled.get();
     }
+
     
     @Override
-    public void logQuery(int sessionId, String sql, long duration)
+    public void logQuery(int sessionId, String sql, long duration, int rowsProcessed)
     {
         /*
+         * If an execution time threshold has been specified but the query
+         * to be logged is not larger than that execution time threshold
+         * than we don't log anything.
+         */
+        if (execTimeThreshold > 0 && duration < execTimeThreshold)
+        {
+            return;
+        }
+        /*
          * format of each query log entry is:
-         * sessionID    SQL text    Exec time in ns
+         * #
+         * # timestamp
+         * # session_id=sessionID
+         * # execution_time=xxxx
+         * SQL text
+         * #
+         * For example:
+         * # 2011-08-18 15:08:11.071
+         * # session_id=2
+         * # execution_time=69824520
+         * select * from tables;
+         * #
+         * # 2011-08-18 15:08:18.224
+         * # session_id=2
+         * # execution_time=3132589
+         * select * from groups;
+         * #
+         * Execution time is output in nano-seconds
          */
         StringBuilder buffer = new StringBuilder();
+        buffer.append("# ");
+        buffer.append(new Timestamp(System.currentTimeMillis()));
+        buffer.append("\n");
+        buffer.append("# session_id=");
         buffer.append(sessionId);
-        buffer.append('\t');
-        buffer.append(sql);
-        buffer.append('\t');
+        buffer.append("\n");
+        buffer.append("# execution_time=");
         buffer.append(duration);
-        buffer.append('\n');
+        buffer.append("\n");
+        buffer.append(sql);
+        buffer.append("\n#\n");
         try {
             synchronized(this) {
                 queryOut.write(buffer.toString());
@@ -201,6 +195,7 @@ public class InstrumentationServiceImpl implements
                 queryOut.close();
             } catch (IOException e) {
                 LOGGER.error("Failed to close query log output stream.", e);
+                throw new QueryLogCloseException (e.getMessage());
             }
         }
     }
@@ -218,6 +213,18 @@ public class InstrumentationServiceImpl implements
         return queryLogFileName;
     }
     
+    @Override
+    public synchronized void setExecutionTimeThreshold(long threshold)
+    {
+        execTimeThreshold = threshold;
+    }
+    
+    @Override
+    public synchronized long getExecutionTimeThreshold()
+    {
+        return execTimeThreshold;
+    }
+    
     // JmxManageable interface
     
     @Override
@@ -225,19 +232,29 @@ public class InstrumentationServiceImpl implements
     {
         return new JmxObjectInfo("Instrumentation", this, InstrumentationMXBean.class);
     }
-    
+
+    // InstrumentationServiceImpl interface
+
+    @Inject
+    public InstrumentationServiceImpl(ConfigurationService config) {
+        this.config = config;
+    }
+
+
     // state
     
-    private static final String QUERY_LOG_PROPERTY = "akserver.querylog";
-    private static final String QUERY_LOG_FILE_PROPERTY = "akserver.querylogfile";
+    private static final String QUERY_LOG_PROPERTY = "akserver.querylog.enabled";
+    private static final String QUERY_LOG_FILE_PROPERTY = "akserver.querylog.filename";
+    private static final String QUERY_LOG_THRESHOLD = "akserver.querylog.exec_time_threshold";
     
     private static final Logger LOGGER = LoggerFactory.getLogger(InstrumentationServiceImpl.class);
             
-    private PostgresServer pgServer;
+//    private final PostgresServer pgServer;
+    private final ConfigurationService config;
     private AtomicBoolean queryLogEnabled;
     private String queryLogFileName;
     private File queryLogFile;
     private BufferedWriter queryOut;
-    private ServiceManager serviceManager;
+    private long execTimeThreshold;
     
 }

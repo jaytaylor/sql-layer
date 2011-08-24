@@ -14,27 +14,26 @@
  */
 package com.akiban.ais.model.validation;
 
-import com.akiban.message.ErrorCode;
+import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.InvalidOperationException;
 
 public class AISValidationFailure {
-    public AISValidationFailure(ErrorCode errorCode, String message) {
-        error = errorCode;
-        this.message = message;
-    }
-    
-    public AISValidationFailure(ErrorCode code, String formatter, Object... args) {
-        this(code, String.format(formatter, args));
+    public AISValidationFailure (InvalidOperationException ex) {
+        this.exception = ex; 
     }
 
     public ErrorCode errorCode() {
-        return error;
+        return exception.getCode();
     }
     public String message() {
-        return message;
+        return exception.getShortMessage();
     }
     
-    private ErrorCode error;
-    private String message;
+    public void generateException() {
+        throw exception;
+    }
+    
+    private InvalidOperationException exception;
 
 }
 

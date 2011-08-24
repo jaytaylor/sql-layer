@@ -15,8 +15,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.TestBase;
-
 import org.junit.Before;
 import org.junit.Test;
 import static junit.framework.Assert.*;
@@ -24,8 +22,9 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
 
+import com.akiban.sql.TestBase;
+
 import java.sql.Statement;
-import java.sql.SQLException;
 
 import java.io.File;
 import java.util.Collection;

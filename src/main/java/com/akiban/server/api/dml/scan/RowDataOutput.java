@@ -15,9 +15,9 @@
 
 package com.akiban.server.api.dml.scan;
 
-import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowData;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.session.Session;
 import com.akiban.util.ListUtils;
 import org.slf4j.Logger;
@@ -38,12 +38,12 @@ public class RowDataOutput implements LegacyRowOutput {
     }
 
     @Override
-    public ByteBuffer getOutputBuffer() throws RowOutputException {
+    public ByteBuffer getOutputBuffer() {
         return null;
     }
 
     @Override
-    public void wroteRow(boolean limitExceeded) throws RowOutputException {
+    public void wroteRow(boolean limitExceeded) {
         throw new UnsupportedOperationException("Shouldn't be calling wroteRow for output to an HAPI request");
     }
 
