@@ -122,7 +122,10 @@ public class GroupIndex extends Index
             return;
         }
         if (entry.getKey().intValue() == indexTableDepth) {
-            throw new BranchingGroupIndexException (indexTable.getGroup().getGroupTable().getName(), 
+            //12:08:40 WARN Thread-816 com.akiban.sql.pg.PostgresServerConnection - Error in query: 02018: 
+            //Group index `test` has tables `_akiban_t1`.`test` and `t3`.`test` on different branches
+            
+            throw new BranchingGroupIndexException (indexColumn.getIndex().getIndexName().getName(), 
                     indexTable.getName(), entry.getValue().getName());
         }
         UserTable entryTable = entry.getValue();
@@ -141,7 +144,7 @@ public class GroupIndex extends Index
 
         if (!leafward.isDescendantOf(rootward))
         {
-            throw new BranchingGroupIndexException (indexTable.getGroup().getGroupTable().getName(), 
+            throw new BranchingGroupIndexException (indexColumn.getIndex().getIndexName().getName(), 
                     indexTable.getName(), entry.getValue().getName());
         }
     }
