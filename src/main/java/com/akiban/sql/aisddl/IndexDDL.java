@@ -18,6 +18,9 @@ package com.akiban.sql.aisddl;
 import java.util.Collection;
 import java.util.LinkedList;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchGroupException;
@@ -41,6 +44,7 @@ import com.akiban.ais.model.TableName;
 /** DDL operations on Indices */
 public class IndexDDL
 {
+    private static final Logger logger = LoggerFactory.getLogger(IndexDDL.class);
     private IndexDDL() {
     }
 
@@ -75,20 +79,40 @@ public class IndexDDL
     
     private static Index buildIndex (AkibanInformationSchema ais, String defaultSchemaName, CreateIndexNode index) {
         final String schemaName = index.getObjectName().getSchemaName() != null ? index.getObjectName().getSchemaName() : defaultSchemaName;
-        final TableName tableName = TableName.create(schemaName, index.getIndexName().getTableName());
+        final TableName tableName = TableName.create(schemaName, index.getIndexTableName().getTableName());
         
         if (checkIndexType (index, tableName) == Index.IndexType.TABLE) {
+            logger.info ("Building Table index on table {}", tableName);
             return buildTableIndex (ais, tableName, index);
         } else {
+            logger.info ("Building Group index on table {}", tableName);
             return buildGroupIndex (ais, tableName, index);
         }
     }
     
+    /**
+     * Check if the index specification is for a table index or a group index. We distinguish between 
+     * them by checking the columns specified in the index, if they all belong to the table 
+     * in the "ON" clause, this is a table index, else it is a group index. 
+     * @param index AST for index to check
+     * @param tableName ON clause table name
+     * @return IndexType (GROUP or TABLE). 
+     */
     private static Index.IndexType checkIndexType(CreateIndexNode index, TableName tableName) {
         for (IndexColumn col : index.getColumnList()) {
-            if (col.getTableName() != null && 
-                    !(col.getTableName().getSchemaName().equalsIgnoreCase(tableName.getSchemaName()) &&
-                      col.getTableName().getTableName().equalsIgnoreCase(tableName.getTableName()))) {
+            
+            // if the column has no table name (e.g. "col1") OR
+            //    there is a table name (e.g. "schema1.table1.col1" or "table1.col1")
+            //      if the table name has a schema it matches, else assume it's the same as the table
+            //    and the table name match the index table. 
+            
+            if (col.getTableName() == null ||
+                    ((col.getTableName().hasSchema() && 
+                            col.getTableName().getSchemaName().equalsIgnoreCase(tableName.getSchemaName()) ||
+                            true) &&
+                     col.getTableName().getTableName().equalsIgnoreCase(tableName.getTableName()))){
+                ; // Column is in the base table, check the next
+            } else {
                 return Index.IndexType.GROUP;
             }
         }
