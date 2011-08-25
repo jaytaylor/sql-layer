@@ -149,7 +149,7 @@ public class IndexDDLIT extends PostgresServerITBase {
         connection.createStatement().execute(sql);
     }
     
-    @Test
+    @Test (expected=PSQLException.class)
     public void createIndexErrorBranching() throws SQLException {
         String sql ="CREATE INDEX test12 on test.t1 (t1.c1, t2.c3, t3.c1)";
         createBranchedGroup();
