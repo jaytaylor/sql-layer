@@ -20,7 +20,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 
-import java.util.Collection;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
@@ -75,23 +74,23 @@ public final class Converters {
 
     private static Map<AkType,AbstractConverter> createConvertersMap() {
         Map<AkType,AbstractConverter> result = new EnumMap<AkType, AbstractConverter>(AkType.class);
-        result.put(DATE, ConvertersForDates.DATE);
-        result.put(DATETIME, ConvertersForDates.DATETIME);
+        result.put(DATE, LongConverter.DATE);
+        result.put(DATETIME, LongConverter.DATETIME);
         result.put(DECIMAL, ConverterForBigDecimal.INSTANCE);
         result.put(DOUBLE, ConverterForDouble.SIGNED);
         result.put(FLOAT, ConverterForFloat.SIGNED);
-        result.put(INT, ConverterForLong.INT);
-        result.put(LONG, ConverterForLong.LONG);
+        result.put(INT, LongConverter.INT);
+        result.put(LONG, LongConverter.LONG);
         result.put(VARCHAR, ConverterForString.STRING);
         result.put(TEXT, ConverterForString.TEXT);
-        result.put(TIME, ConvertersForDates.TIME);
-        result.put(TIMESTAMP, ConvertersForDates.TIMESTAMP);
+        result.put(TIME, LongConverter.TIME);
+        result.put(TIMESTAMP, LongConverter.TIMESTAMP);
         result.put(U_BIGINT, ConverterForBigInteger.INSTANCE);
         result.put(U_DOUBLE, ConverterForDouble.UNSIGNED);
         result.put(U_FLOAT, ConverterForFloat.UNSIGNED);
-        result.put(U_INT, ConverterForLong.U_INT);
+        result.put(U_INT, LongConverter.U_INT);
         result.put(VARBINARY, ConverterForVarBinary.INSTANCE);
-        result.put(YEAR, ConvertersForDates.YEAR);
+        result.put(YEAR, LongConverter.YEAR);
         return result;
     }
 
@@ -164,14 +163,6 @@ public final class Converters {
         );
 
         return builder.result();
-    }
-
-    private static <T> boolean hasIntersection(Collection<? extends T> one, Collection<? extends T> two) {
-        for (T elem : one) {
-            if (two.contains(elem))
-                return true;
-        }
-        return false;
     }
     
     private Converters() {}

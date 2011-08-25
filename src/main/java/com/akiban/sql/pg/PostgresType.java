@@ -22,6 +22,8 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.conversion.LongConverter;
 
+import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
@@ -146,7 +148,7 @@ public class PostgresType
     private int oid;
     private short length;
     private int modifier;
-    private LongConverter converter;
+    private LongExtractor converter;
 
     public PostgresType(int oid, short length, int modifier) {
         this.oid = oid;
@@ -236,7 +238,7 @@ public class PostgresType
         // TODO: For now, these are the only ones needing special treatment.
         // When we are better able to work with the encoder to get the
         // raw bytes, can use this for all.
-        result.converter = Converters.getLongConverter(aisType.akType());
+        result.converter = Extractors.getLongExtractor(aisType.akType());
 
         return result;
     }
@@ -248,7 +250,7 @@ public class PostgresType
 
         TypeId typeId = type.getTypeId();
 
-        LongConverter converter = null;
+        LongExtractor converter = null;
 
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.BIT_TYPE_ID:
@@ -262,7 +264,7 @@ public class PostgresType
             break;
         case TypeId.FormatIds.DATE_TYPE_ID:
             oid = DATE_TYPE_OID;
-            converter = Converters.getLongConverter(AkType.DATE);
+            converter = Extractors.getLongExtractor(AkType.DATE);
             break;
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
         case TypeId.FormatIds.NUMERIC_TYPE_ID:
@@ -273,11 +275,11 @@ public class PostgresType
             break;
         case TypeId.FormatIds.INT_TYPE_ID:
             oid = INT4_TYPE_OID;
-            converter = Converters.getLongConverter(AkType.INT);
+            converter = Extractors.getLongExtractor(AkType.INT);
             break;
         case TypeId.FormatIds.LONGINT_TYPE_ID:
             oid = INT8_TYPE_OID;
-            converter = Converters.getLongConverter(AkType.INT);
+            converter = Extractors.getLongExtractor(AkType.INT);
             break;
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
             oid = TEXT_TYPE_OID;
@@ -290,15 +292,15 @@ public class PostgresType
             break;
         case TypeId.FormatIds.SMALLINT_TYPE_ID:
             oid = INT2_TYPE_OID;
-            converter = Converters.getLongConverter(AkType.INT);
+            converter = Extractors.getLongExtractor(AkType.INT);
             break;
         case TypeId.FormatIds.TIME_TYPE_ID:
             oid = TIME_TYPE_OID;
-            converter = Converters.getLongConverter(AkType.TIME);
+            converter = Extractors.getLongExtractor(AkType.TIME);
             break;
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
             oid = TIMESTAMP_TYPE_OID;
-            converter = Converters.getLongConverter(AkType.TIMESTAMP);
+            converter = Extractors.getLongExtractor(AkType.TIMESTAMP);
             break;
         case TypeId.FormatIds.TINYINT_TYPE_ID:
             oid = BYTEA_TYPE_OID;
@@ -393,7 +395,7 @@ public class PostgresType
 
     public Object decodeParameter(String value) {
         if (converter != null)
-            return converter.doParse(value);
+            return converter.getLong(value);
         else
             return value;
     }

@@ -15,27 +15,94 @@
 
 package com.akiban.server.types.conversion;
 
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
+import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.extract.LongExtractor;
 
 public abstract class LongConverter extends AbstractConverter {
-
-    // LongConverter interface
-
-    public abstract long getLong(ValueSource source);
-    public abstract String asString(long value);
-    public abstract long doParse(String string);
 
     // defined in subclasses
 
     protected abstract void putLong(ValueTarget target, long value);
 
-    // for use in this package
+    @Override
+    protected AkType targetConversionType() {
+        return extractor().targetConversionType();
+    }
 
     @Override
     protected final void doConvert(ValueSource source, ValueTarget target) {
-        putLong(target, getLong(source));
+        putLong(target, extractor().getLong(source));
     }
 
-    LongConverter() {}
+    protected final LongExtractor extractor() {
+        return extractor;
+    }
+
+    protected LongConverter(AkType type) {
+        extractor = Extractors.getLongExtractor(type);
+    }
+
+    private final LongExtractor extractor;
+
+    // consts
+
+
+    static final LongConverter LONG = new LongConverter(AkType.LONG) {
+        @Override
+        protected void putLong(ValueTarget target, long value) {
+            target.putLong(value);
+        }
+    };
+
+    static final LongConverter INT = new LongConverter(AkType.INT) {
+        @Override
+        protected void putLong(ValueTarget target, long value) {
+            target.putInt(value);
+        }
+    };
+
+    static final LongConverter U_INT = new LongConverter(AkType.U_INT) {
+        @Override
+        protected void putLong(ValueTarget target, long value) {
+            target.putUInt(value);
+        }
+    };
+
+    static final LongConverter DATE = new LongConverter(AkType.DATE) {
+        @Override
+        protected void putLong(ValueTarget target, long value) {
+            target.putDate(value);
+        }
+    };
+
+    static final LongConverter DATETIME = new LongConverter(AkType.DATETIME) {
+        @Override
+        protected void putLong(ValueTarget target, long value) {
+            target.putDateTime(value);
+        }
+    };
+
+    static final LongConverter TIME = new LongConverter(AkType.TIME) {
+        @Override
+        protected void putLong(ValueTarget target, long value) {
+            target.putTime(value);
+        }
+    };
+
+    static final LongConverter TIMESTAMP = new LongConverter(AkType.TIMESTAMP) {
+        @Override
+        protected void putLong(ValueTarget target, long value) {
+            target.putTimestamp(value);
+        }
+    };
+
+    static final LongConverter YEAR = new LongConverter(AkType.YEAR) {
+        @Override
+        protected void putLong(ValueTarget target, long value) {
+            target.putYear(value);
+        }
+    };
 }
