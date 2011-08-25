@@ -132,6 +132,10 @@ public final class Converters {
                 VARCHAR
         );
         builder.legalConversions(LONG,
+                DOUBLE,
+                FLOAT,
+                U_BIGINT,
+                DECIMAL,
                 VARCHAR
         );
         builder.legalConversions(DATE,

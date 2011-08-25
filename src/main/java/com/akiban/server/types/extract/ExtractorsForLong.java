@@ -44,8 +44,14 @@ class ExtractorsForLong extends LongExtractor {
         case LONG:      return source.getLong();
         case INT:       return source.getInt();
         case U_INT:     return source.getUInt();
+        case U_BIGINT:  return source.getUBigInt().longValue();
+        case FLOAT:     return (long)source.getFloat();
+        case U_FLOAT:   return (long)source.getUFloat();
+        case DOUBLE:    return (long)source.getDouble();
+        case U_DOUBLE:  return (long)source.getUDouble();
         case TEXT:      return Long.parseLong(source.getText());
         case VARCHAR:   return Long.parseLong(source.getString());
+        case DECIMAL:   return source.getDecimal().longValue();
         default: throw unsupportedConversion(type);
         }
     }
