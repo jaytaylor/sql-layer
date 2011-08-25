@@ -50,13 +50,6 @@ public final class Converters {
         return target;
     }
 
-    public static LongConverter getLongConverter(AkType type) {
-        AbstractConverter converter = get(type);
-        if (converter instanceof LongConverter)
-            return (LongConverter) converter;
-        return null;
-    }
-
     public static boolean isConversionAllowed(AkType sourceType, AkType targetType) {
         // NULL -> * is always allowed, UNSUPPORTED -> * is always disallowed, else A -> A is allowed
         if (sourceType == AkType.NULL || (sourceType != AkType.UNSUPPORTED && sourceType.equals(targetType))) {

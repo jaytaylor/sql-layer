@@ -19,8 +19,6 @@ import com.akiban.server.error.UnknownDataTypeException;
 import com.akiban.server.error.UnknownTypeSizeException;
 import com.akiban.server.error.UnsupportedCharsetException;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.conversion.LongConverter;
 
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.LongExtractor;

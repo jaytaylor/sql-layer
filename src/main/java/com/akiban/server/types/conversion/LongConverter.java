@@ -21,7 +21,7 @@ import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.LongExtractor;
 
-public abstract class LongConverter extends AbstractConverter {
+abstract class LongConverter extends AbstractConverter {
 
     // defined in subclasses
 
