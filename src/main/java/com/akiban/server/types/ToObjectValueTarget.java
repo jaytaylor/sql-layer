@@ -158,7 +158,7 @@ public final class ToObjectValueTarget implements ValueTarget {
     // for use in this class
     
     private void internalPut(Object value, AkType type) {
-        ConversionHelper.checkType(akType, type);
+        ValueSourceHelper.checkType(akType, type);
         if (!putPending) {
             throw new IllegalStateException("no put pending: " + toString());
         }

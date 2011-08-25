@@ -16,7 +16,7 @@ package com.akiban.server.types;
 
 import com.akiban.util.ArgumentValidation;
 
-public final class ConversionHelper {
+public final class ValueSourceHelper {
 
     public static void checkType(AkType expected, AkType actual) {
         ArgumentValidation.notNull("expected", expected);
@@ -30,9 +30,9 @@ public final class ConversionHelper {
             return; // always valid!
         }
         if (expected != actual) {
-            throw new IllegalConversionException(expected, actual);
+            throw new WrongValueGetException(expected, actual);
         }
     }
 
-    private ConversionHelper() {}
+    private ValueSourceHelper() {}
 }

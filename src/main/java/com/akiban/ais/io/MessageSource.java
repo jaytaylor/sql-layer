@@ -83,7 +83,12 @@ public class MessageSource extends Source
         if (length >= 0) {
             byte[] bytes = new byte[length];
             payload.get(bytes);
-            s = new String(bytes);
+            try {
+              s = new String(bytes, "UTF-8");
+            }
+            catch (java.io.UnsupportedEncodingException ex) {
+                throw new RuntimeException(ex);
+            }
         }
         return s;
     }
