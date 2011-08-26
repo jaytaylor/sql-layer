@@ -26,6 +26,7 @@ import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.error.UnsupportedUniqueGroupIndexException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.CreateIndexNode;
 import com.akiban.sql.parser.DropIndexNode;
@@ -160,6 +161,10 @@ public class IndexDDL
             throw new NoSuchGroupException(groupName);
         }
 
+        if (index.getUniqueness()) {
+            throw new UnsupportedUniqueGroupIndexException (indexName);
+        }
+        
         AISBuilder builder = new AISBuilder();
         addGroup(builder, ais, groupName);
         builder.groupIndex(groupName, indexName, index.getUniqueness());

@@ -165,6 +165,7 @@ public enum ErrorCode {
     UNSUPPORTED_CREATE_SELECT (28, 3, Importance.ERROR, UnsupportedCreateSelectException.class),
     UNSUPPORTED_FK_INDEX    (28, 4, Importance.ERROR, UnsupportedFKIndexException.class),
     UNSUPPORTED_CHECK       (28, 5, Importance.ERROR, UnsupportedCheckConstraintException.class),
+    UNSUPPORTED_GROUP_UNIQUE(28, 6, Importance.DEBUG, UnsupportedUniqueGroupIndexException.class),
     
     // Configuration, Startup, & Shutdown errors
     SERVICE_NOT_STARTED  (29, 1, Importance.ERROR, ServiceNotStartedException.class),

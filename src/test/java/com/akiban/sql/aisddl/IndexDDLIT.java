@@ -93,30 +93,12 @@ public class IndexDDLIT extends PostgresServerITBase {
         
     }
     
-    @Test
+    @Test (expected=PSQLException.class)
     public void createUniqueGroupKey () throws SQLException {
         String sql = "CREATE UNIQUE INDEX test4 on test.t2 (t1.c1, t2.c1)";
         createJoinedTables();
         
         connection.createStatement().execute(sql);
-
-        UserTable table1 = ddlServer().getAIS(session()).getUserTable("test", "t1");
-        assertNotNull (table1);
-
-        UserTable table2 = ddlServer().getAIS(session()).getUserTable("test", "t2");
-        assertNotNull (table2);
-        
-        assertNull (table1.getIndex("test4"));
-        assertNull (table2.getIndex("test4"));
-        
-        assertEquals (table1.getGroup().getName(), table2.getGroup().getName());
-        Group group = table1.getGroup();
-
-        assertNotNull (group.getIndex("test4"));
-        assertTrue   (group.getIndex("test4").isUnique());
-        assertEquals  (2, group.getIndex("test4").getColumns().size());
-        assertEquals  ("c1", group.getIndex("test4").getColumns().get(0).getColumn().getName());
-        assertEquals  ("c1", group.getIndex("test4").getColumns().get(0).getColumn().getName());
         
     }
        
