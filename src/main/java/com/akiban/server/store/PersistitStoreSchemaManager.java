@@ -84,6 +84,7 @@ import com.akiban.server.error.UnsupportedCharsetException;
 import com.akiban.server.error.UnsupportedDataTypeException;
 import com.akiban.server.error.UnsupportedIndexDataTypeException;
 import com.akiban.server.error.UnsupportedIndexSizeException;
+import com.akiban.server.error.UnsupportedUniqueGroupIndexException;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.SessionService;
@@ -394,6 +395,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     newGroup = newAIS.getGroup(indexName.getTableName());
                     if(newGroup == null) {
                         throw new NoSuchGroupException(indexName.getTableName());
+                    }
+                    if (index.isUnique()) {
+                        throw new UnsupportedUniqueGroupIndexException ((indexName.getName()));
                     }
                     curIndex = newGroup.getIndex(indexName.getName());
                     schemaName = indexName.getSchemaName();
