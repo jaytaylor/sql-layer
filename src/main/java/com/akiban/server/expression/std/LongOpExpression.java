@@ -19,8 +19,8 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.conversion.LongConverter;
+import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.util.AbstractLongValueSource;
 import com.akiban.util.ArgumentValidation;
 
@@ -78,9 +78,9 @@ public final class LongOpExpression extends AbstractTwoArgExpression {
                 throw new IllegalStateException("left or right operand not set");
             }
             AkType opType = op.opType();
-            LongConverter converter = Converters.getLongConverter(opType);
-            long leftLong = converter.getLong(left);
-            long rightLong = converter.getLong(right);
+            LongExtractor extractor = Extractors.getLongExtractor(opType);
+            long leftLong = extractor.getLong(left);
+            long rightLong = extractor.getLong(right);
             return op.evaluate(leftLong, rightLong);
         }
 

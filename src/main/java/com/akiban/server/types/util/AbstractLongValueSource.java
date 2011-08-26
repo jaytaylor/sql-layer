@@ -21,8 +21,8 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceHelper;
 import com.akiban.server.types.ValueSourceIsNullException;
 import com.akiban.server.types.WrongValueGetException;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.conversion.LongConverter;
+import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
 
@@ -126,8 +126,8 @@ public abstract class AbstractLongValueSource implements ValueSource {
             appender.append(null);
         }
         else {
-            LongConverter converter = Converters.getLongConverter(getConversionType());
-            String asString = converter.asString(rawLong());
+            LongExtractor extractor = Extractors.getLongExtractor(getConversionType());
+            String asString = extractor.asString(rawLong());
             appender.append(asString);
         }
     }

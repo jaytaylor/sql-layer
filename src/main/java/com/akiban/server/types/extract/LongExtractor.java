@@ -13,12 +13,21 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.types.conversion;
+package com.akiban.server.types.extract;
 
-public final class ConverterTestUtils {
-    public static void setGlobalTimezone(String timezone) {
-        ConvertersForDates.setGlobalTimezone(timezone);
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
+
+public abstract class LongExtractor extends AbstractExtractor {
+
+    // LongExtractor interface
+
+    public abstract long getLong(ValueSource source);
+    public abstract String asString(long value);
+    public abstract long getLong(String string);
+
+    // package-private ctor
+    LongExtractor(AkType targetConversionType) {
+        super(targetConversionType);
     }
-
-    private ConverterTestUtils() {}
 }

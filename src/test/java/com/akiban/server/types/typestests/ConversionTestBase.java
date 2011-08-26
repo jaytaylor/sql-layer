@@ -22,7 +22,7 @@ import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
-import com.akiban.server.types.conversion.ConverterTestUtils;
+import com.akiban.server.types.extract.ConverterTestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
