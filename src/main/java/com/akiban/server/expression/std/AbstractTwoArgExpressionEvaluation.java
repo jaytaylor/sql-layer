@@ -16,7 +16,6 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.WrongExpressionArityException;
 
 import java.util.List;
 
