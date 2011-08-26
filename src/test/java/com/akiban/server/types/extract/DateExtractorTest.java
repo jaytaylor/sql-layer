@@ -13,15 +13,14 @@
 * along with this program.  If not, see http://www.gnu.org/licenses.
 */
 
-package com.akiban.server.types.conversion;
+package com.akiban.server.types.extract;
 
+import org.junit.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-
-public class DateConverterTest extends LongConverterTestBase {
-    public DateConverterTest() {
-        super(ConvertersForDates.DATE,
+public class DateExtractorTest extends LongExtractorTestBase {
+    public DateExtractorTest() {
+        super(ExtractorsForDates.DATE,
               new TestElement[] {
                 new TestElement("0000-00-00", 0),
                 new TestElement("0000-00-31", 31),
@@ -38,12 +37,12 @@ public class DateConverterTest extends LongConverterTestBase {
 
     @Test
     public void partiallySpecified() {
-        assertEquals("0002-00-00", encodeAndDecode("2"));
-        assertEquals("0020-00-00", encodeAndDecode("20"));
-        assertEquals("0201-00-00", encodeAndDecode("201"));
-        assertEquals("2011-00-00", encodeAndDecode("2011"));
-        assertEquals("2011-04-00", encodeAndDecode("2011-4"));
-        assertEquals("2011-04-08", encodeAndDecode("2011-4-8"));
+        Assert.assertEquals("0002-00-00", encodeAndDecode("2"));
+        Assert.assertEquals("0020-00-00", encodeAndDecode("20"));
+        Assert.assertEquals("0201-00-00", encodeAndDecode("201"));
+        Assert.assertEquals("2011-00-00", encodeAndDecode("2011"));
+        Assert.assertEquals("2011-04-00", encodeAndDecode("2011-4"));
+        Assert.assertEquals("2011-04-08", encodeAndDecode("2011-4-8"));
     }
 
     @Test(expected=IllegalArgumentException.class)

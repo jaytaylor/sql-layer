@@ -13,56 +13,17 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.types.conversion;
+package com.akiban.server.types.extract;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceIsNullException;
-import com.akiban.server.types.ValueTarget;
 
-abstract class ConverterForLong extends LongConverter {
+class ExtractorsForLong extends LongExtractor {
 
-    static final LongConverter LONG = new ConverterForLong() {
-        @Override
-        protected void putLong(ValueTarget target, long value) {
-            target.putLong(value);
-        }
-
-        // AbstractConverter interface
-
-        @Override
-        protected AkType targetConversionType() {
-            return AkType.LONG;
-        }
-    };
-
-    static final LongConverter INT = new ConverterForLong() {
-        @Override
-        protected void putLong(ValueTarget target, long value) {
-            target.putInt(value);
-        }
-
-        // AbstractConverter interface
-
-        @Override
-        protected AkType targetConversionType() {
-            return AkType.INT;
-        }
-    };
-
-    static final LongConverter U_INT = new ConverterForLong() {
-        @Override
-        protected void putLong(ValueTarget target, long value) {
-            target.putUInt(value);
-        }
-
-        // AbstractConverter interface
-
-        @Override
-        protected AkType targetConversionType() {
-            return AkType.U_INT;
-        }
-    };
+    static final LongExtractor LONG = new ExtractorsForLong(AkType.LONG) ;
+    static final LongExtractor INT = new ExtractorsForLong(AkType.INT);
+    static final LongExtractor U_INT = new ExtractorsForLong(AkType.U_INT);
 
     @Override
     public String asString(long value) {
@@ -70,7 +31,7 @@ abstract class ConverterForLong extends LongConverter {
     }
 
     @Override
-    public long doParse(String string) {
+    public long getLong(String string) {
         return Long.parseLong(string);
     }
 
@@ -83,11 +44,19 @@ abstract class ConverterForLong extends LongConverter {
         case LONG:      return source.getLong();
         case INT:       return source.getInt();
         case U_INT:     return source.getUInt();
+        case U_BIGINT:  return source.getUBigInt().longValue();
+        case FLOAT:     return (long)source.getFloat();
+        case U_FLOAT:   return (long)source.getUFloat();
+        case DOUBLE:    return (long)source.getDouble();
+        case U_DOUBLE:  return (long)source.getUDouble();
         case TEXT:      return Long.parseLong(source.getText());
         case VARCHAR:   return Long.parseLong(source.getString());
+        case DECIMAL:   return source.getDecimal().longValue();
         default: throw unsupportedConversion(type);
         }
     }
 
-    private ConverterForLong() {}
+    private ExtractorsForLong(AkType targetConversionType) {
+        super(targetConversionType);
+    }
 }

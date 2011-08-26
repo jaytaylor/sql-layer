@@ -13,15 +13,14 @@
 * along with this program.  If not, see http://www.gnu.org/licenses.
 */
 
-package com.akiban.server.types.conversion;
+package com.akiban.server.types.extract;
 
+import org.junit.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-
-public class YearConverterTest extends LongConverterTestBase {
-    public YearConverterTest() {
-        super(ConvertersForDates.YEAR,
+public class YearExtractorTest extends LongExtractorTestBase {
+    public YearExtractorTest() {
+        super(ExtractorsForDates.YEAR,
               new TestElement[] {
                 new TestElement("0000", 0),
                 new TestElement("1901", 1),
@@ -37,10 +36,10 @@ public class YearConverterTest extends LongConverterTestBase {
 
     @Test
     public void partiallySpecified() {
-        assertEquals("0002", encodeAndDecode("2"));
-        assertEquals("0020", encodeAndDecode("20"));
-        assertEquals("0201", encodeAndDecode("201"));
-        assertEquals("2011", encodeAndDecode("2011"));
+        Assert.assertEquals("0002", encodeAndDecode("2"));
+        Assert.assertEquals("0020", encodeAndDecode("20"));
+        Assert.assertEquals("0201", encodeAndDecode("201"));
+        Assert.assertEquals("2011", encodeAndDecode("2011"));
     }
 
     @Test(expected=IllegalArgumentException.class)
