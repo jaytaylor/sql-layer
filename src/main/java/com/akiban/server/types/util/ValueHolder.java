@@ -25,7 +25,6 @@ import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
-import com.persistit.Value;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -465,7 +464,7 @@ public final class ValueHolder implements ValueSource, ValueTarget {
 
     public static class IllegalRawPutException extends RuntimeException {
         private IllegalRawPutException(StateType requiredStateType, AkType seenType) {
-            super("illegal put of " + seenType);
+            super("illegal put of " + seenType + " to " + requiredStateType);
         }
     }
 }
