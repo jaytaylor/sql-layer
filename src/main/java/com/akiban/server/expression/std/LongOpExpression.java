@@ -37,8 +37,8 @@ public final class LongOpExpression extends AbstractTwoArgExpression {
         return new InnerEvaluation(longOp, childrenEvaluations());
     }
 
-    public LongOpExpression(AkType type, List<? extends Expression> children, LongOp longOp) {
-        super(type, children);
+    public LongOpExpression(LongOp longOp, List<? extends Expression> children) {
+        super(longOp.opType(), children);
         this.longOp = longOp;
     }
 
