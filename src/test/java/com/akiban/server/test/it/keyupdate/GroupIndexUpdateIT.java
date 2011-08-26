@@ -18,8 +18,8 @@ package com.akiban.server.test.it.keyupdate;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.error.UnsupportedUniqueGroupIndexException;
 import com.akiban.server.store.IndexRecordVisitor;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.Strings;
@@ -220,7 +220,7 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
     }
 
-    @Test(expected = OperatorStore.UniqueIndexUnsupportedException.class)
+    @Test(expected = UnsupportedUniqueGroupIndexException.class)
     public void uniqueGI() {
         try {
             createGroupIndex(groupName, "name_when_sku", true, "c.name, o.when, i.sku");
@@ -233,8 +233,8 @@ public final class GroupIndexUpdateIT extends ITBase {
             );
         } catch (final Exception e) {
             for (Throwable cause = e; cause != null; cause = cause.getCause()) {
-                if (cause instanceof OperatorStore.UniqueIndexUnsupportedException) {
-                    throw (OperatorStore.UniqueIndexUnsupportedException)cause;
+                if (cause instanceof UnsupportedUniqueGroupIndexException) {
+                    throw (UnsupportedUniqueGroupIndexException)cause;
                 }
             }
             throw new RuntimeException(e);

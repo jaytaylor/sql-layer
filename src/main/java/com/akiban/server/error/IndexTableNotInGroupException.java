@@ -14,13 +14,8 @@
  */
 package com.akiban.server.error;
 
-import com.akiban.ais.model.TableName;
-
-public class BranchingGroupIndexException extends InvalidOperationException {
-    public BranchingGroupIndexException (String indexName, TableName table1, TableName table2) {
-        super(ErrorCode.BRANCHING_GROUP_INDEX, indexName, 
-                table1.getSchemaName(), table1.getTableName(), 
-                table2.getSchemaName(), table2.getTableName());
+public class IndexTableNotInGroupException extends InvalidOperationException {
+    public IndexTableNotInGroupException(String indexName, String column, String tableName) {
+        super (ErrorCode.INDEX_TABLE_NOT_IN_GROUP, indexName, column, tableName);
     }
-
 }

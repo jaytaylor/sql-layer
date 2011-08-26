@@ -22,6 +22,7 @@ public final class AISValidations {
     //public static final AISValidation NO_NULL_IDENTIFIERS;
     public static final AISValidation CHARACTER_SET_SUPPORTED = new CharacterSetSupported();
     public static final AISValidation COLUMN_POSITION_DENSE = new ColumnPositionDense();
+    public static final AISValidation GROUP_INDEX_NOT_UNIQUE = new GroupIndexesNotUnique();
     public static final AISValidation GROUP_TABLE_SINGLE_ROOT = new GroupTableSingleRoot();
     public static final AISValidation INDEX_HAS_COLUMNS = new IndexHasColumns();
     public static final AISValidation INDEX_TREE_NAMES_UNIQUE = new IndexTreeNamesUnique();
@@ -57,6 +58,7 @@ public final class AISValidations {
                 TABLE_COLUMNS_MATCH_GROUP,
                 TABLE_INDEXES_MATCH_GROUP,
                 GROUP_TABLE_SINGLE_ROOT,
+                GROUP_INDEX_NOT_UNIQUE,
                 JOIN_TO_ONE_PARENT,
                 JOIN_TO_PARENT_PK,
                 JOIN_COLUMN_TYPES_MATCH,

@@ -80,6 +80,8 @@ public enum ErrorCode {
     DROP_SCHEMA_NOT_ALLOWED (2, 24, Importance.DEBUG, DropSchemaNotAllowedException.class),
     WRONG_TABLE_FOR_INDEX   (2, 25, Importance.DEBUG, WrongTableForIndexException.class),
     MISSING_DDL_PARAMETERS  (2, 26, Importance.DEBUG, MissingDDLParametersException.class),
+    INDEX_COL_NOT_IN_GROUP  (2, 27, Importance.DEBUG, IndexColNotInGroupException.class),
+    INDEX_TABLE_NOT_IN_GROUP(2, 28, Importance.DEBUG, IndexTableNotInGroupException.class),
     
     // DML errors
     NO_REFERENCED_ROW       (3, 0, Importance.DEBUG, null),
@@ -163,6 +165,7 @@ public enum ErrorCode {
     UNSUPPORTED_CREATE_SELECT (28, 3, Importance.ERROR, UnsupportedCreateSelectException.class),
     UNSUPPORTED_FK_INDEX    (28, 4, Importance.ERROR, UnsupportedFKIndexException.class),
     UNSUPPORTED_CHECK       (28, 5, Importance.ERROR, UnsupportedCheckConstraintException.class),
+    UNSUPPORTED_GROUP_UNIQUE(28, 6, Importance.DEBUG, UnsupportedUniqueGroupIndexException.class),
     
     // Configuration, Startup, & Shutdown errors
     SERVICE_NOT_STARTED  (29, 1, Importance.ERROR, ServiceNotStartedException.class),

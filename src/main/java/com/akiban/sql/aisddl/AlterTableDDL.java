@@ -12,15 +12,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package com.akiban.server.error;
+package com.akiban.sql.aisddl;
 
-import com.akiban.ais.model.TableName;
+import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.service.session.Session;
+import com.akiban.sql.parser.AlterTableNode;
 
-public class BranchingGroupIndexException extends InvalidOperationException {
-    public BranchingGroupIndexException (String indexName, TableName table1, TableName table2) {
-        super(ErrorCode.BRANCHING_GROUP_INDEX, indexName, 
-                table1.getSchemaName(), table1.getTableName(), 
-                table2.getSchemaName(), table2.getTableName());
+public class AlterTableDDL {
+    private AlterTableDDL() {}
+    
+    public static void alterTable (DDLFunctions ddlFunctions,
+                                  Session session, 
+                                  String defaultSchemaName,
+                                  AlterTableNode alterTable) {
+        throw new UnsupportedSQLException (alterTable.statementToString(), alterTable);
     }
-
 }

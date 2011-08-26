@@ -25,6 +25,7 @@ import org.junit.Test;
 import com.akiban.ais.model.validation.AISValidationFailure;
 import com.akiban.ais.model.validation.AISValidationResults;
 import com.akiban.ais.model.validation.AISValidations;
+import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.ErrorCode;
 
 public class AISBuilderTest
@@ -1283,7 +1284,7 @@ public class AISBuilderTest
         builder.groupIndexColumn("coi2", "name_date", "test", "o",  "date", 1);
     }
 
-    @Test(expected = GroupIndex.GroupIndexCreationException.class)
+    @Test(expected = BranchingGroupIndexException.class)
     public void groupIndexMultiBranch()
     {
         final AISBuilder builder = new AISBuilder();
