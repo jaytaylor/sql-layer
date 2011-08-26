@@ -122,9 +122,6 @@ public class GroupIndex extends Index
             return;
         }
         if (entry.getKey().intValue() == indexTableDepth) {
-            //12:08:40 WARN Thread-816 com.akiban.sql.pg.PostgresServerConnection - Error in query: 02018: 
-            //Group index `test` has tables `_akiban_t1`.`test` and `t3`.`test` on different branches
-            
             throw new BranchingGroupIndexException (indexColumn.getIndex().getIndexName().getName(), 
                     indexTable.getName(), entry.getValue().getName());
         }
@@ -193,10 +190,4 @@ public class GroupIndex extends Index
     private final NavigableMap<Integer,UserTable> tablesByDepth = new TreeMap<Integer, UserTable>();
     private List<Column> columnsPerFlattenedField;
 
-    // nested classes
-    //public static class GroupIndexCreationException extends RuntimeException {
-    //    public GroupIndexCreationException(String message) {
-    //        super(message);
-    //    }
-    //}
 }
