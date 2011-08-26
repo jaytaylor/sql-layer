@@ -12,10 +12,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package com.akiban.server.types;
 
-public final class WrongValueGetException extends ValueSourceException {
-    public WrongValueGetException(AkType expectedType, AkType actualType) {
-        super("expected to put or get " + expectedType + " but saw " + actualType);
+package com.akiban.server.expression;
+
+public final class WrongExpressionArityException extends RuntimeException { // TODO should be IOE
+    public WrongExpressionArityException(int expected, int actual) {
+        super("expected " + expected + " args but found " + actual);
     }
 }
