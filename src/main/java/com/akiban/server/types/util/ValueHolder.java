@@ -22,6 +22,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceHelper;
 import com.akiban.server.types.ValueSourceIsNullException;
 import com.akiban.server.types.ValueTarget;
+import com.akiban.server.types.WrongValueGetException;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
@@ -35,6 +36,12 @@ import java.util.Set;
 public final class ValueHolder implements ValueSource, ValueTarget {
 
     // ValueHolder interface
+
+    void requireForPuts(AkType type) {
+        allowedPut = type;
+    }
+
+    // ValueSource interface
 
     @Override
     public boolean isNull() {
@@ -304,25 +311,35 @@ public final class ValueHolder implements ValueSource, ValueTarget {
 
     // private methods
 
+    private void checkRawPut(AkType putType) {
+        if (allowedPut != null && allowedPut != putType) {
+            throw new WrongValueGetException(allowedPut, putType);
+        }
+    }
+
     private void putRaw(AkType newType, long value) {
+        checkRawPut(newType);
         type = newType;
         longVal = value;
         stateType = StateType.LONG_VAL;
     }
 
     private void putRaw(AkType newType, double value) {
+        checkRawPut(newType);
         type = newType;
         doubleVal = value;
         stateType = StateType.DOUBLE_VAL;
     }
 
     private void putRaw(AkType newType, float value) {
+        checkRawPut(newType);
         type = newType;
         floatVal = value;
         stateType = StateType.FLOAT_VAL;
     }
     
     private void putRaw(AkType newType, Object value) {
+        checkRawPut(newType);
         if (value == null) {
             putRawNull();
         }
@@ -406,6 +423,7 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     private Object objectVal;
     private AkType type = AkType.UNSUPPORTED;
     private StateType stateType = StateType.UNDEF_VAL;
+    private AkType allowedPut = null;
 
     public static ValueHolder holdingNull() {
         ValueHolder result = new ValueHolder();
