@@ -63,7 +63,14 @@ public final class LiteralExpression implements Expression {
     public static Expression forNull() {
         return NULL_EXPRESSION;
     }
-    
+
+    // Object interface
+
+    @Override
+    public String toString() {
+        return evaluation.eval().toString();
+    }
+
     // object state
 
     private final ExpressionEvaluation evaluation;

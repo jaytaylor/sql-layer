@@ -108,7 +108,7 @@ public abstract class AbstractCompositeExpression implements Expression {
                 sb.append(", ");
             }
         }
-        sb.append(')');
+        sb.append(" -> ").append(valueType()).append(')');
     }
 
     // object state

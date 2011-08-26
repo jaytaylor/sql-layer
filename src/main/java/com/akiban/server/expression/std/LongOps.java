@@ -19,21 +19,21 @@ import com.akiban.server.types.AkType;
 
 public class LongOps {
 
-    public static LongOp LONG_MULTIPLY = new LongOpForLong("*") {
+    public static LongOp LONG_MULTIPLY = new LongOpForLong('*') {
         @Override
         public long evaluate(long one, long two) {
             return one * two;
         }
     };
 
-    public static LongOp LONG_SUBTRACT = new LongOpForLong("-") {
+    public static LongOp LONG_SUBTRACT = new LongOpForLong('-') {
         @Override
         public long evaluate(long one, long two) {
             return one - two;
         }
     };
 
-    public static LongOp LONG_ADD = new LongOpForLong("+") {
+    public static LongOp LONG_ADD = new LongOpForLong('+') {
         @Override
         public long evaluate(long one, long two) {
             return one + two;
@@ -53,8 +53,8 @@ public class LongOps {
             return name;
         }
 
-        protected LongOpForLong(String name) {
-            this.name = name;
+        protected LongOpForLong(char name) {
+            this.name = String.format("op(%s)", name);
         }
 
         private final String name;
