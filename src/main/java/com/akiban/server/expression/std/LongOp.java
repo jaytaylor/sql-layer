@@ -12,10 +12,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package com.akiban.server.types;
 
-public final class WrongValueGetException extends ValueSourceException {
-    public WrongValueGetException(AkType expectedType, AkType actualType) {
-        super("expected to put or get " + expectedType + " but saw " + actualType);
-    }
+package com.akiban.server.expression.std;
+
+import com.akiban.server.types.AkType;
+
+public interface LongOp {
+    AkType opType();
+    long evaluate(long one, long two);
 }

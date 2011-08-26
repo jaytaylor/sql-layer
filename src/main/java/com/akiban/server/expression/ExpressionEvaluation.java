@@ -12,10 +12,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package com.akiban.server.types;
 
-public final class WrongValueGetException extends ValueSourceException {
-    public WrongValueGetException(AkType expectedType, AkType actualType) {
-        super("expected to put or get " + expectedType + " but saw " + actualType);
-    }
+package com.akiban.server.expression;
+
+import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.row.Row;
+import com.akiban.server.types.ValueSource;
+
+public interface ExpressionEvaluation {
+    void of(Row row, Bindings bindings);
+    ValueSource eval();
 }
