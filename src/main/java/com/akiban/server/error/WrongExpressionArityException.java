@@ -13,10 +13,10 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.expression;
+package com.akiban.server.error;
 
-public final class WrongExpressionArityException extends RuntimeException { // TODO should be IOE
+public final class WrongExpressionArityException extends InvalidOperationException {
     public WrongExpressionArityException(int expected, int actual) {
-        super("expected " + expected + " args but found " + actual);
+        super(ErrorCode.WRONG_FUNCTION_ARITY, expected, actual);
     }
 }

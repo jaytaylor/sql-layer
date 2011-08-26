@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
@@ -73,5 +74,19 @@ public final class LongOpExpressionTest {
         ValueSource actual = new ValueHolder(top.rowExpression().eval());
         ValueSource expected = ValueHolder.holdingNull();
         assertEquals("ValueSource", expected, actual);
+    }
+
+    @Test(expected = WrongExpressionArityException.class)
+    public void oneArg() {
+        Expression left = new LiteralExpression(AkType.LONG, 5L);
+        new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left));
+    }
+
+    @Test(expected = WrongExpressionArityException.class)
+    public void threeArgs() {
+        Expression left = new LiteralExpression(AkType.LONG, 5L);
+        Expression right = new LiteralExpression(AkType.VARCHAR, "2");
+        Expression extra = new LiteralExpression(AkType.LONG, 2L);
+        new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right, extra));
     }
 }
