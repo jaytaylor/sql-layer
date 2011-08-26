@@ -100,6 +100,7 @@ public class IndexDDLIT extends PostgresServerITBase {
         
         connection.createStatement().execute(sql);
         
+        
     }
        
     @Test
@@ -169,6 +170,20 @@ public class IndexDDLIT extends PostgresServerITBase {
         connection.createStatement().execute(sql2);
         connection.createStatement().execute(sql3);
     }
+
+    private void createSchemaJoinedTables() throws SQLException {
+        String sql1 = "CREATE TABLE test1.t1 (c1 integer not null primary key," +
+                "c2 integer not null, c3 integer)";
+        String sql2 = "CREATE TABLE test2.t1 (c1 integer not null primary key, " +
+            "c2 integer not null, grouping foreign key (c2) references test.t1, " +
+            "c3 integer not null)";
+        
+        connection.createStatement().execute(sql1);
+        connection.createStatement().execute(sql2);
+    }
+
+    
+    
     protected DDLFunctions ddlServer() {
         return serviceManager().getDXL().ddlFunctions();
     }

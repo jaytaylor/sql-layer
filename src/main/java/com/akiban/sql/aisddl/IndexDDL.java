@@ -110,7 +110,7 @@ public class IndexDDL
             if (col.getTableName() == null ||
                     ((col.getTableName().hasSchema() && 
                             col.getTableName().getSchemaName().equalsIgnoreCase(tableName.getSchemaName()) ||
-                            true) &&
+                      !col.getTableName().hasSchema()) &&
                      col.getTableName().getTableName().equalsIgnoreCase(tableName.getTableName()))){
                 ; // Column is in the base table, check the next
             } else {
@@ -161,6 +161,8 @@ public class IndexDDL
             throw new NoSuchGroupException(groupName);
         }
 
+        // TODO: Remove this check when the PSSM index creation does AIS.validate()
+        // which is the correct approach. 
         if (index.getUniqueness()) {
             throw new UnsupportedUniqueGroupIndexException (indexName);
         }

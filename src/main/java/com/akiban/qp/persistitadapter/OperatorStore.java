@@ -49,6 +49,7 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.NoRowsUpdatedException;
 import com.akiban.server.error.TooManyRowsUpdatedException;
+import com.akiban.server.error.UnsupportedUniqueGroupIndexException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.AisHolder;
@@ -286,8 +287,11 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
 
             for (GroupIndex groupIndex : optionallyOrderGroupIndexes(branchIndexes)) {
+                
+                // TODO: Can this be removed as it is a AISValidation check (i.e. no AIS will 
+                // have this condition.)
                 if (groupIndex.isUnique()) {
-                    throw new UniqueIndexUnsupportedException();
+                    throw new UnsupportedUniqueGroupIndexException (groupIndex.getIndexName().getName());
                 }
                 OperatorStoreMaintenancePlan plan = groupIndexCreationPlan(
                         ais,
@@ -469,9 +473,9 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
 
-    public class UniqueIndexUnsupportedException extends UnsupportedOperationException {
-        public UniqueIndexUnsupportedException() {
-            super("unique indexes not supported");
-        }
-    }
+//    public class UniqueIndexUnsupportedException extends UnsupportedOperationException {
+//       public UniqueIndexUnsupportedException() {
+//           super("unique indexes not supported");
+//      }
+//    }
 }
