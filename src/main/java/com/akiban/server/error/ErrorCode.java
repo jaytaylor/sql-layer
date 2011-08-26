@@ -15,8 +15,6 @@
 
 package com.akiban.server.error;
 
-import com.sun.xml.internal.ws.wsdl.writer.document.Import;
-
 import java.util.ResourceBundle;
 
 /**
