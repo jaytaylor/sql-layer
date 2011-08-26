@@ -24,6 +24,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 
 public final class LiteralExpression implements Expression {
+
     @Override
     public boolean isConstant() {
         return true;
@@ -40,23 +41,39 @@ public final class LiteralExpression implements Expression {
     }
 
     public LiteralExpression(AkType type, long value) throws ValueHolder.IllegalRawPutException {
-        evaluation = new InternalEvaluation(new ValueHolder(type, value));
+        this(new InternalEvaluation(new ValueHolder(type, value)));
     }
 
     public LiteralExpression(AkType type, double value) throws ValueHolder.IllegalRawPutException {
-        evaluation = new InternalEvaluation(new ValueHolder(type, value));
+        this(new InternalEvaluation(new ValueHolder(type, value)));
     }
 
     public LiteralExpression(AkType type, float value) throws ValueHolder.IllegalRawPutException {
-        evaluation = new InternalEvaluation(new ValueHolder(type, value));
+        this(new InternalEvaluation(new ValueHolder(type, value)));
     }
 
     public LiteralExpression(AkType type, Object value) throws ValueHolder.IllegalRawPutException {
-        evaluation = new InternalEvaluation(new ValueHolder(type, value));
+        this(new InternalEvaluation(new ValueHolder(type, value)));
     }
+    
+    private LiteralExpression(InternalEvaluation evaluation) {
+        this.evaluation = evaluation;
+    }
+    
+    public static Expression forNull() {
+        return NULL_EXPRESSION;
+    }
+    
+    // object state
 
     private final ExpressionEvaluation evaluation;
+    
+    // const
+    
+    private static Expression NULL_EXPRESSION = new LiteralExpression(new InternalEvaluation(ValueHolder.holdingNull()));
 
+    // nested classes
+    
     private static class InternalEvaluation implements  ExpressionEvaluation {
         @Override
         public void of(Row row, Bindings bindings) {

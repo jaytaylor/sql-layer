@@ -28,15 +28,50 @@ import static org.junit.Assert.assertTrue;
 
 public final class LongOpExpressionTest {
     @Test
-    public void subtractLongs() {
-        LiteralExpression left = new LiteralExpression(AkType.LONG, 5L);
-        LiteralExpression right = new LiteralExpression(AkType.LONG, 2L);
-
+    public void longMinusLong() {
+        Expression left = new LiteralExpression(AkType.LONG, 5L);
+        Expression right = new LiteralExpression(AkType.LONG, 2L);
         Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
         
-        assertTrue("top isn't constant", top.isConstant());
+        assertTrue("top should be constant", top.isConstant());
         ValueSource actual = new ValueHolder(top.rowExpression().eval());
         ValueSource expected = new ValueHolder(LongOps.LONG_SUBTRACT.opType(), 3L);
+        assertEquals("ValueSource", expected, actual);
+    }
+
+    @Test
+    public void longMinusFloat() {
+        Expression left = new LiteralExpression(AkType.LONG, 5L);
+        Expression right = new LiteralExpression(AkType.FLOAT, 2F);
+        Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
+
+        assertTrue("top should be constant", top.isConstant());
+        ValueSource actual = new ValueHolder(top.rowExpression().eval());
+        ValueSource expected = new ValueHolder(LongOps.LONG_SUBTRACT.opType(), 3L);
+        assertEquals("ValueSource", expected, actual);
+    }
+
+    @Test
+    public void longMinusString() {
+        Expression left = new LiteralExpression(AkType.LONG, 5L);
+        Expression right = new LiteralExpression(AkType.VARCHAR, "2");
+        Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
+
+        assertTrue("top should be constant", top.isConstant());
+        ValueSource actual = new ValueHolder(top.rowExpression().eval());
+        ValueSource expected = new ValueHolder(LongOps.LONG_SUBTRACT.opType(), 3L);
+        assertEquals("ValueSource", expected, actual);
+    }
+
+    @Test
+    public void longMinusNull() {
+        Expression left = new LiteralExpression(AkType.LONG, 5L);
+        Expression right = LiteralExpression.forNull();
+        Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
+
+        assertTrue("top should be constant", top.isConstant());
+        ValueSource actual = new ValueHolder(top.rowExpression().eval());
+        ValueSource expected = ValueHolder.holdingNull();
         assertEquals("ValueSource", expected, actual);
     }
 }

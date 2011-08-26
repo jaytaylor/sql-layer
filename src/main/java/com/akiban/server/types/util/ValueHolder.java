@@ -25,6 +25,7 @@ import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
+import com.persistit.Value;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -406,6 +407,12 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     private Object objectVal;
     private AkType type = AkType.UNSUPPORTED;
     private StateType stateType = StateType.UNDEF_VAL;
+
+    public static ValueHolder holdingNull() {
+        ValueHolder result = new ValueHolder();
+        result.putNull();
+        return result;
+    }
 
     // nested classes
 
