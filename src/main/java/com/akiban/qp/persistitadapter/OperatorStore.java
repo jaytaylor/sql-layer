@@ -472,10 +472,4 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             return PersistitGroupRow.newPersistitGroupRow(adapter, newRow.toRowData());
         }
     }
-
-//    public class UniqueIndexUnsupportedException extends UnsupportedOperationException {
-//       public UniqueIndexUnsupportedException() {
-//           super("unique indexes not supported");
-//      }
-//    }
 }
