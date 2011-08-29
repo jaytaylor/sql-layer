@@ -145,6 +145,27 @@ public class PersistitAdapter extends StoreAdapter
             throw new PersistItErrorException(e);
         }
     }
+    @Override
+    public void writeRow (Row newRow, Bindings bindings) {
+        RowDef rowDef = (RowDef)newRow.rowType().userTable().rowDef();
+        RowData newRowData = rowData (rowDef, newRow, bindings);
+        try {
+            persistit.writeRow(session, newRowData);
+        } catch (PersistitException e) {
+            throw new PersistItErrorException (e);
+        }
+    }
+    
+    @Override
+    public void deleteRow (Row oldRow, Bindings bindings) {
+        RowDef rowDef = (RowDef)oldRow.rowType().userTable().rowDef();
+        RowData oldRowData = rowData(rowDef, oldRow, bindings);
+        try {
+            persistit.deleteRow(session, oldRowData);
+        } catch (PersistitException e) {
+            throw new PersistItErrorException (e);
+        }
+    }
 
     private Exchange transact(Exchange exchange) {
         if (transactional.get()) {

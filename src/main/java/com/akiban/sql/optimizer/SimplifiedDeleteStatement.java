@@ -44,4 +44,9 @@ public class SimplifiedDeleteStatement extends SimplifiedTableStatement
         return str.toString();
     }
 
+    @Override
+    public List<TargetColumn> getTargetColumns() {
+        return null;
+    }
+
 }

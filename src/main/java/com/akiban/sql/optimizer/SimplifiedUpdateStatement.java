@@ -27,30 +27,14 @@ import java.util.*;
  */
 public class SimplifiedUpdateStatement extends SimplifiedTableStatement
 {
-    static class UpdateColumn {
-        private Column column;
-        private SimpleExpression value;
-
-        public UpdateColumn(Column column, SimpleExpression value) {
-            this.column = column;
-            this.value = value;
-        }
-
-        public Column getColumn() {
-            return column;
-        }
-        public SimpleExpression getValue() {
-            return value;
-        }
-    }
-
-    private List<UpdateColumn> updateColumns;
+    private List<TargetColumn> updateColumns;
 
     public SimplifiedUpdateStatement(UpdateNode update, Set<ValueNode> joinConditions) {
         super(update, joinConditions);
     }
     
-    public List<UpdateColumn> getUpdateColumns() {
+    @Override
+    public List<TargetColumn> getTargetColumns() {
         return updateColumns;
     }
 
@@ -61,12 +45,12 @@ public class SimplifiedUpdateStatement extends SimplifiedTableStatement
     }
 
     protected void fillUpdateColumns(ResultColumnList resultColumns) {
-        updateColumns = new ArrayList<UpdateColumn>(resultColumns.size());
+        updateColumns = new ArrayList<TargetColumn>(resultColumns.size());
         for (ResultColumn result : resultColumns) {
             Column column = getColumnReferenceColumn(result.getReference(),
-                                                     "result column");
+                                                     "Update target column");
             SimpleExpression value = getSimpleExpression(result.getExpression());
-            updateColumns.add(new UpdateColumn(column, value));
+            updateColumns.add(new TargetColumn(column, value));
         }
     }
     
@@ -75,9 +59,9 @@ public class SimplifiedUpdateStatement extends SimplifiedTableStatement
         str.append("\ntarget: ");
         str.append(getTargetTable());
         str.append("\nupdate: [");
-        for (int i = 0; i < getUpdateColumns().size(); i++) {
+        for (int i = 0; i < getTargetColumns().size(); i++) {
             if (i > 0) str.append(", ");
-            UpdateColumn updateColumn = getUpdateColumns().get(i);
+            TargetColumn updateColumn = getTargetColumns().get(i);
             str.append(updateColumn.getColumn());
             str.append(" = ");
             str.append(updateColumn.getValue());

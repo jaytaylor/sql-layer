@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.server.error.ColumnNotBoundException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.parser.*;
 import com.akiban.sql.types.DataTypeDescriptor;
@@ -940,7 +941,7 @@ public class SimplifiedQuery
         }
         if (errmsg == null)
             return null;
-        throw new UnsupportedSQLException(errmsg, value);
+        throw new ColumnNotBoundException (value.getColumnName(), errmsg);
     }
 
     // Get the constant integer value that this node represents or else throw error.

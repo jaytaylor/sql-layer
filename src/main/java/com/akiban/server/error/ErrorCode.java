@@ -198,6 +198,7 @@ public enum ErrorCode {
     PERSISTIT_ERROR     (31, 7, Importance.ERROR, PersistItErrorException.class),
     INVALID_VOLUME      (31, 8, Importance.ERROR, InvalidVolumeException.class),
     TABLE_NOT_BOUND     (31, 9, Importance.ERROR, TableNotBoundException.class),
+    COLUMN_NOT_BOUND    (31, 10, Importance.ERROR, ColumnNotBoundException.class),
     ;
 
     private final short value;

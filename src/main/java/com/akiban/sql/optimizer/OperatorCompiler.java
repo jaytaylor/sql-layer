@@ -193,11 +193,9 @@ public class OperatorCompiler
         case NodeTypes.CURSOR_NODE:
             return compileSelect(tracer, (CursorNode)stmt, params);
         case NodeTypes.UPDATE_NODE:
-            return compileUpdate((UpdateNode)stmt, params);
         case NodeTypes.INSERT_NODE:
-            return compileInsert((InsertNode)stmt, params);
         case NodeTypes.DELETE_NODE:
-            return compileDelete((DeleteNode)stmt, params);
+            return CUDCompiler.compileStatement(this, stmt, params);
         default:
             throw new UnsupportedSQLException (stmt.statementToString(), stmt);
         }
@@ -491,6 +489,7 @@ public class OperatorCompiler
                           offset, limit);
     }
 
+    /*
     public Result compileUpdate(UpdateNode update, List<ParameterNode> params)  {
         update = (UpdateNode)bindAndGroup(update);
         SimplifiedUpdateStatement supdate = 
@@ -560,7 +559,7 @@ public class OperatorCompiler
             new SimplifiedDeleteStatement(delete, grouper.getJoinConditions());
         throw new UnsupportedSQLException ("DELETE", delete);
     }
-
+*/
     // A possible index.
     class IndexUsage implements Comparable<IndexUsage> {
         private Index index;
@@ -1141,5 +1140,8 @@ public class OperatorCompiler
         }        
         return result;
     }
-
+    
+    protected Set<ValueNode> getJoinConditions() { 
+        return grouper.getJoinConditions(); 
+    }
 }

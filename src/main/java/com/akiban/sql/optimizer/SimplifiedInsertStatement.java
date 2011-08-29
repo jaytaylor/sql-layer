@@ -15,11 +15,13 @@
 
 package com.akiban.sql.optimizer;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 import com.akiban.sql.parser.*;
 
 import com.akiban.ais.model.Column;
-
-import java.util.*;
 
 /**
  * An SQL INSERT statement turned into a simpler form for the interim
@@ -27,7 +29,7 @@ import java.util.*;
  */
 public class SimplifiedInsertStatement extends SimplifiedTableStatement
 {
-    private List<Column> targetColumns;
+    private List<TargetColumn> targetColumns;
     
     public SimplifiedInsertStatement(InsertNode insert, Set<ValueNode> joinConditions) {
         super(insert, joinConditions);
@@ -40,23 +42,25 @@ public class SimplifiedInsertStatement extends SimplifiedTableStatement
             List<Column> aisColumns = getTargetTable().getTable().getColumns();
             if (ncols > aisColumns.size())
                 ncols = aisColumns.size();
-            targetColumns = new ArrayList<Column>(ncols);
+            targetColumns = new ArrayList<TargetColumn>(ncols);
             for (int i = 0; i < ncols; i++) {
-                targetColumns.add(aisColumns.get(i));
+                targetColumns.add(new TargetColumn(aisColumns.get(i), 
+                        new ColumnExpression(getTargetTable(), aisColumns.get(i))));
             }
         }
     }
 
-    public List<Column> getTargetColumns() {
+    public List<TargetColumn> getTargetColumns() {
         return targetColumns;
     }
 
     protected void fillTargetColumns(ResultColumnList rcl) {
-        targetColumns = new ArrayList<Column>(rcl.size());
+        targetColumns = new ArrayList<TargetColumn>(rcl.size());
         for (ResultColumn resultColumn : rcl) {
             Column column = getColumnReferenceColumn(resultColumn.getReference(),
-                                                     "Unsupported target column");
-            targetColumns.add(column);
+                                                     "Insert target column");
+            SimpleExpression value = getSimpleExpression(resultColumn.getExpression());
+            targetColumns.add(new TargetColumn(column, value));
         }
     }
 

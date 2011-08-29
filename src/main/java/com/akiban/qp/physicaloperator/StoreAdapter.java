@@ -41,6 +41,10 @@ public abstract class StoreAdapter
     }
 
     public abstract void updateRow(Row oldRow, Row newRow, Bindings bindings);
+    
+    public abstract void writeRow (Row newRow, Bindings bindings);
+    
+    public abstract void deleteRow (Row oldRow, Bindings bindings);
 
     public abstract RowData rowData(RowDef rowDef, RowBase row, Bindings bindings);
 

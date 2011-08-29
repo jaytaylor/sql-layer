@@ -16,8 +16,10 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.sql.optimizer.SimplifiedQuery.SimpleExpression;
 import com.akiban.sql.parser.*;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
 
 import java.util.*;
@@ -26,7 +28,7 @@ import java.util.*;
  * An SQL table modifying statement turned into a simpler form for the
  * interim heuristic optimizer.
  */
-public class SimplifiedTableStatement extends SimplifiedQuery
+public abstract class SimplifiedTableStatement extends SimplifiedQuery
 {
     private TableNode targetTable;
 
@@ -48,5 +50,24 @@ public class SimplifiedTableStatement extends SimplifiedQuery
         super.recomputeUsed();
         targetTable.setUsed(true);
     }
+    
+    public abstract List<TargetColumn> getTargetColumns();
 
+
+    static class TargetColumn {
+        private Column column;
+        private SimpleExpression value;
+
+        public TargetColumn(Column column, SimpleExpression value) {
+            this.column = column;
+            this.value = value;
+        }
+
+        public Column getColumn() {
+            return column;
+        }
+        public SimpleExpression getValue() {
+            return value;
+        }
+    }
 }
