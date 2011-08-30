@@ -48,7 +48,7 @@ public final class AggregateOperatorTest {
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
         PhysicalOperator plan = new AggregationOperator(input, 0, FACTORY, TestFactory.FUNC_NAMES, rowType);
         Deque<Row> expected = new RowsBuilder(AkType.VARCHAR)
-                .row("[1, 2, 3]")
+                .row("1, 2, 3")
                 .rows();
         check(plan, expected);
     }
@@ -64,9 +64,29 @@ public final class AggregateOperatorTest {
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
         PhysicalOperator plan = new AggregationOperator(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR)
-                .row(1L, "[10, 11]")
-                .row(2L, "[12]")
-                .row(3L, "[13]")
+                .row(1L, "10, 11")
+                .row(2L, "12")
+                .row(3L, "13")
+                .rows();
+        check(plan, expected);
+    }
+
+    @Test
+    public void partiallyOrderedGroupBy() {
+        TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.LONG)
+                .row(1L, 10L)
+                .row(2L, 11L)
+                .row(3L, 12L)
+                .row(1L, 13L)
+                .row(1L, 14L)
+        );
+        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
+        PhysicalOperator plan = new AggregationOperator(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR)
+                .row(1L, "10")
+                .row(2L, "11")
+                .row(3L, "12")
+                .row(1L, "13, 14")
                 .rows();
         check(plan, expected);
     }
@@ -160,20 +180,17 @@ public final class AggregateOperatorTest {
         @Override
         public void output(ValueTarget output) {
             final String asString;
-            if (result.length() == INITIAL.length()) {
-                asString = "[]";
+            if (result.length() == 0) {
+                asString = "";
             }
             else {
                 result.setLength(result.length() - 2);
-                result.append(']');
                 asString = result.toString();
             }
             result.setLength(0);
-            result.append(INITIAL);
             Converters.convert(new ValueHolder(AkType.VARCHAR, asString), output);
         }
 
-        private StringBuilder result = new StringBuilder(INITIAL);
-        private static final String INITIAL = "[";
+        private StringBuilder result = new StringBuilder();
     }
 }

@@ -30,6 +30,7 @@ import com.akiban.util.Strings;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -68,6 +69,25 @@ public final class RowsBuilder {
         }
         InternalRow row = new InternalRow(rowType, Arrays.asList(values));
         rows.add(row);
+        return this;
+    }
+
+    public RowsBuilder addRow(Row row) {
+        List<ValueHolder> values = new ArrayList<ValueHolder>();
+        for (int i = 0; i < rowType.nFields(); ++i) {
+            ValueSource rowSource = row.bindSource(i, UndefBindings.only());
+            ValueHolder holder = new ValueHolder(rowSource);
+            values.add(holder);
+        }
+        InternalRow newRow = new InternalRow(rowType, values);
+        rows.add(newRow);
+        return this;
+    }
+
+    public RowsBuilder addRows(Collection<? extends Row> rowsToAdd) {
+        for (Row row : rowsToAdd) {
+            addRow(row);
+        }
         return this;
     }
 
