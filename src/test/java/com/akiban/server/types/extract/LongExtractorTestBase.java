@@ -13,13 +13,12 @@
 * along with this program.  If not, see http://www.gnu.org/licenses.
 */
 
-package com.akiban.server.types.conversion;
+package com.akiban.server.types.extract;
 
+import org.junit.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-
-abstract public class LongConverterTestBase {
+abstract public class LongExtractorTestBase {
     static protected class TestElement {
         private final long longVal;
         private final String string;
@@ -35,16 +34,16 @@ abstract public class LongConverterTestBase {
         }
     }
 
-    protected final LongConverter ENCODER;
+    protected final LongExtractor ENCODER;
     protected final TestElement[] TEST_CASES;
 
-    public LongConverterTestBase(LongConverter encoder, TestElement[] testElements) {
+    public LongExtractorTestBase(LongExtractor encoder, TestElement[] testElements) {
         this.ENCODER = encoder;
         this.TEST_CASES = testElements;
     }
 
     protected String encodeAndDecode(String str) {
-        final long val = ENCODER.doParse(str);
+        final long val = ENCODER.getLong(str);
         return ENCODER.asString(val);
     }
 
@@ -53,7 +52,7 @@ abstract public class LongConverterTestBase {
         int count = 0;
         for(TestElement t : TEST_CASES) {
             final String decoded = ENCODER.asString(t.longVal);
-            assertEquals("test case [" + count + "] long->String: " + t, t.string, decoded);
+            Assert.assertEquals("test case [" + count + "] long->String: " + t, t.string, decoded);
             ++count;
         }
     }

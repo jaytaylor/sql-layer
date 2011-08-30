@@ -21,9 +21,6 @@ import com.akiban.sql.parser.*;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
-
-import java.util.*;
 
 /** Calculate types from schema information. */
 public class AISTypeComputer extends TypeComputer

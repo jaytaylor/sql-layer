@@ -15,6 +15,8 @@
 
 package com.akiban.server.types.conversion;
 
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 

@@ -25,12 +25,14 @@ import com.akiban.server.error.UnsupportedCheckConstraintException;
 import com.akiban.server.error.UnsupportedCreateSelectException;
 import com.akiban.server.error.UnsupportedDataTypeException;
 import com.akiban.server.error.UnsupportedFKIndexException;
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.ColumnDefinitionNode;
 import com.akiban.sql.parser.ConstraintDefinitionNode;
 import com.akiban.sql.parser.CreateTableNode;
 import com.akiban.sql.parser.DropTableNode;
 import com.akiban.sql.parser.FKConstraintDefinitionNode;
+import com.akiban.sql.parser.RenameNode;
 import com.akiban.sql.parser.ResultColumn;
 import com.akiban.sql.parser.TableElementNode;
 
@@ -64,7 +66,19 @@ public class TableDDL
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         TableName tableName = TableName.create(schemaName, parserName.getTableName());
         
+        if (ddlFunctions.getAIS(session).getUserTable(tableName) == null && 
+                ddlFunctions.getAIS(session).getGroupTable(tableName) == null) {
+            throw new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName());
+        }
         ddlFunctions.dropTable(session, tableName);
+    }
+    
+    public static void renameTable (DDLFunctions ddlFunctions,
+                                    Session session,
+                                    String defaultSchemaName,
+                                    RenameNode renameTable) {
+        throw new UnsupportedSQLException (renameTable.statementToString(), renameTable);
+        //ddlFunctions.renameTable(session, currentName, newName);
     }
 
     public static void createTable(DDLFunctions ddlFunctions,
@@ -146,7 +160,7 @@ public class TableDDL
         }
     }
 
-    private static void addIndex (final AISBuilder builder, final ConstraintDefinitionNode cdn, 
+    public static void addIndex (final AISBuilder builder, final ConstraintDefinitionNode cdn, 
             final String schemaName, final String tableName)  {
 
         NameGenerator namer = new DefaultNameGenerator();

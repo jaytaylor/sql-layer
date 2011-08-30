@@ -13,14 +13,14 @@
 * along with this program.  If not, see http://www.gnu.org/licenses.
 */
 
-package com.akiban.server.types.conversion;
+package com.akiban.server.types.extract;
 
 import org.junit.Test;
 import java.math.BigInteger;
 
-public class DateTimeConverterTest extends LongConverterTestBase {
-    public DateTimeConverterTest() {
-        super(ConvertersForDates.DATETIME,
+public class DateTimeExtractorTest extends LongExtractorTestBase {
+    public DateTimeExtractorTest() {
+        super(ExtractorsForDates.DATETIME,
               new TestElement[] {
                 new TestElement("0000-00-00 00:00:00", 0),
                 new TestElement("1000-01-01 00:00:00", 10000101000000L),

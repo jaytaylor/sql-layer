@@ -16,7 +16,7 @@
 package com.akiban.server.rowdata;
 
 import com.akiban.server.AkServerUtil;
-import com.akiban.server.types.SourceConversionException;
+import com.akiban.server.types.ValueSourceException;
 import com.akiban.util.AkibanAppender;
 
 import java.math.BigDecimal;
@@ -32,7 +32,7 @@ final class ConversionHelperBigDecimal {
      * @param locationAndOffset the byte's location and offset, packed as RowData packs them
      * @param appender the appender to use
      * @throws NullPointerException if any arguments are null
-     * @throws SourceConversionException if the string can't be parsed to a BigDecimal
+     * @throws ValueSourceException if the string can't be parsed to a BigDecimal
      */
     public static void decodeToString(FieldDef fieldDef, byte[] from, long locationAndOffset, AkibanAppender appender) {
         final int precision = fieldDef.getTypeParameter1().intValue();
@@ -51,7 +51,7 @@ final class ConversionHelperBigDecimal {
             final int bytesLen = (int) (locationAndOffset >>> 32);
             AkServerUtil.hex(AkibanAppender.of(errSb), from, location, bytesLen);
             errSb.append(": ").append( e.getMessage() );
-            throw new SourceConversionException(errSb.toString(), e);
+            throw new ValueSourceException(errSb.toString(), e);
         }
     }
 

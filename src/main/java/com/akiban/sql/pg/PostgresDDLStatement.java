@@ -24,14 +24,17 @@ import com.akiban.sql.aisddl.*;
 
 import com.akiban.sql.StandardException;
 
+import com.akiban.sql.parser.AlterTableNode;
 import com.akiban.sql.parser.CreateIndexNode;
 import com.akiban.sql.parser.CreateTableNode;
 import com.akiban.sql.parser.CreateSchemaNode;
+import com.akiban.sql.parser.DropIndexNode;
 import com.akiban.sql.parser.DropTableNode;
 import com.akiban.sql.parser.DropSchemaNode;
 import com.akiban.sql.parser.DDLStatementNode;
 import com.akiban.sql.parser.DropViewNode;
 import com.akiban.sql.parser.NodeTypes;
+import com.akiban.sql.parser.RenameNode;
 
 import com.akiban.sql.optimizer.AISBinder;
 import com.akiban.sql.views.ViewDefinition;
@@ -100,10 +103,19 @@ public class PostgresDDLStatement implements PostgresStatement
             ((AISBinder)server.getAttribute("aisBinder")).removeView(((DropViewNode)ddl).getObjectName());
             break;
         case NodeTypes.CREATE_INDEX_NODE:
-            IndexDDL.createIndex(ais, schema, (CreateIndexNode)ddl);
+            IndexDDL.createIndex(ddlFunctions, session, schema, (CreateIndexNode)ddl);
+            break;
+        case NodeTypes.DROP_INDEX_NODE:
+            IndexDDL.dropIndex(ddlFunctions, session, schema, (DropIndexNode)ddl);
+        case NodeTypes.ALTER_TABLE_NODE:
+            AlterTableDDL.alterTable(ddlFunctions, session, schema, (AlterTableNode)ddl);
             break;
         case NodeTypes.RENAME_NODE:
-        case NodeTypes.ALTER_TABLE_NODE:
+            if (((RenameNode)ddl).getRenameType() == RenameNode.RenameType.INDEX) {
+                IndexDDL.renameIndex(ddlFunctions, session, schema, (RenameNode)ddl);
+            } else if (((RenameNode)ddl).getRenameType() == RenameNode.RenameType.TABLE) {
+                TableDDL.renameTable(ddlFunctions, session, schema, (RenameNode)ddl);
+            }
         case NodeTypes.REVOKE_NODE:
         default:
             throw new UnsupportedSQLException (ddl.statementToString(), ddl);

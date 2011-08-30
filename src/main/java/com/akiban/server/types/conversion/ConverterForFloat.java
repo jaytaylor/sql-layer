@@ -49,14 +49,14 @@ abstract class ConverterForFloat extends FloatConverter {
         case U_DOUBLE:  return (float) source.getUDouble();
         case TEXT:      return Float.parseFloat(source.getText());
         case VARCHAR:   return Float.parseFloat(source.getString());
-        default: throw unsupportedConversion(source);
+        default: throw unsupportedConversion(type);
         }
     }
 
     // AbstractConverter interface
 
     @Override
-    protected AkType nativeConversionType() {
+    protected AkType targetConversionType() {
         return AkType.FLOAT;
     }
 

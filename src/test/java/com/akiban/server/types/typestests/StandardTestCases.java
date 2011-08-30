@@ -16,9 +16,9 @@
 package com.akiban.server.types.typestests;
 
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.conversion.ConverterTestUtils;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.conversion.LongConverter;
+import com.akiban.server.types.extract.ConverterTestUtils;
+import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.util.ByteSource;
 import com.akiban.util.WrappingByteSource;
 
@@ -92,12 +92,12 @@ final class StandardTestCases {
         list.add(TestCase.forTime(0, NO_STATE));
         list.add(TestCase.forTime(1, NO_STATE));
 
-        LongConverter timestampConverter = Converters.getLongConverter(AkType.TIMESTAMP);
+        LongExtractor timestampExtractor = Extractors.getLongExtractor(AkType.TIMESTAMP);
         ConverterTestUtils.setGlobalTimezone("UTC");
-        list.add(TestCase.forTimestamp(timestampConverter.doParse("0000-00-00 00:00:00"), NO_STATE));
-        list.add(TestCase.forTimestamp(timestampConverter.doParse("1970-01-01 00:00:01"), NO_STATE));
-        list.add(TestCase.forTimestamp(timestampConverter.doParse("2011-08-18 15:09:00"), NO_STATE));
-        list.add(TestCase.forTimestamp(timestampConverter.doParse("2038-01-19 03:14:06"), NO_STATE));
+        list.add(TestCase.forTimestamp(timestampExtractor.getLong("0000-00-00 00:00:00"), NO_STATE));
+        list.add(TestCase.forTimestamp(timestampExtractor.getLong("1970-01-01 00:00:01"), NO_STATE));
+        list.add(TestCase.forTimestamp(timestampExtractor.getLong("2011-08-18 15:09:00"), NO_STATE));
+        list.add(TestCase.forTimestamp(timestampExtractor.getLong("2038-01-19 03:14:06"), NO_STATE));
 
         list.add(TestCase.forUBigInt(BigInteger.ZERO, NO_STATE));
         list.add(TestCase.forUBigInt(BigInteger.ONE, NO_STATE));
@@ -125,11 +125,11 @@ final class StandardTestCases {
         list.add(TestCase.forVarBinary(wrap(), 0, NO_STATE));
         list.add(TestCase.forVarBinary(wrap(Byte.MIN_VALUE, Byte.MAX_VALUE, 0), 2, NO_STATE));
 
-        LongConverter yearConverter = Converters.getLongConverter(AkType.YEAR);
-        list.add(TestCase.forYear(yearConverter.doParse("0000"), NO_STATE));
-        list.add(TestCase.forYear(yearConverter.doParse("1901"), NO_STATE));
-        list.add(TestCase.forYear(yearConverter.doParse("1983"), NO_STATE));
-        list.add(TestCase.forYear(yearConverter.doParse("2155"), NO_STATE));
+        LongExtractor yearConverter = Extractors.getLongExtractor(AkType.YEAR);
+        list.add(TestCase.forYear(yearConverter.getLong("0000"), NO_STATE));
+        list.add(TestCase.forYear(yearConverter.getLong("1901"), NO_STATE));
+        list.add(TestCase.forYear(yearConverter.getLong("1983"), NO_STATE));
+        list.add(TestCase.forYear(yearConverter.getLong("2155"), NO_STATE));
 
         return Collections.unmodifiableCollection(list);
     }

@@ -18,6 +18,8 @@ package com.akiban.server.types.conversion;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
+import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.extract.LongExtractor;
 
 abstract class ConverterForString extends ObjectConverter<String> {
 
@@ -30,7 +32,7 @@ abstract class ConverterForString extends ObjectConverter<String> {
         // AbstractConverter interface
 
         @Override
-        protected AkType nativeConversionType() {
+        protected AkType targetConversionType() {
             return AkType.VARCHAR;
         }
     };
@@ -44,7 +46,7 @@ abstract class ConverterForString extends ObjectConverter<String> {
         // AbstractConverter interface
 
         @Override
-        protected AkType nativeConversionType() {
+        protected AkType targetConversionType() {
             return AkType.TEXT;
         }
     };
@@ -60,22 +62,26 @@ abstract class ConverterForString extends ObjectConverter<String> {
         case FLOAT:     return Float.toString(source.getFloat());
         case INT:       return Long.toString(source.getInt());
         case LONG:      return Long.toString(source.getLong());
-        case U_INT:     return Long.toString(source.getLong());
+        case U_INT:     return Long.toString(source.getUInt());
         case U_DOUBLE:  return Double.toString(source.getUDouble());
         case U_FLOAT:   return Float.toString(source.getUFloat());
-        case U_BIGINT:  return String.valueOf(source.getDecimal());
-        case TIME:      return ConvertersForDates.TIME.asString(source.getTime());
-        case TIMESTAMP: return ConvertersForDates.TIMESTAMP.asString(source.getTimestamp());
-        case YEAR:      return ConvertersForDates.YEAR.asString(source.getYear());
-        case DATE:      return ConvertersForDates.DATE.asString(source.getDate());
-        case DATETIME:  return ConvertersForDates.DATETIME.asString(source.getDateTime());
+        case U_BIGINT:  return String.valueOf(source.getUBigInt());
+        case TIME:      return longExtractor(AkType.TIME).asString(source.getTime());
+        case TIMESTAMP: return longExtractor(AkType.TIMESTAMP).asString(source.getTimestamp());
+        case YEAR:      return longExtractor(AkType.YEAR).asString(source.getYear());
+        case DATE:      return longExtractor(AkType.DATE).asString(source.getDate());
+        case DATETIME:  return longExtractor(AkType.DATETIME).asString(source.getDateTime());
         case DECIMAL:   return String.valueOf(source.getDecimal());
         case VARBINARY: return String.valueOf(source.getVarBinary());
         default:
-            return "UNSUPPORTED CONVERSION TO " + type;
+            throw unsupportedConversion(type);
         }
     }
 
+    private static LongExtractor longExtractor(AkType forType) {
+        // we could also cache these, since they're static
+        return Extractors.getLongExtractor(forType);
+    }
 
     private ConverterForString() {}
 }

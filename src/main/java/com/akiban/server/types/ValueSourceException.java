@@ -13,21 +13,17 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.api.dml;
+package com.akiban.server.types;
 
-import com.akiban.server.encoding.EncodingException;
-import com.akiban.message.ErrorCode;
-
-public final class TableDefinitionMismatchException extends DMLException {
-    public TableDefinitionMismatchException(String message, Throwable t) {
-        super(ErrorCode.TABLEDEF_MISMATCH, message, t);
+public class ValueSourceException extends RuntimeException {
+    ValueSourceException() {
+    }
+    
+    public ValueSourceException(String message) {
+        super(message);
     }
 
-    public TableDefinitionMismatchException(String message) {
-        super(ErrorCode.TABLEDEF_MISMATCH, message);
-    }
-
-    public TableDefinitionMismatchException(EncodingException e) {
-        super(ErrorCode.TABLEDEF_MISMATCH, "Couldn't encode a value; you probably gave a wrong type", e);
+    public ValueSourceException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

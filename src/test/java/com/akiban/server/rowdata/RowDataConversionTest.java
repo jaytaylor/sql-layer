@@ -25,9 +25,9 @@ import com.akiban.junit.Parameterization;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
-import com.akiban.server.types.conversion.ConverterTestUtils;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.conversion.LongConverter;
+import com.akiban.server.types.extract.ConverterTestUtils;
+import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.typestests.ConversionSuite;
 import com.akiban.server.types.typestests.ConversionTestBase;
 import com.akiban.server.types.typestests.LinkedConversion;
@@ -53,9 +53,9 @@ public final class RowDataConversionTest extends ConversionTestBase {
 
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() {
-        LongConverter year = Converters.getLongConverter(AkType.YEAR);
-        LongConverter timestamp = Converters.getLongConverter(AkType.TIMESTAMP);
-        LongConverter time = Converters.getLongConverter(AkType.TIME);
+        LongExtractor year = Extractors.getLongExtractor(AkType.YEAR);
+        LongExtractor timestamp = Extractors.getLongExtractor(AkType.TIMESTAMP);
+        LongExtractor time = Extractors.getLongExtractor(AkType.TIME);
         ConverterTestUtils.setGlobalTimezone("UTC");
 
         ConversionSuite<?> suite = ConversionSuite.build(new ConversionPair())
@@ -108,29 +108,29 @@ public final class RowDataConversionTest extends ConversionTestBase {
                 .add(TestCase.forDecimal(d("0.00000000"), 10, 8, parseHex("0x8000000000")))
 
                 // Year
-                .add(TestCase.forYear(year.doParse("0000"), b(0, 1)))
-                .add(TestCase.forYear(year.doParse("1902"), b(2, 1)))
-                .add(TestCase.forYear(year.doParse("1986"), b(86, 1)))
-                .add(TestCase.forYear(year.doParse("2011"), b(111, 1)))
-                .add(TestCase.forYear(year.doParse("2155"), b(255, 1)))
+                .add(TestCase.forYear(year.getLong("0000"), b(0, 1)))
+                .add(TestCase.forYear(year.getLong("1902"), b(2, 1)))
+                .add(TestCase.forYear(year.getLong("1986"), b(86, 1)))
+                .add(TestCase.forYear(year.getLong("2011"), b(111, 1)))
+                .add(TestCase.forYear(year.getLong("2155"), b(255, 1)))
                 
                 // Timestamp
-                .add(TestCase.forTimestamp(timestamp.doParse("0000-00-00 00:00:00"), b(0, 4)))
-                .add(TestCase.forTimestamp(timestamp.doParse("1970-01-01 00:00:01"), b(1, 4)))
-                .add(TestCase.forTimestamp(timestamp.doParse("2009-02-13 23:31:30"), b(1234567890, 4)))
-                .add(TestCase.forTimestamp(timestamp.doParse("2009-02-13 23:31:30"), b(1234567890, 4)))
-                .add(TestCase.forTimestamp(timestamp.doParse("2038-01-19 03:14:07"), b(2147483647, 4)))
-                .add(TestCase.forTimestamp(timestamp.doParse("1986-10-28 00:00:00"), b(530841600, 4)))
-                .add(TestCase.forTimestamp(timestamp.doParse("2011-04-10 18:34:00"), b(1302460440, 4)))
+                .add(TestCase.forTimestamp(timestamp.getLong("0000-00-00 00:00:00"), b(0, 4)))
+                .add(TestCase.forTimestamp(timestamp.getLong("1970-01-01 00:00:01"), b(1, 4)))
+                .add(TestCase.forTimestamp(timestamp.getLong("2009-02-13 23:31:30"), b(1234567890, 4)))
+                .add(TestCase.forTimestamp(timestamp.getLong("2009-02-13 23:31:30"), b(1234567890, 4)))
+                .add(TestCase.forTimestamp(timestamp.getLong("2038-01-19 03:14:07"), b(2147483647, 4)))
+                .add(TestCase.forTimestamp(timestamp.getLong("1986-10-28 00:00:00"), b(530841600, 4)))
+                .add(TestCase.forTimestamp(timestamp.getLong("2011-04-10 18:34:00"), b(1302460440, 4)))
 
                 // Time
-                .add(TestCase.forTime(time.doParse("00:00:00"), b(0, 3)))
-                .add(TestCase.forTime(time.doParse("00:00:01"), b(1, 3)))
-                .add(TestCase.forTime(time.doParse("-00:00:01"), b(-1, 3)))
-                .add(TestCase.forTime(time.doParse("838:59:59"), b(8385959, 3)))
-                .add(TestCase.forTime(time.doParse("-838:59:59"), b(-8385959, 3)))
-                .add(TestCase.forTime(time.doParse("14:20:32"), b(142032, 3)))
-                .add(TestCase.forTime(time.doParse("-147:21:01"), b(-1472101, 3)))
+                .add(TestCase.forTime(time.getLong("00:00:00"), b(0, 3)))
+                .add(TestCase.forTime(time.getLong("00:00:01"), b(1, 3)))
+                .add(TestCase.forTime(time.getLong("-00:00:01"), b(-1, 3)))
+                .add(TestCase.forTime(time.getLong("838:59:59"), b(8385959, 3)))
+                .add(TestCase.forTime(time.getLong("-838:59:59"), b(-8385959, 3)))
+                .add(TestCase.forTime(time.getLong("14:20:32"), b(142032, 3)))
+                .add(TestCase.forTime(time.getLong("-147:21:01"), b(-1472101, 3)))
                 
                 .suite();
         return params(suite);

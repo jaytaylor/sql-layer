@@ -17,7 +17,7 @@ package com.akiban.server;
 
 import com.akiban.ais.model.Column;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ConversionHelper;
+import com.akiban.server.types.ValueSourceHelper;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.util.ByteSource;
 import com.persistit.Key;
@@ -191,7 +191,7 @@ public final class PersistitKeyValueTarget implements ValueTarget {
     // private methods
 
     private void checkState(AkType type) {
-        ConversionHelper.checkType(this.type, type);
+        ValueSourceHelper.checkType(this.type, type);
     }
 
     private void invalidate() {

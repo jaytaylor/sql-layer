@@ -37,87 +37,87 @@ public final class NullValueSource implements ValueSource {
 
     @Override
     public BigDecimal getDecimal() {
-        throw new SourceIsNullException();
+        throw new ValueSourceIsNullException();
     }
 
     @Override
     public BigInteger getUBigInt() {
-        throw new SourceIsNullException();
+        throw new ValueSourceIsNullException();
     }
 
     @Override
     public ByteSource getVarBinary() {
-        throw new SourceIsNullException();
+        throw new ValueSourceIsNullException();
     }
 
     @Override
     public double getDouble() {
-        throw new SourceIsNullException();
+        throw new ValueSourceIsNullException();
     }
 
     @Override
     public double getUDouble() {
-        throw new SourceIsNullException();
+        throw new ValueSourceIsNullException();
     }
 
     @Override
     public float getFloat() {
-        throw new SourceIsNullException();
+        throw new ValueSourceIsNullException();
     }
 
     @Override
     public float getUFloat() {
-        throw new SourceIsNullException();
+        throw new ValueSourceIsNullException();
     }
 
     @Override
     public long getDate() {
-        throw new SourceIsNullException();
+        throw new ValueSourceIsNullException();
     }
 
     @Override
     public long getDateTime() {
-        throw new SourceIsNullException();
+        throw new ValueSourceIsNullException();
     }
 
     @Override
     public long getInt() {
-        throw new SourceIsNullException();
+        throw new ValueSourceIsNullException();
     }
 
     @Override
     public long getLong() {
-        throw new SourceIsNullException();
+        throw new ValueSourceIsNullException();
     }
 
     @Override
     public long getTime() {
-        throw new SourceIsNullException();
+        throw new ValueSourceIsNullException();
     }
 
     @Override
     public long getTimestamp() {
-        throw new SourceIsNullException();
+        throw new ValueSourceIsNullException();
     }
 
     @Override
     public long getUInt() {
-        throw new SourceIsNullException();
+        throw new ValueSourceIsNullException();
     }
 
     @Override
     public long getYear() {
-        throw new SourceIsNullException();
+        throw new ValueSourceIsNullException();
     }
 
     @Override
     public String getString() {
-        throw new SourceIsNullException();
+        throw new ValueSourceIsNullException();
     }
 
     @Override
     public String getText() {
-        throw new SourceIsNullException();
+        throw new ValueSourceIsNullException();
     }
 
     @Override

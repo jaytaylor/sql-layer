@@ -38,16 +38,8 @@ public class SchemaDDL {
     {
         final String schemaName = createSchema.getSchemaName();
         
-        for (TableName t : ais.getUserTables().keySet()) {
-            if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
-                throw new DuplicateSchemaException (schemaName);
-            }
-        }
-        
-        for (TableName t : ais.getGroupTables().keySet()) {
-            if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
-                throw new DuplicateSchemaException (schemaName);
-            }
+        if (checkSchema (ais, schemaName)) {
+            throw new DuplicateSchemaException (schemaName);
         }
         
         // If you get to this point, the schema name isn't being used by any user or group table
@@ -65,20 +57,31 @@ public class SchemaDDL {
         // 1 == RESTRICT, meaning no drop if the schema isn't empty 
         if (dropSchema.getDropBehavior() == StatementType.DROP_RESTRICT ||
             dropSchema.getDropBehavior() == StatementType.DROP_DEFAULT) {
-            for (TableName t : ais.getUserTables().keySet()) {
-                if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
-                    throw new DropSchemaNotAllowedException(schemaName);
-                }
-            }
-            for (TableName t : ais.getGroupTables().keySet()) {
-                if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
-                    throw new DropSchemaNotAllowedException (schemaName);
-                }
+            if (checkSchema (ais, schemaName)) {
+                throw new DropSchemaNotAllowedException (schemaName);
             }
             // If the schema isn't used by any existing tables, it has effectively 
             // been dropped, so the drop "succeeds".
         } else if (dropSchema.getDropBehavior() == StatementType.DROP_CASCADE) {
             ddlFunctions.dropSchema(session, schemaName);
         }
+    }
+    
+    /**
+     * Check if a schema exists, by checking all the user/group tables names if the schema
+     * is used for any of them..
+     */
+    public static boolean checkSchema (AkibanInformationSchema ais, String schemaName) {
+        for (TableName t : ais.getUserTables().keySet()) {
+            if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
+                return true;
+            }
+        }
+        for (TableName t : ais.getGroupTables().keySet()) {
+            if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
+                return true;
+            }
+        }
+        return false;
     }
 }
