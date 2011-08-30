@@ -16,7 +16,6 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.server.error.NoSuchTableException;
-import com.akiban.sql.optimizer.SimplifiedQuery.SimpleExpression;
 import com.akiban.sql.parser.*;
 
 import com.akiban.ais.model.Column;

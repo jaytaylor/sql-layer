@@ -66,11 +66,10 @@ public class CUDCompiler {
         
         UserTableRowType targetRowType = compiler.tableRowType(tableStmt.getTargetTable());
 
-        Expression[] expressions = generateExpressions (compiler, tableStmt, targetRowType);
+        ExpressionRow updateRow = generateExpressions (compiler, tableStmt, targetRowType);
         
-        ExpressionRow updateRow = new ExpressionRow(targetRowType, expressions);
-
         Plannable plan = generatePlan (stmtNode.getNodeType(), resultOper, updateRow);
+        
         return new Result(plan, compiler.getParameterTypes(params));
     }
     
@@ -145,7 +144,7 @@ public class CUDCompiler {
         return scan;
     }
 
-    private static Expression[] generateExpressions(OperatorCompiler compiler, SimplifiedTableStatement stmt, UserTableRowType targetRowType) {
+    private static ExpressionRow generateExpressions(OperatorCompiler compiler, SimplifiedTableStatement stmt, UserTableRowType targetRowType) {
 
         Map<TableNode,Integer> tableOffsets = new HashMap<TableNode,Integer>(1);
         tableOffsets.put(stmt.getTargetTable(), 0);
@@ -158,7 +157,6 @@ public class CUDCompiler {
                 targetColumn.getValue().generateExpression(fieldOffsets);
         }
         
-        return updates;
+        return new ExpressionRow(targetRowType, updates);
     }
-
 }

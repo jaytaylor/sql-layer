@@ -659,7 +659,7 @@ public class SimplifiedQuery
         }
     }
 
-    protected void fillFromValues(ResultSetNode resultSet) {
+    protected final void fillFromValues(ResultSetNode resultSet) {
         if (resultSet instanceof RowResultSetNode) {
             ResultColumnList resultColumns = resultSet.getResultColumns();
             List<SimpleExpression> row = new ArrayList<SimpleExpression>(resultColumns.size());

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import com.akiban.server.error.InsertNullCheckFailedException;
 import com.akiban.sql.parser.*;
 
 import com.akiban.ais.model.Column;
@@ -34,10 +35,44 @@ public class SimplifiedInsertStatement extends SimplifiedTableStatement
     public SimplifiedInsertStatement(InsertNode insert, Set<ValueNode> joinConditions) {
         super(insert, joinConditions);
 
-        if (insert.getTargetColumnList() != null)
-            fillTargetColumns(insert.getTargetColumnList());
+/*        
+        // Set the list of target columns. There are three cases here: 
+        // 1) insert supplies list of columns, which is in insert.getTargetColumnList()
+        // e.g. INSERT INTO TABLE (c1,c3,c3)...
+        if (insert.getTargetColumnList() != null) {
+            fillTargetColumns (insert.getTargetColumnList());
+        }
+        // 2) insert is supplying values which are expected to be 
+        // table in column order. 
+        // e.g. INSERT INTO Table VALUES (1,2,3) 
+        else if (getValues() != null) {
+            int ncols = insert.getResultSetNode().getResultColumns().size();
+            List<Column> aisColumns = getTargetTable().getTable().getColumns();
+            if (ncols > aisColumns.size()) {
+                // TODO: issue warning we're truncating the list of values supplied 
+                ncols = aisColumns.size();
+            }
+            targetColumns = new ArrayList<TargetColumn>(ncols);
+            int i = 0;
+            for (Column column : aisColumns) {
+                if (i < ncols) {
+                    targetColumns.add(new TargetColumn (column, new ColumnExpression(getTargetTable(), column)));
+                } else if (!column.getNullable()) { 
+                    throw new InsertNullCheckFailedException(column);
+                }
+                i++;
+            }
+        }
+        // 3)  insert is using a query, which are expected to be in column order
+        // e.g INSERT INTO TABLE SELECT 1,2,3...
         else {
-            // No explicit column list: use DDL order.
+            fillTargetColumns (insert.getResultSetNode().getResultColumns());
+        }
+        
+        // the insert statement is generating values from explicit values
+        // not a select statement. Create the targetColumns list from DDL order
+        // list of columns. 
+        if (getValues() != null) {
             int ncols = insert.getResultSetNode().getResultColumns().size();
             List<Column> aisColumns = getTargetTable().getTable().getColumns();
             if (ncols > aisColumns.size())
@@ -45,14 +80,14 @@ public class SimplifiedInsertStatement extends SimplifiedTableStatement
             targetColumns = new ArrayList<TargetColumn>(ncols);
             for (int i = 0; i < ncols; i++) {
                 targetColumns.add(new TargetColumn(aisColumns.get(i), 
+                        getSimpleExpression ()
+                        
                         new ColumnExpression(getTargetTable(), aisColumns.get(i))));
             }
         }
+*/        
     }
 
-    public List<TargetColumn> getTargetColumns() {
-        return targetColumns;
-    }
 
     protected void fillTargetColumns(ResultColumnList rcl) {
         targetColumns = new ArrayList<TargetColumn>(rcl.size());
@@ -62,6 +97,10 @@ public class SimplifiedInsertStatement extends SimplifiedTableStatement
             SimpleExpression value = getSimpleExpression(resultColumn.getExpression());
             targetColumns.add(new TargetColumn(column, value));
         }
+    }
+
+    public List<TargetColumn> getTargetColumns() {
+        return targetColumns;
     }
 
     public String toString() {
