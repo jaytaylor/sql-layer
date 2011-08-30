@@ -15,20 +15,16 @@
 
 package com.akiban.sql.optimizer.query;
 
-import java.util.*;
+import com.akiban.ais.model.UserTable;
 
-/** A SQL UPDATE statement. */
-public class UpdateStatement extends BaseUpdateStatement
+import java.util.List;
+
+public class TableNode extends TableTreeBase.TableNodeBase<TableNode> 
 {
-    private List<UpdateColumn> updateColumns;
+    private List<TableJoinNode> uses;
 
-    public UpdateStatement(Query query, TableNode targetTable,
-                           List<UpdateColumn> updateColumns) {
-        super(query, targetTable);
-        this.updateColumns = updateColumns;
+    public TableNode(UserTable table) {
+        super(table);
     }
 
-    public List<UpdateColumn> getUpdateColumns() {
-        return updateColumns;
-    }
 }

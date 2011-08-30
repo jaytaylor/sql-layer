@@ -15,7 +15,6 @@
 
 package com.akiban.sql.optimizer.query;
 
-
 import com.akiban.ais.model.UserTable;
 
 import java.util.HashMap;

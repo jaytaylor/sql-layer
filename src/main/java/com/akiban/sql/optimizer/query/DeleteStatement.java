@@ -19,7 +19,7 @@ package com.akiban.sql.optimizer.query;
  */
 public class DeleteStatement extends BaseUpdateStatement
 {
-    public DeleteStatement(Query query, TableReference targetTable) {
+    public DeleteStatement(Query query, TableNode targetTable) {
         super(query, targetTable);
     }
 }

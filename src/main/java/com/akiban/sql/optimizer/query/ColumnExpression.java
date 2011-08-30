@@ -27,17 +27,17 @@ import com.akiban.qp.expression.API;
 /** An expression evaluating a column in an actual table. */
 public class ColumnExpression extends BaseExpression 
 {
-    private TableReference table;
+    private TableJoinNode table;
     private Column column;
 
-    public ColumnExpression(TableReference table, Column column, 
+    public ColumnExpression(TableJoinNode table, Column column, 
                             DataTypeDescriptor type) {
         super(type);
         this.table = table;
         this.column = column;
     }
 
-    public TableReference getTable() {
+    public TableJoinNode getTable() {
         return table;
     }
 

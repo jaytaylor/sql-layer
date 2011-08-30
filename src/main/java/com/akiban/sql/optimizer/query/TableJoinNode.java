@@ -18,13 +18,13 @@ package com.akiban.sql.optimizer.query;
 /** A join to an actual table. */
 public class TableJoinNode extends BaseJoinNode 
 {
-    private TableReference table;
+    private TableNode table;
 
-    public TableJoinNode(TableReference table) {
+    public TableJoinNode(TableNode table) {
         this.table = table;
     }
 
-    public TableReference getTable() {
+    public TableNode getTable() {
         return table;
     }
 

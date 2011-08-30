@@ -15,7 +15,12 @@
 
 package com.akiban.sql.optimizer.query;
 
-/* TODO: Figure this out. */
-public class TableReference
+import com.akiban.ais.model.UserTable;
+
+public class TableTree extends TableTreeBase<TableNode> 
 {
+    protected TableNode createNode(UserTable table) {
+        return new TableNode(table);
+    }
+
 }

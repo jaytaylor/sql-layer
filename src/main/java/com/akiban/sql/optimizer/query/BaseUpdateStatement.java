@@ -19,9 +19,9 @@ package com.akiban.sql.optimizer.query;
  */
 public class BaseUpdateStatement extends BaseStatement
 {
-    private TableReference targetTable;
+    private TableNode targetTable;
 
-    protected BaseUpdateStatement(Query query, TableReference targetTable) {
+    protected BaseUpdateStatement(Query query, TableNode targetTable) {
         super(query);
         this.targetTable = targetTable;
     }

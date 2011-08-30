@@ -24,7 +24,7 @@ public class InsertStatement extends BaseUpdateStatement
 {
     private List<Column> targetColumns;
 
-    public InsertStatement(Query query, TableReference targetTable,
+    public InsertStatement(Query query, TableNode targetTable,
                            List<Column> targetColumns) {
         super(query, targetTable);
         this.targetColumns = targetColumns;
