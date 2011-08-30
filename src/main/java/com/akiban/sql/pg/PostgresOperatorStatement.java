@@ -23,7 +23,6 @@ import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.util.Command;
 
 import java.util.*;
 import java.io.IOException;
@@ -95,9 +94,6 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                 if ((maxrows > 0) && (nrows >= maxrows))
                     break;
             }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
         }
         finally {
             cursor.close();
