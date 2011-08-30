@@ -19,7 +19,7 @@ import com.akiban.server.AkServerUtil;
 import com.akiban.server.Quote;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.types.*;
-import com.akiban.server.types.ConversionHelper;
+import com.akiban.server.types.ValueSourceHelper;
 import com.akiban.server.types.conversion.*;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
@@ -204,7 +204,7 @@ abstract class AbstractRowDataValueSource implements ValueSource {
     }
 
     private void checkState(AkType type) {
-        ConversionHelper.checkType(type, getConversionType());
+        ValueSourceHelper.checkType(type, getConversionType());
     }
 
     private double doGetDouble() {
@@ -240,7 +240,7 @@ abstract class AbstractRowDataValueSource implements ValueSource {
     private long getCheckedOffsetAndWidth() {
         long offsetAndWidth = getRawOffsetAndWidth();
         if (offsetAndWidth == 0) {
-            throw new SourceIsNullException();
+            throw new ValueSourceIsNullException();
         }
         return offsetAndWidth;
     }

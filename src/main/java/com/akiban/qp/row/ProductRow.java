@@ -19,13 +19,11 @@ import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.ConversionHelper;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.AkibanAppender;
-import com.akiban.util.Undef;
 
 public class ProductRow extends AbstractRow
 {

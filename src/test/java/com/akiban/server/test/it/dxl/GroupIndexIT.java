@@ -18,6 +18,7 @@ package com.akiban.server.test.it.dxl;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Table;
+import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.store.IndexKeyVisitor;
 import com.akiban.server.test.it.ITBase;
@@ -134,7 +135,7 @@ public class GroupIndexIT extends ITBase {
         createGroupIndex(groupName, "name_d", "c.name, foo.d");
     }
 
-    @Test(expected=GroupIndex.GroupIndexCreationException.class)
+    @Test(expected=BranchingGroupIndexException.class)
     public void branchingNotAllowed() throws InvalidOperationException {
         createGroupIndex(groupName, "name_addr_date", "c.name, a.addr, o.odate");
     }

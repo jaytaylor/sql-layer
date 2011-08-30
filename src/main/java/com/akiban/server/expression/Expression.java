@@ -13,15 +13,12 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.types;
+package com.akiban.server.expression;
 
-public final class SourceIsNullException extends RuntimeException {
-    public SourceIsNullException() {
-    }
+import com.akiban.server.types.AkType;
 
-    static void checkNotNull(ValueSource valueSource) {
-        if (valueSource.isNull()) {
-            throw new SourceIsNullException();
-        }
-    }
+public interface Expression {
+    boolean isConstant();
+    ExpressionEvaluation rowExpression();
+    AkType valueType();
 }

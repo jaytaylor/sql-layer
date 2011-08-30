@@ -13,13 +13,13 @@
 * along with this program.  If not, see http://www.gnu.org/licenses.
 */
 
-package com.akiban.server.types.conversion;
+package com.akiban.server.types.extract;
 
 import org.junit.Test;
 
-public class TimestampConverterTest extends LongConverterTestBase {
-    public TimestampConverterTest() {
-        super(ConvertersForDates.TIMESTAMP,
+public class TimestampExtractorTest extends LongExtractorTestBase {
+    public TimestampExtractorTest() {
+        super(ExtractorsForDates.TIMESTAMP,
               new TestElement[] {
                 new TestElement("0000-00-00 00:00:00", 0),
                 new TestElement("1970-01-01 00:00:01", 1),

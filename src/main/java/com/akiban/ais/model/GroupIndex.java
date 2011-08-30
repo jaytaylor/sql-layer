@@ -23,6 +23,10 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
+import com.akiban.server.error.BranchingGroupIndexException;
+import com.akiban.server.error.IndexColNotInGroupException;
+import com.akiban.server.error.IndexTableNotInGroupException;
+
 public class GroupIndex extends Index
 {
     public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
@@ -61,7 +65,8 @@ public class GroupIndex extends Index
     public void addColumn(IndexColumn indexColumn) {
         Table indexGenericTable = indexColumn.getColumn().getTable();
         if (!(indexGenericTable instanceof UserTable)) {
-            throw new GroupIndexCreationException("index column must be of user table: " + indexColumn);
+            throw new IndexColNotInGroupException (indexColumn.getIndex().getIndexName().getName(),
+                    indexColumn.getColumn().getName());
         }
         UserTable indexTable = (UserTable) indexGenericTable;
 
@@ -72,7 +77,9 @@ public class GroupIndex extends Index
         if (!tablesByDepth.values().contains(indexTable)) {
             Integer indexTableDepth = indexTable.getDepth();
             if (indexTableDepth == null) {
-                throw new GroupIndexCreationException("index table not in group: " + indexTable);
+                throw new IndexTableNotInGroupException (indexColumn.getIndex().getIndexName().getName(),
+                        indexColumn.getColumn().getName(),
+                        indexTable.getName().getTableName());
             }
             Map.Entry<Integer,UserTable> rootwardEntry = tablesByDepth.floorEntry(indexTableDepth);
             Map.Entry<Integer,UserTable> leafwardEntry = tablesByDepth.ceilingEntry(indexTableDepth);
@@ -115,9 +122,8 @@ public class GroupIndex extends Index
             return;
         }
         if (entry.getKey().intValue() == indexTableDepth) {
-            throw new GroupIndexCreationException(
-                    indexTable + " and " + entry.getValue() + " must be multibranch; both have depth " + entry.getKey()
-            );
+            throw new BranchingGroupIndexException (indexColumn.getIndex().getIndexName().getName(), 
+                    indexTable.getName(), entry.getValue().getName());
         }
         UserTable entryTable = entry.getValue();
 
@@ -135,7 +141,8 @@ public class GroupIndex extends Index
 
         if (!leafward.isDescendantOf(rootward))
         {
-            throw new GroupIndexCreationException(indexColumn + " is not within this group index's branch");
+            throw new BranchingGroupIndexException (indexColumn.getIndex().getIndexName().getName(), 
+                    indexTable.getName(), entry.getValue().getName());
         }
     }
 
@@ -183,10 +190,4 @@ public class GroupIndex extends Index
     private final NavigableMap<Integer,UserTable> tablesByDepth = new TreeMap<Integer, UserTable>();
     private List<Column> columnsPerFlattenedField;
 
-    // nested classes
-    public static class GroupIndexCreationException extends RuntimeException {
-        public GroupIndexCreationException(String message) {
-            super(message);
-        }
-    }
 }

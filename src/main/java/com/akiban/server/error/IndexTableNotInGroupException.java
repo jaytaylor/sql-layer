@@ -12,15 +12,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+package com.akiban.server.error;
 
-package com.akiban.server.types;
-
-public final class SourceConversionException extends RuntimeException {
-    public SourceConversionException(String message) {
-        super(message);
-    }
-
-    public SourceConversionException(String message, Throwable cause) {
-        super(message, cause);
+public class IndexTableNotInGroupException extends InvalidOperationException {
+    public IndexTableNotInGroupException(String indexName, String column, String tableName) {
+        super (ErrorCode.INDEX_TABLE_NOT_IN_GROUP, indexName, column, tableName);
     }
 }

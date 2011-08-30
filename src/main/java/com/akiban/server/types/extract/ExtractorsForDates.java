@@ -13,11 +13,11 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.types.conversion;
+package com.akiban.server.types.extract;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueTarget;
+import com.akiban.server.types.ValueSourceIsNullException;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -26,7 +26,7 @@ import java.util.Date;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 
-abstract class ConvertersForDates extends LongConverter {
+abstract class ExtractorsForDates extends LongExtractor {
 
     /**
      * Encoder for working with dates when stored as a 3 byte int using
@@ -34,13 +34,13 @@ abstract class ConvertersForDates extends LongConverter {
      * SQL DATE type.
      * See: http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
      */
-    final static ConvertersForDates DATE = new ConvertersForDates() {
-        @Override protected long doGetLong(ValueSource source)             { return source.getDate(); }
-        @Override protected void putLong(ValueTarget target, long value)   { target.putDate(value); }
-        @Override protected AkType nativeConversionType() { return AkType.DATE; }
+    final static ExtractorsForDates DATE = new ExtractorsForDates(AkType.DATE) {
+        @Override protected long doGetLong(ValueSource source) {
+            return source.getDate();
+        }
 
         @Override
-        public long doParse(String string) {
+        public long getLong(String string) {
             // YYYY-MM-DD
             final String values[] = string.split("-");
             long y = 0, m = 0, d = 0;
@@ -69,13 +69,13 @@ abstract class ConvertersForDates extends LongConverter {
      * This is how MySQL stores the SQL DATETIME type.
      * See: http://dev.mysql.com/doc/refman/5.5/en/datetime.html
      */
-    final static ConvertersForDates DATETIME = new ConvertersForDates() {
-        @Override protected long doGetLong(ValueSource source)             { return source.getDateTime(); }
-        @Override protected void putLong(ValueTarget target, long value)   { target.putDateTime(value); }
-        @Override protected AkType nativeConversionType() { return AkType.DATETIME; }
+    final static ExtractorsForDates DATETIME = new ExtractorsForDates(AkType.DATETIME) {
+        @Override protected long doGetLong(ValueSource source) {
+            return source.getDateTime();
+        }
 
         @Override
-        public long doParse(String string) {
+        public long getLong(String string) {
             final String parts[] = string.split(" ");
             if(parts.length != 2) {
                 throw new IllegalArgumentException("Invalid DATETIME string");
@@ -119,13 +119,13 @@ abstract class ConvertersForDates extends LongConverter {
      * See: http://dev.mysql.com/doc/refman/5.5/en/time.html
      * and  http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
      */
-    final static ConvertersForDates TIME = new ConvertersForDates() {
-        @Override protected long doGetLong(ValueSource source)             { return source.getTime(); }
-        @Override protected void putLong(ValueTarget target, long value)   { target.putTime(value); }
-        @Override protected AkType nativeConversionType() { return AkType.TIME; }
+    final static ExtractorsForDates TIME = new ExtractorsForDates(AkType.TIME) {
+        @Override protected long doGetLong(ValueSource source) {
+            return source.getTime();
+        }
 
         @Override
-        public long doParse(String string) {
+        public long getLong(String string) {
             // (-)HH:MM:SS
             int mul = 1;
             if(string.length() > 0 && string.charAt(0) == '-') {
@@ -167,13 +167,11 @@ abstract class ConvertersForDates extends LongConverter {
      * See: http://dev.mysql.com/doc/refman/5.5/en/timestamp.html
      * and  http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
      */
-    final static ConvertersForDates TIMESTAMP = new ConvertersForDates() {
+    final static ExtractorsForDates TIMESTAMP = new ExtractorsForDates(AkType.TIMESTAMP) {
         @Override protected long doGetLong(ValueSource source)             { return source.getTimestamp(); }
-        @Override protected void putLong(ValueTarget target, long value)   { target.putTimestamp(value); }
-        @Override protected AkType nativeConversionType() { return AkType.TIMESTAMP; }
 
         @Override
-        public long doParse(String string) {
+        public long getLong(String string) {
             if (TIMESTAMP_ZERO_STRING.equals(string))
                 return 0;
             try {
@@ -196,13 +194,13 @@ abstract class ConvertersForDates extends LongConverter {
      * range of 0, 1901-2155.  This is how MySQL stores the SQL YEAR type.
      * See: http://dev.mysql.com/doc/refman/5.5/en/year.html
      */
-    final static ConvertersForDates YEAR = new ConvertersForDates() {
-        @Override protected long doGetLong(ValueSource source)             { return source.getYear(); }
-        @Override protected void putLong(ValueTarget target, long value)   { target.putYear(value); }
-        @Override protected AkType nativeConversionType() { return AkType.YEAR; }
+    final static ExtractorsForDates YEAR = new ExtractorsForDates(AkType.YEAR) {
+        @Override protected long doGetLong(ValueSource source) {
+            return source.getYear();
+        }
 
         @Override
-        public long doParse(String string) {
+        public long getLong(String string) {
             long value = Long.parseLong(string);
             return value == 0 ? 0 : (value - 1900);
         }
@@ -218,17 +216,19 @@ abstract class ConvertersForDates extends LongConverter {
 
     @Override
     public long getLong(ValueSource source) {
+        if (source.isNull())
+            throw new ValueSourceIsNullException();
         AkType type = source.getConversionType();
-        if (type == nativeConversionType()) {
+        if (type == targetConversionType()) {
             return doGetLong(source);
         }
         switch (type) {
-        case TEXT:      return doParse(source.getText());
-        case VARCHAR:   return doParse(source.getString());
-        case LONG:      return source.getLong();
+        case TEXT:      return getLong(source.getText());
+        case VARCHAR:   return getLong(source.getString());
         case INT:       return source.getInt();
         case U_INT:     return source.getUInt();
-        default: throw unsupportedConversion(source);
+        case LONG:      return source.getLong();
+        default: throw unsupportedConversion(type);
         }
     }
 
@@ -244,7 +244,9 @@ abstract class ConvertersForDates extends LongConverter {
 
     // for use in this method
 
-    private ConvertersForDates() {}
+    private ExtractorsForDates(AkType targetConversionType) {
+        super(targetConversionType);
+    }
 
     // class state
 

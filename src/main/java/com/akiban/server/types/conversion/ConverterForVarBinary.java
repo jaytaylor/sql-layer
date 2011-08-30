@@ -29,7 +29,7 @@ final class ConverterForVarBinary extends ObjectConverter<ByteSource> {
         AkType type = source.getConversionType();
         switch (type) {
         case VARBINARY:   return source.getVarBinary();
-        default: throw unsupportedConversion(source);
+        default: throw unsupportedConversion(type);
         }
     }
 
@@ -41,7 +41,7 @@ final class ConverterForVarBinary extends ObjectConverter<ByteSource> {
     // AbstractConverter interface
 
     @Override
-    protected AkType nativeConversionType() {
+    protected AkType targetConversionType() {
         return AkType.VARBINARY;
     }
 

@@ -12,13 +12,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+package com.akiban.sql.aisddl;
 
-package com.akiban.server.types.conversion;
+import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.service.session.Session;
+import com.akiban.sql.parser.AlterTableNode;
 
-public final class ConverterTestUtils {
-    public static void setGlobalTimezone(String timezone) {
-        ConvertersForDates.setGlobalTimezone(timezone);
+public class AlterTableDDL {
+    private AlterTableDDL() {}
+    
+    public static void alterTable (DDLFunctions ddlFunctions,
+                                  Session session, 
+                                  String defaultSchemaName,
+                                  AlterTableNode alterTable) {
+        throw new UnsupportedSQLException (alterTable.statementToString(), alterTable);
     }
-
-    private ConverterTestUtils() {}
 }
