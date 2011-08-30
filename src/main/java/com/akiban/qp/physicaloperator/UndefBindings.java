@@ -17,7 +17,7 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.util.Undef;
 
-public final class UndefBindings implements Bindings {
+public final class UndefBindings extends Bindings {
 
     private static final UndefBindings INSTANCE = new UndefBindings();
 
@@ -28,6 +28,12 @@ public final class UndefBindings implements Bindings {
     @Override
     public Object get(int index) {
         return Undef.only();
+    }
+
+    @Override
+    public void set(int index, Object value)
+    {
+        throw new UnsupportedOperationException();
     }
 
     @Override

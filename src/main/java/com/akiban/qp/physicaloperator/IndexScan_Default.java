@@ -116,7 +116,7 @@ class IndexScan_Default extends PhysicalOperator
                 row.runId(runIdCounter++);
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("IndexScan: {}", row);
+                LOG.debug("IndexScan: yield {}", row);
             }
             return row;
         }

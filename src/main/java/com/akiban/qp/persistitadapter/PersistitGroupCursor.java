@@ -33,8 +33,6 @@ import org.slf4j.LoggerFactory;
  * 1) Scan the entire group: This occurs when there is no binding before open().
  * 2) For a given hkey, find the row and its descendents: This occurs when rebind(HKey, true) is called.
  * 3) For a given hkey, find the row without its descendents: This occurs when rebind(HKey, false) is called.
- * 4) As an hkey-equivalent index: This occurs when IndexKeyRange is provided via constructor. The index restriction is
- *    on columns of the hkey. Find the qualifying rows and all descendents.
  */
 
 
@@ -139,11 +137,6 @@ class PersistitGroupCursor implements GroupCursor
      *    to determine when the scan should end.
      *
      * 3) Scan one hkey without descendents: The key is copied to the exchange.
-     *
-     * 4) Index range scan: The binding is stored in hKeyRange until the scan begins. The exchange is used with
-     *    hKeyRangeFilter to implement the range restriction, alternating with deep traversal. For each
-     *    record that hKeyRangeFilter, the current hKey is copied to conrollingHKey, and this is used to
-     *    identify descendents, as in (2).
      *
      *  General:
      *  - exchange == null iff this cursor is closed

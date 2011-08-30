@@ -45,7 +45,7 @@ class RowList
 
     public RowList()
     {
-        for (int i = 0; i <= INITIAL_CAPACITY; i++) {
+        for (int i = 0; i < INITIAL_CAPACITY; i++) {
             list.add(new RowHolder<Row>());
         }
     }

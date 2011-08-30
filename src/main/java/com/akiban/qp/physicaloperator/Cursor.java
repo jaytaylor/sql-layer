@@ -21,6 +21,7 @@ public interface Cursor
 {
     /**
      * Starts a complete scan of the underlying table or index.
+     * @param bindings Values of variables referenced in the underlying query.
      */
     void open(Bindings bindings);
 
