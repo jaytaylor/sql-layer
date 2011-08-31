@@ -32,6 +32,16 @@ public final class FieldExpression implements Expression {
     }
 
     @Override
+    public boolean needsBindings() {
+        return true; // until a Row doesn't need a binding anymore...
+    }
+
+    @Override
+    public boolean needsRow() {
+        return true;
+    }
+
+    @Override
     public ExpressionEvaluation rowExpression() {
         return new InnerEvaluation(rowType, fieldIndex, akType);
     }
@@ -72,6 +82,12 @@ public final class FieldExpression implements Expression {
                 );
             }
             this.rowSource = incomingSource;
+            of(bindings);
+        }
+
+        @Override
+        public void of(Bindings bindings) {
+            this.bindings = bindings;
         }
 
         @Override
@@ -79,6 +95,12 @@ public final class FieldExpression implements Expression {
             if (rowSource == null)
                 throw new IllegalStateException("haven't seen a row to target");
             return rowSource;
+        }
+
+        private Bindings bindings() {
+            if (bindings == null)
+                throw new IllegalStateException("no bindings set");
+            return bindings;
         }
 
         private InnerEvaluation(RowType rowType, int fieldIndex, AkType akType) {
@@ -93,5 +115,6 @@ public final class FieldExpression implements Expression {
         private final int fieldIndex;
         private final AkType akType;
         private ValueSource rowSource;
+        private Bindings bindings;
     }
 }

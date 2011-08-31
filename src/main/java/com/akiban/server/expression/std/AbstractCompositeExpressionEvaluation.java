@@ -24,10 +24,19 @@ import java.util.Collections;
 import java.util.List;
 
 public abstract class AbstractCompositeExpressionEvaluation implements ExpressionEvaluation {
+
     @Override
     public void of(Row row, Bindings bindings) {
         for (ExpressionEvaluation child : children) {
             child.of(row, bindings);
+        }
+        of(bindings);
+    }
+
+    @Override
+    public void of(Bindings bindings) {
+        for (ExpressionEvaluation child : children) {
+            child.of(bindings);
         }
     }
 

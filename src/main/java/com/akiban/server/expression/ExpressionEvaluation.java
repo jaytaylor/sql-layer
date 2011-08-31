@@ -21,5 +21,6 @@ import com.akiban.server.types.ValueSource;
 
 public interface ExpressionEvaluation {
     void of(Row row, Bindings bindings);
+    void of(Bindings bindings);
     ValueSource eval();
 }
