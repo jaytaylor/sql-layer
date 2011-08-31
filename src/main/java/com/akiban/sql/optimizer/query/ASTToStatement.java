@@ -26,9 +26,13 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 
+import com.akiban.qp.physicaloperator.API.JoinType;
+
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ParseException;
 import com.akiban.server.error.UnsupportedSQLException;
+
+import com.akiban.qp.expression.Comparison;
 
 import java.util.*;
 
@@ -151,7 +155,184 @@ public class ASTToStatement
 
     protected Query toQuery(DMLStatementNode statement)
             throws StandardException {
-        return null;
+        return toQuery(statement.getResultSetNode());
+    }
+
+    protected Query toQuery(ResultSetNode resultSet)
+            throws StandardException {
+        if (resultSet instanceof SelectNode)
+            return toQuery((SelectNode)resultSet);
+        // TODO: UNION and VALUES
+        throw new UnsupportedSQLException("Unsupported query", resultSet);
+    }
+
+    protected Query toQuery(SelectNode selectNode)
+            throws StandardException {
+        BaseJoinNode joins = null;
+        for (FromTable fromTable : selectNode.getFromList()) {
+            if (joins == null)
+                joins = toJoinNode(fromTable);
+            else
+                joins = joinNodes(joins, toJoinNode(fromTable), JoinType.INNER_JOIN);
+        }
+
+        List<ResultExpression> results = null;
+        ResultColumnList rcl = selectNode.getResultColumns();
+        if (rcl != null) {
+            results = new ArrayList<ResultExpression>(rcl.size());
+            for (ResultColumn result : selectNode.getResultColumns()) {
+                BaseExpression expr = toExpression(result.getExpression());
+                String name = result.getName();
+                boolean nameDefaulted =
+                    (result.getExpression() instanceof ColumnReference) &&
+                    (name == ((ColumnReference)result.getExpression()).getColumnName());
+                ResultExpression rexpr = new ResultExpression(expr, name, nameDefaulted);
+                results.add(rexpr);
+            }
+        }
+
+        Query query = new Query(joins, results);
+        query.setConditions(toConditions(selectNode.getWhereClause()));
+        return query;
+    }
+
+    protected BaseJoinNode toJoinNode(FromTable fromTable)
+            throws StandardException {
+        if (fromTable instanceof FromBaseTable) {
+            TableBinding tb = (TableBinding)fromTable.getUserData();
+            if (tb == null)
+                throw new UnsupportedSQLException("FROM table",
+                                                  fromTable);
+            TableNode table = getTableNode((UserTable)tb.getTable());
+            return new TableJoinNode(table);
+        }
+        else if (fromTable instanceof JoinNode) {
+            JoinNode joinNode = (JoinNode)fromTable;
+            JoinType joinType;
+            switch (joinNode.getNodeType()) {
+            case NodeTypes.JOIN_NODE:
+                joinType = JoinType.INNER_JOIN;
+                break;
+            case NodeTypes.HALF_OUTER_JOIN_NODE:
+                if (((HalfOuterJoinNode)joinNode).isRightOuterJoin())
+                    joinType = JoinType.RIGHT_JOIN;
+                else
+                    joinType = JoinType.LEFT_JOIN;
+                break;
+            default:
+                throw new UnsupportedSQLException("Unsupported join type", joinNode);
+            }
+            return joinNodes(toJoinNode((FromTable)joinNode.getLeftResultSet()),
+                             toJoinNode((FromTable)joinNode.getRightResultSet()),
+                             joinType);
+        }
+        else
+            throw new UnsupportedSQLException("Unsupported FROM non-table", fromTable);
+    }
+
+    protected BaseJoinNode joinNodes(BaseJoinNode left, BaseJoinNode right,
+                                     JoinType joinType)
+            throws StandardException {
+        return new JoinJoinNode(left, right, joinType);
+    }
+
+    protected List<BooleanExpression> toConditions(ValueNode cnfClause)
+            throws StandardException {
+        List<BooleanExpression> conditions = new ArrayList<BooleanExpression>();
+        while (cnfClause != null) {
+            if (cnfClause.isBooleanTrue()) break;
+            if (!(cnfClause instanceof AndNode))
+                throw new UnsupportedSQLException("Unsupported complex WHERE",
+                                                  cnfClause);
+            AndNode andNode = (AndNode)cnfClause;
+            cnfClause = andNode.getRightOperand();
+            ValueNode condition = andNode.getLeftOperand();
+            addCondition(conditions, condition);
+        }
+        if (conditions.isEmpty())
+            return null;
+        else
+            return conditions;
+    }
+
+    protected void addCondition(List<BooleanExpression> conditions, ValueNode condition)
+            throws StandardException {
+        switch (condition.getNodeType()) {
+        case NodeTypes.BINARY_EQUALS_OPERATOR_NODE:
+            addComparisonCondition(conditions,
+                                   (BinaryOperatorNode)condition, Comparison.EQ);
+            break;
+        case NodeTypes.BINARY_GREATER_THAN_OPERATOR_NODE:
+            addComparisonCondition(conditions,
+                                   (BinaryOperatorNode)condition, Comparison.GT);
+            break;
+        case NodeTypes.BINARY_GREATER_EQUALS_OPERATOR_NODE:
+            addComparisonCondition(conditions,
+                                   (BinaryOperatorNode)condition, Comparison.GE);
+            break;
+        case NodeTypes.BINARY_LESS_THAN_OPERATOR_NODE:
+            addComparisonCondition(conditions,
+                                   (BinaryOperatorNode)condition, Comparison.LT);
+            break;
+        case NodeTypes.BINARY_LESS_EQUALS_OPERATOR_NODE:
+            addComparisonCondition(conditions,
+                                   (BinaryOperatorNode)condition, Comparison.LE);
+            break;
+        case NodeTypes.BINARY_NOT_EQUALS_OPERATOR_NODE:
+            addComparisonCondition(conditions,
+                                   (BinaryOperatorNode)condition, Comparison.NE);
+            break;
+        case NodeTypes.BETWEEN_OPERATOR_NODE:
+            addBetweenCondition(conditions,
+                                (BetweenOperatorNode)condition);
+            break;
+        case NodeTypes.IN_LIST_OPERATOR_NODE:
+            addInCondition(conditions,
+                           (InListOperatorNode)condition);
+            break;
+        case NodeTypes.BOOLEAN_CONSTANT_NODE:
+            if (condition.isBooleanTrue())
+                break;
+            /* else falls through */
+        default:
+            // TODO: Rest of these.
+            throw new UnsupportedSQLException("Unsupported WHERE predicate",
+                                              condition);
+        }
+    }
+
+    protected void addComparisonCondition(List<BooleanExpression> conditions,
+                                          BinaryOperatorNode binop, Comparison op)
+            throws StandardException {
+        BaseExpression left = toExpression(binop.getLeftOperand());
+        BaseExpression right = toExpression(binop.getRightOperand());
+        conditions.add(new ComparisonExpression(left, right, op,
+                                                binop.getType()));
+    }
+
+    protected void addBetweenCondition(List<BooleanExpression> conditions,
+                                       BetweenOperatorNode between)
+            throws StandardException {
+        BaseExpression left = toExpression(between.getLeftOperand());
+        ValueNodeList rightOperandList = between.getRightOperandList();
+        BaseExpression right1 = toExpression(rightOperandList.get(0));
+        BaseExpression right2 = toExpression(rightOperandList.get(1));
+        DataTypeDescriptor type = between.getType();
+        conditions.add(new ComparisonExpression(left, right1, Comparison.GE, type));
+        conditions.add(new ComparisonExpression(left, right2, Comparison.LE, type));
+    }
+
+    protected void addInCondition(List<BooleanExpression> conditions,
+                                  InListOperatorNode in)
+            throws StandardException {
+        BaseExpression left = toExpression(in.getLeftOperand());
+        ValueNodeList rightOperandList = in.getRightOperandList();
+        // TODO: For real now.
+        if (rightOperandList.size() != 1)
+            throw new UnsupportedSQLException("IN predicate", in);
+        BaseExpression right1 = toExpression(rightOperandList.get(0));
+        conditions.add(new ComparisonExpression(left, right1, Comparison.EQ,
+                                                in.getType()));
     }
 
     protected void setOrderBy(Query query, OrderByList orderByList)

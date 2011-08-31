@@ -23,15 +23,46 @@ import java.util.List;
 public class Query
 {
     private BaseJoinNode joins;
-    private List<BooleanExpression> conditions;
     private List<ResultExpression> results;
+    private List<BooleanExpression> conditions;
     private List<GroupByExpression> groupBy;
-    private BooleanExpression having;
+    private List<BooleanExpression> having;
     private List<OrderByExpression> orderBy;
     private int offset = 0, limit = -1;
     private boolean offsetIsParameter = false, limitIsParameter = false;
 
-    public Query() {
+    public Query(BaseJoinNode joins, List<ResultExpression> results) {
+        this.joins = joins;
+        this.results = results;
+    }
+
+    public BaseJoinNode getJoins() {
+        return joins;
+    }
+    
+    public List<ResultExpression> getResults() {
+        return results;
+    }
+
+    public List<BooleanExpression> getConditions() {
+        return conditions;
+    }
+    public void setConditions(List<BooleanExpression> conditions) {
+        this.conditions = conditions;
+    }
+    
+    public List<GroupByExpression> getGroupBy() {
+        return groupBy;
+    }
+    public void setGroupBy(List<GroupByExpression> groupBy) {
+        this.groupBy = groupBy;
+    }
+
+    public List<BooleanExpression> getHaving() {
+        return having;
+    }
+    public void setHaving(List<BooleanExpression> having) {
+        this.having = having;
     }
 
     public List<OrderByExpression> getOrderBy() {
