@@ -90,6 +90,8 @@ final class AggregationOperator extends PhysicalOperator {
             ));
         }
         factory.validateNames(aggregatorNames);
+        if (outputType == null)
+            throw new NullPointerException();
     }
 
     // object state

@@ -17,8 +17,11 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.AggregatedRowType;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.aggregation.Aggregator;
 import com.akiban.server.aggregation.AggregatorFactory;
+import com.akiban.server.error.InconvertibleTypesException;
+import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
@@ -26,9 +29,11 @@ import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.Strings;
+import com.akiban.util.WrappingByteSource;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
@@ -74,21 +79,114 @@ public final class AggregateOperatorTest {
     @Test
     public void partiallyOrderedGroupBy() {
         TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.LONG)
+                .row(null, 8L)
+                .row(null, 9L)
                 .row(1L, 10L)
                 .row(2L, 11L)
                 .row(3L, 12L)
-                .row(1L, 13L)
-                .row(1L, 14L)
+                .row(null, 13L)
+                .row(null, 14L)
+                .row(1L, 15L)
+                .row(1L, 16L)
         );
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
         PhysicalOperator plan = new AggregationOperator(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR)
+                .row(null, "8, 9")
                 .row(1L, "10")
                 .row(2L, "11")
                 .row(3L, "12")
-                .row(1L, "13, 14")
+                .row(null, "13, 14")
+                .row(1L, "15, 16")
                 .rows();
         check(plan, expected);
+    }
+
+    @Test(expected = InconvertibleTypesException.class)
+    public void invalidRowTypes() {
+        PhysicalOperator plan;
+        try {
+            TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.VARBINARY)
+                    .row(wrapLong(1L), wrapBytes(0x01, 0x02))
+            );
+            AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
+            plan = new AggregationOperator(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        execute(plan);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void inputIsNull() {
+        AggregatedRowType rowType;
+        try {
+            TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.VARBINARY)
+                    .row(wrapLong(1L), wrapBytes(0x01, 0x02))
+            );
+            rowType = new AggregatedRowType(null, 1, input.rowType());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        new AggregationOperator(null, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void factoryIsNull() {
+        TestOperator input;
+        AggregatedRowType rowType;
+        try {
+            input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.VARBINARY)
+                    .row(wrapLong(1L), wrapBytes(0x01, 0x02))
+            );
+            rowType = new AggregatedRowType(null, 1, input.rowType());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        new AggregationOperator(input, 1, null, TestFactory.FUNC_NAMES, rowType);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void listsNameIsNull() {
+        TestOperator input;
+        AggregatedRowType rowType;
+        try {
+            input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.VARBINARY)
+                    .row(wrapLong(1L), wrapBytes(0x01, 0x02))
+            );
+            rowType = new AggregatedRowType(null, 1, input.rowType());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        new AggregationOperator(input, 1, FACTORY, null, rowType);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void rowTypeIsNull() {
+        TestOperator input;
+        try {
+            input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.VARBINARY)
+                    .row(wrapLong(1L), wrapBytes(0x01, 0x02))
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        new AggregationOperator(input, 1, FACTORY, TestFactory.FUNC_NAMES, null);
+    }
+
+    @Test(expected = NoSuchFunctionException.class)
+    public void noSuchFunction() {
+        TestOperator input;
+        AggregatedRowType rowType;
+        try {
+            input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.VARBINARY)
+                    .row(wrapLong(1L), wrapBytes(0x01, 0x02))
+            );
+            rowType = new AggregatedRowType(null, 1, input.rowType());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        new AggregationOperator(input, 1, FACTORY, Arrays.asList("this_method_does_not_exist"), rowType);
     }
 
     private static void check(PhysicalOperator plan, Deque<Row> expecteds) {
@@ -141,6 +239,19 @@ public final class AggregateOperatorTest {
         }
     }
 
+    private ValueHolder wrapBytes(int... bytes) {
+        byte[] asBytes = new byte[bytes.length];
+        for (int i=0; i < bytes.length; ++i) {
+            byte asByte = (byte)bytes[i];
+            asBytes[i] = asByte;
+        }
+        return new ValueHolder(AkType.VARBINARY, new WrappingByteSource(asBytes));
+    }
+
+    private ValueHolder wrapLong(long value) {
+        return new ValueHolder(AkType.LONG, value);
+    }
+
     // consts
 
     private static AggregatorFactory FACTORY = new TestFactory();
@@ -156,7 +267,10 @@ public final class AggregateOperatorTest {
 
         @Override
         public void validateNames(List<String> names) {
-            assert FUNC_NAMES.containsAll(names);
+            for (String requiredName : names) {
+                if (!FUNC_NAMES.contains(requiredName))
+                    throw new NoSuchFunctionException(requiredName);
+            }
         }
 
 
