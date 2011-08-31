@@ -46,6 +46,14 @@ public final class ArgumentValidation {
         }
     }
 
+    public static void isBetween(String argName, long min, long actual, long max) {
+        if (actual < min || actual >= max) {
+            throw new IllegalArgumentException(String.format("required %d <= %s < %d, but found %s=%d",
+                    min, argName, max, argName, actual
+            ));
+        }
+    }
+
     public static void isTrue(String predicateDescription, boolean predicate) {
         if (!predicate) {
             throw new IllegalArgumentException(String.format("%s does not hold", predicateDescription));

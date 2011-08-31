@@ -13,12 +13,18 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.expression;
+package com.akiban.qp.rowtype;
 
-import com.akiban.server.types.AkType;
+public final class AggregatedRowType extends DerivedRowType {
+    @Override
+    public int nFields() {
+        return nFields;
+    }
 
-public interface Expression {
-    boolean isConstant();
-    ExpressionEvaluation evaluation();
-    AkType valueType();
+    public AggregatedRowType(Schema schema, int typeId, RowType base) {
+        super(schema, typeId);
+        nFields = base.nFields();
+    }
+
+    private final int nFields;
 }

@@ -13,12 +13,10 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.expression;
+package com.akiban.server.error;
 
-import com.akiban.server.types.AkType;
-
-public interface Expression {
-    boolean isConstant();
-    ExpressionEvaluation evaluation();
-    AkType valueType();
+public final class NoSuchFunctionException extends InvalidOperationException {
+    public NoSuchFunctionException(String functionName) {
+        super(ErrorCode.NO_SUCH_FUNCTION, functionName);
+    }
 }

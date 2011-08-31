@@ -13,12 +13,11 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.expression;
+package com.akiban.server.aggregation;
 
-import com.akiban.server.types.AkType;
+import java.util.List;
 
-public interface Expression {
-    boolean isConstant();
-    ExpressionEvaluation evaluation();
-    AkType valueType();
+public interface AggregatorFactory {
+    Aggregator get(String name);
+    void validateNames(List<String> names);
 }

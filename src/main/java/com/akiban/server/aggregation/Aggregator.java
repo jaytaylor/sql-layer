@@ -13,12 +13,14 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.expression;
+package com.akiban.server.aggregation;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueTarget;
 
-public interface Expression {
-    boolean isConstant();
-    ExpressionEvaluation evaluation();
-    AkType valueType();
+public interface Aggregator {
+    AkType outputType();
+    void input(ValueSource input);
+    void output(ValueTarget output);
 }

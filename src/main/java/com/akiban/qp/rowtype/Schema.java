@@ -44,6 +44,11 @@ public class Schema
             : groupIndexRowType((GroupIndex) index);
     }
 
+    public synchronized AggregatedRowType newAggregateType(RowType parent)
+    {
+        return new AggregatedRowType(this, nextTypeId(), parent);
+    }
+
     public synchronized FlattenedRowType newFlattenType(RowType parent, RowType child)
     {
         return new FlattenedRowType(this, nextTypeId(), parent, child);
