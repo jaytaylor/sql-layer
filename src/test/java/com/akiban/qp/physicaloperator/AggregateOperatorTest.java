@@ -147,7 +147,8 @@ public final class AggregateOperatorTest {
     public void uninterestingRowsPassThrough() {
         RowsBuilder boringRows = new RowsBuilder(AkType.VARCHAR, AkType.LONG)
                 .row("A", 1L)
-                .row("B", 2L);
+                .row("B", 2L)
+                .row("C", 3L);
         RowsBuilder interestingRows = new RowsBuilder(AkType.LONG, AkType.LONG)
                 .row(10L, 100L)
                 .row(10L, 101L)
@@ -158,6 +159,13 @@ public final class AggregateOperatorTest {
         // (10, 101)
         // ("B", 2)
         // (20, 200)
+        // ("C", 3)
+        // We'll expect the output in this order:
+        // ("A", 1)
+        // ("B", 2)
+        // (10, "100, 101")
+        // ("C", 3)
+        // (20, "200")
         Deque<Row> shuffled = shuffle(interestingRows.rows(), boringRows.rows(), new ArrayDeque<Row>());
         // now in this order:
 
@@ -165,15 +173,17 @@ public final class AggregateOperatorTest {
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
         PhysicalOperator plan = new Aggregation_Batching(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
 
+        // Create the expected output, including rows that have passed through
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR)
                 .row(10L, "100, 101")
                 .row(20L, "200")
                 .rows();
-        // All of the boring rows will be going first; we can't output any interesting rows until we see a change,
-        // which will happen after the ("B", 2) row (when we see the key go from 10 to 20)
         List<Row> expectedFull = new ArrayList<Row>();
         expectedFull.addAll(boringRows.rows());
         expectedFull.addAll(expected);
+        Collections.swap(expectedFull, 2, 3);
+
+        // Finally, check
         check(plan, expectedFull);
     }
 
