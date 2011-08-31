@@ -17,7 +17,6 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.AggregatedRowType;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.aggregation.Aggregator;
 import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.error.InconvertibleTypesException;
@@ -187,6 +186,36 @@ public final class AggregateOperatorTest {
             throw new RuntimeException(e);
         }
         new AggregationOperator(input, 1, FACTORY, Arrays.asList("this_method_does_not_exist"), rowType);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void inputsIndexTooLow() {
+        TestOperator input;
+        AggregatedRowType rowType;
+        try {
+            input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.VARBINARY)
+                    .row(wrapLong(1L), wrapBytes(0x01, 0x02))
+            );
+            rowType = new AggregatedRowType(null, 1, input.rowType());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        new AggregationOperator(input, -1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void inputsIndexTooHigh() {
+        TestOperator input;
+        AggregatedRowType rowType;
+        try {
+            input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.VARBINARY)
+                    .row(wrapLong(1L), wrapBytes(0x01, 0x02))
+            );
+            rowType = new AggregatedRowType(null, 1, input.rowType());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        new AggregationOperator(input, 2, FACTORY, TestFactory.FUNC_NAMES, rowType);
     }
 
     private static void check(PhysicalOperator plan, Deque<Row> expecteds) {

@@ -28,7 +28,9 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 final class AggregationOperator extends PhysicalOperator {
 
@@ -50,6 +52,17 @@ final class AggregationOperator extends PhysicalOperator {
     }
 
     @Override
+    public void findDerivedTypes(Set<RowType> derivedTypes) {
+        inputOperator.findDerivedTypes(derivedTypes);
+        derivedTypes.add(outputType);
+    }
+
+    @Override
+    public List<PhysicalOperator> getInputOperators() {
+        return Collections.singletonList(inputOperator);
+    }
+
+    @Override
     public RowType rowType() {
         return outputType;
     }
@@ -66,6 +79,20 @@ final class AggregationOperator extends PhysicalOperator {
                 inputOperator.rowType().schema().newAggregateType(inputOperator.rowType())
         );
     }
+
+    // Object interface
+
+    @Override
+    public String toString() {
+        if (inputsIndex == 0) {
+            return String.format("Aggregation(without GROUP BY: %s)", aggregatorNames);
+        }
+        if (inputsIndex == 1) {
+            return String.format("Aggregation(GROUP BY 1 field, then: %s)", aggregatorNames);
+        }
+        return String.format("Aggregation(GROUP BY %d fields, then: %s)", inputsIndex, aggregatorNames);
+    }
+
 
     // package-private (for testing)
 
