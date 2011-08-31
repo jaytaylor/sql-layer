@@ -192,19 +192,32 @@ public class ASTToStatement
         }
 
         Query query = new Query(joins, results);
+
         query.setConditions(toConditions(selectNode.getWhereClause()));
+        
+        if (selectNode.getGroupByList() != null)
+            throw new UnsupportedSQLException("GROUP BY", selectNode);
+        if (selectNode.isDistinct())
+            throw new UnsupportedSQLException("DISTINCT", selectNode);
+        if (selectNode.hasWindows())
+            throw new UnsupportedSQLException("WINDOW", selectNode);
+        
         return query;
     }
 
+    protected Map<FromTable,BaseJoinNode> joinNodes =
+        new HashMap<FromTable,BaseJoinNode>();
+
     protected BaseJoinNode toJoinNode(FromTable fromTable)
             throws StandardException {
+        BaseJoinNode result;
         if (fromTable instanceof FromBaseTable) {
             TableBinding tb = (TableBinding)fromTable.getUserData();
             if (tb == null)
                 throw new UnsupportedSQLException("FROM table",
                                                   fromTable);
             TableNode table = getTableNode((UserTable)tb.getTable());
-            return new TableJoinNode(table);
+            result = new TableJoinNode(table);
         }
         else if (fromTable instanceof JoinNode) {
             JoinNode joinNode = (JoinNode)fromTable;
@@ -222,12 +235,14 @@ public class ASTToStatement
             default:
                 throw new UnsupportedSQLException("Unsupported join type", joinNode);
             }
-            return joinNodes(toJoinNode((FromTable)joinNode.getLeftResultSet()),
-                             toJoinNode((FromTable)joinNode.getRightResultSet()),
-                             joinType);
+            result = joinNodes(toJoinNode((FromTable)joinNode.getLeftResultSet()),
+                               toJoinNode((FromTable)joinNode.getRightResultSet()),
+                               joinType);
         }
         else
             throw new UnsupportedSQLException("Unsupported FROM non-table", fromTable);
+        joinNodes.put(fromTable, result);
+        return result;
     }
 
     protected BaseJoinNode joinNodes(BaseJoinNode left, BaseJoinNode right,
@@ -407,9 +422,59 @@ public class ASTToStatement
         return tables.addNode(table);
     }
 
+    protected TableNode getColumnTableNode(Column column)
+            throws StandardException {
+        return getTableNode(column.getUserTable());
+    }
+
     protected BaseExpression toExpression(ValueNode valueNode)
             throws StandardException {
-        return null;
+        DataTypeDescriptor type = valueNode.getType();
+        if (valueNode instanceof ColumnReference) {
+            ColumnBinding cb = (ColumnBinding)((ColumnReference)valueNode).getUserData();
+            if (cb == null)
+                throw new UnsupportedSQLException("Unsupported column", valueNode);
+            Column column = cb.getColumn();
+            if (column == null)
+                throw new UnsupportedSQLException("Unsupported column", valueNode);
+            BaseJoinNode joinNode = joinNodes.get(cb.getFromTable());
+            if (!(joinNode instanceof TableJoinNode))
+                throw new UnsupportedSQLException("Unsupported column", valueNode);
+            return new ColumnExpression(((TableJoinNode)joinNode), column, type);
+        }
+        else if (valueNode instanceof ConstantNode)
+            return new ConstantExpression(((ConstantNode)valueNode).getValue(), type);
+        else if (valueNode instanceof ParameterNode)
+            return new ParameterExpression(((ParameterNode)valueNode)
+                                           .getParameterNumber(),
+                                           type);
+        else if (valueNode instanceof CastNode)
+            return new CastExpression(toExpression(((CastNode)valueNode)
+                                                   .getCastOperand()),
+                                      type);
+        else if (valueNode instanceof AggregateNode) {
+            AggregateNode aggregateNode = (AggregateNode)valueNode;
+            AggregateFunctionExpression.Operation operation;
+            String name = aggregateNode.getAggregateName();
+            if ("COUNT(*)".equals(name) || "COUNT".equals(name))
+                operation = AggregateFunctionExpression.Operation.COUNT;
+            else if ("MAX".equals(name))
+                operation = AggregateFunctionExpression.Operation.MAX;
+            else if ("MIN".equals(name))
+                operation = AggregateFunctionExpression.Operation.MIN;
+            else if ("SUM".equals(name))
+                operation = AggregateFunctionExpression.Operation.SUM;
+            else if ("AVG".equals(name))
+                operation = AggregateFunctionExpression.Operation.AVG;
+            else
+                throw new UnsupportedSQLException("Unsupported function", valueNode);
+            return new AggregateFunctionExpression(toExpression(aggregateNode.getOperand()),
+                                                   operation,
+                                                   aggregateNode.isDistinct(),
+                                                   type);
+        }
+        else
+            throw new UnsupportedSQLException("Unsupported operand", valueNode);
     }
 
     // Get the column that this node references or else return null or throw given error.
