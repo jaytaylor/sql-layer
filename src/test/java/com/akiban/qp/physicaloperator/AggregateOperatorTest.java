@@ -124,7 +124,18 @@ public final class AggregateOperatorTest {
     }
 
     @Test
-    public void noInputRows() {
+    public void noInputRowsWithGroupBy() {
+        TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG));
+        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
+        PhysicalOperator plan = new Aggregation_Batching(input, 0, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        Deque<Row> expected = new RowsBuilder(AkType.VARCHAR)
+                .row(ValueHolder.holdingNull())
+                .rows();
+        check(plan, expected);
+    }
+
+    @Test
+    public void noInputRowsNoGroupBy() {
         TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.LONG));
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
         PhysicalOperator plan = new Aggregation_Batching(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
