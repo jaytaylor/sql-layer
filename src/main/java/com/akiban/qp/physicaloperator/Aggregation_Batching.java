@@ -152,14 +152,28 @@ final class Aggregation_Batching extends PhysicalOperator {
                 close();
                 return null;
             }
+
             assert cursorState == CursorState.OPENING || cursorState == CursorState.RUNNING : cursorState;
             Row input = nextInput();
             if (input == null) {
-                return null;
+                if (everSawInput) {
+                    cursorState = CursorState.CLOSING;
+                    return createOutput();
+                }
+                else if (hasGroupBy()) {
+                    close();
+                    return null;
+                }
+                else {
+                    cursorState = CursorState.CLOSING;
+                    return createNullOutput();
+                }
             }
             if (!input.rowType().equals(inputRowType)) {
                 return input;
             }
+
+            everSawInput = true;
             while (!outputNeeded(input)) {
                 aggregate(input);
                 input = inputCursor.next();
@@ -212,11 +226,24 @@ final class Aggregation_Batching extends PhysicalOperator {
             return outputRow;
         }
 
+        private Row createNullOutput() {
+            assert !hasGroupBy() : "shouldn't be creating null output row when I have a grouping";
+            AggregateRow outputRow = unsharedOutputRow();
+            for (int i = 0; i < outputRow.rowType().nFields(); ++i) {
+                outputRow.holderAt(i).putNull();
+            }
+            return outputRow;
+        }
+
+        private boolean hasGroupBy() {
+            return inputsIndex != 0;
+        }
+
         private boolean outputNeeded(Row givenInput) {
             if (givenInput == null)
                 return true;    // inputs are done, so always output the result
-            if (inputsIndex == 0)
-                return false;   // now GROUP BYs, so aggregate until givenInput is null
+            if (!hasGroupBy())
+                return false;   // no GROUP BYs, so aggregate until givenInput is null
 
             // check for any changes to keys
             // Coming into this code, we're either RUNNING (within a GROUP BY run) or OPENING (about to start
@@ -294,6 +321,7 @@ final class Aggregation_Batching extends PhysicalOperator {
         private final RowHolder<Row> holder = new RowHolder<Row>();
         private CursorState cursorState = CursorState.CLOSED;
         private Bindings bindings;
+        private boolean everSawInput = false;
     }
 
     private enum CursorState {
