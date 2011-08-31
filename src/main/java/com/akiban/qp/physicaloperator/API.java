@@ -34,7 +34,7 @@ public class API
                                              AggregatorFactory factory,
                                              List<String> aggregatorNames)
     {
-        return new Aggregation_Batching(inputOperator, inputsIndex, factory, aggregatorNames);
+        return new Aggregation_Partial(inputOperator, inputsIndex, factory, aggregatorNames);
     }
 
     // Project

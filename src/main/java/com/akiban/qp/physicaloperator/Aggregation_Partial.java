@@ -15,10 +15,9 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.row.AbstractRow;
-import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
+import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.AggregatedRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.aggregation.Aggregator;
@@ -32,7 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-final class Aggregation_Batching extends PhysicalOperator {
+final class Aggregation_Partial extends PhysicalOperator {
 
     // PhysicalOperator interface
 
@@ -69,8 +68,8 @@ final class Aggregation_Batching extends PhysicalOperator {
 
     // AggregationOperator interface
 
-    public Aggregation_Batching(PhysicalOperator inputOperator, int inputsIndex, AggregatorFactory factory,
-                                List<String> aggregatorNames) {
+    public Aggregation_Partial(PhysicalOperator inputOperator, int inputsIndex, AggregatorFactory factory,
+                               List<String> aggregatorNames) {
         this(
                 inputOperator,
                 inputsIndex,
@@ -96,8 +95,8 @@ final class Aggregation_Batching extends PhysicalOperator {
 
     // package-private (for testing)
 
-    Aggregation_Batching(PhysicalOperator inputOperator, int inputsIndex, AggregatorFactory factory,
-                         List<String> aggregatorNames, AggregatedRowType outputType) {
+    Aggregation_Partial(PhysicalOperator inputOperator, int inputsIndex, AggregatorFactory factory,
+                        List<String> aggregatorNames, AggregatedRowType outputType) {
         this.inputOperator = inputOperator;
         this.inputsIndex = inputsIndex;
         this.factory = factory;
@@ -194,6 +193,7 @@ final class Aggregation_Batching extends PhysicalOperator {
         @Override
         public void close() {
             if (cursorState != CursorState.CLOSED) {
+                holder.set(null);
                 inputCursor.close();
                 cursorState = CursorState.CLOSED;
             }
@@ -210,7 +210,7 @@ final class Aggregation_Batching extends PhysicalOperator {
         }
 
         private Row createOutput() {
-            AggregateRow outputRow = unsharedOutputRow();
+            ValuesHolderRow outputRow = unsharedOutputRow();
             for(int i = 0; i < inputsIndex; ++i) {
                 ValueHolder holder = outputRow.holderAt(i);
                 ValueSource key = keyValues.get(i);
@@ -228,7 +228,7 @@ final class Aggregation_Batching extends PhysicalOperator {
 
         private Row createNullOutput() {
             assert !hasGroupBy() : "shouldn't be creating null output row when I have a grouping";
-            AggregateRow outputRow = unsharedOutputRow();
+            ValuesHolderRow outputRow = unsharedOutputRow();
             for (int i = 0; i < outputRow.rowType().nFields(); ++i) {
                 outputRow.holderAt(i).putNull();
             }
@@ -249,7 +249,7 @@ final class Aggregation_Batching extends PhysicalOperator {
             // Coming into this code, we're either RUNNING (within a GROUP BY run) or OPENING (about to start
             // a new run).
             if (cursorState == CursorState.OPENING) {
-                // Copy over this row's values; switch mode to OPENING; return false
+                // Copy over this row's values; switch mode to RUNNING; return false
                 for (int i = 0; i < keyValues.size(); ++i) {
                     keyValues.get(i).copyFrom(givenInput.bindSource(i, bindings));
                 }
@@ -289,8 +289,8 @@ final class Aggregation_Batching extends PhysicalOperator {
             holder.set(input);
         }
 
-        private AggregateRow unsharedOutputRow() {
-            return new AggregateRow(outputRowType); // TODO row sharing, etc
+        private ValuesHolderRow unsharedOutputRow() {
+            return new ValuesHolderRow(outputRowType); // TODO row sharing, etc
         }
 
         // AggregateCursor interface
@@ -331,46 +331,4 @@ final class Aggregation_Batching extends PhysicalOperator {
         CLOSED
     }
 
-    private static class AggregateRow extends AbstractRow {
-
-        public void clear() {
-            for (ValueHolder value : values) {
-                value.clear();
-            }
-        }
-
-        public ValueHolder holderAt(int index) {
-            return values.get(index);
-        }
-
-        @Override
-        public RowType rowType() {
-            return rowType;
-        }
-
-        @Override
-        public HKey hKey() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public ValueSource bindSource(int i, Bindings bindings) {
-            ValueHolder value = values.get(i);
-            if (!value.hasSourceState()) {
-                throw new IllegalStateException("value at index " + i + " was never set");
-            }
-            return value;
-        }
-
-        private AggregateRow(AggregatedRowType rowType) {
-            this.rowType = rowType;
-            values = new ArrayList<ValueHolder>();
-            for (int i=0; i < rowType.nFields(); ++i) {
-                values.add(new ValueHolder());
-            }
-        }
-
-        private final RowType rowType;
-        private final List<ValueHolder> values;
-    }
 }
