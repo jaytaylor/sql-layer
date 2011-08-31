@@ -19,6 +19,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Deque;
 
 public final class TestOperator extends PhysicalOperator {
@@ -36,8 +37,12 @@ public final class TestOperator extends PhysicalOperator {
     }
 
     public TestOperator(RowsBuilder rowsBuilder) {
-        this.rows = new ArrayDeque<Row>(rowsBuilder.rows());
-        this.rowType = rowsBuilder.rowType();
+        this(rowsBuilder.rows(), rowsBuilder.rowType());
+    }
+
+    public TestOperator(Collection<? extends Row> rows, RowType rowType) {
+        this.rows = new ArrayDeque<Row>(rows);
+        this.rowType = rowType;
     }
 
     private final Deque<Row> rows;

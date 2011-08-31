@@ -31,11 +31,13 @@ import com.akiban.util.Strings;
 import com.akiban.util.WrappingByteSource;
 import org.junit.Test;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -119,6 +121,39 @@ public final class AggregateOperatorTest {
                 .row(2L, "charlie", "5")
                 .rows();
         check(plan, expected);
+    }
+
+    @Test
+    public void noInputRows() {
+        TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.LONG));
+        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
+        PhysicalOperator plan = new AggregationOperator(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR).rows();
+        check(plan, expected);
+    }
+
+    @Test
+    public void uninterestingRowsPassThrough() {
+        RowsBuilder boringRows = new RowsBuilder(AkType.VARBINARY, AkType.LONG)
+                .row(wrapBytes(0xAAAA), wrapLong(1L))
+                .row(wrapBytes(0xBBBB), wrapLong(2L));
+        RowsBuilder interestingRows = new RowsBuilder(AkType.LONG, AkType.LONG)
+                .row(10L, 100L)
+                .row(10L, 101L)
+                .row(20L, 200L);
+        // shuffle!
+        Deque<Row> shuffled = shuffle(interestingRows.rows(), boringRows.rows(), new ArrayDeque<Row>());
+
+        TestOperator input = new TestOperator(shuffled, interestingRows.rowType());
+        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
+        PhysicalOperator plan = new AggregationOperator(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+
+        Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR)
+                .row(10L, "100, 101")
+                .row(20L, "200")
+                .rows();
+        Deque<Row> expectedFull = shuffle(expected, boringRows.rows(), new ArrayDeque<Row>());
+        check(plan, expectedFull);
     }
 
     @Test(expected = InconvertibleTypesException.class)
@@ -240,7 +275,10 @@ public final class AggregateOperatorTest {
 
     private static void check(PhysicalOperator plan, Deque<Row> expecteds) {
         List<Row> actuals = execute(plan);
-        assertEquals("size (expecteds=" + expecteds+", actuals=" + actuals + ')', expecteds.size(), actuals.size());
+        if (expecteds.size() != actuals.size()) {
+            assertEquals("output", Strings.join(expecteds), Strings.join(actuals));
+            assertEquals("size (expecteds=" + expecteds+", actuals=" + actuals + ')', expecteds.size(), actuals.size());
+        }
         int rowCount = 0;
         try {
             for (Row actual : actuals) {
@@ -267,6 +305,26 @@ public final class AggregateOperatorTest {
                 actual.release();
             }
         }
+    }
+
+    private static <R extends Row,C extends Collection<? super Row>>
+    C shuffle(Collection<? extends R> first, Collection<? extends R> second, C output)
+    {
+        Iterator<? extends Row> secondIter = second.iterator();
+        for (Row fromFirst : first) {
+            output.add(fromFirst);
+            if (secondIter.hasNext()) {
+                output.add(secondIter.next());
+            }
+        }
+        while (secondIter.hasNext()) {
+            output.add(secondIter.next());
+        }
+        assert output.size() == first.size() + second.size()
+                : String.format("%d != %d + %d: %s from %s %s",
+                    output.size(), first.size(), second.size(), output, first, second
+        );
+        return output;
     }
 
     private static String str(Collection<? extends Row> rows) {
