@@ -114,6 +114,7 @@ public enum ErrorCode {
     VIEW_BAD_SUBQUERY       (3, 27, Importance.DEBUG, ViewHasBadSubqueryException.class),
     TABLE_BAD_SUBQUERY      (3, 28, Importance.DEBUG, TableIsBadSubqueryException.class),
     WRONG_FUNCTION_ARITY    (3, 29, Importance.DEBUG, WrongExpressionArityException.class),
+    NO_SUCH_FUNCTION        (3, 31, Importance.DEBUG, NoSuchFunctionException.class),
     
     ROW_OUTPUT              (4, 11, Importance.DEBUG, RowOutputException.class), 
     AIS_MYSQL_SQL_EXCEPTION (4, 12, Importance.DEBUG, AisSQLErrorException.class),

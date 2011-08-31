@@ -18,6 +18,7 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -25,6 +26,9 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.store.PersistitKeyAppender;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueTarget;
+import com.akiban.server.types.conversion.Converters;
+import com.akiban.util.AkibanAppender;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
@@ -38,7 +42,17 @@ public class PersistitIndexRow extends AbstractRow
     @Override
     public String toString()
     {
-        return hKey == null ? null : hKey.toString();
+        ValueTarget buffer = AkibanAppender.of(new StringBuilder()).asValueTarget();
+        buffer.putString("(");
+        for (int i = 0; i < indexRowType.nFields(); i++) {
+            if (i > 0) {
+                buffer.putString(", ");
+            }
+            Converters.convert(bindSource(i, UndefBindings.only()), buffer);
+        }
+        buffer.putString(")->");
+        buffer.putString(hKey.toString());
+        return buffer.toString();
     }
 
     // RowBase interface

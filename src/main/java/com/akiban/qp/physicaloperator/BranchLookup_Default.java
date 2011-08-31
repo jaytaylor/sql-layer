@@ -82,7 +82,7 @@ public class BranchLookup_Default extends PhysicalOperator
                                 GroupTable groupTable,
                                 RowType inputRowType,
                                 RowType outputRowType,
-                                boolean keepInput,
+                                API.LookupOption flag,
                                 Limit limit)
     {
         ArgumentValidation.notNull("inputRowType", inputRowType);
@@ -91,7 +91,7 @@ public class BranchLookup_Default extends PhysicalOperator
         ArgumentValidation.isTrue("inputRowType instanceof IndexRowType || outputRowType != inputRowType",
                                   inputRowType instanceof IndexRowType || outputRowType != inputRowType);
         ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || !keepInput",
-                                  inputRowType instanceof UserTableRowType || !keepInput);
+                                  inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT);
         UserTableRowType inputTableType = null;
         if (inputRowType instanceof UserTableRowType) {
             inputTableType = (UserTableRowType) inputRowType;
@@ -105,7 +105,7 @@ public class BranchLookup_Default extends PhysicalOperator
                                   inputTable.getGroup(),
                                   "outputTable.getGroup()",
                                   outputTable.getGroup());
-        this.keepInput = keepInput;
+        this.keepInput = flag == API.LookupOption.KEEP_INPUT;
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
         this.inputRowType = inputRowType;
@@ -216,7 +216,7 @@ public class BranchLookup_Default extends PhysicalOperator
                 }
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Lookup: {}", lookupRow.isNull() ? null : lookupRow.get());
+                LOG.debug("BranchLookup_Default: {}", lookupRow.isNull() ? null : lookupRow.get());
             }
             return nextRow;
         }

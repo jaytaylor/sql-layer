@@ -288,7 +288,7 @@ public class OperatorCompiler
                 if (descendantUsed) {
                     resultOperator = branchLookup_Default(resultOperator, groupTable,
                                                           indexRowType, tableType, 
-                                                          false);
+                                                          LookupOption.DISCARD_INPUT);
                     ancestorInputType = tableType; // Index no longer in stream.
                     ancestorInputKept = tableUsed;
                     needFilter = true; // Might be other descendants, too.
@@ -349,7 +349,7 @@ public class OperatorCompiler
                     resultOperator = ancestorLookup_Default(resultOperator, groupTable,
                                                             ancestorInputType, 
                                                             addAncestorTypes, 
-                                                            ancestorInputKept);
+                                                            ancestorInputKept ? LookupOption.KEEP_INPUT : LookupOption.DISCARD_INPUT);
                     resultOperator = maybeAddTableConditions(resultOperator,
                                                              squery, addAncestors);
                 }
@@ -357,7 +357,7 @@ public class OperatorCompiler
                     resultOperator = branchLookup_Default(resultOperator, groupTable,
                                                           branchInputType, 
                                                           tableRowType(branchTable), 
-                                                          true);
+                                                          LookupOption.KEEP_INPUT);
                     resultOperator = maybeAddTableConditions(resultOperator,
                                                              squery, 
                                                              branchTable.subtree());
@@ -414,7 +414,7 @@ public class OperatorCompiler
                                                               cursor);
                         }
                         resultRowType = resultOperator.rowType();
-                        fll.mergeTables(flr);
+                        fll.mergeTablesForProduct(flr);
                     }
                 }
                 fieldOffsets = new TableNodeOffsets(fll.getFieldOffsets());
@@ -520,7 +520,7 @@ public class OperatorCompiler
                                                index.getIndexKeyRange());
             List<RowType> ancestors = Collections.<RowType>singletonList(targetRowType);
             resultOperator = ancestorLookup_Default(resultOperator, groupTable,
-                                                    indexRowType, ancestors, false);
+                                                    indexRowType, ancestors, LookupOption.DISCARD_INPUT);
         }
         else {
             resultOperator = groupScan_Default(groupTable);
@@ -932,13 +932,46 @@ public class OperatorCompiler
         }
 
         
-        public void mergeTables(FlattenState other) {
+        public void mergeTablesForFlatten(FlattenState other) {
             if (tables != null)
                 tables.addAll(other.tables);
             for (TableNode table : other.fieldOffsets.keySet()) {
                 fieldOffsets.put(table, other.fieldOffsets.get(table) + nfields);
             }
             nfields += other.nfields;
+        }
+
+        public void mergeTablesForProduct(final FlattenState other) {
+            // this and other have some tables in common. The result of the merge keeps the tables from this
+            // and just the unique tables in other. The field offsets from other need to be "shifted down".
+            // There could conceivably be multiple tables in common, all of which need to be removed, resulting in
+            // different shift amounts for different offsets in other. For example, other could have tables
+            // {A(offset 0, nfields 3), B(offset 3, nfields 3), C(offset 6, nfields 2), D(offset 8, nfields 2),
+            // E(offset 10, nfields 2)}, with tables B and D also occurring in this. In this
+            // case, C shifts down by 3, and E by 5.
+            Set<TableNode> retained = new HashSet<TableNode>(other.tables);
+            if (tables != null) {
+                retained.removeAll(tables);
+                tables.addAll(retained);
+            }
+            // Arrange other's tables in order of offset. This will simplify shifting later.
+            List<TableNode> otherTables = new ArrayList<TableNode>(other.tables);
+            Collections.sort(otherTables,
+                             new Comparator<TableNode>() {
+                                 @Override
+                                 public int compare(TableNode x, TableNode y) {
+                                     return other.fieldOffsets.get(x) - other.fieldOffsets.get(y);
+                                 }
+                             });
+            // Compute new offsets of retained tables
+            int accumulatedShift = 0;
+            for (TableNode otherTable : otherTables) {
+                if (retained.contains(otherTable))
+                    fieldOffsets.put(otherTable, other.fieldOffsets.get(otherTable) + nfields - accumulatedShift);
+                else
+                    accumulatedShift += otherTable.getNFields();
+            }
+            nfields += other.nfields - accumulatedShift;
         }
 
         @Override
@@ -1040,7 +1073,7 @@ public class OperatorCompiler
                     }
                 }
                 fleft.setResultRowType(flattenedType);
-                fleft.mergeTables(fright);
+                fleft.mergeTablesForFlatten(fright);
                 return fleft;
             }
         }

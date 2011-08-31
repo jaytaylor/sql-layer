@@ -343,6 +343,8 @@ public class AISBinder implements Visitor
         case NodeTypes.JOIN_NODE:
         case NodeTypes.HALF_OUTER_JOIN_NODE:
             return joinNode((JoinNode)fromTable);
+        case NodeTypes.FROM_SUBQUERY:
+            return fromSubquery((FromSubquery)fromTable);
         default:
             // Subqueries in SELECT don't see earlier FROM list tables.
             try {
@@ -373,6 +375,47 @@ public class AISBinder implements Visitor
         joinNode.setLeftResultSet(fromTable((FromTable)joinNode.getLeftResultSet()));
         joinNode.setRightResultSet(fromTable((FromTable)joinNode.getRightResultSet()));
         return joinNode;
+    }
+
+    protected FromSubquery fromSubquery(FromSubquery fromSubquery) {
+        // Do the subquery body first to get types, etc.
+        try {
+            fromSubquery.accept(this);
+
+            if (fromSubquery.getResultColumns() == null) {
+                ResultSetNode inner = fromSubquery.getSubquery();
+                ResultColumnList innerRCL = inner.getResultColumns();
+                if (innerRCL != null) {
+                    NodeFactory nodeFactory = fromSubquery.getNodeFactory();
+                    SQLParserContext parserContext = fromSubquery.getParserContext();
+                    ResultColumnList outerRCL = (ResultColumnList)
+                        nodeFactory.getNode(NodeTypes.RESULT_COLUMN_LIST, parserContext);
+                    int ncols = 0;
+                    for (ResultColumn innerColumn : innerRCL) {
+                        guaranteeColumnName(innerColumn);
+                        ValueNode valueNode = (ValueNode)
+                            nodeFactory.getNode(NodeTypes.VIRTUAL_COLUMN_NODE,
+                                                inner,
+                                                innerColumn,
+                                                ++ncols,
+                                                parserContext);
+                        ResultColumn outerColumn = (ResultColumn)
+                            nodeFactory.getNode(NodeTypes.RESULT_COLUMN,
+                                                innerColumn.getName(),
+                                                valueNode,
+                                                parserContext);
+                        outerRCL.addResultColumn(outerColumn);
+                        //valueNode.setUserData(new ColumnBinding(inner, innerColumn));
+                    }
+                    fromSubquery.setResultColumns(outerRCL);
+                }
+            }
+        }
+        catch (StandardException e) {
+            throw new TableIsBadSubqueryException("", fromSubquery.getExposedName(), e.getMessage());
+        }
+
+        return fromSubquery;
     }
 
     protected void addFromTable(FromTable fromTable) {
@@ -663,22 +706,28 @@ public class AISBinder implements Visitor
     }
 
     protected ResultColumnList getAllResultColumns(TableName allTableName, 
-                                                   FromTable fromTable) {
-        switch (fromTable.getNodeType()) {
-        case NodeTypes.FROM_BASE_TABLE:
-            try {
+                                                   ResultSetNode fromTable) {
+        try {
+            switch (fromTable.getNodeType()) {
+            case NodeTypes.FROM_BASE_TABLE:
                 return getAllResultColumns(allTableName, (FromBaseTable)fromTable);
-            } catch (StandardException ex) {
-                throw new com.akiban.server.error.ParseException ("", ex.getMessage(), allTableName.getFullTableName());
+            case NodeTypes.JOIN_NODE:
+                return getAllResultColumns(allTableName, (JoinNode)fromTable);
+            case NodeTypes.FROM_SUBQUERY:
+                return getAllResultColumns(allTableName, (FromSubquery)fromTable);
+            default:
+                return null;
             }
-        default:
-            return null;
+        } 
+        catch (StandardException ex) {
+            throw new com.akiban.server.error.ParseException("", ex.getMessage(), 
+                                                             (allTableName == null) ? null : allTableName.getFullTableName());
         }
     }
 
     protected ResultColumnList getAllResultColumns(TableName allTableName, 
                                                    FromBaseTable fromTable) 
-        throws StandardException {
+            throws StandardException {
         TableName exposedName = fromTable.getExposedTableName();
         if ((allTableName != null) && !allTableName.equals(exposedName))
             return null;
@@ -705,6 +754,71 @@ public class AISBinder implements Visitor
             rcList.addResultColumn(resultColumn);
             // Easy to do binding right here.
             valueNode.setUserData(new ColumnBinding(fromTable, column));
+        }
+        return rcList;
+    }
+
+    protected ResultColumnList getAllResultColumns(TableName allTableName, 
+                                                   JoinNode fromJoin)
+            throws StandardException {
+        ResultColumnList leftRCL = getAllResultColumns(allTableName,
+                                                       fromJoin.getLogicalLeftResultSet());
+        ResultColumnList rightRCL = getAllResultColumns(allTableName,
+                                                        fromJoin.getLogicalRightResultSet());
+
+        if (leftRCL == null)
+            return rightRCL;
+        else if (rightRCL == null)
+            return leftRCL;
+
+        if (fromJoin.getUsingClause() == null) {
+            leftRCL.addAll(rightRCL);
+            return leftRCL;
+        }
+        
+        // USING is tricky case, since join columns do not repeat in expansion.
+        ResultColumnList joinRCL = leftRCL.getJoinColumns(fromJoin.getUsingClause());
+        leftRCL.removeJoinColumns(fromJoin.getUsingClause());
+        joinRCL.addAll(leftRCL);
+        rightRCL.removeJoinColumns(fromJoin.getUsingClause());
+        joinRCL.addAll(rightRCL);
+        return joinRCL;
+    }
+
+    protected ResultColumnList getAllResultColumns(TableName allTableName, 
+                                                   FromSubquery fromSubquery)
+            throws StandardException {
+        NodeFactory nodeFactory = fromSubquery.getNodeFactory();
+        SQLParserContext parserContext = fromSubquery.getParserContext();
+        TableName exposedName = (TableName)
+            nodeFactory.getNode(NodeTypes.TABLE_NAME,
+                                null,
+                                fromSubquery.getExposedName(),
+                                parserContext);
+        if ((allTableName != null) && !allTableName.equals(exposedName))
+            return null;
+
+        ResultColumnList rcList = (ResultColumnList) 
+            nodeFactory.getNode(NodeTypes.RESULT_COLUMN_LIST,
+                                parserContext);
+        for (ResultColumn resultColumn : fromSubquery.getResultColumns()) {
+            String columnName = resultColumn.getName();
+            boolean isNameGenerated = resultColumn.isNameGenerated();
+
+            TableName tableName = exposedName;
+            ValueNode valueNode = (ValueNode) 
+                nodeFactory.getNode(NodeTypes.COLUMN_REFERENCE,
+                                    columnName,
+                                    tableName,
+                                    parserContext);
+            resultColumn = (ResultColumn)
+                nodeFactory.getNode(NodeTypes.RESULT_COLUMN,
+                                    columnName,
+                                    valueNode,
+                                    parserContext);
+
+            resultColumn.setNameGenerated(isNameGenerated);
+            rcList.add(resultColumn);
         }
         return rcList;
     }

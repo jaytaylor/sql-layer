@@ -66,7 +66,7 @@ public abstract class AbstractCompositeExpression implements Expression {
     protected List<? extends ExpressionEvaluation> childrenEvaluations() {
         List<ExpressionEvaluation> result = new ArrayList<ExpressionEvaluation>();
         for (Expression expression : children) {
-            result.add(expression.rowExpression());
+            result.add(expression.evaluation());
         }
         return result;
     }

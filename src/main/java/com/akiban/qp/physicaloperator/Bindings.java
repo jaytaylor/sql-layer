@@ -15,12 +15,19 @@
 
 package com.akiban.qp.physicaloperator;
 
-public interface Bindings {
+public abstract class Bindings {
     /**
      * Gets the object bound to the given index.
      * @param index the index to look up
      * @return the object at that index
      * @throws BindingNotSetException if the given index wasn't set
      */
-    Object get(int index);
+    public abstract Object get(int index);
+
+    /**
+     * Bind a value to the given index. Used for variables introduced by execution plan, not for query parameters.
+     * @param index the index to set
+     * @param value the value to assign
+     */
+    public abstract void set(int index, Object value);
 }

@@ -44,6 +44,11 @@ public class Schema
             : groupIndexRowType((GroupIndex) index);
     }
 
+    public synchronized AggregatedRowType newAggregateType(RowType parent)
+    {
+        return new AggregatedRowType(this, nextTypeId(), parent);
+    }
+
     public synchronized FlattenedRowType newFlattenType(RowType parent, RowType child)
     {
         return new FlattenedRowType(this, nextTypeId(), parent, child);
@@ -54,11 +59,11 @@ public class Schema
         return new ProjectedRowType(this, nextTypeId(), columns);
     }
 
-    public ProductRowType newProductType(RowType left, RowType right)
+    public ProductRowType newProductType(RowType leftType, RowType rightType)
     {
-        return new ProductRowType(this, nextTypeId(), left, right);
+        return new ProductRowType(this, nextTypeId(), leftType, rightType);
     }
-    
+
     public synchronized ValuesRowType newValuesType(int nfields)
     {
         return new ValuesRowType(this, nextTypeId(), nfields);

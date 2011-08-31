@@ -247,11 +247,11 @@ public class PhysicalOperatorITBase extends ITBase
             cursor.open(NO_BINDINGS);
             Row row;
             while ((row = cursor.next()) != null) {
-                strings.add(String.valueOf(String.format("%s: %s", row.runId(), row)));
+                strings.add(String.valueOf(row));
             }
         } catch (Throwable t) {
-            strings.add("ERROR: " + t);
-        }finally {
+            t.printStackTrace();
+        } finally {
             cursor.close();
         }
         strings.add(0, strings.size() == 1 ? "1 string:" : strings.size() + " strings:");
@@ -303,8 +303,7 @@ public class PhysicalOperatorITBase extends ITBase
         return rowDef.getOrdinal();
     }
 
-    protected static final Bindings NO_BINDINGS = UndefBindings.only();
-    protected static final Limit NO_LIMIT = new PersistitRowLimit(ScanLimit.NONE);
+    protected static final Bindings NO_BINDINGS = new ArrayBindings(0);
 
     protected int customer;
     protected int order;

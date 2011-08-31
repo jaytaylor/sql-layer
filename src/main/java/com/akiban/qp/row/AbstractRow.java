@@ -48,6 +48,12 @@ public abstract class AbstractRow implements Row
         this.runId = runId;
     }
 
+    @Override
+    public Row subRow(RowType subRowType)
+    {
+        return rowType() == subRowType ? this : null;
+    }
+
     // ManagedRow interface
 
     @Override

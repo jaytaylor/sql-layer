@@ -204,7 +204,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     public void testIndexLookup()
     {
         PhysicalOperator indexScan = indexScan_Default(indexType(order, "salesman"));
-        PhysicalOperator lookup = branchLookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, false);
+        PhysicalOperator lookup = branchLookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, LookupOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[]{row(orderRowType, 12L, 1L, "david"),
                                            row(itemRowType, 121L, 12L),
                                            row(itemRowType, 122L, 12L),
@@ -224,12 +224,12 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     public void testIndexLookupWithOneAncestor()
     {
         PhysicalOperator indexScan = indexScan_Default(indexType(order, "salesman"));
-        PhysicalOperator lookup = branchLookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, false);
+        PhysicalOperator lookup = branchLookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, LookupOption.DISCARD_INPUT);
         PhysicalOperator ancestorLookup = ancestorLookup_Default(lookup,
                                                                  coi,
                                                                  orderRowType,
                                                                  Arrays.asList(customerRowType),
-                                                                 true);
+                                                                 LookupOption.KEEP_INPUT);
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
                                            row(orderRowType, 12L, 1L, "david"),
                                            row(itemRowType, 121L, 12L),
@@ -253,12 +253,16 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
     public void testIndexLookupWithTwoAncestors()
     {
         PhysicalOperator indexScan = indexScan_Default(indexType(item, "oid"));
-        PhysicalOperator lookup = branchLookup_Default(indexScan, coi, itemOidIndexRowType, itemRowType, false);
+        PhysicalOperator lookup = branchLookup_Default(indexScan,
+                                                       coi,
+                                                       itemOidIndexRowType,
+                                                       itemRowType,
+                                                       LookupOption.DISCARD_INPUT);
         PhysicalOperator ancestorLookup = ancestorLookup_Default(lookup,
                                                                  coi,
                                                                  itemRowType,
                                                                  Arrays.asList(customerRowType, orderRowType),
-                                                                 true);
+                                                                 LookupOption.KEEP_INPUT);
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
                                            row(orderRowType, 11L, 1L, "ori"),
                                            row(itemRowType, 111L, 11L),
@@ -307,7 +311,11 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
         IndexBound tom = indexBound(row(orderSalesmanIndexRowType, "tom"), columnSelector(idxOrderSalesman));
         IndexKeyRange matchTom = indexKeyRange(tom, true, tom, true);
         PhysicalOperator indexScan = indexScan_Default(orderSalesmanIndexRowType, false, matchTom);
-        PhysicalOperator lookup = branchLookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, false);
+        PhysicalOperator lookup = branchLookup_Default(indexScan,
+                                                       coi,
+                                                       orderSalesmanIndexRowType,
+                                                       orderRowType,
+                                                       LookupOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
                                            row(itemRowType, 211L, 21L),
                                            row(itemRowType, 212L, 21L)};
@@ -327,7 +335,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
                                                                  coi,
                                                                  orderSalesmanIndexRowType,
                                                                  Arrays.asList(customerRowType),
-                                                                 false);
+                                                                 LookupOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc")};
         compareRows(expected, cursor(ancestorLookup, adapter));
     }
