@@ -88,11 +88,11 @@ public class API
 
     public static PhysicalOperator groupScan_Default(GroupTable groupTable,
                                                      Limit limit,
-                                                     Expression hkeyExpression,
+                                                     int hKeyBindingPosition,
                                                      boolean deep)
     {
         return new GroupScan_Default(
-                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hkeyExpression, deep),
+                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hKeyBindingPosition, deep),
                 limit
         );
     }
@@ -103,19 +103,28 @@ public class API
                                                         GroupTable groupTable,
                                                         RowType inputRowType,
                                                         RowType outputRowType,
-                                                        boolean keepInput)
+                                                        LookupOption flag)
     {
-        return branchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, keepInput, NO_LIMIT);
+        return branchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, flag, NO_LIMIT);
     }
 
     public static PhysicalOperator branchLookup_Default(PhysicalOperator inputOperator,
                                                         GroupTable groupTable,
                                                         RowType inputRowType,
                                                         RowType outputRowType,
-                                                        boolean keepInput,
+                                                        LookupOption flag,
                                                         Limit limit)
     {
-        return new BranchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, keepInput, limit);
+        return new BranchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, flag, limit);
+    }
+
+    public static PhysicalOperator branchLookup_Nested(GroupTable groupTable,
+                                                       RowType inputRowType,
+                                                       RowType outputRowType,
+                                                       LookupOption flag,
+                                                       int inputBindingPosition)
+    {
+        return new BranchLookup_Nested(groupTable, inputRowType, outputRowType, flag, inputBindingPosition);
     }
 
     // Limit
@@ -131,9 +140,17 @@ public class API
                                                           GroupTable groupTable,
                                                           RowType rowType,
                                                           Collection<? extends RowType> ancestorTypes,
-                                                          boolean keepInput)
+                                                          LookupOption flag)
     {
-        return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, keepInput);
+        return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, flag);
+    }
+
+    public static PhysicalOperator ancestorLookup_Nested(GroupTable groupTable,
+                                                         RowType rowType,
+                                                         Collection<? extends RowType> ancestorTypes,
+                                                         int hKeyBindingPosition)
+    {
+        return new AncestorLookup_Nested(groupTable, rowType, ancestorTypes, hKeyBindingPosition);
     }
 
     // IndexScan
@@ -174,11 +191,23 @@ public class API
 
     // Product
 
+    /**
+     * @deprecated Use product_NestedLoops instead.
+     */
     public static PhysicalOperator product_ByRun(PhysicalOperator input,
                                                  RowType leftType,
                                                  RowType rightType)
     {
         return new Product_ByRun(input, leftType, rightType);
+    }
+
+    public static PhysicalOperator product_NestedLoops(PhysicalOperator outerInput,
+                                                       PhysicalOperator innerInput,
+                                                       RowType outerType,
+                                                       RowType innerType,
+                                                       int inputBindingPosition)
+    {
+        return new Product_NestedLoops(outerInput, innerInput, outerType, innerType, inputBindingPosition);
     }
 
     // Cut
@@ -211,6 +240,7 @@ public class API
     // Options
 
     // Flattening flags
+
     public static enum JoinType {
         INNER_JOIN,
         LEFT_JOIN,
@@ -222,6 +252,13 @@ public class API
         KEEP_PARENT,
         KEEP_CHILD,
         LEFT_JOIN_SHORTENS_HKEY
+    }
+
+    // Lookup flags
+
+    public static enum LookupOption {
+        KEEP_INPUT,
+        DISCARD_INPUT
     }
 
     // Class state

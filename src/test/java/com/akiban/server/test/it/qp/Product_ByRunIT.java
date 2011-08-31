@@ -32,7 +32,7 @@ import static com.akiban.qp.physicaloperator.API.JoinType.*;
 import static com.akiban.qp.physicaloperator.API.FlattenOption.*;
 import static org.junit.Assert.assertTrue;
 
-public class ProductIT extends PhysicalOperatorITBase
+public class Product_ByRunIT extends PhysicalOperatorITBase
 {
     @Before
     public void before()
@@ -61,12 +61,19 @@ public class ProductIT extends PhysicalOperatorITBase
             createNewRow(customer, 6L, "flybridge"), // no orders or addresses
             // Add a few items to test Product_ByRun rejecting unexpected input. All other tests remove these items.
             createNewRow(item, 1000L, 100L),
-            createNewRow(item, 1001L, 101L),
+            createNewRow(item, 1001L, 100L),
+            createNewRow(item, 1010L, 101L),
+            createNewRow(item, 1011L, 101L),
             createNewRow(item, 2000L, 200L),
-            createNewRow(item, 2001L, 201L),
+            createNewRow(item, 2001L, 200L),
+            createNewRow(item, 2010L, 201L),
+            createNewRow(item, 2011L, 201L),
             createNewRow(item, 3000L, 300L),
+            createNewRow(item, 3001L, 300L),
             createNewRow(item, 4000L, 400L),
-            createNewRow(item, 4001L, 401L),
+            createNewRow(item, 4001L, 400L),
+            createNewRow(item, 4010L, 401L),
+            createNewRow(item, 4011L, 401L),
         };
         use(db);
     }
@@ -124,7 +131,7 @@ public class ProductIT extends PhysicalOperatorITBase
                     coi,
                     customerNameIndexRowType,
                     customerRowType,
-                    false),
+                    LookupOption.DISCARD_INPUT),
                 customerRowType,
                 orderRowType,
                 INNER_JOIN,
@@ -149,7 +156,7 @@ public class ProductIT extends PhysicalOperatorITBase
                         coi,
                         customerNameIndexRowType,
                         customerRowType,
-                        false),
+                        LookupOption.DISCARD_INPUT),
                     removeDescendentTypes(orderRowType)),
                 customerRowType,
                 orderRowType,
@@ -164,14 +171,14 @@ public class ProductIT extends PhysicalOperatorITBase
         RowType coaRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
-            row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2L, "foundation", 2000L, 2L, "222 2000 st"),
-            row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2L, "foundation", 2000L, 2L, "222 2000 st"),
-            row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3L, "matrix", 3000L, 3L, "333 3000 st"),
-            row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3L, "matrix", 3001L, 3L, "333 3001 st"),
-            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1L, "northbridge", 1000L, 1L, "111 1000 st"),
-            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1L, "northbridge", 1000L, 1L, "111 1000 st"),
-            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1L, "northbridge", 1001L, 1L, "111 1001 st"),
-            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1L, "northbridge", 1001L, 1L, "111 1001 st"),
+            row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
+            row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2000L, 2L, "222 2000 st"),
+            row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3000L, 3L, "333 3000 st"),
+            row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3001L, 3L, "333 3001 st"),
+            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1000L, 1L, "111 1000 st"),
+            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1000L, 1L, "111 1000 st"),
+            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1001L, 1L, "111 1001 st"),
+            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1001L, 1L, "111 1001 st"),
         };
         compareRows(expected, cursor);
     }
@@ -187,7 +194,7 @@ public class ProductIT extends PhysicalOperatorITBase
                         coi,
                         orderSalesmanIndexRowType,
                         customerRowType,
-                        false),
+                        LookupOption.DISCARD_INPUT),
                     removeDescendentTypes(orderRowType)),
                 customerRowType,
                 orderRowType,
@@ -202,20 +209,20 @@ public class ProductIT extends PhysicalOperatorITBase
         RowType coaRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
-            row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2L, "foundation", 2000L, 2L, "222 2000 st"),
-            row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2L, "foundation", 2000L, 2L, "222 2000 st"),
-            row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2L, "foundation", 2000L, 2L, "222 2000 st"),
-            row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2L, "foundation", 2000L, 2L, "222 2000 st"),
-            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1L, "northbridge", 1000L, 1L, "111 1000 st"),
-            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1L, "northbridge", 1000L, 1L, "111 1000 st"),
-            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1L, "northbridge", 1001L, 1L, "111 1001 st"),
-            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1L, "northbridge", 1001L, 1L, "111 1001 st"),
-            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1L, "northbridge", 1000L, 1L, "111 1000 st"),
-            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1L, "northbridge", 1000L, 1L, "111 1000 st"),
-            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1L, "northbridge", 1001L, 1L, "111 1001 st"),
-            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1L, "northbridge", 1001L, 1L, "111 1001 st"),
-            row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3L, "matrix", 3000L, 3L, "333 3000 st"),
-            row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3L, "matrix", 3001L, 3L, "333 3001 st"),
+            row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
+            row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2000L, 2L, "222 2000 st"),
+            row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
+            row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2000L, 2L, "222 2000 st"),
+            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1000L, 1L, "111 1000 st"),
+            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1000L, 1L, "111 1000 st"),
+            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1001L, 1L, "111 1001 st"),
+            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1001L, 1L, "111 1001 st"),
+            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1000L, 1L, "111 1000 st"),
+            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1000L, 1L, "111 1000 st"),
+            row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1001L, 1L, "111 1001 st"),
+            row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1001L, 1L, "111 1001 st"),
+            row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3000L, 3L, "333 3000 st"),
+            row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3001L, 3L, "333 3001 st"),
         };
         compareRows(expected, cursor);
     }

@@ -80,7 +80,7 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
                 coi,
                 itemIidIndexRowType,
                 Arrays.asList(customerRowType, orderRowType, itemRowType),
-                false);
+                LookupOption.DISCARD_INPUT);
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);
         int expectedRunId = 0;
@@ -112,7 +112,7 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
                 coi,
                 itemIidIndexRowType,
                 customerRowType,
-                false);
+                LookupOption.DISCARD_INPUT);
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);
         int expectedRunId = 0;
@@ -149,7 +149,7 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
                     coi,
                     customerNameIndexRowType,
                     customerRowType,
-                    false),
+                    LookupOption.DISCARD_INPUT),
                 removeDescendentTypes(customerRowType));
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);
@@ -172,7 +172,7 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
                     coi,
                     customerNameIndexRowType,
                     customerRowType,
-                    false),
+                    LookupOption.DISCARD_INPUT),
                 Arrays.asList(orderRowType, itemRowType));
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);
@@ -210,7 +210,7 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
                         coi,
                         customerNameIndexRowType,
                         customerRowType,
-                        false),
+                        LookupOption.DISCARD_INPUT),
                     removeDescendentTypes(orderRowType)),
                 customerRowType,
                 orderRowType,
@@ -246,7 +246,7 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
                         coi,
                         customerNameIndexRowType,
                         customerRowType,
-                        false),
+                        LookupOption.DISCARD_INPUT),
                     removeDescendentTypes(customerRowType)),
                 customerRowType,
                 Arrays.asList(field(1)));

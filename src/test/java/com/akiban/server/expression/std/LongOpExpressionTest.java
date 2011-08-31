@@ -15,8 +15,12 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.physicaloperator.UndefBindings;
+import com.akiban.qp.row.ValuesRow;
+import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
@@ -25,6 +29,7 @@ import org.junit.Test;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public final class LongOpExpressionTest {
@@ -73,6 +78,22 @@ public final class LongOpExpressionTest {
         assertTrue("top should be constant", top.isConstant());
         ValueSource actual = new ValueHolder(top.rowExpression().eval());
         ValueSource expected = ValueHolder.holdingNull();
+        assertEquals("ValueSource", expected, actual);
+    }
+
+    @Test
+    public void usingFieldExpressions() {
+        ValuesRowType dummyType = new ValuesRowType(null, 1, 2);
+        Expression left = new FieldExpression(dummyType, 0, AkType.LONG);
+        Expression right = new FieldExpression(dummyType, 1, AkType.DOUBLE);
+        Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
+
+        assertFalse("top shouldn't be constant", top.isConstant());
+        ExpressionEvaluation evaluation = top.rowExpression();
+        ValuesRow row = new ValuesRow(dummyType, new Object[] {5L, 2.9} );
+        evaluation.of(row, UndefBindings.only());
+        ValueSource actual = new ValueHolder(evaluation.eval());
+        ValueSource expected = new ValueHolder(LongOps.LONG_SUBTRACT.opType(), 3L);
         assertEquals("ValueSource", expected, actual);
     }
 

@@ -104,7 +104,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
         PhysicalOperator indexScan = indexScan_Default(indexType, false, range);
         PhysicalOperator scanOp;
-        scanOp = ancestorLookup_Default(indexScan, groupTable, indexType, Collections.singletonList(tableType), false);
+        scanOp = ancestorLookup_Default(indexScan, groupTable, indexType, Collections.singletonList(tableType), API.LookupOption.DISCARD_INPUT);
 
         // MVCC will render this useless, but for now, a limit of 1 ensures we won't see the row we just updated,
         // and therefore scan through two rows -- once to update old -> new, then to update new -> copy of new
