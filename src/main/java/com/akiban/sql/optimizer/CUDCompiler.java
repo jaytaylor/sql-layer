@@ -18,7 +18,9 @@ import static com.akiban.qp.physicaloperator.API.ancestorLookup_Default;
 import static com.akiban.qp.physicaloperator.API.groupScan_Default;
 import static com.akiban.qp.physicaloperator.API.indexScan_Default;
 import static com.akiban.qp.physicaloperator.API.select_HKeyOrdered;
+import static com.akiban.qp.physicaloperator.API.valuesScan_Default;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -30,14 +32,17 @@ import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.physicaloperator.ValuesScan_Default;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.optimizer.OperatorCompiler.IndexUsage;
 import com.akiban.sql.optimizer.OperatorCompiler.Result;
 import com.akiban.sql.optimizer.SimplifiedQuery.ColumnCondition;
 import com.akiban.sql.optimizer.SimplifiedQuery.ColumnExpressionToIndex;
+import com.akiban.sql.optimizer.SimplifiedQuery.SimpleExpression;
 import com.akiban.sql.optimizer.SimplifiedQuery.TableNode;
 import com.akiban.sql.optimizer.SimplifiedQuery.TableNodeOffsets;
 import com.akiban.sql.parser.DMLStatementNode;
@@ -119,7 +124,9 @@ public class CUDCompiler {
         IndexUsage index = compiler.pickBestIndex(stmt);
         UserTableRowType targetRowType = compiler.tableRowType(stmt.getTargetTable());
         GroupTable groupTable = stmt.getTargetTable().getGroupTable();
-        if (index != null) {
+        if (stmt.getValues() != null) {
+            scan = values_Default (compiler, stmt.getValues());
+        } else  if (index != null) {
             assert (stmt.getTargetTable() == index.getLeafMostTable());
             stmt.removeConditions(index.getIndexConditions());
             Index iindex = index.getIndex();
@@ -144,6 +151,18 @@ public class CUDCompiler {
         return scan;
     }
 
+    private static PhysicalOperator values_Default(OperatorCompiler compiler,
+            List<List<SimpleExpression>> values) {
+        List<ExpressionRow> exprRowList = new ArrayList<ExpressionRow>(values.size());
+        ValuesRowType rowType = compiler.valuesRowType(values.get(0).size());
+        for (List<SimpleExpression> row : values) {
+            ExpressionRow exprRow = new ExpressionRow (rowType, (Expression[]) row.toArray());
+            exprRowList.add(exprRow);
+        }
+        return new valuesScan_Default (exprRowList);
+        
+    }
+
     private static ExpressionRow generateExpressions(OperatorCompiler compiler, SimplifiedTableStatement stmt, UserTableRowType targetRowType) {
 
         Map<TableNode,Integer> tableOffsets = new HashMap<TableNode,Integer>(1);
@@ -159,4 +178,5 @@ public class CUDCompiler {
         
         return new ExpressionRow(targetRowType, updates);
     }
+    
 }

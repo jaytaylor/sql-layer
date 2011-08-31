@@ -22,6 +22,7 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.sql.optimizer.ExpressionRow;
 
 import java.util.*;
 
@@ -97,6 +98,10 @@ public class API
         );
     }
 
+    public static PhysicalOperator valuesScan_Default (List<ExpressionRow> rows)
+    {
+        return new ValuesScan_Default (rows);
+    }
     // BranchLookup
 
     public static PhysicalOperator branchLookup_Default(PhysicalOperator inputOperator,

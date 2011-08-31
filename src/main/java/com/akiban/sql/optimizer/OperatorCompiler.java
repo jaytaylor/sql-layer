@@ -1095,6 +1095,10 @@ public class OperatorCompiler
         return schema.userTableRowType(table.getTable());
     }
 
+    protected ValuesRowType valuesRowType (int nfields) {
+        return schema.newValuesType(nfields);
+    }
+    
     /** Return an index bound for the given index and expressions.
      * @param index the index in use
      * @param keys {@link Expression}s for index lookup key
