@@ -40,7 +40,7 @@ public final class LongOpExpressionTest {
         Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
         
         assertTrue("top should be constant", top.isConstant());
-        ValueSource actual = new ValueHolder(top.rowExpression().eval());
+        ValueSource actual = new ValueHolder(top.evaluation().eval());
         ValueSource expected = new ValueHolder(LongOps.LONG_SUBTRACT.opType(), 3L);
         assertEquals("ValueSource", expected, actual);
     }
@@ -52,7 +52,7 @@ public final class LongOpExpressionTest {
         Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
 
         assertTrue("top should be constant", top.isConstant());
-        ValueSource actual = new ValueHolder(top.rowExpression().eval());
+        ValueSource actual = new ValueHolder(top.evaluation().eval());
         ValueSource expected = new ValueHolder(LongOps.LONG_SUBTRACT.opType(), 3L);
         assertEquals("ValueSource", expected, actual);
     }
@@ -64,7 +64,7 @@ public final class LongOpExpressionTest {
         Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
 
         assertTrue("top should be constant", top.isConstant());
-        ValueSource actual = new ValueHolder(top.rowExpression().eval());
+        ValueSource actual = new ValueHolder(top.evaluation().eval());
         ValueSource expected = new ValueHolder(LongOps.LONG_SUBTRACT.opType(), 3L);
         assertEquals("ValueSource", expected, actual);
     }
@@ -76,7 +76,7 @@ public final class LongOpExpressionTest {
         Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
 
         assertTrue("top should be constant", top.isConstant());
-        ValueSource actual = new ValueHolder(top.rowExpression().eval());
+        ValueSource actual = new ValueHolder(top.evaluation().eval());
         ValueSource expected = ValueHolder.holdingNull();
         assertEquals("ValueSource", expected, actual);
     }
@@ -89,7 +89,7 @@ public final class LongOpExpressionTest {
         Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
 
         assertFalse("top shouldn't be constant", top.isConstant());
-        ExpressionEvaluation evaluation = top.rowExpression();
+        ExpressionEvaluation evaluation = top.evaluation();
         ValuesRow row = new ValuesRow(dummyType, new Object[] {5L, 2.9} );
         evaluation.of(row, UndefBindings.only());
         ValueSource actual = new ValueHolder(evaluation.eval());

@@ -19,6 +19,6 @@ import com.akiban.server.types.AkType;
 
 public interface Expression {
     boolean isConstant();
-    ExpressionEvaluation rowExpression();
+    ExpressionEvaluation evaluation();
     AkType valueType();
 }

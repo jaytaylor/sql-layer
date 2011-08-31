@@ -32,7 +32,7 @@ public final class FieldExpression implements Expression {
     }
 
     @Override
-    public ExpressionEvaluation rowExpression() {
+    public ExpressionEvaluation evaluation() {
         return new InnerEvaluation(rowType, fieldIndex, akType);
     }
 
