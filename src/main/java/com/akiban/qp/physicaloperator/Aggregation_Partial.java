@@ -325,9 +325,22 @@ final class Aggregation_Partial extends PhysicalOperator {
     }
 
     private enum CursorState {
+        /**
+         * Freshly opened, or about to start a new run of group-bys
+         */
         OPENING,
+        /**
+         * Within a run of group-bys
+         */
         RUNNING,
+        /**
+         * The last row we returned (or the row we're about to return) is the last row; the next row will be
+         * null, and will set the state to closing.
+         */
         CLOSING,
+        /**
+         * The cursor is closed.
+         */
         CLOSED
     }
 
