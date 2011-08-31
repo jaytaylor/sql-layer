@@ -69,7 +69,7 @@ class Sort_InsertionLimited extends PhysicalOperator
     // Sort_InsertionLimited interface
 
     public Sort_InsertionLimited(PhysicalOperator inputOperator, 
-                                 RowType sortType, 
+                                 RowType sortType,
                                  List<Expression> sortExpressions,
                                  List<Boolean> sortDescendings,
                                  int limit)
@@ -97,7 +97,7 @@ class Sort_InsertionLimited extends PhysicalOperator
 
     // Inner classes
 
-    private enum State { CLOSED, FILLING, EMPTYING };
+    private enum State { CLOSED, FILLING, EMPTYING }
 
     private class Execution implements Cursor
     {
@@ -121,28 +121,27 @@ class Sort_InsertionLimited extends PhysicalOperator
                     int count = 0;
                     Row row;
                     while ((row = input.next()) != null) {
-                        if (row.rowType() == sortType) {
-                            Holder holder = new Holder(count++, row, bindings);
-                            if (sorted.size() < limit) {
-                                // Still room: add it in.
+                        assert row.rowType() == sortType : row;
+                        Holder holder = new Holder(count++, row, bindings);
+                        if (sorted.size() < limit) {
+                            // Still room: add it in.
+                            boolean added = sorted.add(holder);
+                            assert added;
+                        }
+                        else {
+                            // Current greatest element.
+                            Holder last = sorted.last();
+                            if (last.compareTo(holder) > 0) {
+                                // New row is less, so keep it
+                                // instead.
+                                sorted.remove(last);
+                                last.empty();
                                 boolean added = sorted.add(holder);
                                 assert added;
                             }
                             else {
-                                // Current greatest element.
-                                Holder last = sorted.last();
-                                if (last.compareTo(holder) > 0) {
-                                    // New row is less, so keep it
-                                    // instead.
-                                    sorted.remove(last);
-                                    last.empty();
-                                    boolean added = sorted.add(holder);
-                                    assert added;
-                                }
-                                else {
-                                    // Will not be using new row.
-                                    holder.empty();
-                                }
+                                // Will not be using new row.
+                                holder.empty();
                             }
                         }
                     }

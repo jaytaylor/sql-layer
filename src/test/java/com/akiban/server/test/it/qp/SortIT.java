@@ -16,6 +16,7 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.expression.Expression;
+import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.row.RowBase;
@@ -24,6 +25,7 @@ import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -49,6 +51,14 @@ public class SortIT extends PhysicalOperatorITBase
             createNewRow(order, 22L, 2L, "jack"),
             createNewRow(order, 31L, 3L, "david"),
             createNewRow(order, 51L, 5L, "yuval"),
+            createNewRow(item, 111L, 11L),
+            createNewRow(item, 112L, 11L),
+            createNewRow(item, 121L, 12L),
+            createNewRow(item, 122L, 12L),
+            createNewRow(item, 211L, 21L),
+            createNewRow(item, 212L, 21L),
+            createNewRow(item, 221L, 22L),
+            createNewRow(item, 222L, 22L),
         };
         use(dbRows);
     }
@@ -58,11 +68,15 @@ public class SortIT extends PhysicalOperatorITBase
     @Test
     public void testCustomerName()
     {
-        PhysicalOperator plan = sort_InsertionLimited(groupScan_Default(coi),
-                                                      customerRowType,
-                                                      Collections.singletonList(field(1)),
-                                                      Collections.singletonList(Boolean.FALSE),
-                                                      2);
+        PhysicalOperator plan =
+            sort_InsertionLimited(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(customerRowType)),
+                customerRowType,
+                Collections.singletonList(field(1)),
+                Collections.singletonList(Boolean.FALSE),
+                2);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 2L, "foundation"),
@@ -80,11 +94,15 @@ public class SortIT extends PhysicalOperatorITBase
         sortDescendings.add(Boolean.FALSE);
         sortExpressions.add(field(1));
         sortDescendings.add(Boolean.TRUE);
-        PhysicalOperator plan = sort_InsertionLimited(groupScan_Default(coi),
-                                                      orderRowType,
-                                                      sortExpressions,
-                                                      sortDescendings,
-                                                      4);
+        PhysicalOperator plan =
+            sort_InsertionLimited(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(orderRowType)),
+                orderRowType,
+                sortExpressions,
+                sortDescendings,
+                4);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 31L, 3L, "david"),
@@ -98,11 +116,15 @@ public class SortIT extends PhysicalOperatorITBase
     @Test
     public void testOrderSalesman()
     {
-        PhysicalOperator plan = sort_InsertionLimited(groupScan_Default(coi),
-                                                      orderRowType,
-                                                      Collections.singletonList(field(2)),
-                                                      Collections.singletonList(Boolean.FALSE),
-                                                      4);
+        PhysicalOperator plan =
+            sort_InsertionLimited(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(orderRowType)),
+                orderRowType,
+                Collections.singletonList(field(2)),
+                Collections.singletonList(Boolean.FALSE),
+                4);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             // Order among equals is group.
@@ -117,11 +139,15 @@ public class SortIT extends PhysicalOperatorITBase
     @Test
     public void testOrderSalesman2()
     {
-        PhysicalOperator plan = sort_InsertionLimited(groupScan_Default(coi),
-                                                      orderRowType,
-                                                      Collections.singletonList(field(2)),
-                                                      Collections.singletonList(Boolean.FALSE),
-                                                      2);
+        PhysicalOperator plan =
+            sort_InsertionLimited(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(orderRowType)),
+                orderRowType,
+                Collections.singletonList(field(2)),
+                Collections.singletonList(Boolean.FALSE),
+                2);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             // Kept earlier ones in group (fewer inserts).
@@ -131,4 +157,291 @@ public class SortIT extends PhysicalOperatorITBase
         compareRows(expected, cursor);
     }
 
+    @Test
+    public void testAAA()
+    {
+        PhysicalOperator flattenOI = flatten_HKeyOrdered(
+            groupScan_Default(coi),
+            orderRowType,
+            itemRowType,
+            JoinType.INNER_JOIN);
+        RowType oiType = flattenOI.rowType();
+        // flattenOI columns: oid, cid, salesman, iid, oid
+        Expression cidField = field(1);
+        Expression oidField = field(0);
+        Expression iidField = field(3);
+        PhysicalOperator plan =
+            sort_InsertionLimited(
+                filter_Default(
+                    flattenOI,
+                    Collections.singleton(oiType)),
+                oiType,
+                Arrays.asList(cidField, oidField, iidField),
+                Arrays.asList(false, false, false),
+                8);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+            row(oiType, 11L, 1L, "ori", 111L, 11L),
+            row(oiType, 11L, 1L, "ori", 112L, 11L),
+            row(oiType, 12L, 1L, "david", 121L, 12L),
+            row(oiType, 12L, 1L, "david", 122L, 12L),
+            row(oiType, 21L, 2L, "david", 211L, 21L),
+            row(oiType, 21L, 2L, "david", 212L, 21L),
+            row(oiType, 22L, 2L, "jack", 221L, 22L),
+            row(oiType, 22L, 2L, "jack", 222L, 22L),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testAAD()
+    {
+        PhysicalOperator flattenOI = flatten_HKeyOrdered(
+            groupScan_Default(coi),
+            orderRowType,
+            itemRowType,
+            JoinType.INNER_JOIN);
+        RowType oiType = flattenOI.rowType();
+        // flattenOI columns: oid, cid, salesman, iid, oid
+        Expression cidField = field(1);
+        Expression oidField = field(0);
+        Expression iidField = field(3);
+        PhysicalOperator plan =
+            sort_InsertionLimited(
+                filter_Default(
+                    flattenOI,
+                    Collections.singleton(oiType)),
+                oiType,
+                Arrays.asList(cidField, oidField, iidField),
+                Arrays.asList(false, false, true),
+                8);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+            row(oiType, 11L, 1L, "ori", 112L, 11L),
+            row(oiType, 11L, 1L, "ori", 111L, 11L),
+            row(oiType, 12L, 1L, "david", 122L, 12L),
+            row(oiType, 12L, 1L, "david", 121L, 12L),
+            row(oiType, 21L, 2L, "david", 212L, 21L),
+            row(oiType, 21L, 2L, "david", 211L, 21L),
+            row(oiType, 22L, 2L, "jack", 222L, 22L),
+            row(oiType, 22L, 2L, "jack", 221L, 22L),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testADA()
+    {
+        PhysicalOperator flattenOI = flatten_HKeyOrdered(
+            groupScan_Default(coi),
+            orderRowType,
+            itemRowType,
+            JoinType.INNER_JOIN);
+        RowType oiType = flattenOI.rowType();
+        // flattenOI columns: oid, cid, salesman, iid, oid
+        Expression cidField = field(1);
+        Expression oidField = field(0);
+        Expression iidField = field(3);
+        PhysicalOperator plan =
+            sort_InsertionLimited(
+                filter_Default(
+                    flattenOI,
+                    Collections.singleton(oiType)),
+                oiType,
+                Arrays.asList(cidField, oidField, iidField),
+                Arrays.asList(false, true, false),
+                8);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+            row(oiType, 12L, 1L, "david", 121L, 12L),
+            row(oiType, 12L, 1L, "david", 122L, 12L),
+            row(oiType, 11L, 1L, "ori", 111L, 11L),
+            row(oiType, 11L, 1L, "ori", 112L, 11L),
+            row(oiType, 22L, 2L, "jack", 221L, 22L),
+            row(oiType, 22L, 2L, "jack", 222L, 22L),
+            row(oiType, 21L, 2L, "david", 211L, 21L),
+            row(oiType, 21L, 2L, "david", 212L, 21L),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testADD()
+    {
+        PhysicalOperator flattenOI = flatten_HKeyOrdered(
+            groupScan_Default(coi),
+            orderRowType,
+            itemRowType,
+            JoinType.INNER_JOIN);
+        RowType oiType = flattenOI.rowType();
+        // flattenOI columns: oid, cid, salesman, iid, oid
+        Expression cidField = field(1);
+        Expression oidField = field(0);
+        Expression iidField = field(3);
+        PhysicalOperator plan =
+            sort_InsertionLimited(
+                filter_Default(
+                    flattenOI,
+                    Collections.singleton(oiType)),
+                oiType,
+                Arrays.asList(cidField, oidField, iidField),
+                Arrays.asList(false, true, true),
+                8);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+            row(oiType, 12L, 1L, "david", 122L, 12L),
+            row(oiType, 12L, 1L, "david", 121L, 12L),
+            row(oiType, 11L, 1L, "ori", 112L, 11L),
+            row(oiType, 11L, 1L, "ori", 111L, 11L),
+            row(oiType, 22L, 2L, "jack", 222L, 22L),
+            row(oiType, 22L, 2L, "jack", 221L, 22L),
+            row(oiType, 21L, 2L, "david", 212L, 21L),
+            row(oiType, 21L, 2L, "david", 211L, 21L),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testDAA()
+    {
+        PhysicalOperator flattenOI = flatten_HKeyOrdered(
+            groupScan_Default(coi),
+            orderRowType,
+            itemRowType,
+            JoinType.INNER_JOIN);
+        RowType oiType = flattenOI.rowType();
+        // flattenOI columns: oid, cid, salesman, iid, oid
+        Expression cidField = field(1);
+        Expression oidField = field(0);
+        Expression iidField = field(3);
+        PhysicalOperator plan =
+            sort_InsertionLimited(
+                filter_Default(
+                    flattenOI,
+                    Collections.singleton(oiType)),
+                oiType,
+                Arrays.asList(cidField, oidField, iidField),
+                Arrays.asList(true, false, false),
+                8);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+            row(oiType, 21L, 2L, "david", 211L, 21L),
+            row(oiType, 21L, 2L, "david", 212L, 21L),
+            row(oiType, 22L, 2L, "jack", 221L, 22L),
+            row(oiType, 22L, 2L, "jack", 222L, 22L),
+            row(oiType, 11L, 1L, "ori", 111L, 11L),
+            row(oiType, 11L, 1L, "ori", 112L, 11L),
+            row(oiType, 12L, 1L, "david", 121L, 12L),
+            row(oiType, 12L, 1L, "david", 122L, 12L),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testDAD()
+    {
+        PhysicalOperator flattenOI = flatten_HKeyOrdered(
+            groupScan_Default(coi),
+            orderRowType,
+            itemRowType,
+            JoinType.INNER_JOIN);
+        RowType oiType = flattenOI.rowType();
+        // flattenOI columns: oid, cid, salesman, iid, oid
+        Expression cidField = field(1);
+        Expression oidField = field(0);
+        Expression iidField = field(3);
+        PhysicalOperator plan =
+            sort_InsertionLimited(
+                filter_Default(
+                    flattenOI,
+                    Collections.singleton(oiType)),
+                oiType,
+                Arrays.asList(cidField, oidField, iidField),
+                Arrays.asList(true, false, true),
+                8);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+            row(oiType, 21L, 2L, "david", 212L, 21L),
+            row(oiType, 21L, 2L, "david", 211L, 21L),
+            row(oiType, 22L, 2L, "jack", 222L, 22L),
+            row(oiType, 22L, 2L, "jack", 221L, 22L),
+            row(oiType, 11L, 1L, "ori", 112L, 11L),
+            row(oiType, 11L, 1L, "ori", 111L, 11L),
+            row(oiType, 12L, 1L, "david", 122L, 12L),
+            row(oiType, 12L, 1L, "david", 121L, 12L),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testDDA()
+    {
+        PhysicalOperator flattenOI = flatten_HKeyOrdered(
+            groupScan_Default(coi),
+            orderRowType,
+            itemRowType,
+            JoinType.INNER_JOIN);
+        RowType oiType = flattenOI.rowType();
+        // flattenOI columns: oid, cid, salesman, iid, oid
+        Expression cidField = field(1);
+        Expression oidField = field(0);
+        Expression iidField = field(3);
+        PhysicalOperator plan =
+            sort_InsertionLimited(
+                filter_Default(
+                    flattenOI,
+                    Collections.singleton(oiType)),
+                oiType,
+                Arrays.asList(cidField, oidField, iidField),
+                Arrays.asList(true, true, false),
+                8);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+            row(oiType, 22L, 2L, "jack", 221L, 22L),
+            row(oiType, 22L, 2L, "jack", 222L, 22L),
+            row(oiType, 21L, 2L, "david", 211L, 21L),
+            row(oiType, 21L, 2L, "david", 212L, 21L),
+            row(oiType, 12L, 1L, "david", 121L, 12L),
+            row(oiType, 12L, 1L, "david", 122L, 12L),
+            row(oiType, 11L, 1L, "ori", 111L, 11L),
+            row(oiType, 11L, 1L, "ori", 112L, 11L),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testDDD()
+    {
+        PhysicalOperator flattenOI = flatten_HKeyOrdered(
+            groupScan_Default(coi),
+            orderRowType,
+            itemRowType,
+            JoinType.INNER_JOIN);
+        RowType oiType = flattenOI.rowType();
+        // flattenOI columns: oid, cid, salesman, iid, oid
+        Expression cidField = field(1);
+        Expression oidField = field(0);
+        Expression iidField = field(3);
+        PhysicalOperator plan =
+            sort_InsertionLimited(
+                filter_Default(
+                    flattenOI,
+                    Collections.singleton(oiType)),
+                oiType,
+                Arrays.asList(cidField, oidField, iidField),
+                Arrays.asList(true, true, true),
+                8);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+            row(oiType, 22L, 2L, "jack", 222L, 22L),
+            row(oiType, 22L, 2L, "jack", 221L, 22L),
+            row(oiType, 21L, 2L, "david", 212L, 21L),
+            row(oiType, 21L, 2L, "david", 211L, 21L),
+            row(oiType, 12L, 1L, "david", 122L, 12L),
+            row(oiType, 12L, 1L, "david", 121L, 12L),
+            row(oiType, 11L, 1L, "ori", 112L, 11L),
+            row(oiType, 11L, 1L, "ori", 111L, 11L),
+        };
+        compareRows(expected, cursor);
+    }
 }

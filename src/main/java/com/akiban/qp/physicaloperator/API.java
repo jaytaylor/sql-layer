@@ -192,13 +192,12 @@ public class API
     // Sort
 
     public static PhysicalOperator sort_InsertionLimited(PhysicalOperator inputOperator, 
-                                                         RowType sortType, 
+                                                         RowType sortType,
                                                          List<Expression> sortExpressions,
                                                          List<Boolean> sortDescendings,
                                                          int limit)
     {
-        return new Sort_InsertionLimited(inputOperator, sortType, 
-                                         sortExpressions, sortDescendings, limit);
+        return new Sort_InsertionLimited(inputOperator, sortType, sortExpressions, sortDescendings, limit);
     }
 
     // Execution interface
