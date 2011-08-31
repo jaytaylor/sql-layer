@@ -141,8 +141,14 @@ public final class AggregateOperatorTest {
                 .row(10L, 100L)
                 .row(10L, 101L)
                 .row(20L, 200L);
-        // shuffle!
+        // Shuffle rows into this order
+        // (10, 100)
+        // ("A", 1)
+        // (10, 101)
+        // ("B", 2)
+        // (20, 200)
         Deque<Row> shuffled = shuffle(interestingRows.rows(), boringRows.rows(), new ArrayDeque<Row>());
+        // now in this order:
 
         TestOperator input = new TestOperator(shuffled, interestingRows.rowType());
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
@@ -152,9 +158,11 @@ public final class AggregateOperatorTest {
                 .row(10L, "100, 101")
                 .row(20L, "200")
                 .rows();
-        // note we're shuffling in the boring rows first. The first output can't be produced until after the
-        // second interesting row (10L, 101L), which itself comes after the boring rows.
-        Deque<Row> expectedFull = shuffle(boringRows.rows(), expected, new ArrayDeque<Row>());
+        // All of the boring rows will be going first; we can't output any interesting rows until we see a change,
+        // which will happen after the ("B", 2) row (when we see the key go from 10 to 20)
+        List<Row> expectedFull = new ArrayList<Row>();
+        expectedFull.addAll(boringRows.rows());
+        expectedFull.addAll(expected);
         check(plan, expectedFull);
     }
 
@@ -275,7 +283,7 @@ public final class AggregateOperatorTest {
         new AggregationOperator(input, 2, FACTORY, TestFactory.FUNC_NAMES, rowType);
     }
 
-    private static void check(PhysicalOperator plan, Deque<Row> expecteds) {
+    private static void check(PhysicalOperator plan, Collection<Row> expecteds) {
         List<Row> actuals = execute(plan);
         if (expecteds.size() != actuals.size()) {
             assertEquals("output", Strings.join(expecteds), Strings.join(actuals));
@@ -283,8 +291,9 @@ public final class AggregateOperatorTest {
         }
         int rowCount = 0;
         try {
+            Iterator<Row> expectedsIter = expecteds.iterator();
             for (Row actual : actuals) {
-                Row expected = expecteds.remove();
+                Row expected = expectedsIter.next();
                 for (int i = 0; i < plan.rowType().nFields(); ++i) {
                     ValueHolder actualHolder = new ValueHolder(actual.bindSource(i, UndefBindings.only()));
                     ValueHolder expectedHolder = new ValueHolder(expected.bindSource(i, UndefBindings.only()));

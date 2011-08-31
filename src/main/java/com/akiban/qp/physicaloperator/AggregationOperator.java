@@ -96,7 +96,7 @@ final class AggregationOperator extends PhysicalOperator {
 
     // package-private (for testing)
 
-    public AggregationOperator(PhysicalOperator inputOperator, int inputsIndex, AggregatorFactory factory,
+    AggregationOperator(PhysicalOperator inputOperator, int inputsIndex, AggregatorFactory factory,
                                List<String> aggregatorNames, AggregatedRowType outputType) {
         this.inputOperator = inputOperator;
         this.inputsIndex = inputsIndex;
@@ -154,9 +154,18 @@ final class AggregationOperator extends PhysicalOperator {
             }
             assert cursorState == CursorState.OPENING || cursorState == CursorState.RUNNING : cursorState;
             Row input = nextInput();
+            if (input == null) {
+                return null;
+            }
+            if (!input.rowType().equals(inputRowType)) {
+                return input;
+            }
             while (!outputNeeded(input)) {
                 aggregate(input);
                 input = inputCursor.next();
+                if (input != null && !input.rowType().equals(inputRowType)) {
+                    return input;
+                }
             }
             if (input == null) {
                 cursorState = CursorState.CLOSING;
