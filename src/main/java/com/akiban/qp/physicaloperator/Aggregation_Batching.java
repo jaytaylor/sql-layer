@@ -32,7 +32,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-final class AggregationOperator extends PhysicalOperator {
+final class Aggregation_Batching extends PhysicalOperator {
 
     // PhysicalOperator interface
 
@@ -69,8 +69,8 @@ final class AggregationOperator extends PhysicalOperator {
 
     // AggregationOperator interface
 
-    public AggregationOperator(PhysicalOperator inputOperator, int inputsIndex, AggregatorFactory factory,
-                               List<String> aggregatorNames) {
+    public Aggregation_Batching(PhysicalOperator inputOperator, int inputsIndex, AggregatorFactory factory,
+                                List<String> aggregatorNames) {
         this(
                 inputOperator,
                 inputsIndex,
@@ -96,8 +96,8 @@ final class AggregationOperator extends PhysicalOperator {
 
     // package-private (for testing)
 
-    AggregationOperator(PhysicalOperator inputOperator, int inputsIndex, AggregatorFactory factory,
-                               List<String> aggregatorNames, AggregatedRowType outputType) {
+    Aggregation_Batching(PhysicalOperator inputOperator, int inputsIndex, AggregatorFactory factory,
+                         List<String> aggregatorNames, AggregatedRowType outputType) {
         this.inputOperator = inputOperator;
         this.inputsIndex = inputsIndex;
         this.factory = factory;

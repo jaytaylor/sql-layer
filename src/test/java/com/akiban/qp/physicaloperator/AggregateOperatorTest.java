@@ -52,7 +52,7 @@ public final class AggregateOperatorTest {
                 .row(3L)
         );
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
-        PhysicalOperator plan = new AggregationOperator(input, 0, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        PhysicalOperator plan = new Aggregation_Batching(input, 0, FACTORY, TestFactory.FUNC_NAMES, rowType);
         Deque<Row> expected = new RowsBuilder(AkType.VARCHAR)
                 .row("1, 2, 3")
                 .rows();
@@ -68,7 +68,7 @@ public final class AggregateOperatorTest {
                 .row(3L, 13L)
         );
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
-        PhysicalOperator plan = new AggregationOperator(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        PhysicalOperator plan = new Aggregation_Batching(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR)
                 .row(1L, "10, 11")
                 .row(2L, "12")
@@ -91,7 +91,7 @@ public final class AggregateOperatorTest {
                 .row(1L, 16L)
         );
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
-        PhysicalOperator plan = new AggregationOperator(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        PhysicalOperator plan = new Aggregation_Batching(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR)
                 .row(null, "8, 9")
                 .row(1L, "10")
@@ -113,7 +113,7 @@ public final class AggregateOperatorTest {
                 .row(2L, "charlie", 5)
         );
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
-        PhysicalOperator plan = new AggregationOperator(input, 2, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        PhysicalOperator plan = new Aggregation_Batching(input, 2, FACTORY, TestFactory.FUNC_NAMES, rowType);
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR, AkType.VARCHAR)
                 .row(1L, "alpha", "1, 2")
                 .row(1L, "bravo", "3")
@@ -127,7 +127,7 @@ public final class AggregateOperatorTest {
     public void noInputRows() {
         TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.LONG));
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
-        PhysicalOperator plan = new AggregationOperator(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        PhysicalOperator plan = new Aggregation_Batching(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR).rows();
         check(plan, expected);
     }
@@ -152,7 +152,7 @@ public final class AggregateOperatorTest {
 
         TestOperator input = new TestOperator(shuffled, interestingRows.rowType());
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
-        PhysicalOperator plan = new AggregationOperator(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        PhysicalOperator plan = new Aggregation_Batching(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
 
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR)
                 .row(10L, "100, 101")
@@ -174,7 +174,7 @@ public final class AggregateOperatorTest {
                     .row(wrapLong(1L), wrapBytes(0x01, 0x02))
             );
             AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
-            plan = new AggregationOperator(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+            plan = new Aggregation_Batching(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -192,7 +192,7 @@ public final class AggregateOperatorTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        new AggregationOperator(null, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        new Aggregation_Batching(null, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
     }
 
     @Test(expected = NullPointerException.class)
@@ -207,7 +207,7 @@ public final class AggregateOperatorTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        new AggregationOperator(input, 1, null, TestFactory.FUNC_NAMES, rowType);
+        new Aggregation_Batching(input, 1, null, TestFactory.FUNC_NAMES, rowType);
     }
 
     @Test(expected = NullPointerException.class)
@@ -222,7 +222,7 @@ public final class AggregateOperatorTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        new AggregationOperator(input, 1, FACTORY, null, rowType);
+        new Aggregation_Batching(input, 1, FACTORY, null, rowType);
     }
 
     @Test(expected = NullPointerException.class)
@@ -235,7 +235,7 @@ public final class AggregateOperatorTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        new AggregationOperator(input, 1, FACTORY, TestFactory.FUNC_NAMES, null);
+        new Aggregation_Batching(input, 1, FACTORY, TestFactory.FUNC_NAMES, null);
     }
 
     @Test(expected = NoSuchFunctionException.class)
@@ -250,7 +250,7 @@ public final class AggregateOperatorTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        new AggregationOperator(input, 1, FACTORY, Arrays.asList("this_method_does_not_exist"), rowType);
+        new Aggregation_Batching(input, 1, FACTORY, Arrays.asList("this_method_does_not_exist"), rowType);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -265,7 +265,7 @@ public final class AggregateOperatorTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        new AggregationOperator(input, -1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        new Aggregation_Batching(input, -1, FACTORY, TestFactory.FUNC_NAMES, rowType);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -280,7 +280,7 @@ public final class AggregateOperatorTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        new AggregationOperator(input, 2, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        new Aggregation_Batching(input, 2, FACTORY, TestFactory.FUNC_NAMES, rowType);
     }
 
     private static void check(PhysicalOperator plan, Collection<Row> expecteds) {
