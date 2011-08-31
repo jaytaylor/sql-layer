@@ -24,6 +24,7 @@ import com.akiban.qp.expression.Expression;
  */
 public class AggregateFunctionExpression extends BaseExpression 
 {
+    // TODO: {VAR,STDDEV}_{POP,SAMP}
     public static enum Operation {
         COUNT, MAX, MIN, SUM, AVG
     }
