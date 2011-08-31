@@ -134,9 +134,9 @@ public final class AggregateOperatorTest {
 
     @Test
     public void uninterestingRowsPassThrough() {
-        RowsBuilder boringRows = new RowsBuilder(AkType.VARBINARY, AkType.LONG)
-                .row(wrapBytes(0xAAAA), wrapLong(1L))
-                .row(wrapBytes(0xBBBB), wrapLong(2L));
+        RowsBuilder boringRows = new RowsBuilder(AkType.VARCHAR, AkType.LONG)
+                .row("A", 1L)
+                .row("B", 2L);
         RowsBuilder interestingRows = new RowsBuilder(AkType.LONG, AkType.LONG)
                 .row(10L, 100L)
                 .row(10L, 101L)
@@ -152,7 +152,9 @@ public final class AggregateOperatorTest {
                 .row(10L, "100, 101")
                 .row(20L, "200")
                 .rows();
-        Deque<Row> expectedFull = shuffle(expected, boringRows.rows(), new ArrayDeque<Row>());
+        // note we're shuffling in the boring rows first. The first output can't be produced until after the
+        // second interesting row (10L, 101L), which itself comes after the boring rows.
+        Deque<Row> expectedFull = shuffle(boringRows.rows(), expected, new ArrayDeque<Row>());
         check(plan, expectedFull);
     }
 
