@@ -21,4 +21,9 @@ public class SelectQuery extends BaseStatement
     public SelectQuery(Query query) {
         super(query);
     }
+
+    @Override
+    public String toString() {
+        return getQuery().toString();
+    }
 }

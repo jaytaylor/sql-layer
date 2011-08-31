@@ -92,5 +92,44 @@ public class Query
         this.limitIsParameter = limitIsParameter;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder str = new StringBuilder(super.toString());
+        if (getJoins() != null) {
+            str.append("\njoins: ");
+            str.append(getJoins());
+        }
+        if (getResults() != null) {
+            str.append("\nresults: [");
+            for (int i = 0; i < getResults().size(); i++) {
+                if (i > 0) str.append(", ");
+                str.append(getResults().get(i));
+            }
+            str.append("]");
+        }
+        if (!getConditions().isEmpty()) {
+            str.append("\nconditions: ");
+            for (int i = 0; i < getConditions().size(); i++) {
+                if (i > 0) str.append(",\n  ");
+                str.append(getConditions().get(i));
+            }
+        }
+        if (getOrderBy() != null) {
+            str.append("\norder_by: ");
+            for (int i = 0; i < getOrderBy().size(); i++) {
+                if (i > 0) str.append(", ");
+                str.append(getOrderBy().get(i));
+            }
+        }
+        if (getOffset() > 0) {
+            str.append("\noffset: ");
+            str.append(getOffset());
+        }
+        if (getLimit() >= 0) {
+            str.append("\nlimit: ");
+            str.append(getLimit());
+        }
+        return str.toString();
+    }
 
 }
