@@ -49,9 +49,11 @@ public class EventTest {
         first.start();
         first.stop();
         second.stop();
-        assertTrue(first.getTotalTime() > 0);
-        assertTrue(second.getTotalTime() > 0);
-        assertTrue(second.getTotalTime() > first.getTotalTime());
+        long firstTime = first.getTotalTime();
+        long secondTime = second.getTotalTime();
+        assertTrue(String.format("firstTime: %s", firstTime), firstTime >= 0);
+        assertTrue(secondTime >= 0);
+        assertTrue(String.format("firstTime: %s, secondTime: %s", firstTime, secondTime), secondTime >= firstTime);
     }
     
     @Test

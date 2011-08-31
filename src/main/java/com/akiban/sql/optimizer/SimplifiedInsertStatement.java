@@ -15,12 +15,14 @@
 
 package com.akiban.sql.optimizer;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import com.akiban.server.error.InsertNullCheckFailedException;
-import com.akiban.sql.parser.*;
+import com.akiban.server.error.NoSuchColumnException;
+import com.akiban.sql.parser.InsertNode;
+import com.akiban.sql.parser.ValueNode;
+
 
 import com.akiban.ais.model.Column;
 
@@ -34,6 +36,17 @@ public class SimplifiedInsertStatement extends SimplifiedTableStatement
     
     public SimplifiedInsertStatement(InsertNode insert, Set<ValueNode> joinConditions) {
         super(insert, joinConditions);
+        
+        // if the insert statement has a target column list (supplied by the user)
+        // this gives to order of columns in the select/values list
+        if (insert.getTargetColumnList() != null) {
+            //fillTargetFromList (insert.getTargetColumnList());
+        }
+        // This insert statement has no target column list, 
+        // meaning the supplied columns are in order of table creation. 
+        else {
+            //fillTargetFromDDL ();
+        }
 
 /*        
         // Set the list of target columns. There are three cases here: 
@@ -88,7 +101,8 @@ public class SimplifiedInsertStatement extends SimplifiedTableStatement
 */        
     }
 
-
+    
+/*
     protected void fillTargetColumns(ResultColumnList rcl) {
         targetColumns = new ArrayList<TargetColumn>(rcl.size());
         for (ResultColumn resultColumn : rcl) {
@@ -98,7 +112,7 @@ public class SimplifiedInsertStatement extends SimplifiedTableStatement
             targetColumns.add(new TargetColumn(column, value));
         }
     }
-
+*/
     public List<TargetColumn> getTargetColumns() {
         return targetColumns;
     }

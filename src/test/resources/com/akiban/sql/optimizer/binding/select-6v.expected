@@ -1,0 +1,147 @@
+com.akiban.sql.parser.CursorNode@148238f4
+name: null
+updateMode: UNSPECIFIED
+statementType: SELECT
+resultSet: 	
+	com.akiban.sql.parser.SelectNode@716925b0
+	isDistinct: false
+	resultColumns: 		
+		com.akiban.sql.parser.ResultColumnList@1ff82982
+
+		[0]:		
+		com.akiban.sql.parser.ResultColumn@5d6d2633
+		exposedName: _SQL_COL_1
+		name: _SQL_COL_1
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@28e70e30
+			columnName: _SQL_COL_1
+			tableName: t
+			type: null
+			userData: com.akiban.sql.parser.ResultColumn@54acb158 from com.akiban.sql.parser.FromSubquery@2e297ffb
+		[1]:		
+		com.akiban.sql.parser.ResultColumn@5954864a
+		exposedName: _SQL_COL_2
+		name: _SQL_COL_2
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@3c3c9217
+			columnName: _SQL_COL_2
+			tableName: t
+			type: null
+			userData: com.akiban.sql.parser.ResultColumn@15af33d6 from com.akiban.sql.parser.FromSubquery@2e297ffb
+		[2]:		
+		com.akiban.sql.parser.ResultColumn@2c9b42e6
+		exposedName: _SQL_COL_3
+		name: _SQL_COL_3
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@54520eb
+			columnName: _SQL_COL_3
+			tableName: t
+			type: null
+			userData: com.akiban.sql.parser.ResultColumn@217431b9 from com.akiban.sql.parser.FromSubquery@2e297ffb
+	fromList: 		
+		com.akiban.sql.parser.FromList@7d742700
+
+		[0]:		
+		com.akiban.sql.parser.FromSubquery@2e297ffb
+		correlation Name: t
+		t
+		resultColumns: 			
+			com.akiban.sql.parser.ResultColumnList@536c79d7
+
+			[0]:			
+			com.akiban.sql.parser.ResultColumn@54acb158
+			exposedName: _SQL_COL_1
+			name: _SQL_COL_1
+			tableName: null
+			isDefaultColumn: false
+			type: null
+			expression: 				
+				com.akiban.sql.parser.VirtualColumnNode@76b33d0a
+				type: null
+				sourceColumn: 					
+					com.akiban.sql.parser.ResultColumn@42787d6a
+					exposedName: _SQL_COL_1
+					name: _SQL_COL_1
+					tableName: null
+					isDefaultColumn: false
+					type: null
+					expression: 						
+						com.akiban.sql.parser.NumericConstantNode@7471dc3d
+						value: 1
+						type: INTEGER NOT NULL
+				sourceResultSet: 					
+					com.akiban.sql.parser.RowResultSetNode@26914f6a
+					correlation Name: null
+					null
+					resultColumns: 						
+						com.akiban.sql.parser.ResultColumnList@df4cbee
+
+						[0]:						
+						com.akiban.sql.parser.ResultColumn@42787d6a
+						***truncated***
+						[1]:						
+						com.akiban.sql.parser.ResultColumn@5f326484
+						exposedName: _SQL_COL_2
+						name: _SQL_COL_2
+						tableName: null
+						isDefaultColumn: false
+						type: null
+						expression: 							
+							com.akiban.sql.parser.NumericConstantNode@656546ef
+							value: 2
+							type: INTEGER NOT NULL
+						[2]:						
+						com.akiban.sql.parser.ResultColumn@5c1428ea
+						exposedName: _SQL_COL_3
+						name: _SQL_COL_3
+						tableName: null
+						isDefaultColumn: false
+						type: null
+						expression: 							
+							com.akiban.sql.parser.NumericConstantNode@2f8a49e0
+							value: 3
+							type: INTEGER NOT NULL
+			[1]:			
+			com.akiban.sql.parser.ResultColumn@15af33d6
+			exposedName: _SQL_COL_2
+			name: _SQL_COL_2
+			tableName: null
+			isDefaultColumn: false
+			type: null
+			expression: 				
+				com.akiban.sql.parser.VirtualColumnNode@716c9867
+				type: null
+				sourceColumn: 					
+					com.akiban.sql.parser.ResultColumn@5f326484
+					***truncated***
+				sourceResultSet: 					
+					com.akiban.sql.parser.RowResultSetNode@26914f6a
+					***truncated***
+			[2]:			
+			com.akiban.sql.parser.ResultColumn@217431b9
+			exposedName: _SQL_COL_3
+			name: _SQL_COL_3
+			tableName: null
+			isDefaultColumn: false
+			type: null
+			expression: 				
+				com.akiban.sql.parser.VirtualColumnNode@1089cc5e
+				type: null
+				sourceColumn: 					
+					com.akiban.sql.parser.ResultColumn@5c1428ea
+					***truncated***
+				sourceResultSet: 					
+					com.akiban.sql.parser.RowResultSetNode@26914f6a
+					***truncated***
+		subquery: 			
+			com.akiban.sql.parser.RowResultSetNode@26914f6a
+			***truncated***

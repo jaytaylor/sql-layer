@@ -19,17 +19,15 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-class AncestorLookup_Default extends PhysicalOperator
+class AncestorLookup_Nested extends PhysicalOperator
 {
     // Object interface
 
@@ -44,42 +42,30 @@ class AncestorLookup_Default extends PhysicalOperator
     @Override
     public void findDerivedTypes(Set<RowType> derivedTypes)
     {
-        inputOperator.findDerivedTypes(derivedTypes);
     }
 
     @Override
     protected Cursor cursor(StoreAdapter adapter)
     {
-        return new Execution(adapter, inputOperator.cursor(adapter));
-    }
-
-    @Override
-    public List<PhysicalOperator> getInputOperators()
-    {
-        List<PhysicalOperator> result = new ArrayList<PhysicalOperator>(1);
-        result.add(inputOperator);
-        return result;
+        return new Execution(adapter);
     }
 
     @Override
     public String describePlan()
     {
-        return describePlan(inputOperator);
+        return toString();
     }
 
     // AncestorLookup_Default interface
 
-    public AncestorLookup_Default(PhysicalOperator inputOperator,
-                                  GroupTable groupTable,
-                                  RowType rowType,
-                                  Collection<? extends RowType> ancestorTypes,
-                                  API.LookupOption flag)
+    public AncestorLookup_Nested(GroupTable groupTable,
+                                 RowType rowType,
+                                 Collection<? extends RowType> ancestorTypes,
+                                 int hKeyBindingPosition)
     {
         ArgumentValidation.notEmpty("ancestorTypes", ancestorTypes);
         // Keeping index rows not currently supported
         boolean inputFromIndex = rowType instanceof IndexRowType;
-        ArgumentValidation.isTrue("!inputFromIndex || flag == API.LookupOption.DISCARD_INPUT",
-                                  !inputFromIndex || flag == API.LookupOption.DISCARD_INPUT);
         RowType tableRowType =
             inputFromIndex
             ? ((IndexRowType) rowType).tableType()
@@ -94,10 +80,9 @@ class AncestorLookup_Default extends PhysicalOperator
             ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
                                       ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup());
         }
-        this.inputOperator = inputOperator;
         this.groupTable = groupTable;
         this.rowType = rowType;
-        this.keepInput = flag == API.LookupOption.KEEP_INPUT;
+        this.hKeyBindingPosition = hKeyBindingPosition;
         // Sort ancestor types by depth
         this.ancestorTypes = new ArrayList<RowType>(ancestorTypes);
         if (this.ancestorTypes.size() > 1) {
@@ -116,23 +101,21 @@ class AncestorLookup_Default extends PhysicalOperator
         this.ancestorTypeDepth = new int[ancestorTypes.size()];
         int a = 0;
         for (RowType ancestorType : this.ancestorTypes) {
-            UserTable userTable = ((UserTableRowType) ancestorType).userTable();
-            this.ancestorTypeDepth[a++] = userTable.getDepth() + 1;
+            this.ancestorTypeDepth[a++] = ancestorType.userTable().getDepth() + 1;
         }
     }
 
     // Class state
 
-    private static final Logger LOG = LoggerFactory.getLogger(AncestorLookup_Default.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AncestorLookup_Nested.class);
 
     // Object state
 
-    private final PhysicalOperator inputOperator;
     private final GroupTable groupTable;
     private final RowType rowType;
     private final List<RowType> ancestorTypes;
     private final int[] ancestorTypeDepth;
-    private final boolean keepInput;
+    private final int hKeyBindingPosition;
 
     // Inner classes
 
@@ -143,19 +126,20 @@ class AncestorLookup_Default extends PhysicalOperator
         @Override
         public void open(Bindings bindings)
         {
-            input.open(bindings);
-            advance();
+            HKey bindingHKey = (HKey) bindings.get(hKeyBindingPosition);
+            bindingHKey.copyTo(hKey);
+            findAncestors();
         }
 
         @Override
         public Row next()
         {
-            while (pending.isEmpty() && inputRow.isNotNull()) {
-                advance();
-            }
             Row row = pending.take();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("AncestorLookup: {}", row == null ? null : row);
+            }
+            if (row == null) {
+                close();
             }
             return row;
         }
@@ -163,83 +147,55 @@ class AncestorLookup_Default extends PhysicalOperator
         @Override
         public void close()
         {
-            input.close();
-            ancestorRow.set(null);
             pending.clear();
+            ancestorCursor.close();
+        }
+
+        // Execution interface
+
+        Execution(StoreAdapter adapter)
+        {
+            this.pending = new PendingRows(ancestorTypeDepth.length);
+            this.ancestorCursor = adapter.newGroupCursor(groupTable);
+            this.hKey = adapter.newHKey(rowType);
         }
 
         // For use by this class
 
-        private void advance()
-        {
-            Row currentRow = input.next();
-            if (currentRow != null) {
-                if (currentRow.rowType() == rowType) {
-                    findAncestors(currentRow);
-                }
-                if (keepInput) {
-                    pending.add(currentRow);
-                }
-                inputRow.set(currentRow);
-            } else {
-                inputRow.set(null);
-            }
-        }
-
-        private void findAncestors(Row inputRow)
+        private void findAncestors()
         {
             assert pending.isEmpty();
-            HKey hKey = inputRow.hKey();
             int nSegments = hKey.segments();
-            for (int i = 0; i < ancestorTypeDepth.length; i++) {
-                int depth = ancestorTypeDepth[i];
+            for (int depth : ancestorTypeDepth) {
                 hKey.useSegments(depth);
-                readAncestorRow(hKey);
-                if (ancestorRow.isNotNull()) {
-                    ancestorRow.get().runId(inputRow.runId());
-                    pending.add(ancestorRow.get());
+                Row row = readAncestorRow(hKey);
+                if (row != null) {
+                    pending.add(row);
                 }
             }
             // Restore the hkey to its original state
             hKey.useSegments(nSegments);
         }
 
-        // Execution interface
-
-        Execution(StoreAdapter adapter, Cursor input)
+        private Row readAncestorRow(HKey hKey)
         {
-            this.input = input;
-            // Why + 1: Because the input row (whose ancestors get discovered) also goes into pending.
-            this.pending = new PendingRows(ancestorTypeDepth.length + 1);
-            this.ancestorCursor = adapter.newGroupCursor(groupTable);
-        }
-
-        // For use by this class
-
-        private void readAncestorRow(HKey hKey)
-        {
-            try {
-                ancestorCursor.rebind(hKey, false);
-                ancestorCursor.open(UndefBindings.only());
-                Row retrievedRow = ancestorCursor.next();
-                if (retrievedRow == null) {
-                    ancestorRow.set(null);
-                } else {
-                    // Retrieved row might not actually be what we were looking for -- not all ancestors are present,
-                    // (there are orphan rows).
-                    ancestorRow.set(hKey.equals(retrievedRow.hKey()) ? retrievedRow : null);
-                }
-            } finally {
-                ancestorCursor.close();
+            Row row;
+            ancestorCursor.close();
+            ancestorCursor.rebind(hKey, false);
+            ancestorCursor.open(UndefBindings.only());
+            row = ancestorCursor.next();
+            // Retrieved row might not actually be what we were looking for -- not all ancestors are present,
+            // (there are orphan rows).
+            if (row != null && !hKey.equals(row.hKey())) {
+                row = null;
             }
+            return row;
         }
 
         // Object state
 
-        private final Cursor input;
-        private final RowHolder<Row> inputRow = new RowHolder<Row>();
         private final GroupCursor ancestorCursor;
-        private final RowHolder<Row> ancestorRow = new RowHolder<Row>();
         private final PendingRows pending;
+        private final HKey hKey;
     }
 }

@@ -27,6 +27,7 @@ public interface RowBase
     boolean ancestorOf(RowBase that);
     int runId();
     void runId(int runId);
+    Row subRow(RowType subRowType);
 
     final int UNDEFINED_RUN_ID = -1;
 }

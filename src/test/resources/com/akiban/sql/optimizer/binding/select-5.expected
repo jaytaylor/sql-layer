@@ -1,44 +1,44 @@
-com.akiban.sql.parser.CursorNode@583e0ebb
+com.akiban.sql.parser.CursorNode@1e79ed7f
 name: null
 updateMode: UNSPECIFIED
 statementType: SELECT
 resultSet: 	
-	com.akiban.sql.parser.SelectNode@5239443f
+	com.akiban.sql.parser.SelectNode@56d73c7a
 	isDistinct: false
 	resultColumns: 		
-		com.akiban.sql.parser.ResultColumnList@6e811c88
+		com.akiban.sql.parser.ResultColumnList@97e121c
 
 		[0]:		
-		com.akiban.sql.parser.ResultColumn@5e785d65
+		com.akiban.sql.parser.ResultColumn@33d6f122
 		exposedName: x
 		name: x
 		tableName: null
 		isDefaultColumn: false
 		type: null
 		expression: 			
-			com.akiban.sql.parser.ColumnReference@303bc257
+			com.akiban.sql.parser.ColumnReference@647109c4
 			columnName: x
 			tableName: null
 			type: null
-			userData: t1.x from com.akiban.sql.parser.FromBaseTable@6a8c436b
+			userData: t1.x from com.akiban.sql.parser.FromBaseTable@44a613f8
 		[1]:		
-		com.akiban.sql.parser.ResultColumn@2353f67e
+		com.akiban.sql.parser.ResultColumn@39385660
 		exposedName: x2
 		name: x2
 		tableName: null
 		isDefaultColumn: false
 		type: null
 		expression: 			
-			com.akiban.sql.parser.ColumnReference@5d5bdc50
+			com.akiban.sql.parser.ColumnReference@21aed5f9
 			columnName: x2
 			tableName: null
 			type: null
-			userData: com.akiban.sql.parser.ResultColumn@1055e55f from com.akiban.sql.parser.FromSubquery@2dafae45
+			userData: com.akiban.sql.parser.ResultColumn@736921fd from com.akiban.sql.parser.FromSubquery@4cc39a20
 	fromList: 		
-		com.akiban.sql.parser.FromList@39dd3812
+		com.akiban.sql.parser.FromList@5d61dfb5
 
 		[0]:		
-		com.akiban.sql.parser.FromBaseTable@6a8c436b
+		com.akiban.sql.parser.FromBaseTable@44a613f8
 		tableName: t1
 		updateOrDelete: null
 		null
@@ -46,49 +46,84 @@ resultSet:
 		null
 		userData: user.t1
 		[1]:		
-		com.akiban.sql.parser.FromSubquery@2dafae45
+		com.akiban.sql.parser.FromSubquery@4cc39a20
 		correlation Name: t2
 		t2
+		resultColumns: 			
+			com.akiban.sql.parser.ResultColumnList@7b36a43c
+
+			[0]:			
+			com.akiban.sql.parser.ResultColumn@40589e56
+			exposedName: not_x
+			name: not_x
+			tableName: null
+			isDefaultColumn: false
+			type: null
+			expression: 				
+				com.akiban.sql.parser.VirtualColumnNode@7a03411a
+				type: null
+				sourceColumn: 					
+					com.akiban.sql.parser.ResultColumn@643c0007
+					exposedName: not_x
+					name: not_x
+					tableName: null
+					isDefaultColumn: false
+					type: null
+					expression: 						
+						com.akiban.sql.parser.ColumnReference@1f25fefa
+						columnName: x
+						tableName: null
+						type: null
+						userData: t1.x from com.akiban.sql.parser.FromBaseTable@5d3ad33d
+				sourceResultSet: 					
+					com.akiban.sql.parser.SelectNode@3dbbd23f
+					isDistinct: false
+					resultColumns: 						
+						com.akiban.sql.parser.ResultColumnList@75e845c2
+
+						[0]:						
+						com.akiban.sql.parser.ResultColumn@643c0007
+						***truncated***
+						[1]:						
+						com.akiban.sql.parser.ResultColumn@7786df0f
+						exposedName: x2
+						name: x2
+						tableName: null
+						isDefaultColumn: false
+						type: null
+						expression: 							
+							com.akiban.sql.parser.ColumnReference@379e8f17
+							columnName: y
+							tableName: null
+							type: null
+							userData: t1.y from com.akiban.sql.parser.FromBaseTable@5d3ad33d
+					fromList: 						
+						com.akiban.sql.parser.FromList@ac44b88
+
+						[0]:						
+						com.akiban.sql.parser.FromBaseTable@5d3ad33d
+						tableName: t1
+						updateOrDelete: null
+						null
+						correlation Name: null
+						null
+						userData: user.t1
+			[1]:			
+			com.akiban.sql.parser.ResultColumn@736921fd
+			exposedName: x2
+			name: x2
+			tableName: null
+			isDefaultColumn: false
+			type: null
+			expression: 				
+				com.akiban.sql.parser.VirtualColumnNode@6ba7508a
+				type: null
+				sourceColumn: 					
+					com.akiban.sql.parser.ResultColumn@7786df0f
+					***truncated***
+				sourceResultSet: 					
+					com.akiban.sql.parser.SelectNode@3dbbd23f
+					***truncated***
 		subquery: 			
-			com.akiban.sql.parser.SelectNode@68da4b71
-			isDistinct: false
-			resultColumns: 				
-				com.akiban.sql.parser.ResultColumnList@538f1d7e
-
-				[0]:				
-				com.akiban.sql.parser.ResultColumn@58d9660d
-				exposedName: not_x
-				name: not_x
-				tableName: null
-				isDefaultColumn: false
-				type: null
-				expression: 					
-					com.akiban.sql.parser.ColumnReference@28bb0d0d
-					columnName: x
-					tableName: null
-					type: null
-					userData: t1.x from com.akiban.sql.parser.FromBaseTable@322c1e6b
-				[1]:				
-				com.akiban.sql.parser.ResultColumn@1055e55f
-				exposedName: x2
-				name: x2
-				tableName: null
-				isDefaultColumn: false
-				type: null
-				expression: 					
-					com.akiban.sql.parser.ColumnReference@7745c859
-					columnName: y
-					tableName: null
-					type: null
-					userData: t1.y from com.akiban.sql.parser.FromBaseTable@322c1e6b
-			fromList: 				
-				com.akiban.sql.parser.FromList@664883c
-
-				[0]:				
-				com.akiban.sql.parser.FromBaseTable@322c1e6b
-				tableName: t1
-				updateOrDelete: null
-				null
-				correlation Name: null
-				null
-				userData: user.t1
+			com.akiban.sql.parser.SelectNode@3dbbd23f
+			***truncated***

@@ -27,25 +27,22 @@ import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 import static java.lang.Math.min;
 
-public class BranchLookup_Default extends PhysicalOperator
+public class BranchLookup_Nested extends PhysicalOperator
 {
     // Object interface
 
     @Override
     public String toString()
     {
-        return String.format("%s(%s %s -> %s limit %s)",
+        return String.format("%s(%s %s -> %s)",
                              getClass().getSimpleName(),
                              groupTable.getName().getTableName(),
                              inputRowType,
-                             outputRowType,
-                             limit);
+                             outputRowType);
     }
 
     // PhysicalOperator interface
@@ -53,45 +50,36 @@ public class BranchLookup_Default extends PhysicalOperator
     @Override
     public void findDerivedTypes(Set<RowType> derivedTypes)
     {
-        inputOperator.findDerivedTypes(derivedTypes);
     }
 
     @Override
     public Cursor cursor(StoreAdapter adapter)
     {
-        return new Execution(adapter, inputOperator.cursor(adapter));
-    }
-
-    @Override
-    public List<PhysicalOperator> getInputOperators()
-    {
-        List<PhysicalOperator> result = new ArrayList<PhysicalOperator>(1);
-        result.add(inputOperator);
-        return result;
+        return new Execution(adapter);
     }
 
     @Override
     public String describePlan()
     {
-        return describePlan(inputOperator);
+        return toString();
     }
 
     // BranchLookup_Default interface
 
-    public BranchLookup_Default(PhysicalOperator inputOperator,
-                                GroupTable groupTable,
-                                RowType inputRowType,
-                                RowType outputRowType,
-                                API.LookupOption flag,
-                                Limit limit)
+    public BranchLookup_Nested(GroupTable groupTable,
+                               RowType inputRowType,
+                               RowType outputRowType,
+                               API.LookupOption flag,
+                               int inputBindingPosition)
     {
+        ArgumentValidation.notNull("groupTable", groupTable);
         ArgumentValidation.notNull("inputRowType", inputRowType);
         ArgumentValidation.notNull("outputRowType", outputRowType);
-        ArgumentValidation.notNull("limit", limit);
         ArgumentValidation.isTrue("inputRowType instanceof IndexRowType || outputRowType != inputRowType",
                                   inputRowType instanceof IndexRowType || outputRowType != inputRowType);
-        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || !keepInput",
+        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT",
                                   inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT);
+        ArgumentValidation.isGTE("hKeyBindingPosition", inputBindingPosition, 0);
         UserTableRowType inputTableType = null;
         if (inputRowType instanceof UserTableRowType) {
             inputTableType = (UserTableRowType) inputRowType;
@@ -105,12 +93,11 @@ public class BranchLookup_Default extends PhysicalOperator
                                   inputTable.getGroup(),
                                   "outputTable.getGroup()",
                                   outputTable.getGroup());
-        this.keepInput = flag == API.LookupOption.KEEP_INPUT;
-        this.inputOperator = inputOperator;
         this.groupTable = groupTable;
         this.inputRowType = inputRowType;
         this.outputRowType = outputRowType;
-        this.limit = limit;
+        this.keepInput = flag == API.LookupOption.KEEP_INPUT;
+        this.inputBindingPosition = inputBindingPosition;
         UserTable commonAncestor = commonAncestor(inputTable, outputTable);
         this.commonSegments = commonAncestor.getDepth() + 1;
         switch (outputTable.getDepth() - commonAncestor.getDepth()) {
@@ -163,20 +150,19 @@ public class BranchLookup_Default extends PhysicalOperator
 
     // Class state
 
-    private static final Logger LOG = LoggerFactory.getLogger(BranchLookup_Default.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BranchLookup_Nested.class);
 
     // Object state
 
-    private final PhysicalOperator inputOperator;
     private final GroupTable groupTable;
     private final RowType inputRowType;
     private final RowType outputRowType;
     private final boolean keepInput;
     // If keepInput is true, inputPrecedesBranch controls whether input row appears before the retrieved branch.
     private final boolean inputPrecedesBranch;
+    private final int inputBindingPosition;
     private final int commonSegments;
     private final int branchRootOrdinal;
-    private final Limit limit;
 
     private class Execution implements Cursor
     {
@@ -185,129 +171,63 @@ public class BranchLookup_Default extends PhysicalOperator
         @Override
         public void open(Bindings bindings)
         {
-            inputCursor.open(bindings);
-            advanceInput();
+            Row rowFromBindings = (Row) bindings.get(inputBindingPosition);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("BranchLookup_Nested: open using {}", rowFromBindings);
+            }
+            assert rowFromBindings.rowType() == inputRowType : rowFromBindings;
+            rowFromBindings.hKey().copyTo(hKey);
+            hKey.useSegments(commonSegments);
+            if (branchRootOrdinal != -1) {
+                hKey.extendWithOrdinal(branchRootOrdinal);
+            }
+            cursor.rebind(hKey, true);
+            cursor.open(bindings);
+            inputRow.set(rowFromBindings);
         }
 
         @Override
         public Row next()
         {
-            Row nextRow = null;
-            while (nextRow == null && inputRow.isNotNull()) {
-                switch (lookupState) {
-                    case BEFORE:
-                        if (keepInput && inputPrecedesBranch) {
-                            nextRow = inputRow.get();
-                        }
-                        lookupState = LookupState.SCANNING;
-                        break;
-                    case SCANNING:
-                        advanceLookup();
-                        if (lookupRow.isNotNull()) {
-                            nextRow = lookupRow.get();
-                        }
-                        break;
-                    case AFTER:
-                        if (keepInput && !inputPrecedesBranch) {
-                            nextRow = inputRow.get();
-                        }
-                        advanceInput();
-                        break;
+            Row row;
+            if (keepInput && inputPrecedesBranch && inputRow.isNotNull()) {
+                row = inputRow.get();
+                inputRow.set(null);
+            } else {
+                row = cursor.next();
+                if (row == null) {
+                    if (keepInput && !inputPrecedesBranch) {
+                        assert inputRow.isNotNull();
+                        row = inputRow.get();
+                        inputRow.set(null);
+                    }
+                    close();
                 }
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("BranchLookup_Default: {}", lookupRow.isNull() ? null : lookupRow.get());
+                LOG.debug("BranchLookup_Nested: yield {}", row);
             }
-            return nextRow;
+            return row;
         }
 
         @Override
         public void close()
         {
-            inputCursor.close();
-            inputRow.set(null);
-            lookupCursor.close();
-            lookupRow.set(null);
+            cursor.close();
         }
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, Cursor input)
+        Execution(StoreAdapter adapter)
         {
-            this.inputCursor = input;
-            this.lookupCursor = adapter.newGroupCursor(groupTable);
-            this.lookupRowHKey = adapter.newHKey(outputRowType);
-        }
-
-        // For use by this class
-
-        private void advanceLookup()
-        {
-            Row currentLookupRow;
-            if ((currentLookupRow = lookupCursor.next()) != null) {
-                if (limit.limitReached(currentLookupRow)) {
-                    lookupState = LookupState.AFTER;
-                    lookupRow.set(null);
-                    close();
-                } else {
-                    currentLookupRow.runId(inputRow.get().runId());
-                    lookupRow.set(currentLookupRow);
-                }
-            } else {
-                lookupState = LookupState.AFTER;
-                lookupRow.set(null);
-            }
-        }
-
-        private void advanceInput()
-        {
-            lookupState = LookupState.BEFORE;
-            lookupRow.set(null);
-            lookupCursor.close();
-            Row currentInputRow = inputCursor.next();
-            if (currentInputRow != null) {
-                if (currentInputRow.rowType() == inputRowType) {
-                    lookupRow.set(null);
-                    computeLookupRowHKey(currentInputRow.hKey());
-                    lookupCursor.rebind(lookupRowHKey, true);
-                    lookupCursor.open(UndefBindings.only());
-                }
-                inputRow.set(currentInputRow);
-            } else {
-                inputRow.set(null);
-            }
-        }
-
-        private void computeLookupRowHKey(HKey inputRowHKey)
-        {
-            inputRowHKey.copyTo(lookupRowHKey);
-            lookupRowHKey.useSegments(commonSegments);
-            if (branchRootOrdinal != -1) {
-                lookupRowHKey.extendWithOrdinal(branchRootOrdinal);
-            }
+            this.cursor = adapter.newGroupCursor(groupTable);
+            this.hKey = adapter.newHKey(outputRowType);
         }
 
         // Object state
 
-        private final Cursor inputCursor;
-        private final RowHolder<Row> inputRow = new RowHolder<Row>();
-        private final GroupCursor lookupCursor;
-        private final RowHolder<Row> lookupRow = new RowHolder<Row>();
-        private final HKey lookupRowHKey;
-        private LookupState lookupState;
-    }
-
-    // Inner classes
-
-    private static enum LookupState
-    {
-        // Before retrieving the first lookup row for the current input row.
-        BEFORE,
-        // After the first lookup row has been retrieved, and before we have discovered that there are no more
-        // lookup rows.
-        SCANNING,
-        // After the lookup rows for the current input row have all been scanned, (known because lookupCursor.next
-        // returned false).
-        AFTER
+        private final GroupCursor cursor;
+        private final HKey hKey;
+        private RowHolder<Row> inputRow = new RowHolder<Row>();
     }
 }
