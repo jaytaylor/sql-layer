@@ -101,6 +101,26 @@ public final class AggregateOperatorTest {
         check(plan, expected);
     }
 
+    @Test
+    public void twoColumnGroupBy() {
+        TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.VARCHAR, AkType.LONG)
+                .row(1L, "alpha", 1)
+                .row(1L, "alpha", 2)
+                .row(1L, "bravo", 3)
+                .row(2L, "bravo", 4)
+                .row(2L, "charlie", 5)
+        );
+        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
+        PhysicalOperator plan = new AggregationOperator(input, 2, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR, AkType.VARCHAR)
+                .row(1L, "alpha", "1, 2")
+                .row(1L, "bravo", "3")
+                .row(2L, "bravo", "4")
+                .row(2L, "charlie", "5")
+                .rows();
+        check(plan, expected);
+    }
+
     @Test(expected = InconvertibleTypesException.class)
     public void invalidRowTypes() {
         PhysicalOperator plan;
