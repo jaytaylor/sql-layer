@@ -27,12 +27,14 @@ import com.akiban.server.types.util.ValueHolder;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public final class LongOpExpressionTest {
+public final class LongOpExpressionTest extends ComposedExpressionTestBase {
+
     @Test
     public void longMinusLong() {
         Expression left = new LiteralExpression(AkType.LONG, 5L);
@@ -109,5 +111,15 @@ public final class LongOpExpressionTest {
         Expression right = new LiteralExpression(AkType.VARCHAR, "2");
         Expression extra = new LiteralExpression(AkType.LONG, 2L);
         new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right, extra));
+    }
+
+    @Override
+    protected int childrenCount() {
+        return 2;
+    }
+
+    @Override
+    protected Expression getExpression(List<? extends Expression> children) {
+        return new LongOpExpression(LongOps.LONG_SUBTRACT, children);
     }
 }
