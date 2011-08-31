@@ -32,7 +32,6 @@ import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.ValuesScan_Default;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
@@ -69,9 +68,7 @@ public class CUDCompiler {
         
         PhysicalOperator resultOper = resultsOperator (compiler, tableStmt);
         
-        UserTableRowType targetRowType = compiler.tableRowType(tableStmt.getTargetTable());
-
-        ExpressionRow updateRow = generateExpressions (compiler, tableStmt, targetRowType);
+        ExpressionRow updateRow = generateExpressions (compiler, tableStmt);
         
         Plannable plan = generatePlan (stmtNode.getNodeType(), resultOper, updateRow);
         
@@ -125,7 +122,7 @@ public class CUDCompiler {
         UserTableRowType targetRowType = compiler.tableRowType(stmt.getTargetTable());
         GroupTable groupTable = stmt.getTargetTable().getGroupTable();
         if (stmt.getValues() != null) {
-            scan = values_Default (compiler, stmt.getValues());
+            scan = values_Default (compiler, stmt);
         } else  if (index != null) {
             assert (stmt.getTargetTable() == index.getLeafMostTable());
             stmt.removeConditions(index.getIndexConditions());
@@ -151,20 +148,26 @@ public class CUDCompiler {
         return scan;
     }
 
-    private static PhysicalOperator values_Default(OperatorCompiler compiler,
-            List<List<SimpleExpression>> values) {
+    private static PhysicalOperator values_Default(OperatorCompiler compiler, SimplifiedTableStatement stmt) {
+
+        List<List<SimpleExpression>>values = stmt.getValues();
         List<ExpressionRow> exprRowList = new ArrayList<ExpressionRow>(values.size());
+        
+        // Using valuesRowType, not UserTableRowType here because values may not be in 
+        // same number or order as user table columns. Re-order and fill will be done 
+        // during execution. 
         ValuesRowType rowType = compiler.valuesRowType(values.get(0).size());
         for (List<SimpleExpression> row : values) {
             ExpressionRow exprRow = new ExpressionRow (rowType, (Expression[]) row.toArray());
             exprRowList.add(exprRow);
         }
-        return new valuesScan_Default (exprRowList);
+        return valuesScan_Default (exprRowList);
         
     }
 
-    private static ExpressionRow generateExpressions(OperatorCompiler compiler, SimplifiedTableStatement stmt, UserTableRowType targetRowType) {
-
+    private static ExpressionRow generateExpressions(OperatorCompiler compiler, SimplifiedTableStatement stmt) {
+        UserTableRowType targetRowType = compiler.tableRowType(stmt.getTargetTable());
+        
         Map<TableNode,Integer> tableOffsets = new HashMap<TableNode,Integer>(1);
         tableOffsets.put(stmt.getTargetTable(), 0);
         ColumnExpressionToIndex fieldOffsets = new TableNodeOffsets(tableOffsets);
