@@ -153,41 +153,32 @@ final class Aggregation_Partial extends PhysicalOperator {
             }
 
             assert cursorState == CursorState.OPENING || cursorState == CursorState.RUNNING : cursorState;
-            Row input = nextInput();
-            if (input == null) {
-                if (everSawInput) {
-                    cursorState = CursorState.CLOSING;
+            while (true) {
+                Row input = nextInput();
+                if (input == null) {
+                    if (everSawInput) {
+                        cursorState = CursorState.CLOSING;
+                        return createOutput();
+                    }
+                    else if (noGroupBy()) {
+                        cursorState = CursorState.CLOSING;
+                        return createNullOutput();
+                    }
+                    else {
+                        close();
+                        return null;
+                    }
+                }
+                if (!input.rowType().equals(inputRowType)) {
+                    return input; // pass through
+                }
+                everSawInput = true;
+                if (outputNeeded(input)) {
+                    saveInput(input); // save this input for the next time this method is invoked
                     return createOutput();
                 }
-                else if (hasGroupBy()) {
-                    close();
-                    return null;
-                }
-                else {
-                    cursorState = CursorState.CLOSING;
-                    return createNullOutput();
-                }
-            }
-            if (!input.rowType().equals(inputRowType)) {
-                return input;
-            }
-
-            everSawInput = true;
-            while (!outputNeeded(input)) {
                 aggregate(input);
-                input = inputCursor.next();
-                if (input != null && !input.rowType().equals(inputRowType)) {
-                    return input;
-                }
             }
-            if (input == null) {
-                cursorState = CursorState.CLOSING;
-            }
-            else {
-                saveInput(input);
-            }
-
-            return createOutput();
         }
 
         @Override
@@ -227,7 +218,7 @@ final class Aggregation_Partial extends PhysicalOperator {
         }
 
         private Row createNullOutput() {
-            assert !hasGroupBy() : "shouldn't be creating null output row when I have a grouping";
+            assert noGroupBy() : "shouldn't be creating null output row when I have a grouping";
             ValuesHolderRow outputRow = unsharedOutputRow();
             for (int i = 0; i < outputRow.rowType().nFields(); ++i) {
                 outputRow.holderAt(i).putNull();
@@ -235,14 +226,12 @@ final class Aggregation_Partial extends PhysicalOperator {
             return outputRow;
         }
 
-        private boolean hasGroupBy() {
-            return inputsIndex != 0;
+        private boolean noGroupBy() {
+            return inputsIndex == 0;
         }
 
         private boolean outputNeeded(Row givenInput) {
-            if (givenInput == null)
-                return true;    // inputs are done, so always output the result
-            if (!hasGroupBy())
+            if (noGroupBy())
                 return false;   // no GROUP BYs, so aggregate until givenInput is null
 
             // check for any changes to keys
