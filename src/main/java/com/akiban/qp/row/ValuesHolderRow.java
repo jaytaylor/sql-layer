@@ -15,7 +15,6 @@
 
 package com.akiban.qp.row;
 
-import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.rowtype.AggregatedRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.ValueSource;
@@ -47,7 +46,7 @@ public class ValuesHolderRow extends AbstractRow {
     }
 
     @Override
-    public ValueSource bindSource(int i, Bindings bindings) {
+    public ValueSource bindSource(int i) {
         ValueHolder value = values.get(i);
         if (!value.hasSourceState()) {
             throw new IllegalStateException("value at index " + i + " was never set");

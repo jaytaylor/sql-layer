@@ -316,8 +316,8 @@ public final class AggregateOperatorTest {
             for (Row actual : actuals) {
                 Row expected = expectedsIter.next();
                 for (int i = 0; i < plan.rowType().nFields(); ++i) {
-                    ValueHolder actualHolder = new ValueHolder(actual.bindSource(i, UndefBindings.only()));
-                    ValueHolder expectedHolder = new ValueHolder(expected.bindSource(i, UndefBindings.only()));
+                    ValueHolder actualHolder = new ValueHolder(actual.bindSource(i));
+                    ValueHolder expectedHolder = new ValueHolder(expected.bindSource(i));
 
                     if (!expectedHolder.equals(actualHolder)) {
                         assertEquals(

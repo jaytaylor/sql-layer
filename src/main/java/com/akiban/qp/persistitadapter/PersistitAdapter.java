@@ -113,7 +113,7 @@ public class PersistitAdapter extends StoreAdapter
         NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
 
         for(int i=0; i < row.rowType().nFields(); ++i) {
-            ValueSource source = row.bindSource(i, bindings);
+            ValueSource source = row.bindSource(i);
             niceRow.put(i, target.convertFromSource(source));
         }
         return niceRow.toRowData();

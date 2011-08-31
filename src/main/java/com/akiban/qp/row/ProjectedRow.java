@@ -43,7 +43,7 @@ public class ProjectedRow extends AbstractRow
     }
 
     @Override
-    public ValueSource bindSource(int i, Bindings bindings) {
+    public ValueSource bindSource(int i) {
         return ExpressionConversionHelper.asValueSource(projections.get(i), row.get(), bindings);
     }
 
@@ -55,11 +55,12 @@ public class ProjectedRow extends AbstractRow
 
     // ProjectedRow interface
 
-    public ProjectedRow(ProjectedRowType rowType, Row row, List<Expression> projections)
+    public ProjectedRow(ProjectedRowType rowType, Row row, Bindings bindings, List<Expression> projections)
     {
         this.rowType = rowType;
         this.row.set(row);
         this.projections = projections;
+        this.bindings = bindings;
         super.runId(row.runId());
     }
 
@@ -68,4 +69,5 @@ public class ProjectedRow extends AbstractRow
     private final ProjectedRowType rowType;
     private final RowHolder<Row> row = new RowHolder<Row>();
     private final List<Expression> projections;
+    private final Bindings bindings;
 }

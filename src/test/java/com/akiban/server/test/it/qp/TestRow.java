@@ -15,7 +15,6 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.RowValuesHolder;
@@ -34,7 +33,7 @@ public class TestRow extends AbstractRow
     }
 
     @Override
-    public ValueSource bindSource(int i, Bindings bindings) {
+    public ValueSource bindSource(int i) {
         return valuesHolder.valueSourceAt(i);
     }
 

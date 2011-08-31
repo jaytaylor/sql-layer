@@ -75,7 +75,7 @@ public final class RowsBuilder {
     public RowsBuilder addRow(Row row) {
         List<ValueHolder> values = new ArrayList<ValueHolder>();
         for (int i = 0; i < rowType.nFields(); ++i) {
-            ValueSource rowSource = row.bindSource(i, UndefBindings.only());
+            ValueSource rowSource = row.bindSource(i);
             ValueHolder holder = new ValueHolder(rowSource);
             values.add(holder);
         }
@@ -120,7 +120,7 @@ public final class RowsBuilder {
         }
 
         @Override
-        public ValueSource bindSource(int i, Bindings bindings) {
+        public ValueSource bindSource(int i) {
             return values.get(i);
         }
 

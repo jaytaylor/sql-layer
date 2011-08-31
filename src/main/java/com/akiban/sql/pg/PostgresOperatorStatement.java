@@ -76,7 +76,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                 messenger.beginMessage(PostgresMessenger.DATA_ROW_TYPE);
                 messenger.writeShort(ncols);
                 for (int i = 0; i < ncols; i++) {
-                    Object field = target.convertFromSource(row.bindSource(i, bindings));
+                    Object field = target.convertFromSource(row.bindSource(i));
                     PostgresType type = columnTypes.get(i);
                     byte[] value = type.encodeValue(field,
                                                     messenger.getEncoding(),

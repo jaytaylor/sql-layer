@@ -15,8 +15,6 @@
 
 package com.akiban.qp.row;
 
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.ValueSource;
@@ -39,7 +37,7 @@ public class ProductRow extends AbstractRow
             if (i > 0) {
                 buffer.putString(", ");
             }
-            Converters.convert(bindSource(i, UndefBindings.only()), buffer);
+            Converters.convert(bindSource(i), buffer);
         }
         buffer.putString(")");
         return buffer.toString();
@@ -54,12 +52,12 @@ public class ProductRow extends AbstractRow
     }
 
     @Override
-    public ValueSource bindSource(int i, Bindings bindings) {
+    public ValueSource bindSource(int i) {
         ValueSource source;
         if (i < nLeftFields) {
-            source = left.isNull() ? NullValueSource.only() : left.get().bindSource(i, bindings);
+            source = left.isNull() ? NullValueSource.only() : left.get().bindSource(i);
         } else {
-            source = right.isNull() ? NullValueSource.only() : right.get().bindSource(i - firstRightFieldOffset, bindings);
+            source = right.isNull() ? NullValueSource.only() : right.get().bindSource(i - firstRightFieldOffset);
         }
         return source;
     }

@@ -16,7 +16,6 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.TableIndex;
-import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -52,7 +51,7 @@ public class NewRowBackedIndexRow implements RowBase
     }
 
     @Override
-    public ValueSource bindSource(int i, Bindings bindings) {
+    public ValueSource bindSource(int i) {
         FieldDef fieldDef = (FieldDef) index.getColumns().get(i).getColumn().getFieldDef();
         int fieldPos = fieldDef.getFieldIndex();
         if (row.isColumnNull(fieldPos)) {

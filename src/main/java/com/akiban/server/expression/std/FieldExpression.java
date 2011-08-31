@@ -64,7 +64,7 @@ public final class FieldExpression implements Expression {
             if (!rowType.equals(incomingType)) {
                 throw new IllegalArgumentException("wrong row type: " + incomingType + " != " + rowType);
             }
-            ValueSource incomingSource = row.bindSource(fieldIndex, bindings);
+            ValueSource incomingSource = row.bindSource(fieldIndex);
             AkType incomingAkType = incomingSource.getConversionType();
             if (incomingAkType != AkType.NULL && !akType.equals(incomingAkType)) {
                 throw new IllegalArgumentException(

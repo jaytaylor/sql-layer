@@ -28,9 +28,15 @@ public class ExpressionRow extends AbstractRow
     private RowType rowType;
     private Expression[] expressions;
 
+    @Deprecated
     public ExpressionRow(RowType rowType, Expression[] expressions) {
+        this(rowType, null, expressions);
+    }
+
+    public ExpressionRow(RowType rowType, Bindings bindings, Expression[] expressions) {
         this.rowType = rowType;
         this.expressions = expressions;
+        this.bindings = bindings;
     }
 
     public Expression getExpression(int i) {
@@ -45,8 +51,8 @@ public class ExpressionRow extends AbstractRow
     }
 
     @Override
-    public ValueSource bindSource(int i, Bindings bindings) {
-        Object value = (expressions[i] == null) ? null : expressions[i].evaluate(null, bindings);
+    public ValueSource bindSource(int i) {
+        Object value = (expressions[i] == null) ? null : expressions[i].evaluate(null, bindings());
         source.setReflectively(value);
         return source;
     }
@@ -73,7 +79,17 @@ public class ExpressionRow extends AbstractRow
         return str.toString();
     }
 
+    // private methods
+
+    private Bindings bindings() {
+        if (bindings == null) {
+            throw new IllegalStateException("no bindings set");
+        }
+        return bindings;
+    }
+
     // object state
 
     private final FromObjectValueSource source = new FromObjectValueSource();
+    private final Bindings bindings;
 }

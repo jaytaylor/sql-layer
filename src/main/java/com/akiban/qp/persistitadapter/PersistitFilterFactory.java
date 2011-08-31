@@ -38,7 +38,7 @@ class PersistitFilterFactory
         void reportKeyFilter(KeyFilter keyFilter);
     }
 
-    public KeyFilter computeIndexFilter(Key key, Index index, IndexKeyRange keyRange, Bindings bindings)
+    public KeyFilter computeIndexFilter(Key key, Index index, IndexKeyRange keyRange)
     {
         PersistitKeyValueTarget target = new PersistitKeyValueTarget();
         target.attach(key);
@@ -46,7 +46,7 @@ class PersistitFilterFactory
         List<IndexColumn> indexColumns = index.getColumns();
         KeyFilter.Term[] terms = new KeyFilter.Term[indexColumns.size()];
         for (int i = 0; i < indexColumns.size(); ++i) {
-            terms[i] = computeKeyFilterTerm(target, key, indexColumns.get(i).getColumn(), i, keyRange, bindings);
+            terms[i] = computeKeyFilterTerm(target, key, indexColumns.get(i).getColumn(), i, keyRange);
         }
         key.clear();
         KeyFilter keyFilter = new KeyFilter(terms, terms.length, Integer.MAX_VALUE);
@@ -65,7 +65,7 @@ class PersistitFilterFactory
 
     // Returns a KeyFilter term if the specified field of either the start or
     private KeyFilter.Term computeKeyFilterTerm(PersistitKeyValueTarget tuple, Key key, Column column, int position,
-                                                IndexKeyRange keyRange, Bindings bindings)
+                                                IndexKeyRange keyRange)
     {
         boolean hasStart = (keyRange.lo() != null) && keyRange.lo().columnSelector().includesColumn(position);
         boolean hasEnd = (keyRange.hi() != null) && keyRange.hi().columnSelector().includesColumn(position);
@@ -75,13 +75,13 @@ class PersistitFilterFactory
         key.clear();
         key.reset();
         if (hasStart) {
-            appendKeyField(tuple, column, position, keyRange.lo().row(), bindings);
+            appendKeyField(tuple, column, position, keyRange.lo().row());
         } else {
             key.append(Key.BEFORE);
             key.setEncodedSize(key.getEncodedSize() + 1);
         }
         if (hasEnd) {
-            appendKeyField(tuple, column, position, keyRange.hi().row(), bindings);
+            appendKeyField(tuple, column, position, keyRange.hi().row());
         } else {
             key.append(Key.AFTER);
         }
@@ -92,10 +92,10 @@ class PersistitFilterFactory
         return KeyFilter.termFromKeySegments(key, key, keyRange.loInclusive(), keyRange.hiInclusive());
     }
 
-    private void appendKeyField(PersistitKeyValueTarget target, Column column, int position, RowBase row, Bindings bindings)
+    private void appendKeyField(PersistitKeyValueTarget target, Column column, int position, RowBase row)
     {
         target.expectingType(column);
-        ValueSource source = row.bindSource(position, bindings);
+        ValueSource source = row.bindSource(position);
         Converters.convert(source, target);
     }
 
