@@ -41,6 +41,10 @@ public abstract class BaseExpression
         return false;
     }
 
+    public boolean isConstant() {
+        return false;
+    }
+
     public interface ColumnExpressionToIndex {
         public int getIndex(ColumnExpression column) throws StandardException;
     }

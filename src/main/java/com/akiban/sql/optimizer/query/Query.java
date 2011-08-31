@@ -30,4 +30,36 @@ public class Query
     private List<OrderByExpression> orderBy;
     private int offset = 0, limit = -1;
     private boolean offsetIsParameter = false, limitIsParameter = false;
+
+    public Query() {
+    }
+
+    public List<OrderByExpression> getOrderBy() {
+        return orderBy;
+    }
+    public void setOrderBy(List<OrderByExpression> orderBy) {
+        this.orderBy = orderBy;
+    }
+
+    public int getOffset() {
+        return offset;
+    }
+    public boolean isOffsetParameter() {
+        return offsetIsParameter;
+    }
+    public int getLimit() {
+        return limit;
+    }
+    public boolean isLimitParameter() {
+        return limitIsParameter;
+    }
+    public void setOffsetAndLimit(int offset, boolean offsetIsParameter,
+                                  int limit, boolean limitIsParameter) {
+        this.offset = offset;
+        this.offsetIsParameter = offsetIsParameter;
+        this.limit = limit;
+        this.limitIsParameter = limitIsParameter;
+    }
+
+
 }

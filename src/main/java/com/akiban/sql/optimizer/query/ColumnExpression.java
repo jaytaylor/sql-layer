@@ -45,14 +45,17 @@ public class ColumnExpression extends BaseExpression
         return column;
     }
 
+    @Override
     public String toString() {
         return column.toString();
     }
 
+    @Override
     public boolean isColumn() {
         return true;
     }
 
+    @Override
     public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) 
             throws StandardException {
         return API.field(fieldOffsets.getIndex(this));

@@ -32,14 +32,21 @@ public class ConstantExpression extends BaseExpression
         this.value = value;
     }
 
+    @Override
+    public boolean isConstant() {
+        return true;
+    }
+
     public Object getValue() {
         return value;
     }
 
+    @Override
     public String toString() {
         return value.toString();
     }
 
+    @Override
     public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
         return API.literal(value);
     }
