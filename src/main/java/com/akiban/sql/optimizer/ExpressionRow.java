@@ -34,10 +34,6 @@ public class ExpressionRow extends AbstractRow
         this.bindings = bindings;
     }
 
-    public Expression getExpression(int i) {
-        return expressions[i];
-    }
-
     /* AbstractRow */
 
     @Override
