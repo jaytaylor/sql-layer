@@ -93,7 +93,7 @@ public abstract class ComposedExpressionTestBase {
         assertEquals("isConstant", childConst, expression.isConstant());
         assertEquals("needsRow", childNeedsRow, expression.needsRow());
         assertEquals("needsBindings", childNeedsBindings, expression.needsBindings());
-        return expression.rowExpression();
+        return expression.evaluation();
     }
 
     private void expectEvalError(ExpressionEvaluation evaluation) {
@@ -112,7 +112,7 @@ public abstract class ComposedExpressionTestBase {
     }
 
     private Row dummyRow() {
-        return new ExpressionRow(null, null);
+        return new ExpressionRow(null, null, null);
     }
 
     // consts
@@ -139,7 +139,7 @@ public abstract class ComposedExpressionTestBase {
         }
 
         @Override
-        public ExpressionEvaluation rowExpression() {
+        public ExpressionEvaluation evaluation() {
             return new DummyExpressionEvaluation(requirements);
         }
 
