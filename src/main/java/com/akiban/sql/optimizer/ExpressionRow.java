@@ -28,11 +28,6 @@ public class ExpressionRow extends AbstractRow
     private RowType rowType;
     private Expression[] expressions;
 
-    @Deprecated
-    public ExpressionRow(RowType rowType, Expression[] expressions) {
-        this(rowType, null, expressions);
-    }
-
     public ExpressionRow(RowType rowType, Bindings bindings, Expression[] expressions) {
         this.rowType = rowType;
         this.expressions = expressions;
@@ -82,9 +77,6 @@ public class ExpressionRow extends AbstractRow
     // private methods
 
     private Bindings bindings() {
-        if (bindings == null) {
-            throw new IllegalStateException("no bindings set");
-        }
         return bindings;
     }
 

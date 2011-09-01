@@ -13,20 +13,10 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.row;
+package com.akiban.qp.expression;
 
-import com.akiban.qp.expression.BoundExpressions;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.ValueSource;
 
-public interface RowBase extends BoundExpressions
-{
-    RowType rowType();
-    HKey hKey();
-    boolean ancestorOf(RowBase that);
-    int runId();
-    void runId(int runId);
-    Row subRow(RowType subRowType);
-
-    final int UNDEFINED_RUN_ID = -1;
+public interface BoundExpressions {
+    ValueSource bindSource(int index);
 }

@@ -18,9 +18,9 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.row.RowBase;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
@@ -38,7 +38,7 @@ class PersistitFilterFactory
         void reportKeyFilter(KeyFilter keyFilter);
     }
 
-    public KeyFilter computeIndexFilter(Key key, Index index, IndexKeyRange keyRange)
+    public KeyFilter computeIndexFilter(Key key, Index index, IndexKeyRange keyRange, Bindings bindings)
     {
         PersistitKeyValueTarget target = new PersistitKeyValueTarget();
         target.attach(key);
@@ -46,7 +46,7 @@ class PersistitFilterFactory
         List<IndexColumn> indexColumns = index.getColumns();
         KeyFilter.Term[] terms = new KeyFilter.Term[indexColumns.size()];
         for (int i = 0; i < indexColumns.size(); ++i) {
-            terms[i] = computeKeyFilterTerm(target, key, indexColumns.get(i).getColumn(), i, keyRange);
+            terms[i] = computeKeyFilterTerm(target, key, indexColumns.get(i).getColumn(), i, keyRange, bindings);
         }
         key.clear();
         KeyFilter keyFilter = new KeyFilter(terms, terms.length, Integer.MAX_VALUE);
@@ -65,7 +65,7 @@ class PersistitFilterFactory
 
     // Returns a KeyFilter term if the specified field of either the start or
     private KeyFilter.Term computeKeyFilterTerm(PersistitKeyValueTarget tuple, Key key, Column column, int position,
-                                                IndexKeyRange keyRange)
+                                                IndexKeyRange keyRange, Bindings bindings)
     {
         boolean hasStart = (keyRange.lo() != null) && keyRange.lo().columnSelector().includesColumn(position);
         boolean hasEnd = (keyRange.hi() != null) && keyRange.hi().columnSelector().includesColumn(position);
@@ -75,13 +75,13 @@ class PersistitFilterFactory
         key.clear();
         key.reset();
         if (hasStart) {
-            appendKeyField(tuple, column, position, keyRange.lo().row());
+            appendKeyField(tuple, column, position, keyRange.lo().boundExpressions(bindings));
         } else {
             key.append(Key.BEFORE);
             key.setEncodedSize(key.getEncodedSize() + 1);
         }
         if (hasEnd) {
-            appendKeyField(tuple, column, position, keyRange.hi().row());
+            appendKeyField(tuple, column, position, keyRange.hi().boundExpressions(bindings));
         } else {
             key.append(Key.AFTER);
         }
@@ -92,7 +92,7 @@ class PersistitFilterFactory
         return KeyFilter.termFromKeySegments(key, key, keyRange.loInclusive(), keyRange.hiInclusive());
     }
 
-    private void appendKeyField(PersistitKeyValueTarget target, Column column, int position, RowBase row)
+    private void appendKeyField(PersistitKeyValueTarget target, Column column, int position, BoundExpressions row)
     {
         target.expectingType(column);
         ValueSource source = row.bindSource(position);
