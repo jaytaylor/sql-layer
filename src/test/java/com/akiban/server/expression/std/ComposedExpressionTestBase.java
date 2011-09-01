@@ -27,8 +27,12 @@ import com.akiban.sql.optimizer.ExpressionRow;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
+import static com.akiban.server.expression.std.ComposedExpressionTestBase.ExpressionAttribute.*;
 import static org.junit.Assert.*;
 
 public abstract class ComposedExpressionTestBase {
@@ -37,62 +41,84 @@ public abstract class ComposedExpressionTestBase {
 
     @Test
     public void childrenAreConst() {
-        ExpressionEvaluation evaluation = evaluation(true, false, false);
+        ExpressionEvaluation evaluation = evaluation(IS_CONSTANT);
         expectEvalSuccess(evaluation);
     }
 
     @Test
     public void childrenNeedRowAndBindings_HasNeither() {
-        ExpressionEvaluation evaluation = evaluation(false, true, true);
+        ExpressionEvaluation evaluation = evaluation(NEEDS_BINDINGS, NEEDS_ROW);
         expectEvalError(evaluation);
     }
 
     @Test
     public void childrenNeedRowAndBindings_HasOnlyBindings() {
-        ExpressionEvaluation evaluation = evaluation(false, true, true);
+        ExpressionEvaluation evaluation = evaluation(NEEDS_BINDINGS, NEEDS_ROW);
         evaluation.of(UndefBindings.only());
+        expectEvalError(evaluation);
+    }
+
+    @Test
+    public void childrenNeedRowAndBindings_HasOnlyRow() {
+        ExpressionEvaluation evaluation = evaluation(NEEDS_BINDINGS, NEEDS_ROW);
+        evaluation.of(dummyRow());
         expectEvalError(evaluation);
     }
 
     @Test
     public void childrenNeedRowAndBindings_HasBoth() {
-        ExpressionEvaluation evaluation = evaluation(false, true, true);
+        ExpressionEvaluation evaluation = evaluation(NEEDS_BINDINGS, NEEDS_ROW);
         evaluation.of(dummyRow());
-        expectEvalSuccess(evaluation);
-    }
-
-    @Test
-    public void childrenNeedBindings_ButMissing() {
-        ExpressionEvaluation evaluation = evaluation(false, false, true);
-        expectEvalError(evaluation);
-    }
-
-    @Test
-    public void childrenNeedBindings_AndHave() {
-        ExpressionEvaluation evaluation = evaluation(false, false, true);
         evaluation.of(UndefBindings.only());
         expectEvalSuccess(evaluation);
     }
 
     @Test
-    public void mutableNoArg() {
-        ExpressionEvaluation evaluation = evaluation(false, false, false);
+    public void childrenNeedBindings_ButMissing() {
+        ExpressionEvaluation evaluation = evaluation(NEEDS_BINDINGS);
+        expectEvalError(evaluation);
+    }
+
+    @Test
+    public void childrenNeedBindings_AndHave() {
+        ExpressionEvaluation evaluation = evaluation(NEEDS_BINDINGS);
+        evaluation.of(UndefBindings.only());
         expectEvalSuccess(evaluation);
     }
 
-    private ExpressionEvaluation evaluation(boolean childConst, boolean childNeedsRow, boolean childNeedsBindings) {
+    @Test
+    public void childrenNeedRow_ButMissing() {
+        ExpressionEvaluation evaluation = evaluation(NEEDS_ROW);
+        expectEvalError(evaluation);
+    }
+
+    @Test
+    public void childrenNeedRow_AndHave() {
+        ExpressionEvaluation evaluation = evaluation(NEEDS_ROW);
+        evaluation.of(dummyRow());
+        expectEvalSuccess(evaluation);
+    }
+
+    @Test
+    public void mutableNoArg() {
+        ExpressionEvaluation evaluation = evaluation();
+        expectEvalSuccess(evaluation);
+    }
+
+    private ExpressionEvaluation evaluation(ExpressionAttribute... attributes) {
         int childrenCount = childrenCount();
         if (childrenCount < 1)
             throw new UnsupportedOperationException("childrenCount() must be > 0");
         List<Expression> children = new ArrayList<Expression>();
-        children.add(new DummyExpression(childConst, childNeedsRow, childNeedsBindings));
+        children.add(new DummyExpression(attributes));
         for (int i=1; i < childrenCount; ++i) {
             children.add(CONST);
         }
         Expression expression = getExpression(children);
-        assertEquals("isConstant", childConst, expression.isConstant());
-        assertEquals("needsRow", childNeedsRow, expression.needsRow());
-        assertEquals("needsBindings", childNeedsBindings, expression.needsBindings());
+        Set<ExpressionAttribute> attributeSet = attributesSet(attributes);
+        assertEquals("isConstant", attributeSet.contains(IS_CONSTANT), expression.isConstant());
+        assertEquals("needsRow", attributeSet.contains(NEEDS_ROW), expression.needsRow());
+        assertEquals("needsBindings", attributeSet.contains(NEEDS_BINDINGS), expression.needsBindings());
         return expression.evaluation();
     }
 
@@ -114,10 +140,16 @@ public abstract class ComposedExpressionTestBase {
     private Row dummyRow() {
         return new ExpressionRow(null, null, null);
     }
+    
+    private static Set<ExpressionAttribute> attributesSet(ExpressionAttribute[] attributes) {
+        Set<ExpressionAttribute> result = EnumSet.noneOf(ExpressionAttribute.class);
+        Collections.addAll(result, attributes);
+        return result;
+    }
 
     // consts
 
-    private static final Expression CONST = new DummyExpression(true, false, false);
+    private static final Expression CONST = new DummyExpression(IS_CONSTANT);
 
     // nested classes
 
@@ -125,17 +157,17 @@ public abstract class ComposedExpressionTestBase {
 
         @Override
         public boolean isConstant() {
-            return requirements.isConstant;
+            return requirements.contains(IS_CONSTANT);
         }
 
         @Override
         public boolean needsBindings() {
-            return requirements.needsBindings;
+            return requirements.contains(NEEDS_BINDINGS);
         }
 
         @Override
         public boolean needsRow() {
-            return requirements.needsRow;
+            return requirements.contains(NEEDS_ROW);
         }
 
         @Override
@@ -148,65 +180,45 @@ public abstract class ComposedExpressionTestBase {
             return AkType.NULL;
         }
 
-        private DummyExpression(boolean constant, boolean needsRow, boolean needsBindings) {
-            requirements = new Requirements(constant, needsRow, needsBindings);
+        private DummyExpression(ExpressionAttribute... attributes) {
+            requirements = attributesSet(attributes);
         }
 
-        private final Requirements requirements;
+        private final Set<ExpressionAttribute> requirements;
     }
 
     private static class DummyExpressionEvaluation implements ExpressionEvaluation {
         @Override
         public void of(Row row) {
-            hasRow = true;
+            missingRequirements.remove(ExpressionAttribute.NEEDS_ROW);
         }
 
         @Override
         public void of(Bindings bindings) {
-            hasBindings = true;
+            missingRequirements.remove(ExpressionAttribute.NEEDS_BINDINGS);
         }
 
         @Override
         public ValueSource eval() {
-            if ( (requirements.needsBindings && !hasBindings) || (requirements.needsRow && ! hasRow)) {
-                fail("failed requirements " + requirements + ": hasRow=" + hasRow + ", hasBindings=" + hasBindings);
+            if (!missingRequirements.isEmpty()) {
+                fail("failed requirements " + missingRequirements + ": original requirements were " + requirements);
             }
             return NullValueSource.only();
         }
 
-        private DummyExpressionEvaluation(Requirements requirements) {
+        private DummyExpressionEvaluation(Set<ExpressionAttribute> requirements) {
             this.requirements = requirements;
-            hasRow = false;
-            hasBindings = false;
+            this.missingRequirements = EnumSet.copyOf(requirements);
+            missingRequirements.remove(IS_CONSTANT);
         }
 
-        private final Requirements requirements;
-        private boolean hasRow;
-        private boolean hasBindings;
+        private final Set<ExpressionAttribute> requirements;
+        private final Set<ExpressionAttribute> missingRequirements;
     }
 
-    private static class Requirements {
-
-        private Requirements(boolean constant, boolean needsRow, boolean needsBindings) {
-            isConstant = constant;
-            this.needsRow = needsRow;
-            this.needsBindings = needsBindings;
-        }
-
-        @Override
-        public String toString() {
-            List<String> reqs = new ArrayList<String>();
-            if (isConstant)
-                reqs.add("CONSTANT");
-            if (needsRow)
-                reqs.add("NEEDS ROW");
-            if (needsBindings)
-                reqs.add("NEEDS BINDINGS");
-            return reqs.toString();
-        }
-
-        final boolean isConstant;
-        final boolean needsRow;
-        final boolean needsBindings;
+    enum ExpressionAttribute {
+        IS_CONSTANT,
+        NEEDS_ROW,
+        NEEDS_BINDINGS
     }
 }
