@@ -30,7 +30,7 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
 
     @Override
     public String toString() {
-        return Arrays.toString(expressions);
+        return "UnboundExpressions" + Arrays.toString(expressions);
     }
 
     public RowBasedUnboundExpressions(RowType rowType, Expression[] expressions) {
