@@ -13,20 +13,18 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.row;
+package com.akiban.qp.rowtype;
 
-import com.akiban.qp.expression.BoundExpressions;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.ValueSource;
+public final class AggregatedRowType extends DerivedRowType {
+    @Override
+    public int nFields() {
+        return nFields;
+    }
 
-public interface RowBase extends BoundExpressions
-{
-    RowType rowType();
-    HKey hKey();
-    boolean ancestorOf(RowBase that);
-    int runId();
-    void runId(int runId);
-    Row subRow(RowType subRowType);
+    public AggregatedRowType(Schema schema, int typeId, RowType base) {
+        super(schema, typeId);
+        nFields = base.nFields();
+    }
 
-    final int UNDEFINED_RUN_ID = -1;
+    private final int nFields;
 }

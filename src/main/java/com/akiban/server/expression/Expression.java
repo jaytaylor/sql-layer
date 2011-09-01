@@ -51,7 +51,7 @@ public interface Expression {
      * across threads.
      * @return this expression's ExpressionEvaluation
      */
-    ExpressionEvaluation rowExpression();
+    ExpressionEvaluation evaluation();
 
     /**
      * The type represented by this expression. {@code this.evaluation().eval()} returns a {@link ValueSource} whose

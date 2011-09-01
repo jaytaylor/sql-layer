@@ -37,6 +37,26 @@ public final class ValueHolder implements ValueSource, ValueTarget {
 
     // ValueHolder interface
 
+    public void clear() {
+        type = AkType.UNSUPPORTED;
+        stateType = StateType.UNDEF_VAL;
+    }
+
+    public void copyFrom(ValueSource copySource) {
+        expectType(copySource.getConversionType());
+        Converters.convert(copySource, this);
+    }
+
+    public void expectType(AkType expectedType) {
+        type = expectedType;
+    }
+
+    public boolean hasSourceState() {
+        return stateType != StateType.UNDEF_VAL;
+    }
+
+    // for use in this class (testing)
+
     void requireForPuts(AkType type) {
         allowedPut = type;
     }
@@ -304,6 +324,9 @@ public final class ValueHolder implements ValueSource, ValueTarget {
 
     @Override
     public String toString() {
+        if (isNull()) {
+            return AkType.NULL.toString();
+        }
         StringBuilder sb = new StringBuilder();
         sb.append(type).append('(');
         appendAsString(AkibanAppender.of(sb), Quote.NONE);
@@ -384,7 +407,7 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     }
 
     public ValueHolder() {
-        // nothing to do
+        clear();
     }
 
     public ValueHolder(AkType type, long value) {
@@ -413,8 +436,7 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     }
 
     public ValueHolder(ValueSource copySource) {
-        this.type = copySource.getConversionType();
-        Converters.convert(copySource, this);
+        copyFrom(copySource);
     }
 
     // object state

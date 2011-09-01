@@ -42,7 +42,7 @@ public final class FieldExpression implements Expression {
     }
 
     @Override
-    public ExpressionEvaluation rowExpression() {
+    public ExpressionEvaluation evaluation() {
         return new InnerEvaluation(rowType, fieldIndex, akType);
     }
 
@@ -74,7 +74,7 @@ public final class FieldExpression implements Expression {
             if (!rowType.equals(incomingType)) {
                 throw new IllegalArgumentException("wrong row type: " + incomingType + " != " + rowType);
             }
-            ValueSource incomingSource = row.bindSource(fieldIndex, bindings);
+            ValueSource incomingSource = row.eval(fieldIndex);
             AkType incomingAkType = incomingSource.getConversionType();
             if (incomingAkType != AkType.NULL && !akType.equals(incomingAkType)) {
                 throw new IllegalArgumentException(
@@ -87,7 +87,6 @@ public final class FieldExpression implements Expression {
 
         @Override
         public void of(Bindings bindings) {
-            this.bindings = bindings;
         }
 
         @Override
@@ -95,12 +94,6 @@ public final class FieldExpression implements Expression {
             if (rowSource == null)
                 throw new IllegalStateException("haven't seen a row to target");
             return rowSource;
-        }
-
-        private Bindings bindings() {
-            if (bindings == null)
-                throw new IllegalStateException("no bindings set");
-            return bindings;
         }
 
         private InnerEvaluation(RowType rowType, int fieldIndex, AkType akType) {
@@ -115,6 +108,5 @@ public final class FieldExpression implements Expression {
         private final int fieldIndex;
         private final AkType akType;
         private ValueSource rowSource;
-        private Bindings bindings;
     }
 }

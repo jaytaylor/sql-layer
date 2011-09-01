@@ -41,7 +41,7 @@ public final class LiteralExpression implements Expression {
     }
 
     @Override
-    public ExpressionEvaluation rowExpression() {
+    public ExpressionEvaluation evaluation() {
         return evaluation;
     }
 
