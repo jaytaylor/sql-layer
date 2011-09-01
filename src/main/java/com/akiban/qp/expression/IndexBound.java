@@ -15,19 +15,19 @@
 
 package com.akiban.qp.expression;
 
-import com.akiban.qp.row.RowBase;
+import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.server.api.dml.ColumnSelector;
 
 public class IndexBound
 {
     public String toString()
     {
-        return String.format("%s", row);
+        return String.valueOf(unboundExpressions);
     }
 
-    public RowBase row()
+    public BoundExpressions boundExpressions(Bindings bindings)
     {
-        return row;
+        return unboundExpressions.get(bindings);
     }
 
     public ColumnSelector columnSelector()
@@ -35,14 +35,40 @@ public class IndexBound
         return columnSelector;
     }
 
-    public IndexBound(RowBase row, ColumnSelector columnSelector)
+    public IndexBound(BoundExpressions row, ColumnSelector columnSelector)
     {
-        this.row = row;
+        this(new PreBoundExpressions(row), columnSelector);
+    }
+
+    public IndexBound(UnboundExpressions unboundExpressions, ColumnSelector columnSelector)
+    {
+        this.unboundExpressions = unboundExpressions;
         this.columnSelector = columnSelector;
     }
 
     // Object state
 
-    private final RowBase row;
+    private final UnboundExpressions unboundExpressions;
     private final ColumnSelector columnSelector;
+
+    // nested classes
+
+    private static class PreBoundExpressions implements UnboundExpressions {
+
+        @Override
+        public BoundExpressions get(Bindings bindings) {
+            return expressions;
+        }
+
+        @Override
+        public String toString() {
+            return String.valueOf(expressions);
+        }
+
+        public PreBoundExpressions(BoundExpressions expressions) {
+            this.expressions = expressions;
+        }
+
+        private final BoundExpressions expressions;
+    }
 }

@@ -136,7 +136,7 @@ public final class GroupIndexScanIT extends ITBase {
             for (Row row = cursor.next(); row != null; row = cursor.next()) {
                 Object[] rowArray = new Object[row.rowType().nFields()];
                 for (int i=0; i < rowArray.length; ++i) {
-                    ValueSource source = row.bindSource(i, UndefBindings.only());
+                    ValueSource source = row.eval(i);
                     rowArray[i] = target.convertFromSource(source);
                 }
                 actualResults.add(Arrays.asList(rowArray));
