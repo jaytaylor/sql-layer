@@ -44,8 +44,8 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
     private static class ExpressionsAndBindings implements BoundExpressions {
 
         @Override
-        public ValueSource bindSource(int index) {
-            return expressionRow.bindSource(index);
+        public ValueSource eval(int index) {
+            return expressionRow.eval(index);
         }
 
         ExpressionsAndBindings(RowType rowType, Expression[] expressions, Bindings bindings) {

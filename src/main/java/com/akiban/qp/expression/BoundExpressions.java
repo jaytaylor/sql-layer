@@ -18,5 +18,5 @@ package com.akiban.qp.expression;
 import com.akiban.server.types.ValueSource;
 
 public interface BoundExpressions {
-    ValueSource bindSource(int index);
+    ValueSource eval(int index);
 }

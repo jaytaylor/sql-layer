@@ -39,12 +39,12 @@ public class FlattenedRow extends AbstractRow
     }
 
     @Override
-    public ValueSource bindSource(int i) {
+    public ValueSource eval(int i) {
         ValueSource source;
         if (i < nParentFields) {
-            source = parent.isNull() ? NullValueSource.only() : parent.get().bindSource(i);
+            source = parent.isNull() ? NullValueSource.only() : parent.get().eval(i);
         } else {
-            source = child.isNull() ? NullValueSource.only() : child.get().bindSource(i - nParentFields);
+            source = child.isNull() ? NullValueSource.only() : child.get().eval(i - nParentFields);
         }
         return source;
     }

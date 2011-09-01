@@ -33,7 +33,7 @@ public class TestRow extends AbstractRow
     }
 
     @Override
-    public ValueSource bindSource(int i) {
+    public ValueSource eval(int i) {
         return valuesHolder.valueSourceAt(i);
     }
 

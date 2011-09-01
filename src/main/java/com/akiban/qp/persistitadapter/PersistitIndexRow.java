@@ -46,7 +46,7 @@ public class PersistitIndexRow extends AbstractRow
             if (i > 0) {
                 buffer.putString(", ");
             }
-            Converters.convert(bindSource(i), buffer);
+            Converters.convert(eval(i), buffer);
         }
         buffer.putString(")->");
         buffer.putString(hKey.toString());
@@ -62,7 +62,7 @@ public class PersistitIndexRow extends AbstractRow
     }
 
     @Override
-    public ValueSource bindSource(int i) {
+    public ValueSource eval(int i) {
         IndexColumn column = index().getColumns().get(i);
         valueSource.attach(indexRow, column);
         return valueSource;

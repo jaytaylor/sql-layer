@@ -195,7 +195,7 @@ final class Aggregation_Partial extends PhysicalOperator {
             for (int i=0; i < aggregators.size(); ++i) {
                 Aggregator aggregator = aggregators.get(i);
                 int inputIndex = i + inputsIndex;
-                aggregator.input(input.bindSource(inputIndex));
+                aggregator.input(input.eval(inputIndex));
             }
         }
 
@@ -239,7 +239,7 @@ final class Aggregation_Partial extends PhysicalOperator {
             if (cursorState == CursorState.OPENING) {
                 // Copy over this row's values; switch mode to RUNNING; return false
                 for (int i = 0; i < keyValues.size(); ++i) {
-                    keyValues.get(i).copyFrom(givenInput.bindSource(i));
+                    keyValues.get(i).copyFrom(givenInput.eval(i));
                 }
                 cursorState = CursorState.RUNNING;
                 return false;
@@ -249,7 +249,7 @@ final class Aggregation_Partial extends PhysicalOperator {
                 // If any keys are different, switch mode to OPENING and return true; else return false.
                 for (int i = 0; i < keyValues.size(); ++i) {
                     ValueHolder key = keyValues.get(i);
-                    scratchValueHolder.copyFrom(givenInput.bindSource(i));
+                    scratchValueHolder.copyFrom(givenInput.eval(i));
                     if (!scratchValueHolder.equals(key)) {
                         cursorState = CursorState.OPENING;
                         return true;

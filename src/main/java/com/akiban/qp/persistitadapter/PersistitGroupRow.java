@@ -49,7 +49,7 @@ public class PersistitGroupRow extends AbstractRow
     }
 
     @Override
-    public ValueSource bindSource(int i) {
+    public ValueSource eval(int i) {
         FieldDef fieldDef = rowDef().getFieldDef(i);
         RowData rowData = rowData();
         valueSource.bind(fieldDef, rowData);

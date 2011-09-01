@@ -46,7 +46,7 @@ public class ValuesHolderRow extends AbstractRow {
     }
 
     @Override
-    public ValueSource bindSource(int i) {
+    public ValueSource eval(int i) {
         ValueHolder value = values.get(i);
         if (!value.hasSourceState()) {
             throw new IllegalStateException("value at index " + i + " was never set");

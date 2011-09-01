@@ -95,7 +95,7 @@ class PersistitFilterFactory
     private void appendKeyField(PersistitKeyValueTarget target, Column column, int position, BoundExpressions row)
     {
         target.expectingType(column);
-        ValueSource source = row.bindSource(position);
+        ValueSource source = row.eval(position);
         Converters.convert(source, target);
     }
 

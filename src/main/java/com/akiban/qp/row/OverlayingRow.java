@@ -42,9 +42,9 @@ public final class OverlayingRow extends AbstractRow {
     }
 
     @Override
-    public ValueSource bindSource(int i) {
+    public ValueSource eval(int i) {
         if (Undef.isUndefined(overlays[i])) {
-            return underlying.bindSource(i);
+            return underlying.eval(i);
         } else {
             valueSource.setReflectively(overlays[i]);
             return valueSource;

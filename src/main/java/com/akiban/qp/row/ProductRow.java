@@ -37,7 +37,7 @@ public class ProductRow extends AbstractRow
             if (i > 0) {
                 buffer.putString(", ");
             }
-            Converters.convert(bindSource(i), buffer);
+            Converters.convert(eval(i), buffer);
         }
         buffer.putString(")");
         return buffer.toString();
@@ -52,12 +52,12 @@ public class ProductRow extends AbstractRow
     }
 
     @Override
-    public ValueSource bindSource(int i) {
+    public ValueSource eval(int i) {
         ValueSource source;
         if (i < nLeftFields) {
-            source = left.isNull() ? NullValueSource.only() : left.get().bindSource(i);
+            source = left.isNull() ? NullValueSource.only() : left.get().eval(i);
         } else {
-            source = right.isNull() ? NullValueSource.only() : right.get().bindSource(i - firstRightFieldOffset);
+            source = right.isNull() ? NullValueSource.only() : right.get().eval(i - firstRightFieldOffset);
         }
         return source;
     }
