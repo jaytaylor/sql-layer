@@ -15,7 +15,6 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.error.WrongExpressionArityException;
@@ -93,7 +92,7 @@ public final class LongOpExpressionTest extends ComposedExpressionTestBase {
         assertFalse("top shouldn't be constant", top.isConstant());
         ExpressionEvaluation evaluation = top.evaluation();
         ValuesRow row = new ValuesRow(dummyType, new Object[] {5L, 2.9} );
-        evaluation.of(row, UndefBindings.only());
+        evaluation.of(row);
         ValueSource actual = new ValueHolder(evaluation.eval());
         ValueSource expected = new ValueHolder(LongOps.LONG_SUBTRACT.opType(), 3L);
         assertEquals("ValueSource", expected, actual);

@@ -57,7 +57,7 @@ public abstract class ComposedExpressionTestBase {
     @Test
     public void childrenNeedRowAndBindings_HasBoth() {
         ExpressionEvaluation evaluation = evaluation(false, true, true);
-        evaluation.of(dummyRow(), UndefBindings.only());
+        evaluation.of(dummyRow());
         expectEvalSuccess(evaluation);
     }
 
@@ -157,9 +157,8 @@ public abstract class ComposedExpressionTestBase {
 
     private static class DummyExpressionEvaluation implements ExpressionEvaluation {
         @Override
-        public void of(Row row, Bindings bindings) {
+        public void of(Row row) {
             hasRow = true;
-            of(bindings);
         }
 
         @Override

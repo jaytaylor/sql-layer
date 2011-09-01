@@ -93,7 +93,7 @@ public final class LiteralExpression implements Expression {
     
     private static class InternalEvaluation implements  ExpressionEvaluation {
         @Override
-        public void of(Row row, Bindings bindings) {
+        public void of(Row row) {
         }
 
         @Override

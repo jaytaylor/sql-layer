@@ -20,7 +20,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.server.types.ValueSource;
 
 public interface ExpressionEvaluation {
-    void of(Row row, Bindings bindings);
+    void of(Row row);
     void of(Bindings bindings);
     ValueSource eval();
 }
