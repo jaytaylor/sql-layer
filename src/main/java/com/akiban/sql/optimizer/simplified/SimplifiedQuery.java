@@ -16,7 +16,7 @@
 package com.akiban.sql.optimizer.simplified;
 
 import com.akiban.sql.optimizer.*;
-import com.akiban.sql.optimizer.query.TableTreeBase;
+import com.akiban.sql.optimizer.plan.TableTreeBase;
 
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.parser.*;
