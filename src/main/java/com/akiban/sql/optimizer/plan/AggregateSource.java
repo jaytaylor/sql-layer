@@ -43,7 +43,7 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
 
     @Override
     public String toString() {
-        return "GROUP BY " + groupBy + aggregates + "\n" + getInput();
+        return "GROUP BY" + groupBy + aggregates + "\n" + getInput();
     }
 
 }

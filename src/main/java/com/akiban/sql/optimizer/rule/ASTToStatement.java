@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.plan.JoinNode;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultExpression;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
@@ -224,8 +225,13 @@ public class ASTToStatement extends BaseRule
             (selectNode.getHavingClause() != null) ||
             hasAggregateFunctionA(results) ||
             hasAggregateFunctionA(sorts)) {
+
             query = toAggregateSource(query, selectNode.getGroupByList());
-            query = toFilter(query, selectNode.getHavingClause(), true);
+
+            List<ConditionExpression> conditions = 
+                toConditions(selectNode.getHavingClause());
+            if (conditions != null)
+                query = new Filter(query, conditions);
         }
 
         if (!sorts.isEmpty()) {
@@ -257,7 +263,16 @@ public class ASTToStatement extends BaseRule
             else
                 joins = joinNodes(joins, toJoinNode(fromTable), JoinType.INNER_JOIN);
         }
-        return toFilter(joins, selectNode.getWhereClause(), false);
+        PlanNode query = joins;
+        List<ConditionExpression> conditions = 
+            toConditions(selectNode.getWhereClause());
+        if (conditions != null) {
+            if (hasAggregateFunction(conditions))
+                throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
+                                                  selectNode.getWhereClause());
+            query = new Filter(query, conditions);
+        }
+        return query;
     }
 
     protected Map<FromTable,Joinable> joinNodes =
@@ -291,9 +306,11 @@ public class ASTToStatement extends BaseRule
             default:
                 throw new UnsupportedSQLException("Unsupported join type", joinNode);
             }
-            result = joinNodes(toJoinNode((FromTable)joinNode.getLeftResultSet()),
-                               toJoinNode((FromTable)joinNode.getRightResultSet()),
-                               joinType);
+            JoinNode join = joinNodes(toJoinNode((FromTable)joinNode.getLeftResultSet()),
+                                      toJoinNode((FromTable)joinNode.getRightResultSet()),
+                                      joinType);
+            join.setJoinConditions(toConditions(joinNode.getJoinClause()));
+            result = join;
         }
         else
             throw new UnsupportedSQLException("Unsupported FROM non-table", fromTable);
@@ -301,14 +318,13 @@ public class ASTToStatement extends BaseRule
         return result;
     }
 
-    protected Joinable joinNodes(Joinable left, Joinable right,
-                                     JoinType joinType)
+    protected JoinNode joinNodes(Joinable left, Joinable right, JoinType joinType)
             throws StandardException {
-        return new com.akiban.sql.optimizer.plan.JoinNode(left, right, joinType);
+        return new JoinNode(left, right, joinType);
     }
 
     /** Add a set of conditions to input. */
-    protected PlanNode toFilter(PlanNode input, ValueNode cnfClause, boolean having)
+    protected List<ConditionExpression> toConditions(ValueNode cnfClause)
             throws StandardException {
         List<ConditionExpression> conditions = new ArrayList<ConditionExpression>();
         while (cnfClause != null) {
@@ -321,13 +337,10 @@ public class ASTToStatement extends BaseRule
             ValueNode condition = andNode.getLeftOperand();
             addCondition(conditions, condition);
         }
-        if (!having && hasAggregateFunction(conditions))
-            throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
-                                              cnfClause);
         if (conditions.isEmpty())
-            return input;
+            return null;
         else
-            return new Filter(input, conditions);
+            return conditions;
     }
 
     protected void addCondition(List<ConditionExpression> conditions, ValueNode condition)
@@ -566,6 +579,11 @@ public class ASTToStatement extends BaseRule
                                                 GroupByList groupByList)
             throws StandardException {
         List<ExpressionNode> groupBy = new ArrayList<ExpressionNode>();
+        if (groupByList != null) {
+            for (GroupByColumn groupByColumn : groupByList) {
+                groupBy.add(toExpression(groupByColumn.getColumnExpression()));
+            }
+        }
         return new AggregateSource(input, groupBy);
     }
     

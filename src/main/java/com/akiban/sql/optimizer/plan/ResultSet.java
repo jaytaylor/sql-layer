@@ -52,7 +52,7 @@ public class ResultSet extends BasePlanWithInput
 
     @Override
     public String toString() {
-        return "SELECT " + results.toString() + "\n" + getInput();
+        return "SELECT" + results.toString() + "\n" + getInput();
     }
 
 }

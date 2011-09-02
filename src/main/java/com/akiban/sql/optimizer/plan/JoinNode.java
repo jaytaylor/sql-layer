@@ -104,6 +104,6 @@ public class JoinNode extends BaseJoinable
 
     @Override
     public String toString() {
-        return joinType + "(" + left + "," + right + ")";
+        return joinType + "(" + left + "," + right + "," + joinConditions + ")";
     }
 }

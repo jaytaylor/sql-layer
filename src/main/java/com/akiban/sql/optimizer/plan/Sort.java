@@ -18,7 +18,7 @@ package com.akiban.sql.optimizer.plan;
 import java.util.List;
 
 /** A key expression in an ORDER BY clause. */
-public class Sort extends BasePlanNode
+public class Sort extends BasePlanWithInput
 {
     public static class OrderByExpression extends AnnotatedExpression {
         private boolean ascending;
@@ -40,17 +40,11 @@ public class Sort extends BasePlanNode
         }
     }
 
-    private PlanNode input;
     private List<OrderByExpression> orderBy;
 
     public Sort(PlanNode input, List<OrderByExpression> orderBy) {
-        this.input = input;
-        input.setOutput(this);
+        super(input);
         this.orderBy = orderBy;
-    }
-
-    public PlanNode getInput() {
-        return input;
     }
 
     public List<OrderByExpression> getOrderBy() {
@@ -59,7 +53,7 @@ public class Sort extends BasePlanNode
 
     @Override
     public String toString() {
-        return "SORT " + orderBy + "\n" + getInput();
+        return "SORT" + orderBy + "\n" + getInput();
     }
 
 }
