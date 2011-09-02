@@ -20,27 +20,23 @@ import java.util.List;
 /** A key expression in an ORDER BY clause. */
 public class Sort extends BasePlanNode
 {
-    public static class OrderByExpression {
-        private BaseExpression expression;
+    public static class OrderByExpression extends AnnotatedExpression {
         private boolean ascending;
 
-        public OrderByExpression(BaseExpression expression, boolean ascending) {
-            this.expression = expression;
+        public OrderByExpression(ExpressionNode expression, boolean ascending) {
+            super(expression);
             this.ascending = ascending;
         }
 
-        public BaseExpression getExpression() {
-            return expression;
-        }
         public boolean isAscending() {
             return ascending;
         }
 
         public String toString() {
             if (ascending)
-                return expression.toString();
+                return super.toString();
             else
-                return expression.toString() + " DESC";
+                return super.toString() + " DESC";
         }
     }
 

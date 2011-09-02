@@ -31,7 +31,9 @@ public class JoinNode extends BaseJoinable
 
     public JoinNode(Joinable left, Joinable right, JoinType joinType) {
         this.left = left;
+        left.setOutput(this);
         this.right = right;
+        right.setOutput(this);
         this.joinType = joinType;
     }
 
@@ -40,12 +42,14 @@ public class JoinNode extends BaseJoinable
     }
     public void setLeft(Joinable left) {
         this.left = left;
+        left.setOutput(this);
     }
     public Joinable getRight() {
         return right;
     }
     public void setRight(Joinable right) {
         this.right = right;
+        right.setOutput(this);
     }
 
     public JoinType getJoinType() {

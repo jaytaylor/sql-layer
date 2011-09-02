@@ -13,27 +13,11 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.akiban.sql.optimizer.rule;
 
-import java.util.List;
+import com.akiban.sql.optimizer.plan.PlanNode;
 
-/** A join node explicitly enumerating rows.
- * From VALUES or IN.
- */
-public class ExpressionsSource extends BaseJoinable
+public abstract class BaseRule
 {
-    private List<List<ExpressionNode>> expressions;
-
-    public ExpressionsSource(List<List<ExpressionNode>> expressions) {
-        this.expressions = expressions;
-    }
-
-    public List<List<ExpressionNode>> getExpressions() {
-        return expressions;
-    }
-
-    @Override
-    public String toString() {
-        return "VALUES" + expressions;
-    }
+    public abstract PlanNode apply(PlanNode plan);
 }

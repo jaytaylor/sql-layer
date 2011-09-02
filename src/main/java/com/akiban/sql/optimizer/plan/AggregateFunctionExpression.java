@@ -25,11 +25,11 @@ import com.akiban.qp.expression.Expression;
  */
 public class AggregateFunctionExpression extends BaseExpression 
 {
-    private BaseExpression operand;
+    private ExpressionNode operand;
     private String function;
     private boolean distinct;
     
-    public AggregateFunctionExpression(BaseExpression operand, String function,
+    public AggregateFunctionExpression(ExpressionNode operand, String function,
                                        boolean distinct, DataTypeDescriptor type) {
         super(type);
         this.operand = operand;
@@ -37,7 +37,7 @@ public class AggregateFunctionExpression extends BaseExpression
         this.distinct = distinct;
     }
 
-    public BaseExpression getOperand() {
+    public ExpressionNode getOperand() {
         return operand;
     }
     public String getFunction() {

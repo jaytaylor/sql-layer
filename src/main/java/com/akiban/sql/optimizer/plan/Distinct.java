@@ -15,25 +15,15 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import java.util.List;
-
-/** A join node explicitly enumerating rows.
- * From VALUES or IN.
- */
-public class ExpressionsSource extends BaseJoinable
+/** Make results distinct. */
+public class Distinct extends BasePlanWithInput
 {
-    private List<List<ExpressionNode>> expressions;
-
-    public ExpressionsSource(List<List<ExpressionNode>> expressions) {
-        this.expressions = expressions;
-    }
-
-    public List<List<ExpressionNode>> getExpressions() {
-        return expressions;
+    public Distinct(PlanNode input) {
+        super(input);
     }
 
     @Override
     public String toString() {
-        return "VALUES" + expressions;
+        return "DISTINCT(" + getInput() + ")";
     }
 }

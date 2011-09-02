@@ -16,25 +16,19 @@
 package com.akiban.sql.optimizer.plan;
 
 /** LIMIT / OFFSET */
-public class Limit extends BasePlanNode
+public class Limit extends BasePlanWithInput
 {
-    private PlanNode input;
     private int offset, limit;
     private boolean offsetIsParameter, limitIsParameter;
 
     public Limit(PlanNode input,
                  int offset, boolean offsetIsParameter,
                  int limit, boolean limitIsParameter) {
-        this.input = input;
-        input.setOutput(this);
+        super(input);
         this.offset = offset;
         this.offsetIsParameter = offsetIsParameter;
         this.limit = limit;
         this.limitIsParameter = limitIsParameter;
-    }
-
-    public PlanNode getInput() {
-        return input;
     }
 
     public int getOffset() {
@@ -64,7 +58,7 @@ public class Limit extends BasePlanNode
             str.append(limit);
         }
         str.append("\n");
-        str.append(input);
+        str.append(getInput());
         return str.toString();
     }
 

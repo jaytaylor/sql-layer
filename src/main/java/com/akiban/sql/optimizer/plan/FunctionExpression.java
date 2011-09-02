@@ -28,10 +28,10 @@ import java.util.List;
 public class FunctionExpression extends BaseExpression
 {
     private String function;
-    private List<BaseExpression> operands;
+    private List<ExpressionNode> operands;
     
     public FunctionExpression(String function,
-                              List<BaseExpression> operands,
+                              List<ExpressionNode> operands,
                               DataTypeDescriptor type) {
         super(type);
         this.function = function;
@@ -41,7 +41,7 @@ public class FunctionExpression extends BaseExpression
     public String getFunction() {
         return function;
     }
-    public List<BaseExpression> getOperands() {
+    public List<ExpressionNode> getOperands() {
         return operands;
     }
 
@@ -49,7 +49,7 @@ public class FunctionExpression extends BaseExpression
         StringBuilder str = new StringBuilder(function);
         str.append("(");
         boolean first = true;
-        for (BaseExpression operand : operands) {
+        for (ExpressionNode operand : operands) {
             if (first) first = false; else str.append(",");
             str.append(operand);
         }

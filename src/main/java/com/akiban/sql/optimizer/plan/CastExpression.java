@@ -23,9 +23,9 @@ import com.akiban.qp.expression.Expression;
  */
 public class CastExpression extends BaseExpression 
 {
-    private BaseExpression inner;
+    private ExpressionNode inner;
 
-    public CastExpression(BaseExpression left, DataTypeDescriptor type) {
+    public CastExpression(ExpressionNode left, DataTypeDescriptor type) {
         super(type);
         this.inner = inner;
     }

@@ -24,25 +24,21 @@ public class UpdateStatement extends BaseUpdateStatement
 {
     /** One of the SET clauses of an UPDATE statement.
      */
-    public class UpdateColumn {
+    public static class UpdateColumn extends AnnotatedExpression {
         private Column column;
-        private BaseExpression value;
 
-        public UpdateColumn(Column column, BaseExpression value) {
+        public UpdateColumn(Column column, ExpressionNode value) {
+            super(value);
             this.column = column;
-            this.value = value;
         }
 
         public Column getColumn() {
             return column;
         }
-        public BaseExpression getValue() {
-            return value;
-        }
 
         @Override
         public String toString() {
-            return column + " = " + value;
+            return column + " = " + getExpression();
         }
     }
 

@@ -18,22 +18,17 @@ package com.akiban.sql.optimizer.plan;
 import java.util.List;
 
 /** An expression in a Project list (the list right after SELECT). */
-public class ResultSet extends BasePlanNode
+public class ResultSet extends BasePlanWithInput
 {
-    public static class ResultExpression {
-        private BaseExpression expression;
+    public static class ResultExpression extends AnnotatedExpression {
         private String name;
         private boolean nameDefaulted;
 
-        public ResultExpression(BaseExpression expression,
+        public ResultExpression(ExpressionNode expression,
                                 String name, boolean nameDefaulted) {
-            this.expression = expression;
+            super(expression);
             this.name = name;
             this.nameDefaulted = nameDefaulted;
-        }
-
-        public BaseExpression getExpression() {
-            return expression;
         }
 
         public String getName() {
@@ -42,15 +37,12 @@ public class ResultSet extends BasePlanNode
         public boolean isNameDefaulted() {
             return nameDefaulted;
         }
-        
-        public String toString() {
-            return expression.toString();
-        }
     }
 
     private List<ResultExpression> results;
 
-    public ResultSet(List<ResultExpression> results) {
+    public ResultSet(PlanNode input, List<ResultExpression> results) {
+        super(input);
         this.results = results;
     }
 
@@ -60,7 +52,7 @@ public class ResultSet extends BasePlanNode
 
     @Override
     public String toString() {
-        return results.toString();
+        return "SELECT " + results.toString() + "\n" + getInput();
     }
 
 }

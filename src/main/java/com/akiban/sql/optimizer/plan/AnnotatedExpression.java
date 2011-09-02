@@ -15,25 +15,22 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import java.util.List;
-
-/** A join node explicitly enumerating rows.
- * From VALUES or IN.
- */
-public class ExpressionsSource extends BaseJoinable
+public abstract class AnnotatedExpression
 {
-    private List<List<ExpressionNode>> expressions;
+    private ExpressionNode expression;
 
-    public ExpressionsSource(List<List<ExpressionNode>> expressions) {
-        this.expressions = expressions;
+    protected AnnotatedExpression(ExpressionNode expression) {
+        this.expression = expression;
+    }
+    
+    public ExpressionNode getExpression() {
+        return expression;
     }
 
-    public List<List<ExpressionNode>> getExpressions() {
-        return expressions;
-    }
-
+        
     @Override
     public String toString() {
-        return "VALUES" + expressions;
+        return expression.toString();
     }
+
 }

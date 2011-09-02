@@ -25,10 +25,10 @@ import com.akiban.qp.expression.Comparison;
  */
 public class ComparisonCondition extends BaseExpression implements ConditionExpression 
 {
-    private BaseExpression left, right;
+    private ExpressionNode left, right;
     private Comparison operation;
 
-    public ComparisonCondition(BaseExpression left, BaseExpression right,
+    public ComparisonCondition(ExpressionNode left, ExpressionNode right,
                                Comparison operation, DataTypeDescriptor type) {
         super(type);
         this.left = left;
@@ -36,10 +36,10 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
         this.operation = operation;
     }
 
-    public BaseExpression getLeft() {
+    public ExpressionNode getLeft() {
         return left;
     }
-    public BaseExpression getRight() {
+    public ExpressionNode getRight() {
         return right;
     }
     public Comparison getOperation() {
@@ -76,7 +76,7 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
     }
 
     public void reverse() {
-        BaseExpression temp = left;
+        ExpressionNode temp = left;
         left = right;
         right = temp;
         operation = reverseComparison(operation);

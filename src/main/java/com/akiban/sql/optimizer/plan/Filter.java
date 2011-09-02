@@ -20,11 +20,12 @@ import java.util.List;
 /** Apply a conjunction of Boolean expressions to the input.
  * (What relational algebra and the operator system call Select).
  */
-public class Filter extends BasePlanNode
+public class Filter extends BasePlanWithInput
 {
     private List<ConditionExpression> conditions;
 
-    public Filter(List<ConditionExpression> conditions) {
+    public Filter(PlanNode input, List<ConditionExpression> conditions) {
+        super(input);
         this.conditions = conditions;
     }
 
@@ -34,6 +35,6 @@ public class Filter extends BasePlanNode
 
     @Override
     public String toString() {
-        return "FILTER" + conditions.toString();
+        return "FILTER" + conditions.toString() + "\n" + getInput();
     }
 }

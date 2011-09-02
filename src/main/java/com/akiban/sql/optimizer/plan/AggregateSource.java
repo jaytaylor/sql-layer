@@ -18,21 +18,19 @@ package com.akiban.sql.optimizer.plan;
 import java.util.List;
 import java.util.ArrayList;
 
-public class AggregateSource extends BaseJoinable implements ColumnSource
+public class AggregateSource extends BasePlanWithInput implements ColumnSource
 {
-    private PlanNode input;
-    private List<BaseExpression> groupBy;
+    private List<ExpressionNode> groupBy;
     private List<AggregateFunctionExpression> aggregates;
 
     public AggregateSource(PlanNode input,
-                           List<BaseExpression> groupBy) {
-        this.input = input;
-        input.setOutput(this);
+                           List<ExpressionNode> groupBy) {
+        super(input);
         this.groupBy = groupBy;
         this.aggregates = new ArrayList<AggregateFunctionExpression>();
     }
 
-    public List<BaseExpression> getGroupBy() {
+    public List<ExpressionNode> getGroupBy() {
         return groupBy;
     }
     public List<AggregateFunctionExpression> getAggregates() {
@@ -45,7 +43,7 @@ public class AggregateSource extends BaseJoinable implements ColumnSource
 
     @Override
     public String toString() {
-        return "GROUP BY " + groupBy + aggregates + "\n" + input;
+        return "GROUP BY " + groupBy + aggregates + "\n" + getInput();
     }
 
 }
