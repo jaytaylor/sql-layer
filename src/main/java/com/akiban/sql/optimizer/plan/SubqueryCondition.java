@@ -15,7 +15,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.sql.StandardException;
+import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.sql.types.DataTypeDescriptor;
 
@@ -24,22 +24,18 @@ import com.akiban.qp.expression.Comparison;
 
 /** A condition involving rows from a subquery.
  */
-public class SubqueryCondition extends BooleanExpression
+public class SubqueryCondition extends BaseExpression implements ConditionExpression
 {
     public static enum Kind {
-        EXISTS, NOT_EXISTS, TEST
+        EXISTS, NOT_EXISTS
     }
     
     private Kind kind;
-    private Query subquery;
+    private PlanNode subquery;
 
-    public SubqueryCondition(Kind kind, BaseExpression left, 
-                             Comparison operation, Query subquery, 
-                             DataTypeDescriptor type) {
+    public SubqueryCondition(Kind kind, PlanNode subquery, DataTypeDescriptor type) {
         super(type);
         this.kind = kind;
-        this.left = left;
-        this.operation = operation;
         this.subquery = subquery;
     }
 
@@ -47,24 +43,17 @@ public class SubqueryCondition extends BooleanExpression
         return kind;
     }
 
-    public BaseExpression getLeft() {
-        return left;
-    }
-
-    public Comparison getOperation() {
-        return operation;
-    }
-
-    public Query getSubquery() {
+    public PlanNode getSubquery() {
         return subquery;
     }
 
+    @Override
     public String toString() {
         return kind + " " + subquery;
     }
 
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) 
-            throws StandardException {
-        throw new StandardException("NIY");
+    @Override
+    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
+        throw new UnsupportedSQLException("EXISTS as expression", null);
     }
 }

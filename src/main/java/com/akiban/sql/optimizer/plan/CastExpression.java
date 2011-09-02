@@ -15,7 +15,6 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.sql.StandardException;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.expression.Expression;
@@ -32,11 +31,10 @@ public class CastExpression extends BaseExpression
     }
 
     public String toString() {
-        return "Cast(" + inner + " AS " + getType() + ")";
+        return "Cast(" + inner + " AS " + getSQLtype() + ")";
     }
 
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) 
-            throws StandardException {
+    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
         // TODO: Need actual cast.
         return inner.generateExpression(fieldOffsets);
     }

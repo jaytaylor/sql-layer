@@ -15,8 +15,6 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.sql.StandardException;
-
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.ais.model.Column;
@@ -27,17 +25,27 @@ import com.akiban.qp.expression.API;
 /** An expression evaluating a column in an actual table. */
 public class ColumnExpression extends BaseExpression 
 {
-    private TableSource table;
+    private ColumnSource table;
     private Column column;
+    private int position;
 
     public ColumnExpression(TableSource table, Column column, 
                             DataTypeDescriptor type) {
         super(type);
         this.table = table;
+        assert (table.getTable().getTable() == column.getUserTable());
         this.column = column;
+        this.position = column.getPosition();
     }
 
-    public TableSource getTable() {
+    public ColumnExpression(ColumnSource table, int position, 
+                            DataTypeDescriptor type) {
+        super(type);
+        this.table = table;
+        this.position = position;
+    }
+
+    public ColumnSource getTable() {
         return table;
     }
 
@@ -45,9 +53,16 @@ public class ColumnExpression extends BaseExpression
         return column;
     }
 
+    public int getPosition() {
+        return position;
+    }
+
     @Override
     public String toString() {
-        return column.toString();
+        if (column != null)
+            return table.getName() + "." + column.getName();
+        else
+            return table.getName() + "[" + position + "]";
     }
 
     @Override
@@ -56,8 +71,7 @@ public class ColumnExpression extends BaseExpression
     }
 
     @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) 
-            throws StandardException {
+    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
         return API.field(fieldOffsets.getIndex(this));
     }
 }

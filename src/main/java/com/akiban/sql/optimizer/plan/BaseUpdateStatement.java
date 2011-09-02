@@ -21,7 +21,7 @@ public class BaseUpdateStatement extends BaseStatement
 {
     private TableNode targetTable;
 
-    protected BaseUpdateStatement(Query query, TableNode targetTable) {
+    protected BaseUpdateStatement(PlanNode query, TableNode targetTable) {
         super(query);
         this.targetTable = targetTable;
     }

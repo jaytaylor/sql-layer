@@ -15,7 +15,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.sql.StandardException;
+import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.sql.types.DataTypeDescriptor;
 
@@ -42,8 +42,7 @@ public class SubqueryExpression extends BaseExpression
         return subquery.toString();
     }
 
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) 
-            throws StandardException {
-        throw new StandardException("NIY");
+    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
+        throw new UnsupportedSQLException("NIY", null);
     }
 }

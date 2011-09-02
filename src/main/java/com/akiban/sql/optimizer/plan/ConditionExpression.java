@@ -15,15 +15,8 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
-
-/** An boolean expression that can be used in a condition.
+/** A Boolean expression that can be used as a condition clause.
  */
-public abstract class ConditionExpression extends BaseExpression 
+public interface ConditionExpression extends ExpressionNode
 {
-    protected ConditionExpression(DataTypeDescriptor type) {
-        super(type);
-        assert (type.getTypeId() == TypeId.BOOLEAN_ID);
-    }
 }

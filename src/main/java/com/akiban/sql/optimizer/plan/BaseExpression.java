@@ -17,38 +17,32 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.qp.expression.Expression;
 
-import com.akiban.sql.StandardException;
-
 import com.akiban.sql.types.DataTypeDescriptor;
 
 /** An evaluated value. 
  * Usually part of a larger expression tree.
 */
-public abstract class BaseExpression 
+public abstract class BaseExpression implements ExpressionNode
 {
+    private DataTypeDescriptor sqlType;
     // TODO: Maybe AkType here once that's stable.
-    private DataTypeDescriptor type;
 
-    protected BaseExpression(DataTypeDescriptor type) {
-        this.type = type;
+    protected BaseExpression(DataTypeDescriptor sqlType) {
+        this.sqlType = sqlType;
     }
 
-    public DataTypeDescriptor getType() {
-        return type;
+    @Override
+    public DataTypeDescriptor getSQLtype() {
+        return sqlType;
     }
 
+    @Override
     public boolean isColumn() {
         return false;
     }
 
+    @Override
     public boolean isConstant() {
         return false;
     }
-
-    public interface ColumnExpressionToIndex {
-        public int getIndex(ColumnExpression column) throws StandardException;
-    }
-
-    public abstract Expression generateExpression(ColumnExpressionToIndex fieldOffsets) 
-            throws StandardException;
 }

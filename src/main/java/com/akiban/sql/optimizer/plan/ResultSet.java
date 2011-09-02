@@ -18,7 +18,7 @@ package com.akiban.sql.optimizer.plan;
 import java.util.List;
 
 /** An expression in a Project list (the list right after SELECT). */
-public class ResultSet extends PlanNode
+public class ResultSet extends BasePlanNode
 {
     public static class ResultExpression {
         private BaseExpression expression;

@@ -15,28 +15,18 @@
 
 package com.akiban.sql.optimizer.plan;
 
-/** A join to a subquery result. */
-public class SubquerySource extends BaseJoinable implements ColumnSource
+public abstract class BasePlanNode implements PlanNode
 {
-    private ResultSet subquery;
-    private String name;
+    private PlanNode output;
 
-    public SubquerySource(ResultSet subquery, String name) {
-        this.subquery = subquery;
-        this.name = name;
+    protected BasePlanNode() {
     }
 
-    public ResultSet getSubquery() {
-        return subquery;
+    public PlanNode getOutput() {
+        return output;
+    }
+    public void setOutput(PlanNode output) {
+        this.output = output;
     }
 
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public String toString() {
-        return subquery.toString();
-    }
 }

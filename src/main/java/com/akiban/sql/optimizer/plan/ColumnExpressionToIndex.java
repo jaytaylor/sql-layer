@@ -15,28 +15,6 @@
 
 package com.akiban.sql.optimizer.plan;
 
-/** A join to a subquery result. */
-public class SubquerySource extends BaseJoinable implements ColumnSource
-{
-    private ResultSet subquery;
-    private String name;
-
-    public SubquerySource(ResultSet subquery, String name) {
-        this.subquery = subquery;
-        this.name = name;
-    }
-
-    public ResultSet getSubquery() {
-        return subquery;
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public String toString() {
-        return subquery.toString();
-    }
+public interface ColumnExpressionToIndex {
+    public int getIndex(ColumnExpression column);
 }

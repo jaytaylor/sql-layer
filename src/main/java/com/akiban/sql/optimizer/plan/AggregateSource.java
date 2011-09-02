@@ -16,25 +16,30 @@
 package com.akiban.sql.optimizer.plan;
 
 import java.util.List;
+import java.util.ArrayList;
 
-public class AggregateSource extends JoinSource
+public class AggregateSource extends BaseJoinable implements ColumnSource
 {
     private PlanNode input;
     private List<BaseExpression> groupBy;
-    private List<AggregateExpression> aggregates;
+    private List<AggregateFunctionExpression> aggregates;
 
     public AggregateSource(PlanNode input,
                            List<BaseExpression> groupBy) {
         this.input = input;
         this.groupBy = groupBy;
-        this.aggregates = new ArrayList<AggregateExpression>();
+        this.aggregates = new ArrayList<AggregateFunctionExpression>();
     }
 
     public List<BaseExpression> getGroupBy() {
         return groupBy;
     }
-    public List<AggregateExpression> getAggregates() {
+    public List<AggregateFunctionExpression> getAggregates() {
         return aggregates;
+    }
+
+    public String getName() {
+        return "GROUP";         // TODO: Something unique needed?
     }
 
     @Override

@@ -15,8 +15,6 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.sql.StandardException;
-
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.expression.API;
@@ -25,7 +23,7 @@ import com.akiban.qp.expression.Comparison;
 
 /** A binary comparison (equality / inequality) between two expressions.
  */
-public class ComparisonCondition extends ConditionExpression 
+public class ComparisonCondition extends BaseExpression implements ConditionExpression 
 {
     private BaseExpression left, right;
     private Comparison operation;
@@ -71,8 +69,7 @@ public class ComparisonCondition extends ConditionExpression
         return left + " " + operation + " " + right;
     }
 
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) 
-            throws StandardException {
+    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
         return API.compare(left.generateExpression(fieldOffsets),
                            operation,
                            right.generateExpression(fieldOffsets));

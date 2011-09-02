@@ -36,6 +36,6 @@ public class InsertStatement extends BaseUpdateStatement
 
     @Override
     public String toString() {
-        return "INSERT " + getTargetTable() + targetColumns + "\n" + getInput();
+        return "INSERT " + getTargetTable() + targetColumns + "\n" + getQuery();
     }
 }

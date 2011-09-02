@@ -15,7 +15,8 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.sql.StandardException;
+import com.akiban.server.error.UnsupportedSQLException;
+
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.expression.Expression;
@@ -39,8 +40,8 @@ public class AggregateFunctionExpression extends BaseExpression
     public BaseExpression getOperand() {
         return operand;
     }
-    public Operation getOperation() {
-        return operation;
+    public String getFunction() {
+        return function;
     }
     public boolean isDistinct() {
         return distinct;
@@ -59,9 +60,8 @@ public class AggregateFunctionExpression extends BaseExpression
         return str.toString();
     }
 
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) 
-            throws StandardException {
-        throw new StandardException("NIY");
+    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
+        throw new UnsupportedSQLException("NIY", null);
     }
 
 }

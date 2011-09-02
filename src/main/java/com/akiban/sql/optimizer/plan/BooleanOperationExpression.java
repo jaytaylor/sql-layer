@@ -15,15 +15,16 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.server.error.UnsupportedSQLException;
+
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.expression.Expression;
 
-import com.akiban.sql.StandardException;
-
-/** An operation on boolean expressions.
+/** An operation on Boolean expressions.
  */
-public class BooleanOperationExpression extends ConditionExpression
+public class BooleanOperationExpression extends BaseExpression 
+                                        implements ConditionExpression
 {
     public static enum Operation {
         AND, OR, NOT
@@ -59,8 +60,7 @@ public class BooleanOperationExpression extends ConditionExpression
             return left + " " + operation + " " + right;
     }
 
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) 
-            throws StandardException {
-        throw new StandardException("NIY");
+    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
+        throw new UnsupportedSQLException("NIY", null);
     }
 }

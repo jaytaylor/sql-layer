@@ -15,16 +15,14 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.sql.StandardException;
-
 /** LIMIT / OFFSET */
-public class Limit extends PlanNode
+public class Limit extends BasePlanNode
 {
     private PlanNode input;
     private int offset, limit;
     private boolean offsetIsParameter, limitIsParameter;
 
-    public Query(PlanNode input,
+    public Limit(PlanNode input,
                  int offset, boolean offsetIsParameter,
                  int limit, boolean limitIsParameter) {
         this.input = input;
@@ -54,7 +52,7 @@ public class Limit extends PlanNode
 
     @Override
     public String toString() {
-        StringBuilder str = new StringBuilder(super.toString());
+        StringBuilder str = new StringBuilder();
         if (offset > 0) {
             str.append("OFFSET ");
             if (offsetIsParameter) str.append("$");

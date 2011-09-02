@@ -15,19 +15,11 @@
 
 package com.akiban.sql.optimizer.plan;
 
-/** A node in the tree of tables and their joins. */
-public abstract class JoinSource extends PlanNode
+public interface PlanNode
 {
-    protected JoinSource() {
-    }
+    public PlanNode getOutput();
 
-    public boolean isTable() {
-        return false;
-    }
-    public boolean isJoin() {
-        return false;
-    }
-    public boolean isInnerJoin() {
-        return false;
-    }
+    public void setOutput(PlanNode output);
+
+    // TODO: Visitor stuff.
 }

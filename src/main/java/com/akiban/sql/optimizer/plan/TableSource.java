@@ -16,17 +16,23 @@
 package com.akiban.sql.optimizer.plan;
 
 /** A join to an actual table. */
-public class TableSource extends JoinSource
+public class TableSource extends BaseJoinable implements ColumnSource
 {
     private TableNode table;
-    // TODO: Add conditions, ...
+    // TODO: Add conditions, correlation name?, ...
 
     public TableSource(TableNode table) {
         this.table = table;
+        table.addUse(this);
     }
 
     public TableNode getTable() {
         return table;
+    }
+
+    @Override
+    public String getName() {
+        return table.getTable().getName().toString();
     }
 
     @Override

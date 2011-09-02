@@ -17,7 +17,7 @@ package com.akiban.sql.optimizer.plan;
 
 /** A top-level (executable) query or statement.
  */
-public class BaseStatement extends PlanNode
+public class BaseStatement extends BasePlanNode
 {
     private PlanNode query;
 

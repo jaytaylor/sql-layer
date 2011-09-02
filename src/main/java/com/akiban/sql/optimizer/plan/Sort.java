@@ -18,7 +18,7 @@ package com.akiban.sql.optimizer.plan;
 import java.util.List;
 
 /** A key expression in an ORDER BY clause. */
-public class Sort extends Plan Node
+public class Sort extends BasePlanNode
 {
     public static class OrderByExpression {
         private BaseExpression expression;

@@ -21,30 +21,30 @@ import com.akiban.qp.physicaloperator.API.JoinType;
 import java.util.*;
 
 /** A join between two tables / subjoins. */
-public class Join extends JoinSource
+public class JoinNode extends BaseJoinable
 {
-    private JoinSource left, right;
+    private Joinable left, right;
     private JoinType joinType;
-    private List<BooleanExpression> joinConditions;
+    private List<ConditionExpression> joinConditions;
     private Join groupJoin;
-    private BooleanExpression groupJoinCondition;
+    private ConditionExpression groupJoinCondition;
 
-    public Join(JoinSource left, JoinSource right, JoinType joinType) {
+    public JoinNode(Joinable left, Joinable right, JoinType joinType) {
         this.left = left;
         this.right = right;
         this.joinType = joinType;
     }
 
-    public JoinSource getLeft() {
+    public Joinable getLeft() {
         return left;
     }
-    public void setLeft(JoinSource left) {
+    public void setLeft(Joinable left) {
         this.left = left;
     }
-    public JoinSource getRight() {
+    public Joinable getRight() {
         return right;
     }
-    public void setRight(JoinSource right) {
+    public void setRight(Joinable right) {
         this.right = right;
     }
 
@@ -62,10 +62,10 @@ public class Join extends JoinSource
         return (joinType == JoinType.INNER_JOIN);
     }
 
-    public List<BooleanExpression> getJoinConditions() {
+    public List<ConditionExpression> getJoinConditions() {
         return joinConditions;
     }
-    public void setJoinConditions(List<BooleanExpression> joinConditions) {
+    public void setJoinConditions(List<ConditionExpression> joinConditions) {
         this.joinConditions = joinConditions;
     }
 
@@ -76,16 +76,16 @@ public class Join extends JoinSource
         this.groupJoin = groupJoin;
     }
 
-    public BooleanExpression getGroupJoinCondition() {
+    public ConditionExpression getGroupJoinCondition() {
         return groupJoinCondition;
     }
-    public void setGroupJoinCondition(BooleanExpression groupJoinCondition) {
+    public void setGroupJoinCondition(ConditionExpression groupJoinCondition) {
         this.groupJoinCondition = groupJoinCondition;
     }
 
     /** Reverse operands and outer join direction if necessary. */
     public void reverse() {
-        BaseJoinNode temp = left;
+        Joinable temp = left;
         left = right;
         right = temp;
         switch (joinType) {

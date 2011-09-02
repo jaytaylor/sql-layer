@@ -18,15 +18,21 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.ais.model.UserTable;
 
 import java.util.List;
+import java.util.ArrayList;
 
 /** A table from AIS.
  */
 public class TableNode extends TableTreeBase.TableNodeBase<TableNode> 
 {
-    private List<TableJoinNode> uses;
+    private List<TableSource> uses;
 
     public TableNode(UserTable table) {
         super(table);
+        uses = new ArrayList<TableSource>();
+    }
+
+    public void addUse(TableSource use) {
+        uses.add(use);
     }
 
 }
