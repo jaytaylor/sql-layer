@@ -30,8 +30,8 @@ import com.akiban.sql.optimizer.simplified.SimplifiedDeleteStatement;
 import com.akiban.sql.optimizer.simplified.SimplifiedInsertStatement;
 import com.akiban.sql.optimizer.simplified.SimplifiedSelectQuery;
 import com.akiban.sql.optimizer.simplified.SimplifiedUpdateStatement;
-import com.akiban.sql.optimizer.query.ASTToStatement;
-import com.akiban.sql.optimizer.query.BaseStatement;
+import com.akiban.sql.optimizer.plan.AST;
+import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.DMLStatementNode;
@@ -60,7 +60,7 @@ public class Tester
         BIND, COMPUTE_TYPES,
         BOOLEAN_NORMALIZE, FLATTEN_SUBQUERIES,
         GROUP, GROUP_REWRITE, 
-        SIMPLIFY, SIMPLIFY_REORDER, SIMPLIFY_2, OPERATORS
+        SIMPLIFY, SIMPLIFY_REORDER, PLAN_0, PLAN_1, PLAN_2, OPERATORS
     }
 
     List<Action> actions;
@@ -166,8 +166,11 @@ public class Tester
                         System.out.println(query);
                 }
                 break;
-            case SIMPLIFY_2:
-                System.out.println(simplify_2((DMLStatementNode)stmt));
+            case PLAN_0:
+                {
+                    PlanNode plan = new AST((DMLStatementNode)stmt);
+                    System.out.println(plan);
+                }
                 break;
             case OPERATORS:
                 {
@@ -200,23 +203,6 @@ public class Tester
         }
     }
 
-    private static BaseStatement simplify_2(DMLStatementNode stmt)
-            throws Exception {
-        switch (stmt.getNodeType()) {
-        case NodeTypes.CURSOR_NODE:
-            return ASTToStatement.selectQuery((CursorNode)stmt);
-        case NodeTypes.DELETE_NODE:
-            return ASTToStatement.deleteStatement((DeleteNode)stmt);
-        case NodeTypes.UPDATE_NODE:
-            return ASTToStatement.updateStatement((UpdateNode)stmt);
-        case NodeTypes.INSERT_NODE:
-            return ASTToStatement.insertStatement((InsertNode)stmt);
-        default:
-            throw new StandardException("Unsupported statement type: " +
-                                        stmt.statementToString());
-        }
-    }
-
     public void setSchema(String sql) throws Exception {
         SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
         SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
@@ -238,7 +224,7 @@ public class Tester
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             System.out.println("Usage: Tester " +
-                               "[-clone] [-bind] [-types] [-boolean] [-flatten] [-group] [-group-rewrite] [-simplify] [-simplify-reorder] [-simplify-2] [-operators]" +
+                               "[-clone] [-bind] [-types] [-boolean] [-flatten] [-group] [-group-rewrite] [-simplify] [-simplify-reorder] [-plan-{0,1,2}] [-operators]" +
                                "[-tree] [-print] [-print-bound]" +
                                "[-schema ddl] [-view ddl]..." +
                                "sql...");
@@ -283,8 +269,12 @@ public class Tester
                     tester.addAction(Action.SIMPLIFY);
                 else if ("-simplify-reorder".equals(arg))
                     tester.addAction(Action.SIMPLIFY_REORDER);
-                else if ("-simplify-2".equals(arg))
-                    tester.addAction(Action.SIMPLIFY_2);
+                else if ("-plan-0".equals(arg))
+                    tester.addAction(Action.PLAN_0);
+                else if ("-plan-1".equals(arg))
+                    tester.addAction(Action.PLAN_1);
+                else if ("-plan-2".equals(arg))
+                    tester.addAction(Action.PLAN_2);
                 else if ("-operators".equals(arg))
                     tester.addAction(Action.OPERATORS);
                 else if ("-repeat".equals(arg))
