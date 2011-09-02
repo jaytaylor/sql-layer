@@ -15,7 +15,6 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
@@ -70,20 +69,15 @@ class Sort_InsertionLimited extends PhysicalOperator
 
     public Sort_InsertionLimited(PhysicalOperator inputOperator, 
                                  RowType sortType,
-                                 List<Expression> sortExpressions,
-                                 List<Boolean> sortDescendings,
+                                 API.Ordering ordering,
                                  int limit)
     {
         ArgumentValidation.notNull("sortType", sortType);
-        ArgumentValidation.notEmpty("sortExpressions", sortExpressions);
-        ArgumentValidation.notNull("sortDescendings", sortDescendings);
-        ArgumentValidation.isEQ("sortExpressions.size()", sortExpressions.size(),
-                                "sortDescendings.size()", sortDescendings.size());
+        ArgumentValidation.isGT("ordering.columns()", ordering.sortFields(), 0);
         ArgumentValidation.isGT("limit", limit, 0);
         this.inputOperator = inputOperator;
         this.sortType = sortType;
-        this.sortExpressions = sortExpressions;
-        this.sortDescendings = sortDescendings;
+        this.ordering = ordering;
         this.limit = limit;
     }
 
@@ -91,8 +85,7 @@ class Sort_InsertionLimited extends PhysicalOperator
 
     private final PhysicalOperator inputOperator;
     private final RowType sortType;
-    private final List<Expression> sortExpressions;
-    private final List<Boolean> sortDescendings;
+    private final API.Ordering ordering;
     private final int limit;
 
     // Inner classes
@@ -213,9 +206,9 @@ class Sort_InsertionLimited extends PhysicalOperator
             row = new RowHolder();
             row.set(arow);
 
-            values = new Comparable[sortExpressions.size()];
+            values = new Comparable[ordering.sortFields()];
             for (int i = 0; i < values.length; i++) {
-                values[i] = (Comparable)sortExpressions.get(i).evaluate(arow, bindings);
+                values[i] = (Comparable)ordering.expression(i).evaluate(arow, bindings);
             }
         }
 
@@ -230,13 +223,13 @@ class Sort_InsertionLimited extends PhysicalOperator
                 Comparable v1 = values[i];
                 Comparable v2 = other.values[i];
                 int less, greater;
-                if (sortDescendings.get(i).booleanValue()) {
-                    less = +1;
-                    greater = -1;
-                }
-                else {
+                if (ordering.ascending(i)) {
                     less = -1;
                     greater = +1;
+                }
+                else {
+                    less = +1;
+                    greater = -1;
                 }
                 if (v1 == null) {
                     if (v2 == null) {

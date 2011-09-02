@@ -55,7 +55,7 @@ public class ValuesHolderRow extends AbstractRow {
         return value;
     }
 
-    public ValuesHolderRow(AggregatedRowType rowType) {
+    public ValuesHolderRow(RowType rowType) {
         this.rowType = rowType;
         values = new ArrayList<ValueHolder>();
         for (int i=0; i < rowType.nFields(); ++i) {

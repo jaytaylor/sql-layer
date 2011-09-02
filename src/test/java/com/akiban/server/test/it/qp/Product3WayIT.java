@@ -109,7 +109,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
         } else {
             persistitStore = (PersistitStore) plainStore;
         }
-        adapter = new PersistitAdapter(schema, persistitStore, session());
+        adapter = new PersistitAdapter(schema, persistitStore, null, session());
         use(db);
     }
 

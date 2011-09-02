@@ -598,7 +598,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             else
                 persistitStore = (PersistitStore)store;
             adapter = new PersistitAdapter(compiler.getSchema(),
-                                           persistitStore, 
+                                           persistitStore,
+                                           reqs.treeService(),
                                            session);
         }
 

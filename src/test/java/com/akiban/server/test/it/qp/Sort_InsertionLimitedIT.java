@@ -34,7 +34,7 @@ import java.util.List;
 import static com.akiban.qp.expression.API.field;
 import static com.akiban.qp.physicaloperator.API.*;
 
-public class SortIT extends PhysicalOperatorITBase
+public class Sort_InsertionLimitedIT extends PhysicalOperatorITBase
 {
     @Before
     public void before()
@@ -74,8 +74,7 @@ public class SortIT extends PhysicalOperatorITBase
                     groupScan_Default(coi),
                     Collections.singleton(customerRowType)),
                 customerRowType,
-                Collections.singletonList(field(1)),
-                Collections.singletonList(Boolean.FALSE),
+                ordering(field(1), true),
                 2);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -88,20 +87,13 @@ public class SortIT extends PhysicalOperatorITBase
     @Test
     public void testOrderSalesmanCid()
     {
-        List<Expression> sortExpressions = new ArrayList<Expression>(2);
-        List<Boolean> sortDescendings = new ArrayList<Boolean>(2);
-        sortExpressions.add(field(2));
-        sortDescendings.add(Boolean.FALSE);
-        sortExpressions.add(field(1));
-        sortDescendings.add(Boolean.TRUE);
         PhysicalOperator plan =
             sort_InsertionLimited(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
                 orderRowType,
-                sortExpressions,
-                sortDescendings,
+                ordering(field(2), true, field(1), false),
                 4);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -122,12 +114,11 @@ public class SortIT extends PhysicalOperatorITBase
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
                 orderRowType,
-                Collections.singletonList(field(2)),
-                Collections.singletonList(Boolean.FALSE),
+                ordering(field(2), true),
                 4);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
-            // Order among equals is group.
+            // Order among equals in group.
             row(orderRowType, 12L, 1L, "david"),
             row(orderRowType, 21L, 2L, "david"),
             row(orderRowType, 31L, 3L, "david"),
@@ -145,8 +136,7 @@ public class SortIT extends PhysicalOperatorITBase
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
                 orderRowType,
-                Collections.singletonList(field(2)),
-                Collections.singletonList(Boolean.FALSE),
+                ordering(field(2), true),
                 2);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -176,8 +166,7 @@ public class SortIT extends PhysicalOperatorITBase
                     flattenOI,
                     Collections.singleton(oiType)),
                 oiType,
-                Arrays.asList(cidField, oidField, iidField),
-                Arrays.asList(false, false, false),
+                ordering(cidField, true, oidField, true, iidField, true),
                 8);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -212,8 +201,7 @@ public class SortIT extends PhysicalOperatorITBase
                     flattenOI,
                     Collections.singleton(oiType)),
                 oiType,
-                Arrays.asList(cidField, oidField, iidField),
-                Arrays.asList(false, false, true),
+                ordering(cidField, true, oidField, true, iidField, false),
                 8);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -248,8 +236,7 @@ public class SortIT extends PhysicalOperatorITBase
                     flattenOI,
                     Collections.singleton(oiType)),
                 oiType,
-                Arrays.asList(cidField, oidField, iidField),
-                Arrays.asList(false, true, false),
+                ordering(cidField, true, oidField, false, iidField, true),
                 8);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -284,8 +271,7 @@ public class SortIT extends PhysicalOperatorITBase
                     flattenOI,
                     Collections.singleton(oiType)),
                 oiType,
-                Arrays.asList(cidField, oidField, iidField),
-                Arrays.asList(false, true, true),
+                ordering(cidField, true, oidField, false, iidField, false),
                 8);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -320,8 +306,7 @@ public class SortIT extends PhysicalOperatorITBase
                     flattenOI,
                     Collections.singleton(oiType)),
                 oiType,
-                Arrays.asList(cidField, oidField, iidField),
-                Arrays.asList(true, false, false),
+                ordering(cidField, false, oidField, true, iidField, true),
                 8);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -356,8 +341,7 @@ public class SortIT extends PhysicalOperatorITBase
                     flattenOI,
                     Collections.singleton(oiType)),
                 oiType,
-                Arrays.asList(cidField, oidField, iidField),
-                Arrays.asList(true, false, true),
+                ordering(cidField, false, oidField, true, iidField, false),
                 8);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -392,8 +376,7 @@ public class SortIT extends PhysicalOperatorITBase
                     flattenOI,
                     Collections.singleton(oiType)),
                 oiType,
-                Arrays.asList(cidField, oidField, iidField),
-                Arrays.asList(true, true, false),
+                ordering(cidField, false, oidField, false, iidField, true),
                 8);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -428,8 +411,7 @@ public class SortIT extends PhysicalOperatorITBase
                     flattenOI,
                     Collections.singleton(oiType)),
                 oiType,
-                Arrays.asList(cidField, oidField, iidField),
-                Arrays.asList(true, true, true),
+                ordering(cidField, false, oidField, false, iidField, false),
                 8);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -444,4 +426,17 @@ public class SortIT extends PhysicalOperatorITBase
         };
         compareRows(expected, cursor);
     }
+
+    private Ordering ordering(Object... objects)
+    {
+        Ordering ordering = API.ordering();
+        int i = 0;
+        while (i < objects.length) {
+            Expression expression = (Expression) objects[i++];
+            Boolean ascending = (Boolean) objects[i++];
+            ordering.append(expression, ascending);
+        }
+        return ordering;
+    }
+
 }

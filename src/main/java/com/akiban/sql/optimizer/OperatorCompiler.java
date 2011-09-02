@@ -445,20 +445,15 @@ public class OperatorCompiler
             int limit = squery.getLimit();
             if ((limit < 0) || (limit > INSERTION_SORT_MAX_LIMIT))
                 throw new UnsupportedSQLException ("ORDER BY without index for " + squery.getSortColumns(), cursor);
-            int nsorts = squery.getSortColumns().size();
-            List<Expression> sortExpressions = new ArrayList<Expression>(nsorts);
-            List<Boolean> sortDescendings = new ArrayList<Boolean>(nsorts);
+            Ordering ordering = ordering();
             for (SortColumn sortColumn : squery.getSortColumns()) {
                 ColumnExpression columnExpression = 
                     squery.getColumnExpression(sortColumn.getColumn());
                 Expression sortExpression = 
                     columnExpression.generateExpression(fieldOffsets);
-                sortExpressions.add(sortExpression);
-                sortDescendings.add(Boolean.valueOf(!sortColumn.isAscending()));
+                ordering.append(sortExpression, sortColumn.isAscending());
             }
-            resultOperator = sort_InsertionLimited(resultOperator, resultRowType,
-                                                   sortExpressions, sortDescendings,
-                                                   limit);
+            resultOperator = sort_InsertionLimited(resultOperator, resultRowType, ordering, limit);
         }
 
         int ncols = squery.getSelectColumns().size();
