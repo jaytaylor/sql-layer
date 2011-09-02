@@ -33,7 +33,7 @@ public final class FieldExpression implements Expression {
 
     @Override
     public boolean needsBindings() {
-        return true; // until a Row doesn't need a binding anymore...
+        return false;
     }
 
     @Override
