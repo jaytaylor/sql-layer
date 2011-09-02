@@ -49,6 +49,7 @@ public class Sort extends BasePlanNode
 
     public Sort(PlanNode input, List<OrderByExpression> orderBy) {
         this.input = input;
+        input.setOutput(this);
         this.orderBy = orderBy;
     }
 

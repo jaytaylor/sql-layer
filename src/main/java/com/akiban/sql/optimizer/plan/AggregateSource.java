@@ -27,6 +27,7 @@ public class AggregateSource extends BaseJoinable implements ColumnSource
     public AggregateSource(PlanNode input,
                            List<BaseExpression> groupBy) {
         this.input = input;
+        input.setOutput(this);
         this.groupBy = groupBy;
         this.aggregates = new ArrayList<AggregateFunctionExpression>();
     }
