@@ -65,6 +65,8 @@ public final class ValueHolder implements ValueSource, ValueTarget {
 
     @Override
     public boolean isNull() {
+        if (stateType == StateType.UNDEF_VAL)
+            throw new IllegalStateException("ValueHolder has no state");
         return type == AkType.NULL;
     }
 
