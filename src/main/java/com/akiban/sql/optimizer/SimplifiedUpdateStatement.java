@@ -15,7 +15,6 @@
 
 package com.akiban.sql.optimizer;
 
-import com.akiban.sql.optimizer.SimplifiedQuery.SimpleSelectColumn;
 import com.akiban.sql.parser.*;
 
 import com.akiban.ais.model.Column;

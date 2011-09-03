@@ -15,12 +15,11 @@
 
 package com.akiban.sql.optimizer;
 
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.sql.optimizer.SimplifiedQuery.ColumnExpressionToIndex;
-import com.akiban.sql.parser.*;
-
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.NoSuchTableException;
+import com.akiban.sql.parser.DMLModStatementNode;
+import com.akiban.sql.parser.ValueNode;
 
 import java.util.*;
 
