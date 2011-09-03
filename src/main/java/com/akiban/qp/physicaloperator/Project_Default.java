@@ -85,10 +85,10 @@ class Project_Default extends PhysicalOperator
 
     // Object state
 
-    private final PhysicalOperator inputOperator;
-    private final RowType rowType;
-    private final List<Expression> projections;
-    private final ProjectedRowType projectType;
+    protected final PhysicalOperator inputOperator;
+    protected final RowType rowType;
+    protected final List<Expression> projections;
+    protected ProjectedRowType projectType;
 
     // Inner classes
 

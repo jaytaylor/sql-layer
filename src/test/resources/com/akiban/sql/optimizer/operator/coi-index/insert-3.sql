@@ -1,0 +1,1 @@
+insert into CUSTOMERS (name, cid) values ('Jones', 1), ('Smith', 2)

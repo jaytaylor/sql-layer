@@ -32,7 +32,6 @@ import com.akiban.sql.optimizer.SimplifiedUpdateStatement;
 import com.akiban.sql.optimizer.SubqueryFlattener;
 import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.parser.DMLStatementNode;
-import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.DeleteNode;
 import com.akiban.sql.parser.InsertNode;
 import com.akiban.sql.parser.NodeTypes;

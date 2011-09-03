@@ -29,7 +29,7 @@ public class ValuesScan_Default extends PhysicalOperator {
     @Override
     public String toString()
     {
-        return getClass().getSimpleName();
+        return getClass().getSimpleName()  + rows;
     }
 
     public ValuesScan_Default (List<ExpressionRow> rows) 

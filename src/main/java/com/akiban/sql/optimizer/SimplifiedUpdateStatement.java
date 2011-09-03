@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.sql.optimizer.SimplifiedQuery.SimpleSelectColumn;
 import com.akiban.sql.parser.*;
 
 import com.akiban.ais.model.Column;
@@ -28,14 +29,39 @@ import java.util.*;
 public class SimplifiedUpdateStatement extends SimplifiedTableStatement
 {
     private List<TargetColumn> updateColumns;
+    private List<SimpleSelectColumn> queryColumns = null;
 
     public SimplifiedUpdateStatement(UpdateNode update, Set<ValueNode> joinConditions) {
         super(update, joinConditions);
+        
+        queryColumns = new ArrayList<SimpleSelectColumn>(getTargetTable().getTable().getColumns().size());
+        for (Column column : getTargetTable().getTable().getColumns()) {
+            ColumnExpression expr = getColumnExpression(column);
+            SimpleSelectColumn selectCol = new SimpleSelectColumn(column.getName(), true,
+                    expr,
+                    null);
+            queryColumns.add(selectCol);
+            expr.getTable().addSelectColumn(selectCol);
+        }
     }
     
     @Override
     public List<TargetColumn> getTargetColumns() {
         return updateColumns;
+    }
+
+    @Override
+    public ColumnExpressionToIndex getFieldOffset() {
+        return null;
+    }
+
+    /**
+     * Override the select columns to turn the query into a 
+     * SELECT * FROM <target table>. 
+     */
+    @Override
+    public List<SimpleSelectColumn> getSelectColumns() {
+        return queryColumns;
     }
 
     @Override

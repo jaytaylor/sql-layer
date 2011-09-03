@@ -49,4 +49,9 @@ public class SimplifiedDeleteStatement extends SimplifiedTableStatement
         return null;
     }
 
+    @Override
+    public ColumnExpressionToIndex getFieldOffset() {
+        return null;
+    }
+
 }

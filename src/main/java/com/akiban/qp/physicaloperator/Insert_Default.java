@@ -20,41 +20,32 @@ import java.util.List;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
-import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Strings;
 import com.akiban.util.Tap;
 
 public final class Insert_Default implements UpdatePlannable {
 
-    public Insert_Default(PhysicalOperator inputOperator, UpdateFunction updateFunction) {
-        ArgumentValidation.notNull("insert lambda", updateFunction);
-        
+    public Insert_Default(PhysicalOperator inputOperator) {
         this.inputOperator = inputOperator;
-        this.insertFunction = updateFunction;
     }
 
     @Override
     public UpdateResult run(Bindings bindings, StoreAdapter adapter) {
         int seen = 0, modified = 0;
         INSERT_TAP.in();
-        //long start = System.currentTimeMillis();
         Cursor inputCursor = inputOperator.cursor(adapter);
         inputCursor.open(bindings);
         try {
-            Row oldRow;
-            while ((oldRow = inputCursor.next()) != null) {
+            Row row;
+            while ((row = inputCursor.next()) != null) {
                 ++seen;
-                if (insertFunction.rowIsSelected(oldRow)) {
-                    Row newRow = insertFunction.evaluate(oldRow, bindings);
-                    adapter.writeRow(newRow, bindings);
-                    ++modified;
-                }
+                adapter.writeRow(row, bindings);
+                ++modified;
             }
         } finally {
             inputCursor.close();
             INSERT_TAP.out();
         }
-        //long end = System.currentTimeMillis();
         return new StandardUpdateResult(INSERT_TAP.getDuration(), seen, modified);
     }
 
@@ -75,11 +66,10 @@ public final class Insert_Default implements UpdatePlannable {
 
     @Override
     public String toString() {
-        return String.format("%s(%s -> %s)", getClass().getSimpleName(), inputOperator, insertFunction);
+        return String.format("%s(%s)", getClass().getSimpleName(), inputOperator);
     }
 
     private final PhysicalOperator inputOperator;
-    private final UpdateFunction insertFunction;
     private static final Tap.InOutTap INSERT_TAP = Tap.createTimer("operator: insert");
 
 }

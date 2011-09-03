@@ -1,0 +1,1 @@
+insert into customers (name, cid) select order_date, cid from orders where cid < 10

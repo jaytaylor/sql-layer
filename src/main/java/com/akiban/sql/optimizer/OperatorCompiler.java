@@ -189,13 +189,22 @@ public class OperatorCompiler
     }
 
     public Result compile(SessionTracer tracer, DMLStatementNode stmt, List<ParameterNode> params) {
+        try {
+            // Get into standard form.
+            tracer.beginEvent(EventTypes.BIND_AND_GROUP);
+            stmt = bindAndGroup(stmt);
+        } finally {
+            tracer.endEvent();
+        }
         switch (stmt.getNodeType()) {
         case NodeTypes.CURSOR_NODE:
-            return compileSelect(tracer, (CursorNode)stmt, params);
+            SimplifiedSelectQuery squery = 
+                new SimplifiedSelectQuery((CursorNode)stmt, grouper.getJoinConditions());
+            return compileSelect(tracer, squery, stmt, params);
         case NodeTypes.UPDATE_NODE:
         case NodeTypes.INSERT_NODE:
         case NodeTypes.DELETE_NODE:
-            return CUDCompiler.compileStatement(this, stmt, params);
+            return CUDCompiler.compileStatement(tracer, this, stmt, params);
         default:
             throw new UnsupportedSQLException (stmt.statementToString(), stmt);
         }
@@ -218,16 +227,7 @@ public class OperatorCompiler
 
     static final int INSERTION_SORT_MAX_LIMIT = 100;
 
-    public Result compileSelect(SessionTracer tracer, CursorNode cursor, List<ParameterNode> params)  {
-        try {
-            // Get into standard form.
-            tracer.beginEvent(EventTypes.BIND_AND_GROUP);
-            cursor = (CursorNode)bindAndGroup(cursor);
-        } finally {
-            tracer.endEvent();
-        }
-        SimplifiedSelectQuery squery = 
-            new SimplifiedSelectQuery(cursor, grouper.getJoinConditions());
+    public Result compileSelect(SessionTracer tracer, SimplifiedQuery squery, DMLStatementNode cursor, List<ParameterNode> params)  {
         squery.promoteImpossibleOuterJoins();
         GroupBinding group = squery.getGroup();
         GroupTable groupTable = group.getGroup().getGroupTable();
@@ -407,7 +407,7 @@ public class OperatorCompiler
                                                               " product of " +
                                                               resultRowType + " and " +
                                                               flr.getResultRowType(), 
-                                                              cursor);
+                                                                cursor);
                         }
                         resultRowType = resultOperator.rowType();
                         fll.mergeTablesForProduct(flr);

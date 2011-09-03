@@ -36,7 +36,13 @@ public class API
     {
         return new Project_Default(inputOperator, rowType, projections);
     }
-
+    
+    public static PhysicalOperator project_Table(PhysicalOperator inputOperator, 
+                                                 RowType rowType,
+                                                 List<Expression>projections) 
+    {
+        return new Project_Table (inputOperator, rowType, projections);
+    }
     // Flatten
 
     public static PhysicalOperator flatten_HKeyOrdered(PhysicalOperator inputOperator,

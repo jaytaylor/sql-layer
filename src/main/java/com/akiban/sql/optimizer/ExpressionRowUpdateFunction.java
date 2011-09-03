@@ -34,7 +34,7 @@ public class ExpressionRowUpdateFunction implements UpdateFunction
 
     @Override
     public boolean rowIsSelected(Row row) {
-        return row.rowType().equals(expressions.rowType());
+        return true;
     }
 
     @Override

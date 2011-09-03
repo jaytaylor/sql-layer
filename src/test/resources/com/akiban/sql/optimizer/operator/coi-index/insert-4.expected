@@ -1,0 +1,5 @@
+Insert_Default(project to table user.customers ([Field(1), Field(0)]))
+  project to table user.customers ([Field(1), Field(0)])
+    project([Field(2), Field(1)])
+      AncestorLookup_Default(Index(user.orders.__akiban_fk_0[IndexColumn(cid)]) -> [user.orders])
+        IndexScan_Default(Index(user.orders.__akiban_fk_0[IndexColumn(cid)]) (,<ExpressionRow[Literal(10)]))

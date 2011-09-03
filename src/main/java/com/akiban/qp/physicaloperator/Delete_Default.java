@@ -19,6 +19,7 @@ import java.util.List;
 
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
+import com.akiban.qp.row.Row;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Strings;
 import com.akiban.util.Tap;
@@ -43,8 +44,27 @@ public class Delete_Default implements UpdatePlannable {
 
     @Override
     public UpdateResult run(Bindings bindings, StoreAdapter adapter) {
-        // TODO Auto-generated method stub
-        return null;
+        int seen = 0, modified = 0;
+        DELETE_TAP.in();
+        //long start = System.currentTimeMillis();
+        Cursor inputCursor = inputOperator.cursor(adapter);
+        inputCursor.open(bindings);
+        try {
+            Row oldRow;
+            while ((oldRow = inputCursor.next()) != null) {
+                ++seen;
+                if (deleteFunction.rowIsSelected(oldRow)) {
+                    adapter.deleteRow(oldRow, bindings);
+                    ++modified;
+                }
+            }
+        } finally {
+            inputCursor.close();
+            DELETE_TAP.out();
+        }
+        //long end = System.currentTimeMillis();
+        return new StandardUpdateResult(DELETE_TAP.getDuration(), seen, modified);
+
     }
 
     @Override

@@ -15,6 +15,16 @@
 
 package com.akiban.sql.optimizer;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.akiban.server.error.ColumnNotBoundException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.parser.*;
@@ -27,8 +37,6 @@ import static com.akiban.qp.expression.API.*;
 import static com.akiban.qp.physicaloperator.API.JoinType;
 import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;
-
-import java.util.*;
 
 /**
  * An SQL DML statement turned into a simpler form for the interim

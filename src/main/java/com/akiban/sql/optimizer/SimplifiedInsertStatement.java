@@ -15,14 +15,17 @@
 
 package com.akiban.sql.optimizer;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-import com.akiban.server.error.InsertNullCheckFailedException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.sql.parser.InsertNode;
+import com.akiban.sql.parser.ResultColumn;
+import com.akiban.sql.parser.ResultColumnList;
 import com.akiban.sql.parser.ValueNode;
-
 
 import com.akiban.ais.model.Column;
 
@@ -32,22 +35,82 @@ import com.akiban.ais.model.Column;
  */
 public class SimplifiedInsertStatement extends SimplifiedTableStatement
 {
-    private List<TargetColumn> targetColumns;
+    private List<TargetColumn> targetColumns = null;
+    ColumnExpressionToIndex fieldOffsets;
     
     public SimplifiedInsertStatement(InsertNode insert, Set<ValueNode> joinConditions) {
         super(insert, joinConditions);
         
-        // if the insert statement has a target column list (supplied by the user)
-        // this gives to order of columns in the select/values list
-        if (insert.getTargetColumnList() != null) {
-            //fillTargetFromList (insert.getTargetColumnList());
+        if (insert.getOrderByList() != null)
+            fillFromOrderBy(insert.getOrderByList());
+        if (insert.getOffset() != null)
+            fillOffset(insert.getOffset());
+        if (insert.getFetchFirst() != null) 
+            fillLimit(insert.getOffset());
+        
+        if (insert.getTargetColumnList() != null)
+            fillTargetFromList (insert.getTargetColumnList());
+        else 
+            fillTargetFromDDL();
+    }
+    
+   protected void fillTargetFromList (ResultColumnList rcl) {
+       
+       int table_cols = getTargetTable().getTable().getColumns().size();
+       targetColumns = new ArrayList<TargetColumn>(table_cols);
+        Map<Column,Integer> columnOffsets = new HashMap<Column,Integer>(table_cols);
+        int i = 0;
+        for (ResultColumn resultColumn : rcl) {
+            Column column = getTargetTable().getTable().getColumn(resultColumn.getName());
+            if (column == null) {
+                throw new NoSuchColumnException (resultColumn.getName());
+            }
+            targetColumns.add(new TargetColumn(column, getColumnExpression(column)));
+            columnOffsets.put(column, i++);
         }
-        // This insert statement has no target column list, 
-        // meaning the supplied columns are in order of table creation. 
-        else {
-            //fillTargetFromDDL ();
+        
+        // If the list of columns provided does not cover all of the columns in the 
+        // in the table, add the remaining columns. 
+        if (i < table_cols) {
+            for (Column column : getTargetTable().getTable().getColumns()) {
+                if (!columnOffsets.containsKey(column)) {
+                    columnOffsets.put(column, i++);
+                    //TODO use Column.defaultValue expression if exists. 
+                    targetColumns.add(new TargetColumn(column, NULL_EXPR));
+                }
+            }
         }
+        fieldOffsets = new ColumnIndexMap (columnOffsets);
+    }
 
+   protected void fillTargetFromDDL() {
+       int table_cols = getTargetTable().getTable().getColumns().size();
+       int max_cols = (getSelectColumns() != null ? getSelectColumns().size() : 
+                       getValues() != null ? getValues().get(0).size() : 
+                       table_cols);
+       if (max_cols > table_cols) {
+           // TODO: throw new TooManyColumnsException(); ?
+           max_cols = table_cols; 
+       }
+       targetColumns = new ArrayList<TargetColumn>(table_cols);
+       Map<Column,Integer> columnOffsets = new HashMap<Column,Integer>(table_cols);
+       int i = 0;
+       for (Column column : getTargetTable().getTable().getColumns()) {
+           columnOffsets.put(column, i++);
+           // if the number of columns in the select list or values list is 
+           // smaller than the number of columns in the table, use the smaller
+           // list. 
+           
+           if (i <= max_cols) {
+               targetColumns.add(new TargetColumn(column, getColumnExpression(column)));
+           } else {
+               // TODO: when column has defaultValue expression, use that instead
+               targetColumns.add(new TargetColumn(column, NULL_EXPR));
+           }
+       }
+       fieldOffsets = new ColumnIndexMap(columnOffsets);
+   }
+   private static final SimpleExpression NULL_EXPR = new LiteralExpression(null);
 /*        
         // Set the list of target columns. There are three cases here: 
         // 1) insert supplies list of columns, which is in insert.getTargetColumnList()
@@ -99,8 +162,6 @@ public class SimplifiedInsertStatement extends SimplifiedTableStatement
             }
         }
 */        
-    }
-
     
 /*
     protected void fillTargetColumns(ResultColumnList rcl) {
@@ -116,7 +177,11 @@ public class SimplifiedInsertStatement extends SimplifiedTableStatement
     public List<TargetColumn> getTargetColumns() {
         return targetColumns;
     }
-
+    
+    public ColumnExpressionToIndex getFieldOffset() {
+        return fieldOffsets;
+    }
+    
     public String toString() {
         StringBuilder str = new StringBuilder(super.toString());
         str.append("\ntarget: ");
@@ -178,5 +243,4 @@ public class SimplifiedInsertStatement extends SimplifiedTableStatement
         }
         return str.toString();
     }
-
 }

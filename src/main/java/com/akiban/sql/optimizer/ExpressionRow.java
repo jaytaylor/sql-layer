@@ -15,6 +15,10 @@
 
 package com.akiban.sql.optimizer;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.AbstractRow;
@@ -37,6 +41,9 @@ public class ExpressionRow extends AbstractRow
         return expressions[i];
     }
 
+    public List<Expression> getExpressions() {
+        return new ArrayList<Expression> (Arrays.asList(expressions));
+    }
     /* AbstractRow */
 
     @Override

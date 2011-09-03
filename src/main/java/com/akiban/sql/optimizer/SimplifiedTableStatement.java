@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.sql.optimizer.SimplifiedQuery.ColumnExpressionToIndex;
 import com.akiban.sql.parser.*;
 
 import com.akiban.ais.model.Column;
@@ -51,6 +52,7 @@ public abstract class SimplifiedTableStatement extends SimplifiedQuery
     }
     
     public abstract List<TargetColumn> getTargetColumns();
+    public abstract ColumnExpressionToIndex getFieldOffset();
 
 
     static class TargetColumn {
