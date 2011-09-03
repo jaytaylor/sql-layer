@@ -578,8 +578,8 @@ public class ASTToStatement extends BaseRule
                                                       aggregateNode);
                 }
             }
-            return new AggregateFunctionExpression(operand,
-                                                   function,
+            return new AggregateFunctionExpression(function,
+                                                   operand,
                                                    aggregateNode.isDistinct(),
                                                    type);
         }

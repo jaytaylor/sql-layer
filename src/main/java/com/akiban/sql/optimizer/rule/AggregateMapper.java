@@ -17,6 +17,9 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
+
 import com.akiban.sql.optimizer.plan.*;
 
 import java.util.*;
@@ -122,10 +125,7 @@ public class AggregateMapper extends BaseRule
             if (nexpr != null)
                 return nexpr;
             if (expr instanceof AggregateFunctionExpression) {
-                int position = source.addAggregate((AggregateFunctionExpression)expr);
-                nexpr = new ColumnExpression(source, position, expr.getSQLtype());
-                map.put(expr, nexpr);
-                return nexpr;
+                return addAggregate((AggregateFunctionExpression)expr);
             }
             if (expr instanceof ColumnExpression) {
                 if (((ColumnExpression)expr).getTable() != source) {
@@ -134,6 +134,34 @@ public class AggregateMapper extends BaseRule
                 }
             }
             return expr;
+        }
+
+        protected ExpressionNode addAggregate(AggregateFunctionExpression expr) {
+            ExpressionNode nexpr = rewrite(expr);
+            if (nexpr != null)
+                return nexpr.accept(this);
+            int position = source.addAggregate((AggregateFunctionExpression)expr);
+            nexpr = new ColumnExpression(source, position, expr.getSQLtype());
+            map.put(expr, nexpr);
+            return nexpr;
+        }
+
+        // Rewrite agregate functions that aren't well behaved wrt pre-aggregation.
+        protected ExpressionNode rewrite(AggregateFunctionExpression expr) {
+            String function = expr.getFunction();
+            if ("AVG".equals(function)) {
+                ExpressionNode operand = expr.getOperand();
+                List<ExpressionNode> noperands = new ArrayList<ExpressionNode>(2);
+                noperands.add(new AggregateFunctionExpression("SUM", operand, false,
+                                                              operand.getSQLtype()));
+                noperands.add(new AggregateFunctionExpression("COUNT", operand, false,
+                                                              new DataTypeDescriptor(TypeId.INTEGER_ID, false)));
+                return new FunctionExpression("divide",
+                                              noperands,
+                                              expr.getSQLtype());
+            }
+            // TODO: {VAR,STDDEV}_{POP,SAMP}
+            return null;
         }
     }
 
