@@ -28,4 +28,13 @@ public class BaseStatement extends BasePlanNode
     public PlanNode getQuery() {
         return query;
     }
+
+    @Override
+    public boolean accept(PlanVisitor v) {
+        if (v.visitEnter(this)) {
+            query.accept(v);
+        }
+        return v.visitLeave(this);
+    }
+    
 }

@@ -41,6 +41,11 @@ public class TableSource extends BaseJoinable implements ColumnSource
     }
 
     @Override
+    public boolean accept(PlanVisitor v) {
+        return v.visit(this);
+    }
+    
+    @Override
     public String toString() {
         return table.toString();
     }

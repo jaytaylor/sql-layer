@@ -51,6 +51,21 @@ public class ResultSet extends BasePlanWithInput
     }
 
     @Override
+    public boolean accept(PlanVisitor v) {
+        if (v.visitEnter(this)) {
+            if (getInput().accept(v)) {
+                if (v instanceof ExpressionVisitor) {
+                    for (ResultExpression result : results) {
+                        if (!result.getExpression().accept((ExpressionVisitor)v))
+                            break;
+                    }
+                }
+            }
+        }
+        return v.visitLeave(this);
+    }
+
+    @Override
     public String toString() {
         return "SELECT" + results.toString() + "\n" + getInput();
     }

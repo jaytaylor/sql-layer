@@ -31,4 +31,12 @@ public abstract class BasePlanWithInput extends BasePlanNode
         this.input = input;
     }
 
+    @Override
+    public boolean accept(PlanVisitor v) {
+        if (v.visitEnter(this)) {
+            input.accept(v);
+        }
+        return v.visitLeave(this);
+    }
+    
 }

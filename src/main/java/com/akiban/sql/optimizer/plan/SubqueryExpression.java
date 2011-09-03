@@ -53,10 +53,8 @@ public class SubqueryExpression extends BaseExpression
     @Override
     public boolean accept(ExpressionVisitor v) {
         if (v.visitEnter(this)) {
-            /** TODO
             if (v instanceof PlanVisitor)
                 subquery.accept((PlanVisitor)v);
-            **/
         }
         return v.visitLeave(this);
     }

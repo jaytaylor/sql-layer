@@ -103,6 +103,15 @@ public class JoinNode extends BaseJoinable
     }
 
     @Override
+    public boolean accept(PlanVisitor v) {
+        if (v.visitEnter(this)) {
+            if (left.accept(v))
+                right.accept(v);
+        }
+        return v.visitLeave(this);
+    }
+    
+    @Override
     public String toString() {
         return joinType + "(" + left + "," + right + "," + joinConditions + ")";
     }

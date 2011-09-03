@@ -33,6 +33,23 @@ public class ExpressionsSource extends BaseJoinable
     }
 
     @Override
+    public boolean accept(PlanVisitor v) {
+        if (v.visitEnter(this)) {
+            if (v instanceof ExpressionVisitor) {
+                expressions:
+                for (List<ExpressionNode> row : expressions) {
+                    for (ExpressionNode expr : row) {
+                        if (!expr.accept((ExpressionVisitor)v)) {
+                            break expressions;
+                        }
+                    }
+                }
+            }
+        }
+        return v.visitLeave(this);
+    }
+    
+    @Override
     public String toString() {
         return "VALUES" + expressions;
     }

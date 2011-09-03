@@ -36,6 +36,14 @@ public class SubquerySource extends BaseJoinable implements ColumnSource
     }
 
     @Override
+    public boolean accept(PlanVisitor v) {
+        if (v.visitEnter(this)) {
+            subquery.accept(v);
+        }
+        return v.visitLeave(this);
+    }
+    
+    @Override
     public String toString() {
         return subquery.toString();
     }

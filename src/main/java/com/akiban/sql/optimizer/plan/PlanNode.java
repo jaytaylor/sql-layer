@@ -21,5 +21,5 @@ public interface PlanNode
 
     public void setOutput(PlanNode output);
 
-    //    public boolean accept(PlanVisitor v);
+    public boolean accept(PlanVisitor v);
 }

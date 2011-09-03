@@ -42,6 +42,28 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
     }
 
     @Override
+    public boolean accept(PlanVisitor v) {
+        if (v.visitEnter(this)) {
+            if (getInput().accept(v)) {
+                if (v instanceof ExpressionVisitor) {
+                    children:
+                    if (v.visitEnter(this)) {
+                        for (ExpressionNode child : groupBy) {
+                            if (!child.accept((ExpressionVisitor)v))
+                                break children;
+                        }
+                        for (AggregateFunctionExpression child : aggregates) {
+                            if (!child.accept((ExpressionVisitor)v))
+                                break children;
+                        }
+                    }
+                }
+            }
+        }
+        return v.visitLeave(this);
+    }
+    
+    @Override
     public String toString() {
         return "GROUP BY" + groupBy + aggregates + "\n" + getInput();
     }

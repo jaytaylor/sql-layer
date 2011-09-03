@@ -34,6 +34,22 @@ public class Filter extends BasePlanWithInput
     }
 
     @Override
+    public boolean accept(PlanVisitor v) {
+        if (v.visitEnter(this)) {
+            if (getInput().accept(v)) {
+                if (v instanceof ExpressionVisitor) {
+                    for (ConditionExpression condition : conditions) {
+                        if (!condition.accept((ExpressionVisitor)v)) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return v.visitLeave(this);
+    }
+    
+    @Override
     public String toString() {
         return "FILTER" + conditions.toString() + "\n" + getInput();
     }

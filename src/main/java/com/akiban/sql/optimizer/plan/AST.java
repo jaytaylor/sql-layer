@@ -34,6 +34,11 @@ public class AST extends BasePlanNode
     }
 
     @Override
+    public boolean accept(PlanVisitor v) {
+        return v.visit(this);
+    }
+    
+    @Override
     public String toString() {
         try {
             return new NodeToString().toString(statement);
