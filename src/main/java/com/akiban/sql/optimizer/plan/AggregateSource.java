@@ -37,6 +37,13 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
         return aggregates;
     }
 
+    /** Add a new aggregate and return its position. */
+    public int addAggregate(AggregateFunctionExpression aggregate) {
+        int position = groupBy.size() + aggregates.size();
+        aggregates.add(aggregate);
+        return position;
+    }
+
     public String getName() {
         return "GROUP";         // TODO: Something unique needed?
     }

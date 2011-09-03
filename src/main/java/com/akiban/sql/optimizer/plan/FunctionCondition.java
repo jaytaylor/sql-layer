@@ -15,24 +15,15 @@
 
 package com.akiban.sql.optimizer.plan;
 
-public abstract class AnnotatedExpression
+import com.akiban.sql.types.DataTypeDescriptor;
+
+import java.util.List;
+
+public class FunctionCondition extends FunctionExpression implements ConditionExpression
 {
-    private ExpressionNode expression;
-
-    protected AnnotatedExpression(ExpressionNode expression) {
-        this.expression = expression;
+    public FunctionCondition(String function,
+                             List<ExpressionNode> operands,
+                             DataTypeDescriptor type) {
+        super(function, operands, type);
     }
-    
-    public ExpressionNode getExpression() {
-        return expression;
-    }
-    public void setExpression(ExpressionNode expression) {
-        this.expression = expression;
-    }
-
-    @Override
-    public String toString() {
-        return expression.toString();
-    }
-
 }

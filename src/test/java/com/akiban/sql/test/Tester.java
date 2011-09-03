@@ -34,6 +34,7 @@ import com.akiban.sql.optimizer.plan.AST;
 import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.PlanToString;
 import com.akiban.sql.optimizer.rule.ASTToStatement;
+import com.akiban.sql.optimizer.rule.AggregateMapper;
 import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.DMLStatementNode;
@@ -175,6 +176,10 @@ public class Tester
                     PlanNode plan = new AST((DMLStatementNode)stmt);
                     if (action != Action.PLAN_0) {
                         plan = new ASTToStatement().apply(plan);
+                    }
+                    if ((action != Action.PLAN_0) &&
+                        (action != Action.PLAN_1)) {
+                        plan = new AggregateMapper().apply(plan);
                     }
                     System.out.println(PlanToString.of(plan));
                 }
