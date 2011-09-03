@@ -15,19 +15,10 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.sql.types.DataTypeDescriptor;
-
-import com.akiban.qp.expression.Expression;
-
-public interface ExpressionNode
+/** A hierarchical visitor on expression tree. */
+public interface ExpressionVisitor
 {
-    public DataTypeDescriptor getSQLtype();
-
-    public boolean isColumn();
-    public boolean isConstant();
-
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets);
-
-    public boolean accept(ExpressionVisitor v);
-    public ExpressionNode accept(ExpressionRewriteVisitor v);
+    boolean visitEnter(ExpressionNode n);
+    boolean visitLeave(ExpressionNode n);
+    boolean visit(ExpressionNode n);
 }

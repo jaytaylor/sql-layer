@@ -48,6 +48,38 @@ public class SubqueryCondition extends BaseExpression implements ConditionExpres
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof SubqueryCondition)) return false;
+        SubqueryCondition other = (SubqueryCondition)obj;
+        return ((kind == other.kind) &&
+                // Currently this is ==; don't match whole subquery.
+                subquery.equals(other.subquery));
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = kind.hashCode();
+        hash += subquery.hashCode();
+        return hash;
+    }
+
+    @Override
+    public boolean accept(ExpressionVisitor v) {
+        if (v.visitEnter(this)) {
+            /** TODO
+            if (v instanceof PlanVisitor)
+                subquery.accept((PlanVisitor)v);
+            **/
+        }
+        return v.visitLeave(this);
+    }
+
+    @Override
+    public ExpressionNode accept(ExpressionRewriteVisitor v) {
+        return v.visit(this);
+    }
+
+    @Override
     public String toString() {
         return kind + " " + subquery;
     }

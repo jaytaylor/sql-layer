@@ -25,25 +25,26 @@ import com.akiban.qp.expression.Comparison;
  */
 public class ComparisonCondition extends BaseExpression implements ConditionExpression 
 {
-    private ExpressionNode left, right;
     private Comparison operation;
+    private ExpressionNode left, right;
 
-    public ComparisonCondition(ExpressionNode left, ExpressionNode right,
-                               Comparison operation, DataTypeDescriptor type) {
+    public ComparisonCondition(Comparison operation,
+                               ExpressionNode left, ExpressionNode right,
+                               DataTypeDescriptor type) {
         super(type);
+        this.operation = operation;
         this.left = left;
         this.right = right;
-        this.operation = operation;
     }
 
+    public Comparison getOperation() {
+        return operation;
+    }
     public ExpressionNode getLeft() {
         return left;
     }
     public ExpressionNode getRight() {
         return right;
-    }
-    public Comparison getOperation() {
-        return operation;
     }
 
     public static Comparison reverseComparison(Comparison operation) {
@@ -65,10 +66,47 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
         }
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof ComparisonCondition)) return false;
+        ComparisonCondition other = (ComparisonCondition)obj;
+        return ((operation == other.operation) &&
+                left.equals(other.left) &&
+                right.equals(other.right));
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = operation.hashCode();
+        hash += left.hashCode();
+        hash += right.hashCode();
+        return hash;
+    }
+
+    @Override
+    public boolean accept(ExpressionVisitor v) {
+        if (v.visitEnter(this)) {
+            if (left.accept(v))
+                right.accept(v);
+        }
+        return v.visitLeave(this);
+    }
+
+    @Override
+    public ExpressionNode accept(ExpressionRewriteVisitor v) {
+        ExpressionNode result = v.visit(this);
+        if (result != this) return result;
+        left = left.accept(v);
+        right = right.accept(v);
+        return this;
+    }
+
+    @Override
     public String toString() {
         return left + " " + operation + " " + right;
     }
 
+    @Override
     public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
         return API.compare(left.generateExpression(fieldOffsets),
                            operation,

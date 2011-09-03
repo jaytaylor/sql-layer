@@ -30,10 +30,43 @@ public class CastExpression extends BaseExpression
         this.inner = inner;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof CastExpression)) return false;
+        CastExpression other = (CastExpression)obj;
+        return (getSQLtype().equals(other.getSQLtype()) &&
+                inner.equals(other.inner));
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = getSQLtype().hashCode();
+        hash += inner.hashCode();
+        return hash;
+    }
+
+    @Override
+    public boolean accept(ExpressionVisitor v) {
+        if (v.visitEnter(this)) {
+            inner.accept(v);
+        }
+        return v.visitLeave(this);
+    }
+
+    @Override
+    public ExpressionNode accept(ExpressionRewriteVisitor v) {
+        ExpressionNode result = v.visit(this);
+        if (result != this) return result;
+        inner = inner.accept(v);
+        return this;
+    }
+
+    @Override
     public String toString() {
         return "Cast(" + inner + " AS " + getSQLtype() + ")";
     }
 
+    @Override
     public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
         // TODO: Need actual cast.
         return inner.generateExpression(fieldOffsets);

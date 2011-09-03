@@ -15,19 +15,9 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.sql.types.DataTypeDescriptor;
-
-import com.akiban.qp.expression.Expression;
-
-public interface ExpressionNode
+/** A visitor that can rewrite portions of the expression as it goes. */
+public interface ExpressionRewriteVisitor
 {
-    public DataTypeDescriptor getSQLtype();
-
-    public boolean isColumn();
-    public boolean isConstant();
-
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets);
-
-    public boolean accept(ExpressionVisitor v);
-    public ExpressionNode accept(ExpressionRewriteVisitor v);
+    /** Return a replacement for this node (or the node itself). */
+    ExpressionNode visit(ExpressionNode n);
 }

@@ -45,6 +45,43 @@ public class FunctionExpression extends BaseExpression
         return operands;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof FunctionExpression)) return false;
+        FunctionExpression other = (FunctionExpression)obj;
+        return (function.equals(other.function) &&
+                operands.equals(other.operands));
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = function.hashCode();
+        hash += operands.hashCode();
+        return hash;
+    }
+
+    @Override
+    public boolean accept(ExpressionVisitor v) {
+        if (v.visitEnter(this)) {
+            for (ExpressionNode operand : operands) {
+                if (!operand.accept(v))
+                    break;
+            }
+        }
+        return v.visitLeave(this);
+    }
+
+    @Override
+    public ExpressionNode accept(ExpressionRewriteVisitor v) {
+        ExpressionNode result = v.visit(this);
+        if (result != this) return result;
+        for (int i = 0; i < operands.size(); i++) {
+            operands.set(i, operands.get(i).accept(v));
+        }
+        return this;
+    }
+
+    @Override
     public String toString() {
         StringBuilder str = new StringBuilder(function);
         str.append("(");
@@ -57,6 +94,7 @@ public class FunctionExpression extends BaseExpression
         return str.toString();
     }
 
+    @Override
     public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
         throw new UnsupportedSQLException("NIY", null);
     }

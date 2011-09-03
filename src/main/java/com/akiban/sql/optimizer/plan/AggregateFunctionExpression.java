@@ -47,6 +47,44 @@ public class AggregateFunctionExpression extends BaseExpression
         return distinct;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof AggregateFunctionExpression)) return false;
+        AggregateFunctionExpression other = (AggregateFunctionExpression)obj;
+        return (function.equals(other.function) &&
+                ((operand == null) ? 
+                 (other.operand == null) :
+                 operand.equals(other.operand)) &&
+                (distinct == other.distinct));
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = function.hashCode();
+        hash += operand.hashCode();
+        if (distinct) hash ^= 1;
+        return hash;
+    }
+
+    @Override
+    public boolean accept(ExpressionVisitor v) {
+        if (v.visitEnter(this)) {
+            if (operand != null) 
+                operand.accept(v);
+        }
+        return v.visitLeave(this);
+    }
+
+    @Override
+    public ExpressionNode accept(ExpressionRewriteVisitor v) {
+        ExpressionNode result = v.visit(this);
+        if (result != this) return result;
+        if (operand != null)
+            operand = operand.accept(v);
+        return this;
+    }
+
+    @Override
     public String toString() {
         StringBuilder str = new StringBuilder(function);
         str.append("(");
@@ -60,8 +98,9 @@ public class AggregateFunctionExpression extends BaseExpression
         return str.toString();
     }
 
+    @Override
     public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        throw new UnsupportedSQLException("NIY", null);
+        throw new UnsupportedSQLException("Aggregate used as regular function", null);
     }
 
 }

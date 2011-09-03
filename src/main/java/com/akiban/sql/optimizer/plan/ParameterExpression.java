@@ -34,10 +34,34 @@ public class ParameterExpression extends BaseExpression
         return position;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof ParameterExpression)) return false;
+        ParameterExpression other = (ParameterExpression)obj;
+        return (position == other.position);
+    }
+
+    @Override
+    public int hashCode() {
+        return position;
+    }
+
+    @Override
+    public boolean accept(ExpressionVisitor v) {
+        return v.visit(this);
+    }
+
+    @Override
+    public ExpressionNode accept(ExpressionRewriteVisitor v) {
+        return v.visit(this);
+    }
+
+    @Override
     public String toString() {
         return "$" + position;
     }
 
+    @Override
     public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
         return API.variable(position);
     }

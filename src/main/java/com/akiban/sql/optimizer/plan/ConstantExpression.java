@@ -42,8 +42,32 @@ public class ConstantExpression extends BaseExpression
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof ConstantExpression)) return false;
+        ConstantExpression other = (ConstantExpression)obj;
+        return ((value == null) ?
+                (other.value == null) :
+                value.equals(other.value));
+    }
+
+    @Override
+    public int hashCode() {
+        return value.hashCode();
+    }
+
+    @Override
+    public boolean accept(ExpressionVisitor v) {
+        return v.visit(this);
+    }
+
+    @Override
+    public ExpressionNode accept(ExpressionRewriteVisitor v) {
+        return v.visit(this);
+    }
+
+    @Override
     public String toString() {
-        return value.toString();
+        return String.valueOf(value);
     }
 
     @Override

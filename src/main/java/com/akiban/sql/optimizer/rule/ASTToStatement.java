@@ -394,7 +394,7 @@ public class ASTToStatement extends BaseRule
             throws StandardException {
         ExpressionNode left = toExpression(binop.getLeftOperand());
         ExpressionNode right = toExpression(binop.getRightOperand());
-        conditions.add(new ComparisonCondition(left, right, op,
+        conditions.add(new ComparisonCondition(op, left, right,
                                                binop.getType()));
     }
 
@@ -406,8 +406,8 @@ public class ASTToStatement extends BaseRule
         ExpressionNode right1 = toExpression(rightOperandList.get(0));
         ExpressionNode right2 = toExpression(rightOperandList.get(1));
         DataTypeDescriptor type = between.getType();
-        conditions.add(new ComparisonCondition(left, right1, Comparison.GE, type));
-        conditions.add(new ComparisonCondition(left, right2, Comparison.LE, type));
+        conditions.add(new ComparisonCondition(Comparison.GE, left, right1, type));
+        conditions.add(new ComparisonCondition(Comparison.LE, left, right2, type));
     }
 
     protected void addInCondition(List<ConditionExpression> conditions,
@@ -419,7 +419,7 @@ public class ASTToStatement extends BaseRule
         if (rightOperandList.size() != 1)
             throw new UnsupportedSQLException("IN predicate", in);
         ExpressionNode right1 = toExpression(rightOperandList.get(0));
-        conditions.add(new ComparisonCondition(left, right1, Comparison.EQ,
+        conditions.add(new ComparisonCondition(Comparison.EQ, left, right1,
                                                 in.getType()));
     }
     

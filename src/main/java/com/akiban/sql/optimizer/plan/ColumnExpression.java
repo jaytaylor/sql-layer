@@ -58,6 +58,33 @@ public class ColumnExpression extends BaseExpression
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof ColumnExpression)) return false;
+        ColumnExpression other = (ColumnExpression)obj;
+        return (table.equals(other.table) &&
+                ((column != null) ?
+                 (column == other.column) :
+                 (position == other.position)));
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = table.hashCode();
+        hash += position;
+        return hash;
+    }
+
+    @Override
+    public boolean accept(ExpressionVisitor v) {
+        return v.visit(this);
+    }
+
+    @Override
+    public ExpressionNode accept(ExpressionRewriteVisitor v) {
+        return v.visit(this);
+    }
+
+    @Override
     public String toString() {
         if (column != null)
             return table.getName() + "." + column.getName();
