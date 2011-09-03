@@ -56,6 +56,6 @@ public class UpdateStatement extends BaseUpdateStatement
 
     @Override
     public String toString() {
-        return "UPDATE " + getTargetTable() + updateColumns + "\n" + getQuery();
+        return "UPDATE " + getTargetTable() + updateColumns;
     }
 }

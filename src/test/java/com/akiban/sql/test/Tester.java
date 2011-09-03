@@ -32,6 +32,7 @@ import com.akiban.sql.optimizer.simplified.SimplifiedSelectQuery;
 import com.akiban.sql.optimizer.simplified.SimplifiedUpdateStatement;
 import com.akiban.sql.optimizer.plan.AST;
 import com.akiban.sql.optimizer.plan.PlanNode;
+import com.akiban.sql.optimizer.plan.PlanToString;
 import com.akiban.sql.optimizer.rule.ASTToStatement;
 import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.parser.DMLStatementNode;
@@ -175,7 +176,7 @@ public class Tester
                     if (action != Action.PLAN_0) {
                         plan = new ASTToStatement().apply(plan);
                     }
-                    System.out.println(plan);
+                    System.out.println(PlanToString.of(plan));
                 }
                 break;
             case OPERATORS:

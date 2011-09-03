@@ -24,6 +24,6 @@ public class SelectQuery extends BaseStatement
 
     @Override
     public String toString() {
-        return getQuery().toString();
+        return "SELECT";
     }
 }

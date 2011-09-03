@@ -18,7 +18,7 @@ package com.akiban.sql.optimizer.plan;
 /** A hierarchical visitor on expression tree. */
 public interface ExpressionVisitor
 {
-    boolean visitEnter(ExpressionNode n);
-    boolean visitLeave(ExpressionNode n);
-    boolean visit(ExpressionNode n);
+    public boolean visitEnter(ExpressionNode n);
+    public boolean visitLeave(ExpressionNode n);
+    public boolean visit(ExpressionNode n);
 }

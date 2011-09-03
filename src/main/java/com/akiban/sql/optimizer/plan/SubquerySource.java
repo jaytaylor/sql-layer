@@ -45,6 +45,6 @@ public class SubquerySource extends BaseJoinable implements ColumnSource
     
     @Override
     public String toString() {
-        return subquery.toString();
+        return "Subquery";
     }
 }

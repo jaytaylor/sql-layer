@@ -25,6 +25,6 @@ public class DeleteStatement extends BaseUpdateStatement
 
     @Override
     public String toString() {
-        return "DELETE " + getTargetTable() + "\n" + getQuery();
+        return "DELETE " + getTargetTable();
     }
 }

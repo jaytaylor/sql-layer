@@ -24,6 +24,6 @@ public class Distinct extends BasePlanWithInput
 
     @Override
     public String toString() {
-        return "DISTINCT(" + getInput() + ")";
+        return "Distinct";
     }
 }

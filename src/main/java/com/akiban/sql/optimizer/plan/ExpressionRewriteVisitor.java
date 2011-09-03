@@ -19,5 +19,5 @@ package com.akiban.sql.optimizer.plan;
 public interface ExpressionRewriteVisitor
 {
     /** Return a replacement for this node (or the node itself). */
-    ExpressionNode visit(ExpressionNode n);
+    public ExpressionNode visit(ExpressionNode n);
 }
