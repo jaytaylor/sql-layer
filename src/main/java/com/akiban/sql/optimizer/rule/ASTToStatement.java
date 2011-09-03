@@ -378,6 +378,17 @@ public class ASTToStatement extends BaseRule
             addInCondition(conditions,
                            (InListOperatorNode)condition);
             break;
+
+        case NodeTypes.IS_NULL_NODE:
+        case NodeTypes.IS_NOT_NULL_NODE:
+            addFunctionCondition(conditions,
+                                 (UnaryOperatorNode)condition);
+            break;
+        case NodeTypes.LIKE_OPERATOR_NODE:
+            addFunctionCondition(conditions,
+                                 (TernaryOperatorNode)condition);
+            break;
+
         case NodeTypes.BOOLEAN_CONSTANT_NODE:
             if (condition.isBooleanTrue())
                 break;
@@ -423,6 +434,39 @@ public class ASTToStatement extends BaseRule
                                                 in.getType()));
     }
     
+    protected void addFunctionCondition(List<ConditionExpression> conditions,
+                                        UnaryOperatorNode unary)
+            throws StandardException {
+        List<ExpressionNode> operands = new ArrayList<ExpressionNode>(1);
+        operands.add(toExpression(unary.getOperand()));
+        conditions.add(new FunctionCondition(unary.getMethodName(),
+                                             operands,
+                                             unary.getType()));
+    }
+
+    protected void addFunctionCondition(List<ConditionExpression> conditions,
+                                        BinaryOperatorNode binary)
+            throws StandardException {
+        List<ExpressionNode> operands = new ArrayList<ExpressionNode>(2);
+        operands.add(toExpression(binary.getLeftOperand()));
+        operands.add(toExpression(binary.getRightOperand()));
+        conditions.add(new FunctionCondition(binary.getMethodName(),
+                                             operands,
+                                             binary.getType()));
+    }
+
+    protected void addFunctionCondition(List<ConditionExpression> conditions,
+                                        TernaryOperatorNode ternary)
+            throws StandardException {
+        List<ExpressionNode> operands = new ArrayList<ExpressionNode>(3);
+        operands.add(toExpression(ternary.getReceiver()));
+        operands.add(toExpression(ternary.getLeftOperand()));
+        operands.add(toExpression(ternary.getRightOperand()));
+        conditions.add(new FunctionCondition(ternary.getMethodName(),
+                                             operands,
+                                             ternary.getType()));
+    }
+
     /** LIMIT / OFFSET */
     protected Limit toLimit(PlanNode input, 
                             ValueNode offsetClause, 
@@ -492,6 +536,9 @@ public class ASTToStatement extends BaseRule
     /** Translate expression to intermediate form. */
     protected ExpressionNode toExpression(ValueNode valueNode)
             throws StandardException {
+        if (valueNode == null) {
+            return new ConstantExpression(null, null);
+        }
         DataTypeDescriptor type = valueNode.getType();
         if (valueNode instanceof ColumnReference) {
             ColumnBinding cb = (ColumnBinding)((ColumnReference)valueNode).getUserData();
@@ -535,6 +582,33 @@ public class ASTToStatement extends BaseRule
                                                    function,
                                                    aggregateNode.isDistinct(),
                                                    type);
+        }
+        else if (valueNode instanceof UnaryOperatorNode) {
+            UnaryOperatorNode unary = (UnaryOperatorNode)valueNode;
+            List<ExpressionNode> operands = new ArrayList<ExpressionNode>(1);
+            operands.add(toExpression(unary.getOperand()));
+            return new FunctionExpression(unary.getMethodName(),
+                                          operands,
+                                          unary.getType());
+        }
+        else if (valueNode instanceof BinaryOperatorNode) {
+            BinaryOperatorNode binary = (BinaryOperatorNode)valueNode;
+            List<ExpressionNode> operands = new ArrayList<ExpressionNode>(2);
+            operands.add(toExpression(binary.getLeftOperand()));
+            operands.add(toExpression(binary.getRightOperand()));
+            return new FunctionExpression(binary.getMethodName(),
+                                          operands,
+                                          binary.getType());
+        }
+        else if (valueNode instanceof TernaryOperatorNode) {
+            TernaryOperatorNode ternary = (TernaryOperatorNode)valueNode;
+            List<ExpressionNode> operands = new ArrayList<ExpressionNode>(3);
+            operands.add(toExpression(ternary.getReceiver()));
+            operands.add(toExpression(ternary.getLeftOperand()));
+            operands.add(toExpression(ternary.getRightOperand()));
+            return new FunctionExpression(ternary.getMethodName(),
+                                          operands,
+                                          ternary.getType());
         }
         else
             throw new UnsupportedSQLException("Unsupported operand", valueNode);
