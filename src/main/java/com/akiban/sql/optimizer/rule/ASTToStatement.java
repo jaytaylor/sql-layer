@@ -613,7 +613,36 @@ public class ASTToStatement extends BaseRule
                                           operands,
                                           ternary.getType(), ternary);
         }
+        else if (valueNode instanceof JavaToSQLValueNode) {
+            return toExpression(((JavaToSQLValueNode)valueNode).getJavaValueNode(),
+                                valueNode);
+        }
         else
+            throw new UnsupportedSQLException("Unsupported operand", valueNode);
+    }
+
+    // TODO: Need to figure out return type.  Maybe better to have
+    // done this earlier and bound to a known function and elided the
+    // Java stuff then.
+    protected ExpressionNode toExpression(JavaValueNode javaToSQL,
+                                          ValueNode valueNode)
+            throws StandardException {
+        if (javaToSQL instanceof MethodCallNode) {
+            MethodCallNode methodCall = (MethodCallNode)javaToSQL;
+            List<ExpressionNode> operands = new ArrayList<ExpressionNode>();
+            if (methodCall.getMethodParameters() != null) {
+                for (JavaValueNode javaValue : methodCall.getMethodParameters()) {
+                    operands.add(toExpression(javaValue, null));
+                }
+            }
+            return new FunctionExpression(methodCall.getMethodName(),
+                                          operands,
+                                          valueNode.getType(), valueNode);
+        }
+        else if (javaToSQL instanceof SQLToJavaValueNode) {
+            return toExpression(((SQLToJavaValueNode)javaToSQL).getSQLValueNode());
+        }
+        else 
             throw new UnsupportedSQLException("Unsupported operand", valueNode);
     }
 
