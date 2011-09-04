@@ -17,7 +17,7 @@ package com.akiban.qp.physicaloperator;
 import java.util.List;
 
 import com.akiban.qp.expression.Expression;
-import com.akiban.qp.rowtype.ProjectedRowType;
+import com.akiban.qp.rowtype.ProjectedUserTableRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 /**
@@ -32,18 +32,19 @@ import com.akiban.util.ArgumentValidation;
  */
 class Project_Table extends Project_Default {
 
-    public Project_Table(PhysicalOperator inputOperator, RowType rowType, List<Expression> projections)
+    public Project_Table(PhysicalOperator inputOperator, 
+            RowType projectTableRowType, List<Expression> projections)
     {
-        super (inputOperator, rowType, projections);
-        ArgumentValidation.isTrue("RowType has UserTable", rowType.hasUserTable());
-        projectType = new ProjectedRowType(rowType.schema(), rowType.typeId(), projections); 
+        super (inputOperator, inputOperator.rowType(), projections);
+        ArgumentValidation.isTrue("RowType has UserTable", projectTableRowType.hasUserTable());
+        //projectType = new ProjectedRowType(rowType.schema(), rowType.typeId(), projections); 
+        projectType = new ProjectedUserTableRowType (projectTableRowType.schema(), 
+                projectTableRowType.userTable(), projections);
     }
 
     @Override
     public String toString()
     {
-        return String.format("project to table %s (%s)", rowType.userTable(), projections);
+        return String.format("project to table %s (%s)", projectType.userTable(), projections);
     }
-
-
 }

@@ -17,6 +17,9 @@ package com.akiban.qp.physicaloperator;
 import java.util.Collections;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
@@ -41,6 +44,10 @@ public final class Insert_Default implements UpdatePlannable {
                 ++seen;
                 adapter.writeRow(row, bindings);
                 ++modified;
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Insert: row {}", row);
+                }
+
             }
         } finally {
             inputCursor.close();
@@ -71,5 +78,6 @@ public final class Insert_Default implements UpdatePlannable {
 
     private final PhysicalOperator inputOperator;
     private static final Tap.InOutTap INSERT_TAP = Tap.createTimer("operator: insert");
+    private static final Logger LOG = LoggerFactory.getLogger(Insert_Default.class);
 
 }

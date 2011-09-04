@@ -17,6 +17,7 @@ package com.akiban.qp.physicaloperator;
 import java.util.List;
 
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.sql.optimizer.ExpressionRow;
 
 public class ValuesScan_Default extends PhysicalOperator {
@@ -36,7 +37,16 @@ public class ValuesScan_Default extends PhysicalOperator {
     {
         this.rows = rows;
     }
-    
+
+    /**
+     * All the rows in the ValuesScan should have the same ValueScanRowType
+     * 
+     */
+    @Override 
+    public RowType rowType()
+    {
+        return rows.get(0).rowType();
+    }
     private List<ExpressionRow> rows;
     
     private static class Execution implements Cursor

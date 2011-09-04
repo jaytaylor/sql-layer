@@ -12,41 +12,51 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-
 package com.akiban.qp.rowtype;
-
-import com.akiban.qp.expression.Expression;
 
 import java.util.List;
 
-public class ProjectedRowType extends DerivedRowType
-{
-    // Object interface
+import com.akiban.ais.model.HKey;
+import com.akiban.ais.model.UserTable;
+import com.akiban.qp.expression.Expression;
+
+public class ProjectedUserTableRowType extends ProjectedRowType {
+
+    public ProjectedUserTableRowType(Schema schema, UserTable table,
+            List<Expression> projections) {
+        super(schema, table.getTableId(), projections);
+        this.table = table;
+    }
+
+    @Override
+    public UserTable userTable() {
+        return table;
+    }
+
+    @Override
+    public boolean hasUserTable() {
+        return table != null;
+    }
+    
+    @Override
+    public int nFields()
+    {
+        return table.getColumnsIncludingInternal().size();
+    }
+
+    @Override
+    public HKey hKey()
+    {
+        return table.hKey();
+    }
 
     @Override
     public String toString()
     {
-        return String.format("project(%s)", projections);
+        return String.format("%s: %s", super.toString(), table);
     }
 
-
-    // RowType interface
-
-    @Override
-    public int nFields()
-    {
-        return projections.size();
-    }
-
-    // ProjectedRowType interface
-
-    public ProjectedRowType(Schema schema, int typeId, List<Expression> projections)
-    {
-        super(schema, typeId);
-        this.projections = projections;
-    }
+    private final UserTable table;
     
-    // Object state
 
-    private final List<Expression> projections;
 }
