@@ -1,1 +1,1 @@
-insert into customers values (1, 'Smith')
+insert into customers values (4, 'Brown')

@@ -1,1 +1,1 @@
-INSERT INTO customers VALUES(4,'Wang')
+INSERT INTO customers VALUES(4,'Brown')
