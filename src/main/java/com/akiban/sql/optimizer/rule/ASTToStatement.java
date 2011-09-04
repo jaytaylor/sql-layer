@@ -383,6 +383,12 @@ public class ASTToStatement extends BaseRule
                                  (UnaryOperatorNode)condition);
             break;
 
+        case NodeTypes.OR_NODE:
+        case NodeTypes.AND_NODE:
+        case NodeTypes.NOT_NODE:
+            addLogicalFunctionCondition(conditions, condition);
+            break;
+
         case NodeTypes.BOOLEAN_CONSTANT_NODE:
             if (!condition.isBooleanTrue()) {
                 // FALSE = TRUE
@@ -592,6 +598,54 @@ public class ASTToStatement extends BaseRule
                                              ternary.getType(), ternary));
     }
 
+    protected void addLogicalFunctionCondition(List<ConditionExpression> conditions, 
+                                               ValueNode condition) 
+            throws StandardException {
+        List<ConditionExpression> operands = new ArrayList<ConditionExpression>();
+        String functionName;
+        if (condition instanceof UnaryLogicalOperatorNode) {
+            addCondition(operands, ((UnaryLogicalOperatorNode)condition).getOperand());
+            switch (condition.getNodeType()) {
+            case NodeTypes.NOT_NODE:
+                functionName = "not";
+                break;
+            default:
+               throw new UnsupportedSQLException("Unsuported condition", condition);
+            }
+        }
+        else if (condition instanceof BinaryLogicalOperatorNode) {
+            ValueNode leftOperand = ((BinaryLogicalOperatorNode)
+                                     condition).getLeftOperand();
+            ValueNode rightOperand = ((BinaryLogicalOperatorNode)
+                                      condition).getRightOperand();
+            switch (condition.getNodeType()) {
+            case NodeTypes.OR_NODE:
+                if (rightOperand.isBooleanFalse()) {
+                    addCondition(conditions, leftOperand);
+                    return;
+                }
+                functionName = "or";
+                break;
+            case NodeTypes.AND_NODE:
+                if (rightOperand.isBooleanTrue()) {
+                    addCondition(conditions, leftOperand);
+                    return;
+                }
+                functionName = "and";
+                break;
+            default:
+               throw new UnsupportedSQLException("Unsuported condition", condition);
+            }
+            addCondition(operands, leftOperand);
+            addCondition(operands, rightOperand);
+        }
+        else
+           throw new UnsupportedSQLException("Unsuported condition", condition);
+        conditions.add(new FunctionCondition(functionName, 
+                                             new ArrayList<ExpressionNode>(operands),
+                                             condition.getType(), condition));
+    }
+
     /** LIMIT / OFFSET */
     protected Limit toLimit(PlanNode input, 
                             ValueNode offsetClause, 
@@ -737,6 +791,14 @@ public class ASTToStatement extends BaseRule
             return new FunctionExpression(ternary.getMethodName(),
                                           operands,
                                           ternary.getType(), ternary);
+        }
+        else if (valueNode instanceof SubqueryNode) {
+            SubqueryNode subqueryNode = (SubqueryNode)valueNode;
+            return new SubqueryExpression(toQueryForSelect(subqueryNode.getResultSet(),
+                                                           subqueryNode.getOrderByList(),
+                                                           subqueryNode.getOffset(),
+                                                           subqueryNode.getFetchFirst()),
+                                          subqueryNode.getType(), subqueryNode);
         }
         else if (valueNode instanceof JavaToSQLValueNode) {
             return toExpression(((JavaToSQLValueNode)valueNode).getJavaValueNode(),

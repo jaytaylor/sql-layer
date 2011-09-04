@@ -27,15 +27,15 @@ import com.akiban.qp.expression.Expression;
  */
 public class SubqueryExpression extends BaseExpression 
 {
-    private ResultSet subquery;
+    private PlanNode subquery;
 
-    public SubqueryExpression(ResultSet subquery, 
+    public SubqueryExpression(PlanNode subquery, 
                               DataTypeDescriptor sqlType, ValueNode sqlSource) {
         super(sqlType, sqlSource);
         this.subquery = subquery;
     }
 
-    public ResultSet getSubquery() {
+    public PlanNode getSubquery() {
         return subquery;
     }
 
