@@ -17,9 +17,9 @@ package com.akiban.sql.optimizer.plan;
 
 public interface PlanNode
 {
-    public PlanNode getOutput();
+    public PlanWithInput getOutput();
 
-    public void setOutput(PlanNode output);
+    public void setOutput(PlanWithInput output);
 
     public boolean accept(PlanVisitor v);
 

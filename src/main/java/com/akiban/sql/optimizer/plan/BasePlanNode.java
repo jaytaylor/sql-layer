@@ -17,18 +17,18 @@ package com.akiban.sql.optimizer.plan;
 
 public abstract class BasePlanNode implements PlanNode
 {
-    private PlanNode output;
+    private PlanWithInput output;
 
     protected BasePlanNode() {
     }
 
     @Override
-    public PlanNode getOutput() {
+    public PlanWithInput getOutput() {
         return output;
     }
 
     @Override
-    public void setOutput(PlanNode output) {
+    public void setOutput(PlanWithInput output) {
         this.output = output;
     }
 

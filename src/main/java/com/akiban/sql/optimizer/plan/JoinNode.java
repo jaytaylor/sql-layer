@@ -21,7 +21,7 @@ import com.akiban.qp.physicaloperator.API.JoinType;
 import java.util.*;
 
 /** A join between two tables / subjoins. */
-public class JoinNode extends BaseJoinable
+public class JoinNode extends BaseJoinable implements PlanWithInput
 {
     private Joinable left, right;
     private JoinType joinType;
@@ -100,6 +100,14 @@ public class JoinNode extends BaseJoinable
             joinType = JoinType.LEFT_JOIN;
             break;
         }
+    }
+
+    @Override
+    public void replaceInput(PlanNode oldInput, PlanNode newInput) {
+        if (left == oldInput)
+            left = (Joinable)newInput;
+        if (right == oldInput)
+            right = (Joinable)newInput;
     }
 
     @Override

@@ -16,7 +16,7 @@
 package com.akiban.sql.optimizer.plan;
 
 /** A union of two subqueries. */
-public class Union extends BasePlanNode
+public class Union extends BasePlanNode implements PlanWithInput
 {
     private PlanNode left, right;
     private boolean all;
@@ -46,6 +46,14 @@ public class Union extends BasePlanNode
 
     public boolean isAll() {
         return all;
+    }
+
+    @Override
+    public void replaceInput(PlanNode oldInput, PlanNode newInput) {
+        if (left == oldInput)
+            left = newInput;
+        if (right == oldInput)
+            right = newInput;
     }
 
     @Override

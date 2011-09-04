@@ -15,34 +15,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
-public abstract class BasePlanWithInput extends BasePlanNode implements PlanWithInput
+public interface PlanWithInput extends PlanNode
 {
-    private PlanNode input;
-
-    protected BasePlanWithInput(PlanNode input) {
-        this.input = input;
-        input.setOutput(this);
-    }
-
-    public PlanNode getInput() {
-        return input;
-    }
-    public void setInput(PlanNode input) {
-        this.input = input;
-    }
-
-    @Override
-    public void replaceInput(PlanNode oldInput, PlanNode newInput) {
-        if (input == oldInput)
-            input = newInput;
-    }
-
-    @Override
-    public boolean accept(PlanVisitor v) {
-        if (v.visitEnter(this)) {
-            input.accept(v);
-        }
-        return v.visitLeave(this);
-    }
-    
+    public void replaceInput(PlanNode oldInput, PlanNode newInput);
 }

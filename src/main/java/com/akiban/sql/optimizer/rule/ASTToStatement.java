@@ -474,6 +474,7 @@ public class ASTToStatement extends BaseRule
             break;
         case NOT_IN: 
         case NE_ANY: 
+            comp = Comparison.NE;
             needOperand = true;
             break;
         case NE_ALL: 
@@ -518,9 +519,34 @@ public class ASTToStatement extends BaseRule
             needOperand = true;
             break;
         }
-        if (subquery instanceof ResultSet) {
-            ResultSet rs = (ResultSet)subquery;
-            subquery = rs.getInput();
+        // TODO: This may not be right for c IN (SELECT x ... UNION SELECT y ...).
+        // Maybe turn that into an OR and optimize each separately.
+        {
+            PlanWithInput prev = null;
+            PlanNode plan = subquery;
+            while (true) {
+                if (!(plan instanceof BasePlanWithInput))
+                    break;
+                PlanNode next = ((BasePlanWithInput)plan).getInput();
+                if (plan instanceof ResultSet) {
+                    ResultSet rs = (ResultSet)plan;
+                    if (needOperand) {
+                        if (rs.getResults().size() != 1)
+                            throw new UnsupportedSQLException("Subquery must have exactly one column", subqueryNode);
+                        operand = rs.getResults().get(0).getExpression();
+                    }
+                    // Don't need result set any more.
+                    if (prev != null)
+                        prev.replaceInput(plan, next);
+                }
+                else if (plan instanceof Filter) {
+                    Filter f = (Filter)plan;
+                    innerConds = f.getConditions();
+                    break;
+                }
+                prev = (PlanWithInput)plan;
+                plan = next;
+            }
         }
         if (needOperand) {
             assert ((operand != null) && (innerConds != null));
