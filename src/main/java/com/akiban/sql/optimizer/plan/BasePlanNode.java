@@ -22,11 +22,19 @@ public abstract class BasePlanNode implements PlanNode
     protected BasePlanNode() {
     }
 
+    @Override
     public PlanNode getOutput() {
         return output;
     }
+
+    @Override
     public void setOutput(PlanNode output) {
         this.output = output;
+    }
+
+    @Override
+    public String summaryString() {
+        return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16);
     }
 
 }

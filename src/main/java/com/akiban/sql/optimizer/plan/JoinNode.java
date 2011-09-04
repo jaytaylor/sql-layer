@@ -112,8 +112,8 @@ public class JoinNode extends BaseJoinable
     }
     
     @Override
-    public String toString() {
-        return super.toString() + 
+    public String summaryString() {
+        return super.summaryString() + 
             "(" + joinType.toString() + joinConditions.toString() + ")";
     }
 }

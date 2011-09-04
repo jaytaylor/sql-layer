@@ -66,7 +66,7 @@ public class SubqueryExpression extends BaseExpression
 
     @Override
     public String toString() {
-        return subquery.toString();
+        return subquery.summaryString();
     }
 
     @Override

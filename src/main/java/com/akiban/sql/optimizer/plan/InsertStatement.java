@@ -35,7 +35,7 @@ public class InsertStatement extends BaseUpdateStatement
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + getTargetTable() + targetColumns + ")";
+    public String summaryString() {
+        return super.summaryString() + "(" + getTargetTable() + targetColumns + ")";
     }
 }

@@ -24,7 +24,7 @@ public class DeleteStatement extends BaseUpdateStatement
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + getTargetTable() + ")";
+    public String summaryString() {
+        return super.summaryString() + "(" + getTargetTable() + ")";
     }
 }

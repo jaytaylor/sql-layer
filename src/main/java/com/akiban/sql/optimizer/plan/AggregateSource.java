@@ -71,8 +71,8 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
     }
     
     @Override
-    public String toString() {
-        return super.toString() + groupBy + aggregates;
+    public String summaryString() {
+        return super.summaryString() + groupBy + aggregates;
     }
 
 }

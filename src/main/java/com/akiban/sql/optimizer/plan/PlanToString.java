@@ -15,7 +15,8 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import java.util.Stack;
+import java.util.Deque;
+import java.util.ArrayDeque;
 
 public class PlanToString implements PlanVisitor, ExpressionVisitor
 {
@@ -24,39 +25,20 @@ public class PlanToString implements PlanVisitor, ExpressionVisitor
         str.add(plan);
         return str.toString();
     }
-
-    static class Pending {
-        PlanNode plan;
-        String name;
-        
-        Pending(PlanNode plan, String name) {
-            this.plan = plan;
-            this.name = name;
-        }
-    }
     
     private StringBuilder string = new StringBuilder();
-    private Stack<Pending> pending = new Stack<Pending>();
+    private Deque<PlanNode> pending = new ArrayDeque<PlanNode>();
     private int planDepth = 0, expressionDepth = 0;
-    
-    public void add(PlanNode plan) {
-        add(plan, null);
-    }
-    public void add(PlanNode plan, String name) {
-        pending.add(new Pending(plan, name));
+
+    protected void add(PlanNode n) {
+        pending.addLast(n);
     }
 
     @Override
     public String toString() {
-        while (!pending.empty()) {
-            Pending p = pending.pop();
-            if (string.length() > 0)
-                string.append("\n");
-            if (p.name != null) {
-                string.append(p.name);
-                string.append(": ");
-            }
-            p.plan.accept(this);
+        while (!pending.isEmpty()) {
+            PlanNode p = pending.removeFirst();
+            p.accept(this);
         }
         return string.toString();
     }
@@ -84,7 +66,7 @@ public class PlanToString implements PlanVisitor, ExpressionVisitor
         if (string.length() > 0) string.append("\n");
         for (int i = 0; i < planDepth; i++)
             string.append("  ");
-        string.append(n);
+        string.append(n.summaryString());
         return true;
     }
     

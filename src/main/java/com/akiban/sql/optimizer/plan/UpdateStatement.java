@@ -55,7 +55,7 @@ public class UpdateStatement extends BaseUpdateStatement
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + getTargetTable() + updateColumns + ")";
+    public String summaryString() {
+        return super.summaryString() + "(" + getTargetTable() + updateColumns + ")";
     }
 }

@@ -79,7 +79,7 @@ public class SubqueryCondition extends BaseExpression implements ConditionExpres
 
     @Override
     public String toString() {
-        return kind + " " + subquery;
+        return kind + " " + subquery.summaryString();
     }
 
     @Override

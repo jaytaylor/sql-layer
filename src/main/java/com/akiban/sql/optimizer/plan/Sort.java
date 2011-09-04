@@ -68,8 +68,8 @@ public class Sort extends BasePlanWithInput
     }
     
     @Override
-    public String toString() {
-        return super.toString() + orderBy;
+    public String summaryString() {
+        return super.summaryString() + orderBy;
     }
 
 }

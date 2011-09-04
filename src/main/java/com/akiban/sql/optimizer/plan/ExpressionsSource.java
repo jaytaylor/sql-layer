@@ -50,7 +50,7 @@ public class ExpressionsSource extends BaseJoinable
     }
     
     @Override
-    public String toString() {
-        return super.toString() + expressions;
+    public String summaryString() {
+        return super.summaryString() + expressions;
     }
 }

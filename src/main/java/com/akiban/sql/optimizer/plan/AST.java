@@ -39,8 +39,8 @@ public class AST extends BasePlanNode
     }
     
     @Override
-    public String toString() {
-        StringBuilder str = new StringBuilder(super.toString());
+    public String summaryString() {
+        StringBuilder str = new StringBuilder(super.summaryString());
         str.append("(");
         try {
             str.append(new NodeToString().toString(statement));
