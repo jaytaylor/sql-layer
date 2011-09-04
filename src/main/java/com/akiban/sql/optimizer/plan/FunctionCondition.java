@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ValueNode;
 
 import java.util.List;
 
@@ -23,7 +24,7 @@ public class FunctionCondition extends FunctionExpression implements ConditionEx
 {
     public FunctionCondition(String function,
                              List<ExpressionNode> operands,
-                             DataTypeDescriptor type) {
-        super(function, operands, type);
+                             DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        super(function, operands, sqlType, sqlSource);
     }
 }

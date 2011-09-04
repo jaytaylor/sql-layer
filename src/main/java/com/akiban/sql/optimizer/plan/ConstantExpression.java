@@ -19,14 +19,16 @@ import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.API;
 
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ValueNode;
 
 /** An operand with a constant value. */
 public class ConstantExpression extends BaseExpression 
 {
     private Object value;
 
-    public ConstantExpression(Object value, DataTypeDescriptor type) {
-        super(type);
+    public ConstantExpression(Object value, 
+                              DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        super(sqlType, sqlSource);
         if (value instanceof Integer)
             value = new Long(((Integer)value).intValue());
         this.value = value;

@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ValueNode;
 
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.API;
@@ -25,8 +26,9 @@ public class ParameterExpression extends BaseExpression
 {
     private int position;
 
-    public ParameterExpression(int position, DataTypeDescriptor type) {
-        super(type);
+    public ParameterExpression(int position, 
+                               DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        super(sqlType, sqlSource);
         this.position = position;
     }
 

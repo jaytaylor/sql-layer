@@ -81,7 +81,8 @@ public class AggregateMapper extends BaseRule
             List<ExpressionNode> groupBy = source.getGroupBy();
             for (int i = 0; i < groupBy.size(); i++) {
                 ExpressionNode expr = groupBy.get(i);
-                map.put(expr, new ColumnExpression(source, i, expr.getSQLtype()));
+                map.put(expr, new ColumnExpression(source, i, 
+                                                   expr.getSQLtype(), expr.getSQLsource()));
             }
         }
 
@@ -130,7 +131,7 @@ public class AggregateMapper extends BaseRule
             if (expr instanceof ColumnExpression) {
                 if (((ColumnExpression)expr).getTable() != source) {
                     // MySQL adds an implicit FIRST (not first not-null) aggregate function.
-                    throw new UnsupportedSQLException("Column cannot be used outside aggregate function or GROUP BY: " + expr, null); // TODO: Get original.
+                    throw new UnsupportedSQLException("Column cannot be used outside aggregate function or GROUP BY", expr.getSQLsource());
                 }
             }
             return expr;
@@ -141,7 +142,8 @@ public class AggregateMapper extends BaseRule
             if (nexpr != null)
                 return nexpr.accept(this);
             int position = source.addAggregate((AggregateFunctionExpression)expr);
-            nexpr = new ColumnExpression(source, position, expr.getSQLtype());
+            nexpr = new ColumnExpression(source, position, 
+                                         expr.getSQLtype(), expr.getSQLsource());
             map.put(expr, nexpr);
             return nexpr;
         }
@@ -153,12 +155,12 @@ public class AggregateMapper extends BaseRule
                 ExpressionNode operand = expr.getOperand();
                 List<ExpressionNode> noperands = new ArrayList<ExpressionNode>(2);
                 noperands.add(new AggregateFunctionExpression("SUM", operand, false,
-                                                              operand.getSQLtype()));
+                                                              operand.getSQLtype(), null));
                 noperands.add(new AggregateFunctionExpression("COUNT", operand, false,
-                                                              new DataTypeDescriptor(TypeId.INTEGER_ID, false)));
+                                                              new DataTypeDescriptor(TypeId.INTEGER_ID, false), null));
                 return new FunctionExpression("divide",
                                               noperands,
-                                              expr.getSQLtype());
+                                              expr.getSQLtype(), expr.getSQLsource());
             }
             // TODO: {VAR,STDDEV}_{POP,SAMP}
             return null;

@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ValueNode;
 
 import com.akiban.ais.model.Column;
 
@@ -30,8 +31,8 @@ public class ColumnExpression extends BaseExpression
     private int position;
 
     public ColumnExpression(TableSource table, Column column, 
-                            DataTypeDescriptor type) {
-        super(type);
+                            DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        super(sqlType, sqlSource);
         this.table = table;
         assert (table.getTable().getTable() == column.getUserTable());
         this.column = column;
@@ -39,8 +40,8 @@ public class ColumnExpression extends BaseExpression
     }
 
     public ColumnExpression(ColumnSource table, int position, 
-                            DataTypeDescriptor type) {
-        super(type);
+                            DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        super(sqlType, sqlSource);
         this.table = table;
         this.position = position;
     }

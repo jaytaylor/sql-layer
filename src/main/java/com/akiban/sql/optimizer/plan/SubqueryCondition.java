@@ -18,6 +18,7 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ValueNode;
 
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.Comparison;
@@ -33,8 +34,9 @@ public class SubqueryCondition extends BaseExpression implements ConditionExpres
     private Kind kind;
     private PlanNode subquery;
 
-    public SubqueryCondition(Kind kind, PlanNode subquery, DataTypeDescriptor type) {
-        super(type);
+    public SubqueryCondition(Kind kind, PlanNode subquery, 
+                             DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        super(sqlType, sqlSource);
         this.kind = kind;
         this.subquery = subquery;
     }

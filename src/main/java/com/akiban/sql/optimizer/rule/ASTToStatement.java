@@ -406,7 +406,7 @@ public class ASTToStatement extends BaseRule
         ExpressionNode left = toExpression(binop.getLeftOperand());
         ExpressionNode right = toExpression(binop.getRightOperand());
         conditions.add(new ComparisonCondition(op, left, right,
-                                               binop.getType()));
+                                               binop.getType(), binop));
     }
 
     protected void addBetweenCondition(List<ConditionExpression> conditions,
@@ -417,8 +417,8 @@ public class ASTToStatement extends BaseRule
         ExpressionNode right1 = toExpression(rightOperandList.get(0));
         ExpressionNode right2 = toExpression(rightOperandList.get(1));
         DataTypeDescriptor type = between.getType();
-        conditions.add(new ComparisonCondition(Comparison.GE, left, right1, type));
-        conditions.add(new ComparisonCondition(Comparison.LE, left, right2, type));
+        conditions.add(new ComparisonCondition(Comparison.GE, left, right1, type, null));
+        conditions.add(new ComparisonCondition(Comparison.LE, left, right2, type, null));
     }
 
     protected void addInCondition(List<ConditionExpression> conditions,
@@ -431,7 +431,7 @@ public class ASTToStatement extends BaseRule
             throw new UnsupportedSQLException("IN predicate", in);
         ExpressionNode right1 = toExpression(rightOperandList.get(0));
         conditions.add(new ComparisonCondition(Comparison.EQ, left, right1,
-                                                in.getType()));
+                                               in.getType(), in));
     }
     
     protected void addFunctionCondition(List<ConditionExpression> conditions,
@@ -441,7 +441,7 @@ public class ASTToStatement extends BaseRule
         operands.add(toExpression(unary.getOperand()));
         conditions.add(new FunctionCondition(unary.getMethodName(),
                                              operands,
-                                             unary.getType()));
+                                             unary.getType(), unary));
     }
 
     protected void addFunctionCondition(List<ConditionExpression> conditions,
@@ -452,7 +452,7 @@ public class ASTToStatement extends BaseRule
         operands.add(toExpression(binary.getRightOperand()));
         conditions.add(new FunctionCondition(binary.getMethodName(),
                                              operands,
-                                             binary.getType()));
+                                             binary.getType(), binary));
     }
 
     protected void addFunctionCondition(List<ConditionExpression> conditions,
@@ -464,7 +464,7 @@ public class ASTToStatement extends BaseRule
         operands.add(toExpression(ternary.getRightOperand()));
         conditions.add(new FunctionCondition(ternary.getMethodName(),
                                              operands,
-                                             ternary.getType()));
+                                             ternary.getType(), ternary));
     }
 
     /** LIMIT / OFFSET */
@@ -537,7 +537,7 @@ public class ASTToStatement extends BaseRule
     protected ExpressionNode toExpression(ValueNode valueNode)
             throws StandardException {
         if (valueNode == null) {
-            return new ConstantExpression(null, null);
+            return new ConstantExpression(null, null, null);
         }
         DataTypeDescriptor type = valueNode.getType();
         if (valueNode instanceof ColumnReference) {
@@ -549,21 +549,24 @@ public class ASTToStatement extends BaseRule
                 throw new UnsupportedSQLException("Unsupported column", valueNode);
             Column column = cb.getColumn();
             if (column != null)
-                return new ColumnExpression(((TableSource)joinNode), column, type);
+                return new ColumnExpression(((TableSource)joinNode), column, 
+                                            type, valueNode);
             else
                 // TODO: Get the position correctly from reference.
-                return new ColumnExpression(((ColumnSource)joinNode), -1, type);
+                return new ColumnExpression(((ColumnSource)joinNode), -1, 
+                                            type, valueNode);
         }
         else if (valueNode instanceof ConstantNode)
-            return new ConstantExpression(((ConstantNode)valueNode).getValue(), type);
+            return new ConstantExpression(((ConstantNode)valueNode).getValue(), 
+                                          type, valueNode);
         else if (valueNode instanceof ParameterNode)
             return new ParameterExpression(((ParameterNode)valueNode)
                                            .getParameterNumber(),
-                                           type);
+                                           type, valueNode);
         else if (valueNode instanceof CastNode)
             return new CastExpression(toExpression(((CastNode)valueNode)
                                                    .getCastOperand()),
-                                      type);
+                                      type, valueNode);
         else if (valueNode instanceof AggregateNode) {
             AggregateNode aggregateNode = (AggregateNode)valueNode;
             String function = aggregateNode.getAggregateName();
@@ -581,7 +584,7 @@ public class ASTToStatement extends BaseRule
             return new AggregateFunctionExpression(function,
                                                    operand,
                                                    aggregateNode.isDistinct(),
-                                                   type);
+                                                   type, valueNode);
         }
         else if (valueNode instanceof UnaryOperatorNode) {
             UnaryOperatorNode unary = (UnaryOperatorNode)valueNode;
@@ -589,7 +592,7 @@ public class ASTToStatement extends BaseRule
             operands.add(toExpression(unary.getOperand()));
             return new FunctionExpression(unary.getMethodName(),
                                           operands,
-                                          unary.getType());
+                                          unary.getType(), unary);
         }
         else if (valueNode instanceof BinaryOperatorNode) {
             BinaryOperatorNode binary = (BinaryOperatorNode)valueNode;
@@ -598,7 +601,7 @@ public class ASTToStatement extends BaseRule
             operands.add(toExpression(binary.getRightOperand()));
             return new FunctionExpression(binary.getMethodName(),
                                           operands,
-                                          binary.getType());
+                                          binary.getType(), binary);
         }
         else if (valueNode instanceof TernaryOperatorNode) {
             TernaryOperatorNode ternary = (TernaryOperatorNode)valueNode;
@@ -608,7 +611,7 @@ public class ASTToStatement extends BaseRule
             operands.add(toExpression(ternary.getRightOperand()));
             return new FunctionExpression(ternary.getMethodName(),
                                           operands,
-                                          ternary.getType());
+                                          ternary.getType(), ternary);
         }
         else
             throw new UnsupportedSQLException("Unsupported operand", valueNode);

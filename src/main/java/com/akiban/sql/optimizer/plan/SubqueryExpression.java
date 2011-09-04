@@ -18,6 +18,7 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ValueNode;
 
 import com.akiban.qp.expression.Expression;
 
@@ -28,8 +29,9 @@ public class SubqueryExpression extends BaseExpression
 {
     private ResultSet subquery;
 
-    public SubqueryExpression(ResultSet subquery, DataTypeDescriptor type) {
-        super(type);
+    public SubqueryExpression(ResultSet subquery, 
+                              DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        super(sqlType, sqlSource);
         this.subquery = subquery;
     }
 

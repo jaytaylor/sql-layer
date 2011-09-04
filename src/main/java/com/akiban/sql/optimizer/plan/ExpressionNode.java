@@ -16,12 +16,14 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ValueNode;
 
 import com.akiban.qp.expression.Expression;
 
 public interface ExpressionNode
 {
     public DataTypeDescriptor getSQLtype();
+    public ValueNode getSQLsource();
 
     public boolean isColumn();
     public boolean isConstant();

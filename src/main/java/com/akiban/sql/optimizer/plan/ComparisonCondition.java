@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ValueNode;
 
 import com.akiban.qp.expression.API;
 import com.akiban.qp.expression.Expression;
@@ -30,8 +31,8 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
 
     public ComparisonCondition(Comparison operation,
                                ExpressionNode left, ExpressionNode right,
-                               DataTypeDescriptor type) {
-        super(type);
+                               DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        super(sqlType, sqlSource);
         this.operation = operation;
         this.left = left;
         this.right = right;

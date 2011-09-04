@@ -18,6 +18,7 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.qp.expression.Expression;
 
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ValueNode;
 
 /** An evaluated value. 
  * Usually part of a larger expression tree.
@@ -26,14 +27,21 @@ public abstract class BaseExpression implements ExpressionNode
 {
     private DataTypeDescriptor sqlType;
     // TODO: Maybe AkType here once that's stable.
+    private ValueNode sqlSource;
 
-    protected BaseExpression(DataTypeDescriptor sqlType) {
+    protected BaseExpression(DataTypeDescriptor sqlType, ValueNode sqlSource) {
         this.sqlType = sqlType;
+        this.sqlSource = sqlSource;
     }
 
     @Override
     public DataTypeDescriptor getSQLtype() {
         return sqlType;
+    }
+
+    @Override
+    public ValueNode getSQLsource() {
+        return sqlSource;
     }
 
     @Override

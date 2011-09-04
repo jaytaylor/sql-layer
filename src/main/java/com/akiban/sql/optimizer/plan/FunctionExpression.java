@@ -18,6 +18,7 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ValueNode;
 
 import com.akiban.qp.expression.Expression;
 
@@ -32,8 +33,8 @@ public class FunctionExpression extends BaseExpression
     
     public FunctionExpression(String function,
                               List<ExpressionNode> operands,
-                              DataTypeDescriptor type) {
-        super(type);
+                              DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        super(sqlType, sqlSource);
         this.function = function;
         this.operands = operands;
     }
