@@ -225,13 +225,8 @@ public class ASTToStatement extends BaseRule
             (selectNode.getHavingClause() != null) ||
             hasAggregateFunctionA(results) ||
             hasAggregateFunctionA(sorts)) {
-
             query = toAggregateSource(query, selectNode.getGroupByList());
-
-            List<ConditionExpression> conditions = 
-                toConditions(selectNode.getHavingClause());
-            if (conditions != null)
-                query = new Filter(query, conditions);
+            query = new Filter(query, toConditions(selectNode.getHavingClause()));
         }
 
         if (!sorts.isEmpty()) {
@@ -263,16 +258,11 @@ public class ASTToStatement extends BaseRule
             else
                 joins = joinNodes(joins, toJoinNode(fromTable), JoinType.INNER_JOIN);
         }
-        PlanNode query = joins;
-        List<ConditionExpression> conditions = 
-            toConditions(selectNode.getWhereClause());
-        if (conditions != null) {
-            if (hasAggregateFunction(conditions))
-                throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
-                                                  selectNode.getWhereClause());
-            query = new Filter(query, conditions);
-        }
-        return query;
+        List<ConditionExpression> conditions = toConditions(selectNode.getWhereClause());
+        if (hasAggregateFunction(conditions))
+            throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
+                                              selectNode.getWhereClause());
+        return new Filter(joins, conditions);
     }
 
     protected Map<FromTable,Joinable> joinNodes =
@@ -337,13 +327,11 @@ public class ASTToStatement extends BaseRule
             ValueNode condition = andNode.getLeftOperand();
             addCondition(conditions, condition);
         }
-        if (conditions.isEmpty())
-            return null;
-        else
-            return conditions;
+        return conditions;
     }
 
-    protected void addCondition(List<ConditionExpression> conditions, ValueNode condition)
+    protected void addCondition(List<ConditionExpression> conditions, 
+                                ValueNode condition)
             throws StandardException {
         switch (condition.getNodeType()) {
         case NodeTypes.BINARY_EQUALS_OPERATOR_NODE:
@@ -374,27 +362,37 @@ public class ASTToStatement extends BaseRule
             addBetweenCondition(conditions,
                                 (BetweenOperatorNode)condition);
             break;
+
         case NodeTypes.IN_LIST_OPERATOR_NODE:
             addInCondition(conditions,
                            (InListOperatorNode)condition);
             break;
 
+        case NodeTypes.SUBQUERY_NODE:
+            addSubqueryCondition(conditions,
+                                 (SubqueryNode)condition);
+            break;
+
+        case NodeTypes.LIKE_OPERATOR_NODE:
+            addFunctionCondition(conditions,
+                                 (TernaryOperatorNode)condition);
+            break;
         case NodeTypes.IS_NULL_NODE:
         case NodeTypes.IS_NOT_NULL_NODE:
             addFunctionCondition(conditions,
                                  (UnaryOperatorNode)condition);
             break;
-        case NodeTypes.LIKE_OPERATOR_NODE:
-            addFunctionCondition(conditions,
-                                 (TernaryOperatorNode)condition);
-            break;
 
         case NodeTypes.BOOLEAN_CONSTANT_NODE:
-            if (condition.isBooleanTrue())
-                break;
-            /* else falls through */
+            if (!condition.isBooleanTrue()) {
+                // FALSE = TRUE
+                conditions.add(new ComparisonCondition(Comparison.EQ,
+                                                       toExpression(condition),
+                                                       new ConstantExpression(Boolean.TRUE, null, null),
+                                                       condition.getType(), condition));
+            }
+            break;
         default:
-            // TODO: Rest of these.
             throw new UnsupportedSQLException("Unsupported WHERE predicate",
                                               condition);
         }
@@ -426,14 +424,115 @@ public class ASTToStatement extends BaseRule
             throws StandardException {
         ExpressionNode left = toExpression(in.getLeftOperand());
         ValueNodeList rightOperandList = in.getRightOperandList();
-        // TODO: For real now.
-        if (rightOperandList.size() != 1)
-            throw new UnsupportedSQLException("IN predicate", in);
-        ExpressionNode right1 = toExpression(rightOperandList.get(0));
-        conditions.add(new ComparisonCondition(Comparison.EQ, left, right1,
-                                               in.getType(), in));
+        if (rightOperandList.size() == 1) {
+            ExpressionNode right1 = toExpression(rightOperandList.get(0));
+            conditions.add(new ComparisonCondition(Comparison.EQ, left, right1,
+                                                   in.getType(), in));
+            return;
+        }
+        List<List<ExpressionNode>> rows = new ArrayList<List<ExpressionNode>>();
+        for (ValueNode rightOperand : rightOperandList) {
+            rows.add(Collections.singletonList(toExpression(rightOperand)));
+        }
+        ExpressionsSource source = new ExpressionsSource(rows);
+        List<ConditionExpression> innerConds = new ArrayList<ConditionExpression>(1);
+        innerConds.add(new ComparisonCondition(Comparison.EQ, left,
+                                               new ColumnExpression(source, 0,
+                                                                    left.getSQLtype(), null),
+                                               in.getType(), null));
+        PlanNode subquery = new Filter(source, innerConds);
+        conditions.add(new SubqueryCondition(SubqueryCondition.Kind.EXISTS, subquery, 
+                                             in.getType(), in));
     }
     
+    protected void addSubqueryCondition(List<ConditionExpression> conditions, 
+                                        SubqueryNode subqueryNode)
+            throws StandardException {
+        PlanNode subquery = toQueryForSelect(subqueryNode.getResultSet(),
+                                             subqueryNode.getOrderByList(),
+                                             subqueryNode.getOffset(),
+                                             subqueryNode.getFetchFirst());
+        SubqueryCondition.Kind kind = SubqueryCondition.Kind.EXISTS;
+        Comparison comp = Comparison.EQ;
+        ExpressionNode operand = null;
+        boolean needOperand = false;
+        List<ConditionExpression> innerConds = null;
+        switch (subqueryNode.getSubqueryType()) {
+        case EXISTS:
+            break;
+        case NOT_EXISTS:
+            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            break;
+        case IN:
+        case EQ_ANY: 
+            needOperand = true;
+            break;
+        case EQ_ALL: 
+            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            comp = Comparison.NE;
+            needOperand = true;
+            break;
+        case NOT_IN: 
+        case NE_ANY: 
+            needOperand = true;
+            break;
+        case NE_ALL: 
+            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            comp = Comparison.EQ;
+            needOperand = true;
+            break;
+        case GT_ANY: 
+            comp = Comparison.GT;
+            needOperand = true;
+            break;
+        case GT_ALL: 
+            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            comp = Comparison.LE;
+            needOperand = true;
+            break;
+        case GE_ANY: 
+            comp = Comparison.GE;
+            needOperand = true;
+            break;
+        case GE_ALL: 
+            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            comp = Comparison.LT;
+            needOperand = true;
+            break;
+        case LT_ANY: 
+            comp = Comparison.LT;
+            needOperand = true;
+            break;
+        case LT_ALL: 
+            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            comp = Comparison.GE;
+            needOperand = true;
+            break;
+        case LE_ANY: 
+            comp = Comparison.LE;
+            needOperand = true;
+            break;
+        case LE_ALL: 
+            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            comp = Comparison.GT;
+            needOperand = true;
+            break;
+        }
+        if (subquery instanceof ResultSet) {
+            ResultSet rs = (ResultSet)subquery;
+            subquery = rs.getInput();
+        }
+        if (needOperand) {
+            assert ((operand != null) && (innerConds != null));
+            ExpressionNode left = toExpression(subqueryNode.getLeftOperand());
+            innerConds.add(new ComparisonCondition(comp, left, operand,
+                                                   subqueryNode.getType(), 
+                                                   subqueryNode));
+        }
+        conditions.add(new SubqueryCondition(kind, subquery, 
+                                             subqueryNode.getType(), subqueryNode));
+    }
+
     protected void addFunctionCondition(List<ConditionExpression> conditions,
                                         UnaryOperatorNode unary)
             throws StandardException {

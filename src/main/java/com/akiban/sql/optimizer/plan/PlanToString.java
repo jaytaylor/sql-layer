@@ -38,6 +38,8 @@ public class PlanToString implements PlanVisitor, ExpressionVisitor
     public String toString() {
         while (!pending.isEmpty()) {
             PlanNode p = pending.removeFirst();
+            if (string.length() > 0)
+                string.append("\n");
             p.accept(this);
         }
         return string.toString();

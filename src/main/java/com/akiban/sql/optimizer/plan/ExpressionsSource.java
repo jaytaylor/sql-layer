@@ -20,7 +20,7 @@ import java.util.List;
 /** A join node explicitly enumerating rows.
  * From VALUES or IN.
  */
-public class ExpressionsSource extends BaseJoinable
+public class ExpressionsSource extends BaseJoinable implements ColumnSource
 {
     private List<List<ExpressionNode>> expressions;
 
@@ -30,6 +30,11 @@ public class ExpressionsSource extends BaseJoinable
 
     public List<List<ExpressionNode>> getExpressions() {
         return expressions;
+    }
+
+    @Override
+    public String getName() {
+        return "VALUES";
     }
 
     @Override
