@@ -40,12 +40,15 @@ public class AST extends BasePlanNode
     
     @Override
     public String toString() {
+        StringBuilder str = new StringBuilder(super.toString());
+        str.append("(");
         try {
-            return new NodeToString().toString(statement);
+            str.append(new NodeToString().toString(statement));
         }
         catch (StandardException ex) {
-            return super.toString();
         }
+        str.append(")");
+        return str.toString();
     }
 
 }

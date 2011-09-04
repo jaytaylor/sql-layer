@@ -59,6 +59,9 @@ public class Union extends BasePlanNode
     
     @Override
     public String toString() {
-        return (all ? "UNION ALL" : "UNION");
+        if (all)
+            return super.toString() + "(ALL)";
+        else
+            return super.toString();
     }
 }

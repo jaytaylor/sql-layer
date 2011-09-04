@@ -43,8 +43,4 @@ public class SubquerySource extends BaseJoinable implements ColumnSource
         return v.visitLeave(this);
     }
     
-    @Override
-    public String toString() {
-        return "Subquery";
-    }
 }

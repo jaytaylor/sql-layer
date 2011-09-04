@@ -47,6 +47,6 @@ public class TableSource extends BaseJoinable implements ColumnSource
     
     @Override
     public String toString() {
-        return table.toString();
+        return super.toString() + "(" + table.toString() + ")";
     }
 }

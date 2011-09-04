@@ -51,6 +51,6 @@ public class Filter extends BasePlanWithInput
     
     @Override
     public String toString() {
-        return "Filter" + conditions.toString();
+        return super.toString() + conditions.toString();
     }
 }

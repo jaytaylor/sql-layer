@@ -22,8 +22,4 @@ public class SelectQuery extends BaseStatement
         super(query);
     }
 
-    @Override
-    public String toString() {
-        return "SELECT";
-    }
 }

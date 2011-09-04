@@ -67,7 +67,7 @@ public class ResultSet extends BasePlanWithInput
 
     @Override
     public String toString() {
-        return "ResultSet" + results;
+        return super.toString() + results;
     }
 
 }

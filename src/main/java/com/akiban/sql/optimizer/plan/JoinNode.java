@@ -113,6 +113,7 @@ public class JoinNode extends BaseJoinable
     
     @Override
     public String toString() {
-        return joinType.toString() + joinConditions.toString();
+        return super.toString() + 
+            "(" + joinType.toString() + joinConditions.toString() + ")";
     }
 }

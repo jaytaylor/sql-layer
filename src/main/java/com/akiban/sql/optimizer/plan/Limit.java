@@ -46,19 +46,20 @@ public class Limit extends BasePlanWithInput
 
     @Override
     public String toString() {
-        StringBuilder str = new StringBuilder();
+        StringBuilder str = new StringBuilder(super.toString());
+        str.append("(");
         if (offset > 0) {
             str.append("OFFSET ");
             if (offsetIsParameter) str.append("$");
             str.append(offset);
         }
         if (limit >= 0) {
+            if (offset > 0) str.append(" ");
             str.append("LIMIT ");
             if (limitIsParameter) str.append("$");
             str.append(limit);
         }
-        str.append("\n");
-        str.append(getInput());
+        str.append(")");
         return str.toString();
     }
 
