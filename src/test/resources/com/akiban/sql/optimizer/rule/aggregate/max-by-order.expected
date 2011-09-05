@@ -1,0 +1,8 @@
+SelectQuery@42787d6a
+  ResultSet@7471dc3d[GROUP[0], GROUP[1], GROUP[2]]
+    Filter@5f326484[]
+      AggregateSource@656546ef[user.orders.order_date][MAX(user.items.quan), MIN(user.items.quan)]
+        Filter@5c1428ea[]
+          JoinNode@2f8a49e0(INNER_JOIN[user.orders.oid == user.items.oid])
+            TableSource@2e297ffb(user.items)
+            TableSource@148238f4(user.orders)

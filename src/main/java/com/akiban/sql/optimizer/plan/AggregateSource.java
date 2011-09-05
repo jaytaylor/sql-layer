@@ -54,7 +54,7 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
             if (getInput().accept(v)) {
                 if (v instanceof ExpressionVisitor) {
                     children:
-                    if (v.visitEnter(this)) {
+                    {
                         for (ExpressionNode child : groupBy) {
                             if (!child.accept((ExpressionVisitor)v))
                                 break children;
