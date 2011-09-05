@@ -302,6 +302,14 @@ public class ASTToStatement extends BaseRule
             join.setJoinConditions(toConditions(joinNode.getJoinClause()));
             result = join;
         }
+        else if (fromTable instanceof FromSubquery) {
+            FromSubquery fromSubquery = (FromSubquery)fromTable;
+            PlanNode subquery = toQueryForSelect(fromSubquery.getSubquery(),
+                                                 fromSubquery.getOrderByList(),
+                                                 fromSubquery.getOffset(),
+                                                 fromSubquery.getFetchFirst());
+            result = new SubquerySource(subquery, fromSubquery.getExposedName());
+        }
         else
             throw new UnsupportedSQLException("Unsupported FROM non-table", fromTable);
         joinNodes.put(fromTable, result);
