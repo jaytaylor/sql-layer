@@ -31,8 +31,8 @@ public class BooleanOperationExpression extends BaseExpression
         AND, OR, NOT
     }
 
-    private ConditionExpression left, right;
     private Operation operation;
+    private ConditionExpression left, right;
     
     public BooleanOperationExpression(Operation operation, 
                                       ConditionExpression left, 
@@ -101,4 +101,12 @@ public class BooleanOperationExpression extends BaseExpression
     public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
         throw new UnsupportedSQLException("NIY", null);
     }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        left = (ConditionExpression)left.duplicate(map);
+        right = (ConditionExpression)right.duplicate(map);
+    }
+
 }

@@ -72,4 +72,12 @@ public class Union extends BasePlanNode implements PlanWithInput
         else
             return super.summaryString();
     }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        left = (PlanNode)left.duplicate(map);
+        right = (PlanNode)right.duplicate(map);
+    }
+
 }

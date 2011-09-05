@@ -23,7 +23,7 @@ import com.akiban.ais.model.UserTable;
 public class TableTree extends TableTreeBase<TableNode> 
 {
     protected TableNode createNode(UserTable table) {
-        return new TableNode(table);
+        return new TableNode(table, this);
     }
 
 }

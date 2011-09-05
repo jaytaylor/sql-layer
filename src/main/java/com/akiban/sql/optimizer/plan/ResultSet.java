@@ -70,4 +70,10 @@ public class ResultSet extends BasePlanWithInput
         return super.summaryString() + results;
     }
 
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        results = duplicateList(results, map);
+    }
+
 }

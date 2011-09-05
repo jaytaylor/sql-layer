@@ -58,4 +58,11 @@ public class UpdateStatement extends BaseUpdateStatement
     public String summaryString() {
         return super.summaryString() + "(" + getTargetTable() + updateColumns + ")";
     }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        updateColumns = duplicateList(updateColumns, map);
+    }
+
 }

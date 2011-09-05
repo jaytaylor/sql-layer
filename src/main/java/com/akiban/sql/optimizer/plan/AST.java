@@ -51,4 +51,10 @@ public class AST extends BasePlanNode
         return str.toString();
     }
 
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        // Do not copy AST.
+    }
+
 }

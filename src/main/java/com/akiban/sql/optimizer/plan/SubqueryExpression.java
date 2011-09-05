@@ -75,4 +75,11 @@ public class SubqueryExpression extends BaseExpression
     public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
         throw new UnsupportedSQLException("NIY", null);
     }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        subquery = (PlanNode)subquery.duplicate(map);
+    }
+
 }

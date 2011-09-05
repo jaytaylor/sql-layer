@@ -74,4 +74,10 @@ public class CastExpression extends BaseExpression
         return inner.generateExpression(fieldOffsets);
     }
 
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        inner = (ExpressionNode)inner.duplicate(map);
+    }
+
 }

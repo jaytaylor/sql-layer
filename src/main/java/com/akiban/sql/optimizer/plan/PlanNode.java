@@ -15,7 +15,9 @@
 
 package com.akiban.sql.optimizer.plan;
 
-public interface PlanNode
+import java.util.Map;
+
+public interface PlanNode extends Duplicatable
 {
     public PlanWithInput getOutput();
 

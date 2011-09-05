@@ -29,4 +29,11 @@ public class BaseUpdateStatement extends BaseStatement
     public TableNode getTargetTable() {
         return targetTable;
     }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        targetTable = map.duplicate(targetTable);
+    }
+
 }

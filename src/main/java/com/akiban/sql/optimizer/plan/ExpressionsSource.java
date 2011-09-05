@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer.plan;
 
 import java.util.List;
+import java.util.ArrayList;
 
 /** A join node explicitly enumerating rows.
  * From VALUES or IN.
@@ -58,4 +59,14 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource
     public String summaryString() {
         return super.summaryString() + expressions;
     }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        expressions = new ArrayList<List<ExpressionNode>>(expressions);
+        for (int i = 0; i < expressions.size(); i++) {
+            expressions.set(i, duplicateList(expressions.get(i), map));
+        }
+    }
+
 }

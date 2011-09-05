@@ -15,30 +15,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
-public abstract class AnnotatedExpression extends BaseDuplicatable
+/** Marker interface that a Duplicatable should be entered into the map. */
+public interface DuplicatableOnce
 {
-    private ExpressionNode expression;
-
-    protected AnnotatedExpression(ExpressionNode expression) {
-        this.expression = expression;
-    }
-    
-    public ExpressionNode getExpression() {
-        return expression;
-    }
-    public void setExpression(ExpressionNode expression) {
-        this.expression = expression;
-    }
-
-    @Override
-    public String toString() {
-        return expression.toString();
-    }
-
-    @Override
-    protected void deepCopy(DuplicateMap map) {
-        super.deepCopy(map);
-        expression = (ExpressionNode)expression.duplicate(map);
-    }
-
 }

@@ -20,10 +20,12 @@ import com.akiban.qp.expression.Expression;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
+import java.util.Map;
+
 /** An evaluated value. 
  * Usually part of a larger expression tree.
 */
-public abstract class BaseExpression implements ExpressionNode
+public abstract class BaseExpression extends BaseDuplicatable implements ExpressionNode
 {
     private DataTypeDescriptor sqlType;
     // TODO: Maybe AkType here once that's stable.
@@ -53,4 +55,11 @@ public abstract class BaseExpression implements ExpressionNode
     public boolean isConstant() {
         return false;
     }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        // Don't clone AST or type.
+    }
+
 }

@@ -124,4 +124,18 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         return super.summaryString() + 
             "(" + joinType.toString() + joinConditions.toString() + ")";
     }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        left = (Joinable)left.duplicate(map);
+        right = (Joinable)right.duplicate(map);
+        int pos = -1;
+        if (groupJoinCondition != null)
+            pos = joinConditions.indexOf(groupJoinCondition);
+        joinConditions = duplicateList(joinConditions, map);
+        if (groupJoinCondition != null)
+            groupJoinCondition = joinConditions.get(pos);
+    }
+
 }

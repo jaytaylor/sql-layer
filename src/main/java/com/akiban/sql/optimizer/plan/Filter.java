@@ -53,4 +53,11 @@ public class Filter extends BasePlanWithInput
     public String summaryString() {
         return super.summaryString() + conditions.toString();
     }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        conditions = duplicateList(conditions, map);
+    }
+
 }

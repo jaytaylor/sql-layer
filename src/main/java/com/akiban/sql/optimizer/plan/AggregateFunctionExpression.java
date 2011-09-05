@@ -105,4 +105,10 @@ public class AggregateFunctionExpression extends BaseExpression
         throw new UnsupportedSQLException("Aggregate used as regular function", null);
     }
 
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        operand = (ExpressionNode)operand.duplicate(map);
+    }
+
 }

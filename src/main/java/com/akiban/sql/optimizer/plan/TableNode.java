@@ -24,11 +24,17 @@ import java.util.ArrayList;
  */
 public class TableNode extends TableTreeBase.TableNodeBase<TableNode> 
 {
+    private TableTree tree;
     private List<TableSource> uses;
 
-    public TableNode(UserTable table) {
+    public TableNode(UserTable table, TableTree tree) {
         super(table);
+        this.tree = tree;
         uses = new ArrayList<TableSource>();
+    }
+
+    public TableTree getTree() {
+        return tree;
     }
 
     public void addUse(TableSource use) {

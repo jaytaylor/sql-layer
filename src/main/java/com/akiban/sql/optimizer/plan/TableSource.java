@@ -49,4 +49,12 @@ public class TableSource extends BaseJoinable implements ColumnSource
     public String summaryString() {
         return super.summaryString() + "(" + table.toString() + ")";
     }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        table = map.duplicate(table);
+        table.addUse(this);
+    }
+
 }

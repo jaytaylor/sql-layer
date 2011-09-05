@@ -37,4 +37,10 @@ public class BaseStatement extends BasePlanNode
         return v.visitLeave(this);
     }
     
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        query = (PlanNode)query.duplicate(map);
+    }
+
 }

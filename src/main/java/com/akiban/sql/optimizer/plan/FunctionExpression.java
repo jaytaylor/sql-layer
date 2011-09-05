@@ -100,4 +100,10 @@ public class FunctionExpression extends BaseExpression
         throw new UnsupportedSQLException("NIY", null);
     }
 
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        operands = duplicateList(operands, map);
+    }
+
 }

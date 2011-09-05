@@ -88,4 +88,11 @@ public class SubqueryCondition extends BaseExpression implements ConditionExpres
     public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
         throw new UnsupportedSQLException("EXISTS as expression", null);
     }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        subquery = (PlanNode)subquery.duplicate(map);
+    }
+
 }

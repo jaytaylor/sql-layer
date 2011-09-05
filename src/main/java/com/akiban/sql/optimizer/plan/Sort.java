@@ -72,4 +72,10 @@ public class Sort extends BasePlanWithInput
         return super.summaryString() + orderBy;
     }
 
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        orderBy = duplicateList(orderBy, map);
+    }
+
 }

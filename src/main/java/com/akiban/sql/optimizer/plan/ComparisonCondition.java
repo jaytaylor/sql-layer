@@ -121,4 +121,11 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
         operation = reverseComparison(operation);
     }
 
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        left = (ExpressionNode)left.duplicate();
+        right = (ExpressionNode)right.duplicate();
+    }
+
 }

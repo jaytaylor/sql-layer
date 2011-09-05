@@ -75,4 +75,11 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
         return super.summaryString() + groupBy + aggregates;
     }
 
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        groupBy = duplicateList(groupBy, map);
+        aggregates = duplicateList(aggregates, map);
+    }
+
 }
