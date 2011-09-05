@@ -32,10 +32,10 @@ import com.akiban.util.ArgumentValidation;
  */
 class Project_Table extends Project_Default {
 
-    public Project_Table(PhysicalOperator inputOperator, 
+    public Project_Table(PhysicalOperator inputOperator, RowType inputRowType,
             RowType projectTableRowType, List<Expression> projections)
     {
-        super (inputOperator, inputOperator.rowType(), projections);
+        super (inputOperator, inputRowType, projections);
         ArgumentValidation.isTrue("RowType has UserTable", projectTableRowType.hasUserTable());
         //projectType = new ProjectedRowType(rowType.schema(), rowType.typeId(), projections); 
         projectType = new ProjectedUserTableRowType (projectTableRowType.schema(), 

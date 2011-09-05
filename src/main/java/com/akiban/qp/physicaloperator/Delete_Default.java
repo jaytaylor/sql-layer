@@ -20,7 +20,6 @@ import java.util.List;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
-import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Strings;
 import com.akiban.util.Tap;
 
@@ -28,18 +27,15 @@ public class Delete_Default implements UpdatePlannable {
 
     // constructor
 
-    public Delete_Default(PhysicalOperator inputOperator, UpdateFunction deleteFunction) {
-        ArgumentValidation.notNull("delete lambda", deleteFunction);
-        
+    public Delete_Default(PhysicalOperator inputOperator) {
         this.inputOperator = inputOperator;
-        this.deleteFunction = deleteFunction;
     }
 
     // Object interface
 
     @Override
     public String toString() {
-        return String.format("%s(%s -> %s)", getClass().getSimpleName(), inputOperator, deleteFunction);
+        return String.format("%s(%s)", getClass().getSimpleName(), inputOperator);
     }
 
     @Override
@@ -53,10 +49,8 @@ public class Delete_Default implements UpdatePlannable {
             Row oldRow;
             while ((oldRow = inputCursor.next()) != null) {
                 ++seen;
-                if (deleteFunction.rowIsSelected(oldRow)) {
-                    adapter.deleteRow(oldRow, bindings);
-                    ++modified;
-                }
+                adapter.deleteRow(oldRow, bindings);
+                ++modified;
             }
         } finally {
             inputCursor.close();
@@ -83,7 +77,6 @@ public class Delete_Default implements UpdatePlannable {
     }
 
     private final PhysicalOperator inputOperator;
-    private final UpdateFunction deleteFunction;
     private static final Tap.InOutTap DELETE_TAP = Tap.createTimer("operator: delete");
 
 }

@@ -896,6 +896,9 @@ public class SimplifiedQuery
                                                    (joinType == JoinType.FULL_JOIN))),
                              joinType);
         }
+        else if (fromTable instanceof CurrentOfNode) {
+            throw new UnsupportedSQLException("Unsupported WHERE CURRENT OF", fromTable);
+        }
         else
             throw new UnsupportedSQLException("Unsupported FROM non-table", fromTable);
     }

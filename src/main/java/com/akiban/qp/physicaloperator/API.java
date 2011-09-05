@@ -38,10 +38,11 @@ public class API
     }
     
     public static PhysicalOperator project_Table(PhysicalOperator inputOperator, 
-                                                 RowType rowType,
+                                                 RowType inputRowType,
+                                                 RowType outputRowType,
                                                  List<Expression>projections) 
     {
-        return new Project_Table (inputOperator, rowType, projections);
+        return new Project_Table (inputOperator, inputRowType, outputRowType, projections);
     }
     // Flatten
 

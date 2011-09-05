@@ -32,9 +32,15 @@ import com.akiban.ais.model.Column;
 /**
  * An SQL INSERT statement turned into a simpler form for the interim
  * heuristic optimizer.
+ * 
+ * TODO: These items are still left to be implemented
+ * * CHECK CONSTRAINTS including NOT NULL check as a expression on top of the column ones
+ * * DEFAULT VALUES, including AUTO-INCREMENT
+ * 
  */
 public class SimplifiedInsertStatement extends SimplifiedTableStatement
 {
+    protected static final SimpleExpression NULL_EXPR = new LiteralExpression(null);
     private List<TargetColumn> targetColumns = null;
     ColumnExpressionToIndex fieldOffsets;
     
@@ -54,7 +60,14 @@ public class SimplifiedInsertStatement extends SimplifiedTableStatement
             fillTargetFromDDL();
     }
     
-   protected void fillTargetFromList (ResultColumnList rcl) {
+    /**
+     * Fill the targetColumns from the list of columns provided by the user. 
+     * e.g. INSERT INTO t1 (c1, c4, c11, c3). 
+     * This lets the user insert items in any order, so this list create the
+     * mapping between the user specified column order and the DDL expected one
+     * @param rcl SQL parser list of user supplied columns. 
+     */
+    protected void fillTargetFromList (ResultColumnList rcl) {
        
        int table_cols = getTargetTable().getTable().getColumns().size();
        targetColumns = new ArrayList<TargetColumn>(table_cols);
@@ -83,6 +96,12 @@ public class SimplifiedInsertStatement extends SimplifiedTableStatement
         fieldOffsets = new ColumnIndexMap (columnOffsets);
     }
 
+   /**
+    * fillTargetFromDDL is used when the INSERT statement lacks the list of columns
+    * e.g. INSERT INTO T1 <(c1, c2, c3)>. If the list of columns is omitted, SQL 
+    * assumes the values (or query results) are in the order of columns defined in the 
+    * CREATE TABLE (i.e. DDL order). 
+    */
    protected void fillTargetFromDDL() {
        int table_cols = getTargetTable().getTable().getColumns().size();
        int max_cols = (getSelectColumns() != null ? getSelectColumns().size() : 
@@ -110,70 +129,6 @@ public class SimplifiedInsertStatement extends SimplifiedTableStatement
        }
        fieldOffsets = new ColumnIndexMap(columnOffsets);
    }
-   private static final SimpleExpression NULL_EXPR = new LiteralExpression(null);
-/*        
-        // Set the list of target columns. There are three cases here: 
-        // 1) insert supplies list of columns, which is in insert.getTargetColumnList()
-        // e.g. INSERT INTO TABLE (c1,c3,c3)...
-        if (insert.getTargetColumnList() != null) {
-            fillTargetColumns (insert.getTargetColumnList());
-        }
-        // 2) insert is supplying values which are expected to be 
-        // table in column order. 
-        // e.g. INSERT INTO Table VALUES (1,2,3) 
-        else if (getValues() != null) {
-            int ncols = insert.getResultSetNode().getResultColumns().size();
-            List<Column> aisColumns = getTargetTable().getTable().getColumns();
-            if (ncols > aisColumns.size()) {
-                // TODO: issue warning we're truncating the list of values supplied 
-                ncols = aisColumns.size();
-            }
-            targetColumns = new ArrayList<TargetColumn>(ncols);
-            int i = 0;
-            for (Column column : aisColumns) {
-                if (i < ncols) {
-                    targetColumns.add(new TargetColumn (column, new ColumnExpression(getTargetTable(), column)));
-                } else if (!column.getNullable()) { 
-                    throw new InsertNullCheckFailedException(column);
-                }
-                i++;
-            }
-        }
-        // 3)  insert is using a query, which are expected to be in column order
-        // e.g INSERT INTO TABLE SELECT 1,2,3...
-        else {
-            fillTargetColumns (insert.getResultSetNode().getResultColumns());
-        }
-        
-        // the insert statement is generating values from explicit values
-        // not a select statement. Create the targetColumns list from DDL order
-        // list of columns. 
-        if (getValues() != null) {
-            int ncols = insert.getResultSetNode().getResultColumns().size();
-            List<Column> aisColumns = getTargetTable().getTable().getColumns();
-            if (ncols > aisColumns.size())
-                ncols = aisColumns.size();
-            targetColumns = new ArrayList<TargetColumn>(ncols);
-            for (int i = 0; i < ncols; i++) {
-                targetColumns.add(new TargetColumn(aisColumns.get(i), 
-                        getSimpleExpression ()
-                        
-                        new ColumnExpression(getTargetTable(), aisColumns.get(i))));
-            }
-        }
-*/        
-    
-/*
-    protected void fillTargetColumns(ResultColumnList rcl) {
-        targetColumns = new ArrayList<TargetColumn>(rcl.size());
-        for (ResultColumn resultColumn : rcl) {
-            Column column = getColumnReferenceColumn(resultColumn.getReference(),
-                                                     "Insert target column");
-            SimpleExpression value = getSimpleExpression(resultColumn.getExpression());
-            targetColumns.add(new TargetColumn(column, value));
-        }
-    }
-*/
     public List<TargetColumn> getTargetColumns() {
         return targetColumns;
     }

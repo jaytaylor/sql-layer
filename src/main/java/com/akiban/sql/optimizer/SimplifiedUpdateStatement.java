@@ -24,6 +24,11 @@ import java.util.*;
 /**
  * An SQL UPDATE statement turned into a simpler form for the interim
  * heuristic optimizer.
+ * 
+ * TODO: These items are still left to be implemented
+ * * CHECK CONSTRAINTS including NOT NULL check as a expression on top of the column ones
+ * * DEFAULT VALUES, including AUTO-INCREMENT
+ * 
  */
 public class SimplifiedUpdateStatement extends SimplifiedTableStatement
 {

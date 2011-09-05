@@ -1,0 +1,3 @@
+Delete_Default(AncestorLookup_Default(Index(user.items.PRIMARY[IndexColumn(iid)]) -> [user.items]))
+  AncestorLookup_Default(Index(user.items.PRIMARY[IndexColumn(iid)]) -> [user.items])
+    IndexScan_Default(Index(user.items.PRIMARY[IndexColumn(iid)]) (>=ExpressionRow[Literal(1012)],<=ExpressionRow[Literal(1012)]))
