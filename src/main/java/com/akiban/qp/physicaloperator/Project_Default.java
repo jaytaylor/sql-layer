@@ -100,6 +100,7 @@ class Project_Default extends PhysicalOperator
         public void open(Bindings bindings)
         {
             input.open(bindings);
+            this.bindings = bindings;
         }
 
         @Override
@@ -110,7 +111,7 @@ class Project_Default extends PhysicalOperator
             if ((inputRow = input.next()) != null) {
                 projectedRow =
                     inputRow.rowType() == rowType
-                    ? new ProjectedRow(projectType, inputRow, projections)
+                    ? new ProjectedRow(projectType, inputRow, bindings, projections)
                     : inputRow;
             }
             return projectedRow;
@@ -132,5 +133,6 @@ class Project_Default extends PhysicalOperator
         // Object state
 
         private final Cursor input;
+        private Bindings bindings;
     }
 }

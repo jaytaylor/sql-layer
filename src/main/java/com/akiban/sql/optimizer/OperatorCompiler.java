@@ -17,6 +17,8 @@ package com.akiban.sql.optimizer;
 
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.exec.Plannable;
+import com.akiban.qp.expression.RowBasedUnboundExpressions;
+import com.akiban.qp.expression.UnboundExpressions;
 import com.akiban.qp.rowtype.*;
 import com.akiban.sql.optimizer.SimplifiedQuery.*;
 
@@ -1087,9 +1089,9 @@ public class OperatorCompiler
     /** Return a {@link Row} for the given index containing the given
      * {@link Expression} values.  
      */
-    protected Row getIndexExpressionRow(Index index, Expression[] keys) {
+    protected UnboundExpressions getIndexExpressionRow(Index index, Expression[] keys) {
         RowType rowType = schema.indexRowType(index);
-        return new ExpressionRow(rowType, keys);
+        return new RowBasedUnboundExpressions(rowType, keys);
     }
 
     protected DataTypeDescriptor[] getParameterTypes(List<ParameterNode> params) {

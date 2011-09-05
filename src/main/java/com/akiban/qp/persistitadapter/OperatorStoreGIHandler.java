@@ -19,7 +19,6 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.types.ValueSource;
@@ -59,7 +58,7 @@ class OperatorStoreGIHandler {
             final int flattenedIndex = irc.getFieldPosition(i);
             Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
 
-            ValueSource source = row.bindSource(flattenedIndex, UndefBindings.only());
+            ValueSource source = row.eval(flattenedIndex);
             Converters.convert(source, target.expectingType(column));
 
             boolean isHKeyComponent = i+1 > groupIndex.getColumns().size();
@@ -197,7 +196,7 @@ class OperatorStoreGIHandler {
             else {
                 final int flattenedIndex = irc.getFieldPosition(i);
                 Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
-                ValueSource source = row.bindSource(flattenedIndex, UndefBindings.only());
+                ValueSource source = row.eval(flattenedIndex);
                 Converters.convert(source, target.expectingType(column));
             }
         }

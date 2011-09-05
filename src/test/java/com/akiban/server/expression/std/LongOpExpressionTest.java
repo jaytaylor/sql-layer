@@ -15,7 +15,6 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.error.WrongExpressionArityException;
@@ -27,12 +26,14 @@ import com.akiban.server.types.util.ValueHolder;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public final class LongOpExpressionTest {
+public final class LongOpExpressionTest extends ComposedExpressionTestBase {
+
     @Test
     public void longMinusLong() {
         Expression left = new LiteralExpression(AkType.LONG, 5L);
@@ -40,7 +41,7 @@ public final class LongOpExpressionTest {
         Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
         
         assertTrue("top should be constant", top.isConstant());
-        ValueSource actual = new ValueHolder(top.rowExpression().eval());
+        ValueSource actual = new ValueHolder(top.evaluation().eval());
         ValueSource expected = new ValueHolder(LongOps.LONG_SUBTRACT.opType(), 3L);
         assertEquals("ValueSource", expected, actual);
     }
@@ -52,7 +53,7 @@ public final class LongOpExpressionTest {
         Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
 
         assertTrue("top should be constant", top.isConstant());
-        ValueSource actual = new ValueHolder(top.rowExpression().eval());
+        ValueSource actual = new ValueHolder(top.evaluation().eval());
         ValueSource expected = new ValueHolder(LongOps.LONG_SUBTRACT.opType(), 3L);
         assertEquals("ValueSource", expected, actual);
     }
@@ -64,7 +65,7 @@ public final class LongOpExpressionTest {
         Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
 
         assertTrue("top should be constant", top.isConstant());
-        ValueSource actual = new ValueHolder(top.rowExpression().eval());
+        ValueSource actual = new ValueHolder(top.evaluation().eval());
         ValueSource expected = new ValueHolder(LongOps.LONG_SUBTRACT.opType(), 3L);
         assertEquals("ValueSource", expected, actual);
     }
@@ -76,7 +77,7 @@ public final class LongOpExpressionTest {
         Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
 
         assertTrue("top should be constant", top.isConstant());
-        ValueSource actual = new ValueHolder(top.rowExpression().eval());
+        ValueSource actual = new ValueHolder(top.evaluation().eval());
         ValueSource expected = ValueHolder.holdingNull();
         assertEquals("ValueSource", expected, actual);
     }
@@ -89,9 +90,9 @@ public final class LongOpExpressionTest {
         Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
 
         assertFalse("top shouldn't be constant", top.isConstant());
-        ExpressionEvaluation evaluation = top.rowExpression();
+        ExpressionEvaluation evaluation = top.evaluation();
         ValuesRow row = new ValuesRow(dummyType, new Object[] {5L, 2.9} );
-        evaluation.of(row, UndefBindings.only());
+        evaluation.of(row);
         ValueSource actual = new ValueHolder(evaluation.eval());
         ValueSource expected = new ValueHolder(LongOps.LONG_SUBTRACT.opType(), 3L);
         assertEquals("ValueSource", expected, actual);
@@ -109,5 +110,15 @@ public final class LongOpExpressionTest {
         Expression right = new LiteralExpression(AkType.VARCHAR, "2");
         Expression extra = new LiteralExpression(AkType.LONG, 2L);
         new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right, extra));
+    }
+
+    @Override
+    protected int childrenCount() {
+        return 2;
+    }
+
+    @Override
+    protected Expression getExpression(List<? extends Expression> children) {
+        return new LongOpExpression(LongOps.LONG_SUBTRACT, children);
     }
 }

@@ -24,7 +24,7 @@ import com.akiban.qp.row.Row;
 /** Update a row by substituting expressions for some fields. */
 public class ExpressionRowUpdateFunction implements UpdateFunction
 {
-    private ExpressionRow expressions;
+    private final ExpressionRow expressions;
 
     public ExpressionRowUpdateFunction(ExpressionRow expressions) {
         this.expressions = expressions;
@@ -34,7 +34,7 @@ public class ExpressionRowUpdateFunction implements UpdateFunction
 
     @Override
     public boolean rowIsSelected(Row row) {
-        return true;
+        return row.rowType().equals(expressions.rowType());
     }
 
     @Override

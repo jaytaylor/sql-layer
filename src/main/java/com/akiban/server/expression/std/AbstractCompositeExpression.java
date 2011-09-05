@@ -30,7 +30,29 @@ public abstract class AbstractCompositeExpression implements Expression {
 
     @Override
     public boolean isConstant() {
-        return isConstant;
+        for (Expression child : children) {
+            if (!child.isConstant())
+                return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean needsRow() {
+        for (Expression child : children) {
+            if (child.needsRow())
+                return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean needsBindings() {
+        for (Expression child : children) {
+            if (child.needsBindings())
+                return true;
+        }
+        return false;
     }
 
     @Override
@@ -60,26 +82,17 @@ public abstract class AbstractCompositeExpression implements Expression {
                 ? Collections.<Expression>emptyList()
                 : Collections.unmodifiableList(new ArrayList<Expression>(children));
         this.type = type;
-        this.isConstant = calcConst(this.children);
     }
 
     protected List<? extends ExpressionEvaluation> childrenEvaluations() {
         List<ExpressionEvaluation> result = new ArrayList<ExpressionEvaluation>();
         for (Expression expression : children) {
-            result.add(expression.rowExpression());
+            result.add(expression.evaluation());
         }
         return result;
     }
 
     // for use in this class
-
-    private static boolean calcConst(List<? extends Expression> children) {
-        for (Expression child : children) {
-            if (!child.isConstant())
-                return false;
-        }
-        return true;
-    }
 
     /**
      * Builds a description of this instance into the specified StringBuilder. The general format is:
@@ -115,7 +128,6 @@ public abstract class AbstractCompositeExpression implements Expression {
 
     private final List<? extends Expression> children;
     private final AkType type;
-    private final boolean isConstant;
 
     // const
 

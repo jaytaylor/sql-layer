@@ -36,12 +36,12 @@ public final class FieldExpressionTest {
 
         assertFalse("shouldn't be constant", fieldExpression.isConstant());
         assertEquals("type", AkType.LONG, fieldExpression.valueType());
-        ExpressionEvaluation evaluation = fieldExpression.rowExpression();
+        ExpressionEvaluation evaluation = fieldExpression.evaluation();
 
-        evaluation.of(new ValuesRow(dummyType, new Object[]{27L}), UndefBindings.only());
+        evaluation.of(new ValuesRow(dummyType, new Object[]{27L}));
         assertEquals("evaluation.eval()", new ValueHolder(AkType.LONG, 27L), new ValueHolder(evaluation.eval()));
 
-        evaluation.of(new ValuesRow(dummyType, new Object[]{23L}), UndefBindings.only());
+        evaluation.of(new ValuesRow(dummyType, new Object[]{23L}));
         assertEquals("evaluation.eval()", new ValueHolder(AkType.LONG, 23L), new ValueHolder(evaluation.eval()));
     }
 
@@ -52,7 +52,7 @@ public final class FieldExpressionTest {
             ValuesRowType dummyType = new ValuesRowType(null, 1, 1);
             Expression fieldExpression = new FieldExpression(dummyType, 0, AkType.LONG);
             assertEquals("type", AkType.LONG, fieldExpression.valueType());
-            evaluation = fieldExpression.rowExpression();
+            evaluation = fieldExpression.evaluation();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -65,13 +65,13 @@ public final class FieldExpressionTest {
         final Row badRow;
         try {
             ValuesRowType dummyType1 = new ValuesRowType(null, 1, 1);
-            evaluation = new FieldExpression(dummyType1, 0, AkType.LONG).rowExpression();
+            evaluation = new FieldExpression(dummyType1, 0, AkType.LONG).evaluation();
             ValuesRowType dummyType2 = new ValuesRowType(null, 2, 1); // similar, but not same!
             badRow = new ValuesRow(dummyType2, new Object[] { 31L });
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        evaluation.of(badRow, UndefBindings.only());
+        evaluation.of(badRow);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -92,12 +92,12 @@ public final class FieldExpressionTest {
         final Row badRow;
         try {
             ValuesRowType dummyType = new ValuesRowType(null, 1, 1);
-            evaluation = new FieldExpression(dummyType, 0, AkType.LONG).rowExpression();
+            evaluation = new FieldExpression(dummyType, 0, AkType.LONG).evaluation();
             badRow = new ValuesRow(dummyType, new Object[] { 31.4159 });
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        evaluation.of(badRow, UndefBindings.only());
+        evaluation.of(badRow);
     }
 
     @Test(expected = NullPointerException.class)

@@ -33,7 +33,7 @@ public final class LongOpExpression extends AbstractTwoArgExpression {
     }
 
     @Override
-    public ExpressionEvaluation rowExpression() {
+    public ExpressionEvaluation evaluation() {
         return new InnerEvaluation(longOp, childrenEvaluations());
     }
 

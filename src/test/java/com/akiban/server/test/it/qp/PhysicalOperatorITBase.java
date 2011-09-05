@@ -286,8 +286,8 @@ public class PhysicalOperatorITBase extends ITBase
         ToObjectValueTarget target = new ToObjectValueTarget();
         boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
         for (int i = 0; equal && i < actual.rowType().nFields(); i++) {
-            Object expectedField = target.convertFromSource(expected.bindSource(i, NO_BINDINGS));
-            Object actualField = target.convertFromSource(actual.bindSource(i, NO_BINDINGS));
+            Object expectedField = target.convertFromSource(expected.eval(i));
+            Object actualField = target.convertFromSource(actual.eval(i));
             equal =
                 expectedField == actualField || // handles case in which both are null
                 expectedField != null && actualField != null && expectedField.equals(actualField);

@@ -23,11 +23,21 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.sql.optimizer.ExpressionRow;
+import com.akiban.server.aggregation.AggregatorFactory;
 
 import java.util.*;
 
 public class API
 {
+    // Aggregate
+    public static PhysicalOperator aggregate(PhysicalOperator inputOperator,
+                                             int inputsIndex,
+                                             AggregatorFactory factory,
+                                             List<String> aggregatorNames)
+    {
+        return new Aggregation_Partial(inputOperator, inputsIndex, factory, aggregatorNames);
+    }
+
     // Project
 
     public static PhysicalOperator project_Default(PhysicalOperator inputOperator,

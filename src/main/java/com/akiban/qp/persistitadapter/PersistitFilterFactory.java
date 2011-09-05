@@ -18,9 +18,9 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.row.RowBase;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
@@ -75,13 +75,13 @@ class PersistitFilterFactory
         key.clear();
         key.reset();
         if (hasStart) {
-            appendKeyField(tuple, column, position, keyRange.lo().row(), bindings);
+            appendKeyField(tuple, column, position, keyRange.lo().boundExpressions(bindings));
         } else {
             key.append(Key.BEFORE);
             key.setEncodedSize(key.getEncodedSize() + 1);
         }
         if (hasEnd) {
-            appendKeyField(tuple, column, position, keyRange.hi().row(), bindings);
+            appendKeyField(tuple, column, position, keyRange.hi().boundExpressions(bindings));
         } else {
             key.append(Key.AFTER);
         }
@@ -92,10 +92,10 @@ class PersistitFilterFactory
         return KeyFilter.termFromKeySegments(key, key, keyRange.loInclusive(), keyRange.hiInclusive());
     }
 
-    private void appendKeyField(PersistitKeyValueTarget target, Column column, int position, RowBase row, Bindings bindings)
+    private void appendKeyField(PersistitKeyValueTarget target, Column column, int position, BoundExpressions row)
     {
         target.expectingType(column);
-        ValueSource source = row.bindSource(position, bindings);
+        ValueSource source = row.eval(position);
         Converters.convert(source, target);
     }
 

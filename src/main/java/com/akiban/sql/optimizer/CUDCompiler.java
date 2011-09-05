@@ -26,6 +26,7 @@ import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.error.UnsupportedSQLException;
@@ -143,7 +144,7 @@ public class CUDCompiler {
                 expressions[i] = expr.generateExpression(stmt.getFieldOffset());
                 i++;
             }
-            exprRowList.add(new ExpressionRow(rowType, expressions));
+            exprRowList.add(new ExpressionRow(rowType, UndefBindings.only(), expressions));
         }
         return valuesScan_Default (exprRowList);
         
@@ -167,7 +168,7 @@ public class CUDCompiler {
                 targetColumn.getValue().generateExpression(fieldOffsets);
         }
         
-        return new ExpressionRow(targetRowType, updates);
+        return new ExpressionRow(targetRowType, UndefBindings.only(), updates);
     }
     
 }
