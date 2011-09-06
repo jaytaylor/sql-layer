@@ -76,8 +76,8 @@ public class RulesTest extends OptimizerTestBase
     }
 
     public RulesTest(String caseName, File rulesFile, File schemaFile,
-                                String sql, String expected) {
-        super(caseName, sql, expected);
+                     String sql, String expected, String error) {
+        super(caseName, sql, expected, error);
         this.rulesFile = rulesFile;
         this.schemaFile = schemaFile;
     }
@@ -108,17 +108,36 @@ public class RulesTest extends OptimizerTestBase
 
     @Test
     public void testRules() throws Exception {
-        StatementNode stmt = parser.parseStatement(sql);
-        binder.bind(stmt);
-        stmt = booleanNormalizer.normalize(stmt);
-        typeComputer.compute(stmt);
-        stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
-        // Turn parsed AST into intermediate form as starting point.
-        PlanNode plan = new AST((DMLStatementNode)stmt);
-        for (BaseRule rule : rules) {
-            plan = rule.apply(plan);
+        String result = null;
+        Exception errorResult = null;
+        try {
+            StatementNode stmt = parser.parseStatement(sql);
+            binder.bind(stmt);
+            stmt = booleanNormalizer.normalize(stmt);
+            typeComputer.compute(stmt);
+            stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
+            // Turn parsed AST into intermediate form as starting point.
+            PlanNode plan = new AST((DMLStatementNode)stmt);
+            for (BaseRule rule : rules) {
+                plan = rule.apply(plan);
+            }
+            result = PlanToString.of(plan);
         }
-        assertEqualsWithoutHashes(caseName, expected, PlanToString.of(plan));
+        catch (Exception ex) {
+            errorResult = ex;
+        }
+        if (error != null) {
+            if (errorResult == null)
+                fail(caseName + ": error expected but none thrown");
+            else
+                assertEquals(caseName, error, errorResult.toString());
+        }
+        else if (errorResult != null) {
+            throw errorResult;
+        }
+        else {
+            assertEqualsWithoutHashes(caseName, expected, result);
+        }
     }
 
 }

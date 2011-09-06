@@ -52,7 +52,7 @@ public class DuplicatePlanTest extends OptimizerTestBase
     }
 
     public DuplicatePlanTest(String caseName, String sql) {
-        super(caseName, sql, null);
+        super(caseName, sql, null, null);
     }
 
     @Before
