@@ -45,18 +45,38 @@ public class PostgresServerMultipleUpdateIT extends PostgresServerITBase
         return TestBase.sqlAndExpected(RESOURCE_DIR);
     }
 
-    public PostgresServerMultipleUpdateIT(String caseName, String sql, String expected) {
-        super(caseName, sql, expected, null);
+    public PostgresServerMultipleUpdateIT(String caseName, String sql, 
+                                          String expected, String error) {
+        super(caseName, sql, expected, error, null);
     }
 
     @Test
     public void testMultipleUpdate() throws Exception {
-        Statement stmt = connection.createStatement();
-        for (String sqls : sql.split("\\;\\s*")) {
-            stmt.executeUpdate(sqls);
+        String result = null;
+        Exception errorResult = null;
+        try {
+            Statement stmt = connection.createStatement();
+            for (String sqls : sql.split("\\;\\s*")) {
+                stmt.executeUpdate(sqls);
+            }
+            stmt.close();
+            result = dumpData();
         }
-        stmt.close();
-        assertEquals("Difference in " + caseName, expected, dumpData());
+        catch (Exception ex) {
+            errorResult = ex;
+        }
+        if (error != null) {
+            if (errorResult == null)
+                fail(caseName + ": error expected but none thrown");
+            else
+                assertEquals(caseName, error, errorResult.toString());
+        }
+        else if (errorResult != null) {
+            throw errorResult;
+        }
+        else {
+            assertEquals("Difference in " + caseName, expected, result);
+        }
     }
 
 }
