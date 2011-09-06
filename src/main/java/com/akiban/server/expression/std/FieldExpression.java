@@ -32,6 +32,16 @@ public final class FieldExpression implements Expression {
     }
 
     @Override
+    public boolean needsBindings() {
+        return false;
+    }
+
+    @Override
+    public boolean needsRow() {
+        return true;
+    }
+
+    @Override
     public ExpressionEvaluation evaluation() {
         return new InnerEvaluation(rowType, fieldIndex, akType);
     }
@@ -59,12 +69,12 @@ public final class FieldExpression implements Expression {
 
     private static class InnerEvaluation implements ExpressionEvaluation {
         @Override
-        public void of(Row row, Bindings bindings) {
+        public void of(Row row) {
             RowType incomingType = row.rowType();
             if (!rowType.equals(incomingType)) {
                 throw new IllegalArgumentException("wrong row type: " + incomingType + " != " + rowType);
             }
-            ValueSource incomingSource = row.bindSource(fieldIndex, bindings);
+            ValueSource incomingSource = row.eval(fieldIndex);
             AkType incomingAkType = incomingSource.getConversionType();
             if (incomingAkType != AkType.NULL && !akType.equals(incomingAkType)) {
                 throw new IllegalArgumentException(
@@ -72,6 +82,10 @@ public final class FieldExpression implements Expression {
                 );
             }
             this.rowSource = incomingSource;
+        }
+
+        @Override
+        public void of(Bindings bindings) {
         }
 
         @Override

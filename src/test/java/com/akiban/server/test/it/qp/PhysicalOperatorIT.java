@@ -67,7 +67,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
             public Row evaluate(Row original, Bindings bindings) {
                 ToObjectValueTarget target = new ToObjectValueTarget();
                 target.expectType(AkType.VARCHAR);
-                Object obj = Converters.convert(original.bindSource(1, bindings), target).lastConvertedValue();
+                Object obj = Converters.convert(original.eval(1), target).lastConvertedValue();
                 String name = (String) obj; // TODO eventually use Expression for this
                 name = name.toUpperCase();
                 name = name + name;
