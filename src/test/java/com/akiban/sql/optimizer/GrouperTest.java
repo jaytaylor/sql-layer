@@ -24,6 +24,7 @@ import static junit.framework.Assert.*;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
+import static junit.framework.Assert.*;
 
 import java.io.File;
 import java.util.Collection;
@@ -39,8 +40,8 @@ public class GrouperTest extends OptimizerTestBase
         return sqlAndExpected(RESOURCE_DIR);
     }
 
-    public GrouperTest(String caseName, String sql, String expected) {
-        super(caseName, sql, expected);
+    public GrouperTest(String caseName, String sql, String expected, String error) {
+        super(caseName, sql, expected, error);
     }
 
     @Before
@@ -51,16 +52,35 @@ public class GrouperTest extends OptimizerTestBase
 
     @Test
     public void testGroup() throws Exception {
-        StatementNode stmt = parser.parseStatement(sql);
-        binder.bind(stmt);
-        stmt = booleanNormalizer.normalize(stmt);
-        typeComputer.compute(stmt);
-        stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
-        grouper.group(stmt);
-        grouper.rewrite(stmt);
-        assertEqualsWithoutPattern(caseName,
-                                   expected.trim(), unparser.toString(stmt), 
-                                   "_G_\\d+");
+        String result = null;
+        Exception errorResult = null;
+        try {
+            StatementNode stmt = parser.parseStatement(sql);
+            binder.bind(stmt);
+            stmt = booleanNormalizer.normalize(stmt);
+            typeComputer.compute(stmt);
+            stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
+            grouper.group(stmt);
+            grouper.rewrite(stmt);
+            result = unparser.toString(stmt);
+        }
+        catch (Exception ex) {
+            errorResult = ex;
+        }
+        if (error != null) {
+            if (errorResult == null)
+                fail(caseName + ": error expected but none thrown");
+            else
+                assertEquals(caseName, error, errorResult.toString());
+        }
+        else if (errorResult != null) {
+            throw errorResult;
+        }
+        else {
+            assertEqualsWithoutPattern(caseName,
+                                       expected.trim(), result, 
+                                       "_G_\\d+");
+        }
     }
 
 }

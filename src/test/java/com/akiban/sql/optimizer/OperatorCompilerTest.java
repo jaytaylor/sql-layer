@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
+import static junit.framework.Assert.*;
 
 import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.ddl.SchemaDefToAis;
@@ -186,19 +187,39 @@ public class OperatorCompilerTest extends TestBase
     }
 
     public OperatorCompilerTest(String caseName, File schemaFile, File indexFile,
-                                String sql, String expected) {
-        super(caseName, sql, expected);
+                                String sql, String expected, String error) {
+        super(caseName, sql, expected, error);
         this.schemaFile = schemaFile;
         this.indexFile = indexFile;
     }
 
     @Test
     public void testOperator() throws Exception {
-        StatementNode stmt = parser.parseStatement(sql);
-        OperatorCompiler.Result result = compiler.compile(new PostgresSessionTracer(1, false),
-                                                          (DMLStatementNode)stmt,
-                                                          parser.getParameterList());
-        assertEqualsWithoutHashes(caseName, expected, result.toString());
+        String stringResult = null;
+        Exception errorResult = null;
+        try {
+            StatementNode stmt = parser.parseStatement(sql);
+            OperatorCompiler.Result result = 
+                compiler.compile(new PostgresSessionTracer(1, false),
+                                 (DMLStatementNode)stmt,
+                                 parser.getParameterList());
+            stringResult = result.toString();
+        }
+        catch (Exception ex) {
+            errorResult = ex;
+        }
+        if (error != null) {
+            if (errorResult == null)
+                fail(caseName + ": error expected but none thrown");
+            else
+                assertEquals(caseName, error, errorResult.toString());
+        }
+        else if (errorResult != null) {
+            throw errorResult;
+        }
+        else {
+            assertEqualsWithoutHashes(caseName, expected, stringResult);
+        }
     }
 
 }

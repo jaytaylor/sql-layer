@@ -46,26 +46,46 @@ public class PostgresServerUpdateIT extends PostgresServerITBase
         return TestBase.sqlAndExpectedAndParams(RESOURCE_DIR);
     }
 
-    public PostgresServerUpdateIT(String caseName, String sql, String expected,
+    public PostgresServerUpdateIT(String caseName, String sql, 
+                                  String expected, String error,
                                   String[] params) {
-        super(caseName, sql, expected, params);
+        super(caseName, sql, expected, error, params);
     }
 
     @Test
     public void testUpdate() throws Exception {
-        PreparedStatement stmt = connection.prepareStatement(sql);
-        if (params != null) {
-            for (int i = 0; i < params.length; i++) {
-                String param = params[i];
-                if (param.startsWith("#"))
-                    stmt.setLong(i + 1, Long.parseLong(param.substring(1)));
-                else
-                    stmt.setString(i + 1, param);
+        String result = null;
+        Exception errorResult = null;
+        try {
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            if (params != null) {
+                for (int i = 0; i < params.length; i++) {
+                    String param = params[i];
+                    if (param.startsWith("#"))
+                        stmt.setLong(i + 1, Long.parseLong(param.substring(1)));
+                    else
+                        stmt.setString(i + 1, param);
+                }
             }
+            int count = stmt.executeUpdate();
+            stmt.close();
+            result = dumpData();
         }
-        int count = stmt.executeUpdate();
-        stmt.close();
-        assertEquals("Difference in " + caseName, expected, dumpData());
+        catch (Exception ex) {
+            errorResult = ex;
+        }
+        if (error != null) {
+            if (errorResult == null)
+                fail(caseName + ": error expected but none thrown");
+            else
+                assertEquals(caseName, error, errorResult.toString());
+        }
+        else if (errorResult != null) {
+            throw errorResult;
+        }
+        else {
+            assertEquals("Difference in " + caseName, expected, result);
+        }
     }
 
 }

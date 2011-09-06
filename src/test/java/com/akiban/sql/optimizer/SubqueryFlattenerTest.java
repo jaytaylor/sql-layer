@@ -39,8 +39,9 @@ public class SubqueryFlattenerTest extends OptimizerTestBase
         return sqlAndExpected(RESOURCE_DIR);
     }
 
-    public SubqueryFlattenerTest(String caseName, String sql, String expected) {
-        super(caseName, sql, expected);
+    public SubqueryFlattenerTest(String caseName, String sql, 
+                                 String expected, String error) {
+        super(caseName, sql, expected, error);
     }
 
     @Before
@@ -52,12 +53,31 @@ public class SubqueryFlattenerTest extends OptimizerTestBase
 
     @Test
     public void testFlatten() throws Exception {
-        StatementNode stmt = parser.parseStatement(sql);
-        binder.bind(stmt);
-        stmt = booleanNormalizer.normalize(stmt);
-        typeComputer.compute(stmt);
-        stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
-        assertEquals(caseName, expected.trim(), unparser.toString(stmt));
+        String result = null;
+        Exception errorResult = null;
+        try {
+            StatementNode stmt = parser.parseStatement(sql);
+            binder.bind(stmt);
+            stmt = booleanNormalizer.normalize(stmt);
+            typeComputer.compute(stmt);
+            stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
+            result = unparser.toString(stmt);
+        }
+        catch (Exception ex) {
+            errorResult = ex;
+        }
+        if (error != null) {
+            if (errorResult == null)
+                fail(caseName + ": error expected but none thrown");
+            else
+                assertEquals(caseName, error, errorResult.toString());
+        }
+        else if (errorResult != null) {
+            throw errorResult;
+        }
+        else {
+            assertEquals(caseName, expected.trim(), result);
+        }
     }
 
 }

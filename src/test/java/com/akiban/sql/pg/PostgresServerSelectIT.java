@@ -49,39 +49,59 @@ public class PostgresServerSelectIT extends PostgresServerITBase
         return TestBase.sqlAndExpectedAndParams(RESOURCE_DIR);
     }
 
-    public PostgresServerSelectIT(String caseName, String sql, String expected, 
+    public PostgresServerSelectIT(String caseName, String sql, 
+                                  String expected, String error,
                                   String[] params) {
-        super(caseName, sql, expected, params);
+        super(caseName, sql, expected, error, params);
     }
 
     @Test
     public void testQuery() throws Exception {
-        StringBuilder data = new StringBuilder();
-        PreparedStatement stmt = connection.prepareStatement(sql);
-        if (params != null) {
-            for (int i = 0; i < params.length; i++) {
-                String param = params[i];
-                if (param.startsWith("#"))
-                    stmt.setLong(i + 1, Long.parseLong(param.substring(1)));
-                else
-                    stmt.setString(i + 1, param);
+        String result = null;
+        Exception errorResult = null;
+        try {
+            StringBuilder data = new StringBuilder();
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            if (params != null) {
+                for (int i = 0; i < params.length; i++) {
+                    String param = params[i];
+                    if (param.startsWith("#"))
+                        stmt.setLong(i + 1, Long.parseLong(param.substring(1)));
+                    else
+                        stmt.setString(i + 1, param);
+                }
             }
-        }
-        ResultSet rs = stmt.executeQuery();
-        ResultSetMetaData md = rs.getMetaData();
-        for (int i = 1; i <= md.getColumnCount(); i++) {
-            if (i > 1) data.append('\t');
-            data.append(md.getColumnName(i));
-        }
-        data.append('\n');
-        while (rs.next()) {
+            ResultSet rs = stmt.executeQuery();
+            ResultSetMetaData md = rs.getMetaData();
             for (int i = 1; i <= md.getColumnCount(); i++) {
                 if (i > 1) data.append('\t');
-                data.append(rs.getString(i));
+                data.append(md.getColumnName(i));
             }
             data.append('\n');
+            while (rs.next()) {
+                for (int i = 1; i <= md.getColumnCount(); i++) {
+                    if (i > 1) data.append('\t');
+                    data.append(rs.getString(i));
+                }
+                data.append('\n');
+            }
+            stmt.close();
+            result = data.toString();
         }
-        stmt.close();
-        assertEquals("Difference in " + caseName, expected, data.toString());
+        catch (Exception ex) {
+            errorResult = ex;
+        }
+        if (error != null) {
+            if (errorResult == null)
+                fail(caseName + ": error expected but none thrown");
+            else
+                assertEquals(caseName, error, errorResult.toString());
+        }
+        else if (errorResult != null) {
+            throw errorResult;
+        }
+        else {
+            assertEquals("Difference in " + caseName, expected, result);
+        }
     }
 }
