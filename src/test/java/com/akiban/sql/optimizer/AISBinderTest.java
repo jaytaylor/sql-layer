@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
+import static junit.framework.Assert.*;
 
 import java.io.File;
 import java.util.Collection;
@@ -36,16 +37,35 @@ public class AISBinderTest extends OptimizerTestBase
         return sqlAndExpected(RESOURCE_DIR);
     }
 
-    public AISBinderTest(String caseName, String sql, String expected) {
-        super(caseName, sql, expected);
+    public AISBinderTest(String caseName, String sql, String expected, String error) {
+        super(caseName, sql, expected, error);
     }
 
     @Test
     public void testBinding() throws Exception {
         loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
-        StatementNode stmt = parser.parseStatement(sql);
-        binder.bind(stmt);
-        assertEqualsWithoutHashes(caseName, expected, getTree(stmt));
+        String result = null;
+        Exception errorResult = null;
+        try {
+            StatementNode stmt = parser.parseStatement(sql);
+            binder.bind(stmt);
+            result = getTree(stmt);
+        }
+        catch (Exception ex) {
+            errorResult = ex;
+        }
+        if (error != null) {
+            if (errorResult == null)
+                fail(caseName + ": error expected but none thrown");
+            else
+                assertEquals(caseName, error, errorResult.toString());
+        }
+        else if (errorResult != null) {
+            throw errorResult;
+        }
+        else {
+            assertEqualsWithoutHashes(caseName, expected, result);
+        }
     }
 
 }
