@@ -800,6 +800,16 @@ public class ASTToStatement extends BaseRule
                                           operands,
                                           ternary.getType(), ternary);
         }
+        else if (valueNode instanceof CoalesceFunctionNode) {
+            CoalesceFunctionNode coalesce = (CoalesceFunctionNode)valueNode;
+            List<ExpressionNode> operands = new ArrayList<ExpressionNode>();
+            for (ValueNode value : coalesce.getArgumentsList()) {
+                operands.add(toExpression(value));
+            }
+            return new FunctionExpression(coalesce.getFunctionName(),
+                                          operands,
+                                          coalesce.getType(), coalesce);
+        }
         else if (valueNode instanceof SubqueryNode) {
             SubqueryNode subqueryNode = (SubqueryNode)valueNode;
             return new SubqueryExpression(toQueryForSelect(subqueryNode.getResultSet(),
