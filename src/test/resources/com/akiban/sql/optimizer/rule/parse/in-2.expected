@@ -1,0 +1,6 @@
+SelectQuery@2330633a
+  ResultSet@3dc286e2[user.customers.cid, user.customers.name]
+    Filter@2e257f1b[user.customers.name == user.parent.name]
+      JoinNode@1fbbdd48(INNER_JOIN)
+        TableSource@66bcb23e(user.customers)
+        TableSource@6e5a3923(user.parent)
