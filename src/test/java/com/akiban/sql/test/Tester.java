@@ -53,6 +53,7 @@ import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 
 import java.util.*;
+import java.io.FileReader;
 
 /** Standalone testing. */
 public class Tester
@@ -233,6 +234,28 @@ public class Tester
             operatorCompiler.addView(view);
     }
 
+    public static String maybeFile(String sql) throws Exception {
+        if (!sql.startsWith("@"))
+            return sql;
+        FileReader reader = null;
+        try {
+            reader = new FileReader(sql.substring(1));
+            StringBuilder str = new StringBuilder();
+            char[] buf = new char[128];
+            while (true) {
+                int nc = reader.read(buf);
+                if (nc < 0) break;
+                str.append(buf, 0, nc);
+            }
+            return str.toString();
+        }
+        finally {
+            if (reader != null) {
+                reader.close();
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             System.out.println("Usage: Tester " +
@@ -264,9 +287,9 @@ public class Tester
                 else if ("-bind".equals(arg))
                     tester.addAction(Action.BIND);
                 else if ("-schema".equals(arg))
-                    tester.setSchema(args[i++]);
+                    tester.setSchema(maybeFile(args[i++]));
                 else if ("-view".equals(arg))
-                    tester.addView(args[i++]);
+                    tester.addView(maybeFile(args[i++]));
                 else if ("-types".equals(arg))
                     tester.addAction(Action.COMPUTE_TYPES);
                 else if ("-boolean".equals(arg))
@@ -296,7 +319,7 @@ public class Tester
             }
             else {
                 try {
-                    tester.process(arg);
+                    tester.process(maybeFile(arg));
                 }
                 catch (StandardException ex) {
                     System.out.flush();

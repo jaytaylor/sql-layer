@@ -170,7 +170,7 @@ public class ASTToStatement extends BaseRule
                                              null, null, null);
             PlanNode right = toQueryForSelect(union.getRightResultSet(), 
                                               null, null, null);
-            boolean all = true; // TODO: union.isAll();
+            boolean all = union.isAll();
             if (all &&
                 (left instanceof ExpressionsSource) &&
                 (right instanceof ExpressionsSource)) {
@@ -739,8 +739,8 @@ public class ASTToStatement extends BaseRule
                 return new ColumnExpression(((TableSource)joinNode), column, 
                                             type, valueNode);
             else
-                // TODO: Get the position correctly from reference.
-                return new ColumnExpression(((ColumnSource)joinNode), -1, 
+                return new ColumnExpression(((ColumnSource)joinNode), 
+                                            cb.getFromTable().getResultColumns().indexOf(cb.getResultColumn()), 
                                             type, valueNode);
         }
         else if (valueNode instanceof ConstantNode)

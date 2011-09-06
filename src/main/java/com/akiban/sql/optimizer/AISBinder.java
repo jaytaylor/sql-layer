@@ -712,6 +712,7 @@ public class AISBinder implements Visitor
             case NodeTypes.FROM_BASE_TABLE:
                 return getAllResultColumns(allTableName, (FromBaseTable)fromTable);
             case NodeTypes.JOIN_NODE:
+            case NodeTypes.HALF_OUTER_JOIN_NODE:
                 return getAllResultColumns(allTableName, (JoinNode)fromTable);
             case NodeTypes.FROM_SUBQUERY:
                 return getAllResultColumns(allTableName, (FromSubquery)fromTable);
