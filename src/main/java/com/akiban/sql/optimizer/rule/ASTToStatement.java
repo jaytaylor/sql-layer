@@ -680,7 +680,7 @@ public class ASTToStatement extends BaseRule
                 limitIsParameter = true;
             }
             else {
-                limit = getIntegerConstant(offsetClause, 
+                limit = getIntegerConstant(limitClause, 
                                            "LIMIT must be constant integer");
                 if (limit < 0)
                     throw new UnsupportedSQLException("LIMIT must not be negative", 

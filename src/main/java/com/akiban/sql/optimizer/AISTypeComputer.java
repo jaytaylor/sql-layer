@@ -41,7 +41,7 @@ public class AISTypeComputer extends TypeComputer
             throws StandardException {
         ColumnBinding columnBinding = (ColumnBinding)node.getUserData();
         assert (columnBinding != null) : "column is not bound yet";
-            return columnBinding.getType();
+        return columnBinding.getType();
     }
 
 }

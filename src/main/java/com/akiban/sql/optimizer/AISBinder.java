@@ -111,6 +111,9 @@ public class AISBinder implements Visitor
             case NodeTypes.DELETE_NODE:
                 dmlModStatementNode((DMLModStatementNode)node);
                 break;
+            case NodeTypes.UNION_NODE:
+                unionNode((UnionNode)node);
+                break;
             }
         }
 
@@ -845,6 +848,29 @@ public class AISBinder implements Visitor
                 columnReference.setUserData(columnBinding);
             }
         }
+    }
+
+    protected void unionNode(UnionNode node) {
+        pushBindingContext();
+        try {
+            node.getLeftResultSet().accept(this);
+            // TODO: This isn't really correct, but it's where the names come from.
+            node.getResultColumns().accept(this);
+        }
+        catch (StandardException e) {
+            throw new com.akiban.server.error.ParseException("", e.getMessage(), 
+                                                             node.getLeftResultSet().toString());
+        }
+        popBindingContext();
+        pushBindingContext();
+        try {
+            node.getRightResultSet().accept(this);
+        }
+        catch (StandardException e) {
+            throw new com.akiban.server.error.ParseException("", e.getMessage(), 
+                                                             node.getRightResultSet().toString());
+        }
+        popBindingContext();
     }
 
     protected static class BindingContext {
