@@ -122,7 +122,9 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
     @Override
     public String summaryString() {
         return super.summaryString() + 
-            "(" + joinType.toString() + String.valueOf(joinConditions) + ")";
+            "(" + joinType.toString() +
+            ((joinConditions != null) ? joinConditions.toString() : "") + 
+            ")";
     }
 
     @Override

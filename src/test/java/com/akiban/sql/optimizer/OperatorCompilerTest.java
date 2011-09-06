@@ -217,6 +217,9 @@ public class OperatorCompilerTest extends TestBase
         else if (errorResult != null) {
             throw errorResult;
         }
+        else if (expected == null) {
+            fail(caseName + ": actual='" + stringResult + "'");
+        }
         else {
             assertEqualsWithoutHashes(caseName, expected, stringResult);
         }

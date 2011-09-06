@@ -135,6 +135,9 @@ public class RulesTest extends OptimizerTestBase
         else if (errorResult != null) {
             throw errorResult;
         }
+        else if (expected == null) {
+            fail(caseName + ": actual='" + result + "'");
+        }
         else {
             assertEqualsWithoutHashes(caseName, expected, result);
         }
