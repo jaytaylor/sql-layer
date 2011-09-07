@@ -38,10 +38,10 @@ public final class FieldExpressionTest {
         assertEquals("type", AkType.LONG, fieldExpression.valueType());
         ExpressionEvaluation evaluation = fieldExpression.evaluation();
 
-        evaluation.of(new ValuesRow(dummyType, new Object[]{27L}), UndefBindings.only());
+        evaluation.of(new ValuesRow(dummyType, new Object[]{27L}));
         assertEquals("evaluation.eval()", new ValueHolder(AkType.LONG, 27L), new ValueHolder(evaluation.eval()));
 
-        evaluation.of(new ValuesRow(dummyType, new Object[]{23L}), UndefBindings.only());
+        evaluation.of(new ValuesRow(dummyType, new Object[]{23L}));
         assertEquals("evaluation.eval()", new ValueHolder(AkType.LONG, 23L), new ValueHolder(evaluation.eval()));
     }
 
@@ -71,7 +71,7 @@ public final class FieldExpressionTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        evaluation.of(badRow, UndefBindings.only());
+        evaluation.of(badRow);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -97,7 +97,7 @@ public final class FieldExpressionTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        evaluation.of(badRow, UndefBindings.only());
+        evaluation.of(badRow);
     }
 
     @Test(expected = NullPointerException.class)

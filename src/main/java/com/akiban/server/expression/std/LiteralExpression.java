@@ -31,6 +31,16 @@ public final class LiteralExpression implements Expression {
     }
 
     @Override
+    public boolean needsBindings() {
+        return false;
+    }
+
+    @Override
+    public boolean needsRow() {
+        return false;
+    }
+
+    @Override
     public ExpressionEvaluation evaluation() {
         return evaluation;
     }
@@ -83,7 +93,11 @@ public final class LiteralExpression implements Expression {
     
     private static class InternalEvaluation implements  ExpressionEvaluation {
         @Override
-        public void of(Row row, Bindings bindings) {
+        public void of(Row row) {
+        }
+
+        @Override
+        public void of(Bindings bindings) {
         }
 
         @Override
