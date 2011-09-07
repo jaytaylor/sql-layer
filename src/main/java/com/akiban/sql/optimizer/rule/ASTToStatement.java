@@ -935,8 +935,34 @@ public class ASTToStatement extends BaseRule
 
     /** Does this expression include any aggregates? */
     protected boolean hasAggregateFunction(ExpressionNode expr) {
-        // TODO: Walk the tree.
-        return (expr instanceof AggregateFunctionExpression);
+        return HasAggregateFunction.of(expr);
+    }
+
+    public static class HasAggregateFunction implements ExpressionVisitor {
+        private boolean found = false;
+
+        @Override
+        public boolean visitEnter(ExpressionNode n) {
+            return visit(n);
+        }
+        @Override
+        public boolean visitLeave(ExpressionNode n) {
+            return !found;
+        }
+        @Override
+        public boolean visit(ExpressionNode n) {
+            if (n instanceof AggregateFunctionExpression) {
+                found = true;
+                return false;
+            }
+            return true;
+        }
+
+        static boolean of(ExpressionNode expr) {
+            HasAggregateFunction haf = new HasAggregateFunction();
+            expr.accept(haf);
+            return haf.found;
+        }
     }
 
 }
