@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.sql.TestBase;
+
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 
@@ -29,7 +31,7 @@ import java.io.File;
 import java.util.Collection;
 
 @RunWith(Parameterized.class)
-public class SubqueryFlattenerTest extends OptimizerTestBase
+public class SubqueryFlattenerTest extends OptimizerTestBase implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "flatten");
@@ -53,31 +55,22 @@ public class SubqueryFlattenerTest extends OptimizerTestBase
 
     @Test
     public void testFlatten() throws Exception {
-        String result = null;
-        Exception errorResult = null;
-        try {
-            StatementNode stmt = parser.parseStatement(sql);
-            binder.bind(stmt);
-            stmt = booleanNormalizer.normalize(stmt);
-            typeComputer.compute(stmt);
-            stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
-            result = unparser.toString(stmt);
-        }
-        catch (Exception ex) {
-            errorResult = ex;
-        }
-        if (error != null) {
-            if (errorResult == null)
-                fail(caseName + ": error expected but none thrown");
-            else
-                assertEquals(caseName, error, errorResult.toString());
-        }
-        else if (errorResult != null) {
-            throw errorResult;
-        }
-        else {
-            assertEquals(caseName, expected.trim(), result);
-        }
+        generateAndCheckResult();
+    }
+
+    @Override
+    public String generateResult() throws Exception {
+        StatementNode stmt = parser.parseStatement(sql);
+        binder.bind(stmt);
+        stmt = booleanNormalizer.normalize(stmt);
+        typeComputer.compute(stmt);
+        stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
+        return unparser.toString(stmt);
+    }
+
+    @Override
+    public void checkResult(String result) {
+        assertEquals(caseName, expected.trim(), result);
     }
 
 }

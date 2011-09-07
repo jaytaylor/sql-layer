@@ -14,6 +14,9 @@
  */
 
 package com.akiban.sql.pg;
+
+import com.akiban.sql.TestBase;
+
 import com.akiban.server.rowdata.RowDef;
 
 import com.akiban.server.api.dml.scan.CursorId;
@@ -254,6 +257,11 @@ public class PostgresServerITBase extends ITBase
     }
 
     protected PostgresServerITBase() {
+    }
+
+    protected void generateAndCheckResult() throws Exception {
+        TestBase.generateAndCheckResult((TestBase.GenerateAndCheckResult)this, 
+                                        caseName, expected, error);
     }
 
 }

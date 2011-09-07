@@ -15,14 +15,14 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.TestBase;
+
 import org.junit.Before;
 import org.junit.Test;
 import static junit.framework.Assert.*;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
-
-import com.akiban.sql.TestBase;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -32,7 +32,7 @@ import java.io.File;
 import java.util.Collection;
 
 @RunWith(Parameterized.class)
-public class PostgresServerSelectIT extends PostgresServerITBase
+public class PostgresServerSelectIT extends PostgresServerITBase implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(PostgresServerITBase.RESOURCE_DIR, "select");
@@ -57,51 +57,43 @@ public class PostgresServerSelectIT extends PostgresServerITBase
 
     @Test
     public void testQuery() throws Exception {
-        String result = null;
-        Exception errorResult = null;
-        try {
-            StringBuilder data = new StringBuilder();
-            PreparedStatement stmt = connection.prepareStatement(sql);
-            if (params != null) {
-                for (int i = 0; i < params.length; i++) {
-                    String param = params[i];
-                    if (param.startsWith("#"))
-                        stmt.setLong(i + 1, Long.parseLong(param.substring(1)));
-                    else
-                        stmt.setString(i + 1, param);
-                }
+        generateAndCheckResult();
+    }
+
+    @Override
+    public String generateResult() throws Exception {
+        StringBuilder data = new StringBuilder();
+        PreparedStatement stmt = connection.prepareStatement(sql);
+        if (params != null) {
+            for (int i = 0; i < params.length; i++) {
+                String param = params[i];
+                if (param.startsWith("#"))
+                    stmt.setLong(i + 1, Long.parseLong(param.substring(1)));
+                else
+                    stmt.setString(i + 1, param);
             }
-            ResultSet rs = stmt.executeQuery();
-            ResultSetMetaData md = rs.getMetaData();
+        }
+        ResultSet rs = stmt.executeQuery();
+        ResultSetMetaData md = rs.getMetaData();
+        for (int i = 1; i <= md.getColumnCount(); i++) {
+            if (i > 1) data.append('\t');
+            data.append(md.getColumnName(i));
+        }
+        data.append('\n');
+        while (rs.next()) {
             for (int i = 1; i <= md.getColumnCount(); i++) {
                 if (i > 1) data.append('\t');
-                data.append(md.getColumnName(i));
+                data.append(rs.getString(i));
             }
             data.append('\n');
-            while (rs.next()) {
-                for (int i = 1; i <= md.getColumnCount(); i++) {
-                    if (i > 1) data.append('\t');
-                    data.append(rs.getString(i));
-                }
-                data.append('\n');
-            }
-            stmt.close();
-            result = data.toString();
         }
-        catch (Exception ex) {
-            errorResult = ex;
-        }
-        if (error != null) {
-            if (errorResult == null)
-                fail(caseName + ": error expected but none thrown");
-            else
-                assertEquals(caseName, error, errorResult.toString());
-        }
-        else if (errorResult != null) {
-            throw errorResult;
-        }
-        else {
-            assertEquals("Difference in " + caseName, expected, result);
-        }
+        stmt.close();
+        return data.toString();
     }
+
+    @Override
+    public void checkResult(String result) {
+        assertEquals(caseName, expected, result);
+    }
+
 }

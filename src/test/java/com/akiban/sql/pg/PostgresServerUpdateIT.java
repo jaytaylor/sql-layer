@@ -31,7 +31,7 @@ import java.io.File;
 import java.util.Collection;
 
 @RunWith(Parameterized.class)
-public class PostgresServerUpdateIT extends PostgresServerITBase
+public class PostgresServerUpdateIT extends PostgresServerITBase implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(PostgresServerITBase.RESOURCE_DIR, "update");
@@ -54,38 +54,29 @@ public class PostgresServerUpdateIT extends PostgresServerITBase
 
     @Test
     public void testUpdate() throws Exception {
-        String result = null;
-        Exception errorResult = null;
-        try {
-            PreparedStatement stmt = connection.prepareStatement(sql);
-            if (params != null) {
-                for (int i = 0; i < params.length; i++) {
-                    String param = params[i];
-                    if (param.startsWith("#"))
-                        stmt.setLong(i + 1, Long.parseLong(param.substring(1)));
-                    else
-                        stmt.setString(i + 1, param);
-                }
+        generateAndCheckResult();
+    }
+
+    @Override
+    public String generateResult() throws Exception {
+        PreparedStatement stmt = connection.prepareStatement(sql);
+        if (params != null) {
+            for (int i = 0; i < params.length; i++) {
+                String param = params[i];
+                if (param.startsWith("#"))
+                    stmt.setLong(i + 1, Long.parseLong(param.substring(1)));
+                else
+                    stmt.setString(i + 1, param);
             }
-            int count = stmt.executeUpdate();
-            stmt.close();
-            result = dumpData();
         }
-        catch (Exception ex) {
-            errorResult = ex;
-        }
-        if (error != null) {
-            if (errorResult == null)
-                fail(caseName + ": error expected but none thrown");
-            else
-                assertEquals(caseName, error, errorResult.toString());
-        }
-        else if (errorResult != null) {
-            throw errorResult;
-        }
-        else {
-            assertEquals("Difference in " + caseName, expected, result);
-        }
+        int count = stmt.executeUpdate();
+        stmt.close();
+        return dumpData();
+    }
+
+    @Override
+    public void checkResult(String result) {
+        assertEquals(caseName, expected, result);
     }
 
 }

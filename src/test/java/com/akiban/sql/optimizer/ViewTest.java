@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.sql.TestBase;
+
 import com.akiban.sql.parser.StatementNode;
 
 import org.junit.Before;
@@ -26,10 +28,11 @@ import org.junit.runner.RunWith;
 import static junit.framework.Assert.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 
 @RunWith(Parameterized.class)
-public class ViewTest extends OptimizerTestBase
+public class ViewTest extends OptimizerTestBase implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "view");
@@ -51,28 +54,19 @@ public class ViewTest extends OptimizerTestBase
 
     @Test
     public void testView() throws Exception {
-        String result = null;
-        Exception errorResult = null;
-        try {
-            StatementNode stmt = parser.parseStatement(sql);
-            binder.bind(stmt);
-            result = getTree(stmt);
-        }
-        catch (Exception ex) {
-            errorResult = ex;
-        }
-        if (error != null) {
-            if (errorResult == null)
-                fail(caseName + ": error expected but none thrown");
-            else
-                assertEquals(caseName, error, errorResult.toString());
-        }
-        else if (errorResult != null) {
-            throw errorResult;
-        }
-        else {
-            assertEqualsWithoutHashes(caseName, expected, result);
-        }
+        generateAndCheckResult();
+    }
+
+    @Override
+    public String generateResult() throws Exception {
+        StatementNode stmt = parser.parseStatement(sql);
+        binder.bind(stmt);
+        return getTree(stmt);
+    }
+
+    @Override
+    public void checkResult(String result) throws IOException {
+        assertEqualsWithoutHashes(caseName, expected, result);
     }
 
 }
