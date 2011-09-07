@@ -822,6 +822,23 @@ public class ASTToStatement extends BaseRule
             return toExpression(((JavaToSQLValueNode)valueNode).getJavaValueNode(),
                                 valueNode);
         }
+        else if (valueNode instanceof CurrentDatetimeOperatorNode) {
+            String functionName = null;
+            switch (((CurrentDatetimeOperatorNode)valueNode).getField()) {
+            case DATE:
+                functionName = "currentDate";
+                break;
+            case TIME:
+                functionName = "currentTime";
+                break;
+            case TIMESTAMP:
+                functionName = "currentTimestamp";
+                break;
+            }
+            return new FunctionExpression(functionName,
+                                          Collections.<ExpressionNode>emptyList(),
+                                          valueNode.getType(), valueNode);
+        }
         else
             throw new UnsupportedSQLException("Unsupported operand", valueNode);
     }
