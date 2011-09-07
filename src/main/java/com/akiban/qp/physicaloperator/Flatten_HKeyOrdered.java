@@ -296,15 +296,17 @@ class Flatten_HKeyOrdered extends PhysicalOperator
             if (leftJoin && childlessParent && parent.isNotNull()) {
                 if (inputRow == null) {
                     readyForLeftJoinRow = true;
+                } else if (!parent.get().ancestorOf(inputRow)) {
+                    readyForLeftJoinRow = true;
+                } else if (inputRow.rowType() == childType) {
+                    // inputRow is a child of parent (since ancestorOf is true)
+                    readyForLeftJoinRow = false;
                 } else {
-                    readyForLeftJoinRow =
-                        // If the inputRow is a child of the parent then we don't need a left join row.
-                        !(inputRow.rowType() == childType && parent.get().ancestorOf(inputRow)) &&
-                        // Equality can occur when an input stream contains both flattened rows and the input
-                        // to the flattening, e.g. an Order row, o, and a flatten(Customer, Order)
-                        // row derived from o. Ordering is not well-defined in this case, so neither < nor <= is
-                        // clearly preferable.
-                        leftJoinHKey.compareTo(inputRow.hKey()) < 0;
+                    // Equality can occur when an input stream contains both flattened rows and the input
+                    // to the flattening, e.g. an Order row, o, and a flatten(Customer, Order)
+                    // row derived from o. Ordering is not well-defined in this case, so neither < nor <= is
+                    // clearly preferable.
+                    readyForLeftJoinRow = leftJoinHKey.compareTo(inputRow.hKey()) < 0;
                 }
             }
             return readyForLeftJoinRow;
