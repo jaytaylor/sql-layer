@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.sql.TestBase;
+
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 
@@ -27,10 +29,11 @@ import org.junit.runner.RunWith;
 import static junit.framework.Assert.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 
 @RunWith(Parameterized.class)
-public class GrouperTest extends OptimizerTestBase
+public class GrouperTest extends OptimizerTestBase implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "group");
@@ -52,35 +55,24 @@ public class GrouperTest extends OptimizerTestBase
 
     @Test
     public void testGroup() throws Exception {
-        String result = null;
-        Exception errorResult = null;
-        try {
-            StatementNode stmt = parser.parseStatement(sql);
-            binder.bind(stmt);
-            stmt = booleanNormalizer.normalize(stmt);
-            typeComputer.compute(stmt);
-            stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
-            grouper.group(stmt);
-            grouper.rewrite(stmt);
-            result = unparser.toString(stmt);
-        }
-        catch (Exception ex) {
-            errorResult = ex;
-        }
-        if (error != null) {
-            if (errorResult == null)
-                fail(caseName + ": error expected but none thrown");
-            else
-                assertEquals(caseName, error, errorResult.toString());
-        }
-        else if (errorResult != null) {
-            throw errorResult;
-        }
-        else {
-            assertEqualsWithoutPattern(caseName,
-                                       expected.trim(), result, 
-                                       "_G_\\d+");
-        }
+        generateAndCheckResult();
+    }
+
+    @Override
+    public String generateResult() throws Exception {
+        StatementNode stmt = parser.parseStatement(sql);
+        binder.bind(stmt);
+        stmt = booleanNormalizer.normalize(stmt);
+        typeComputer.compute(stmt);
+        stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
+        grouper.group(stmt);
+        grouper.rewrite(stmt);
+        return unparser.toString(stmt);
+    }
+
+    @Override
+    public void checkResult(String result) throws IOException {
+        assertEqualsWithoutPattern(caseName, expected.trim(), result, "_G_\\d+");
     }
 
 }

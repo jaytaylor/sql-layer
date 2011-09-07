@@ -34,10 +34,11 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 
 @RunWith(Parameterized.class)
-public class BoundNodeToStringTest extends TestBase
+public class BoundNodeToStringTest extends TestBase implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR =
         new File(OptimizerTestBase.RESOURCE_DIR, "unparser");
@@ -71,28 +72,19 @@ public class BoundNodeToStringTest extends TestBase
 
     @Test
     public void testBound() throws Exception {
-        String result = null;
-        Exception errorResult = null;
-        try {
-            StatementNode stmt = parser.parseStatement(sql);
-            binder.bind(stmt);
-            result = unparser.toString(stmt);
-        }
-        catch (Exception ex) {
-            errorResult = ex;
-        }
-        if (error != null) {
-            if (errorResult == null)
-                fail(caseName + ": error expected but none thrown");
-            else
-                assertEquals(caseName, error, errorResult.toString());
-        }
-        else if (errorResult != null) {
-            throw errorResult;
-        }
-        else {
-            assertEquals(caseName, expected, result);
-        }
+        generateAndCheckResult();
+    }
+
+    @Override
+    public String generateResult() throws Exception {
+        StatementNode stmt = parser.parseStatement(sql);
+        binder.bind(stmt);
+        return unparser.toString(stmt);
+    }
+
+    @Override
+    public void checkResult(String result) throws IOException {
+        assertEquals(caseName, expected, result);
     }
 
 }

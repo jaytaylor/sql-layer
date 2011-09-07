@@ -15,6 +15,8 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.TestBase;
+
 import org.junit.Before;
 import org.junit.Test;
 import static junit.framework.Assert.*;
@@ -22,15 +24,14 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
 
-import com.akiban.sql.TestBase;
-
 import java.sql.Statement;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 
 @RunWith(Parameterized.class)
-public class PostgresServerMultipleUpdateIT extends PostgresServerITBase
+public class PostgresServerMultipleUpdateIT extends PostgresServerITBase implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(PostgresServerITBase.RESOURCE_DIR, "multiple-update");
@@ -52,31 +53,22 @@ public class PostgresServerMultipleUpdateIT extends PostgresServerITBase
 
     @Test
     public void testMultipleUpdate() throws Exception {
-        String result = null;
-        Exception errorResult = null;
-        try {
-            Statement stmt = connection.createStatement();
-            for (String sqls : sql.split("\\;\\s*")) {
-                stmt.executeUpdate(sqls);
-            }
-            stmt.close();
-            result = dumpData();
+        generateAndCheckResult();
+    }
+
+    @Override
+    public String generateResult() throws Exception {
+        Statement stmt = connection.createStatement();
+        for (String sqls : sql.split("\\;\\s*")) {
+            stmt.executeUpdate(sqls);
         }
-        catch (Exception ex) {
-            errorResult = ex;
-        }
-        if (error != null) {
-            if (errorResult == null)
-                fail(caseName + ": error expected but none thrown");
-            else
-                assertEquals(caseName, error, errorResult.toString());
-        }
-        else if (errorResult != null) {
-            throw errorResult;
-        }
-        else {
-            assertEquals("Difference in " + caseName, expected, result);
-        }
+        stmt.close();
+        return dumpData();
+    }
+
+    @Override
+    public void checkResult(String result) throws IOException {
+        assertEquals(caseName, expected, result);
     }
 
 }
