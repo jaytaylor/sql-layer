@@ -17,7 +17,12 @@ package com.akiban.sql.optimizer;
 
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.parser.*;
+
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
@@ -915,16 +920,63 @@ public class SimplifiedQuery
             return new LiteralExpression(((ConstantNode)operand).getValue());
         else if (operand instanceof ParameterNode)
             return new ParameterExpression(((ParameterNode)operand).getParameterNumber());
-        else if (operand instanceof CastNode)
-            // TODO: This is passing the burden of proper conversion
-            // onto the Expression / IndexKey. It might be better to
-            // attempt to do some here.
-            return getSimpleExpression(((CastNode)operand).getCastOperand());
+        else if (operand instanceof CastNode) {
+            CastNode castNode = (CastNode)operand;
+            operand = castNode.getCastOperand();
+            if (operand instanceof ConstantNode)
+                return getTypedLiteral(((ConstantNode)operand).getValue(),
+                                       castNode.getType());
+            else
+                return getSimpleExpression(operand);
+        }
         else if ((operand instanceof AggregateNode) &&
                  "COUNT(*)".equals(((AggregateNode)operand).getAggregateName()))
             return new CountStarExpression();
         else
             throw new UnsupportedSQLException("Unsupported operand", operand);
+    }
+
+    protected SimpleExpression getTypedLiteral(Object object, DataTypeDescriptor type) {
+        // TODO: Need some more conversions for other types.
+        if (object instanceof String) {
+            LongExtractor extractor = null;
+            TypeId typeId = type.getTypeId();
+            switch (typeId.getTypeFormatId()) {
+            case TypeId.FormatIds.DATE_TYPE_ID:
+                extractor = Extractors.getLongExtractor(AkType.DATE);
+                break;
+            case TypeId.FormatIds.INT_TYPE_ID:
+                extractor = Extractors.getLongExtractor(AkType.INT);
+                break;
+            case TypeId.FormatIds.LONGINT_TYPE_ID:
+                extractor = Extractors.getLongExtractor(AkType.INT);
+                break;
+            case TypeId.FormatIds.SMALLINT_TYPE_ID:
+                extractor = Extractors.getLongExtractor(AkType.INT);
+                break;
+            case TypeId.FormatIds.TIME_TYPE_ID:
+                extractor = Extractors.getLongExtractor(AkType.TIME);
+                break;
+            case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
+                extractor = Extractors.getLongExtractor(AkType.TIMESTAMP);
+                break;
+            case TypeId.FormatIds.USERDEFINED_TYPE_ID:
+                {
+                    String name = typeId.getSQLTypeName();
+                    System.out.println("*** " + name);
+                    if ("datetime".equals(name)) {
+                        extractor = Extractors.getLongExtractor(AkType.DATETIME);
+                    }
+                    else if ("year".equals(name)) {
+                        extractor = Extractors.getLongExtractor(AkType.YEAR);
+                    }
+                }
+                break;
+            }
+            if (extractor != null)
+                object = extractor.getLong((String)object);
+        }
+        return new LiteralExpression(object);
     }
 
     // Get the column that this node references or else return null or throw given error.
