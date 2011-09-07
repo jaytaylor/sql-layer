@@ -130,6 +130,11 @@ public final class PersistitKeyValueSource implements ValueSource {
     }
 
     @Override
+    public boolean getBool() {
+        return as(Boolean.class, AkType.BOOL);
+    }
+
+    @Override
     public void appendAsString(AkibanAppender appender, Quote quote) {
         // Can we optimize this at all?
         AkType type = getConversionType();

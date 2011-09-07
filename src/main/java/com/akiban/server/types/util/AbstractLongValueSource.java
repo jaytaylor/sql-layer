@@ -121,6 +121,11 @@ public abstract class AbstractLongValueSource implements ValueSource {
     }
 
     @Override
+    public boolean getBool() {
+        throw complain(AkType.BOOL);
+    }
+
+    @Override
     public void appendAsString(AkibanAppender appender, Quote quote) {
         if (isNull()) {
             appender.append(null);

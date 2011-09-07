@@ -41,6 +41,7 @@ public interface ValueSource {
     long getYear();
     String getString();
     String getText();
+    boolean getBool();
     void appendAsString(AkibanAppender appender, Quote quote);
     AkType getConversionType();
 }

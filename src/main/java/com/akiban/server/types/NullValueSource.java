@@ -121,6 +121,11 @@ public final class NullValueSource implements ValueSource {
     }
 
     @Override
+    public boolean getBool() {
+        throw new ValueSourceIsNullException();
+    }
+
+    @Override
     public void appendAsString(AkibanAppender appender, Quote quote) {
         AkType type = getConversionType();
         quote.quote(appender, type);
