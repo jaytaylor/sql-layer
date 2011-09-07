@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.sql.TestBase;
+
 import com.akiban.sql.optimizer.OptimizerTestBase;
 import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.AST;
@@ -44,7 +46,7 @@ import java.io.IOException;
 import java.io.Reader;
 
 @RunWith(Parameterized.class)
-public class RulesTest extends OptimizerTestBase
+public class RulesTest extends OptimizerTestBase implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "rule");
@@ -108,39 +110,29 @@ public class RulesTest extends OptimizerTestBase
 
     @Test
     public void testRules() throws Exception {
+        generateAndCheckResult();
+    }
+
+    @Override
+    public String generateResult() throws Exception {
         String result = null;
         Exception errorResult = null;
-        try {
-            StatementNode stmt = parser.parseStatement(sql);
-            binder.bind(stmt);
-            stmt = booleanNormalizer.normalize(stmt);
-            typeComputer.compute(stmt);
-            stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
-            // Turn parsed AST into intermediate form as starting point.
-            PlanNode plan = new AST((DMLStatementNode)stmt);
-            for (BaseRule rule : rules) {
-                plan = rule.apply(plan);
-            }
-            result = PlanToString.of(plan);
+        StatementNode stmt = parser.parseStatement(sql);
+        binder.bind(stmt);
+        stmt = booleanNormalizer.normalize(stmt);
+        typeComputer.compute(stmt);
+        stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
+        // Turn parsed AST into intermediate form as starting point.
+        PlanNode plan = new AST((DMLStatementNode)stmt);
+        for (BaseRule rule : rules) {
+            plan = rule.apply(plan);
         }
-        catch (Exception ex) {
-            errorResult = ex;
-        }
-        if (error != null) {
-            if (errorResult == null)
-                fail(caseName + ": error expected but none thrown");
-            else
-                assertEquals(caseName, error, errorResult.toString());
-        }
-        else if (errorResult != null) {
-            throw errorResult;
-        }
-        else if (expected == null) {
-            fail(caseName + ": actual='" + result + "'");
-        }
-        else {
-            assertEqualsWithoutHashes(caseName, expected, result);
-        }
+        return PlanToString.of(plan);
+    }
+
+    @Override
+    public void checkResult(String result) throws IOException {
+        assertEqualsWithoutHashes(caseName, expected, result);
     }
 
 }
