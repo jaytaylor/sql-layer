@@ -182,7 +182,7 @@ public class TableDDL
         
         int colPos = 0;
         for (ResultColumn col : cdn.getColumnList()) {
-            builder.indexColumn(schemaName, tableName, indexName, col.getName(), colPos++, true, 0);
+            builder.indexColumn(schemaName, tableName, indexName, col.getName(), colPos++, true, null);
         }
     }
     

@@ -169,6 +169,7 @@ public enum ErrorCode {
     UNSUPPORTED_FK_INDEX    (28, 4, Importance.ERROR, UnsupportedFKIndexException.class),
     UNSUPPORTED_CHECK       (28, 5, Importance.ERROR, UnsupportedCheckConstraintException.class),
     UNSUPPORTED_GROUP_UNIQUE(28, 6, Importance.DEBUG, UnsupportedUniqueGroupIndexException.class),
+    UNSUPPORTED_INDEX_PREFIX(28, 7, Importance.ERROR, UnsupportedIndexPrefixException.class),
     
     // Configuration, Startup, & Shutdown errors
     SERVICE_NOT_STARTED  (29, 1, Importance.ERROR, ServiceNotStartedException.class),

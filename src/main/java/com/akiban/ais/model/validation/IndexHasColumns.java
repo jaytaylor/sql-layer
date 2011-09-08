@@ -19,7 +19,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.IndexLacksColumnsException;
 
-public class IndexHasColumns implements AISValidation {
+class IndexHasColumns implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
