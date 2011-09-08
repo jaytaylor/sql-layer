@@ -15,6 +15,8 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.TestBase;
+
 import org.junit.Before;
 import org.junit.Test;
 import static junit.framework.Assert.*;
@@ -22,15 +24,14 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
 
-import com.akiban.sql.TestBase;
-
 import java.sql.Statement;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 
 @RunWith(Parameterized.class)
-public class PostgresServerMultipleUpdateIT extends PostgresServerITBase
+public class PostgresServerMultipleUpdateIT extends PostgresServerITBase implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(PostgresServerITBase.RESOURCE_DIR, "multiple-update");
@@ -45,18 +46,29 @@ public class PostgresServerMultipleUpdateIT extends PostgresServerITBase
         return TestBase.sqlAndExpected(RESOURCE_DIR);
     }
 
-    public PostgresServerMultipleUpdateIT(String caseName, String sql, String expected) {
-        super(caseName, sql, expected, null);
+    public PostgresServerMultipleUpdateIT(String caseName, String sql, 
+                                          String expected, String error) {
+        super(caseName, sql, expected, error, null);
     }
 
     @Test
     public void testMultipleUpdate() throws Exception {
+        generateAndCheckResult();
+    }
+
+    @Override
+    public String generateResult() throws Exception {
         Statement stmt = connection.createStatement();
         for (String sqls : sql.split("\\;\\s*")) {
             stmt.executeUpdate(sqls);
         }
         stmt.close();
-        assertEquals("Difference in " + caseName, expected, dumpData());
+        return dumpData();
+    }
+
+    @Override
+    public void checkResult(String result) throws IOException {
+        assertEquals(caseName, expected, result);
     }
 
 }

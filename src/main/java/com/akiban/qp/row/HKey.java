@@ -15,10 +15,14 @@
 
 package com.akiban.qp.row;
 
-public interface HKey
+public interface HKey extends Comparable<HKey>
 {
     // Object interface
     boolean equals(Object hKey);
+
+    // Comparable interface
+    @Override
+    int compareTo(HKey o);
 
     // HKey interface
     boolean prefixOf(HKey hKey);

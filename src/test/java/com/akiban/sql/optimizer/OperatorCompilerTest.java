@@ -15,8 +15,9 @@
 
 package com.akiban.sql.optimizer;
 
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.sql.TestBase;
+
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.SQLParser;
@@ -26,6 +27,7 @@ import org.junit.Test;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
+import static junit.framework.Assert.*;
 
 import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.ddl.SchemaDefToAis;
@@ -48,7 +50,7 @@ import java.io.IOException;
 import java.io.Reader;
 
 @RunWith(Parameterized.class)
-public class OperatorCompilerTest extends TestBase
+public class OperatorCompilerTest extends TestBase implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "operator");
@@ -184,19 +186,30 @@ public class OperatorCompilerTest extends TestBase
     }
 
     public OperatorCompilerTest(String caseName, File schemaFile, File indexFile,
-                                String sql, String expected) {
-        super(caseName, sql, expected);
+                                String sql, String expected, String error) {
+        super(caseName, sql, expected, error);
         this.schemaFile = schemaFile;
         this.indexFile = indexFile;
     }
 
     @Test
     public void testOperator() throws Exception {
+        generateAndCheckResult();
+    }
+
+    @Override
+    public String generateResult() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
-        OperatorCompiler.Result result = compiler.compile(new PostgresSessionTracer(1, false),
-                                                          (DMLStatementNode)stmt,
-                                                          parser.getParameterList());
-        assertEqualsWithoutHashes(caseName, expected, result.toString());
+        OperatorCompiler.Result result = 
+            compiler.compile(new PostgresSessionTracer(1, false),
+                             (DMLStatementNode)stmt,
+                             parser.getParameterList());
+        return result.toString();
+    }
+
+    @Override
+    public void checkResult(String result) throws IOException {
+        assertEqualsWithoutHashes(caseName, expected, result);
     }
 
 }

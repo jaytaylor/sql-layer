@@ -963,7 +963,6 @@ public class SimplifiedQuery
             case TypeId.FormatIds.USERDEFINED_TYPE_ID:
                 {
                     String name = typeId.getSQLTypeName();
-                    System.out.println("*** " + name);
                     if ("datetime".equals(name)) {
                         extractor = Extractors.getLongExtractor(AkType.DATETIME);
                     }
