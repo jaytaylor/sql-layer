@@ -31,7 +31,7 @@ import java.io.File;
 import java.util.Collection;
 
 @RunWith(Parameterized.class)
-public class PostgresServerUpdateIT extends PostgresServerITBase
+public class PostgresServerUpdateIT extends PostgresServerITBase implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(PostgresServerITBase.RESOURCE_DIR, "update");
@@ -46,13 +46,19 @@ public class PostgresServerUpdateIT extends PostgresServerITBase
         return TestBase.sqlAndExpectedAndParams(RESOURCE_DIR);
     }
 
-    public PostgresServerUpdateIT(String caseName, String sql, String expected,
+    public PostgresServerUpdateIT(String caseName, String sql, 
+                                  String expected, String error,
                                   String[] params) {
-        super(caseName, sql, expected, params);
+        super(caseName, sql, expected, error, params);
     }
 
     @Test
     public void testUpdate() throws Exception {
+        generateAndCheckResult();
+    }
+
+    @Override
+    public String generateResult() throws Exception {
         PreparedStatement stmt = connection.prepareStatement(sql);
         if (params != null) {
             for (int i = 0; i < params.length; i++) {
@@ -65,7 +71,12 @@ public class PostgresServerUpdateIT extends PostgresServerITBase
         }
         int count = stmt.executeUpdate();
         stmt.close();
-        assertEquals("Difference in " + caseName, expected, dumpData());
+        return dumpData();
+    }
+
+    @Override
+    public void checkResult(String result) {
+        assertEquals(caseName, expected, result);
     }
 
 }

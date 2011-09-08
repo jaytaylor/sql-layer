@@ -122,8 +122,8 @@ public class PersistitAdapter extends StoreAdapter
         ToObjectValueTarget target = new ToObjectValueTarget();
         NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
 
-        for (int i = 0; i < row.rowType().nFields(); ++i) {
-            ValueSource source = row.bindSource(i, bindings);
+        for(int i=0; i < row.rowType().nFields(); ++i) {
+            ValueSource source = row.eval(i);
             niceRow.put(i, target.convertFromSource(source));
         }
         return niceRow.toRowData();

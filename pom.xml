@@ -378,9 +378,12 @@
                     <exclude>**/*.json</exclude>
                     <exclude>**/*.sql</exclude>
                     <exclude>**/*.expected</exclude>
+                    <exclude>**/*.error</exclude>
                     <exclude>**/*.dat</exclude>
                     <exclude>**/*.fail</exclude>
                     <exclude>**/*.params</exclude>
+                    <exclude>**/*.yaml</exclude>
+                    <exclude>**/*.yml</exclude>
                     <exclude>**/group.idx</exclude>
                     <exclude>src/test/bin/*.sh</exclude>
                     <exclude>src/test/bin/*.cmd</exclude>

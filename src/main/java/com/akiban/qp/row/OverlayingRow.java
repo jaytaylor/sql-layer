@@ -15,7 +15,6 @@
 
 package com.akiban.qp.row;
 
-import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.FromObjectValueSource;
@@ -43,9 +42,9 @@ public final class OverlayingRow extends AbstractRow {
     }
 
     @Override
-    public ValueSource bindSource(int i, Bindings bindings) {
+    public ValueSource eval(int i) {
         if (Undef.isUndefined(overlays[i])) {
-            return underlying.bindSource(i, bindings);
+            return underlying.eval(i);
         } else {
             valueSource.setReflectively(overlays[i]);
             return valueSource;

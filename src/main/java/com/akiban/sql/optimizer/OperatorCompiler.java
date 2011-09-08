@@ -15,10 +15,14 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.sql.optimizer.simplified.*;
+import com.akiban.sql.optimizer.simplified.SimplifiedQuery.*;
+
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.exec.Plannable;
+import com.akiban.qp.expression.RowBasedUnboundExpressions;
+import com.akiban.qp.expression.UnboundExpressions;
 import com.akiban.qp.rowtype.*;
-import com.akiban.sql.optimizer.SimplifiedQuery.*;
 
 import com.akiban.sql.parser.*;
 import com.akiban.sql.compiler.*;
@@ -528,17 +532,16 @@ public class OperatorCompiler
                                                 targetRowType,
                                                 predicate);
         }
-        
+
         Expression[] updates = new Expression[targetRowType.nFields()];
         for (SimplifiedUpdateStatement.UpdateColumn updateColumn : 
                  supdate.getUpdateColumns()) {
             updates[updateColumn.getColumn().getPosition()] =
                 updateColumn.getValue().generateExpression(fieldOffsets);
         }
-        ExpressionRow updateRow = new ExpressionRow(targetRowType, updates);
 
         Plannable updatePlan = new com.akiban.qp.physicaloperator.Update_Default(resultOperator,
-                                            new ExpressionRowUpdateFunction(updateRow));
+                                            new ExpressionRowUpdateFunction(updates, targetRowType));
         return new Result(updatePlan, getParameterTypes(params));
     }
 
@@ -1150,9 +1153,9 @@ public class OperatorCompiler
     /** Return a {@link Row} for the given index containing the given
      * {@link Expression} values.  
      */
-    protected Row getIndexExpressionRow(Index index, Expression[] keys) {
+    protected UnboundExpressions getIndexExpressionRow(Index index, Expression[] keys) {
         RowType rowType = schema.indexRowType(index);
-        return new ExpressionRow(rowType, keys);
+        return new RowBasedUnboundExpressions(rowType, keys);
     }
 
     protected DataTypeDescriptor[] getParameterTypes(List<ParameterNode> params) {

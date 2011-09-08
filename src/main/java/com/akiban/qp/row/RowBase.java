@@ -15,14 +15,13 @@
 
 package com.akiban.qp.row;
 
-import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.ValueSource;
 
-public interface RowBase
+public interface RowBase extends BoundExpressions
 {
     RowType rowType();
-    ValueSource bindSource(int i, Bindings bindings);
     HKey hKey();
     boolean ancestorOf(RowBase that);
     int runId();

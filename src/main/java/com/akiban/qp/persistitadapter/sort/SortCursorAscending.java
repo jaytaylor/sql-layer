@@ -42,7 +42,6 @@ class SortCursorAscending extends SortCursor
         Row next = null;
         try {
             if (exchange.next(true)) {
-                exchange.fetch();
                 next = row();
             } else {
                 close();

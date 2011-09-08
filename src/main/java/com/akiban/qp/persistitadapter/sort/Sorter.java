@@ -124,7 +124,7 @@ public class Sorter
         value.clear();
         value.setStreamMode(true);
         for (int i = 0; i < rowFields; i++) {
-            ValueSource field = row.bindSource(i, bindings);
+            ValueSource field = row.eval(i);
             if (fieldTypes[i] == null) {
                 fieldTypes[i] = field.getConversionType();
             }
