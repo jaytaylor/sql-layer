@@ -17,7 +17,10 @@ package com.akiban.sql.optimizer;
 
 import com.akiban.sql.TestBase;
 
+import com.akiban.sql.optimizer.simplified.SimplifiedQuery;
+
 import com.akiban.server.rowdata.RowDef;
+
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.SQLParser;
@@ -36,6 +39,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.TableStatus;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.util.GroupIndexCreator;
 
 import org.junit.Before;

@@ -24,6 +24,8 @@ public class UnsupportedSQLException extends InvalidOperationException {
     }
     
     protected static String formatSQL(QueryTreeNode sql) {
+        if (sql == null)
+            return null;
         try {
             return new NodeToString().toString(sql);
         }

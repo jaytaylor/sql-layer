@@ -111,6 +111,9 @@ public class AISBinder implements Visitor
             case NodeTypes.DELETE_NODE:
                 dmlModStatementNode((DMLModStatementNode)node);
                 break;
+            case NodeTypes.UNION_NODE:
+                unionNode((UnionNode)node);
+                break;
             }
         }
 
@@ -712,6 +715,7 @@ public class AISBinder implements Visitor
             case NodeTypes.FROM_BASE_TABLE:
                 return getAllResultColumns(allTableName, (FromBaseTable)fromTable);
             case NodeTypes.JOIN_NODE:
+            case NodeTypes.HALF_OUTER_JOIN_NODE:
                 return getAllResultColumns(allTableName, (JoinNode)fromTable);
             case NodeTypes.FROM_SUBQUERY:
                 return getAllResultColumns(allTableName, (FromSubquery)fromTable);
@@ -844,6 +848,29 @@ public class AISBinder implements Visitor
                 columnReference.setUserData(columnBinding);
             }
         }
+    }
+
+    protected void unionNode(UnionNode node) {
+        pushBindingContext();
+        try {
+            node.getLeftResultSet().accept(this);
+            // TODO: This isn't really correct, but it's where the names come from.
+            node.getResultColumns().accept(this);
+        }
+        catch (StandardException e) {
+            throw new com.akiban.server.error.ParseException("", e.getMessage(), 
+                                                             node.getLeftResultSet().toString());
+        }
+        popBindingContext();
+        pushBindingContext();
+        try {
+            node.getRightResultSet().accept(this);
+        }
+        catch (StandardException e) {
+            throw new com.akiban.server.error.ParseException("", e.getMessage(), 
+                                                             node.getRightResultSet().toString());
+        }
+        popBindingContext();
     }
 
     protected static class BindingContext {
