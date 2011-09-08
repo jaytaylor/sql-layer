@@ -1,0 +1,4 @@
+SelectQuery@556917ee
+  ResultSet@66a23610[plus(divide(times(user.items.price,user.items.quan),user.items.oid),1)]
+    Filter@238b8914[]
+      TableSource@1dd49247(user.items)

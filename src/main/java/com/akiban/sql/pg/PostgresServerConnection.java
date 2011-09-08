@@ -246,6 +246,10 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                         messenger.write(0);
                         messenger.sendMessage(true);
                     }
+                    if (errorMode == ErrorMode.EXTENDED)
+                        ignoreUntilSync = true;
+                    else
+                        readyForQuery();
                 }
                 
                 finally {

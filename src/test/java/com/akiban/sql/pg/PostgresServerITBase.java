@@ -14,6 +14,9 @@
  */
 
 package com.akiban.sql.pg;
+
+import com.akiban.sql.TestBase;
+
 import com.akiban.server.rowdata.RowDef;
 
 import com.akiban.server.api.dml.scan.CursorId;
@@ -239,19 +242,26 @@ public class PostgresServerITBase extends ITBase
         }
     }
 
-    protected String caseName, sql, expected;
+    protected String caseName, sql, expected, error;
     protected String[] params;
 
     /** Parameterized version. */
-    protected PostgresServerITBase(String caseName, String sql, String expected, 
+    protected PostgresServerITBase(String caseName, String sql, 
+                                   String expected, String error,
                                    String[] params) {
         this.caseName = caseName;
         this.sql = sql.trim();
         this.expected = expected;
+        this.error = error;
         this.params = params;
     }
 
     protected PostgresServerITBase() {
+    }
+
+    protected void generateAndCheckResult() throws Exception {
+        TestBase.generateAndCheckResult((TestBase.GenerateAndCheckResult)this, 
+                                        caseName, expected, error);
     }
 
 }

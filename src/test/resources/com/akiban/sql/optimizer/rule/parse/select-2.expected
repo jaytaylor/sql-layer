@@ -1,0 +1,6 @@
+SelectQuery@15af33d6
+  ResultSet@217431b9[user.parent.name, user.child.name]
+    Filter@536c79d7[user.parent.name == Smith]
+      JoinNode@76b33d0a(INNER_JOIN[user.parent.id == user.child.pid])
+        TableSource@716c9867(user.parent)
+        TableSource@1089cc5e(user.child)

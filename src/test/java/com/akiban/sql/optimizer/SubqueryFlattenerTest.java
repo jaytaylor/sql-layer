@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.sql.TestBase;
+
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 
@@ -29,7 +31,7 @@ import java.io.File;
 import java.util.Collection;
 
 @RunWith(Parameterized.class)
-public class SubqueryFlattenerTest extends OptimizerTestBase
+public class SubqueryFlattenerTest extends OptimizerTestBase implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "flatten");
@@ -39,8 +41,9 @@ public class SubqueryFlattenerTest extends OptimizerTestBase
         return sqlAndExpected(RESOURCE_DIR);
     }
 
-    public SubqueryFlattenerTest(String caseName, String sql, String expected) {
-        super(caseName, sql, expected);
+    public SubqueryFlattenerTest(String caseName, String sql, 
+                                 String expected, String error) {
+        super(caseName, sql, expected, error);
     }
 
     @Before
@@ -52,12 +55,22 @@ public class SubqueryFlattenerTest extends OptimizerTestBase
 
     @Test
     public void testFlatten() throws Exception {
+        generateAndCheckResult();
+    }
+
+    @Override
+    public String generateResult() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
         binder.bind(stmt);
         stmt = booleanNormalizer.normalize(stmt);
         typeComputer.compute(stmt);
         stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
-        assertEquals(caseName, expected.trim(), unparser.toString(stmt));
+        return unparser.toString(stmt);
+    }
+
+    @Override
+    public void checkResult(String result) {
+        assertEquals(caseName, expected.trim(), result);
     }
 
 }

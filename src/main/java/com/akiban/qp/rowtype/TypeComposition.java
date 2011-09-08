@@ -16,6 +16,7 @@
 package com.akiban.qp.rowtype;
 
 
+import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.util.ArgumentValidation;
 
@@ -88,4 +89,5 @@ public class TypeComposition
     private final RowType rowType;
     private final Set<UserTable> tables;
     private final Map<RowType, Boolean> ancestorOf = new HashMap<RowType, Boolean>();
+    private UserTable rootmost;
 }

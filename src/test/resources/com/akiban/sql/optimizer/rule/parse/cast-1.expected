@@ -1,0 +1,4 @@
+SelectQuery@1cee1ede
+  ResultSet@552c8fa8[Cast(user.orders.order_date AS INTEGER)]
+    Filter@608b8a47[]
+      TableSource@69236cd5(user.orders)
