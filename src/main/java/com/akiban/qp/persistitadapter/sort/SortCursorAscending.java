@@ -15,48 +15,49 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.qp.persistitadapter.PersistitAdapterException;
+import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.server.PersistitValueValueSource;
 import com.akiban.server.types.util.ValueHolder;
-import com.persistit.Exchange;
+import com.persistit.Key;
+import com.persistit.exception.PersistitException;
 
-abstract class SortCursor implements Cursor
+class SortCursorAscending extends SortCursor
 {
     // Cursor interface
 
     @Override
-    public final void close()
+    public void open(Bindings bindings)
     {
-        sorter.close();
+        exchange.clear();
+        exchange.append(Key.BEFORE);
     }
 
-    // For use by subclasses
-
-    protected SortCursor(Sorter sorter)
+    @Override
+    public Row next()
     {
-        this.sorter = sorter;
-        this.exchange = sorter.exchange;
-        this.valueSource = new PersistitValueValueSource();
-        this.valueSource.attach(sorter.value);
-    }
-
-    protected Row row()
-    {
-        ValuesHolderRow row = new ValuesHolderRow(sorter.rowType);
-        sorter.value.setStreamMode(true);
-        for (int i = 0; i < sorter.rowFields; i++) {
-            ValueHolder valueHolder = row.holderAt(i);
-            valueSource.expectedType(sorter.fieldTypes[i]);
-            valueHolder.copyFrom(valueSource);
+        Row next = null;
+        try {
+            if (exchange.next(true)) {
+                exchange.fetch();
+                next = row();
+            } else {
+                close();
+            }
+        } catch (PersistitException e) {
+            close();
+            throw new PersistitAdapterException(e);
         }
-        return row;
+        return next;
     }
 
-    // Object state
+    // SortCursorAscending interface
 
-    protected final Sorter sorter;
-    protected final Exchange exchange;
-    private final PersistitValueValueSource valueSource;
+    public SortCursorAscending(Sorter sorter)
+    {
+        super(sorter);
+    }
 }

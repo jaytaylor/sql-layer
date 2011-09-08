@@ -284,6 +284,20 @@ public class API
 
     public static class Ordering
     {
+        public String toString()
+        {
+            StringBuilder buffer = new StringBuilder();
+            for (int i = 0; i < expressions.size(); i++) {
+                if (i > 0) {
+                    buffer.append(", ");
+                }
+                buffer.append(expressions.get(i));
+                buffer.append(' ');
+                buffer.append(directions.get(i) ? "ASC" : "DESC");
+            }
+            return buffer.toString();
+        }
+
         public int sortFields()
         {
             return expressions.size();
@@ -303,6 +317,14 @@ public class API
         {
             expressions.add(expression);
             directions.add(ascending);
+        }
+
+        public Ordering copy()
+        {
+            Ordering copy = new Ordering();
+            copy.expressions.addAll(expressions);
+            copy.directions.addAll(directions);
+            return copy;
         }
 
         private final List<Expression> expressions = new ArrayList<Expression>();

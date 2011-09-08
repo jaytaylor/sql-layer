@@ -41,16 +41,17 @@ public class Sorter
         this.adapter = adapter;
         this.input = input;
         this.rowType = rowType;
-        this.ordering = ordering;
+        this.ordering = ordering.copy();
         this.bindings = bindings;
         this.exchange = adapter.takeExchangeForSorting();
         this.key = exchange.getKey();
         this.value = exchange.getValue();
         this.valueTarget = new PersistitValueValueTarget();
         this.valueTarget.attach(exchange.getValue());
-        this.sortFields = ordering.sortFields();
         this.rowFields = rowType.nFields();
         this.fieldTypes = new AkType[this.rowFields];
+        // This implementation adds a count field as a sort key, to ensure key uniqueness for Persisit.
+        this.ordering.append(null, true);
     }
 
     public Cursor sort() throws PersistitException
@@ -91,12 +92,25 @@ public class Sorter
 
     private Cursor cursor()
     {
-        return new SortCursor(this);
+        boolean allAscending = true;
+        boolean allDescending = true;
+        for (int i = 0; i < ordering.sortFields(); i++) {
+            if (ordering.ascending(i)) {
+                allDescending = false;
+            } else {
+                allAscending = false;
+            }
+        }
+        SortCursor cursor = allAscending ? new SortCursorAscending(this) :
+                            allDescending ? new SortCursorDescending(this) : new SortCursorMixedOrder(this);
+        cursor.open(bindings);
+        return cursor;
     }
 
     private void createKey(Row row)
     {
         key.clear();
+        int sortFields = ordering.sortFields() - 1; // Don't include the artificial count field
         for (int i = 0; i < sortFields; i++) {
             Expression expression = ordering.expression(i);
             Object keyField = expression.evaluate(row, bindings);
@@ -134,7 +148,6 @@ public class Sorter
     final Key key;
     final Value value;
     final PersistitValueValueTarget valueTarget;
-    final int sortFields;
     final int rowFields;
     // TODO: Horrible hack. When we switch from qp.Expression to server.Expression, use Expression.valueType()
     final AkType fieldTypes[];
