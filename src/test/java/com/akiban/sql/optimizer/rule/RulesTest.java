@@ -88,19 +88,7 @@ public class RulesTest extends OptimizerTestBase implements TestBase.GenerateAnd
 
     @Before
     public void loadRules() throws Exception {
-        rules = new ArrayList<BaseRule>();
-        Yaml yaml = new Yaml();
-        FileInputStream istr = new FileInputStream(rulesFile);
-        List<Object> list = (List<Object>)yaml.load(istr);
-        istr.close();
-        for (Object obj : list) {
-            if (obj instanceof String) {
-                rules.add((BaseRule)Class.forName((String)obj).newInstance());
-            }
-            else {
-                throw new Exception("Don't know what to do with " + obj);
-            }
-        }
+        rules = RulesTestHelper.loadRules(rulesFile);
     }
 
     @Before
