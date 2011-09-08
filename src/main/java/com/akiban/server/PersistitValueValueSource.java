@@ -39,9 +39,9 @@ public final class PersistitValueValueSource implements ValueSource
 
     public void attach(Value value)
     {
-        assert value.isStreamMode();
         this.value = value;
         clear();
+        value.setStreamMode(true);
     }
 
     // ValueSource interface
