@@ -57,3 +57,21 @@ CREATE TABLE types
   a_year year,
   a_text text
 ) engine=akibandb;
+
+CREATE TABLE types_i
+(
+  a_int int, PRIMARY KEY(a_int),
+  a_uint int unsigned, INDEX(a_uint),
+  a_float float, INDEX(a_float),
+  a_ufloat float unsigned, INDEX(a_ufloat),
+  a_double double, INDEX(a_double),
+  a_udouble double unsigned, INDEX(a_udouble),
+  a_decimal decimal(5,2), INDEX(a_decimal),
+  a_udecimal decimal(5,2) unsigned, INDEX(a_udecimal),
+  a_varchar varchar(16), INDEX(a_varchar),
+  a_date date, INDEX(a_date),
+  a_time time, INDEX(a_time),
+  a_datetime datetime, INDEX(a_datetime),
+  a_timestamp timestamp, INDEX(a_timestamp),
+  a_year year, INDEX(a_year)
+) engine=akibandb;
