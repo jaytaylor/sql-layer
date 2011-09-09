@@ -1,0 +1,6 @@
+SelectQuery@3a51127a
+  ResultSet@2094257f[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date]
+    Filter@5e29c58e[COALESCE(user.orders.order_date,currentDate()) > Cast(2011-01-01 AS DATE NOT NULL)]
+      JoinNode@8691dee(LEFT_JOIN[user.customers.cid == user.orders.cid])
+        TableSource@2d2bf892(user.customers)
+        TableSource@21cc5069(user.orders)

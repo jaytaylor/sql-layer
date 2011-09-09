@@ -45,6 +45,7 @@ import java.util.*;
  */
 public class ASTToStatement extends BaseRule
 {
+    @Override
     public PlanNode apply(PlanNode plan) {
         DMLStatementNode stmt = ((AST)plan).getStatement();
         try {
@@ -649,9 +650,8 @@ public class ASTToStatement extends BaseRule
         }
         else
            throw new UnsupportedSQLException("Unsuported condition", condition);
-        conditions.add(new FunctionCondition(functionName, 
-                                             new ArrayList<ExpressionNode>(operands),
-                                             condition.getType(), condition));
+        conditions.add(new LogicalFunctionCondition(functionName, operands,
+                                                    condition.getType(), condition));
     }
 
     /** LIMIT / OFFSET */

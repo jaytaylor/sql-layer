@@ -1,0 +1,6 @@
+SelectQuery@1664023c
+  ResultSet@7fcebc9f[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date]
+    Filter@5dc1ac46[or(user.orders.order_date < Cast(2000-01-01 AS DATE NOT NULL),user.customers.name == Jones)]
+      JoinNode@561557c0(LEFT_JOIN[user.customers.cid == user.orders.cid])
+        TableSource@13342a67(user.customers)
+        TableSource@45cbda0a(user.orders)
