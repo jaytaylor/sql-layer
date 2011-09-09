@@ -24,12 +24,17 @@ import com.akiban.sql.optimizer.BoundNodeToString;
 import com.akiban.sql.optimizer.Grouper;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.OperatorCompilerTest;
-import com.akiban.sql.optimizer.SimplifiedDeleteStatement;
-import com.akiban.sql.optimizer.SimplifiedInsertStatement;
-import com.akiban.sql.optimizer.SimplifiedQuery;
-import com.akiban.sql.optimizer.SimplifiedSelectQuery;
-import com.akiban.sql.optimizer.SimplifiedUpdateStatement;
 import com.akiban.sql.optimizer.SubqueryFlattener;
+import com.akiban.sql.optimizer.simplified.SimplifiedQuery;
+import com.akiban.sql.optimizer.simplified.SimplifiedDeleteStatement;
+import com.akiban.sql.optimizer.simplified.SimplifiedInsertStatement;
+import com.akiban.sql.optimizer.simplified.SimplifiedSelectQuery;
+import com.akiban.sql.optimizer.simplified.SimplifiedUpdateStatement;
+import com.akiban.sql.optimizer.plan.AST;
+import com.akiban.sql.optimizer.plan.PlanNode;
+import com.akiban.sql.optimizer.plan.PlanToString;
+import com.akiban.sql.optimizer.rule.ASTToStatement;
+import com.akiban.sql.optimizer.rule.AggregateMapper;
 import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.DeleteNode;
@@ -47,6 +52,7 @@ import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 
 import java.util.*;
+import java.io.FileReader;
 
 /** Standalone testing. */
 public class Tester
@@ -57,7 +63,7 @@ public class Tester
         BIND, COMPUTE_TYPES,
         BOOLEAN_NORMALIZE, FLATTEN_SUBQUERIES,
         GROUP, GROUP_REWRITE, 
-        SIMPLIFY, SIMPLIFY_REORDER, OPERATORS
+        SIMPLIFY, SIMPLIFY_REORDER, PLAN_0, PLAN_1, PLAN_2, OPERATORS
     }
 
     List<Action> actions;
@@ -163,6 +169,21 @@ public class Tester
                         System.out.println(query);
                 }
                 break;
+            case PLAN_0:
+            case PLAN_1:
+            case PLAN_2:
+                {
+                    PlanNode plan = new AST((DMLStatementNode)stmt);
+                    if (action != Action.PLAN_0) {
+                        plan = new ASTToStatement().apply(plan);
+                    }
+                    if ((action != Action.PLAN_0) &&
+                        (action != Action.PLAN_1)) {
+                        plan = new AggregateMapper().apply(plan);
+                    }
+                    System.out.println(PlanToString.of(plan));
+                }
+                break;
             case OPERATORS:
                 {
                     Object compiled = operatorCompiler.compile(new PostgresSessionTracer(1, false),
@@ -212,10 +233,32 @@ public class Tester
             operatorCompiler.addView(view);
     }
 
+    public static String maybeFile(String sql) throws Exception {
+        if (!sql.startsWith("@"))
+            return sql;
+        FileReader reader = null;
+        try {
+            reader = new FileReader(sql.substring(1));
+            StringBuilder str = new StringBuilder();
+            char[] buf = new char[128];
+            while (true) {
+                int nc = reader.read(buf);
+                if (nc < 0) break;
+                str.append(buf, 0, nc);
+            }
+            return str.toString();
+        }
+        finally {
+            if (reader != null) {
+                reader.close();
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             System.out.println("Usage: Tester " +
-                               "[-clone] [-bind] [-types] [-boolean] [-flatten] [-group] [-group-rewrite] [-simplify] [-simplify-reorder] [-operators]" +
+                               "[-clone] [-bind] [-types] [-boolean] [-flatten] [-group] [-group-rewrite] [-simplify] [-simplify-reorder] [-plan-{0,1,2}] [-operators]" +
                                "[-tree] [-print] [-print-bound]" +
                                "[-schema ddl] [-view ddl]..." +
                                "sql...");
@@ -243,9 +286,9 @@ public class Tester
                 else if ("-bind".equals(arg))
                     tester.addAction(Action.BIND);
                 else if ("-schema".equals(arg))
-                    tester.setSchema(args[i++]);
+                    tester.setSchema(maybeFile(args[i++]));
                 else if ("-view".equals(arg))
-                    tester.addView(args[i++]);
+                    tester.addView(maybeFile(args[i++]));
                 else if ("-types".equals(arg))
                     tester.addAction(Action.COMPUTE_TYPES);
                 else if ("-boolean".equals(arg))
@@ -260,6 +303,12 @@ public class Tester
                     tester.addAction(Action.SIMPLIFY);
                 else if ("-simplify-reorder".equals(arg))
                     tester.addAction(Action.SIMPLIFY_REORDER);
+                else if ("-plan-0".equals(arg))
+                    tester.addAction(Action.PLAN_0);
+                else if ("-plan-1".equals(arg))
+                    tester.addAction(Action.PLAN_1);
+                else if ("-plan-2".equals(arg))
+                    tester.addAction(Action.PLAN_2);
                 else if ("-operators".equals(arg))
                     tester.addAction(Action.OPERATORS);
                 else if ("-repeat".equals(arg))
@@ -269,7 +318,7 @@ public class Tester
             }
             else {
                 try {
-                    tester.process(arg);
+                    tester.process(maybeFile(arg));
                 }
                 catch (StandardException ex) {
                     System.out.flush();

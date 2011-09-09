@@ -15,12 +15,14 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.sql.optimizer.simplified.*;
+import com.akiban.sql.optimizer.simplified.SimplifiedQuery.*;
+
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.expression.UnboundExpressions;
 import com.akiban.qp.rowtype.*;
-import com.akiban.sql.optimizer.SimplifiedQuery.*;
 
 import com.akiban.sql.parser.*;
 import com.akiban.sql.compiler.*;

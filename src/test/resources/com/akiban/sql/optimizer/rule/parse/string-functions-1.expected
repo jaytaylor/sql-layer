@@ -1,0 +1,4 @@
+SelectQuery@4301ac93
+  ResultSet@22e90943[user.parent.name, upper(user.parent.name), lower(user.parent.name), upper(user.parent.name), lower(user.parent.name), ansiTrim(user.parent.name, ,null), ansiTrim(user.parent.name, ,null), ansiTrim(user.parent.name, ,null), substring(user.parent.name,1,2), getDB2Length(user.parent.name), locate(user.parent.name,bar,1)]
+    Filter@715f1f9c[]
+      TableSource@1c1474ea(user.parent)

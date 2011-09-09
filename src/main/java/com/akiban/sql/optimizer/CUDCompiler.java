@@ -32,10 +32,14 @@ import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.sql.optimizer.OperatorCompiler.Result;
-import com.akiban.sql.optimizer.SimplifiedQuery.ColumnExpressionToIndex;
-import com.akiban.sql.optimizer.SimplifiedQuery.SimpleExpression;
-import com.akiban.sql.optimizer.SimplifiedQuery.TableNode;
-import com.akiban.sql.optimizer.SimplifiedQuery.TableNodeOffsets;
+import com.akiban.sql.optimizer.simplified.SimplifiedDeleteStatement;
+import com.akiban.sql.optimizer.simplified.SimplifiedInsertStatement;
+import com.akiban.sql.optimizer.simplified.SimplifiedTableStatement;
+import com.akiban.sql.optimizer.simplified.SimplifiedUpdateStatement;
+import com.akiban.sql.optimizer.simplified.SimplifiedQuery.SimpleExpression;
+import com.akiban.sql.optimizer.simplified.SimplifiedQuery.TableNode;
+import com.akiban.sql.optimizer.simplified.SimplifiedQuery.TableNodeOffsets;
+import com.akiban.sql.optimizer.simplified.SimplifiedQuery.ColumnExpressionToIndex;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.DeleteNode;
 import com.akiban.sql.parser.InsertNode;
@@ -156,16 +160,16 @@ public class CUDCompiler {
         Map<TableNode,Integer> tableOffsets = new HashMap<TableNode,Integer>(1);
         tableOffsets.put(stmt.getTargetTable(), 0);
         
-        ColumnExpressionToIndex fieldOffsets = new TableNodeOffsets(tableOffsets);
+        ColumnExpressionToIndex fieldOffsets = (ColumnExpressionToIndex) new TableNodeOffsets(tableOffsets);
         if (stmt.getFieldOffset() != null) {
-            fieldOffsets = stmt.getFieldOffset();
+            fieldOffsets = (ColumnExpressionToIndex) stmt.getFieldOffset();
         }
         
         Expression[] updates = new Expression[targetRowType.nFields()];
         for (SimplifiedTableStatement.TargetColumn targetColumn : 
                  stmt.getTargetColumns()) {
             updates[targetColumn.getColumn().getPosition()] =
-                targetColumn.getValue().generateExpression(fieldOffsets);
+                targetColumn.getValue().generateExpression((com.akiban.sql.optimizer.simplified.SimplifiedQuery.ColumnExpressionToIndex) fieldOffsets);
         }
         
         return new ExpressionRow(targetRowType, UndefBindings.only(), updates);
