@@ -15,11 +15,11 @@
 
 package com.akiban.server.types.conversion;
 
-import com.akiban.server.Quote;
+import com.akiban.server.error.InconvertibleTypesException;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
-import com.akiban.util.AkibanAppender;
 
 abstract class AbstractConverter {
     public final void convert(ValueSource source, ValueTarget target) {
@@ -31,13 +31,10 @@ abstract class AbstractConverter {
         }
     }
 
-    protected abstract void doConvert(ValueSource source, ValueTarget target);
-    protected abstract AkType nativeConversionType();
-
-    protected final RuntimeException unsupportedConversion(ValueSource source) {
-        StringBuilder sb = new StringBuilder("can't convert to type ").append(nativeConversionType());
-        sb.append(" from ").append(source.getConversionType()).append(": ");
-        source.appendAsString(AkibanAppender.of(sb), Quote.NONE);
-        return new TypeConversionException(sb.toString());
+    protected InvalidOperationException unsupportedConversion(AkType sourceType) {
+        throw new InconvertibleTypesException(sourceType, targetConversionType());
     }
+
+    protected abstract void doConvert(ValueSource source, ValueTarget target);
+    protected abstract AkType targetConversionType();
 }

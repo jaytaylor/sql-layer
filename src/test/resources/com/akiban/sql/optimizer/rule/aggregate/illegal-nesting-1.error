@@ -1,0 +1,1 @@
+com.akiban.server.error.UnsupportedSQLException: UNSUPPORTED_SQL: Unsupported SQL Cannot nest aggregate functions : MAX(MIN(name))

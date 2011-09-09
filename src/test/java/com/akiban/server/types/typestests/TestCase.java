@@ -18,8 +18,8 @@ package com.akiban.server.types.typestests;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.conversion.LongConverter;
+import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.util.ByteSource;
 import com.akiban.util.Undef;
 
@@ -181,7 +181,7 @@ public final class TestCase<T> {
     }
 
     private String niceLongValue() {
-        LongConverter longConverter = Converters.getLongConverter(type);
+        LongExtractor longConverter = Extractors.getLongExtractor(type);
         if (longConverter != null) {
             return "(" + valLong + "->\"" + longConverter.asString(valLong) + "\")";
         }

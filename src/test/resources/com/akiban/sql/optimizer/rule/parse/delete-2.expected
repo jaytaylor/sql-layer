@@ -1,0 +1,3 @@
+DeleteStatement@ad4d66b(user.child)
+  Filter@1b49105b[user.child.name == Fred]
+    TableSource@59d0d45b(user.child)

@@ -232,7 +232,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                     else
                         readyForQuery();
                 } catch (Exception e) {
-                    logger.warn("Unexpected error in query: {}", e.getMessage());
+                    final String message = (e.getMessage() == null ? e.getClass().toString() : e.getMessage()); 
+                    logger.warn("Unexpected error in query", e);
                     if (errorMode == ErrorMode.NONE) throw e;
                     else {
                         messenger.beginMessage(PostgresMessenger.ERROR_RESPONSE_TYPE);
@@ -241,10 +242,14 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                         messenger.write('C');
                         messenger.writeString(ErrorCode.UNEXPECTED_EXCEPTION.getFormattedValue());
                         messenger.write('M');
-                        messenger.writeString(e.getMessage());
+                        messenger.writeString(message);
                         messenger.write(0);
                         messenger.sendMessage(true);
                     }
+                    if (errorMode == ErrorMode.EXTENDED)
+                        ignoreUntilSync = true;
+                    else
+                        readyForQuery();
                 }
                 
                 finally {

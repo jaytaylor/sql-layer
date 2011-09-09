@@ -15,14 +15,14 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.TestBase;
+
 import org.junit.Before;
 import org.junit.Test;
 import static junit.framework.Assert.*;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
-
-import com.akiban.sql.TestBase;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -32,7 +32,7 @@ import java.io.File;
 import java.util.Collection;
 
 @RunWith(Parameterized.class)
-public class PostgresServerSelectIT extends PostgresServerITBase
+public class PostgresServerSelectIT extends PostgresServerITBase implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(PostgresServerITBase.RESOURCE_DIR, "select");
@@ -49,13 +49,19 @@ public class PostgresServerSelectIT extends PostgresServerITBase
         return TestBase.sqlAndExpectedAndParams(RESOURCE_DIR);
     }
 
-    public PostgresServerSelectIT(String caseName, String sql, String expected, 
+    public PostgresServerSelectIT(String caseName, String sql, 
+                                  String expected, String error,
                                   String[] params) {
-        super(caseName, sql, expected, params);
+        super(caseName, sql, expected, error, params);
     }
 
     @Test
     public void testQuery() throws Exception {
+        generateAndCheckResult();
+    }
+
+    @Override
+    public String generateResult() throws Exception {
         StringBuilder data = new StringBuilder();
         PreparedStatement stmt = connection.prepareStatement(sql);
         if (params != null) {
@@ -67,7 +73,13 @@ public class PostgresServerSelectIT extends PostgresServerITBase
                     stmt.setString(i + 1, param);
             }
         }
-        ResultSet rs = stmt.executeQuery();
+        ResultSet rs;
+        try {
+            rs = stmt.executeQuery();
+        }
+        catch (Exception ex) {
+            return ex.getMessage();
+        }
         ResultSetMetaData md = rs.getMetaData();
         for (int i = 1; i <= md.getColumnCount(); i++) {
             if (i > 1) data.append('\t');
@@ -82,6 +94,12 @@ public class PostgresServerSelectIT extends PostgresServerITBase
             data.append('\n');
         }
         stmt.close();
-        assertEquals("Difference in " + caseName, expected, data.toString());
+        return data.toString();
     }
+
+    @Override
+    public void checkResult(String result) {
+        assertEquals(caseName, expected, result);
+    }
+
 }

@@ -27,6 +27,7 @@ import java.math.BigInteger;
 public abstract class AkibanAppender {
     public abstract void append(Object o);
     public abstract void append(char c);
+    public abstract void append(long l);
     public abstract void append(String s);
     public abstract Appendable getAppendable();
     public abstract ValueTarget asValueTarget();
@@ -67,6 +68,11 @@ public abstract class AkibanAppender {
         @Override
         public void append(char c) {
             pr.print(c);
+        }
+
+        @Override
+        public void append(long l) {
+            pr.print(l);
         }
 
         @Override
@@ -124,6 +130,11 @@ public abstract class AkibanAppender {
         @Override
         public void append(char c) {
             sb.append(c);
+        }
+
+        @Override
+        public void append(long l) {
+            sb.append(l);
         }
 
         @Override

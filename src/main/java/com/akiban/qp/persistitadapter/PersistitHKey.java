@@ -40,6 +40,15 @@ class PersistitHKey implements HKey
         return hKey.hashCode();
     }
 
+    // Comparable interface
+
+    @Override
+    public int compareTo(HKey that)
+    {
+        return this.hKey.compareTo(((PersistitHKey)that).hKey);
+    }
+
+
     // HKey interface
 
     public int segments()

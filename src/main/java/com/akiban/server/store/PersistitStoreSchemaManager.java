@@ -427,9 +427,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 if(!newRefTable.getGroup().equals(newGroup)) {
                     throw new TableNotInGroupException (refTableName);
                 }
+                // TODO: Checked in newIndex.addColumn(newIndexCol) ?  
                 if(lastTable != null && !inSameBranch(lastTable, newRefTable)) {
                     throw new BranchingGroupIndexException (
-                            newRefTable.getGroup().getGroupTable().getName(),
+                            index.getIndexName().getName(),
                             lastTable.getName(), newRefTable.getName());
                 }
                 lastTable = newRefTable;

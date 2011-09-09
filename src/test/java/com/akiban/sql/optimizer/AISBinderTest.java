@@ -15,18 +15,22 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.sql.TestBase;
+
 import com.akiban.sql.parser.StatementNode;
 
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
+import static junit.framework.Assert.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 
 @RunWith(Parameterized.class)
-public class AISBinderTest extends OptimizerTestBase
+public class AISBinderTest extends OptimizerTestBase implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "binding");
@@ -36,16 +40,26 @@ public class AISBinderTest extends OptimizerTestBase
         return sqlAndExpected(RESOURCE_DIR);
     }
 
-    public AISBinderTest(String caseName, String sql, String expected) {
-        super(caseName, sql, expected);
+    public AISBinderTest(String caseName, String sql, String expected, String error) {
+        super(caseName, sql, expected, error);
     }
 
     @Test
     public void testBinding() throws Exception {
         loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
+        generateAndCheckResult();
+    }
+
+    @Override
+    public String generateResult() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
         binder.bind(stmt);
-        assertEqualsWithoutHashes(caseName, expected, getTree(stmt));
+        return getTree(stmt);
+    }
+    
+    @Override
+    public void checkResult(String result) throws IOException {
+        assertEqualsWithoutHashes(caseName, expected, result);
     }
 
 }

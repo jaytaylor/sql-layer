@@ -15,12 +15,16 @@
 
 package com.akiban.server.types.conversion;
 
+import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Set;
+
+import static com.akiban.server.types.AkType.*;
 
 public final class Converters {
 
@@ -38,16 +42,21 @@ public final class Converters {
             target.putNull();
         } else {
             AkType conversionType = target.getConversionType();
+            if (conversionType == null || conversionType == UNSUPPORTED || conversionType == NULL) {
+                throw new InconvertibleTypesException(source.getConversionType(), conversionType);
+            }
             get(conversionType).convert(source, target);
         }
         return target;
     }
 
-    public static LongConverter getLongConverter(AkType type) {
-        AbstractConverter converter = get(type);
-        if (converter instanceof LongConverter)
-            return (LongConverter) converter;
-        return null;
+    public static boolean isConversionAllowed(AkType sourceType, AkType targetType) {
+        // NULL -> * is always allowed, UNSUPPORTED -> * is always disallowed, else A -> A is allowed
+        if (sourceType == AkType.NULL || (sourceType != AkType.UNSUPPORTED && sourceType.equals(targetType))) {
+            return true;
+        }
+        Set<AkType> allowedTargets = readOnlyLegalConversions.get(sourceType);
+        return allowedTargets != null && allowedTargets.contains(targetType);
     }
 
     // for use in this class
@@ -58,24 +67,99 @@ public final class Converters {
 
     private static Map<AkType,AbstractConverter> createConvertersMap() {
         Map<AkType,AbstractConverter> result = new EnumMap<AkType, AbstractConverter>(AkType.class);
-        result.put(AkType.DATE, ConvertersForDates.DATE);
-        result.put(AkType.DATETIME, ConvertersForDates.DATETIME);
-        result.put(AkType.DECIMAL, ConverterForBigDecimal.INSTANCE);
-        result.put(AkType.DOUBLE, ConverterForDouble.SIGNED);
-        result.put(AkType.FLOAT, ConverterForFloat.SIGNED);
-        result.put(AkType.INT, ConverterForLong.INT);
-        result.put(AkType.LONG, ConverterForLong.LONG);
-        result.put(AkType.VARCHAR, ConverterForString.STRING);
-        result.put(AkType.TEXT, ConverterForString.TEXT);
-        result.put(AkType.TIME, ConvertersForDates.TIME);
-        result.put(AkType.TIMESTAMP, ConvertersForDates.TIMESTAMP);
-        result.put(AkType.U_BIGINT, ConverterForBigInteger.INSTANCE);
-        result.put(AkType.U_DOUBLE, ConverterForDouble.UNSIGNED);
-        result.put(AkType.U_FLOAT, ConverterForFloat.UNSIGNED);
-        result.put(AkType.U_INT, ConverterForLong.U_INT);
-        result.put(AkType.VARBINARY, ConverterForVarBinary.INSTANCE);
-        result.put(AkType.YEAR, ConvertersForDates.YEAR);
+        result.put(DATE, LongConverter.DATE);
+        result.put(DATETIME, LongConverter.DATETIME);
+        result.put(DECIMAL, ConverterForBigDecimal.INSTANCE);
+        result.put(DOUBLE, ConverterForDouble.SIGNED);
+        result.put(FLOAT, ConverterForFloat.SIGNED);
+        result.put(INT, LongConverter.INT);
+        result.put(LONG, LongConverter.LONG);
+        result.put(VARCHAR, ConverterForString.STRING);
+        result.put(TEXT, ConverterForString.TEXT);
+        result.put(TIME, LongConverter.TIME);
+        result.put(TIMESTAMP, LongConverter.TIMESTAMP);
+        result.put(U_BIGINT, ConverterForBigInteger.INSTANCE);
+        result.put(U_DOUBLE, ConverterForDouble.UNSIGNED);
+        result.put(U_FLOAT, ConverterForFloat.UNSIGNED);
+        result.put(U_INT, LongConverter.U_INT);
+        result.put(VARBINARY, ConverterForVarBinary.INSTANCE);
+        result.put(YEAR, LongConverter.YEAR);
         return result;
+    }
+
+    private static Map<AkType,Set<AkType>> createLegalConversionsMap() {
+        
+        ConversionsBuilder builder = new ConversionsBuilder(NULL, UNSUPPORTED);
+        
+        builder.alias(VARCHAR, TEXT);
+        builder.alias(DOUBLE, U_DOUBLE);
+        builder.alias(FLOAT, U_FLOAT);
+        builder.alias(LONG, INT);
+        builder.alias(LONG, U_INT);
+        
+        builder.legalConversions(VARCHAR,
+                DOUBLE,
+                FLOAT,
+                LONG,
+                U_BIGINT,
+                TIME,
+                TIMESTAMP,
+                YEAR,
+                DATE,
+                DATETIME,
+                DECIMAL,
+                VARBINARY
+        );
+        builder.legalConversions(U_BIGINT,
+                VARCHAR
+        );
+        builder.legalConversions(DECIMAL,
+                VARCHAR,
+                LONG,
+                FLOAT,
+                DOUBLE
+        );
+        builder.legalConversions(DOUBLE,
+                FLOAT,
+                DECIMAL,
+                LONG,
+                VARCHAR
+        );
+        builder.legalConversions(FLOAT,
+                DOUBLE,
+                DECIMAL,
+                LONG,
+                VARCHAR
+        );
+        builder.legalConversions(LONG,
+                DOUBLE,
+                FLOAT,
+                U_BIGINT,
+                DECIMAL,
+                VARCHAR
+        );
+        builder.legalConversions(DATE,
+                VARCHAR,
+                LONG
+        );
+        builder.legalConversions(DATETIME,
+                VARCHAR,
+                LONG
+        );
+        builder.legalConversions(TIME,
+                VARCHAR,
+                LONG
+        );
+        builder.legalConversions(TIMESTAMP,
+                VARCHAR,
+                LONG
+        );
+        builder.legalConversions(YEAR,
+                VARCHAR,
+                LONG
+        );
+
+        return builder.result();
     }
     
     private Converters() {}
@@ -86,4 +170,9 @@ public final class Converters {
      * thread safety comes solely from the happens-before relationship of the class instantiation.
      */
     private static final Map<AkType,AbstractConverter> readOnlyConvertersMap = createConvertersMap();
+
+    /**
+     * Mapping of each source AkType to the set of AkTypes it can be converted to. Unsynchronized, so read only.
+     */
+    private static final Map<AkType,Set<AkType>> readOnlyLegalConversions = createLegalConversionsMap();
 }

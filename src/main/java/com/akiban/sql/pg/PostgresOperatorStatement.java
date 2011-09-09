@@ -23,7 +23,6 @@ import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.util.Command;
 
 import java.util.*;
 import java.io.IOException;
@@ -77,7 +76,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                 messenger.beginMessage(PostgresMessenger.DATA_ROW_TYPE);
                 messenger.writeShort(ncols);
                 for (int i = 0; i < ncols; i++) {
-                    Object field = target.convertFromSource(row.bindSource(i, bindings));
+                    Object field = target.convertFromSource(row.eval(i));
                     PostgresType type = columnTypes.get(i);
                     byte[] value = type.encodeValue(field,
                                                     messenger.getEncoding(),
@@ -95,9 +94,6 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                 if ((maxrows > 0) && (nrows >= maxrows))
                     break;
             }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
         }
         finally {
             cursor.close();

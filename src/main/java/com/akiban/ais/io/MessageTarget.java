@@ -84,7 +84,13 @@ public class MessageTarget extends Target
         if (s == null) {
             payload.putInt(NULL_STRING);
         } else {
-            byte[] bytes = s.getBytes();
+            byte[] bytes;
+            try {
+                bytes = s.getBytes("UTF-8");
+            }
+            catch (java.io.UnsupportedEncodingException ex) {
+                throw new RuntimeException(ex);
+            }
             payload.putInt(bytes.length);
             payload.put(bytes);
         }
