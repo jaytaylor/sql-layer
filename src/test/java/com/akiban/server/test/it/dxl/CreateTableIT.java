@@ -33,6 +33,7 @@ import com.akiban.server.error.ParseException;
 import com.akiban.server.error.UnsupportedCharsetException;
 import com.akiban.server.error.UnsupportedDataTypeException;
 import com.akiban.server.error.UnsupportedIndexDataTypeException;
+import com.akiban.server.error.UnsupportedIndexPrefixException;
 import com.akiban.server.error.UnsupportedIndexSizeException;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Assert;
@@ -391,17 +392,17 @@ public final class CreateTableIT extends ITBase {
 
     @Test // bug713387
     public void pkeyTooLarge() throws InvalidOperationException {
-        createExpectException(UnsupportedIndexSizeException.class, "test", "t", "id varchar(2050) key");
+        createExpectException(UnsupportedIndexSizeException.class, "test", "t6", "id varchar(2050) key");
     }
 
     @Test // bug760202
     public void prefixIndexes() throws InvalidOperationException {
         // Prefixes on unique not supported, expect rejection until they are
-        createExpectException(UnsupportedIndexSizeException.class, "test", "t", "v varchar(10), unique index(v(3))");
+        createExpectException(UnsupportedIndexPrefixException.class, "test", "t7", "v varchar(10), unique index(v(3))");
         // Allow non-unique as we will still be correct, just storing more than required
         createTable("test", "t2", "v varchar(10), index(v(3))");
         // But reject when what we'll be storing (the column) is too large
-        createExpectException(UnsupportedIndexSizeException.class, "test", "t3", "v varchar(2050), index(v(128))");
+        createExpectException(UnsupportedIndexSizeException.class, "test", "t8", "v varchar(2050), index(v(128))");
     }
 
     @Test
