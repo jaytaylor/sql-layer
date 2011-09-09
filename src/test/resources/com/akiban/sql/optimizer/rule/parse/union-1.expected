@@ -1,0 +1,8 @@
+SelectQuery@101a0ae6
+  Union@1dc18a4c
+    ResultSet@d5e92d7[user.parent.name]
+      Filter@3bfa681c[]
+        TableSource@34c92507(user.parent)
+    ResultSet@19e09a4[user.customers.name]
+      Filter@2e8aeed0[]
+        TableSource@2344b18f(user.customers)

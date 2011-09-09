@@ -36,8 +36,9 @@ public class PostgresServerInstrumentedIT extends PostgresServerSelectIT {
     public PostgresServerInstrumentedIT(String caseName, 
                                         String sql, 
                                         String expected, 
+                                        String error,
                                         String[] params) {
-        super(caseName, sql, expected, params);
+        super(caseName, sql, expected, error, params);
     }
 
 }

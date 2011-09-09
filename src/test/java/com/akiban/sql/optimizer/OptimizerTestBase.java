@@ -41,8 +41,9 @@ import java.io.StringWriter;
 @Ignore
 public class OptimizerTestBase extends ASTTransformTestBase
 {
-    protected OptimizerTestBase(String caseName, String sql, String expected) {
-        super(caseName, sql, expected);
+    protected OptimizerTestBase(String caseName, String sql, 
+                                String expected, String error) {
+        super(caseName, sql, expected, error);
     }
 
     public static final File RESOURCE_DIR = 
