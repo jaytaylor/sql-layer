@@ -15,10 +15,8 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.row.ProductRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
-import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
@@ -28,14 +26,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-class Product_NestedLoops extends PhysicalOperator
+class Map_NestedLoops extends PhysicalOperator
 {
     // Object interface
 
     @Override
     public String toString()
     {
-        return String.format("%s(%s x %s)", getClass().getSimpleName(), outerType, innerType);
+        return getClass().getSimpleName();
     }
 
     // PhysicalOperator interface
@@ -47,17 +45,10 @@ class Product_NestedLoops extends PhysicalOperator
     }
 
     @Override
-    public ProductRowType rowType()
-    {
-        return productType;
-    }
-
-    @Override
     public void findDerivedTypes(Set<RowType> derivedTypes)
     {
         innerInputOperator.findDerivedTypes(derivedTypes);
         outerInputOperator.findDerivedTypes(derivedTypes);
-        derivedTypes.add(productType);
     }
 
     @Override
@@ -72,28 +63,20 @@ class Product_NestedLoops extends PhysicalOperator
     @Override
     public String describePlan()
     {
-        return describePlan(outerInputOperator);
+        return String.format("%s\n%s", describePlan(outerInputOperator), describePlan(innerInputOperator));
     }
 
     // Project_Default interface
 
-    public Product_NestedLoops(PhysicalOperator outerInputOperator,
-                               PhysicalOperator innerInputOperator,
-                               RowType outerType,
-                               RowType innerType,
-                               int inputBindingPosition)
+    public Map_NestedLoops(PhysicalOperator outerInputOperator,
+                           PhysicalOperator innerInputOperator,
+                           int inputBindingPosition)
     {
         ArgumentValidation.notNull("outerInputOperator", outerInputOperator);
         ArgumentValidation.notNull("innerInputOperator", innerInputOperator);
-        ArgumentValidation.notNull("outerType", outerType);
-        ArgumentValidation.notNull("innerType", innerType);
         ArgumentValidation.isGTE("inputBindingPosition", inputBindingPosition, 0);
         this.outerInputOperator = outerInputOperator;
         this.innerInputOperator = innerInputOperator;
-        this.outerType = outerType;
-        this.innerType = innerType;
-        this.productType = outerType.schema().newProductType(outerType, innerType);
-        this.branchType = productType.branchType();
         this.inputBindingPosition = inputBindingPosition;
     }
 
@@ -105,10 +88,6 @@ class Product_NestedLoops extends PhysicalOperator
 
     private final PhysicalOperator outerInputOperator;
     private final PhysicalOperator innerInputOperator;
-    private final RowType branchType;
-    private final RowType outerType;
-    private final RowType innerType;
-    private final ProductRowType productType;
     private final int inputBindingPosition;
 
     // Inner classes
@@ -129,34 +108,24 @@ class Product_NestedLoops extends PhysicalOperator
         {
             Row outputRow = null;
             while (!closed && outputRow == null) {
-                outputRow = nextProductRow();
+                outputRow = nextOutputRow();
                 if (outputRow == null) {
                     Row row = outerInput.next();
                     if (row == null) {
                         close();
                     } else {
-                        RowType rowType = row.rowType();
-                        if (rowType == outerType) {
-                            Row branchRow = row.subRow(branchType);
-                            assert branchRow != null : row;
-                            if (outerBranchRow.isNull() || !branchRow.hKey().equals(outerBranchRow.get().hKey())) {
-                                if (LOG.isDebugEnabled()) {
-                                    LOG.debug("Product_NestedLoops: branch row {}", row);
-                                }
-                                outerBranchRow.set(branchRow);
-                                innerRows.newBranchRow(branchRow);
-                            }
-                            outerRow.set(row);
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("Product_NestedLoops: restart inner loop using current branch row");
-                            }
-                            innerRows.resetForCurrentBranchRow();
+                        outerRow.set(row);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Map_NestedLoops: restart inner loop using current branch row");
                         }
+                        innerInput.close();
+                        bindings.set(inputBindingPosition, row);
+                        innerInput.open(bindings);
                     }
                 }
             }
             if(LOG.isDebugEnabled()) {
-                LOG.debug("Product_NestedLoops: yield {}", outputRow);
+                LOG.debug("Map_NestedLoops: yield {}", outputRow);
             }
             return outputRow;
         }
@@ -175,86 +144,37 @@ class Product_NestedLoops extends PhysicalOperator
         Execution(StoreAdapter adapter)
         {
             this.outerInput = outerInputOperator.cursor(adapter);
-            this.innerRows = new InnerRows(innerInputOperator.cursor(adapter));
+            this.innerInput = innerInputOperator.cursor(adapter);
         }
 
         // For use by this class
 
-        private Row nextProductRow()
+        private Row nextOutputRow()
         {
-            Row productRow = null;
+            Row outputRow = null;
             if (outerRow.isNotNull()) {
-                Row innerRow = innerRows.next();
+                Row innerRow = innerInput.next();
                 if (innerRow == null) {
-                    closeInner();
+                    outerRow.set(null);
                 } else {
-                    productRow = new ProductRow(productType, outerRow.get(), innerRow);
+                    outputRow = innerRow;
                 }
             }
-            return productRow;
+            return outputRow;
         }
 
         private void closeOuter()
         {
-            closeInner();
-            outerInput.close();
-        }
-
-        private void closeInner()
-        {
             outerRow.set(null);
-            innerRows.close();
+            outerInput.close();
         }
 
         // Object state
 
         private final Cursor outerInput;
+        private final Cursor innerInput;
         private final RowHolder<Row> outerRow = new RowHolder<Row>();
-        private final RowHolder<Row> outerBranchRow = new RowHolder<Row>();
-        private final InnerRows innerRows;
         private Bindings bindings;
         private boolean closed = false;
-
-        // Inner classes
-
-        private class InnerRows
-        {
-            public InnerRows(Cursor innerInput)
-            {
-                this.innerInput = innerInput;
-            }
-
-            public Row next()
-            {
-                return scan.next();
-            }
-
-            public void resetForCurrentBranchRow()
-            {
-                scan.reset();
-            }
-
-            public void newBranchRow(Row branchRow)
-            {
-                close();
-                bindings.set(inputBindingPosition, branchRow);
-                innerInput.open(bindings);
-                rows.clear();
-                Row row;
-                while ((row = innerInput.next()) != null) {
-                    rows.add(row);
-                }
-                resetForCurrentBranchRow();
-            }
-
-            public void close()
-            {
-                innerInput.close();
-            }
-
-            private final Cursor innerInput;
-            private final RowList rows = new RowList();
-            private final RowList.Scan scan = rows.scan();
-        }
     }
 }

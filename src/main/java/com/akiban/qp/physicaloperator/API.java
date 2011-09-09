@@ -230,6 +230,15 @@ public class API
                                          sortExpressions, sortDescendings, limit);
     }
 
+    // Map
+
+    public static PhysicalOperator map_NestedLoops(PhysicalOperator outerInput,
+                                                   PhysicalOperator innerInput,
+                                                   int inputBindingPosition)
+    {
+        return new Map_NestedLoops(outerInput, innerInput, inputBindingPosition);
+    }
+
     // Execution interface
 
     public static Cursor cursor(PhysicalOperator root, StoreAdapter adapter)
