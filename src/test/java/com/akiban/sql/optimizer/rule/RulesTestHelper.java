@@ -45,7 +45,10 @@ public class RulesTestHelper
         List<BaseRule> result = new ArrayList<BaseRule>();
         for (Object obj : list) {
             if (obj instanceof String) {
-                result.add((BaseRule)Class.forName((String)obj).newInstance());
+                String cname = (String)obj;
+                if (cname.indexOf('.') < 0)
+                    cname = RulesTestHelper.class.getPackage().getName() + '.' + cname;
+                result.add((BaseRule)Class.forName(cname).newInstance());
             }
             else {
                 // TODO: Someday parse options from hash, etc.
