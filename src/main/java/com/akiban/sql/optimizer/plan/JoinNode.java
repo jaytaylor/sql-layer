@@ -109,10 +109,14 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
 
     @Override
     public void replaceInput(PlanNode oldInput, PlanNode newInput) {
-        if (left == oldInput)
+        if (left == oldInput) {
             left = (Joinable)newInput;
-        if (right == oldInput)
+            left.setOutput(this);
+        }
+        if (right == oldInput) {
             right = (Joinable)newInput;
+            right.setOutput(this);
+        }
     }
 
     @Override

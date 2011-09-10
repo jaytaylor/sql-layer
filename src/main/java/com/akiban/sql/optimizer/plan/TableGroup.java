@@ -44,4 +44,10 @@ public class TableGroup
         tables.add(use);
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16) +
+            "(" + group.getName() + ")";
+    }
+
 }
