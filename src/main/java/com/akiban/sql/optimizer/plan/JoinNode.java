@@ -126,10 +126,17 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
     
     @Override
     public String summaryString() {
-        return super.summaryString() + 
-            "(" + joinType.toString() +
-            ((joinConditions != null) ? joinConditions.toString() : "") + 
-            ")";
+        StringBuilder str = new StringBuilder(super.summaryString());
+        str.append("(");
+        str.append(joinType);
+        if (joinConditions != null)
+            str.append(joinConditions.toString());
+        if (groupJoin != null) {
+            str.append(" - ");
+            str.append(groupJoin);
+        }
+        str.append(")");
+        return str.toString();
     }
 
     @Override

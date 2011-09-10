@@ -268,10 +268,11 @@ public class FindGroupJoins extends BaseRule
     protected void findGroupJoin(TableSource childTable, JoinNode join, 
                                  List<ConditionExpression> conditions) {
         Join groupJoin = childTable.getTable().getTable().getParentJoin();
-        TableNode parentTable = childTable.getTable()
+        TableNode parentNode = childTable.getTable()
             .getTree().getNode(groupJoin.getParent());
-        if (parentTable == null) return;
-        ComparisonCondition found = null;
+        if (parentNode == null) return;
+        ComparisonCondition groupJoinCondition = null;
+        TableSource parentTable = null;
         for (ConditionExpression condition : conditions) {
             if (condition instanceof ComparisonCondition) {
                 ComparisonCondition ccond = (ComparisonCondition)condition;
@@ -282,9 +283,10 @@ public class FindGroupJoins extends BaseRule
                     ColumnSource rightSource = (ColumnSource)right;
                     if (rightSource instanceof TableSource) {
                         TableSource rightTable = (TableSource)rightSource;
-                        if (rightTable.getTable() == parentTable) {
-                            if (found == null) {
-                                found = ccond;
+                        if (rightTable.getTable() == parentNode) {
+                            if (groupJoinCondition == null) {
+                                groupJoinCondition = ccond;
+                                parentTable = rightTable;
                             }
                             else {
                                 // TODO: What we need is something
@@ -298,9 +300,29 @@ public class FindGroupJoins extends BaseRule
                 }
             }
         }
-        if (found == null) return;
-        found.setImplementation(ConditionExpression.Implementation.GROUP_JOIN);
+        if (groupJoinCondition == null) return;
+        groupJoinCondition.setImplementation(ConditionExpression.Implementation.GROUP_JOIN);
         join.setGroupJoin(groupJoin);
+        TableGroup childGroup = childTable.getGroup();
+        TableGroup parentGroup = parentTable.getGroup();
+        if (childGroup == null) {
+            childGroup = parentGroup;
+            if (childGroup == null) {
+                childGroup = new TableGroup(groupJoin.getGroup());
+                parentTable.setGroup(childGroup);
+            }
+            childTable.setGroup(childGroup);
+        }
+        else if (parentGroup == null) {
+            parentGroup = childGroup;
+            parentTable.setGroup(parentGroup);
+        }
+        else {
+            // Combining: move all to parent group.
+            for (TableSource table : childGroup.getTables()) {
+                table.setGroup(parentGroup);
+            }
+        }
     }
 
 }

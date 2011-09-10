@@ -219,6 +219,8 @@ public class Tester
             binder = new AISBinder(ais, "user");
         if (actions.indexOf(Action.OPERATORS) >= 0)
             operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, "user");
+        if (planRules != null)
+            RulesTestHelper.ensureRowDefs(ais);
     }
 
     public void addView(String sql) throws Exception {

@@ -19,6 +19,7 @@ package com.akiban.sql.optimizer.plan;
 public class TableSource extends BaseJoinable implements ColumnSource
 {
     private TableNode table;
+    private TableGroup group;
     // TODO: Add conditions, correlation name?, ...
 
     public TableSource(TableNode table) {
@@ -28,6 +29,14 @@ public class TableSource extends BaseJoinable implements ColumnSource
 
     public TableNode getTable() {
         return table;
+    }
+
+    public TableGroup getGroup() {
+        return group;
+    }
+    public void setGroup(TableGroup group) {
+        this.group = group;
+        group.addTable(this);
     }
 
     @Override
@@ -47,7 +56,15 @@ public class TableSource extends BaseJoinable implements ColumnSource
     
     @Override
     public String summaryString() {
-        return super.summaryString() + "(" + table.toString() + ")";
+        StringBuilder str = new StringBuilder(super.summaryString());
+        str.append("(");
+        str.append(table.toString());
+        if (group != null) {
+            str.append(" - ");
+            str.append(group);
+        }
+        str.append(")");
+        return str.toString();
     }
 
     @Override
