@@ -27,7 +27,6 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
     private JoinType joinType;
     private List<ConditionExpression> joinConditions;
     private Join groupJoin;
-    private ConditionExpression groupJoinCondition;
 
     public JoinNode(Joinable left, Joinable right, JoinType joinType) {
         this.left = left;
@@ -84,11 +83,13 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         this.groupJoin = groupJoin;
     }
 
+    /** Get the condition that implements groupJoin. */
     public ConditionExpression getGroupJoinCondition() {
-        return groupJoinCondition;
-    }
-    public void setGroupJoinCondition(ConditionExpression groupJoinCondition) {
-        this.groupJoinCondition = groupJoinCondition;
+        for (ConditionExpression condition : joinConditions) {
+            if (condition.getImplementation() == ConditionExpression.Implementation.GROUP_JOIN)
+                return condition;
+        }
+        return null;
     }
 
     /** Reverse operands and outer join direction if necessary. */
@@ -136,12 +137,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         super.deepCopy(map);
         left = (Joinable)left.duplicate(map);
         right = (Joinable)right.duplicate(map);
-        int pos = -1;
-        if (groupJoinCondition != null)
-            pos = joinConditions.indexOf(groupJoinCondition);
         joinConditions = duplicateList(joinConditions, map);
-        if (groupJoinCondition != null)
-            groupJoinCondition = joinConditions.get(pos);
     }
 
 }

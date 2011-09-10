@@ -53,6 +53,11 @@ public class BooleanOperationExpression extends BaseExpression
     public ConditionExpression getRight() {
         return right;
     }
+    
+    @Override
+    public Implementation getImplementation() {
+        return Implementation.NORMAL;
+    }
 
     @Override
     public boolean equals(Object obj) {

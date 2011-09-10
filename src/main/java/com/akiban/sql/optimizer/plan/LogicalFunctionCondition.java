@@ -21,7 +21,7 @@ import com.akiban.sql.parser.ValueNode;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LogicalFunctionCondition extends FunctionCondition implements ConditionExpression
+public class LogicalFunctionCondition extends FunctionCondition
 {
     // TODO: Can't use operands directly without making
     // FunctionExpression generic in <T extends ExpressionNode> for
