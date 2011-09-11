@@ -309,7 +309,8 @@ public class ASTToStatement extends BaseRule
                                                  fromSubquery.getOrderByList(),
                                                  fromSubquery.getOffset(),
                                                  fromSubquery.getFetchFirst());
-            result = new SubquerySource(subquery, fromSubquery.getExposedName());
+            result = new SubquerySource(new Subquery(subquery), 
+                                        fromSubquery.getExposedName());
         }
         else
             throw new UnsupportedSQLException("Unsupported FROM non-table", fromTable);
@@ -456,7 +457,8 @@ public class ASTToStatement extends BaseRule
                                                                     left.getSQLtype(), null),
                                                in.getType(), null));
         PlanNode subquery = new Filter(source, innerConds);
-        conditions.add(new SubqueryCondition(SubqueryCondition.Kind.EXISTS, subquery, 
+        conditions.add(new SubqueryCondition(SubqueryCondition.Kind.EXISTS, 
+                                             new Subquery(subquery),
                                              in.getType(), in));
     }
     
@@ -570,7 +572,7 @@ public class ASTToStatement extends BaseRule
                                                    subqueryNode.getType(), 
                                                    subqueryNode));
         }
-        conditions.add(new SubqueryCondition(kind, subquery, 
+        conditions.add(new SubqueryCondition(kind, new Subquery(subquery), 
                                              subqueryNode.getType(), subqueryNode));
     }
 
@@ -812,10 +814,11 @@ public class ASTToStatement extends BaseRule
         }
         else if (valueNode instanceof SubqueryNode) {
             SubqueryNode subqueryNode = (SubqueryNode)valueNode;
-            return new SubqueryExpression(toQueryForSelect(subqueryNode.getResultSet(),
-                                                           subqueryNode.getOrderByList(),
-                                                           subqueryNode.getOffset(),
-                                                           subqueryNode.getFetchFirst()),
+            PlanNode subquery = toQueryForSelect(subqueryNode.getResultSet(),
+                                                 subqueryNode.getOrderByList(),
+                                                 subqueryNode.getOffset(),
+                                                 subqueryNode.getFetchFirst());
+            return new SubqueryExpression(new Subquery(subquery),
                                           subqueryNode.getType(), subqueryNode);
         }
         else if (valueNode instanceof JavaToSQLValueNode) {
