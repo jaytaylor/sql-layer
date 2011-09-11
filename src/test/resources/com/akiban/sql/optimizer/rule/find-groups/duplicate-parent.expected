@@ -1,10 +1,10 @@
-SelectQuery@16528780
-  ResultSet@43deff3[user.parent.id, user.parent.name, user.parent.state, user.parent.id, user.parent.name, user.parent.state, user.child.id, user.child.pid, user.child.name, user.child.id, user.child.pid, user.child.name]
-    Filter@7e543cb1[]
-      JoinNode@4c5cc942(INNER_JOIN[user.child.pid == user.parent.id] - Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent)))
-        JoinNode@5fa13338(INNER_JOIN[user.child.pid == user.parent.id] - Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent)))
-          JoinNode@5029d294(INNER_JOIN)
-            TableSource@69c01ba9(user.parent - TableGroup@43582a7c(parent))
-            TableSource@514d556e(user.parent - TableGroup@2c23d275(parent))
-          TableSource@63ce15f6(user.child - TableGroup@43582a7c(parent))
-        TableSource@6f03fcaa(user.child - TableGroup@2c23d275(parent))
+SelectQuery@737371
+  ResultSet@1a001ff[user.parent.id, user.parent.name, user.parent.state, user.parent.id, user.parent.name, user.parent.state, user.child.id, user.child.pid, user.child.name, user.child.id, user.child.pid, user.child.name]
+    Filter@1e328e0[]
+      JoinNode@90c06f(INNER_JOIN[user.child.pid == user.parent.id] - TableGroupJoin@149d886(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
+        JoinNode@1267649(INNER_JOIN[user.child.pid == user.parent.id] - TableGroupJoin@1fe88d(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
+          JoinNode@dcb03b(INNER_JOIN)
+            TableSource@b60b93(user.parent - TableGroup@1b1fbf4(parent))
+            TableSource@148662(user.parent - TableGroup@1829e6f(parent))
+          TableSource@6fa9fc(user.child - TableGroupJoin@1fe88d(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
+        TableSource@100ebec(user.child - TableGroupJoin@149d886(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))

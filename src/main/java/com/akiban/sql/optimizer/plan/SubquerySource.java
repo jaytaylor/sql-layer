@@ -49,6 +49,11 @@ public class SubquerySource extends BaseJoinable implements ColumnSource
     }
 
     @Override
+    protected boolean maintainInDuplicateMap() {
+        return true;
+    }
+
+    @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
         subquery = (PlanNode)subquery.duplicate(map);

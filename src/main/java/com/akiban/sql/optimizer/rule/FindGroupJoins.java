@@ -203,44 +203,54 @@ public class FindGroupJoins extends BaseRule
             List<ConditionExpression> whereConditions = null;
             if (island.getOutput() instanceof Filter)
                 whereConditions = ((Filter)island.getOutput()).getConditions();
-            findGroupJoins(island, whereConditions);
+            findGroupJoins(island, null, whereConditions);
         }
     }
 
-    protected void findGroupJoins(Joinable joinable,
+    protected void findGroupJoins(Joinable joinable, JoinNode output,
                                   List<ConditionExpression> whereConditions) {
-        if (joinable.isJoin()) {
+        if (joinable.isTable()) {
+            TableSource table = (TableSource)joinable;
+            List<ConditionExpression> conditions = null;
+            if (output != null)
+                conditions = output.getJoinConditions();
+            if ((conditions != null) && conditions.isEmpty())
+                conditions = null;
+            if (conditions == null)
+                conditions = whereConditions;
+            TableGroupJoin tableJoin = findParentJoin(table, conditions);
+            if ((output != null) && (tableJoin != null)) {
+                output.setGroupJoin(tableJoin);
+                if (conditions == whereConditions) {
+                    ConditionExpression condition = tableJoin.getCondition();
+                    // Move down from WHERE conditions to join condition.
+                    if (output.getJoinConditions() == null)
+                        output.setJoinConditions(new ArrayList<ConditionExpression>());
+                    output.getJoinConditions().add(condition);
+                    conditions.remove(condition);
+                }
+            }
+        }
+        else if (joinable.isJoin()) {
             JoinNode join = (JoinNode)joinable;
             Joinable right = join.getRight();
             if (!join.isInnerJoin())
                 whereConditions = null;
-            if (right.isTable()) {
-                TableSource table = (TableSource)right;
-                List<ConditionExpression> conditions = join.getJoinConditions();
-                have_conds:
-                {
-                    if ((conditions == null) || conditions.isEmpty()) {
-                        if (whereConditions != null)
-                            conditions = whereConditions;
-                        else
-                            break have_conds;
-                    }
-                    findGroupJoin(table, join, conditions);
-                }
-            }
-            else
-                findGroupJoins(right, whereConditions);
-            findGroupJoins(join.getLeft(), whereConditions);
+            findGroupJoins(join.getLeft(), join, whereConditions);
+            findGroupJoins(join.getRight(), join, whereConditions);
         }
     }
 
-    protected void findGroupJoin(TableSource childTable, JoinNode join, 
-                                 List<ConditionExpression> conditions) {
+    // Find a condition among the given conditions that matches the
+    // parent join for the given table.
+    protected TableGroupJoin findParentJoin(TableSource childTable,
+                                            List<ConditionExpression> conditions) {
+        if (conditions == null) return null;
         TableNode childNode = childTable.getTable();
         Join groupJoin = childNode.getTable().getParentJoin();
-        if (groupJoin == null) return;
+        if (groupJoin == null) return null;
         TableNode parentNode = childNode.getTree().getNode(groupJoin.getParent());
-        if (parentNode == null) return;
+        if (parentNode == null) return null;
         ComparisonCondition groupJoinCondition = null;
         TableSource parentTable = null;
         for (ConditionExpression condition : conditions) {
@@ -270,36 +280,18 @@ public class FindGroupJoins extends BaseRule
                 }
             }
         }
-        if (groupJoinCondition == null) return;
-        groupJoinCondition.setImplementation(ConditionExpression.Implementation.GROUP_JOIN);
-        join.setGroupJoin(groupJoin);
-        if (conditions != join.getJoinConditions()) {
-            // Move down from WHERE conditions to join condition.
-            if (join.getJoinConditions() == null)
-                join.setJoinConditions(new ArrayList<ConditionExpression>());
-            join.getJoinConditions().add(groupJoinCondition);
-            conditions.remove(groupJoinCondition);
+        if (groupJoinCondition == null) return null;
+        TableGroup group = parentTable.getGroup();
+        if (group == null) {
+            group = childTable.getGroup();
+            if (group == null)
+                group = new TableGroup(groupJoin.getGroup());
         }
-        TableGroup childGroup = childTable.getGroup();
-        TableGroup parentGroup = parentTable.getGroup();
-        if (childGroup == null) {
-            childGroup = parentGroup;
-            if (childGroup == null) {
-                childGroup = new TableGroup(groupJoin.getGroup());
-                parentTable.setGroup(childGroup);
-            }
-            childTable.setGroup(childGroup);
+        else if (childTable.getGroup() != null) {
+            group.merge(childTable.getGroup());
         }
-        else if (parentGroup == null) {
-            parentGroup = childGroup;
-            parentTable.setGroup(parentGroup);
-        }
-        else {
-            // Combining: move all to parent group.
-            for (TableSource table : childGroup.getTables()) {
-                table.setGroup(parentGroup);
-            }
-        }
+        return new TableGroupJoin(group, parentTable, childTable, 
+                                  groupJoinCondition, groupJoin);
     }
 
     protected static int compareColumnSources(ColumnSource c1, ColumnSource c2) {

@@ -20,6 +20,7 @@ public class TableSource extends BaseJoinable implements ColumnSource
 {
     private TableNode table;
     private TableGroup group;
+    private TableGroupJoin parentJoin;
     // TODO: Add conditions, correlation name?, ...
 
     public TableSource(TableNode table) {
@@ -34,9 +35,16 @@ public class TableSource extends BaseJoinable implements ColumnSource
     public TableGroup getGroup() {
         return group;
     }
-    public void setGroup(TableGroup group) {
+    protected void setGroup(TableGroup group) {
         this.group = group;
-        group.addTable(this);
+    }
+
+    public TableGroupJoin getParentJoin() {
+        return parentJoin;
+    }
+    protected void setParentJoin(TableGroupJoin parentJoin) {
+        this.parentJoin = parentJoin;
+        this.group = parentJoin.getGroup();
     }
 
     @Override
@@ -59,7 +67,11 @@ public class TableSource extends BaseJoinable implements ColumnSource
         StringBuilder str = new StringBuilder(super.summaryString());
         str.append("(");
         str.append(table.toString());
-        if (group != null) {
+        if (parentJoin != null) {
+            str.append(" - ");
+            str.append(parentJoin);
+        }
+        else if (group != null) {
             str.append(" - ");
             str.append(group);
         }

@@ -1,8 +1,8 @@
-SelectQuery@72f6f1b6
-  ResultSet@32771eb1[user.parent.id, user.parent.name, user.parent.state, user.child.id, user.child.pid, user.child.name, user.child.id, user.child.pid, user.child.name]
-    Filter@2a801059[]
-      JoinNode@3db158db(INNER_JOIN[user.child.pid == user.parent.id] - Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent)))
-        JoinNode@4640b181(INNER_JOIN[user.child.pid == user.parent.id] - Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent)))
-          TableSource@4145b02f(user.parent - TableGroup@4631ff23(parent))
-          TableSource@7c6576d5(user.child - TableGroup@4631ff23(parent))
-        TableSource@695cd9c0(user.child - TableGroup@4631ff23(parent))
+SelectQuery@1f82982
+  ResultSet@16d2633[user.parent.id, user.parent.name, user.parent.state, user.child.id, user.child.pid, user.child.name, user.child.id, user.child.pid, user.child.name]
+    Filter@e70e30[]
+      JoinNode@154864a(INNER_JOIN[user.child.pid == user.parent.id] - TableGroupJoin@3c9217(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
+        JoinNode@9b42e6(INNER_JOIN[user.child.pid == user.parent.id] - TableGroupJoin@14520eb(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
+          TableSource@1742700(user.parent - TableGroup@acb158(parent))
+          TableSource@1af33d6(user.child - TableGroupJoin@14520eb(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
+        TableSource@17431b9(user.child - TableGroupJoin@3c9217(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))

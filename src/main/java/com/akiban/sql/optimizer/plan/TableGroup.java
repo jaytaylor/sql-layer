@@ -17,37 +17,69 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Group;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /** A set of tables with common group joins.
  */
-public class TableGroup
+public class TableGroup extends BasePlanElement
 {
     private Group group;
-    private List<TableSource> tables;
+    private Set<TableSource> tables;
+    private List<TableGroupJoin> joins;
 
     public TableGroup(Group group) {
         this.group = group;
-        tables = new ArrayList<TableSource>();
+        tables = new HashSet<TableSource>();
+        joins = new ArrayList<TableGroupJoin>();
     }
 
     public Group getGroup() {
         return group;
     }
 
-    public List<TableSource> getTables() {
+    public Set<TableSource> getTables() {
         return tables;
     }
 
-    public void addTable(TableSource use) {
-        tables.add(use);
+    public List<TableGroupJoin> getJoins() {
+        return joins;
+    }
+
+    public void addJoin(TableGroupJoin join) {
+        joins.add(join);
+        tables.add(join.getParent());
+        tables.add(join.getChild());
+    }
+
+    public void merge(TableGroup other) {
+        assert (group == other.group);
+        for (TableGroupJoin join : other.joins) {
+            join.setGroup(this);
+            join.getParent().setGroup(this);
+            join.getChild().setGroup(this);
+            addJoin(join);
+        }
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16) +
             "(" + group.getName() + ")";
+    }
+
+    @Override
+    protected boolean maintainInDuplicateMap() {
+        return true;
+    }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        tables = duplicateSet(tables, map);
+        joins = duplicateList(joins, map);
     }
 
 }

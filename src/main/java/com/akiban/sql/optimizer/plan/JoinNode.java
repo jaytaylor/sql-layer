@@ -15,7 +15,6 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.ais.model.Join;
 import com.akiban.qp.physicaloperator.API.JoinType;
 
 import java.util.*;
@@ -26,7 +25,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
     private Joinable left, right;
     private JoinType joinType;
     private List<ConditionExpression> joinConditions;
-    private Join groupJoin;
+    private TableGroupJoin groupJoin;
 
     public JoinNode(Joinable left, Joinable right, JoinType joinType) {
         this.left = left;
@@ -76,10 +75,10 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         this.joinConditions = joinConditions;
     }
 
-    public Join getGroupJoin() {
+    public TableGroupJoin getGroupJoin() {
         return groupJoin;
     }
-    public void setGroupJoin(Join groupJoin) {
+    public void setGroupJoin(TableGroupJoin groupJoin) {
         this.groupJoin = groupJoin;
     }
 
