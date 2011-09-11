@@ -27,11 +27,15 @@ public abstract class BaseDuplicatable implements Duplicatable, Cloneable
         return duplicate(new DuplicateMap());
     }
 
+    protected boolean maintainInDuplicateMap() {
+        return false;
+    }
+
     @Override
     public Duplicatable duplicate(DuplicateMap map) {
         BaseDuplicatable copy;
         try {
-            if (this instanceof DuplicatableOnce) {
+          if (maintainInDuplicateMap()) {
                 copy = map.get(this);
                 if (copy != null)
                     return copy;

@@ -132,6 +132,12 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
     }
 
     @Override
+    protected boolean maintainInDuplicateMap() {
+        // Index and join are likely to be pointed to elsewhere.
+        return (implementation != Implementation.NORMAL);
+    }
+
+    @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
         left = (ExpressionNode)left.duplicate();
