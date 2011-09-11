@@ -152,7 +152,7 @@ public class FindGroupJoins extends BaseRule
     }
 
     // Second pass: put adjacent inner joined tables together in
-    // right-deep ascending ordinal order.
+    // left-deep ascending-ordinal order. E.g. (CO)I.
     protected void reorderJoins(List<Joinable> islands) {
         for (int i = 0; i < islands.size(); i++) {
             Joinable island = islands.get(i);
