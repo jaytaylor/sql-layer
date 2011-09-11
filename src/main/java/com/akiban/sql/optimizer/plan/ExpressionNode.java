@@ -20,7 +20,7 @@ import com.akiban.sql.parser.ValueNode;
 
 import com.akiban.qp.expression.Expression;
 
-public interface ExpressionNode extends Duplicatable
+public interface ExpressionNode extends PlanElement
 {
     public DataTypeDescriptor getSQLtype();
     public ValueNode getSQLsource();
