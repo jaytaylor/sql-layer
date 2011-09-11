@@ -32,7 +32,7 @@ public abstract class BaseDuplicatable implements Duplicatable, Cloneable
     public Duplicatable duplicate(DuplicateMap map) {
         BaseDuplicatable copy;
         try {
-          if (maintainInDuplicateMap()) {
+            if (maintainInDuplicateMap()) {
                 copy = map.get(this);
                 if (copy != null)
                     return copy;
