@@ -18,6 +18,7 @@ package com.akiban.server.test.it.qp;
 import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
 import org.junit.Test;
@@ -124,24 +125,72 @@ public class Map_NestedLoopsIT extends PhysicalOperatorITBase
     }
 
     @Test
-    public void testJoin()
+    public void testInnerJoin()
     {
-        // customer order join, done as a general join
+        // customer order inner join, done as a general join
+        PhysicalOperator project = project_Default(
+            select_HKeyOrdered(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(orderRowType)),
+                orderRowType,
+                compare(field(1) /* order.cid */, Comparison.EQ, boundField(0, 0) /* customer.cid */)),
+            orderRowType,
+            Arrays.asList(boundField(0, 0) /* customer.cid */, field(0) /* order.oid */));
         PhysicalOperator plan =
             map_NestedLoops(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(customerRowType)),
-                project_Default(
-                    select_HKeyOrdered(
-                        filter_Default(
-                            groupScan_Default(coi),
-                            Collections.singleton(orderRowType)),
-                        orderRowType,
-                        compare(field(1) /* order.cid */, Comparison.EQ, variable(0))),
-                    orderRowType,
-                    Arrays.asList(field(1), variable(0))),
+                project,
                 0);
-        dumpToAssertion(plan);
+        RowType projectRowType = project.rowType();
+        RowBase[] expected = new RowBase[]{
+            row(projectRowType, 1L, 100L),
+            row(projectRowType, 1L, 101L),
+            row(projectRowType, 2L, 200L),
+            row(projectRowType, 2L, 201L),
+            row(projectRowType, 3L, 300L),
+            row(projectRowType, 4L, 400L),
+            row(projectRowType, 4L, 401L),
+        };
+        compareRows(expected, cursor(plan, adapter));
+    }
+
+    @Test
+    public void testOuterJoin()
+    {
+        // customer order outer join, done as a general join
+        PhysicalOperator project = project_Default(
+            select_HKeyOrdered(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(orderRowType)),
+                orderRowType,
+                compare(field(1) /* order.cid */, Comparison.EQ, boundField(0, 0) /* customer.cid */)),
+            orderRowType,
+            Arrays.asList(boundField(0, 0) /* customer.cid */, field(0) /* order.oid */));
+        RowType projectRowType = project.rowType();
+        PhysicalOperator plan =
+            map_NestedLoops(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(customerRowType)),
+                project,
+                projectRowType,
+                Arrays.asList(boundField(0, 0), literal(null)),
+                0);
+        RowBase[] expected = new RowBase[]{
+            row(projectRowType, 1L, 100L),
+            row(projectRowType, 1L, 101L),
+            row(projectRowType, 2L, 200L),
+            row(projectRowType, 2L, 201L),
+            row(projectRowType, 3L, 300L),
+            row(projectRowType, 4L, 400L),
+            row(projectRowType, 4L, 401L),
+            row(projectRowType, 5L, null),
+            row(projectRowType, 6L, null),
+        };
+        compareRows(expected, cursor(plan, adapter));
     }
 }

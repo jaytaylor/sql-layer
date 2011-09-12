@@ -15,8 +15,10 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.qp.expression.Expression;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
+import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
@@ -70,13 +72,22 @@ class Map_NestedLoops extends PhysicalOperator
 
     public Map_NestedLoops(PhysicalOperator outerInputOperator,
                            PhysicalOperator innerInputOperator,
+                           RowType outerJoinRowType,
+                           List<Expression> outerJoinRowExpressions,
                            int inputBindingPosition)
     {
         ArgumentValidation.notNull("outerInputOperator", outerInputOperator);
         ArgumentValidation.notNull("innerInputOperator", innerInputOperator);
+        ArgumentValidation.isTrue("outer join specification makes sense",
+                                  (outerJoinRowType == null && outerJoinRowExpressions == null) ||
+                                  (outerJoinRowType != null &&
+                                   outerJoinRowExpressions != null &&
+                                   outerJoinRowExpressions.size() > 0));
         ArgumentValidation.isGTE("inputBindingPosition", inputBindingPosition, 0);
         this.outerInputOperator = outerInputOperator;
         this.innerInputOperator = innerInputOperator;
+        this.outerJoinRowType = outerJoinRowType;
+        this.outerJoinRowExpressions = new ArrayList<Expression>(outerJoinRowExpressions);
         this.inputBindingPosition = inputBindingPosition;
     }
 
@@ -88,6 +99,8 @@ class Map_NestedLoops extends PhysicalOperator
 
     private final PhysicalOperator outerInputOperator;
     private final PhysicalOperator innerInputOperator;
+    private final RowType outerJoinRowType;
+    private final List<Expression> outerJoinRowExpressions;
     private final int inputBindingPosition;
 
     // Inner classes
@@ -118,9 +131,7 @@ class Map_NestedLoops extends PhysicalOperator
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Map_NestedLoops: restart inner loop using current branch row");
                         }
-                        innerInput.close();
-                        bindings.set(inputBindingPosition, row);
-                        innerInput.open(bindings);
+                        startNewInnerLoop(row);
                     }
                 }
             }
@@ -155,9 +166,21 @@ class Map_NestedLoops extends PhysicalOperator
             if (outerRow.isNotNull()) {
                 Row innerRow = innerInput.next();
                 if (innerRow == null) {
-                    outerRow.set(null);
+                    if (needOuterJoinRow) {
+                        int nFields = outerJoinRowType.nFields();
+                        Object[] fields = new Object[nFields];
+                        for (int i = 0; i < nFields; i++) {
+                            fields[i] = outerJoinRowExpressions.get(i).evaluate(outerRow.get(), bindings);
+                        }
+                        outputRow = new ValuesRow(outerJoinRowType, fields);
+                        // We're about to emit an outerjoin row. Don't do it again.
+                        needOuterJoinRow = false;
+                    } else {
+                        outerRow.set(null);
+                    }
                 } else {
                     outputRow = innerRow;
+                    needOuterJoinRow = false;
                 }
             }
             return outputRow;
@@ -169,6 +192,14 @@ class Map_NestedLoops extends PhysicalOperator
             outerInput.close();
         }
 
+        private void startNewInnerLoop(Row row)
+        {
+            innerInput.close();
+            bindings.set(inputBindingPosition, row);
+            innerInput.open(bindings);
+            needOuterJoinRow = true;
+        }
+
         // Object state
 
         private final Cursor outerInput;
@@ -176,5 +207,6 @@ class Map_NestedLoops extends PhysicalOperator
         private final RowHolder<Row> outerRow = new RowHolder<Row>();
         private Bindings bindings;
         private boolean closed = false;
+        private boolean needOuterJoinRow;
     }
 }

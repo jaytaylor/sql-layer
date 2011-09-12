@@ -60,14 +60,12 @@ public abstract class AbstractRow implements Row
     {
         assert references >= 0 : this;
         references++;
-        // System.out.println(String.format("%s: share %s", references, this));
     }
 
     @Override
     public final boolean isShared()
     {
         assert references >= 1 : this;
-        // System.out.println(String.format("%s: isShared %s", references, this));
         return references > 1;
     }
 
@@ -75,7 +73,6 @@ public abstract class AbstractRow implements Row
     public final void release()
     {
         references--;
-        // System.out.println(String.format("%s: release %s", references, this));
     }
 
     @Override
