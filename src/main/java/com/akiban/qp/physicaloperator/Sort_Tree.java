@@ -66,7 +66,7 @@ class Sort_Tree extends PhysicalOperator
         return describePlan(inputOperator);
     }
 
-    // Sort_InsertionLimited interface
+    // Sort_Tree interface
 
     public Sort_Tree(PhysicalOperator inputOperator, RowType sortType, API.Ordering ordering)
     {
@@ -92,8 +92,10 @@ class Sort_Tree extends PhysicalOperator
         @Override
         public void open(Bindings bindings)
         {
+            assert closed;
             input.open(bindings);
             this.bindings = bindings;
+            closed = false;
         }
 
         @Override
@@ -119,6 +121,7 @@ class Sort_Tree extends PhysicalOperator
                 input.close();
                 if (output != null) {
                     output.close();
+                    output = null;
                 }
                 closed = true;
             }
@@ -138,6 +141,6 @@ class Sort_Tree extends PhysicalOperator
         private final Cursor input;
         private Cursor output;
         private Bindings bindings;
-        private boolean closed = false;
+        private boolean closed = true;
     }
 }
