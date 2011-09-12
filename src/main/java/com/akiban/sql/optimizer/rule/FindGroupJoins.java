@@ -207,7 +207,15 @@ public class FindGroupJoins extends BaseRule
                 nonTables.add(joinable);
         }
         joinables.clear();
-        for (List<TableSource> group : groups.values()) {
+        // Make order of groups predictable.
+        List<Group> keys = new ArrayList(groups.keySet());
+        Collections.sort(keys, new Comparator<Group>() {
+                                 public int compare(Group g1, Group g2) {
+                                     return g1.getName().compareTo(g2.getName());
+                                 }
+                             });
+        for (Group gkey : keys) {
+            List<TableSource> group = groups.get(gkey);
             Collections.sort(group, new Comparator<TableSource>() {
                                  public int compare(TableSource t1, TableSource t2) {
                                      return compareTableSources(t1, t2);
