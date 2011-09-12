@@ -1,0 +1,7 @@
+SelectQuery@727f3b8a
+  ResultSet@7f1e1bbf[user.customers.cid, user.customers.name]
+    Filter@11afd9cc[EXISTS Filter@3003e926[user.customers.name == VALUES[0]]]
+      TableSource@50bfd66a(user.customers)
+
+Filter@3003e926[user.customers.name == VALUES[0]]
+  ExpressionsSource@6295f290[[Smith], [Jones], [Sanchez]]
