@@ -44,7 +44,7 @@ public class AISBuilderTest
         Assert.assertEquals(0, 
                 builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
-
+    
     @Test
     public void testSingleTableNoGroups()
     {
@@ -1058,7 +1058,7 @@ public class AISBuilderTest
         builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
         builder.index("test", "c", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("test", "c", Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, 0);
+        builder.indexColumn("test", "c", Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
         builder.userTable("test", "o");
         builder.column("test", "o", "oid", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "o", "cid", 1, "int", 0L, 0L, false, false, null, null);
@@ -1073,6 +1073,7 @@ public class AISBuilderTest
         builder.groupIndexColumn("coi", "name_date", "test", "o",  "date", 1);
         builder.groupingIsComplete();
 
+        builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
         Assert.assertEquals(0, 
                 builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
         
@@ -1110,14 +1111,14 @@ public class AISBuilderTest
         builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
         builder.index("test", "c", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("test", "c", "pk", "id", 0, true, 0);
+        builder.indexColumn("test", "c", "pk", "id", 0, true, null);
         
         builder.userTable("test", "o");
         builder.column("test", "o", "oid", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "o", "cid", 1, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "o", "date", 2, "int", 0L, 0L, false, false, null, null);
         builder.index("test", "o", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("test", "o", "pk", "oid", 0, true, 0);
+        builder.indexColumn("test", "o", "pk", "oid", 0, true, null);
         builder.joinTables("c/id/o/cid", "test", "c", "test", "o");
         builder.joinColumns("c/id/o/cid", "test", "c", "id", "test", "o", "cid");
 
@@ -1179,14 +1180,14 @@ public class AISBuilderTest
         builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
         builder.index("test", "c", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("test", "c", "pk", "id", 0, true, 0);
+        builder.indexColumn("test", "c", "pk", "id", 0, true, null);
 
         builder.userTable("test", "o");
         builder.column("test", "o", "oid", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "o", "cid", 1, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "o", "date", 2, "int", 0L, 0L, false, false, null, null);
         builder.index("test", "o", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("test", "o", "pk", "oid", 0, true, 0);
+        builder.indexColumn("test", "o", "pk", "oid", 0, true, null);
         
         builder.joinTables("c/id/o/cid", "test", "c", "test", "o");
         builder.joinColumns("c/id/o/cid", "test", "c", "id", "test", "o", "cid");

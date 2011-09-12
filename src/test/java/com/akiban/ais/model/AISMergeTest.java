@@ -87,7 +87,7 @@ public class AISMergeTest {
         b.userTable(SCHEMA, TABLE);
         b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
         b.index(SCHEMA, TABLE, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, TABLE, "PRIMARY", "c1", 0, true, 0);
+        b.indexColumn(SCHEMA, TABLE, "PRIMARY", "c1", 0, true, null);
         b.basicSchemaIsComplete();
         AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
         t = merge.merge().getAIS();
@@ -109,7 +109,7 @@ public class AISMergeTest {
         b.userTable(SCHEMA, TABLE);
         b.column(SCHEMA, TABLE, "c1", 0, "int", (long)0, (long)0, false, false, null, null);
         b.index(SCHEMA, TABLE, "c1", true, Index.UNIQUE_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, TABLE, "c1", "c1", 0, true, 0);
+        b.indexColumn(SCHEMA, TABLE, "c1", "c1", 0, true, null);
         
         AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
         t = merge.merge().getAIS();
@@ -134,7 +134,7 @@ public class AISMergeTest {
         b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
         b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
         b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, 0);
+        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
         b.basicSchemaIsComplete();
         b.createGroup("FRED", SCHEMA, "_akiban_t1");
         b.addTableToGroup("FRED", SCHEMA, TABLE);
@@ -171,7 +171,7 @@ public class AISMergeTest {
         b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
         b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
         b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, 0);
+        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
         b.basicSchemaIsComplete();
         b.createGroup("FRED", SCHEMA, "_akiban_t1");
         b.addTableToGroup("FRED", SCHEMA, TABLE);
@@ -222,7 +222,7 @@ public class AISMergeTest {
         b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
         b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
         b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, 0);
+        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
         b.basicSchemaIsComplete();
         b.createGroup("FRED", SCHEMA, "_akiban_t1");
         b.addTableToGroup("FRED", SCHEMA, TABLE);
@@ -235,7 +235,7 @@ public class AISMergeTest {
         b.userTable(SCHEMA, "t3");
         b.column(SCHEMA, "t3", "c1", 0, "int", 0L, 0L, false, false, null, null);
         b.index(SCHEMA, "t3", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, "t3", "pk", "c1", 0, true, 0);
+        b.indexColumn(SCHEMA, "t3", "pk", "c1", 0, true, null);
         b.createGroup("DOUG", SCHEMA, "_akiban_t3");
         b.addTableToGroup("DOUG", SCHEMA, "t3");
         // table 2 : join to wrong table. 
@@ -260,7 +260,7 @@ public class AISMergeTest {
         b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
         b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
         b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, 0);
+        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
         b.basicSchemaIsComplete();
         b.createGroup("FRED", SCHEMA, "_akiban_t1");
         b.addTableToGroup("FRED", SCHEMA, TABLE);
@@ -275,7 +275,7 @@ public class AISMergeTest {
         b.userTable(SCHEMA, "t1");
         b.column(SCHEMA, "t1", "c5", 0, "int", 0L, 0L, false, false, null, null);
         b.index(SCHEMA, "t1", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, "t1", "pk", "c5", 0, true, 0);
+        b.indexColumn(SCHEMA, "t1", "pk", "c5", 0, true, null);
         b.createGroup("DOUG", SCHEMA, "_akiban_t1");
         b.addTableToGroup("DOUG", SCHEMA, "t1");
         // table 2 : join to wrong table. 
@@ -301,7 +301,7 @@ public class AISMergeTest {
         b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
         b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
         b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, 0);
+        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
         b.basicSchemaIsComplete();
         b.createGroup("FRED", SCHEMA, "_akiban_t1");
         b.addTableToGroup("FRED", SCHEMA, TABLE);
@@ -315,7 +315,7 @@ public class AISMergeTest {
         b.userTable(SCHEMA, "t1");
         b.column(SCHEMA, "t1", "c1", 0, "int", 0L, 0L, false, false, null, null);
         b.index(SCHEMA, "t1", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, "t1", "pk", "c1", 0, true, 0);
+        b.indexColumn(SCHEMA, "t1", "pk", "c1", 0, true, null);
         b.createGroup("DOUG", SCHEMA, "_akiban_t1");
         b.addTableToGroup("DOUG", SCHEMA, "t1");
         // table 2 : join to wrong table. 
@@ -346,7 +346,7 @@ public class AISMergeTest {
         b.userTable(SCHEMA, TABLE);
         b.column(SCHEMA, TABLE, "c1", 0, "BIGINT", 0L, 0L, false, false, null, null);
         b.index(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, 0);
+        b.indexColumn(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
         b.basicSchemaIsComplete();
         b.createGroup(TABLE, SCHEMA, "_akiban_t1");
         b.addTableToGroup(TABLE, SCHEMA, TABLE);
@@ -384,7 +384,7 @@ public class AISMergeTest {
         b.userTable(SCHEMA, TABLE);
         b.column(SCHEMA, TABLE, "c1", 0, "BIGINT", 0L, 0L, false, false, null, null);
         b.index(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, 0);
+        b.indexColumn(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
         b.basicSchemaIsComplete();
         b.createGroup(TABLE, SCHEMA, "_akiban_t1");
         b.addTableToGroup(TABLE, SCHEMA, TABLE);
