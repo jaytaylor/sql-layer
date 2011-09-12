@@ -1,1 +1,1 @@
-com.akiban.server.error.UnsupportedSQLException: UNSUPPORTED_SQL: Unsupported SQL ORDER BY non integer constant : 'constant'
+com.akiban.server.error.OrderByNonIntegerConstant: ORDER_BY_NON_INTEGER_CONSTANT: ORDER BY non integer constant: 'constant'

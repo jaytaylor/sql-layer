@@ -12,12 +12,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+
 package com.akiban.server.error;
 
-import com.akiban.sql.parser.QueryTreeNode;
-
-public class UnsupportedSQLException extends BaseSQLException {
-    public UnsupportedSQLException(String msg, QueryTreeNode sql) {
-        super(ErrorCode.UNSUPPORTED_SQL, msg, sql);
+public final class OrderByIntegerOutOfRange extends InvalidOperationException {
+    public OrderByIntegerOutOfRange(int index, int limit) {
+        super(ErrorCode.ORDER_BY_INTEGER_OUT_OF_RANGE, index, limit);
     }
 }

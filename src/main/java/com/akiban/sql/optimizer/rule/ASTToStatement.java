@@ -36,6 +36,8 @@ import com.akiban.qp.physicaloperator.API.JoinType;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ParseException;
 import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.error.OrderByNonIntegerConstant;
+import com.akiban.server.error.OrderByIntegerOutOfRange;
 
 import com.akiban.qp.expression.Comparison;
 
@@ -217,13 +219,11 @@ public class ASTToStatement extends BaseRule
                     if (value instanceof Long) {
                         int i = ((Long)value).intValue();
                         if ((i <= 0) || (i > results.size()))
-                            throw new UnsupportedSQLException("ORDER BY index out of range", 
-                                                              expression.getSQLsource());
+                            throw new OrderByIntegerOutOfRange(i, results.size());
                         expression = results.get(i-1).getExpression();
                     }
                     else
-                        throw new UnsupportedSQLException("ORDER BY non integer constant",
-                                                          expression.getSQLsource());
+                        throw new OrderByNonIntegerConstant(expression.getSQLsource());
                 }
                 sorts.add(new OrderByExpression(expression,
                                                 orderByColumn.isAscending()));
