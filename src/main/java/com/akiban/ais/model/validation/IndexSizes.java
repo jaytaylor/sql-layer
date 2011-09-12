@@ -23,7 +23,6 @@ import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Table;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.encoding.EncoderFactory;
@@ -90,6 +89,13 @@ class IndexSizes implements AISValidation {
                     if (!index.leafMostTable().hKey().containsColumn(column)) {
                         fullKeySize += getMaxKeyStorageSize((column));
                     }
+
+                    // Reject prefix indexes until supported (bug760202)
+                    if(index.isUnique() && iColumn.getIndexedLength() != null) {
+                        output.reportFailure(new AISValidationFailure (
+                                new UnsupportedIndexPrefixException (index.leafMostTable().getName(), 
+                                        index.getIndexName().getName())));
+                    }
                 }
                 if (fullKeySize > MAX_INDEX_STORAGE_SIZE) {
                     output.reportFailure(new AISValidationFailure(
@@ -98,7 +104,7 @@ class IndexSizes implements AISValidation {
             }
         }
     }
-                
+
     private long getMaxKeyStorageSize(final Column column) {
         final Type type = column.getType();
         return EncoderFactory.valueOf(type.encoding(), type).getMaxKeyStorageSize(column);
