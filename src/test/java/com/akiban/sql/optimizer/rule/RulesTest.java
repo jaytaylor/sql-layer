@@ -25,6 +25,8 @@ import com.akiban.sql.optimizer.plan.PlanToString;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 
+import com.akiban.ais.model.AkibanInformationSchema;
+
 import org.junit.Before;
 import org.junit.Test;
 import static junit.framework.Assert.*;
@@ -48,7 +50,7 @@ public class RulesTest extends OptimizerTestBase implements TestBase.GenerateAnd
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "rule");
 
-    protected File rulesFile, schemaFile;
+    protected File rulesFile, schemaFile, indexFile;
 
     @Parameters
     public static Collection<Object[]> statements() throws Exception {
@@ -61,12 +63,16 @@ public class RulesTest extends OptimizerTestBase implements TestBase.GenerateAnd
             File rulesFile = new File(subdir, "rules.yml");
             File schemaFile = new File(subdir, "schema.ddl");
             if (rulesFile.exists() && schemaFile.exists()) {
+                File indexFile = new File(subdir, "group.idx");
+                if (!indexFile.exists())
+                    indexFile = null;
                 for (Object[] args : sqlAndExpected(subdir)) {
-                    Object[] nargs = new Object[args.length+2];
+                    Object[] nargs = new Object[args.length+3];
                     nargs[0] = subdir.getName() + "/" + args[0];
                     nargs[1] = rulesFile;
                     nargs[2] = schemaFile;
-                    System.arraycopy(args, 1, nargs, 3, args.length-1);
+                    nargs[3] = indexFile;
+                    System.arraycopy(args, 1, nargs, 4, args.length-1);
                     result.add(nargs);
                 }
             }
@@ -74,11 +80,12 @@ public class RulesTest extends OptimizerTestBase implements TestBase.GenerateAnd
         return result;
     }
 
-    public RulesTest(String caseName, File rulesFile, File schemaFile,
+    public RulesTest(String caseName, File rulesFile, File schemaFile, File indexFile,
                      String sql, String expected, String error) {
         super(caseName, sql, expected, error);
         this.rulesFile = rulesFile;
         this.schemaFile = schemaFile;
+        this.indexFile = indexFile;
     }
 
     protected List<BaseRule> rules;
@@ -90,7 +97,10 @@ public class RulesTest extends OptimizerTestBase implements TestBase.GenerateAnd
 
     @Before
     public void loadDDL() throws Exception {
-        RulesTestHelper.ensureRowDefs(loadSchema(schemaFile));
+        AkibanInformationSchema ais = loadSchema(schemaFile);
+        if (indexFile != null)
+            OptimizerTestBase.loadGroupIndexes(ais, indexFile);
+        RulesTestHelper.ensureRowDefs(ais);
     }
 
     @Test
