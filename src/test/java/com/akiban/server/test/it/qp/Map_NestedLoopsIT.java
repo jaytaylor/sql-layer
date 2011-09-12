@@ -16,6 +16,7 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.expression.Comparison;
+import com.akiban.qp.expression.Expression;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
@@ -93,6 +94,24 @@ public class Map_NestedLoopsIT extends PhysicalOperatorITBase
     public void testNegativeInputBindingPosition()
     {
         map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), -1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBadOuterJoin1()
+    {
+        map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), null, Arrays.asList(field(0)), 0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBadOuterJoin2()
+    {
+        map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), customerRowType, null, 0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBadOuterJoin3()
+    {
+        map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), customerRowType, Collections.<Expression>emptyList(), 0);
     }
 
     // Test operator execution

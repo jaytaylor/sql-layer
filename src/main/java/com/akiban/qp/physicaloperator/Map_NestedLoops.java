@@ -87,7 +87,7 @@ class Map_NestedLoops extends PhysicalOperator
         this.outerInputOperator = outerInputOperator;
         this.innerInputOperator = innerInputOperator;
         this.outerJoinRowType = outerJoinRowType;
-        this.outerJoinRowExpressions = new ArrayList<Expression>(outerJoinRowExpressions);
+        this.outerJoinRowExpressions = outerJoinRowExpressions == null ? null : new ArrayList<Expression>(outerJoinRowExpressions);
         this.inputBindingPosition = inputBindingPosition;
     }
 
@@ -197,7 +197,7 @@ class Map_NestedLoops extends PhysicalOperator
             innerInput.close();
             bindings.set(inputBindingPosition, row);
             innerInput.open(bindings);
-            needOuterJoinRow = true;
+            needOuterJoinRow = outerJoinRowType != null;
         }
 
         // Object state
