@@ -16,11 +16,14 @@ package com.akiban.ais.model.validation;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Table;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.encoding.EncoderFactory;
@@ -71,6 +74,24 @@ class IndexSizes implements AISValidation {
                     }
                 }
                 if(fullKeySize > MAX_INDEX_STORAGE_SIZE) {
+                    output.reportFailure(new AISValidationFailure(
+                            new UnsupportedIndexSizeException (table.getName(), index.getIndexName().getName())));
+                }
+            }
+        }
+        
+        for (GroupTable table : ais.getGroupTables().values()) {
+            for (GroupIndex index : table.getGroupIndexes()) {
+                long hkeySize = validateHKeySize(index.leafMostTable(), output);
+                long fullKeySize = hkeySize;
+                for(IndexColumn iColumn : index.getColumns()) {
+                    final Column column = iColumn.getColumn();
+                    // Only indexed columns not in hkey contribute new information
+                    if (!index.leafMostTable().hKey().containsColumn(column)) {
+                        fullKeySize += getMaxKeyStorageSize((column));
+                    }
+                }
+                if (fullKeySize > MAX_INDEX_STORAGE_SIZE) {
                     output.reportFailure(new AISValidationFailure(
                             new UnsupportedIndexSizeException (table.getName(), index.getIndexName().getName())));
                 }
