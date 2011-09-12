@@ -28,6 +28,9 @@ public class IndexUsage extends BaseDuplicatable
     private ConditionExpression lowCondition, highCondition;
     private List<OrderByExpression> ordering;
 
+    // TODO: how successful: ordering, grouping, partial grouping, none
+    // hkey depth returned?
+
     public IndexUsage(Index index) {
         this.index = index;
     }
