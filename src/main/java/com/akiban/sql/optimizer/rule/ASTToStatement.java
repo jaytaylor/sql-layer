@@ -212,10 +212,21 @@ public class ASTToStatement extends BaseRule
         if (orderByList != null) {
             for (OrderByColumn orderByColumn : orderByList) {
                 ExpressionNode expression = toExpression(orderByColumn.getExpression());
-                // If column has a constant value, there is no need to sort on it.
-                if (!expression.isConstant())
-                    sorts.add(new OrderByExpression(expression, 
-                                                  orderByColumn.isAscending()));
+                if (expression.isConstant()) {
+                    Object value = ((ConstantExpression)expression).getValue();
+                    if (value instanceof Long) {
+                        int i = ((Long)value).intValue();
+                        if ((i <= 0) || (i > results.size()))
+                            throw new UnsupportedSQLException("ORDER BY index out of range", 
+                                                              expression.getSQLsource());
+                        expression = results.get(i-1).getExpression();
+                    }
+                    else
+                        throw new UnsupportedSQLException("ORDER BY non integer constant",
+                                                          expression.getSQLsource());
+                }
+                sorts.add(new OrderByExpression(expression,
+                                                orderByColumn.isAscending()));
             }
         }
 
