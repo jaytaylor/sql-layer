@@ -34,6 +34,7 @@ import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -88,6 +89,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
         beforeChildRowType = schema.userTableRowType(userTable(beforeChild));
         childRowType = schema.userTableRowType(userTable(child));
         afterChildRowType = schema.userTableRowType(userTable(afterChild));
+        parentPidIndexType = indexType(parent, "pid");
         group = groupTable(ancestor);
         db = new NewRow[]{
             // case 1: one row of each type (except child)
@@ -472,6 +474,47 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
         compareRows(expected, cursor(plan, adapter));
     }
 
+    // After the original fix to bug 837706 was committed, the XXX1 query, using a large data set, produced failures.
+    // The problem was that an index scan produced only partially hkey-ordered input to the flatten. It was hkey
+    // ordered under the parent type, but the parent rows themselves were in index order.
+    @Test
+    public void testNotCompletelyHKeyOrdered()
+    {
+        PhysicalOperator plan =
+            flatten_HKeyOrdered(
+                branchLookup_Default(
+                    indexScan_Default(
+                        parentPidIndexType,
+                        true,
+                        null),
+                    group,
+                    parentPidIndexType,
+                    parentRowType,
+                    LookupOption.DISCARD_INPUT),
+                parentRowType,
+                childRowType,
+                LEFT_JOIN,
+                KEEP_PARENT);
+        RowType pcRowType = plan.rowType();
+        RowBase[] expected = new RowBase[]{
+            row(parentRowType, 42L, 4L, "p42"),
+            row(pcRowType, 42L, 4L, "p42", null, null, null),
+            row(parentRowType, 41L, 4L, "p41"),
+            row(pcRowType, 41L, 4L, "p41", null, null, null),
+            row(parentRowType, 33L, 3L, "p3"),
+            row(beforeChildRowType, 333L, 33L, "b3"),
+            row(pcRowType, 33L, 3L, "p3", null, null, null),
+            row(parentRowType, 22L, 2L, "p2"),
+            row(pcRowType, 22L, 2L, "p2", null, null, null),
+            row(afterChildRowType, 222L, 22L, "a2"),
+            row(parentRowType, 11L, 1L, "p1"),
+            row(beforeChildRowType, 111L, 11L, "b1"),
+            row(pcRowType, 11L, 1L, "p1", null, null, null),
+            row(afterChildRowType, 111L, 11L, "a1"),
+        };
+        compareRows(expected, cursor(plan, adapter));
+    }
+
     // For use by this class
 
     private Expression selectAncestor(long aid)
@@ -491,5 +534,6 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     private RowType beforeChildRowType;
     private RowType childRowType;
     private RowType afterChildRowType;
+    private IndexRowType parentPidIndexType;
     private GroupTable group;
 }

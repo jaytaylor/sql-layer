@@ -73,7 +73,13 @@ public class PostgresServerSelectIT extends PostgresServerITBase implements Test
                     stmt.setString(i + 1, param);
             }
         }
-        ResultSet rs = stmt.executeQuery();
+        ResultSet rs;
+        try {
+            rs = stmt.executeQuery();
+        }
+        catch (Exception ex) {
+            return ex.getMessage();
+        }
         ResultSetMetaData md = rs.getMetaData();
         for (int i = 1; i <= md.getColumnCount(); i++) {
             if (i > 1) data.append('\t');
