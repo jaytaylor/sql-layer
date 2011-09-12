@@ -171,16 +171,7 @@ public class FindGroupJoins extends BaseRule
             for (int i = 0; i < joins.size(); i++) {
                 joins.set(i, reorderJoins(joins.get(i)));
             }
-            Collections.sort(joins, new Comparator<Joinable>() {
-                                 public int compare(Joinable j1, Joinable j2) {
-                                     return compareJoinables(j1, j2);
-                                 }
-                             });
-            Joinable result = joins.get(0);
-            for (int i = 1; i < joins.size(); i++) {
-                result = new JoinNode(result, joins.get(i), JoinType.INNER_JOIN);
-            }
-            return result;
+            return orderInnerJoins(joins);
         }
         else if (joinable.isJoin()) {
             JoinNode join = (JoinNode)joinable;
@@ -195,6 +186,48 @@ public class FindGroupJoins extends BaseRule
             }
         }
         return joinable;
+    }
+
+    // Make inner joins into a tree of group-tree / non-table.
+    protected Joinable orderInnerJoins(List<Joinable> joinables) {
+        Map<Group,List<TableSource>> groups = new HashMap<Group,List<TableSource>>();
+        List<Joinable> nonTables = new ArrayList<Joinable>();
+        for (Joinable joinable : joinables) {
+            if (joinable instanceof TableSource) {
+                TableSource table = (TableSource)joinable;
+                Group group = table.getTable().getGroup();
+                List<TableSource> entry = groups.get(group);
+                if (entry == null) {
+                    entry = new ArrayList<TableSource>();
+                    groups.put(group, entry);
+                }
+                entry.add(table);
+            }
+            else
+                nonTables.add(joinable);
+        }
+        joinables.clear();
+        for (List<TableSource> group : groups.values()) {
+            Collections.sort(group, new Comparator<TableSource>() {
+                                 public int compare(TableSource t1, TableSource t2) {
+                                     return compareTableSources(t1, t2);
+                                 }
+                             });
+            joinables.add(constructInnerJoins(group));
+        }
+        joinables.addAll(nonTables);
+        if (joinables.size() > 1)
+            return constructInnerJoins(joinables);
+        else
+            return joinables.get(0);
+    }
+
+    protected Joinable constructInnerJoins(List<? extends Joinable> joinables) {
+        Joinable result = joinables.get(0);
+        for (int i = 1; i < joinables.size(); i++) {
+            result = new JoinNode(result, joinables.get(i), JoinType.INNER_JOIN);
+        }
+        return result;
     }
 
     // Third pass: find join conditions corresponding to group joins.
@@ -297,11 +330,11 @@ public class FindGroupJoins extends BaseRule
     protected static int compareColumnSources(ColumnSource c1, ColumnSource c2) {
         if (c1 instanceof TableSource) {
             if (!(c2 instanceof TableSource))
-                return -1;
+                return +1;
             return compareTableSources((TableSource)c1, (TableSource)c2);
         }
         else if (c2 instanceof TableSource)
-            return +1;
+            return -1;
         else
             return 0;
     }
