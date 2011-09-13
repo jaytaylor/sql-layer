@@ -17,7 +17,8 @@ package com.akiban.sql.optimizer;
 import static com.akiban.qp.physicaloperator.API.valuesScan_Default;
 import static com.akiban.qp.physicaloperator.API.project_Table;
 
-import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -135,7 +136,7 @@ public class CUDCompiler {
     private static PhysicalOperator values_Default(OperatorCompiler compiler, SimplifiedTableStatement stmt) {
 
         List<List<SimpleExpression>>values = stmt.getValues();
-        List<ExpressionRow> exprRowList = new ArrayList<ExpressionRow>(values.size());
+        Deque<ExpressionRow> exprRowList = new ArrayDeque<ExpressionRow>(values.size());
         
         // Using valuesRowType, not UserTableRowType here because values may not be in 
         // same number or order as user table columns. Re-order and fill will be done 
@@ -150,7 +151,7 @@ public class CUDCompiler {
             }
             exprRowList.add(new ExpressionRow(rowType, UndefBindings.only(), expressions));
         }
-        return valuesScan_Default (exprRowList);
+        return valuesScan_Default (exprRowList, rowType);
         
     }
 

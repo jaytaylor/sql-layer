@@ -14,13 +14,21 @@
  */
 package com.akiban.qp.physicaloperator;
 
-import java.util.List;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Deque;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.sql.optimizer.ExpressionRow;
 
 public class ValuesScan_Default extends PhysicalOperator {
+
+    // PhysicalOperator interface
+
+    @Override
+    public RowType rowType() {
+        return rowType;
+    }
 
     @Override
     protected Cursor cursor(StoreAdapter adapter) {
@@ -33,47 +41,38 @@ public class ValuesScan_Default extends PhysicalOperator {
         return getClass().getSimpleName()  + rows;
     }
 
-    public ValuesScan_Default (List<ExpressionRow> rows) 
-    {
-        this.rows = rows;
+    public ValuesScan_Default (Collection<? extends Row> rows, RowType rowType) {
+        this.rows = new ArrayDeque<Row> (rows);
+        this.rowType = rowType;
     }
 
-    /**
-     * All the rows in the ValuesScan should have the same ValueScanRowType
-     * 
-     */
-    @Override 
-    public RowType rowType()
-    {
-        return rows.get(0).rowType();
-    }
-    private List<ExpressionRow> rows;
+    private final Deque<Row> rows;
+    private final RowType rowType;
     
     private static class Execution implements Cursor
     {
-        private List<ExpressionRow> rows;
-        private int index;
-        public Execution (List<ExpressionRow> rows) {
+        private final Deque<Row> rows;
+        private final Deque<Row> cursorRows;
+
+        public Execution (Deque<Row> rows) {
             this.rows = rows;
+            this.cursorRows = new ArrayDeque<Row>();
         }
 
         @Override
         public void close() {
-            index = rows.size() + 1;
+            cursorRows.clear();
         }
 
         @Override
         public Row next() {
-            if (index < rows.size()) { 
-                return rows.get(index++);
-            } else { 
-                return null;
-            }
+            return cursorRows.poll();
         }
 
         @Override
         public void open(Bindings bindings) {
-            index = 0;
+            cursorRows.clear();
+            cursorRows.addAll(rows);
         }
     }
 }

@@ -18,11 +18,12 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.sql.optimizer.ExpressionRow;
+
 import com.akiban.server.aggregation.AggregatorFactory;
 
 import java.util.*;
@@ -115,9 +116,9 @@ public class API
         );
     }
 
-    public static PhysicalOperator valuesScan_Default (List<ExpressionRow> rows)
+    public static PhysicalOperator valuesScan_Default (Collection<? extends Row> rows, RowType rowType)
     {
-        return new ValuesScan_Default (rows);
+        return new ValuesScan_Default (rows, rowType);
     }
     // BranchLookup
 
