@@ -52,7 +52,7 @@ public class API
                                                  RowType outputRowType,
                                                  List<Expression>projections) 
     {
-        return new Project_Table (inputOperator, inputRowType, outputRowType, projections);
+        return new Project_Default (inputOperator, inputRowType, outputRowType, projections);
     }
     // Flatten
 
