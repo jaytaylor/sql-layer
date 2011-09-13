@@ -14,8 +14,17 @@
  */
 package com.akiban.server.error;
 
-public class ColumnNotBoundException extends AkibanInternalError {
-    public ColumnNotBoundException (String columnName, String location) {
-        super (String.format("AIS User column `%s` not bound to DML at %s during compile.", columnName, location));
+public class AkibanInternalError extends RuntimeException {
+    
+    public AkibanInternalError (String message) {
+        super (message);
+    }
+    
+    public AkibanInternalError (String message, Throwable cause)  {
+        super (message, cause);
+    }
+
+    public ErrorCode getCode() { 
+        return ErrorCode.INTERNAL_ERROR;
     }
 }
