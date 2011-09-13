@@ -116,7 +116,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
     // Test assumption about ordinals
 
     @Test
-    public void ordersBeforeAddresses()
+    public void testOrdinalOrder()
     {
         assertTrue(ordinal(rRowType) < ordinal(aRowType));
         assertTrue(ordinal(aRowType) < ordinal(bRowType));

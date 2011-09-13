@@ -85,6 +85,7 @@ class Filter_Default extends PhysicalOperator
         public void open(Bindings bindings)
         {
             input.open(bindings);
+            closed = false;
         }
 
         @Override

@@ -15,7 +15,6 @@
 
 package com.akiban.qp.expression;
 
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.ColumnSelector;
 
@@ -49,6 +48,11 @@ public class API
     public static Expression variable(int position)
     {
         return new Variable(position);
+    }
+
+    public static Expression boundField(int rowPosition, int fieldPosition)
+    {
+        return new BoundField(rowPosition, fieldPosition);
     }
     
     public static Comparison EQ = Comparison.EQ;

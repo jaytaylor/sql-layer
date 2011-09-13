@@ -240,6 +240,24 @@ public class API
                                          sortExpressions, sortDescendings, limit);
     }
 
+    // Map
+
+    public static PhysicalOperator map_NestedLoops(PhysicalOperator outerInput,
+                                                   PhysicalOperator innerInput,
+                                                   int inputBindingPosition)
+    {
+        return new Map_NestedLoops(outerInput, innerInput, null, null, inputBindingPosition);
+    }
+
+    public static PhysicalOperator map_NestedLoops(PhysicalOperator outerInput,
+                                                   PhysicalOperator innerInput,
+                                                   RowType outerJoinRowType,
+                                                   List<Expression> outerJoinRowExpressions,
+                                                   int inputBindingPosition)
+    {
+        return new Map_NestedLoops(outerInput, innerInput, outerJoinRowType, outerJoinRowExpressions, inputBindingPosition);
+    }
+
     // Execution interface
 
     public static Cursor cursor(PhysicalOperator root, StoreAdapter adapter)
