@@ -141,6 +141,11 @@ public final class ToObjectValueTarget implements ValueTarget {
     }
 
     @Override
+    public void putBool(boolean value) {
+        internalPut(value, AkType.BOOL);
+    }
+
+    @Override
     public AkType getConversionType() {
         return akType;
     }
