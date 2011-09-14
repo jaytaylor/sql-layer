@@ -30,17 +30,11 @@ import com.akiban.ais.model.UserTable;
 
 import java.util.*;
 
+/** A goal for indexing: conditions on joined tables and ordering / grouping. */
 public class IndexGoal implements Comparator<IndexUsage>
 {
     // Tables already bound outside.
     private Set<TableSource> boundTables;
-
-    // The group we want to index.
-    private TableGroup group;
-    // All the tables that are joined together here, including outer
-    // join ones that can't have indexes, but might have sorting or
-    // covering.
-    private List<TableSource> tables;
 
     // All the conditions that might be indexable.
     private List<ConditionExpression> conditions;
@@ -51,7 +45,14 @@ public class IndexGoal implements Comparator<IndexUsage>
     private List<ExpressionNode> grouping;
     private List<OrderByExpression> ordering;
 
-    public IndexGoal(TableGroup group) {
+    public IndexGoal(Set<TableSource> boundTables, 
+                     List<ConditionExpression> conditions,
+                     List<ExpressionNode> grouping,
+                     List<OrderByExpression> ordering) {
+        this.boundTables = boundTables;
+        this.conditions = conditions;
+        this.grouping = grouping;
+        this.ordering = ordering;
     }
 
     /** Populate given index usage according to goal.
@@ -70,18 +71,20 @@ public class IndexGoal implements Comparator<IndexUsage>
             for (ConditionExpression condition : conditions) {
                 if (condition instanceof ComparisonCondition) {
                     ComparisonCondition ccond = (ComparisonCondition)condition;
+                    ExpressionNode comparand = null;
                     if (ccond.getOperation() == Comparison.EQ) {
                         if (indexExpression.equals(ccond.getLeft())) {
-                            otherComparand = ccond.getRight();
-                            equalityCondition = condition;
-                            break;
+                            comparand = ccond.getRight();
                         }
                         else if (indexExpression.equals(ccond.getRight())) {
-                            otherComparand = ccond.getLeft();
-                            equalityCondition = condition;
-                            break;
+                            comparand = ccond.getLeft();
                         }
                     }
+                    if ((comparand != null) && constantOrBound(comparand)) {
+                        equalityCondition = condition;
+                        otherComparand = comparand;
+                    }
+                    break;
                 }
             }
             if (equalityCondition == null)
@@ -198,6 +201,41 @@ public class IndexGoal implements Comparator<IndexUsage>
         return IndexUsage.OrderEffectiveness.NONE;
     }
 
+    protected class UnboundFinder implements ExpressionVisitor {
+        boolean found = false;
+
+        @Override
+        public boolean visitEnter(ExpressionNode n) {
+            return visit(n);
+        }
+        @Override
+        public boolean visitLeave(ExpressionNode n) {
+            return !found;
+        }
+        @Override
+        public boolean visit(ExpressionNode n) {
+            if (n instanceof ColumnExpression) {
+                if (!boundTables.contains(((ColumnExpression)n).getTable())) {
+                    found = true;
+                    return false;
+                }
+            }
+            else if (n instanceof SubqueryExpression) {
+                found = true;
+                return false;
+            }
+            return true;
+        }
+    }
+
+    /** Does the given expression have references to tables that aren't bound? */
+    protected boolean constantOrBound(ExpressionNode expression) {
+        UnboundFinder f = new UnboundFinder();
+        expression.accept(f);
+        return !f.found;
+    }
+
+    /** Get an expression form of the given index column. */
     protected ExpressionNode getIndexExpression(IndexUsage index,
                                                 IndexColumn indexColumn) {
         Column column = indexColumn.getColumn();
