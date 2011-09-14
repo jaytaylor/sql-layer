@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.server.error.InvalidOperationException;
+
 /** A join to an actual table. */
 public class TableSource extends BaseJoinable implements ColumnSource
 {
@@ -22,6 +24,7 @@ public class TableSource extends BaseJoinable implements ColumnSource
     private TableGroup group;
     private TableGroupJoin parentJoin;
     private boolean required;
+    private TableAccessPath accessPath;
 
     public TableSource(TableNode table, boolean required) {
         this.table = table;
@@ -65,6 +68,13 @@ public class TableSource extends BaseJoinable implements ColumnSource
         this.required = required;
     }
 
+    public TableAccessPath getAccessPath() {
+        return accessPath;
+    }
+    public void setAccessPath(TableAccessPath accessPath) {
+        this.accessPath = accessPath;
+    }
+
     @Override
     public String getName() {
         return table.getTable().getName().toString();
@@ -93,6 +103,10 @@ public class TableSource extends BaseJoinable implements ColumnSource
             str.append(" - ");
             str.append(group);
         }
+        if (accessPath != null) {
+            str.append(" - ");
+            str.append(accessPath);
+        }
         str.append(")");
         return str.toString();
     }
@@ -107,6 +121,9 @@ public class TableSource extends BaseJoinable implements ColumnSource
         super.deepCopy(map);
         table = map.duplicate(table);
         table.addUse(this);
+        if (accessPath != null)
+            // TODO: Fix exception.
+            throw new RuntimeException("Can't duplicate after setting access path.");
     }
 
 }

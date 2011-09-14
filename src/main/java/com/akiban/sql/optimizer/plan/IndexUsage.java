@@ -23,7 +23,7 @@ import com.akiban.ais.model.Index;
 
 import java.util.*;
 
-public class IndexUsage extends BaseDuplicatable
+public class IndexUsage extends BaseDuplicatable implements TableAccessPath
 {
     public static enum OrderEffectiveness {
         NONE, PARTIAL_GROUPED, GROUPED, SORTED
@@ -187,4 +187,29 @@ public class IndexUsage extends BaseDuplicatable
         ordering = duplicateList(ordering, map);
     }
     
+    @Override
+    public String toString() {
+        StringBuilder str = new StringBuilder(super.toString());
+        str.append("(");
+        str.append(orderEffectiveness);
+        if (equalityComparands != null) {
+            for (ExpressionNode expression : equalityComparands) {
+                str.append(", =");
+                str.append(expression);
+            }
+        }
+        if (lowComparand != null) {
+            str.append(", ");
+            str.append((lowInclusive) ? ">=" : ">");
+            str.append(lowComparand);
+        }
+        if (highComparand != null) {
+            str.append(", ");
+            str.append((highInclusive) ? "<=" : "<");
+            str.append(highComparand);
+        }
+        str.append(")");
+        return str.toString();
+    }
+
 }
