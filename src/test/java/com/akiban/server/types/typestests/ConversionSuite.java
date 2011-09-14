@@ -64,6 +64,7 @@ public final class ConversionSuite<T> {
 
     void getMismatch(int i) {
         TestCase<? extends T> testCase = testCases.get(i);
+        System.out.println(testCase);
         AkType expectedType = testCase.type();
         converters.setUp(testCase);
         testCase.put(converters.linkedTarget());

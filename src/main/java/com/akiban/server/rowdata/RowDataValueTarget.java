@@ -170,6 +170,12 @@ public final class RowDataValueTarget implements ValueTarget {
     }
 
     @Override
+    public void putBool(boolean value) {
+        checkState(AkType.BOOL);
+        recordEncoded(encodeLong(value ? 1 : 0));
+    }
+
+    @Override
     public AkType getConversionType() {
         return fieldDef == null ? AkType.UNSUPPORTED : fieldDef.getType().akType();
     }

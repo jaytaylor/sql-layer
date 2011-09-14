@@ -155,6 +155,12 @@ abstract class AbstractRowDataValueSource implements ValueSource {
     }
 
     @Override
+    public boolean getBool() {
+        checkState(AkType.BOOL);
+        return extractLong(Signage.SIGNED) != 0;
+    }
+
+    @Override
     public void appendAsString(AkibanAppender appender, Quote quote) {
         AkType type = getConversionType();
         quote.quote(appender, type);

@@ -23,11 +23,13 @@ import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.extract.ConverterTestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 @RunWith(NamedParameterizedRunner.class)
@@ -47,6 +49,7 @@ public abstract class ConversionTestBase {
 
     @Test
     @OnlyIf("isMismatch()")
+    @Ignore
     public void getMismatch() {
         suite.getMismatch(indexWithinSuite);
     }
@@ -73,6 +76,21 @@ public abstract class ConversionTestBase {
             }
         }
         return builder.asList();
+    }
+
+    protected static Collection<Parameterization> filter(
+            Collection<Parameterization> collection,
+            Predicate predicate)
+    {
+        for(Iterator<? extends Parameterization> iter = collection.iterator(); iter.hasNext(); ) {
+            Parameterization param = iter.next();
+            ConversionSuite<?> suite = (ConversionSuite) param.getArgsAsList().get(0);
+            Integer indexWithinSuite = (Integer) param.getArgsAsList().get(1);
+            if (!predicate.include(suite.testCaseAt(indexWithinSuite))) {
+                iter.remove();
+            }
+        }
+        return collection;
     }
 
     protected ConversionTestBase(ConversionSuite<?> suite, int indexWithinSuite) {
@@ -139,5 +157,7 @@ public abstract class ConversionTestBase {
         private final LinkedConversion<?> delegate;
     }
 
-
+    protected interface Predicate {
+        boolean include(TestCase<?> testCase);
+    }
 }

@@ -196,6 +196,12 @@ public final class AllowedConversionsTest {
             return akType;
         }
 
+        @Override
+        public boolean getBool() {
+            checkType(AkType.BOOL);
+            return false;
+        }
+
         private AlwaysWorkingSource(AkType akType, AkType targetType) {
             this.akType = akType;
             switch (targetType) {
@@ -310,6 +316,10 @@ public final class AllowedConversionsTest {
 
         @Override
         public void putYear(long value) {
+        }
+
+        @Override
+        public void putBool(boolean value) {
         }
 
         @Override

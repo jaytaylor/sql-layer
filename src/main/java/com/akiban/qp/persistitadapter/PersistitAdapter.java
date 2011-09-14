@@ -78,8 +78,7 @@ public class PersistitAdapter extends StoreAdapter
     @Override
     public HKey newHKey(RowType rowType)
     {
-        assert rowType instanceof UserTableRowType : rowType;
-        return new PersistitHKey(this, rowType.userTable().hKey());
+        return new PersistitHKey(this, rowType.hKey());
     }
 
     public void setTransactional(boolean transactional)

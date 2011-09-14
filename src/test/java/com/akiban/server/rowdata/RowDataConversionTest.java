@@ -133,7 +133,12 @@ public final class RowDataConversionTest extends ConversionTestBase {
                 .add(TestCase.forTime(time.getLong("-147:21:01"), b(-1472101, 3)))
                 
                 .suite();
-        return params(suite);
+        return filter(params(suite), new Predicate() {
+            @Override
+            public boolean include(TestCase<?> testCase) {
+                return testCase.type() != AkType.BOOL;
+            }
+        });
     }
 
     public RowDataConversionTest(ConversionSuite<?> suite, int indexWithinSuite) {

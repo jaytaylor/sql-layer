@@ -92,6 +92,9 @@ final class StandardTestCases {
         list.add(TestCase.forTime(0, NO_STATE));
         list.add(TestCase.forTime(1, NO_STATE));
 
+        list.add(TestCase.forBool(true, NO_STATE));
+        list.add(TestCase.forBool(false, NO_STATE));
+
         LongExtractor timestampExtractor = Extractors.getLongExtractor(AkType.TIMESTAMP);
         ConverterTestUtils.setGlobalTimezone("UTC");
         list.add(TestCase.forTimestamp(timestampExtractor.getLong("0000-00-00 00:00:00"), NO_STATE));

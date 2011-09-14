@@ -260,5 +260,10 @@ public abstract class AkibanAppender {
         public void putYear(long value) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public void putBool(boolean value) {
+            throw new UnsupportedOperationException();
+        }
     }
 }

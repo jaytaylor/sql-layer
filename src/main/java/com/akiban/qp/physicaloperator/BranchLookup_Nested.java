@@ -164,6 +164,8 @@ public class BranchLookup_Nested extends PhysicalOperator
     private final int commonSegments;
     private final int branchRootOrdinal;
 
+    // Inner classes
+
     private class Execution implements Cursor
     {
         // Cursor interface
