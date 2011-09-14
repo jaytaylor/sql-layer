@@ -49,7 +49,6 @@ public final class Update_Default implements UpdatePlannable {
     public UpdateResult run(Bindings bindings, StoreAdapter adapter) {
         int seen = 0, modified = 0;
         UPDATE_TAP.in();
-        //long start = System.currentTimeMillis();
         Cursor inputCursor = inputOperator.cursor(adapter);
         inputCursor.open(bindings);
         try {
@@ -66,8 +65,7 @@ public final class Update_Default implements UpdatePlannable {
             inputCursor.close();
             UPDATE_TAP.out();
         }
-        //long end = System.currentTimeMillis();
-        return new StandardUpdateResult(UPDATE_TAP.getDuration(), seen, modified);
+        return new StandardUpdateResult(seen, modified);
     }
 
     // Plannable interface

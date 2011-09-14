@@ -42,7 +42,6 @@ public class Delete_Default implements UpdatePlannable {
     public UpdateResult run(Bindings bindings, StoreAdapter adapter) {
         int seen = 0, modified = 0;
         DELETE_TAP.in();
-        //long start = System.currentTimeMillis();
         Cursor inputCursor = inputOperator.cursor(adapter);
         inputCursor.open(bindings);
         try {
@@ -56,9 +55,7 @@ public class Delete_Default implements UpdatePlannable {
             inputCursor.close();
             DELETE_TAP.out();
         }
-        //long end = System.currentTimeMillis();
-        return new StandardUpdateResult(DELETE_TAP.getDuration(), seen, modified);
-
+        return new StandardUpdateResult(seen, modified);
     }
 
     @Override

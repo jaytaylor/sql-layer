@@ -53,7 +53,7 @@ public final class Insert_Default implements UpdatePlannable {
             inputCursor.close();
             INSERT_TAP.out();
         }
-        return new StandardUpdateResult(INSERT_TAP.getDuration(), seen, modified);
+        return new StandardUpdateResult(seen, modified);
     }
 
     @Override

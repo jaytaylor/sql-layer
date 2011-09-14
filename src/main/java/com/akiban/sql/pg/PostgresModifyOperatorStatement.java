@@ -49,8 +49,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
 
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
-        UpdateResult updateResult;
-        updateResult = resultOperator.run(bindings, server.getStore());
+        final UpdateResult updateResult = resultOperator.run(bindings, server.getStore());
         
         LOG.debug("Statement: {}, result: {}", statementType, updateResult);
         
