@@ -1,7 +1,7 @@
 SelectQuery@7f81497d
   ResultSet@ffeef1[user.customers.cid, user.customers.name]
     Filter@22a010ba[EXISTS Subquery@3aaa3518]
-      TableSource@7c83d8be(user.customers)
+      TableSource@7c83d8be(user.customers - TableGroup@7f81497d(customers))
 
 Subquery@3aaa3518
   Filter@3aaa3518[user.customers.name == VALUES[0]]

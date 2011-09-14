@@ -39,14 +39,14 @@ public class TableSource extends BaseJoinable implements ColumnSource
     public TableGroup getGroup() {
         return group;
     }
-    protected void setGroup(TableGroup group) {
+    public void setGroup(TableGroup group) {
         this.group = group;
     }
 
     public TableGroupJoin getParentJoin() {
         return parentJoin;
     }
-    protected void setParentJoin(TableGroupJoin parentJoin) {
+    public void setParentJoin(TableGroupJoin parentJoin) {
         this.parentJoin = parentJoin;
         this.group = parentJoin.getGroup();
     }

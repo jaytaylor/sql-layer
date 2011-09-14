@@ -246,6 +246,9 @@ public class FindGroupJoins extends BaseRule
                 whereConditions = ((Filter)island.getOutput()).getConditions();
             findGroupJoins(island, null, whereConditions);
         }
+        for (Joinable island : islands) {
+            findSingleGroups(island);
+        }
     }
 
     protected void findGroupJoins(Joinable joinable, JoinNode output,
@@ -333,6 +336,23 @@ public class FindGroupJoins extends BaseRule
         }
         return new TableGroupJoin(group, parentTable, childTable, 
                                   groupJoinCondition, groupJoin);
+    }
+
+    protected void findSingleGroups(Joinable joinable) {
+        if (joinable.isTable()) {
+            TableSource table = (TableSource)joinable;
+            if (table.getGroup() == null) {
+                TableGroup group = new TableGroup(table.getTable().getTable().getGroup());
+                group.getTables().add(table);
+                table.setGroup(group);
+            }
+        }
+        else if (joinable.isJoin()) {
+            JoinNode join = (JoinNode)joinable;
+            Joinable right = join.getRight();
+            findSingleGroups(join.getLeft());
+            findSingleGroups(join.getRight());
+        }
     }
 
     protected static int compareColumnSources(ColumnSource c1, ColumnSource c2) {
