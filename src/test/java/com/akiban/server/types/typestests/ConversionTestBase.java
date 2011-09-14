@@ -23,6 +23,7 @@ import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.extract.ConverterTestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -48,6 +49,7 @@ public abstract class ConversionTestBase {
 
     @Test
     @OnlyIf("isMismatch()")
+    @Ignore
     public void getMismatch() {
         suite.getMismatch(indexWithinSuite);
     }

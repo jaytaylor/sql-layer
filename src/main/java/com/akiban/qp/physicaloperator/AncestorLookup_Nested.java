@@ -61,7 +61,7 @@ class AncestorLookup_Nested extends PhysicalOperator
     public AncestorLookup_Nested(GroupTable groupTable,
                                  RowType rowType,
                                  Collection<? extends RowType> ancestorTypes,
-                                 int hKeyBindingPosition)
+                                 int inputBindingPosition)
     {
         ArgumentValidation.notEmpty("ancestorTypes", ancestorTypes);
         // Keeping index rows not currently supported
@@ -82,7 +82,7 @@ class AncestorLookup_Nested extends PhysicalOperator
         }
         this.groupTable = groupTable;
         this.rowType = rowType;
-        this.hKeyBindingPosition = hKeyBindingPosition;
+        this.inputBindingPosition = inputBindingPosition;
         // Sort ancestor types by depth
         this.ancestorTypes = new ArrayList<RowType>(ancestorTypes);
         if (this.ancestorTypes.size() > 1) {
@@ -115,7 +115,7 @@ class AncestorLookup_Nested extends PhysicalOperator
     private final RowType rowType;
     private final List<RowType> ancestorTypes;
     private final int[] ancestorTypeDepth;
-    private final int hKeyBindingPosition;
+    private final int inputBindingPosition;
 
     // Inner classes
 
@@ -126,8 +126,12 @@ class AncestorLookup_Nested extends PhysicalOperator
         @Override
         public void open(Bindings bindings)
         {
-            HKey bindingHKey = (HKey) bindings.get(hKeyBindingPosition);
-            bindingHKey.copyTo(hKey);
+            Row rowFromBindings = (Row) bindings.get(inputBindingPosition);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("AncestorLookup_Nested: open using {}", rowFromBindings);
+            }
+            assert rowFromBindings.rowType() == rowType : rowFromBindings;
+            rowFromBindings.hKey().copyTo(hKey);
             findAncestors();
         }
 
