@@ -12,28 +12,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+package com.akiban.server.error;
 
-package com.akiban.server.types;
+import com.akiban.ais.model.TableName;
 
-public enum AkType {
-    DATE,
-    DATETIME,
-    DECIMAL,
-    DOUBLE,
-    FLOAT,
-    INT,
-    LONG,
-    VARCHAR,
-    TEXT,
-    TIME,
-    TIMESTAMP,
-    U_BIGINT,
-    U_DOUBLE,
-    U_FLOAT,
-    U_INT,
-    VARBINARY,
-    YEAR,
-    BOOL,
-    NULL,
-    UNSUPPORTED,
+public class UnsupportedIndexPrefixException extends InvalidOperationException {
+    public UnsupportedIndexPrefixException (TableName table, String index) {
+        super (ErrorCode.UNSUPPORTED_INDEX_PREFIX, table.getSchemaName(), table.getTableName(), index);
+    }
 }

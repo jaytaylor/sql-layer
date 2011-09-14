@@ -84,6 +84,7 @@ public final class Converters {
         result.put(U_INT, LongConverter.U_INT);
         result.put(VARBINARY, ConverterForVarBinary.INSTANCE);
         result.put(YEAR, LongConverter.YEAR);
+        result.put(BOOL, new ConverterForBool());
         return result;
     }
 
@@ -157,6 +158,13 @@ public final class Converters {
         builder.legalConversions(YEAR,
                 VARCHAR,
                 LONG
+        );
+        builder.legalConversions(BOOL,
+                DOUBLE,
+                FLOAT,
+                LONG,
+                VARCHAR,
+                U_BIGINT
         );
 
         return builder.result();

@@ -83,6 +83,7 @@ import com.akiban.server.error.TableNotInGroupException;
 import com.akiban.server.error.UnsupportedCharsetException;
 import com.akiban.server.error.UnsupportedDataTypeException;
 import com.akiban.server.error.UnsupportedIndexDataTypeException;
+import com.akiban.server.error.UnsupportedIndexPrefixException;
 import com.akiban.server.error.UnsupportedIndexSizeException;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
@@ -229,6 +230,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         
         final String schemaName = newTable.getName().getSchemaName();
         final UserTable finalTable = merge.getAIS().getUserTable(newTable.getName());
+        //validateIndexSizes(newTable);
         setTreeNames(finalTable);
         
         try {
@@ -271,10 +273,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         validateTableDefinition(tableDef);
         final AkibanInformationSchema newAIS = addSchemaDefToAIS(schemaDef);
         final UserTable newTable = newAIS.getUserTable(schemaName, tableName);
+        
+        //TODO: remove this (and the definition) when the AISValidate is turned on
         validateIndexSizes(newTable);
         setTreeNames(newTable);
         
-        // A dozen or two ITs need updated before can validate through this (or mostly NOT NULL
+        // TODO: A dozen or two ITs need updated before can validate through this (or mostly NOT NULL
         // primary key parts, a few modifications of frozen AIS)
         //newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
         //newAIS.freeze();
@@ -1030,7 +1034,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
                 // Reject prefix indexes until supported (bug760202)
                 if(index.isUnique() && iColumn.getIndexedLength() != null) {
-                    throw new UnsupportedIndexSizeException (table.getName(), index.getIndexName().getName());
+                    throw new UnsupportedIndexPrefixException (table.getName(), index.getIndexName().getName());
                 }
             }
             if(fullKeySize > MAX_INDEX_STORAGE_SIZE) {

@@ -106,6 +106,10 @@ public final class TestCase<T> {
         return new TestCase<T>(YEAR, value, TC_LONG, expectedState);
     }
 
+    public static <T> TestCase<T> forBool(boolean value, T expectedState) {
+        return new TestCase<T>(BOOL, bool2long(value), TC_LONG, expectedState);
+    }
+
     static <T> TestCase<T> derive(TestCase<?> source, T newState) {
         return new TestCase<T>(source, newState);
     }
@@ -145,6 +149,7 @@ public final class TestCase<T> {
         case U_INT: target.putUInt(valLong); break;
         case VARBINARY: target.putVarBinary((ByteSource)valObject); break;
         case YEAR: target.putYear(valLong); break;
+        case BOOL: target.putBool(long2bool(valLong)); break;
         default: throw new UnsupportedOperationException(type().name());
         }
     }
@@ -170,6 +175,7 @@ public final class TestCase<T> {
         case U_INT: assertEquals(niceString(), valLong, source.getUInt()); break;
         case VARBINARY: assertEquals(niceString(), valObject, source.getVarBinary()); break;
         case YEAR: assertEquals(niceString(), valLong, source.getYear()); break;
+        case BOOL: assertEquals(niceString(), long2bool(valLong), source.getBool()); break;
         default: throw new UnsupportedOperationException(type().name());
         }
     }
@@ -186,6 +192,14 @@ public final class TestCase<T> {
             return "(" + valLong + "->\"" + longConverter.asString(valLong) + "\")";
         }
         return "ERR";
+    }
+
+    private static long bool2long(boolean value) {
+        return value ? TRUE_LONG : FALSE_LONG;
+    }
+
+    private static boolean long2bool(long value) {
+        return value != 0;
     }
 
     void get(ValueSource source) {
@@ -207,6 +221,7 @@ public final class TestCase<T> {
         case U_INT: source.getUInt(); break;
         case VARBINARY: source.getVarBinary(); break;
         case YEAR: source.getYear(); break;
+        case BOOL: source.getYear(); break;
         default: throw new UnsupportedOperationException(type().name());
         }
     }
@@ -332,6 +347,8 @@ public final class TestCase<T> {
     private static final float NO_FLOAT = -1;
     private static final long NO_LONG = -1;
     private static final Object NO_OBJECT = Undef.only();
+    private static final long TRUE_LONG = 1;
+    private static final long FALSE_LONG = 0;
 
     // nested classes
     enum TestCaseType {
