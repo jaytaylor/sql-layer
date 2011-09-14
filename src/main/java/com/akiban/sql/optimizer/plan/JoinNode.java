@@ -56,6 +56,10 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         return joinType;
     }
 
+    public void setJoinType(JoinType joinType) {
+        this.joinType = joinType;
+    }
+
     @Override
     public boolean isJoin() {
         return true;

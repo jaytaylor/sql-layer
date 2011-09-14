@@ -1,0 +1,6 @@
+SelectQuery@59e184cb
+  ResultSet@64d55986[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date]
+    Filter@72e8a021[]
+      JoinNode@6691177(INNER_JOIN)
+        TableSource@5bf99eea(user.customers)
+        TableSource@613043d2(user.orders)
