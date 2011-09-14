@@ -15,6 +15,10 @@
 
 package com.akiban.sql.optimizer.plan;
 
-public interface TableAccessPath extends Duplicatable
+public abstract class BaseAccessPath extends BasePlanElement implements TableAccessPath
 {
+    @Override
+    protected boolean maintainInDuplicateMap() {
+        return true;
+    }
 }

@@ -39,6 +39,114 @@ public class PickIndexes extends BaseRule
     }
 
     protected void pickIndexes(Joinable joins) {
-        
+        Collection<TableSource> tables, required;
+        TableGroup group = onlyTableGroup(joins);
+        if (group == null) {
+            assert (joins instanceof TableSource) : "single table";
+            tables = Collections.singletonList((TableSource)joins);
+            required = tables;
+        }
+        else {
+            tables = group.getTables();
+            required = new ArrayList<TableSource>();
+            for (TableSource table : tables) {
+                if (table.isRequired())
+                    required.add(table);
+            }
+        }
+        IndexUsage index = null;
+        TableSource indexTable = null;
+        IndexGoal goal = determineIndexGoal(joins);
+        if (goal != null) {
+            index = goal.pickBestIndex(required);
+            indexTable = index.getLeafMostTable();
+        }
+        TableAccessPath groupScan = null, ancestorLookup = null, branchLookup = null;
+        for (TableSource table : tables) {
+            TableAccessPath accessPath;
+            if (indexTable == null) {
+                if (groupScan == null)
+                    groupScan = new GroupScan(group);
+                accessPath = groupScan;
+            }
+            else if (table == indexTable) {
+                accessPath = index;
+            }
+            else if (ancestorOf(table, indexTable)) {
+                if (ancestorLookup == null)
+                    ancestorLookup = new AncestorLookup(indexTable);
+                accessPath = ancestorLookup;
+            }
+            // TODO: Need to find separate subbranches, not one for all.
+            else {
+                if (branchLookup == null)
+                    branchLookup = new BranchLookup(indexTable);
+                accessPath = branchLookup;
+            }
+            table.setAccessPath(accessPath);
+        }
     }
+    
+    protected boolean ancestorOf(TableSource t1, TableSource t2) {
+        do {
+            if (t1 == t2) return true;
+            t2 = t2.getParentTable();
+        } while (t2 != null);
+        return false;
+    }
+
+    protected TableGroup onlyTableGroup(Joinable joins) {
+        if (joins instanceof JoinNode) {
+            JoinNode join = (JoinNode)joins;
+            TableGroup gl = onlyTableGroup(join.getLeft());
+            TableGroup gr = onlyTableGroup(join.getRight());
+            if (gl == gr) return gl;
+        }
+        else if (joins instanceof TableSource) {
+            return ((TableSource)joins).getGroup();
+        }
+        throw new UnsupportedSQLException("Joins other than one group: " + joins, null);
+    }
+
+    protected IndexGoal determineIndexGoal(PlanNode input) {
+        List<ConditionExpression> conditions;
+        List<ExpressionNode> grouping = null;
+        List<OrderByExpression> ordering = null;
+        input = input.getOutput();
+        if (input instanceof Filter)
+            conditions = ((Filter)input).getConditions();
+        else
+            return null;
+        input = input.getOutput();
+        if (input instanceof Sort) {
+            ordering = ((Sort)input).getOrderBy();
+        }
+        else if (input instanceof AggregateSource) {
+            grouping = ((AggregateSource)input).getGroupBy();
+            input = input.getOutput();
+            if (input instanceof Filter)
+                input = input.getOutput();
+            if (input instanceof Sort) {
+                ordering = ((Sort)input).getOrderBy();
+                // Would this ordering satisfy the grouping, too?
+                for (ExpressionNode groupBy : grouping) {
+                    boolean found = false;
+                    for (OrderByExpression orderBy : ordering) {
+                        if (orderBy.getExpression().equals(groupBy)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        // Not possible: just try for grouping.
+                        ordering = null;
+                        break;
+                    }
+                }
+            }
+        }
+        return new IndexGoal(Collections.<TableSource>emptySet(),
+                             conditions, grouping, ordering);
+    }
+
 }

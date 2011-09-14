@@ -122,8 +122,7 @@ public class TableSource extends BaseJoinable implements ColumnSource
         table = map.duplicate(table);
         table.addUse(this);
         if (accessPath != null)
-            // TODO: Fix exception.
-            throw new RuntimeException("Can't duplicate after setting access path.");
+            accessPath = (TableAccessPath)accessPath.duplicate();
     }
 
 }

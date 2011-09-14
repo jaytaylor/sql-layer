@@ -15,6 +15,27 @@
 
 package com.akiban.sql.optimizer.plan;
 
-public interface TableAccessPath extends Duplicatable
+public class GroupScan extends BaseAccessPath
 {
+    private TableGroup group;
+
+    public GroupScan(TableGroup group) {
+        this.group = group;
+    }
+
+    public TableGroup getGroup() {
+        return group;
+    }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        group = (TableGroup)group.duplicate();
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "(" + group.getGroup() + ")";
+    }
+
 }

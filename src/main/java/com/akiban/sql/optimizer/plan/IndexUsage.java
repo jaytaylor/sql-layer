@@ -23,7 +23,7 @@ import com.akiban.ais.model.Index;
 
 import java.util.*;
 
-public class IndexUsage extends BaseDuplicatable implements TableAccessPath
+public class IndexUsage extends BaseAccessPath
 {
     public static enum OrderEffectiveness {
         NONE, PARTIAL_GROUPED, GROUPED, SORTED
@@ -174,6 +174,11 @@ public class IndexUsage extends BaseDuplicatable implements TableAccessPath
                 column.setAscending(!column.isAscending());
             }
         }
+    }
+
+    @Override
+    protected boolean maintainInDuplicateMap() {
+        return true;
     }
 
     @Override

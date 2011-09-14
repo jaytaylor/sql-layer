@@ -15,6 +15,28 @@
 
 package com.akiban.sql.optimizer.plan;
 
-public interface TableAccessPath extends Duplicatable
+public class BranchLookup extends BaseAccessPath
 {
+    // TODO: Need to mark specific destination; i.e., branchpoint.
+    private TableSource source;
+
+    public BranchLookup(TableSource source) {
+        this.source = source;
+    }
+
+    public TableSource getSource() {
+        return source;
+    }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        source = (TableSource)source.duplicate();
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "(" + source + ")";
+    }
+
 }

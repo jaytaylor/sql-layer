@@ -15,6 +15,27 @@
 
 package com.akiban.sql.optimizer.plan;
 
-public interface TableAccessPath extends Duplicatable
+public class AncestorLookup extends BaseAccessPath
 {
+    private TableSource descendant;
+
+    public AncestorLookup(TableSource descendant) {
+        this.descendant = descendant;
+    }
+
+    public TableSource getDescendant() {
+        return descendant;
+    }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        descendant = (TableSource)descendant.duplicate();
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "(" + descendant + ")";
+    }
+
 }
