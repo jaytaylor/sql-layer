@@ -156,6 +156,11 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     }
 
     @Override
+    public boolean getBool() {
+        return rawLong(AkType.BOOL) != 0;
+    }
+
+    @Override
     public void appendAsString(AkibanAppender appender, Quote quote) {
         // TODO use extractors instead
         ToObjectValueTarget target = new ToObjectValueTarget();
@@ -259,6 +264,11 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     @Override
     public void putYear(long value) {
         putRaw(AkType.YEAR, value);
+    }
+
+    @Override
+    public void putBool(boolean value) {
+        putRaw(AkType.BOOL, value ? 1L : 0L);
     }
 
     // Object interface

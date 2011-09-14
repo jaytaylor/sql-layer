@@ -101,6 +101,7 @@ public final class MismatchedConversionsSuite {
         map.put(U_INT, TestCase.forUInt(0, NO_STATE));
         map.put(VARBINARY, TestCase.forVarBinary(new WrappingByteSource().wrap(new byte[0]), 0, NO_STATE));
         map.put(YEAR, TestCase.forYear(0, NO_STATE));
+        map.put(BOOL, TestCase.forBool(false, NO_STATE));
 
         Set<AkType> allValidAkTypes = EnumSet.allOf(AkType.class);
         allValidAkTypes.removeAll(invalidTypes);

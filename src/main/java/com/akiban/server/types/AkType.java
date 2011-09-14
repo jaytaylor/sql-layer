@@ -33,6 +33,7 @@ public enum AkType {
     U_INT,
     VARBINARY,
     YEAR,
+    BOOL,
     NULL,
     UNSUPPORTED,
 }

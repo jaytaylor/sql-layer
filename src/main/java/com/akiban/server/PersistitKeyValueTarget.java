@@ -171,6 +171,13 @@ public final class PersistitKeyValueTarget implements ValueTarget {
     }
 
     @Override
+    public void putBool(boolean value) {
+        checkState(AkType.BOOL);
+        key.append(value);
+        invalidate();
+    }
+
+    @Override
     public AkType getConversionType() {
         return type;
     }

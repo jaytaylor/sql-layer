@@ -52,6 +52,7 @@ final class FromObjectTransformations {
         new DoubleTransformer().addTo(map, AkType.DOUBLE, AkType.U_DOUBLE);
         new ByteSourceTransformer().addTo(map, AkType.VARBINARY);
         new StringTransformer().addTo(map, AkType.VARCHAR, AkType.TEXT);
+        new BoolTransformer().addTo(map, AkType.BOOL);
 
         return map;
     }
@@ -173,6 +174,20 @@ final class FromObjectTransformations {
 
         private StringTransformer() {
             super(String.class);
+        }
+    }
+
+    private static class BoolTransformer extends AbstractTransformer<Boolean> {
+        @Override
+        protected Boolean doTransform(Object in) {
+            if (in instanceof Boolean) {
+                return (Boolean) in;
+            }
+            return super.doTransform(in);
+        }
+
+        private BoolTransformer() {
+            super(Boolean.class);
         }
     }
 }
