@@ -15,34 +15,39 @@
 
 package com.akiban.sql.optimizer;
 
+import java.util.List;
+
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.UpdateFunction;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.RowType;
 
 /** Update a row by substituting expressions for some fields. */
 public class ExpressionRowUpdateFunction implements UpdateFunction
 {
-    private final ExpressionRow expressions;
+    private final List<Expression> expressions;
+    private final RowType rowType;
 
-    public ExpressionRowUpdateFunction(ExpressionRow expressions) {
+    public ExpressionRowUpdateFunction(List<Expression> expressions, RowType rowType) {
         this.expressions = expressions;
+        this.rowType = rowType;
     }
 
     /* UpdateFunction */
 
     @Override
     public boolean rowIsSelected(Row row) {
-        return row.rowType().equals(expressions.rowType());
+        return row.rowType().equals(rowType);
     }
 
     @Override
     public Row evaluate(Row original, Bindings bindings) {
         OverlayingRow result = new OverlayingRow(original);
-        int nfields = expressions.rowType().nFields();
+        int nfields = rowType.nFields();
         for (int i = 0; i < nfields; i++) {
-            Expression expression = expressions.getExpression(i);
+            Expression expression = expressions.get(i); 
             if (expression != null) {
                 result.overlay(i, expression.evaluate(original, bindings));
             }
