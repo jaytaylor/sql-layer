@@ -47,6 +47,13 @@ public class TableSource extends BaseJoinable implements ColumnSource
         this.group = parentJoin.getGroup();
     }
 
+    public TableSource getParentTable() {
+        if (parentJoin == null)
+            return null;
+        else
+            return parentJoin.getParent();
+    }
+
     @Override
     public String getName() {
         return table.getTable().getName().toString();

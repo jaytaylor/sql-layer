@@ -46,6 +46,11 @@ public class ColumnExpression extends BaseExpression
         this.position = position;
     }
 
+    // Generated column references without an original SQL source.
+    public ColumnExpression(TableSource table, Column column) {
+        this(table, column, null, null);
+    }
+
     public ColumnSource getTable() {
         return table;
     }
