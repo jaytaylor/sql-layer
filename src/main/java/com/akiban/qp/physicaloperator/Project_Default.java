@@ -88,7 +88,7 @@ class Project_Default extends PhysicalOperator
         projectType = rowType.schema().newProjectType(this.projections);
     }
     
-    // Project_Table constructor, returns ProjectedUserTableRowType rows 
+    // Project_Default constructor, returns ProjectedUserTableRowType rows 
     public Project_Default(PhysicalOperator inputOperator, RowType inputRowType,
             RowType projectTableRowType, List<Expression> projections)
     {

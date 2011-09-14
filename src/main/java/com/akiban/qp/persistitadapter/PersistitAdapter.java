@@ -87,48 +87,6 @@ public class PersistitAdapter extends StoreAdapter
         this.transactional.set(transactional);
     }
 
-    // PersistitAdapter interface
-
-    public RowDef rowDef(int tableId)
-    {
-        return persistit.getRowDefCache().getRowDef(tableId);
-    }
-
-    public PersistitGroupRow newGroupRow()
-    {
-        return PersistitGroupRow.newPersistitGroupRow(this);
-    }
-
-    public PersistitIndexRow newIndexRow(IndexRowType indexRowType) throws PersistitException
-    {
-        return new PersistitIndexRow(this, indexRowType);
-    }
-
-    public RowData rowData(RowDef rowDef, RowBase row, Bindings bindings) {
-        if (row instanceof PersistitGroupRow) {
-            return ((PersistitGroupRow)row).rowData();
-        }
-
-        ToObjectValueTarget target = new ToObjectValueTarget();
-        NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
-
-        for(int i=0; i < row.rowType().nFields(); ++i) {
-            ValueSource source = row.eval(i);
-            niceRow.put(i, target.convertFromSource(source));
-        }
-        return niceRow.toRowData();
-    }
-
-    public Exchange takeExchange(GroupTable table) throws PersistitException
-    {
-        return transact(persistit.getExchange(session, (RowDef) table.rowDef()));
-    }
-
-    public Exchange takeExchange(Index index)
-    {
-        return transact(persistit.getExchange(session, index));
-    }
-
     @Override
     public void updateRow(Row oldRow, Row newRow, Bindings bindings) {
         RowDef rowDef = (RowDef) oldRow.rowType().userTable().rowDef();
@@ -166,6 +124,50 @@ public class PersistitAdapter extends StoreAdapter
             throw new PersistItErrorException (e);
         }
     }
+
+    public RowData rowData(RowDef rowDef, RowBase row, Bindings bindings) {
+        if (row instanceof PersistitGroupRow) {
+            return ((PersistitGroupRow)row).rowData();
+        }
+
+        ToObjectValueTarget target = new ToObjectValueTarget();
+        NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
+
+        for(int i=0; i < row.rowType().nFields(); ++i) {
+            ValueSource source = row.eval(i);
+            niceRow.put(i, target.convertFromSource(source));
+        }
+        return niceRow.toRowData();
+    }
+
+    // PersistitAdapter interface
+
+    public RowDef rowDef(int tableId)
+    {
+        return persistit.getRowDefCache().getRowDef(tableId);
+    }
+
+    public PersistitGroupRow newGroupRow()
+    {
+        return PersistitGroupRow.newPersistitGroupRow(this);
+    }
+
+    public PersistitIndexRow newIndexRow(IndexRowType indexRowType) throws PersistitException
+    {
+        return new PersistitIndexRow(this, indexRowType);
+    }
+
+
+    public Exchange takeExchange(GroupTable table) throws PersistitException
+    {
+        return transact(persistit.getExchange(session, (RowDef) table.rowDef()));
+    }
+
+    public Exchange takeExchange(Index index)
+    {
+        return transact(persistit.getExchange(session, index));
+    }
+
 
     private Exchange transact(Exchange exchange) {
         if (transactional.get()) {

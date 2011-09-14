@@ -17,6 +17,7 @@ package com.akiban.qp.physicaloperator;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
+import java.util.Iterator;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -32,7 +33,7 @@ public class ValuesScan_Default extends PhysicalOperator {
 
     @Override
     protected Cursor cursor(StoreAdapter adapter) {
-        return new Execution(rows);
+        return new Execution();
     }
     
     @Override
@@ -49,30 +50,29 @@ public class ValuesScan_Default extends PhysicalOperator {
     private final Deque<Row> rows;
     private final RowType rowType;
     
-    private static class Execution implements Cursor
+    private class Execution implements Cursor
     {
-        private final Deque<Row> rows;
-        private final Deque<Row> cursorRows;
-
-        public Execution (Deque<Row> rows) {
-            this.rows = rows;
-            this.cursorRows = new ArrayDeque<Row>();
+        private Iterator<Row> i; 
+        public Execution () {
         }
 
         @Override
         public void close() {
-            cursorRows.clear();
+            i = null;
         }
 
         @Override
         public Row next() {
-            return cursorRows.poll();
+            if (i != null && i.hasNext()) {
+                return i.next();
+            } else {
+                return null;
+            }
         }
 
         @Override
         public void open(Bindings bindings) {
-            cursorRows.clear();
-            cursorRows.addAll(rows);
+            i = rows.iterator();
         }
     }
 }
