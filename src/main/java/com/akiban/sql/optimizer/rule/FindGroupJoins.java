@@ -342,9 +342,7 @@ public class FindGroupJoins extends BaseRule
         if (joinable.isTable()) {
             TableSource table = (TableSource)joinable;
             if (table.getGroup() == null) {
-                TableGroup group = new TableGroup(table.getTable().getTable().getGroup());
-                group.getTables().add(table);
-                table.setGroup(group);
+                table.setGroup(new TableGroup(table.getTable().getTable().getGroup()));
             }
         }
         else if (joinable.isJoin()) {

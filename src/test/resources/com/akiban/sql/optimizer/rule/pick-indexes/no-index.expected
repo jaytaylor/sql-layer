@@ -1,0 +1,6 @@
+SelectQuery@6f57b46f
+  ResultSet@67071c84[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date]
+    Filter@3e152f4[]
+      JoinNode@3e0d1329(INNER_JOIN[user.orders.cid == user.customers.cid] - TableGroupJoin@4c650892(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+        TableSource@73aecc3a(user.customers - TableGroup@7d15d06c(customers) - GroupScan@2326a29c(Group(customers -> user._akiban_customers)))
+        TableSource@58e22f2b(user.orders - TableGroupJoin@4c650892(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))) - GroupScan@2326a29c(Group(customers -> user._akiban_customers)))

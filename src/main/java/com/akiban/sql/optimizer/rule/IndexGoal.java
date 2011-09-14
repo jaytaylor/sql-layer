@@ -83,8 +83,8 @@ public class IndexGoal implements Comparator<IndexUsage>
                     if ((comparand != null) && constantOrBound(comparand)) {
                         equalityCondition = condition;
                         otherComparand = comparand;
+                        break;
                     }
-                    break;
                 }
             }
             if (equalityCondition == null)
@@ -128,7 +128,8 @@ public class IndexGoal implements Comparator<IndexUsage>
             index.setOrdering(ordering);
         }
         index.setOrderEffectiveness(determineOrderEffectiveness(index));
-        return true;
+        return ((index.getOrderEffectiveness() != IndexUsage.OrderEffectiveness.NONE) ||
+                (index.getConditions() != null));
     }
 
     // Determine how well this index does against the target.
@@ -158,8 +159,9 @@ public class IndexGoal implements Comparator<IndexUsage>
                         // Only good enough up to reversal of scan.
                         break try_sorted;
                     idx++;
+                    continue;
                 }
-                else {
+                if (equalityComparands != null) {
                     // Another possibility is that target ordering is
                     // in fact unchanged due to equality condition.
                     // TODO: Should this have been noticed earlier on
@@ -294,7 +296,8 @@ public class IndexGoal implements Comparator<IndexUsage>
         IndexUsage bestIndex = null;
         for (TableSource table : tables) {
             IndexUsage tableIndex = pickBestIndex(table);
-            if ((bestIndex == null) || (compare(tableIndex, bestIndex) > 0))
+            if ((tableIndex != null) &&
+                ((bestIndex == null) || (compare(tableIndex, bestIndex) > 0)))
                 bestIndex = tableIndex;
         }
         return bestIndex;

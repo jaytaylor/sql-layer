@@ -1,0 +1,5 @@
+SelectQuery@7564debb
+  ResultSet@315b0333[user.items.iid, user.items.oid, user.items.sku, user.items.quan]
+    Sort@4e2f2295[user.items.sku]
+      Filter@78878c4c[user.items.quan > 100]
+        TableSource@583e97df(user.items - TableGroup@b0c0f66(customers) - IndexUsage@44c6f734(Index(user.items.sku[IndexColumn(sku)]), SORTED))

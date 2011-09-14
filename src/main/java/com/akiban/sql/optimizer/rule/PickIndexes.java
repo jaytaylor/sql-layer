@@ -39,27 +39,20 @@ public class PickIndexes extends BaseRule
     }
 
     protected void pickIndexes(Joinable joins) {
-        Collection<TableSource> tables, required;
         TableGroup group = onlyTableGroup(joins);
-        if (group == null) {
-            assert (joins instanceof TableSource) : "single table";
-            tables = Collections.singletonList((TableSource)joins);
-            required = tables;
-        }
-        else {
-            tables = group.getTables();
-            required = new ArrayList<TableSource>();
-            for (TableSource table : tables) {
-                if (table.isRequired())
-                    required.add(table);
-            }
-        }
+        Collection<TableSource> tables, required;
+        tables = group.getTables();
+        required = new ArrayList<TableSource>();
+        for (TableSource table : tables)
+            if (table.isRequired())
+                required.add(table);
         IndexUsage index = null;
         TableSource indexTable = null;
         IndexGoal goal = determineIndexGoal(joins);
         if (goal != null) {
             index = goal.pickBestIndex(required);
-            indexTable = index.getLeafMostTable();
+            if (index != null)
+                indexTable = index.getLeafMostTable();
         }
         TableAccessPath groupScan = null, ancestorLookup = null, branchLookup = null;
         for (TableSource table : tables) {
@@ -103,7 +96,10 @@ public class PickIndexes extends BaseRule
             if (gl == gr) return gl;
         }
         else if (joins instanceof TableSource) {
-            return ((TableSource)joins).getGroup();
+            TableGroup g = ((TableSource)joins).getGroup();
+            if (g == null)
+                throw new UnsupportedSQLException("Joins without group: " + joins, null);
+            return g;
         }
         throw new UnsupportedSQLException("Joins other than one group: " + joins, null);
     }

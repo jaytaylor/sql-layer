@@ -98,6 +98,9 @@ public class IndexUsage extends BaseAccessPath
         if (equalityComparands == null)
             equalityComparands = new ArrayList<ExpressionNode>();
         equalityComparands.add(comparand);
+        if (conditions == null)
+            conditions = new ArrayList<ConditionExpression>();
+        conditions.add(condition);
     }
 
     public void addInequalityCondition(ConditionExpression condition, 
@@ -138,10 +141,10 @@ public class IndexUsage extends BaseAccessPath
                                                       null);
             }
             else
+                // Not really an inequality.
                 return;
         }
         else {
-            assert false : "Unknown comparison";
             return;
         }
         if (conditions == null)
@@ -196,7 +199,11 @@ public class IndexUsage extends BaseAccessPath
     public String toString() {
         StringBuilder str = new StringBuilder(super.toString());
         str.append("(");
+        str.append(index);
+        str.append(", ");
         str.append(orderEffectiveness);
+        if (reverseScan)
+            str.append("/reverse");
         if (equalityComparands != null) {
             for (ExpressionNode expression : equalityComparands) {
                 str.append(", =");

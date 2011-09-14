@@ -21,4 +21,10 @@ public abstract class BaseAccessPath extends BasePlanElement implements TableAcc
     protected boolean maintainInDuplicateMap() {
         return true;
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16);
+    }
+
 }
