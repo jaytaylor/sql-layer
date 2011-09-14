@@ -213,7 +213,41 @@ public class IndexGoal implements Comparator<IndexUsage>
 
     // TODO: This is a pretty poor substitute for evidence-based comparison.
     public int compare(IndexUsage i1, IndexUsage i2) {
-        return 0;
+        if (i1.getOrderEffectiveness() != i2.getOrderEffectiveness())
+            // These are ordered worst to best.
+            return i1.getOrderEffectiveness().compareTo(i2.getOrderEffectiveness());
+        if (i1.getEqualityComparands() != null) {
+            if (i2.getEqualityComparands() == null)
+                return +1;
+            else if (i1.getEqualityComparands().size() !=
+                     i2.getEqualityComparands().size())
+                return (i1.getEqualityComparands().size() > 
+                        i2.getEqualityComparands().size()) 
+                    // More conditions tested better than fewer.
+                    ? +1 : -1;
+        }
+        else if (i2.getEqualityComparands() != null)
+            return -1;
+        {
+            int n1 = 0, n2 = 0;
+            if (i1.getLowComparand() != null)
+                n1++;
+            if (i1.getHighComparand() != null)
+                n1++;
+            if (i2.getLowComparand() != null)
+                n2++;
+            if (i2.getHighComparand() != null)
+                n2++;
+            if (n1 != n2) 
+                return (n1 > n2) ? +1 : -1;
+        }
+        if (i1.getIndex().getColumns().size() != i2.getIndex().getColumns().size())
+            return (i1.getIndex().getColumns().size() < 
+                    i2.getIndex().getColumns().size()) 
+                // Fewer columns indexed better than more.
+                ? +1 : -1;
+        // Deeper better than shallower.
+        return i1.getLeafMostTable().getTable().getTable().getTableId().compareTo(i2.getLeafMostTable().getTable().getTable().getTableId());
     }
 
 }
