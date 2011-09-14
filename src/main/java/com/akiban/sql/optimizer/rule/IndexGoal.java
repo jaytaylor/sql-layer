@@ -25,6 +25,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 
 import java.util.*;
@@ -209,6 +210,56 @@ public class IndexGoal implements Comparator<IndexUsage>
             }
         }
         return null;
+    }
+
+    /** Find the best index on the given table. */
+    public IndexUsage pickBestIndex(TableSource table) {
+        IndexUsage bestIndex = null;
+        for (TableIndex index : table.getTable().getTable().getIndexes()) {
+            IndexUsage candidate = new IndexUsage(index, table, table);
+            bestIndex = betterIndex(bestIndex, candidate);
+        }
+        if (table.getGroup() != null) {
+            for (GroupIndex index : table.getGroup().getGroup().getIndexes()) {
+                // The leaf must be used or else we'll get duplicates from a
+                // scan (the indexed columns need not be root to leaf, making
+                // ancestors discontiguous and duplicates hard to eliminate).
+                if (index.leafMostTable() != table.getTable().getTable())
+                    continue;
+                // The root must be present, since the index does not
+                // contain orphans.
+                TableSource rootTable = table;
+                while (rootTable != null) {
+                    if (index.rootMostTable() == rootTable.getTable().getTable())
+                        break;
+                    rootTable = rootTable.getParentTable();
+                }
+                if (rootTable == null) continue;
+                IndexUsage candidate = new IndexUsage(index, table, rootTable);
+                bestIndex = betterIndex(bestIndex, candidate);
+            
+            }
+        }
+        return bestIndex;
+    }
+
+    protected IndexUsage betterIndex(IndexUsage bestIndex, IndexUsage candidate) {
+        if (usable(candidate)) {
+            if ((bestIndex == null) || (compare(candidate, bestIndex) > 0))
+                return candidate;
+        }
+        return bestIndex;
+    }
+
+    /** Find the best index among the given tables. */
+    public IndexUsage pickBestIndex(Collection<TableSource> tables) {
+        IndexUsage bestIndex = null;
+        for (TableSource table : tables) {
+            IndexUsage tableIndex = pickBestIndex(table);
+            if ((bestIndex == null) || (compare(tableIndex, bestIndex) > 0))
+                bestIndex = tableIndex;
+        }
+        return bestIndex;
     }
 
     // TODO: This is a pretty poor substitute for evidence-based comparison.
