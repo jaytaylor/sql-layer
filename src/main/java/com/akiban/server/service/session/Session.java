@@ -19,14 +19,22 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 public final class Session
 {
+    private final static AtomicLong idGenerator = new AtomicLong(0);
+
     private final Map<Key<?>,Object> map = new HashMap<Key<?>, Object>();
     private final SessionEventListener listener;
+    private final long sessionId = idGenerator.getAndIncrement();
 
     Session(SessionEventListener listener) {
         this.listener = listener;
+    }
+
+    public long sessionId() {
+        return sessionId;
     }
 
     public <T> T get(Session.Key<T> key) {

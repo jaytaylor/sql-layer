@@ -231,13 +231,21 @@ public class API
     // Sort
 
     public static PhysicalOperator sort_InsertionLimited(PhysicalOperator inputOperator, 
-                                                         RowType sortType, 
-                                                         List<Expression> sortExpressions,
-                                                         List<Boolean> sortDescendings,
+                                                         RowType sortType,
+                                                         Ordering ordering,
                                                          int limit)
     {
-        return new Sort_InsertionLimited(inputOperator, sortType, 
-                                         sortExpressions, sortDescendings, limit);
+        return new Sort_InsertionLimited(inputOperator, sortType, ordering, limit);
+    }
+
+    public static PhysicalOperator sort_Tree(PhysicalOperator inputOperator, RowType sortType, Ordering ordering)
+    {
+        return new Sort_Tree(inputOperator, sortType, ordering);
+    }
+
+    public static Ordering ordering()
+    {
+        return new Ordering();
     }
 
     // Map
@@ -288,6 +296,57 @@ public class API
     public static enum LookupOption {
         KEEP_INPUT,
         DISCARD_INPUT
+    }
+
+    // Ordering specification
+
+    public static class Ordering
+    {
+        public String toString()
+        {
+            StringBuilder buffer = new StringBuilder();
+            for (int i = 0; i < expressions.size(); i++) {
+                if (i > 0) {
+                    buffer.append(", ");
+                }
+                buffer.append(expressions.get(i));
+                buffer.append(' ');
+                buffer.append(directions.get(i) ? "ASC" : "DESC");
+            }
+            return buffer.toString();
+        }
+
+        public int sortFields()
+        {
+            return expressions.size();
+        }
+
+        public Expression expression(int i)
+        {
+            return expressions.get(i);
+        }
+
+        public boolean ascending(int i)
+        {
+            return directions.get(i);
+        }
+
+        public void append(Expression expression, boolean ascending)
+        {
+            expressions.add(expression);
+            directions.add(ascending);
+        }
+
+        public Ordering copy()
+        {
+            Ordering copy = new Ordering();
+            copy.expressions.addAll(expressions);
+            copy.directions.addAll(directions);
+            return copy;
+        }
+
+        private final List<Expression> expressions = new ArrayList<Expression>();
+        private final List<Boolean> directions = new ArrayList<Boolean>(); // true: ascending, false: descending
     }
 
     // Class state

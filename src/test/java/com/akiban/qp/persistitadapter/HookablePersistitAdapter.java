@@ -17,6 +17,7 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 
 public final class HookablePersistitAdapter extends PersistitAdapter {
@@ -25,7 +26,7 @@ public final class HookablePersistitAdapter extends PersistitAdapter {
         // empty interface; just promoting visibility
     }
 
-    public HookablePersistitAdapter(Schema schema, PersistitStore persistit, Session session, FilterFactoryHook hook) {
-        super(schema, persistit, session, hook);
+    public HookablePersistitAdapter(Schema schema, PersistitStore persistit, Session session, TreeService treeService, FilterFactoryHook hook) {
+        super(schema, persistit, session, treeService, hook);
     }
 }

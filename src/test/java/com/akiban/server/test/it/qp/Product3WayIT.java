@@ -109,7 +109,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
         } else {
             persistitStore = (PersistitStore) plainStore;
         }
-        adapter = new PersistitAdapter(schema, persistitStore, session());
+        adapter = new PersistitAdapter(schema, persistitStore, null, session());
         use(db);
     }
 
@@ -128,6 +128,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
     @Test
     public void testProductAfterIndexScanOfA_ByRun()
     {
+        // TODO: This plan is dumb. It does an AC product twice, once in the index lookup, once in ProductRABC.
         PhysicalOperator flattenRC =
             flatten_HKeyOrdered(
                 branchLookup_Default(

@@ -19,11 +19,8 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.GroupCursor;
-import com.akiban.qp.physicaloperator.StoreAdapter;
-import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
+import com.akiban.qp.persistitadapter.sort.Sorter;
+import com.akiban.qp.physicaloperator.*;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -31,12 +28,14 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeLink;
+import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
@@ -76,6 +75,16 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
+    public Cursor sort(Cursor input, RowType rowType, API.Ordering ordering, Bindings bindings)
+    {
+        try {
+            return new Sorter(this, input, rowType, ordering, bindings).sort();
+        } catch (PersistitException e) {
+            throw new PersistitAdapterException(e);
+        }
+    }
+
+    @Override
     public HKey newHKey(RowType rowType)
     {
         return new PersistitHKey(this, rowType.hKey());
@@ -103,9 +112,10 @@ public class PersistitAdapter extends StoreAdapter
         return new PersistitIndexRow(this, indexRowType);
     }
 
-    public RowData rowData(RowDef rowDef, RowBase row, Bindings bindings) {
+    public RowData rowData(RowDef rowDef, RowBase row, Bindings bindings)
+    {
         if (row instanceof PersistitGroupRow) {
-            return ((PersistitGroupRow)row).rowData();
+            return ((PersistitGroupRow) row).rowData();
         }
 
         ToObjectValueTarget target = new ToObjectValueTarget();
@@ -128,8 +138,14 @@ public class PersistitAdapter extends StoreAdapter
         return transact(persistit.getExchange(session, index));
     }
 
+    public Exchange takeExchangeForSorting()
+    {
+        return treeService.getExchange(session, sortTreeLink);
+    }
+
     @Override
-    public void updateRow(Row oldRow, Row newRow, Bindings bindings) {
+    public void updateRow(Row oldRow, Row newRow, Bindings bindings)
+    {
         RowDef rowDef = (RowDef) oldRow.rowType().userTable().rowDef();
         Object rowDefNewRow = newRow.rowType().userTable().rowDef();
         if (rowDef != rowDefNewRow) {
@@ -145,7 +161,8 @@ public class PersistitAdapter extends StoreAdapter
         }
     }
 
-    private Exchange transact(Exchange exchange) {
+    private Exchange transact(Exchange exchange)
+    {
         if (transactional.get()) {
             synchronized (transactionsMap) {
                 if (!transactionsMap.containsKey(exchange)) {
@@ -162,7 +179,8 @@ public class PersistitAdapter extends StoreAdapter
         return exchange;
     }
 
-    public void commitAllTransactions() throws PersistitException {
+    public void commitAllTransactions() throws PersistitException
+    {
         Collection<Transaction> transactions = new ArrayList<Transaction>();
         synchronized (transactionsMap) {
             Iterator<Transaction> transactionsIter = transactionsMap.values().iterator();
@@ -182,23 +200,38 @@ public class PersistitAdapter extends StoreAdapter
         persistit.releaseExchange(session, exchange);
     }
 
-    public PersistitAdapter(Schema schema, PersistitStore persistit, Session session)
+    public PersistitAdapter(Schema schema,
+                            PersistitStore persistit,
+                            TreeService treeService,
+                            Session session)
     {
-        this(schema, persistit, session, null);
+        this(schema, persistit, session, treeService, null);
     }
 
-    PersistitAdapter(Schema schema, PersistitStore persistit, Session session, PersistitFilterFactory.InternalHook hook)
+    PersistitAdapter(Schema schema,
+                     PersistitStore persistit,
+                     Session session,
+                     TreeService treeService,
+                     PersistitFilterFactory.InternalHook hook)
     {
         super(schema);
         this.persistit = persistit;
         this.session = session;
+        this.treeService = treeService;
         this.filterFactory = new PersistitFilterFactory(this, hook);
+        this.sortTreeLink = new TemporaryTableTreeLink(SORT_TREE_NAME_PREFIX + session.sessionId());
     }
+
+    // Class state
+
+    private static final String SORT_TREE_NAME_PREFIX = "sort.";
 
     // Object state
 
     private final AtomicBoolean transactional = new AtomicBoolean(false);
-    private final Map<Exchange,Transaction> transactionsMap = new HashMap<Exchange, Transaction>();
+    private final Map<Exchange, Transaction> transactionsMap = new HashMap<Exchange, Transaction>();
+    private final TreeService treeService;
+    private final TreeLink sortTreeLink;
     final PersistitStore persistit;
     final Session session;
     final PersistitFilterFactory filterFactory;
