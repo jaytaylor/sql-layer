@@ -255,9 +255,9 @@ public class ASTToStatement extends BaseRule
         Joinable joins = null;
         for (FromTable fromTable : selectNode.getFromList()) {
             if (joins == null)
-                joins = toJoinNode(fromTable);
+                joins = toJoinNode(fromTable, true);
             else
-                joins = joinNodes(joins, toJoinNode(fromTable), JoinType.INNER_JOIN);
+                joins = joinNodes(joins, toJoinNode(fromTable, true), JoinType.INNER_JOIN);
         }
         List<ConditionExpression> conditions = toConditions(selectNode.getWhereClause());
         if (hasAggregateFunction(conditions))
@@ -269,7 +269,7 @@ public class ASTToStatement extends BaseRule
     protected Map<FromTable,Joinable> joinNodes =
         new HashMap<FromTable,Joinable>();
 
-    protected Joinable toJoinNode(FromTable fromTable)
+    protected Joinable toJoinNode(FromTable fromTable, boolean required)
             throws StandardException {
         Joinable result;
         if (fromTable instanceof FromBaseTable) {
@@ -278,7 +278,7 @@ public class ASTToStatement extends BaseRule
                 throw new UnsupportedSQLException("FROM table",
                                                   fromTable);
             TableNode table = getTableNode((UserTable)tb.getTable());
-            result = new TableSource(table);
+            result = new TableSource(table, required);
         }
         else if (fromTable instanceof com.akiban.sql.parser.JoinNode) {
             com.akiban.sql.parser.JoinNode joinNode = 
@@ -297,8 +297,10 @@ public class ASTToStatement extends BaseRule
             default:
                 throw new UnsupportedSQLException("Unsupported join type", joinNode);
             }
-            JoinNode join = joinNodes(toJoinNode((FromTable)joinNode.getLeftResultSet()),
-                                      toJoinNode((FromTable)joinNode.getRightResultSet()),
+            JoinNode join = joinNodes(toJoinNode((FromTable)joinNode.getLeftResultSet(),
+                                                 required && (joinType != JoinType.RIGHT_JOIN)),
+                                      toJoinNode((FromTable)joinNode.getRightResultSet(),
+                                                 required && (joinType != JoinType.LEFT_JOIN)),
                                       joinType);
             join.setJoinConditions(toConditions(joinNode.getJoinClause()));
             result = join;

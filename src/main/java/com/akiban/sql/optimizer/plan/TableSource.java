@@ -21,11 +21,12 @@ public class TableSource extends BaseJoinable implements ColumnSource
     private TableNode table;
     private TableGroup group;
     private TableGroupJoin parentJoin;
-    // TODO: Add conditions, correlation name?, ...
+    private boolean required;
 
-    public TableSource(TableNode table) {
+    public TableSource(TableNode table, boolean required) {
         this.table = table;
         table.addUse(this);
+        this.required = required;
     }
 
     public TableNode getTable() {
@@ -52,6 +53,16 @@ public class TableSource extends BaseJoinable implements ColumnSource
             return null;
         else
             return parentJoin.getParent();
+    }
+
+    public boolean isRequired() {
+        return required;
+    }
+    public boolean isOptional() {
+        return !required;
+    }
+    public void setRequired(boolean required) {
+        this.required = required;
     }
 
     @Override
