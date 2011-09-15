@@ -26,9 +26,13 @@ import com.akiban.server.aggregation.AggregatorFactory;
 
 import java.util.*;
 
+import static com.akiban.qp.expression.API.wrap;
+import static com.akiban.qp.expression.API.wrapAll;
+
 public class API
 {
     // Aggregate
+
     public static PhysicalOperator aggregate(PhysicalOperator inputOperator,
                                              int inputsIndex,
                                              AggregatorFactory factory,
@@ -43,7 +47,7 @@ public class API
                                                    RowType rowType,
                                                    List<Expression> projections)
     {
-        return new Project_Default(inputOperator, rowType, projections);
+        return new Project_Default(inputOperator, rowType, wrapAll(projections));
     }
 
     // Flatten
@@ -189,7 +193,7 @@ public class API
                                                       RowType predicateRowType,
                                                       Expression predicate)
     {
-        return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate);
+        return new Select_HKeyOrdered(inputOperator, predicateRowType, wrap(predicate));
     }
 
     // Filter

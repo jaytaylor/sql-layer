@@ -50,8 +50,10 @@ public class Sorter
         this.valueTarget.attach(exchange.getValue());
         this.rowFields = rowType.nFields();
         this.fieldTypes = new AkType[this.rowFields];
-        // This implementation adds a count field as a sort key, to ensure key uniqueness for Persisit.
-        this.ordering.append(null, true);
+        // Append a count field as a sort key, to ensure key uniqueness for Persisit. By setting
+        // the ascending flag equal to that of some other sort field, we don't change an all-ASC or all-DESC sort
+        // into a less efficient mixed-mode sort.
+        this.ordering.append(null, ordering.ascending(0));
     }
 
     public Cursor sort() throws PersistitException

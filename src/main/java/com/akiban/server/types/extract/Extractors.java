@@ -15,7 +15,10 @@
 
 package com.akiban.server.types.extract;
 
+import com.akiban.server.Quote;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
+import com.akiban.util.AkibanAppender;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -27,6 +30,13 @@ public final class Extractors {
             return (LongExtractor) extractor;
         }
         return null;
+    }
+
+    public static boolean extractBoolean(ValueSource source) {
+        StringBuilder sb = new StringBuilder();
+        source.appendAsString(AkibanAppender.of(sb), Quote.NONE);
+        String asString = sb.toString();
+        return Boolean.getBoolean(asString);
     }
 
     private static AbstractExtractor get(AkType type) {

@@ -15,10 +15,12 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.types.extract.Extractors;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.ArrayList;
@@ -91,7 +93,7 @@ class Select_HKeyOrdered extends PhysicalOperator
         public void open(Bindings bindings)
         {
             input.open(bindings);
-            this.bindings = bindings;
+            this.evaluation.of(bindings);
         }
 
         @Override
@@ -101,8 +103,9 @@ class Select_HKeyOrdered extends PhysicalOperator
             Row inputRow = input.next();
             while (row == null && inputRow != null) {
                 if (inputRow.rowType() == predicateRowType) {
-                    // New row of predicateRowType
-                    if ((Boolean) predicate.evaluate(inputRow, bindings)) {
+                    evaluation.of(inputRow);
+                    if (Extractors.extractBoolean(evaluation.eval())) {
+                        // New row of predicateRowType
                         selectedRow.set(inputRow);
                         row = inputRow;
                     }
@@ -135,14 +138,13 @@ class Select_HKeyOrdered extends PhysicalOperator
         Execution(StoreAdapter adapter, Cursor input)
         {
             this.input = input;
+            this.evaluation = predicate.evaluation();
         }
 
         // Object state
 
         private final Cursor input;
-        // selectedRow is the last input row with type = predicateRowType.
-        private final RowHolder<Row> selectedRow = new RowHolder<Row>();
-
-        private Bindings bindings;
+        private final RowHolder<Row> selectedRow = new RowHolder<Row>(); // The last input row with type = predicateRowType.
+        private final ExpressionEvaluation evaluation;
     }
 }

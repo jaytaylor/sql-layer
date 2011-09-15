@@ -33,17 +33,17 @@ class Compare implements Expression
         int c = leftValue.compareTo(rightValue);
         switch (comparison) {
             case EQ:
-                return c == 0;
+                return boolAsInt(c == 0);
             case NE:
-                return c != 0;
+                return boolAsInt(c != 0);
             case LT:
-                return c < 0;
+                return boolAsInt(c < 0);
             case LE:
-                return c <= 0;
+                return boolAsInt(c <= 0);
             case GT:
-                return c > 0;
+                return boolAsInt(c > 0);
             case GE:
-                return c >= 0;
+                return boolAsInt(c >= 0);
             default:
                 assert false : row;
                 return false;
@@ -63,6 +63,13 @@ class Compare implements Expression
         this.left = left;
         this.right = right;
         this.comparison = comparison;
+    }
+
+    // For use by this class
+
+    private long boolAsInt(boolean boolValue)
+    {
+        return boolValue ? 1 : 0;
     }
 
     // Object state

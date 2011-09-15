@@ -15,11 +15,11 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.expression.Expression;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.ArrayList;
@@ -73,7 +73,7 @@ class Project_Default extends PhysicalOperator
 
     // Project_Default interface
 
-    public Project_Default(PhysicalOperator inputOperator, RowType rowType, List<Expression> projections)
+    public Project_Default(PhysicalOperator inputOperator, RowType rowType, List<? extends Expression> projections)
     {
         ArgumentValidation.notNull("rowType", rowType);
         ArgumentValidation.notEmpty("projections", projections);
