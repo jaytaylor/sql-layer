@@ -34,6 +34,10 @@ public class ConstantExpression extends BaseExpression
         this.value = value;
     }
 
+    public ConstantExpression(Object value) {
+        this(value, null, null);
+    }
+
     @Override
     public boolean isConstant() {
         return true;

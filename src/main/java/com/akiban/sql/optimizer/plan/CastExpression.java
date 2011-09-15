@@ -32,6 +32,10 @@ public class CastExpression extends BaseExpression
         this.inner = inner;
     }
 
+    public ExpressionNode getOperand() {
+        return inner;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof CastExpression)) return false;

@@ -125,6 +125,11 @@ public class AggregateMapper extends BaseRule
         }
 
         @Override
+        public boolean visitChildrenFirst(ExpressionNode expr) {
+            return false;
+        }
+
+        @Override
         public ExpressionNode visit(ExpressionNode expr) {
             ExpressionNode nexpr = map.get(expr);
             if (nexpr != null)
