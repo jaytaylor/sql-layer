@@ -33,10 +33,7 @@ public final class Extractors {
     }
 
     public static boolean extractBoolean(ValueSource source) {
-        StringBuilder sb = new StringBuilder();
-        source.appendAsString(AkibanAppender.of(sb), Quote.NONE);
-        String asString = sb.toString();
-        return Boolean.getBoolean(asString);
+        return source.getBool();
     }
 
     private static AbstractExtractor get(AkType type) {

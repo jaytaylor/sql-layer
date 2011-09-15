@@ -66,6 +66,9 @@ public class API
 
     public static com.akiban.server.expression.Expression wrap(Expression qpExpression)
     {
+        if (qpExpression == null) {
+            throw new IllegalArgumentException();
+        }
         return new InnerNewExpressionWrapper(qpExpression);
     }
 
@@ -146,6 +149,12 @@ public class API
 
     private static class NewExpressionEvaluationWrapper implements ExpressionEvaluation
     {
+        @Override
+        public String toString()
+        {
+            return delegate.toString();
+        }
+
         @Override
         public void of(Row row)
         {

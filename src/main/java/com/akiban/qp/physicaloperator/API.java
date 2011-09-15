@@ -267,7 +267,11 @@ public class API
                                                    List<Expression> outerJoinRowExpressions,
                                                    int inputBindingPosition)
     {
-        return new Map_NestedLoops(outerInput, innerInput, outerJoinRowType, outerJoinRowExpressions, inputBindingPosition);
+        return new Map_NestedLoops(outerInput,
+                                   innerInput,
+                                   outerJoinRowType,
+                                   wrapAll(outerJoinRowExpressions),
+                                   inputBindingPosition);
     }
 
     // Execution interface

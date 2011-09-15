@@ -67,9 +67,16 @@ class Compare implements Expression
 
     // For use by this class
 
+/*
     private long boolAsInt(boolean boolValue)
     {
         return boolValue ? 1 : 0;
+    }
+*/
+
+    private boolean boolAsInt(boolean boolValue)
+    {
+        return boolValue;
     }
 
     // Object state
