@@ -1,0 +1,8 @@
+SelectQuery@6f7cf6b6
+  ResultSet@75295fe8[user.customers.name, MIN(user.orders.order_date)]
+    Filter@6f57b46f[]
+      AggregateSource@67071c84[user.customers.name][]
+        Filter@3e152f4[]
+          JoinNode@3e0d1329(INNER_JOIN[user.orders.cid == user.customers.cid] - TableGroupJoin@4c650892(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+            TableSource@11c7865b(user.customers - TableGroup@7d15d06c(customers) - IndexUsage@2326a29c(Index(user.customers.name[IndexColumn(name)]), GROUPED))
+            TableSource@4245c97b(user.orders - TableGroupJoin@4c650892(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))) - BranchLookup@3d7dc1cb(com.akiban.sql.optimizer.plan.TableSource@11c7865b))

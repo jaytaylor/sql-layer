@@ -187,7 +187,8 @@ public class IndexGoal implements Comparator<IndexUsage>
                 }
                 if (!found) {
                     allFound = false;
-                    if (equalityComparands.indexOf(targetExpression) < 0) {
+                    if ((equalityComparands == null) ||
+                        equalityComparands.indexOf(targetExpression) < 0) {
                         continue;
                     }
                 }
