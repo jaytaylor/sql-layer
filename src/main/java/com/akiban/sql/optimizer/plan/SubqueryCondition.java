@@ -50,6 +50,11 @@ public class SubqueryCondition extends BaseExpression implements ConditionExpres
     }
 
     @Override
+    public Implementation getImplementation() {
+        return Implementation.NORMAL;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof SubqueryCondition)) return false;
         SubqueryCondition other = (SubqueryCondition)obj;

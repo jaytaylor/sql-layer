@@ -28,6 +28,7 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
 {
     private Comparison operation;
     private ExpressionNode left, right;
+    private Implementation implementation;
 
     public ComparisonCondition(Comparison operation,
                                ExpressionNode left, ExpressionNode right,
@@ -36,6 +37,7 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
         this.operation = operation;
         this.left = left;
         this.right = right;
+        this.implementation = Implementation.NORMAL;
     }
 
     public Comparison getOperation() {
@@ -46,6 +48,14 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
     }
     public ExpressionNode getRight() {
         return right;
+    }
+
+    @Override
+    public Implementation getImplementation() {
+        return implementation;
+    }
+    public void setImplementation(Implementation implementation) {
+        this.implementation = implementation;
     }
 
     public static Comparison reverseComparison(Comparison operation) {
@@ -119,6 +129,12 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
         left = right;
         right = temp;
         operation = reverseComparison(operation);
+    }
+
+    @Override
+    protected boolean maintainInDuplicateMap() {
+        // Index and join are likely to be pointed to elsewhere.
+        return (implementation != Implementation.NORMAL);
     }
 
     @Override

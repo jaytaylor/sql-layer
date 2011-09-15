@@ -15,7 +15,6 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.ais.model.Join;
 import com.akiban.qp.physicaloperator.API.JoinType;
 
 import java.util.*;
@@ -26,8 +25,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
     private Joinable left, right;
     private JoinType joinType;
     private List<ConditionExpression> joinConditions;
-    private Join groupJoin;
-    private ConditionExpression groupJoinCondition;
+    private TableGroupJoin groupJoin;
 
     public JoinNode(Joinable left, Joinable right, JoinType joinType) {
         this.left = left;
@@ -77,18 +75,20 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         this.joinConditions = joinConditions;
     }
 
-    public Join getGroupJoin() {
+    public TableGroupJoin getGroupJoin() {
         return groupJoin;
     }
-    public void setGroupJoin(Join groupJoin) {
+    public void setGroupJoin(TableGroupJoin groupJoin) {
         this.groupJoin = groupJoin;
     }
 
+    /** Get the condition that implements groupJoin. */
     public ConditionExpression getGroupJoinCondition() {
-        return groupJoinCondition;
-    }
-    public void setGroupJoinCondition(ConditionExpression groupJoinCondition) {
-        this.groupJoinCondition = groupJoinCondition;
+        for (ConditionExpression condition : joinConditions) {
+            if (condition.getImplementation() == ConditionExpression.Implementation.GROUP_JOIN)
+                return condition;
+        }
+        return null;
     }
 
     /** Reverse operands and outer join direction if necessary. */
@@ -108,10 +108,14 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
 
     @Override
     public void replaceInput(PlanNode oldInput, PlanNode newInput) {
-        if (left == oldInput)
+        if (left == oldInput) {
             left = (Joinable)newInput;
-        if (right == oldInput)
+            left.setOutput(this);
+        }
+        if (right == oldInput) {
             right = (Joinable)newInput;
+            right.setOutput(this);
+        }
     }
 
     @Override
@@ -125,10 +129,17 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
     
     @Override
     public String summaryString() {
-        return super.summaryString() + 
-            "(" + joinType.toString() +
-            ((joinConditions != null) ? joinConditions.toString() : "") + 
-            ")";
+        StringBuilder str = new StringBuilder(super.summaryString());
+        str.append("(");
+        str.append(joinType);
+        if (joinConditions != null)
+            str.append(joinConditions.toString());
+        if (groupJoin != null) {
+            str.append(" - ");
+            str.append(groupJoin);
+        }
+        str.append(")");
+        return str.toString();
     }
 
     @Override
@@ -136,12 +147,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         super.deepCopy(map);
         left = (Joinable)left.duplicate(map);
         right = (Joinable)right.duplicate(map);
-        int pos = -1;
-        if (groupJoinCondition != null)
-            pos = joinConditions.indexOf(groupJoinCondition);
         joinConditions = duplicateList(joinConditions, map);
-        if (groupJoinCondition != null)
-            groupJoinCondition = joinConditions.get(pos);
     }
 
 }

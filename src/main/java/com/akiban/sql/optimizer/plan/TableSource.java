@@ -19,6 +19,8 @@ package com.akiban.sql.optimizer.plan;
 public class TableSource extends BaseJoinable implements ColumnSource
 {
     private TableNode table;
+    private TableGroup group;
+    private TableGroupJoin parentJoin;
     // TODO: Add conditions, correlation name?, ...
 
     public TableSource(TableNode table) {
@@ -28,6 +30,21 @@ public class TableSource extends BaseJoinable implements ColumnSource
 
     public TableNode getTable() {
         return table;
+    }
+
+    public TableGroup getGroup() {
+        return group;
+    }
+    protected void setGroup(TableGroup group) {
+        this.group = group;
+    }
+
+    public TableGroupJoin getParentJoin() {
+        return parentJoin;
+    }
+    protected void setParentJoin(TableGroupJoin parentJoin) {
+        this.parentJoin = parentJoin;
+        this.group = parentJoin.getGroup();
     }
 
     @Override
@@ -47,7 +64,24 @@ public class TableSource extends BaseJoinable implements ColumnSource
     
     @Override
     public String summaryString() {
-        return super.summaryString() + "(" + table.toString() + ")";
+        StringBuilder str = new StringBuilder(super.summaryString());
+        str.append("(");
+        str.append(table.toString());
+        if (parentJoin != null) {
+            str.append(" - ");
+            str.append(parentJoin);
+        }
+        else if (group != null) {
+            str.append(" - ");
+            str.append(group);
+        }
+        str.append(")");
+        return str.toString();
+    }
+
+    @Override
+    protected boolean maintainInDuplicateMap() {
+        return true;
     }
 
     @Override
