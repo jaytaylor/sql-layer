@@ -40,8 +40,14 @@ public class IndexGoal implements Comparator<IndexUsage>
     private List<ConditionExpression> conditions;
 
     // If both grouping and ordering are present, they must be
-    // compatible: something satisfying the ordering would also handle
-    // the grouping.
+    // compatible. Something satisfying the ordering would also handle
+    // the grouping. All the order by columns must also be group by
+    // columns, though not necessarily in the same order. There can't
+    // be any additional order by columns, because even though it
+    // would be properly grouped going into aggregation, it wouldn't
+    // still be sorted by those coming out. It's hard to write such a
+    // query in SQL, since the ORDER BY can't contain columns not in
+    // the GROUP BY, and non-columns won't appear in the index.
     private List<ExpressionNode> grouping;
     private List<OrderByExpression> ordering;
 
@@ -139,7 +145,8 @@ public class IndexGoal implements Comparator<IndexUsage>
         determineOrderEffectiveness(IndexUsage index) {
         List<OrderByExpression> indexOrdering = index.getOrdering();
         List<ExpressionNode> equalityComparands = index.getEqualityComparands();
-        if (indexOrdering == null) return IndexUsage.OrderEffectiveness.NONE;
+        IndexUsage.OrderEffectiveness result = IndexUsage.OrderEffectiveness.NONE;
+        if (indexOrdering == null) return result;
         try_sorted:
         if (ordering != null) {
             Boolean reverse = null;
@@ -166,42 +173,49 @@ public class IndexGoal implements Comparator<IndexUsage>
                     // in fact unchanged due to equality condition.
                     // TODO: Should this have been noticed earlier on
                     // so that it can be taken out of the sort?
-                    if (equalityComparands.indexOf(targetExpression) >= 0)
+                    if (equalityComparands.contains(targetExpression))
                         continue;
                 }
                 break try_sorted;
             }
             if (reverse != null)
                 index.setReverseScan(reverse.booleanValue());
-            return IndexUsage.OrderEffectiveness.SORTED;
+            result = IndexUsage.OrderEffectiveness.SORTED;
         }
         if (grouping != null) {
             boolean anyFound = false, allFound = true;
             for (ExpressionNode targetExpression : grouping) {
-                boolean found = false;
-                for (OrderByExpression indexColumn : indexOrdering) {
-                    if (indexColumn.getExpression().equals(targetExpression)) {
-                        found = true;
+                int found = -1;
+                for (int i = 0; i < indexOrdering.size(); i++) {
+                    if (targetExpression.equals(indexOrdering.get(i).getExpression())) {
+                        found = i;
                         break;
                     }
                 }
-                if (!found) {
+                if (found < 0) {
                     allFound = false;
                     if ((equalityComparands == null) ||
-                        equalityComparands.indexOf(targetExpression) < 0) {
+                        !equalityComparands.contains(targetExpression))
                         continue;
-                    }
+                }
+                else if (found >= grouping.size()) {
+                    // Ordered by this column, but after some other
+                    // stuff which will break up the group. Only
+                    // partially grouped.
+                    allFound = false;
                 }
                 anyFound = true;
             }
             if (anyFound) {
-                if (allFound)
-                    return IndexUsage.OrderEffectiveness.GROUPED;
-                else
+                if (!allFound)
                     return IndexUsage.OrderEffectiveness.PARTIAL_GROUPED;
+                else if (result == IndexUsage.OrderEffectiveness.SORTED)
+                    return result;
+                else
+                    return IndexUsage.OrderEffectiveness.GROUPED;
             }
         }
-        return IndexUsage.OrderEffectiveness.NONE;
+        return result;
     }
 
     protected class UnboundFinder implements ExpressionVisitor {

@@ -123,18 +123,10 @@ public class PickIndexes extends BaseRule
             if (input instanceof Filter)
                 input = input.getOutput();
             if (input instanceof Sort) {
+                // Needs to be possible to satisfy both.
                 ordering = ((Sort)input).getOrderBy();
-                // Would this ordering satisfy the grouping, too?
-                for (ExpressionNode groupBy : grouping) {
-                    boolean found = false;
-                    for (OrderByExpression orderBy : ordering) {
-                        if (orderBy.getExpression().equals(groupBy)) {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        // Not possible: just try for grouping.
+                for (OrderByExpression orderBy : ordering) {
+                    if (!grouping.contains(orderBy.getExpression())) {
                         ordering = null;
                         break;
                     }
