@@ -30,11 +30,12 @@ import com.akiban.server.store.Store;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import static com.akiban.qp.physicaloperator.API.*;
 
-public class BranchLookup_NestedIT extends PhysicalOperatorITBase
+public class AncestorLookup_NestedIT extends PhysicalOperatorITBase
 {
     @Before
     public void before()
@@ -104,191 +105,116 @@ public class BranchLookup_NestedIT extends PhysicalOperatorITBase
     // Test argument validation
 
     @Test(expected = IllegalArgumentException.class)
-    public void testBLNGroupTableNull()
+    public void testALNGroupTableNull()
     {
-        branchLookup_Nested(null, aRowType, bRowType, LookupOption.KEEP_INPUT, 0);
+        ancestorLookup_Nested(null, aValueIndexRowType, Collections.singleton(aRowType), 0);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testBLNInputRowTypeNull()
+    public void testALNRowTypeNull()
     {
-        branchLookup_Nested(rabc, null, bRowType, LookupOption.KEEP_INPUT, 0);
+        ancestorLookup_Nested(rabc, null, Collections.singleton(aRowType), 0);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testBLNOutputRowTypeNull()
+    public void testALNAncestorTypesNull()
     {
-        branchLookup_Nested(rabc, aRowType, null, LookupOption.KEEP_INPUT, 0);
+        ancestorLookup_Nested(rabc, aValueIndexRowType, null, 0);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testBLNLookupOptionNull()
+    public void testALNAncestorTypesEmpty()
     {
-        branchLookup_Nested(rabc, aRowType, bRowType, null, 0);
+        ancestorLookup_Nested(rabc, aValueIndexRowType, Collections.<RowType>emptyList(), 0);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testBLNBadInputBindingPosition()
+    public void testALNBadBindingPosition()
     {
-        branchLookup_Nested(rabc, aRowType, bRowType, LookupOption.KEEP_INPUT, -1);
+        ancestorLookup_Nested(rabc, aValueIndexRowType, Collections.singleton(aRowType), -1);
     }
 
     // Test operator execution
 
     @Test
-    public void testAIndexToR()
+    public void testAIndexToA()
     {
         PhysicalOperator plan =
             map_NestedLoops(
                 indexScan_Default(aValueIndexRowType),
-                branchLookup_Nested(rabc, aValueIndexRowType, rRowType, LookupOption.DISCARD_INPUT, 0),
+                ancestorLookup_Nested(rabc, aValueIndexRowType, Collections.singleton(aRowType), 0),
                 0);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
-            // Each r row, and everything below it, is duplicated, because the A index refers to each r value twice.
-            row(rRowType, 1L, "r1"),
             row(aRowType, 13L, 1L, "a13"),
             row(aRowType, 14L, 1L, "a14"),
-            row(bRowType, 15L, 1L, "b15"),
-            row(bRowType, 16L, 1L, "b16"),
-            row(cRowType, 17L, 1L, "c17"),
-            row(cRowType, 18L, 1L, "c18"),
-            row(rRowType, 1L, "r1"),
-            row(aRowType, 13L, 1L, "a13"),
-            row(aRowType, 14L, 1L, "a14"),
-            row(bRowType, 15L, 1L, "b15"),
-            row(bRowType, 16L, 1L, "b16"),
-            row(cRowType, 17L, 1L, "c17"),
-            row(cRowType, 18L, 1L, "c18"),
-            row(rRowType, 2L, "r2"),
             row(aRowType, 23L, 2L, "a23"),
             row(aRowType, 24L, 2L, "a24"),
-            row(bRowType, 25L, 2L, "b25"),
-            row(bRowType, 26L, 2L, "b26"),
-            row(cRowType, 27L, 2L, "c27"),
-            row(cRowType, 28L, 2L, "c28"),
-            row(rRowType, 2L, "r2"),
-            row(aRowType, 23L, 2L, "a23"),
-            row(aRowType, 24L, 2L, "a24"),
-            row(bRowType, 25L, 2L, "b25"),
-            row(bRowType, 26L, 2L, "b26"),
-            row(cRowType, 27L, 2L, "c27"),
-            row(cRowType, 28L, 2L, "c28"),
         };
         compareRows(expected, cursor);
     }
 
     @Test
-    public void testAToR()
+    public void testAIndexToAAndR()
     {
         PhysicalOperator plan =
             map_NestedLoops(
-                ancestorLookup_Default(
-                    indexScan_Default(aValueIndexRowType),
-                    rabc,
-                    aValueIndexRowType,
-                    Collections.singleton(aRowType),
-                    LookupOption.DISCARD_INPUT),
-                branchLookup_Nested(rabc, aRowType, rRowType, LookupOption.DISCARD_INPUT, 0),
+                indexScan_Default(aValueIndexRowType),
+                ancestorLookup_Nested(rabc, aValueIndexRowType, Arrays.asList(aRowType, rRowType), 0),
                 0);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
-            // Each r row, and everything below it, is duplicated, because the A index refers to each r value twice.
             row(rRowType, 1L, "r1"),
             row(aRowType, 13L, 1L, "a13"),
-            row(aRowType, 14L, 1L, "a14"),
-            row(bRowType, 15L, 1L, "b15"),
-            row(bRowType, 16L, 1L, "b16"),
-            row(cRowType, 17L, 1L, "c17"),
-            row(cRowType, 18L, 1L, "c18"),
             row(rRowType, 1L, "r1"),
-            row(aRowType, 13L, 1L, "a13"),
             row(aRowType, 14L, 1L, "a14"),
-            row(bRowType, 15L, 1L, "b15"),
-            row(bRowType, 16L, 1L, "b16"),
-            row(cRowType, 17L, 1L, "c17"),
-            row(cRowType, 18L, 1L, "c18"),
             row(rRowType, 2L, "r2"),
             row(aRowType, 23L, 2L, "a23"),
-            row(aRowType, 24L, 2L, "a24"),
-            row(bRowType, 25L, 2L, "b25"),
-            row(bRowType, 26L, 2L, "b26"),
-            row(cRowType, 27L, 2L, "c27"),
-            row(cRowType, 28L, 2L, "c28"),
             row(rRowType, 2L, "r2"),
-            row(aRowType, 23L, 2L, "a23"),
             row(aRowType, 24L, 2L, "a24"),
-            row(bRowType, 25L, 2L, "b25"),
-            row(bRowType, 26L, 2L, "b26"),
-            row(cRowType, 27L, 2L, "c27"),
-            row(cRowType, 28L, 2L, "c28"),
         };
         compareRows(expected, cursor);
     }
 
     @Test
-    public void testAToB()
+    public void testAIndexToARAndA()
     {
         PhysicalOperator plan =
             map_NestedLoops(
-                filter_Default(
-                    groupScan_Default(rabc),
-                    Collections.singleton(aRowType)),
-                branchLookup_Nested(rabc, aRowType, bRowType, LookupOption.DISCARD_INPUT, 0),
+                indexScan_Default(aValueIndexRowType),
+                ancestorLookup_Nested(rabc, aValueIndexRowType, Arrays.asList(rRowType, aRowType), 0),
                 0);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
-            row(bRowType, 15L, 1L, "b15"),
-            row(bRowType, 16L, 1L, "b16"),
-            row(bRowType, 15L, 1L, "b15"),
-            row(bRowType, 16L, 1L, "b16"),
-            row(bRowType, 25L, 2L, "b25"),
-            row(bRowType, 26L, 2L, "b26"),
-            row(bRowType, 25L, 2L, "b25"),
-            row(bRowType, 26L, 2L, "b26"),
+            row(rRowType, 1L, "r1"),
+            row(aRowType, 13L, 1L, "a13"),
+            row(rRowType, 1L, "r1"),
+            row(aRowType, 14L, 1L, "a14"),
+            row(rRowType, 2L, "r2"),
+            row(aRowType, 23L, 2L, "a23"),
+            row(rRowType, 2L, "r2"),
+            row(aRowType, 24L, 2L, "a24"),
         };
         compareRows(expected, cursor);
     }
 
     @Test
-    public void testAToBAndC()
+    public void testAIndexToAToR()
     {
         PhysicalOperator plan =
             map_NestedLoops(
                 map_NestedLoops(
-                    filter_Default(
-                        groupScan_Default(rabc),
-                        Collections.singleton(aRowType)),
-                    branchLookup_Nested(rabc, aRowType, bRowType, LookupOption.DISCARD_INPUT, 0),
+                    indexScan_Default(aValueIndexRowType),
+                    ancestorLookup_Nested(rabc, aValueIndexRowType, Arrays.asList(aRowType), 0),
                     0),
-                branchLookup_Nested(rabc, bRowType, cRowType, LookupOption.KEEP_INPUT, 1),
+                ancestorLookup_Nested(rabc, aRowType, Arrays.asList(rRowType), 1),
                 1);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
-            row(bRowType, 15L, 1L, "b15"),
-            row(cRowType, 17L, 1L, "c17"),
-            row(cRowType, 18L, 1L, "c18"),
-            row(bRowType, 16L, 1L, "b16"),
-            row(cRowType, 17L, 1L, "c17"),
-            row(cRowType, 18L, 1L, "c18"),
-            row(bRowType, 15L, 1L, "b15"),
-            row(cRowType, 17L, 1L, "c17"),
-            row(cRowType, 18L, 1L, "c18"),
-            row(bRowType, 16L, 1L, "b16"),
-            row(cRowType, 17L, 1L, "c17"),
-            row(cRowType, 18L, 1L, "c18"),
-            row(bRowType, 25L, 2L, "b25"),
-            row(cRowType, 27L, 2L, "c27"),
-            row(cRowType, 28L, 2L, "c28"),
-            row(bRowType, 26L, 2L, "b26"),
-            row(cRowType, 27L, 2L, "c27"),
-            row(cRowType, 28L, 2L, "c28"),
-            row(bRowType, 25L, 2L, "b25"),
-            row(cRowType, 27L, 2L, "c27"),
-            row(cRowType, 28L, 2L, "c28"),
-            row(bRowType, 26L, 2L, "b26"),
-            row(cRowType, 27L, 2L, "c27"),
-            row(cRowType, 28L, 2L, "c28"),
+            row(rRowType, 1L, "r1"),
+            row(rRowType, 1L, "r1"),
+            row(rRowType, 2L, "r2"),
+            row(rRowType, 2L, "r2"),
         };
         compareRows(expected, cursor);
     }
