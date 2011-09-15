@@ -24,8 +24,12 @@ import com.akiban.sql.optimizer.plan.*;
 
 import java.util.*;
 
+/** Resolve aggregate functions and group by expressions to output
+ * columns of the "group table," that is, the result of aggregation.
+ */
 public class AggregateMapper extends BaseRule
 {
+    @Override
     public PlanNode apply(PlanNode plan) {
         Collector c = new Collector();
         plan.accept(c);

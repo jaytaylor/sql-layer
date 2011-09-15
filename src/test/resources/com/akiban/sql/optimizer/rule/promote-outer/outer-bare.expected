@@ -1,0 +1,6 @@
+SelectQuery@3dc286e2
+  ResultSet@2e257f1b[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date]
+    Filter@1fbbdd48[]
+      JoinNode@66bcb23e(LEFT_JOIN[user.customers.cid == user.orders.cid])
+        TableSource@6e5a3923(user.customers)
+        TableSource@655d616e(user.orders)

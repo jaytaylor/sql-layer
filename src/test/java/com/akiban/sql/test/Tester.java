@@ -33,8 +33,8 @@ import com.akiban.sql.optimizer.simplified.SimplifiedUpdateStatement;
 import com.akiban.sql.optimizer.plan.AST;
 import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.PlanToString;
-import com.akiban.sql.optimizer.rule.ASTToStatement;
-import com.akiban.sql.optimizer.rule.AggregateMapper;
+import com.akiban.sql.optimizer.rule.BaseRule;
+import com.akiban.sql.optimizer.rule.RulesTestHelper;
 import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.DMLStatementNode;
@@ -53,7 +53,7 @@ import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 
 import java.util.*;
-import java.io.FileReader;
+import java.io.*;
 
 /** Standalone testing. */
 public class Tester
@@ -64,7 +64,7 @@ public class Tester
         BIND, COMPUTE_TYPES,
         BOOLEAN_NORMALIZE, FLATTEN_SUBQUERIES,
         GROUP, GROUP_REWRITE, 
-        SIMPLIFY, SIMPLIFY_REORDER, PLAN_0, PLAN_1, PLAN_2, OPERATORS
+        SIMPLIFY, SIMPLIFY_REORDER, PLAN, OPERATORS
     }
 
     List<Action> actions;
@@ -76,6 +76,7 @@ public class Tester
     SubqueryFlattener subqueryFlattener;
     Grouper grouper;
     OperatorCompiler operatorCompiler;
+    List<BaseRule> planRules;
     int repeat;
 
     public Tester() {
@@ -170,17 +171,11 @@ public class Tester
                         System.out.println(query);
                 }
                 break;
-            case PLAN_0:
-            case PLAN_1:
-            case PLAN_2:
+            case PLAN:
                 {
                     PlanNode plan = new AST((DMLStatementNode)stmt);
-                    if (action != Action.PLAN_0) {
-                        plan = new ASTToStatement().apply(plan);
-                    }
-                    if ((action != Action.PLAN_0) &&
-                        (action != Action.PLAN_1)) {
-                        plan = new AggregateMapper().apply(plan);
+                    for (BaseRule rule : planRules) {
+                        plan = rule.apply(plan);
                     }
                     System.out.println(PlanToString.of(plan));
                 }
@@ -234,6 +229,14 @@ public class Tester
             operatorCompiler.addView(view);
     }
 
+    public void loadPlanRules(File file) throws Exception {
+        planRules = RulesTestHelper.loadRules(file);
+    }
+
+    public void parsePlanRules(String rules) throws Exception {
+        planRules = RulesTestHelper.parseRules(rules);
+    }
+
     public static String maybeFile(String sql) throws Exception {
         if (!sql.startsWith("@"))
             return sql;
@@ -259,7 +262,7 @@ public class Tester
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             System.out.println("Usage: Tester " +
-                               "[-clone] [-bind] [-types] [-boolean] [-flatten] [-group] [-group-rewrite] [-simplify] [-simplify-reorder] [-plan-{0,1,2}] [-operators]" +
+                               "[-clone] [-bind] [-types] [-boolean] [-flatten] [-group] [-group-rewrite] [-simplify] [-simplify-reorder] [-plan @planfile] [-operators]" +
                                "[-tree] [-print] [-print-bound]" +
                                "[-schema ddl] [-view ddl]..." +
                                "sql...");
@@ -304,12 +307,14 @@ public class Tester
                     tester.addAction(Action.SIMPLIFY);
                 else if ("-simplify-reorder".equals(arg))
                     tester.addAction(Action.SIMPLIFY_REORDER);
-                else if ("-plan-0".equals(arg))
-                    tester.addAction(Action.PLAN_0);
-                else if ("-plan-1".equals(arg))
-                    tester.addAction(Action.PLAN_1);
-                else if ("-plan-2".equals(arg))
-                    tester.addAction(Action.PLAN_2);
+                else if ("-plan".equals(arg)) {
+                    String rules = args[i++];
+                    if (rules.startsWith("@"))
+                        tester.loadPlanRules(new File(rules.substring(1)));
+                    else
+                        tester.parsePlanRules(rules);
+                    tester.addAction(Action.PLAN);
+                }
                 else if ("-operators".equals(arg))
                     tester.addAction(Action.OPERATORS);
                 else if ("-repeat".equals(arg))
