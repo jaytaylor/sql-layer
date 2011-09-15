@@ -658,6 +658,19 @@ public class ASTToStatement extends BaseRule
                                                     condition.getType(), condition));
     }
 
+    /** Get given condition as a single node. */
+    protected ConditionExpression toCondition(ValueNode condition)
+            throws StandardException {
+        List<ConditionExpression> conditions = new ArrayList<ConditionExpression>(1);
+        addCondition(conditions, condition);
+        if (conditions.size() == 1)
+            return conditions.get(0);
+        // CASE WHEN x BETWEEN a AND b means multiple conditions from single one in AST.
+        else
+            return new LogicalFunctionCondition("and", conditions,
+                                                condition.getType(), condition);
+    }
+
     /** LIMIT / OFFSET */
     protected Limit toLimit(PlanNode input, 
                             ValueNode offsetClause, 
@@ -848,6 +861,13 @@ public class ASTToStatement extends BaseRule
             return new FunctionExpression(functionName,
                                           Collections.<ExpressionNode>emptyList(),
                                           valueNode.getType(), valueNode);
+        }
+        else if (valueNode instanceof ConditionalNode) {
+            ConditionalNode cond = (ConditionalNode)valueNode;
+            return new IfElseExpression(toCondition(cond.getTestCondition()),
+                                        toExpression(cond.getThenNode()),
+                                        toExpression(cond.getElseNode()),
+                                        cond.getType(), cond);
         }
         else
             throw new UnsupportedSQLException("Unsupported operand", valueNode);

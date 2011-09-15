@@ -112,7 +112,7 @@ public class PhysicalOperatorITBase extends ITBase
         else {
             persistitStore = (PersistitStore) plainStore;
         }
-        adapter = new PersistitAdapter(schema, persistitStore, session());
+        adapter = new PersistitAdapter(schema, persistitStore, treeService(), session());
     }
 
     protected void use(NewRow[] db)

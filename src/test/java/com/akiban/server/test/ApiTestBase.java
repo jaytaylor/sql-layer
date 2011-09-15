@@ -46,6 +46,7 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.util.GroupIndexCreator;
 import com.akiban.util.Strings;
@@ -258,6 +259,10 @@ public class ApiTestBase {
 
     protected final DXLService dxl() {
         return sm.getDXL();
+    }
+
+    protected final TreeService treeService() {
+        return sm.getTreeService();
     }
 
     protected final int aisGeneration() {
