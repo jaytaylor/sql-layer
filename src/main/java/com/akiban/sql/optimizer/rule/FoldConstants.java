@@ -52,6 +52,8 @@ public class FoldConstants extends BaseRule implements ExpressionRewriteVisitor
             return castExpression((CastExpression)expr);
         else if (expr instanceof FunctionExpression)
             return functionExpression((FunctionExpression)expr);
+        else if (expr instanceof IfElseExpression)
+            return ifElseExpression((IfElseExpression)expr);
         else if (expr instanceof ColumnExpression)
             return columnExpression((ColumnExpression)expr);
         else if (expr instanceof SubqueryExpression)
@@ -87,8 +89,6 @@ public class FoldConstants extends BaseRule implements ExpressionRewriteVisitor
             return isNullExpression(fun);
         else if ("COALESCE".equals(fname))
             return coalesceExpression(fun);
-        else if ("case".equals(fname))
-            return caseExpression(fun);
 
         boolean allConstant = true, anyNull = false;
         for (ExpressionNode operand : fun.getOperands()) {
@@ -158,8 +158,14 @@ public class FoldConstants extends BaseRule implements ExpressionRewriteVisitor
         return fun;
     }
 
-    protected ExpressionNode caseExpression(FunctionExpression fun) {
-        return fun;
+    protected ExpressionNode ifElseExpression(IfElseExpression cond) {
+        Constantness c = isConstant(cond.getTestCondition());
+        if (c == Constantness.VARIABLE)
+            return cond;
+        if (((ConstantExpression)cond.getTestCondition()).getValue() == Boolean.TRUE)
+            return cond.getThenExpression();
+        else
+            return cond.getElseExpression();
     }
 
     protected ExpressionNode columnExpression(ColumnExpression col) {
