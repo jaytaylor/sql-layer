@@ -37,7 +37,12 @@ public class Filter extends BasePlanWithInput
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
             if (getInput().accept(v)) {
-                if (v instanceof ExpressionVisitor) {
+                if (v instanceof ExpressionRewriteVisitor) {
+                    for (int i = 0; i < conditions.size(); i++) {
+                        conditions.set(i, (ConditionExpression) conditions.get(i).accept((ExpressionRewriteVisitor)v));
+                    }
+                }
+                else if (v instanceof ExpressionVisitor) {
                     for (ConditionExpression condition : conditions) {
                         if (!condition.accept((ExpressionVisitor)v)) {
                             break;

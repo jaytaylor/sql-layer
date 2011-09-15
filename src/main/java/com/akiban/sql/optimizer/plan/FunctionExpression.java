@@ -74,12 +74,15 @@ public class FunctionExpression extends BaseExpression
 
     @Override
     public ExpressionNode accept(ExpressionRewriteVisitor v) {
-        ExpressionNode result = v.visit(this);
-        if (result != this) return result;
+        boolean childrenFirst = v.visitChildrenFirst(this);
+        if (!childrenFirst) {
+            ExpressionNode result = v.visit(this);
+            if (result != this) return result;
+        }
         for (int i = 0; i < operands.size(); i++) {
             operands.set(i, operands.get(i).accept(v));
         }
-        return this;
+        return (childrenFirst) ? v.visit(this) : this;
     }
 
     @Override

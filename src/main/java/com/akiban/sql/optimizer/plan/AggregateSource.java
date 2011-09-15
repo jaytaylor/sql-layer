@@ -52,7 +52,15 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
             if (getInput().accept(v)) {
-                if (v instanceof ExpressionVisitor) {
+                if (v instanceof ExpressionRewriteVisitor) {
+                    for (int i = 0; i < groupBy.size(); i++) {
+                        groupBy.set(i, groupBy.get(i).accept((ExpressionRewriteVisitor)v));
+                    }
+                    for (int i = 0; i < aggregates.size(); i++) {
+                        aggregates.set(i, (AggregateFunctionExpression)aggregates.get(i).accept((ExpressionRewriteVisitor)v));
+                    }
+                }
+                else if (v instanceof ExpressionVisitor) {
                     children:
                     {
                         for (ExpressionNode child : groupBy) {

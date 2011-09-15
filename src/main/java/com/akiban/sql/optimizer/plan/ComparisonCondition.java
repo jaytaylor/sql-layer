@@ -105,11 +105,14 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
 
     @Override
     public ExpressionNode accept(ExpressionRewriteVisitor v) {
-        ExpressionNode result = v.visit(this);
-        if (result != this) return result;
+        boolean childrenFirst = v.visitChildrenFirst(this);
+        if (!childrenFirst) {
+            ExpressionNode result = v.visit(this);
+            if (result != this) return result;
+        }
         left = left.accept(v);
         right = right.accept(v);
-        return this;
+        return (childrenFirst) ? v.visit(this) : this;
     }
 
     @Override
