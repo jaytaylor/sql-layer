@@ -308,8 +308,7 @@ public class PersistitStore implements Store {
                     // TODO: Maintain a counter elsewhere, maybe in the
                     // FieldDef. At the end of the bulk load,
                     // TODO: assign the counter to TableStatus.
-                    TableStatus tableStatus = fieldDef.getRowDef()
-                            .getTableStatus();
+                    TableStatus tableStatus = fieldDef.getRowDef().getTableStatus();
                     hkey.append(tableStatus.allocateNewUniqueId());
                 } else {
                     appender.append(hKeyValues[k], fieldDef);

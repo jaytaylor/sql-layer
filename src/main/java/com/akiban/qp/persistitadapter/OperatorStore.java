@@ -457,7 +457,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 return PersistitGroupRow.newPersistitGroupRow(adapter, newRowData);
             }
             // Note: some encodings are untested except as necessary for mtr
-            NewRow newRow = new NiceRow(rowDef.getRowDefId());
+            NewRow newRow = adapter.niceRow(rowDef);
             ToObjectValueTarget target = new ToObjectValueTarget();
             for (int i=0; i < original.rowType().nFields(); ++i) {
                 if (columnSelector.includesColumn(i)) {
