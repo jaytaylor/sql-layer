@@ -39,5 +39,6 @@ public interface ValueTarget {
     void putUInt(long value);
     void putVarBinary(ByteSource value);
     void putYear(long value);
+    void putBool(boolean value);
     AkType getConversionType();
 }

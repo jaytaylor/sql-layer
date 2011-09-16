@@ -61,6 +61,11 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource
     }
 
     @Override
+    protected boolean maintainInDuplicateMap() {
+        return true;
+    }
+
+    @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
         expressions = new ArrayList<List<ExpressionNode>>(expressions);

@@ -76,6 +76,11 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
     }
 
     @Override
+    protected boolean maintainInDuplicateMap() {
+        return true;
+    }
+
+    @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
         groupBy = duplicateList(groupBy, map);

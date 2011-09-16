@@ -32,14 +32,11 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
 
-import org.yaml.snakeyaml.Yaml;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileFilter;
 import java.io.FileReader;
 import java.io.IOException;
@@ -88,24 +85,12 @@ public class RulesTest extends OptimizerTestBase implements TestBase.GenerateAnd
 
     @Before
     public void loadRules() throws Exception {
-        rules = new ArrayList<BaseRule>();
-        Yaml yaml = new Yaml();
-        FileInputStream istr = new FileInputStream(rulesFile);
-        List<Object> list = (List<Object>)yaml.load(istr);
-        istr.close();
-        for (Object obj : list) {
-            if (obj instanceof String) {
-                rules.add((BaseRule)Class.forName((String)obj).newInstance());
-            }
-            else {
-                throw new Exception("Don't know what to do with " + obj);
-            }
-        }
+        rules = RulesTestHelper.loadRules(rulesFile);
     }
 
     @Before
     public void loadDDL() throws Exception {
-        loadSchema(schemaFile);
+        RulesTestHelper.ensureRowDefs(loadSchema(schemaFile));
     }
 
     @Test

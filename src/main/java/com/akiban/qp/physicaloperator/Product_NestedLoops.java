@@ -55,6 +55,7 @@ class Product_NestedLoops extends PhysicalOperator
     @Override
     public void findDerivedTypes(Set<RowType> derivedTypes)
     {
+        innerInputOperator.findDerivedTypes(derivedTypes);
         outerInputOperator.findDerivedTypes(derivedTypes);
         derivedTypes.add(productType);
     }
@@ -165,6 +166,7 @@ class Product_NestedLoops extends PhysicalOperator
         {
             if (!closed) {
                 closeOuter();
+                closed = true;
             }
         }
 
@@ -196,7 +198,6 @@ class Product_NestedLoops extends PhysicalOperator
         {
             closeInner();
             outerInput.close();
-            closed = true;
         }
 
         private void closeInner()

@@ -15,10 +15,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 
 public abstract class BaseDuplicatable implements Duplicatable, Cloneable
 {
@@ -27,11 +24,15 @@ public abstract class BaseDuplicatable implements Duplicatable, Cloneable
         return duplicate(new DuplicateMap());
     }
 
+    protected boolean maintainInDuplicateMap() {
+        return false;
+    }
+
     @Override
     public Duplicatable duplicate(DuplicateMap map) {
         BaseDuplicatable copy;
         try {
-            if (this instanceof DuplicatableOnce) {
+            if (maintainInDuplicateMap()) {
                 copy = map.get(this);
                 if (copy != null)
                     return copy;
@@ -54,9 +55,18 @@ public abstract class BaseDuplicatable implements Duplicatable, Cloneable
 
     protected static <T extends Duplicatable> List<T> duplicateList(List<T> list,
                                                                     DuplicateMap map) {
-        List<T> copy = new ArrayList<T>(list);
-        for (int i = 0; i < copy.size(); i++) {
-            copy.set(i, (T)copy.get(i).duplicate(map));
+        List<T> copy = new ArrayList<T>(list.size());
+        for (T elem : list) {
+            copy.add((T)elem.duplicate(map));
+        }
+        return copy;
+    }
+
+    protected static <T extends Duplicatable> Set<T> duplicateSet(Set<T> set,
+                                                                  DuplicateMap map) {
+        Set<T> copy = new HashSet<T>(set.size());
+        for (T elem : set) {
+            copy.add((T)elem.duplicate(map));
         }
         return copy;
     }

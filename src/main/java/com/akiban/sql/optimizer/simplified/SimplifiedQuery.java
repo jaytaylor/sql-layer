@@ -798,20 +798,30 @@ public class SimplifiedQuery
     }
 
     protected void addBinaryCondition(BinaryOperatorNode binop, Comparison op) {
-        ColumnExpression left;
-        SimpleExpression right;
-        left = getColumnExpression(binop.getLeftOperand());
-        if (left != null) {
-            right = getSimpleExpression(binop.getRightOperand());
+        SimpleExpression left, right;
+        left = getSimpleExpression(binop.getLeftOperand());
+        right = getSimpleExpression(binop.getRightOperand());
+        if (!left.isColumn()) {
+            if (right.isColumn()) {
+                SimpleExpression temp = left;
+                left = right;
+                right = temp;
+                op = ColumnCondition.reverseComparison(op);
+            }
+            else if ((left instanceof LiteralExpression) && 
+                     (right instanceof LiteralExpression)) {
+                // Know that literals don't need offsets, rows or bindings.
+                boolean answer = (Boolean)
+                    compare(left.generateExpression(null), 
+                            op,
+                            right.generateExpression(null))
+                    .evaluate(null, null);
+                if (answer) return; // Boolean true: nothing to add.
+                // Boolean false; no way to add such a condition; throw error.
+            }
+            throw new UnsupportedSQLException("WHERE operands", binop);
         }
-        else {
-            left = getColumnExpression(binop.getRightOperand());
-            if (left == null)
-                throw new UnsupportedSQLException("WHERE operands", binop);
-            right = getSimpleExpression(binop.getLeftOperand());
-            op = ColumnCondition.reverseComparison(op);
-        }
-        conditions.add(new ColumnCondition(left, right, op));
+        conditions.add(new ColumnCondition((ColumnExpression)left, right, op));
     }
 
     protected void addBetweenCondition(BetweenOperatorNode between) {

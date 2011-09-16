@@ -1,0 +1,8 @@
+SelectQuery@b1aebf
+  ResultSet@1478a43[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date, user.items.iid, user.items.oid, user.items.sku, user.items.quan, user.items.price]
+    Filter@1c65216[]
+      JoinNode@1372656(LEFT_JOIN[user.items.oid == user.orders.oid] - TableGroupJoin@1b6101e(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+        JoinNode@1dc423f(LEFT_JOIN[user.orders.cid == user.customers.cid] - TableGroupJoin@1815bfb(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+          TableSource@1bdc9d8(user.customers - TableGroup@10ea9ba(customers))
+          TableSource@1a918d5(user.orders - TableGroupJoin@1815bfb(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+        TableSource@9d6065(user.items - TableGroupJoin@1b6101e(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))

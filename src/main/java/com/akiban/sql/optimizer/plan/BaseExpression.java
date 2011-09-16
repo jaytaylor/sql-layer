@@ -25,7 +25,7 @@ import java.util.Map;
 /** An evaluated value. 
  * Usually part of a larger expression tree.
 */
-public abstract class BaseExpression extends BaseDuplicatable implements ExpressionNode
+public abstract class BaseExpression extends BasePlanElement implements ExpressionNode
 {
     private DataTypeDescriptor sqlType;
     // TODO: Maybe AkType here once that's stable.

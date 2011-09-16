@@ -63,7 +63,8 @@ public class PhysicalOperatorITBase extends ITBase
             "cid int",
             "salesman varchar(20)",
             "constraint __akiban_oc foreign key __akiban_oc(cid) references customer(cid)",
-            "index(salesman)");
+            "index(salesman)",
+            "index(cid)");
         item = createTable(
             "schema", "item",
             "iid int not null key",
@@ -111,7 +112,7 @@ public class PhysicalOperatorITBase extends ITBase
         else {
             persistitStore = (PersistitStore) plainStore;
         }
-        adapter = new PersistitAdapter(schema, persistitStore, session());
+        adapter = new PersistitAdapter(schema, persistitStore, treeService(), session());
     }
 
     protected void use(NewRow[] db)

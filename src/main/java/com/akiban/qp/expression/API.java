@@ -49,6 +49,11 @@ public class API
     {
         return new Variable(position);
     }
+
+    public static Expression boundField(int rowPosition, int fieldPosition)
+    {
+        return new BoundField(rowPosition, fieldPosition);
+    }
     
     public static Comparison EQ = Comparison.EQ;
     public static Comparison NE = Comparison.NE;

@@ -31,7 +31,19 @@ public class ProjectedRow extends AbstractRow
     @Override
     public String toString()
     {
-        return String.format("%s[%s]", row, projections);
+        StringBuilder buffer = new StringBuilder();
+        buffer.append('(');
+        boolean first = true;
+        for (Expression expression : projections) {
+            if (first) {
+                first = false;
+            } else {
+                buffer.append(", ");
+            }
+            buffer.append(expression.evaluate(row.get(), bindings));
+        }
+        buffer.append(')');
+        return buffer.toString();
     }
 
     // Row interface

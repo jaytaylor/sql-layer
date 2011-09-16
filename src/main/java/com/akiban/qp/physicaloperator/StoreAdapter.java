@@ -48,6 +48,8 @@ public abstract class StoreAdapter
 
     public abstract RowData rowData(RowDef rowDef, RowBase row, Bindings bindings);
 
+    public abstract Cursor sort(Cursor input, RowType rowType, API.Ordering ordering, Bindings bindings);
+
     // For use by subclasses
 
     protected StoreAdapter(Schema schema)

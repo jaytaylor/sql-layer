@@ -56,6 +56,8 @@ public final class FromObjectValueSource implements ValueSource {
             asType = AkType.VARBINARY;
         else if (object instanceof BigInteger)
              asType = AkType.U_BIGINT;
+        else if (object instanceof Boolean)
+             asType = AkType.BOOL;
         else if (object instanceof Character) {
             object = String.valueOf(object);
             asType = AkType.VARCHAR;
@@ -161,6 +163,11 @@ public final class FromObjectValueSource implements ValueSource {
     @Override
     public String getText() {
         return as(String.class, AkType.TEXT);
+    }
+
+    @Override
+    public boolean getBool() {
+        return as(Boolean.class, AkType.BOOL);
     }
 
     @Override

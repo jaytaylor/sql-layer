@@ -19,7 +19,7 @@ import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
 
 public class PersistitAdapterException extends StoreAdapterRuntimeException
 {
-    PersistitAdapterException(Exception exception)
+    public PersistitAdapterException(Exception exception)
     {
         super(exception);
     }

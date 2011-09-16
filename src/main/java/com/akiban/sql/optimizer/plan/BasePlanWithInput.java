@@ -34,8 +34,10 @@ public abstract class BasePlanWithInput extends BasePlanNode implements PlanWith
 
     @Override
     public void replaceInput(PlanNode oldInput, PlanNode newInput) {
-        if (input == oldInput)
+        if (input == oldInput) {
             input = newInput;
+            input.setOutput(this);
+        }
     }
 
     @Override
