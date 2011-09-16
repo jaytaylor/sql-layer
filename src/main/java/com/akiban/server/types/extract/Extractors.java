@@ -25,37 +25,36 @@ import java.util.EnumMap;
 import java.util.Map;
 
 public final class Extractors {
+    // Extractors interface
     public static LongExtractor getLongExtractor(AkType type) {
         return get(type, LongExtractor.class, true);
     }
 
     public static BooleanExtractor getBooleanExtractor() {
-        return get(AkType.BOOL, BooleanExtractor.class);
+        return BOOLEAN_EXTRACTOR;
     }
 
     public static DoubleExtractor getDoubleExtractor() {
-        return get(AkType.DOUBLE, DoubleExtractor.class);
+        return DOUBLE_EXTRACTOR;
     }
 
     public static ObjectExtractor<String> getStringExtractor() {
-        return get(AkType.VARCHAR, ExtractorForString.class);
+        return STRING_EXTRACTOR;
     }
 
     public static ObjectExtractor<BigInteger> getUBigIntExtractor() {
-        return get(AkType.U_BIGINT, ExtractorForBigInteger.class);
+        return UBIGINT_EXTRACTOR;
     }
 
     public static ObjectExtractor<BigDecimal> getDecimalExtractor() {
-        return get(AkType.DECIMAL, ExtractorForBigDecimal.class);
+        return DECIMAL_EXTRACTOR;
     }
 
     public static ObjectExtractor<ByteSource> getByteSourceExtractor() {
-        return get(AkType.VARBINARY, ExtractorForVarBinary.class);
+        return VARBINARY_EXTRACTOR;
     }
 
-    private static <E extends AbstractExtractor> E get(AkType type, Class<E> extractorClass) {
-        return get(type, extractorClass, false);
-    }
+    // private methods
 
     private static <E extends AbstractExtractor> E get(AkType type, Class<E> extractorClass, boolean nullDefault) {
         AbstractExtractor extractor = readOnlyExtractorsMap.get(type);
@@ -69,27 +68,25 @@ public final class Extractors {
         );
     }
 
-    private static Map<AkType,AbstractExtractor> createExtractorsMap() {
-        Map<AkType,AbstractExtractor> result = new EnumMap<AkType, AbstractExtractor>(AkType.class);
+    private static Map<AkType,? extends LongExtractor> createLongExtractorsMap() {
+        Map<AkType,LongExtractor> result = new EnumMap<AkType,LongExtractor>(AkType.class);
         result.put(AkType.DATE, ExtractorsForDates.DATE);
         result.put(AkType.DATETIME, ExtractorsForDates.DATETIME);
-        result.put(AkType.DECIMAL, new ExtractorForBigDecimal());
-        result.put(AkType.DOUBLE, new DoubleExtractor());
-        result.put(AkType.FLOAT, new DoubleExtractor());
         result.put(AkType.INT, ExtractorsForLong.INT);
         result.put(AkType.LONG, ExtractorsForLong.LONG);
-        result.put(AkType.VARCHAR, new ExtractorForString());
-        result.put(AkType.TEXT, new ExtractorForString());
         result.put(AkType.TIME, ExtractorsForDates.TIME);
         result.put(AkType.TIMESTAMP, ExtractorsForDates.TIMESTAMP);
-        result.put(AkType.U_BIGINT, new ExtractorForBigInteger());
-        result.put(AkType.U_DOUBLE, new DoubleExtractor());
-        result.put(AkType.U_FLOAT,  new DoubleExtractor());
         result.put(AkType.U_INT, ExtractorsForLong.U_INT);
-        result.put(AkType.VARBINARY, new ExtractorForVarBinary());
         result.put(AkType.YEAR, ExtractorsForDates.YEAR);
         return result;
     }
 
-    private static final Map<AkType,AbstractExtractor> readOnlyExtractorsMap = createExtractorsMap();
+    private static final BooleanExtractor BOOLEAN_EXTRACTOR = new BooleanExtractor();
+    private static final DoubleExtractor DOUBLE_EXTRACTOR = new DoubleExtractor();
+    private static final ExtractorForString STRING_EXTRACTOR = new ExtractorForString();
+    private static final ExtractorForBigInteger UBIGINT_EXTRACTOR = new ExtractorForBigInteger();
+    private static final ExtractorForBigDecimal DECIMAL_EXTRACTOR = new ExtractorForBigDecimal();
+    private static final ExtractorForVarBinary VARBINARY_EXTRACTOR = new ExtractorForVarBinary();
+
+    private static final Map<AkType,? extends LongExtractor> readOnlyExtractorsMap = createLongExtractorsMap();
 }

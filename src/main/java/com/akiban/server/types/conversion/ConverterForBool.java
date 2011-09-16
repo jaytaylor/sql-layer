@@ -24,6 +24,8 @@ import com.akiban.server.types.extract.Extractors;
 import java.math.BigInteger;
 
 public final class ConverterForBool extends AbstractConverter {
+    public static final ConverterForBool INSTANCE = new ConverterForBool();
+
     @Override
     protected void doConvert(ValueSource source, ValueTarget target) {
         target.putBool(extractor.getBoolean(source));
