@@ -49,6 +49,10 @@ public class AggregateFunctionExpression extends BaseExpression
         return distinct;
     }
 
+    public void setOperand(ExpressionNode operand) {
+        this.operand = operand;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof AggregateFunctionExpression)) return false;
@@ -63,7 +67,8 @@ public class AggregateFunctionExpression extends BaseExpression
     @Override
     public int hashCode() {
         int hash = function.hashCode();
-        hash += operand.hashCode();
+        if (operand != null)
+            hash += operand.hashCode();
         if (distinct) hash ^= 1;
         return hash;
     }

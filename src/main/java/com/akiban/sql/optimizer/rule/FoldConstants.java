@@ -21,24 +21,34 @@ import com.akiban.qp.expression.Expression;
 
 import java.util.*;
 
-/** Evaluate as much as possible at generate time. */
+/** Evaluate as much as possible at generate time. 
+ * As with any compiler, false constants used in conditions can lead
+ * to dead code, that is, join sources that don't need to bother
+ * outputting any data. And these empty data sets can in turn affect
+ * subqueries and aggregation.
+ */
 public class FoldConstants extends BaseRule 
 {
     @Override
     public PlanNode apply(PlanNode plan) {
         Folder folder = new Folder();
-        while (folder.apply(plan));
+        while (folder.foldConstants(plan));
+        folder.finishAggregates(plan);
         return plan;
     }
 
     static class Folder implements PlanVisitor, ExpressionRewriteVisitor {
         private Set<ColumnSource> eliminatedSources = new HashSet<ColumnSource>();
+        private Set<AggregateSource> changedAggregates = null;
+        private enum State { FOLDING, AGGREGATES };
+        private State state;
         private boolean changed;
 
         /** Return <code>true</code> if substantial enough changes were made that
          * need to be run again.
          */
-        public boolean apply(PlanNode plan) {
+        public boolean foldConstants(PlanNode plan) {
+            state = State.FOLDING;
             changed = false;
             plan.accept(this);
             return changed;
@@ -51,12 +61,14 @@ public class FoldConstants extends BaseRule
 
         @Override
         public boolean visitLeave(PlanNode n) {
-            if (n instanceof Filter)
-                filterNode((Filter)n);
-            else if (n instanceof SubquerySource)
-                subquerySource((SubquerySource)n);
-            else if (n instanceof AggregateSource)
-                aggregateSource((AggregateSource)n);
+            if (state == State.FOLDING) {
+                if (n instanceof Filter)
+                    filterNode((Filter)n);
+                else if (n instanceof SubquerySource)
+                    subquerySource((SubquerySource)n);
+                else if (n instanceof AggregateSource)
+                    aggregateSource((AggregateSource)n);
+            }
             return true;
         }
 
@@ -76,22 +88,27 @@ public class FoldConstants extends BaseRule
 
         @Override
         public ExpressionNode visit(ExpressionNode expr) {
-            if (expr instanceof ComparisonCondition)
-                return comparisonCondition((ComparisonCondition)expr);
-            else if (expr instanceof CastExpression)
-                return castExpression((CastExpression)expr);
-            else if (expr instanceof FunctionExpression)
-                return functionExpression((FunctionExpression)expr);
-            else if (expr instanceof IfElseExpression)
-                return ifElseExpression((IfElseExpression)expr);
-            else if (expr instanceof ColumnExpression)
-                return columnExpression((ColumnExpression)expr);
-            else if (expr instanceof SubqueryExpression)
-                return subqueryExpression((SubqueryExpression)expr);
-            else if (expr instanceof SubqueryCondition)
-                return subqueryCondition((SubqueryCondition)expr);
-            else
-                return expr;
+            if (state == State.FOLDING) {
+                if (expr instanceof ComparisonCondition)
+                    return comparisonCondition((ComparisonCondition)expr);
+                else if (expr instanceof CastExpression)
+                    return castExpression((CastExpression)expr);
+                else if (expr instanceof FunctionExpression)
+                    return functionExpression((FunctionExpression)expr);
+                else if (expr instanceof IfElseExpression)
+                    return ifElseExpression((IfElseExpression)expr);
+                else if (expr instanceof ColumnExpression)
+                    return columnExpression((ColumnExpression)expr);
+                else if (expr instanceof SubqueryExpression)
+                    return subqueryExpression((SubqueryExpression)expr);
+                else if (expr instanceof SubqueryCondition)
+                    return subqueryCondition((SubqueryCondition)expr);
+            }
+            else if (state == State.AGGREGATES) {
+                if (expr instanceof ColumnExpression)
+                    return columnExpression((ColumnExpression)expr);
+            }
+            return expr;
         }
 
         protected ExpressionNode comparisonCondition(ComparisonCondition cond) {
@@ -199,12 +216,61 @@ public class FoldConstants extends BaseRule
         }
 
         protected ExpressionNode columnExpression(ColumnExpression col) {
-            if (eliminatedSources.contains(col.getTable()))
-                // TODO: Could do a new ColumnExpression with the
-                // NullSource that replaced it, but then that'd have
-                // to eval specially.
-                return new ConstantExpression(null,
-                                              col.getSQLtype(), col.getSQLsource());
+            ColumnSource source = col.getTable();
+            if (source instanceof AggregateSource) {
+                AggregateSource asource = (AggregateSource)source;
+                int apos = col.getPosition() - asource.getGroupBy().size();
+                if (apos >= 0) {
+                    List<AggregateFunctionExpression> afuns = asource.getAggregates();
+                    AggregateFunctionExpression afun = afuns.get(apos);
+                    if (state == State.FOLDING) {
+                        boolean ok = eliminatedSources.contains(asource);
+                        if (!ok) {
+                            if (isAggregateOfNull(afun)) {
+                                ok = true;
+                                changedAggregates = new HashSet<AggregateSource>();
+                                changedAggregates.add(asource);
+                            }
+                        }
+                        if (ok) {
+                            // This is an aggregate of a NULL value or with no inputs.
+                            // That can be NULL or 0 for COUNT.
+                            Object value = null;
+                            if (isAggregateZero(afun))
+                                value = Integer.valueOf(0);
+                            return new ConstantExpression(value,
+                                                          col.getSQLtype(), 
+                                                          col.getSQLsource());
+                        }
+                    }
+                    else if (state == State.AGGREGATES) {
+                        if (changedAggregates.contains(asource) &&
+                            !eliminatedSources.contains(source)) {
+                            // Adjust position for any null functions
+                            // which are about to get
+                            // removed. References to these positions
+                            // were replaced by constants some time
+                            // ago.
+                            int delta = 0;
+                            for (int i = 0; i < apos; i++) {
+                                if (isAggregateOfNull(afuns.get(i))) {
+                                    delta++;
+                                }
+                            }
+                            if (delta > 0)
+                                col.setPosition(col.getPosition() - delta);
+                        }
+                    }
+                }
+            }
+            if (state == State.FOLDING) {
+                if (eliminatedSources.contains(source))
+                    // TODO: Could do a new ColumnExpression with the
+                    // NullSource that replaced it, but then that'd have
+                    // to eval specially.
+                    return new ConstantExpression(null,
+                                                  col.getSQLtype(), col.getSQLsource());
+            }
             return col;
         }
 
@@ -220,17 +286,27 @@ public class FoldConstants extends BaseRule
             }
             if (!keep) {
                 eliminateSources(filter.getInput());
-                PlanWithInput inOutput = filter;
-                PlanNode toReplace = null;
-                while ((inOutput instanceof Filter) ||
-                       (inOutput instanceof Sort)) {
-                    // TODO: Also aggregate with GROUP BY. 
-                    // Without GROUP BY, need special handling for COUNT to
-                    // give 0 rather than NULL.
+                PlanNode toReplace = filter;
+                PlanWithInput inOutput = toReplace.getOutput();
+                if (inOutput instanceof Sort) {
                     toReplace = inOutput;
                     inOutput = toReplace.getOutput();
                 }
-                inOutput.replaceInput(toReplace, new NullSource());
+                boolean emptyRow = false;
+                if (inOutput instanceof AggregateSource) {
+                    toReplace = inOutput;
+                    inOutput = toReplace.getOutput();
+                    eliminatedSources.add((ColumnSource)toReplace);
+                    // No GROUP BY outputs an answer for no inputs.
+                    emptyRow = ((AggregateSource)toReplace).getGroupBy().isEmpty();
+                }
+                PlanNode replacement;
+                if (!emptyRow)
+                    replacement = new NullSource();
+                else {
+                    replacement = new ExpressionsSource(Collections.singletonList(Collections.<ExpressionNode>emptyList()));
+                }
+                inOutput.replaceInput(toReplace, replacement);
             }
         }
 
@@ -333,9 +409,49 @@ public class FoldConstants extends BaseRule
             return (node instanceof NullSource);
         }
 
+        public void finishAggregates(PlanNode plan) {
+            if (changedAggregates == null) return;
+            state = State.AGGREGATES;
+            plan.accept(this);
+            // Now that all the indexes are fixed, we can finally
+            // remove the precomputed aggregate results.
+            for (AggregateSource asource : changedAggregates) {
+                List<AggregateFunctionExpression> afuns = asource.getAggregates();
+                int i = 0;
+                while (i < afuns.size()) {
+                    AggregateFunctionExpression afun = afuns.get(i);
+                    if (isAggregateOfNull(afun)) {
+                        afuns.remove(i);
+                        continue;
+                    }
+                    i++;
+                }
+            }
+        }
+        
         protected void aggregateSource(AggregateSource aggr) {
-            // TODO: SUM(NULL) is NULL, COUNT(NULL) is 0,
-            // COUNT(not nullable) is COUNT(*).
+            // TODO: Check nullity of outer join result. Should be
+            // added even if not on column.
+            for (AggregateFunctionExpression afun : aggr.getAggregates()) {
+                if ((afun.getOperand() != null) &&
+                    !afun.isDistinct() &&
+                    "COUNT".equals(afun.getFunction()) &&
+                    ((isConstant(afun.getOperand()) == Constantness.CONSTANT) ||
+                     ((afun.getOperand().getSQLtype() != null) &&
+                      !afun.getOperand().getSQLtype().isNullable()))) {
+                    // COUNT(constant or NOT NULL) -> COUNT(*).
+                    afun.setOperand(null);
+                }
+            }
+        }
+
+        protected boolean isAggregateOfNull(AggregateFunctionExpression afun) {
+            return ((afun.getOperand() != null) &&
+                    (isConstant(afun.getOperand()) == Constantness.NULL));
+        }
+
+        protected boolean isAggregateZero(AggregateFunctionExpression afun) {
+            return ("COUNT".equals(afun.getFunction()));
         }
 
         protected static enum Constantness { VARIABLE, CONSTANT, NULL }

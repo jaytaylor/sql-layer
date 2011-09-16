@@ -13,6 +13,7 @@ CREATE TABLE orders
   cid int NOT NULL,
   order_date date NOT NULL,
   KEY(order_date),
+  special varchar(10),
   CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (cid) REFERENCES customers(cid)
 ) engine=akibandb;
 
