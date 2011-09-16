@@ -55,6 +55,8 @@ public class FoldConstants extends BaseRule
                 filterNode((Filter)n);
             else if (n instanceof SubquerySource)
                 subquerySource((SubquerySource)n);
+            else if (n instanceof AggregateSource)
+                aggregateSource((AggregateSource)n);
             return true;
         }
 
@@ -221,8 +223,10 @@ public class FoldConstants extends BaseRule
                 PlanWithInput inOutput = filter;
                 PlanNode toReplace = null;
                 while ((inOutput instanceof Filter) ||
-                       (inOutput instanceof Sort) ||
-                       (inOutput instanceof AggregateSource)) {
+                       (inOutput instanceof Sort)) {
+                    // TODO: Also aggregate with GROUP BY. 
+                    // Without GROUP BY, need special handling for COUNT to
+                    // give 0 rather than NULL.
                     toReplace = inOutput;
                     inOutput = toReplace.getOutput();
                 }
@@ -323,6 +327,11 @@ public class FoldConstants extends BaseRule
 
         protected boolean isNullSubquery(Subquery subquery) {
             return (subquery.getInput() instanceof NullSource);
+        }
+
+        protected void aggregateSource(AggregateSource aggr) {
+            // TODO: SUM(NULL) is NULL, COUNT(NULL) is 0,
+            // COUNT(not nullable) is COUNT(*).
         }
 
         protected static enum Constantness { VARIABLE, CONSTANT, NULL }
