@@ -27,7 +27,7 @@ import java.util.*;
  * condition on it (other that those that permit NULLs like IS NULL)
  * into inner joins.
  */
-public class PromoteOuterJoins extends BaseRule
+public class OuterJoinPromoter extends BaseRule
 {
     static class WhereFinder implements PlanVisitor, ExpressionVisitor {
         List<Filter> result = new ArrayList<Filter>();

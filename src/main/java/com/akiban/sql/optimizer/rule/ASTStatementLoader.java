@@ -43,7 +43,7 @@ import java.util.*;
 
 /** Turn a parsed SQL AST into this package's format.
  */
-public class ASTToStatement extends BaseRule
+public class ASTStatementLoader extends BaseRule
 {
     @Override
     public PlanNode apply(PlanNode plan) {

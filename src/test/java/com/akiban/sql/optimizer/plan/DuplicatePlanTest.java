@@ -16,7 +16,7 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.sql.optimizer.OptimizerTestBase;
-import com.akiban.sql.optimizer.rule.ASTToStatement;
+import com.akiban.sql.optimizer.rule.ASTStatementLoader;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
@@ -69,7 +69,7 @@ public class DuplicatePlanTest extends OptimizerTestBase
         stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
         // Turn parsed AST into intermediate form.
         PlanNode plan = new AST((DMLStatementNode)stmt);
-        plan = new ASTToStatement().apply(plan);
+        plan = new ASTStatementLoader().apply(plan);
         PlanNode duplicate = (PlanNode)plan.duplicate();
         assertFalse(plan == duplicate);
         assertEqualsWithoutHashes(caseName, 

@@ -27,7 +27,7 @@ import java.util.*;
  * outputting any data. And these empty data sets can in turn affect
  * subqueries and aggregation.
  */
-public class FoldConstants extends BaseRule 
+public class ConstantFolder extends BaseRule 
 {
     @Override
     public PlanNode apply(PlanNode plan) {
