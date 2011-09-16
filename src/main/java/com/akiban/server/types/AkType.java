@@ -15,7 +15,7 @@
 
 package com.akiban.server.types;
 
-import com.akiban.server.error.AkibanRuntimeException;
+import com.akiban.server.error.AkibanInternalException;
 
 import static com.akiban.server.types.AkType.UnderlyingType.*;
 
@@ -44,7 +44,7 @@ public enum AkType {
 
     public UnderlyingType underlyingType() {
         if (underlyingType == null) {
-            throw new AkibanRuntimeException("no underlying type for " + name());
+            throw new AkibanInternalException("no underlying type for " + name());
         }
         return underlyingType;
     }

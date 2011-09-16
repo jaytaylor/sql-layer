@@ -12,19 +12,19 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-
 package com.akiban.server.error;
 
-public final class AkibanRuntimeException extends RuntimeException {
-    public AkibanRuntimeException(String message) {
-        super(message);
+public class AkibanInternalException extends RuntimeException {
+    
+    public AkibanInternalException(String message) {
+        super (message);
+    }
+    
+    public AkibanInternalException(String message, Throwable cause)  {
+        super (message, cause);
     }
 
-    public AkibanRuntimeException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public AkibanRuntimeException(Throwable cause) {
-        super(cause);
+    public ErrorCode getCode() { 
+        return ErrorCode.INTERNAL_ERROR;
     }
 }
