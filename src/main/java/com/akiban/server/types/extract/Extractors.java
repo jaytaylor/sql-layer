@@ -15,42 +15,78 @@
 
 package com.akiban.server.types.extract;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types.AkType;
+import com.akiban.util.ByteSource;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.EnumMap;
 import java.util.Map;
 
 public final class Extractors {
     public static LongExtractor getLongExtractor(AkType type) {
-        AbstractExtractor extractor = get(type);
-        if (extractor instanceof LongExtractor) {
-            return (LongExtractor) extractor;
-        }
-        return null;
+        return get(type, LongExtractor.class, true);
     }
 
-    private static AbstractExtractor get(AkType type) {
-        return readOnlyExtractorsMap.get(type);
+    public static BooleanExtractor getBooleanExtractor() {
+        return get(AkType.BOOL, BooleanExtractor.class);
+    }
+
+    public static DoubleExtractor getDoubleExtractor() {
+        return get(AkType.DOUBLE, DoubleExtractor.class);
+    }
+
+    public static ObjectExtractor<String> getStringExtractor() {
+        return get(AkType.VARCHAR, ExtractorForString.class);
+    }
+
+    public static ObjectExtractor<BigInteger> getUBigIntExtractor() {
+        return get(AkType.U_BIGINT, ExtractorForBigInteger.class);
+    }
+
+    public static ObjectExtractor<BigDecimal> getDecimalExtractor() {
+        return get(AkType.DECIMAL, ExtractorForBigDecimal.class);
+    }
+
+    public static ObjectExtractor<ByteSource> getByteSourceExtractor() {
+        return get(AkType.VARBINARY, ExtractorForVarBinary.class);
+    }
+
+    private static <E extends AbstractExtractor> E get(AkType type, Class<E> extractorClass) {
+        return get(type, extractorClass, false);
+    }
+
+    private static <E extends AbstractExtractor> E get(AkType type, Class<E> extractorClass, boolean nullDefault) {
+        AbstractExtractor extractor = readOnlyExtractorsMap.get(type);
+        if (extractorClass.isInstance(extractor)) {
+            return extractorClass.cast(extractor);
+        }
+        if (nullDefault)
+            return null;
+        throw new AkibanInternalException(
+                "extractor for " + type + " is of class " + extractor.getClass() + ", required " + extractorClass
+        );
     }
 
     private static Map<AkType,AbstractExtractor> createExtractorsMap() {
         Map<AkType,AbstractExtractor> result = new EnumMap<AkType, AbstractExtractor>(AkType.class);
         result.put(AkType.DATE, ExtractorsForDates.DATE);
         result.put(AkType.DATETIME, ExtractorsForDates.DATETIME);
-        result.put(AkType.DECIMAL, null);
-        result.put(AkType.DOUBLE, null);
-        result.put(AkType.FLOAT, null);
+        result.put(AkType.DECIMAL, new ExtractorForBigDecimal());
+        result.put(AkType.DOUBLE, new DoubleExtractor());
+        result.put(AkType.FLOAT, new DoubleExtractor());
         result.put(AkType.INT, ExtractorsForLong.INT);
         result.put(AkType.LONG, ExtractorsForLong.LONG);
-        result.put(AkType.VARCHAR, null);
-        result.put(AkType.TEXT, null);
+        result.put(AkType.VARCHAR, new ExtractorForString());
+        result.put(AkType.TEXT, new ExtractorForString());
         result.put(AkType.TIME, ExtractorsForDates.TIME);
         result.put(AkType.TIMESTAMP, ExtractorsForDates.TIMESTAMP);
-        result.put(AkType.U_BIGINT, null);
-        result.put(AkType.U_DOUBLE, null);
-        result.put(AkType.U_FLOAT, null);
+        result.put(AkType.U_BIGINT, new ExtractorForBigInteger());
+        result.put(AkType.U_DOUBLE, new DoubleExtractor());
+        result.put(AkType.U_FLOAT,  new DoubleExtractor());
         result.put(AkType.U_INT, ExtractorsForLong.U_INT);
-        result.put(AkType.VARBINARY, null);
+        result.put(AkType.VARBINARY, new ExtractorForVarBinary());
         result.put(AkType.YEAR, ExtractorsForDates.YEAR);
         return result;
     }

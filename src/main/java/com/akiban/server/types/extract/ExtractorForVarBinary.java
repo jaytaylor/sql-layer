@@ -13,31 +13,29 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.types.conversion;
+package com.akiban.server.types.extract;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueTarget;
-import com.akiban.server.types.extract.Extractors;
 import com.akiban.util.ByteSource;
 
-final class ConverterForVarBinary extends ObjectConverter<ByteSource> {
-
-    static final ObjectConverter<ByteSource> INSTANCE = new ConverterForVarBinary();
+final class ExtractorForVarBinary extends ObjectExtractor<ByteSource> {
 
     @Override
-    protected void putObject(ValueTarget target, ByteSource value) {
-        target.putVarBinary(value);
+    public ByteSource getObject(ValueSource source) {
+        AkType type = source.getConversionType();
+        switch (type) {
+        case VARBINARY:   return source.getVarBinary();
+        default: throw unsupportedConversion(type);
+        }
     }
-
-    // AbstractConverter interface
 
     @Override
-    protected AkType targetConversionType() {
-        return AkType.VARBINARY;
+    public ByteSource getObject(String string) {
+        throw new UnsupportedOperationException(); // TODO later
     }
 
-    private ConverterForVarBinary() {
-        super(Extractors.getByteSourceExtractor());
+    ExtractorForVarBinary() {
+        super(AkType.VARBINARY);
     }
 }
