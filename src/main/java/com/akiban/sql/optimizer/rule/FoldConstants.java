@@ -32,8 +32,7 @@ public class FoldConstants extends BaseRule
     }
 
     static class Folder implements PlanVisitor, ExpressionRewriteVisitor {
-        private Map<ColumnSource,ColumnSource> sourceSubstitutions = 
-            new HashMap<ColumnSource,ColumnSource>();
+        private Set<ColumnSource> eliminatedSources = new HashSet<ColumnSource>();
         private boolean changed;
 
         /** Return <code>true</code> if substantial enough changes were made that
@@ -198,17 +197,48 @@ public class FoldConstants extends BaseRule
         }
 
         protected ExpressionNode columnExpression(ColumnExpression col) {
-            ColumnSource sub = sourceSubstitutions.get(col.getTable());
-            if (sub != null)
-                return new ColumnExpression(sub, col.getPosition(),
-                                            col.getSQLtype(), col.getSQLsource());
+            if (eliminatedSources.contains(col.getTable()))
+                // TODO: Could do a new ColumnExpression with the
+                // NullSource that replaced it, but then that'd have
+                // to eval specially.
+                return new ConstantExpression(null,
+                                              col.getSQLtype(), col.getSQLsource());
             return col;
         }
 
         protected void filterNode(Filter filter) {
             if (!checkConditions(filter.getConditions())) {
-                
+                eliminateSources(filter.getInput());
+                PlanWithInput inOutput = filter;
+                PlanNode toReplace = null;
+                while ((inOutput instanceof Filter) ||
+                       (inOutput instanceof Sort) ||
+                       (inOutput instanceof AggregateSource)) {
+                    toReplace = inOutput;
+                    inOutput = toReplace.getOutput();
+                }
+                inOutput.replaceInput(toReplace, new NullSource());
             }
+        }
+
+        protected void eliminateSources(PlanNode node) {
+            if (node instanceof ColumnSource) {
+                eliminateSource((ColumnSource)node);
+            }
+            if (node instanceof BasePlanWithInput) {
+                eliminateSources(((BasePlanWithInput)node).getInput());
+            }
+            else if (node instanceof JoinNode) {
+                JoinNode join = (JoinNode)node;
+                eliminateSources(join.getLeft());
+                eliminateSources(join.getRight());
+            }
+        }
+
+        protected void eliminateSource(ColumnSource source) {
+            eliminatedSources.add(source);
+            // Need to find all the references to it, which means another pass.
+            changed = true;
         }
 
         /** Returns <code>false</code> if it's impossible for these
@@ -230,14 +260,29 @@ public class FoldConstants extends BaseRule
         }
 
         protected ExpressionNode subqueryExpression(SubqueryExpression expr) {
+            if (isNullSubquery(expr.getSubquery())) {
+                return new ConstantExpression(null,
+                                              expr.getSQLtype(), expr.getSQLsource());
+            }
             return expr;
         }
 
-        protected ExpressionNode subqueryCondition(SubqueryCondition expr) {
-            return expr;
+        protected ExpressionNode subqueryCondition(SubqueryCondition cond) {
+            if (isNullSubquery(cond.getSubquery())) {
+                return new BooleanConstantExpression((cond.getKind() == SubqueryCondition.Kind.NOT_EXISTS),
+                                                     cond.getSQLtype(), cond.getSQLsource());
+            }
+            return cond;
         }
     
-        protected void subquerySource(SubquerySource n) {
+        protected void subquerySource(SubquerySource source) {
+            if (isNullSubquery(source.getSubquery())) {
+                eliminateSource(source);
+            }            
+        }
+
+        protected boolean isNullSubquery(Subquery subquery) {
+            return (subquery.getInput() instanceof NullSource);
         }
 
         protected static enum Constantness { VARIABLE, CONSTANT, NULL }
