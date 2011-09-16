@@ -193,15 +193,22 @@ public class OperatorCompiler
     }
 
     public Result compile(SessionTracer tracer, DMLStatementNode stmt, List<ParameterNode> params) {
+        try {
+            // Get into standard form.
+            tracer.beginEvent(EventTypes.BIND_AND_GROUP);
+            stmt = bindAndGroup(stmt);
+        } finally {
+            tracer.endEvent();
+        }
         switch (stmt.getNodeType()) {
         case NodeTypes.CURSOR_NODE:
-            return compileSelect(tracer, (CursorNode)stmt, params);
+            SimplifiedSelectQuery squery = 
+                new SimplifiedSelectQuery((CursorNode)stmt, grouper.getJoinConditions());
+            return compileSelect(tracer, squery, stmt, params);
         case NodeTypes.UPDATE_NODE:
-            return compileUpdate((UpdateNode)stmt, params);
         case NodeTypes.INSERT_NODE:
-            return compileInsert((InsertNode)stmt, params);
         case NodeTypes.DELETE_NODE:
-            return compileDelete((DeleteNode)stmt, params);
+            return CUDCompiler.compileStatement(tracer, this, stmt, params);
         default:
             throw new UnsupportedSQLException (stmt.statementToString(), stmt);
         }
@@ -224,16 +231,7 @@ public class OperatorCompiler
 
     static final int INSERTION_SORT_MAX_LIMIT = 100;
 
-    public Result compileSelect(SessionTracer tracer, CursorNode cursor, List<ParameterNode> params)  {
-        try {
-            // Get into standard form.
-            tracer.beginEvent(EventTypes.BIND_AND_GROUP);
-            cursor = (CursorNode)bindAndGroup(cursor);
-        } finally {
-            tracer.endEvent();
-        }
-        SimplifiedSelectQuery squery = 
-            new SimplifiedSelectQuery(cursor, grouper.getJoinConditions());
+    public Result compileSelect(SessionTracer tracer, SimplifiedQuery squery, DMLStatementNode cursor, List<ParameterNode> params)  {
         squery.promoteImpossibleOuterJoins();
         GroupBinding group = squery.getGroup();
         GroupTable groupTable = group.getGroup().getGroupTable();
@@ -413,7 +411,7 @@ public class OperatorCompiler
                                                               " product of " +
                                                               resultRowType + " and " +
                                                               flr.getResultRowType(), 
-                                                              cursor);
+                                                                cursor);
                         }
                         resultRowType = resultOperator.rowType();
                         fll.mergeTablesForProduct(flr);
@@ -488,75 +486,6 @@ public class OperatorCompiler
         return new Result(resultOperator, resultColumns, 
                           getParameterTypes(params),
                           offset, limit);
-    }
-
-    public Result compileUpdate(UpdateNode update, List<ParameterNode> params)  {
-        update = (UpdateNode)bindAndGroup(update);
-        SimplifiedUpdateStatement supdate = 
-            new SimplifiedUpdateStatement(update, grouper.getJoinConditions());
-        supdate.reorderJoins();
-
-        TableNode targetTable = supdate.getTargetTable();
-        GroupTable groupTable = targetTable.getGroupTable();
-        UserTableRowType targetRowType = tableRowType(targetTable);
-        
-        // TODO: If we flattened subqueries (e.g., IN or EXISTS) into
-        // the main result set, then the index and conditions might be
-        // on joined tables, which might need to be looked up and / or
-        // flattened in before non-index conditions.
-
-        IndexUsage index = pickBestIndex(supdate);
-        PhysicalOperator resultOperator;
-        if (index != null) {
-            assert (targetTable == index.getLeafMostTable());
-            supdate.removeConditions(index.getIndexConditions());
-            Index iindex = index.getIndex();
-            IndexRowType indexRowType = targetRowType.indexRowType(iindex);
-            resultOperator = indexScan_Default(indexRowType, 
-                                               index.isReverse(),
-                                               index.getIndexKeyRange());
-            List<RowType> ancestors = Collections.<RowType>singletonList(targetRowType);
-            resultOperator = ancestorLookup_Default(resultOperator, groupTable,
-                                                    indexRowType, ancestors, LookupOption.DISCARD_INPUT);
-        }
-        else {
-            resultOperator = groupScan_Default(groupTable);
-        }
-        
-        Map<TableNode,Integer> tableOffsets = new HashMap<TableNode,Integer>(1);
-        tableOffsets.put(targetTable, 0);
-        ColumnExpressionToIndex fieldOffsets = new TableNodeOffsets(tableOffsets);
-        for (ColumnCondition condition : supdate.getConditions()) {
-            Expression predicate = condition.generateExpression(fieldOffsets);
-            resultOperator = select_HKeyOrdered(resultOperator,
-                                                targetRowType,
-                                                predicate);
-        }
-
-        Expression[] updates = new Expression[targetRowType.nFields()];
-        for (SimplifiedUpdateStatement.UpdateColumn updateColumn : 
-                 supdate.getUpdateColumns()) {
-            updates[updateColumn.getColumn().getPosition()] =
-                updateColumn.getValue().generateExpression(fieldOffsets);
-        }
-
-        Plannable updatePlan = new com.akiban.qp.physicaloperator.Update_Default(resultOperator,
-                                            new ExpressionRowUpdateFunction(updates, targetRowType));
-        return new Result(updatePlan, getParameterTypes(params));
-    }
-
-    public Result compileInsert(InsertNode insert, List<ParameterNode> params) {
-        insert = (InsertNode)bindAndGroup(insert);
-        SimplifiedInsertStatement sstmt = 
-            new SimplifiedInsertStatement(insert, grouper.getJoinConditions());
-        throw new UnsupportedSQLException ("INSERT", insert);
-    }
-
-    public Result compileDelete(DeleteNode delete, List<ParameterNode> params)  {
-        delete = (DeleteNode)bindAndGroup(delete);
-        SimplifiedDeleteStatement sstmt = 
-            new SimplifiedDeleteStatement(delete, grouper.getJoinConditions());
-        throw new UnsupportedSQLException ("DELETE", delete);
     }
 
     // A possible index.
@@ -1127,6 +1056,10 @@ public class OperatorCompiler
         return schema.userTableRowType(table.getTable());
     }
 
+    protected ValuesRowType valuesRowType (int nfields) {
+        return schema.newValuesType(nfields);
+    }
+    
     /** Return an index bound for the given index and expressions.
      * @param index the index in use
      * @param keys {@link Expression}s for index lookup key
@@ -1172,5 +1105,8 @@ public class OperatorCompiler
         }        
         return result;
     }
-
+    
+    protected Set<ValueNode> getJoinConditions() { 
+        return grouper.getJoinConditions(); 
+    }
 }

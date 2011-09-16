@@ -36,6 +36,8 @@ import com.akiban.qp.physicaloperator.API.JoinType;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ParseException;
 import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.error.OrderByNonIntegerConstant;
+import com.akiban.server.error.OrderByIntegerOutOfRange;
 
 import com.akiban.qp.expression.Comparison;
 
@@ -212,10 +214,19 @@ public class ASTStatementLoader extends BaseRule
         if (orderByList != null) {
             for (OrderByColumn orderByColumn : orderByList) {
                 ExpressionNode expression = toExpression(orderByColumn.getExpression());
-                // If column has a constant value, there is no need to sort on it.
-                if (!expression.isConstant())
-                    sorts.add(new OrderByExpression(expression, 
-                                                  orderByColumn.isAscending()));
+                if (expression.isConstant()) {
+                    Object value = ((ConstantExpression)expression).getValue();
+                    if (value instanceof Long) {
+                        int i = ((Long)value).intValue();
+                        if ((i <= 0) || (i > results.size()))
+                            throw new OrderByIntegerOutOfRange(i, results.size());
+                        expression = results.get(i-1).getExpression();
+                    }
+                    else
+                        throw new OrderByNonIntegerConstant(expression.getSQLsource());
+                }
+                sorts.add(new OrderByExpression(expression,
+                                                orderByColumn.isAscending()));
             }
         }
 

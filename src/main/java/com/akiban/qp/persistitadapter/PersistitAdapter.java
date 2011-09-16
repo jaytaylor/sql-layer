@@ -27,7 +27,6 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.PersistItErrorException;
@@ -95,21 +94,42 @@ public class PersistitAdapter extends StoreAdapter
         this.transactional.set(transactional);
     }
 
-    // PersistitAdapter interface
+    @Override
+    public void updateRow(Row oldRow, Row newRow, Bindings bindings) {
+        RowDef rowDef = (RowDef) oldRow.rowType().userTable().rowDef();
+        Object rowDefNewRow = newRow.rowType().userTable().rowDef();
+        if (rowDef != rowDefNewRow) {
+            throw new IllegalArgumentException(String.format("%s != %s", rowDef, rowDefNewRow));
+        }
 
-    public RowDef rowDef(int tableId)
-    {
-        return persistit.getRowDefCache().getRowDef(tableId);
+        RowData oldRowData = rowData(rowDef, oldRow, bindings);
+        RowData newRowData = rowData(rowDef, newRow, bindings);
+        try {
+            persistit.updateRow(session, oldRowData, newRowData, null);
+        } catch (PersistitException e) {
+            throw new PersistItErrorException(e);
+        }
     }
-
-    public PersistitGroupRow newGroupRow()
-    {
-        return PersistitGroupRow.newPersistitGroupRow(this);
+    @Override
+    public void writeRow (Row newRow, Bindings bindings) {
+        RowDef rowDef = (RowDef)newRow.rowType().userTable().rowDef();
+        RowData newRowData = rowData (rowDef, newRow, bindings);
+        try {
+            persistit.writeRow(session, newRowData);
+        } catch (PersistitException e) {
+            throw new PersistItErrorException (e);
+        }
     }
-
-    public PersistitIndexRow newIndexRow(IndexRowType indexRowType) throws PersistitException
-    {
-        return new PersistitIndexRow(this, indexRowType);
+    
+    @Override
+    public void deleteRow (Row oldRow, Bindings bindings) {
+        RowDef rowDef = (RowDef)oldRow.rowType().userTable().rowDef();
+        RowData oldRowData = rowData(rowDef, oldRow, bindings);
+        try {
+            persistit.deleteRow(session, oldRowData);
+        } catch (PersistitException e) {
+            throw new PersistItErrorException (e);
+        }
     }
 
     public RowData rowData(RowDef rowDef, RowBase row, Bindings bindings)
@@ -128,6 +148,24 @@ public class PersistitAdapter extends StoreAdapter
         return niceRow.toRowData();
     }
 
+    // PersistitAdapter interface
+
+    public RowDef rowDef(int tableId)
+    {
+        return persistit.getRowDefCache().getRowDef(tableId);
+    }
+
+    public PersistitGroupRow newGroupRow()
+    {
+        return PersistitGroupRow.newPersistitGroupRow(this);
+    }
+
+    public PersistitIndexRow newIndexRow(IndexRowType indexRowType) throws PersistitException
+    {
+        return new PersistitIndexRow(this, indexRowType);
+    }
+
+
     public Exchange takeExchange(GroupTable table) throws PersistitException
     {
         return transact(persistit.getExchange(session, (RowDef) table.rowDef()));
@@ -141,24 +179,6 @@ public class PersistitAdapter extends StoreAdapter
     public Exchange takeExchangeForSorting()
     {
         return treeService.getExchange(session, sortTreeLink);
-    }
-
-    @Override
-    public void updateRow(Row oldRow, Row newRow, Bindings bindings)
-    {
-        RowDef rowDef = (RowDef) oldRow.rowType().userTable().rowDef();
-        Object rowDefNewRow = newRow.rowType().userTable().rowDef();
-        if (rowDef != rowDefNewRow) {
-            throw new IllegalArgumentException(String.format("%s != %s", rowDef, rowDefNewRow));
-        }
-
-        RowData oldRowData = rowData(rowDef, oldRow, bindings);
-        RowData newRowData = rowData(rowDef, newRow, bindings);
-        try {
-            persistit.updateRow(session, oldRowData, newRowData, null);
-        } catch (PersistitException e) {
-            throw new PersistItErrorException(e);
-        }
     }
 
     private Exchange transact(Exchange exchange)
