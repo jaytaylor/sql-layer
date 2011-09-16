@@ -23,7 +23,7 @@ import com.akiban.ais.model.Index;
 
 import java.util.*;
 
-public class IndexUsage extends BaseAccessPath
+public class IndexScan extends BasePlanNode implements ColumnExpressionToIndex
 {
     public static enum OrderEffectiveness {
         NONE, PARTIAL_GROUPED, GROUPED, SORTED
@@ -46,6 +46,9 @@ public class IndexUsage extends BaseAccessPath
     // May need building of index keys in the expressions subsystem.
     private boolean lowInclusive, highInclusive;
 
+    // Columns in order, should the index be used as covering.
+    private List<ExpressionNode> columns;
+
     // This is how the indexed result will be ordered from using this index.
     // TODO: Is this right? Are we allowed to switch directions
     // between segments, in which case something else figures out
@@ -55,8 +58,8 @@ public class IndexUsage extends BaseAccessPath
 
     private OrderEffectiveness orderEffectiveness;
 
-    public IndexUsage(Index index, 
-                      TableSource leafMostTable, TableSource rootMostTable) {
+    public IndexScan(Index index, 
+                     TableSource leafMostTable, TableSource rootMostTable) {
         this.index = index;
         this.leafMostTable = leafMostTable;
         this.rootMostTable = rootMostTable;
@@ -152,6 +155,13 @@ public class IndexUsage extends BaseAccessPath
         conditions.add(condition);
     }
 
+    public List<ExpressionNode> getColumns() {
+        return columns;
+    }
+    public void setColumns(List<ExpressionNode> columns) {
+        this.columns = columns;
+    }
+
     public List<OrderByExpression> getOrdering() {
         return ordering;
     }
@@ -180,6 +190,20 @@ public class IndexUsage extends BaseAccessPath
     }
 
     @Override
+    // For when used as covering index.
+    public int getIndex(ColumnExpression column) {
+        return columns.indexOf(column);
+    }
+
+    @Override
+    public boolean accept(PlanVisitor v) {
+        if (v.visitEnter(this)) {
+            // TODO: Should we visit the tables; we've replaced them, right?
+        }
+        return v.visitLeave(this);
+    }
+    
+    @Override
     protected boolean maintainInDuplicateMap() {
         return true;
     }
@@ -196,8 +220,8 @@ public class IndexUsage extends BaseAccessPath
     }
     
     @Override
-    public String toString() {
-        StringBuilder str = new StringBuilder(super.toString());
+    public String summaryString() {
+        StringBuilder str = new StringBuilder(super.summaryString());
         str.append("(");
         str.append(index);
         str.append(", ");

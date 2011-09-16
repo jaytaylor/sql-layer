@@ -15,27 +15,47 @@
 
 package com.akiban.sql.optimizer.plan;
 
-public class AncestorLookup extends BaseAccessPath
+import java.util.List;
+
+public class AncestorLookup extends BasePlanWithInput
 {
     private TableSource descendant;
+    private List<TableSource> ancestors;
 
-    public AncestorLookup(TableSource descendant) {
+    public AncestorLookup(PlanNode input, 
+                          TableSource descendant, List<TableSource> ancestors) {
+        super(input);
         this.descendant = descendant;
+        this.ancestors = ancestors;
     }
 
     public TableSource getDescendant() {
         return descendant;
     }
 
+    public List<TableSource> getAncestors() {
+        return ancestors;
+    }
+
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
         descendant = (TableSource)descendant.duplicate();
+        ancestors = duplicateList(ancestors, map);
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + descendant + ")";
+    public String summaryString() {
+        StringBuilder str = new StringBuilder(super.summaryString());
+        str.append("(");
+        str.append(descendant.getTable());
+        str.append(" -> ");
+        for (int i = 0; i < ancestors.size(); i++) {
+            if (i > 0) str.append(", ");
+            str.append(ancestors.get(i).getTable());
+        }
+        str.append(")");
+        return str.toString();
     }
 
 }

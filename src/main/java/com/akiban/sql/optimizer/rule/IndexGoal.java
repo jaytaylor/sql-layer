@@ -31,7 +31,7 @@ import com.akiban.ais.model.UserTable;
 import java.util.*;
 
 /** A goal for indexing: conditions on joined tables and ordering / grouping. */
-public class IndexGoal implements Comparator<IndexUsage>
+public class IndexGoal implements Comparator<IndexScan>
 {
     // Tables already bound outside.
     private Set<TableSource> boundTables;
@@ -64,13 +64,16 @@ public class IndexGoal implements Comparator<IndexUsage>
     /** Populate given index usage according to goal.
      * @return <code>false</code> if the index is useless.
      */
-    public boolean usable(IndexUsage index) {
+    public boolean usable(IndexScan index) {
         List<IndexColumn> indexColumns = index.getIndex().getColumns();
         int ncols = indexColumns.size();
+        List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
+        for (IndexColumn indexColumn : indexColumns)
+            indexExpressions.add(getIndexExpression(index, indexColumn));
+        index.setColumns(indexExpressions);
         int nequals = 0;
         while (nequals < ncols) {
-            IndexColumn indexColumn = indexColumns.get(nequals);
-            ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
+            ExpressionNode indexExpression = indexExpressions.get(nequals);
             if (indexExpression == null) break;
             ConditionExpression equalityCondition = null;
             ExpressionNode otherComparand = null;
@@ -99,25 +102,22 @@ public class IndexGoal implements Comparator<IndexUsage>
             nequals++;
         }
         if (nequals < ncols) {
-            {
-                IndexColumn indexColumn = indexColumns.get(nequals);
-                ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
-                if (indexExpression != null) {
-                    for (ConditionExpression condition : conditions) {
-                        if (condition instanceof ComparisonCondition) {
-                            ComparisonCondition ccond = (ComparisonCondition)condition;
-                            ExpressionNode otherComparand = null;
-                            if (indexExpression.equals(ccond.getLeft())) {
-                                otherComparand = ccond.getRight();
-                            }
-                            else if (indexExpression.equals(ccond.getRight())) {
-                                otherComparand = ccond.getLeft();
-                            }
-                            if (otherComparand != null) {
-                                index.addInequalityCondition(condition,
-                                                             ccond.getOperation(),
-                                                             otherComparand);
-                            }
+            ExpressionNode indexExpression = indexExpressions.get(nequals);
+            if (indexExpression != null) {
+                for (ConditionExpression condition : conditions) {
+                    if (condition instanceof ComparisonCondition) {
+                        ComparisonCondition ccond = (ComparisonCondition)condition;
+                        ExpressionNode otherComparand = null;
+                        if (indexExpression.equals(ccond.getLeft())) {
+                            otherComparand = ccond.getRight();
+                        }
+                        else if (indexExpression.equals(ccond.getRight())) {
+                            otherComparand = ccond.getLeft();
+                        }
+                        if (otherComparand != null) {
+                            index.addInequalityCondition(condition,
+                                                         ccond.getOperation(),
+                                                         otherComparand);
                         }
                     }
                 }
@@ -125,27 +125,26 @@ public class IndexGoal implements Comparator<IndexUsage>
             List<OrderByExpression> ordering = 
                 new ArrayList<OrderByExpression>(ncols - nequals);
             for (int i = nequals; i < ncols; i++) {
-                IndexColumn indexColumn = indexColumns.get(i);
-                ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
+                indexExpression = indexExpressions.get(i);
                 if (indexExpression == null) break;
                 ordering.add(new OrderByExpression(indexExpression, 
-                                                   indexColumn.isAscending()));
+                                                   indexColumns.get(i).isAscending()));
             }
             index.setOrdering(ordering);
         }
         index.setOrderEffectiveness(determineOrderEffectiveness(index));
-        return ((index.getOrderEffectiveness() != IndexUsage.OrderEffectiveness.NONE) ||
+        return ((index.getOrderEffectiveness() != IndexScan.OrderEffectiveness.NONE) ||
                 (index.getConditions() != null));
     }
 
     // Determine how well this index does against the target.
     // Also, reverse the scan order if that helps. 
     // TODO: But see the comment on that field.
-    protected IndexUsage.OrderEffectiveness
-        determineOrderEffectiveness(IndexUsage index) {
+    protected IndexScan.OrderEffectiveness
+        determineOrderEffectiveness(IndexScan index) {
         List<OrderByExpression> indexOrdering = index.getOrdering();
         List<ExpressionNode> equalityComparands = index.getEqualityComparands();
-        IndexUsage.OrderEffectiveness result = IndexUsage.OrderEffectiveness.NONE;
+        IndexScan.OrderEffectiveness result = IndexScan.OrderEffectiveness.NONE;
         if (indexOrdering == null) return result;
         try_sorted:
         if (ordering != null) {
@@ -180,7 +179,7 @@ public class IndexGoal implements Comparator<IndexUsage>
             }
             if (reverse != null)
                 index.setReverseScan(reverse.booleanValue());
-            result = IndexUsage.OrderEffectiveness.SORTED;
+            result = IndexScan.OrderEffectiveness.SORTED;
         }
         if (grouping != null) {
             boolean anyFound = false, allFound = true;
@@ -208,11 +207,11 @@ public class IndexGoal implements Comparator<IndexUsage>
             }
             if (anyFound) {
                 if (!allFound)
-                    return IndexUsage.OrderEffectiveness.PARTIAL_GROUPED;
-                else if (result == IndexUsage.OrderEffectiveness.SORTED)
+                    return IndexScan.OrderEffectiveness.PARTIAL_GROUPED;
+                else if (result == IndexScan.OrderEffectiveness.SORTED)
                     return result;
                 else
-                    return IndexUsage.OrderEffectiveness.GROUPED;
+                    return IndexScan.OrderEffectiveness.GROUPED;
             }
         }
         return result;
@@ -253,7 +252,7 @@ public class IndexGoal implements Comparator<IndexUsage>
     }
 
     /** Get an expression form of the given index column. */
-    protected ExpressionNode getIndexExpression(IndexUsage index,
+    protected ExpressionNode getIndexExpression(IndexScan index,
                                                 IndexColumn indexColumn) {
         Column column = indexColumn.getColumn();
         UserTable indexTable = column.getUserTable();
@@ -268,10 +267,10 @@ public class IndexGoal implements Comparator<IndexUsage>
     }
 
     /** Find the best index on the given table. */
-    public IndexUsage pickBestIndex(TableSource table) {
-        IndexUsage bestIndex = null;
+    public IndexScan pickBestIndex(TableSource table) {
+        IndexScan bestIndex = null;
         for (TableIndex index : table.getTable().getTable().getIndexes()) {
-            IndexUsage candidate = new IndexUsage(index, table, table);
+            IndexScan candidate = new IndexScan(index, table, table);
             bestIndex = betterIndex(bestIndex, candidate);
         }
         if (table.getGroup() != null) {
@@ -290,7 +289,7 @@ public class IndexGoal implements Comparator<IndexUsage>
                     rootTable = rootTable.getParentTable();
                 }
                 if (rootTable == null) continue;
-                IndexUsage candidate = new IndexUsage(index, table, rootTable);
+                IndexScan candidate = new IndexScan(index, table, rootTable);
                 bestIndex = betterIndex(bestIndex, candidate);
             
             }
@@ -298,7 +297,7 @@ public class IndexGoal implements Comparator<IndexUsage>
         return bestIndex;
     }
 
-    protected IndexUsage betterIndex(IndexUsage bestIndex, IndexUsage candidate) {
+    protected IndexScan betterIndex(IndexScan bestIndex, IndexScan candidate) {
         if (usable(candidate)) {
             if ((bestIndex == null) || (compare(candidate, bestIndex) > 0))
                 return candidate;
@@ -307,10 +306,10 @@ public class IndexGoal implements Comparator<IndexUsage>
     }
 
     /** Find the best index among the given tables. */
-    public IndexUsage pickBestIndex(Collection<TableSource> tables) {
-        IndexUsage bestIndex = null;
+    public IndexScan pickBestIndex(Collection<TableSource> tables) {
+        IndexScan bestIndex = null;
         for (TableSource table : tables) {
-            IndexUsage tableIndex = pickBestIndex(table);
+            IndexScan tableIndex = pickBestIndex(table);
             if ((tableIndex != null) &&
                 ((bestIndex == null) || (compare(tableIndex, bestIndex) > 0)))
                 bestIndex = tableIndex;
@@ -319,7 +318,7 @@ public class IndexGoal implements Comparator<IndexUsage>
     }
 
     // TODO: This is a pretty poor substitute for evidence-based comparison.
-    public int compare(IndexUsage i1, IndexUsage i2) {
+    public int compare(IndexScan i1, IndexScan i2) {
         if (i1.getOrderEffectiveness() != i2.getOrderEffectiveness())
             // These are ordered worst to best.
             return i1.getOrderEffectiveness().compareTo(i2.getOrderEffectiveness());

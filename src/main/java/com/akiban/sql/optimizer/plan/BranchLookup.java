@@ -15,28 +15,35 @@
 
 package com.akiban.sql.optimizer.plan;
 
-public class BranchLookup extends BaseAccessPath
+public class BranchLookup extends BasePlanWithInput
 {
-    // TODO: Need to mark specific destination; i.e., branchpoint.
-    private TableSource source;
+    private TableSource source, branch;
 
-    public BranchLookup(TableSource source) {
+    public BranchLookup(PlanNode input, TableSource source, TableSource branch) {
+        super(input);
         this.source = source;
+        this.branch = branch;
     }
 
     public TableSource getSource() {
         return source;
     }
 
+    public TableSource getBranch() {
+        return branch;
+    }
+
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
         source = (TableSource)source.duplicate();
+        branch = (TableSource)branch.duplicate();
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + source + ")";
+    public String summaryString() {
+        return super.summaryString() +
+            "(" + source.getTable() + " -> " + branch.getTable() + ")";
     }
 
 }

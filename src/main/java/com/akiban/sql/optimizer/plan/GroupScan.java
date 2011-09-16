@@ -15,7 +15,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
-public class GroupScan extends BaseAccessPath
+public class GroupScan  extends BasePlanNode
 {
     private TableGroup group;
 
@@ -28,14 +28,19 @@ public class GroupScan extends BaseAccessPath
     }
 
     @Override
+    public boolean accept(PlanVisitor v) {
+        return v.visit(this);
+    }
+
+    @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
         group = (TableGroup)group.duplicate();
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + group.getGroup() + ")";
+    public String summaryString() {
+        return super.summaryString() + "(" + group.getGroup() + ")";
     }
 
 }

@@ -17,6 +17,8 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.error.InvalidOperationException;
 
+import java.util.Set;
+
 /** A join to an actual table. */
 public class TableSource extends BaseJoinable implements ColumnSource
 {
@@ -24,7 +26,7 @@ public class TableSource extends BaseJoinable implements ColumnSource
     private TableGroup group;
     private TableGroupJoin parentJoin;
     private boolean required;
-    private TableAccessPath accessPath;
+    private Set<ColumnExpression> columnsUsed;
 
     public TableSource(TableNode table, boolean required) {
         this.table = table;
@@ -69,11 +71,11 @@ public class TableSource extends BaseJoinable implements ColumnSource
         this.required = required;
     }
 
-    public TableAccessPath getAccessPath() {
-        return accessPath;
+    public Set<ColumnExpression> getColumnsUsed() {
+        return columnsUsed;
     }
-    public void setAccessPath(TableAccessPath accessPath) {
-        this.accessPath = accessPath;
+    public void setColumnsUsed(Set<ColumnExpression> columnsUsed) {
+        this.columnsUsed = columnsUsed;
     }
 
     @Override
@@ -104,10 +106,6 @@ public class TableSource extends BaseJoinable implements ColumnSource
             str.append(" - ");
             str.append(group);
         }
-        if (accessPath != null) {
-            str.append(" - ");
-            str.append(accessPath);
-        }
         str.append(")");
         return str.toString();
     }
@@ -122,8 +120,8 @@ public class TableSource extends BaseJoinable implements ColumnSource
         super.deepCopy(map);
         table = map.duplicate(table);
         table.addUse(this);
-        if (accessPath != null)
-            accessPath = (TableAccessPath)accessPath.duplicate();
+        if (columnsUsed != null)
+            columnsUsed = duplicateSet(columnsUsed, map);
     }
 
 }
