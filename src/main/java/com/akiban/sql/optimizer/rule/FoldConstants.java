@@ -207,7 +207,16 @@ public class FoldConstants extends BaseRule
         }
 
         protected void filterNode(Filter filter) {
-            if (!checkConditions(filter.getConditions())) {
+            boolean keep = checkConditions(filter.getConditions());
+            if (keep && (filter.getInput() instanceof Joinable)) {
+                Joinable input = (Joinable)filter.getInput();
+                input = checkOuterJoins(input);
+                if (input == null)
+                    keep = false;
+                else
+                    filter.setInput(input);
+            }
+            if (!keep) {
                 eliminateSources(filter.getInput());
                 PlanWithInput inOutput = filter;
                 PlanNode toReplace = null;
@@ -219,6 +228,36 @@ public class FoldConstants extends BaseRule
                 }
                 inOutput.replaceInput(toReplace, new NullSource());
             }
+        }
+
+        protected Joinable checkOuterJoins(Joinable joinable) {
+            if (eliminatedSources.contains(joinable))
+                return null;
+            if (joinable instanceof JoinNode) {
+                JoinNode join = (JoinNode)joinable;
+                Joinable left = checkOuterJoins(join.getLeft());
+                Joinable right = checkOuterJoins(join.getRight());
+                if (!checkConditions(join.getJoinConditions())) {
+                    // Join cannot be satified.
+                    switch (join.getJoinType()) {
+                    case INNER_JOIN:
+                        return null;
+                    case LEFT_JOIN:
+                        eliminateSources(right);
+                        return left;
+                    case RIGHT_JOIN:
+                        eliminateSources(left);
+                        return right;
+                    }
+                }
+                if (left == null)
+                    return right;
+                if (right == null)
+                    return left;
+                join.setLeft(left);
+                join.setRight(right);
+            }
+            return joinable;
         }
 
         protected void eliminateSources(PlanNode node) {
@@ -244,6 +283,7 @@ public class FoldConstants extends BaseRule
         /** Returns <code>false</code> if it's impossible for these
          * conditions to be satisfied. */
         protected boolean checkConditions(List<ConditionExpression> conditions) {
+            if (conditions == null) return true;
             int i = 0;
             while (i < conditions.size()) {
                 ConditionExpression condition = conditions.get(i);

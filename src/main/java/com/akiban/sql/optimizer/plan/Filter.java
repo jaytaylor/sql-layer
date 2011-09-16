@@ -39,7 +39,7 @@ public class Filter extends BasePlanWithInput
             if (getInput().accept(v)) {
                 if (v instanceof ExpressionRewriteVisitor) {
                     for (int i = 0; i < conditions.size(); i++) {
-                        conditions.set(i, (ConditionExpression) conditions.get(i).accept((ExpressionRewriteVisitor)v));
+                        conditions.set(i, (ConditionExpression)conditions.get(i).accept((ExpressionRewriteVisitor)v));
                     }
                 }
                 else if (v instanceof ExpressionVisitor) {
