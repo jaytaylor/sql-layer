@@ -42,7 +42,6 @@ import static com.akiban.qp.expression.API.*;
 import static com.akiban.qp.physicaloperator.API.*;
 import static com.akiban.qp.physicaloperator.API.JoinType.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 public class PhysicalOperatorIT extends PhysicalOperatorITBase
 {

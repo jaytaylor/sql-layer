@@ -18,6 +18,17 @@ package com.akiban.sql.optimizer.simplified;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.TableTreeBase;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import com.akiban.server.error.ColumnNotBoundException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.parser.*;
 
@@ -34,8 +45,6 @@ import static com.akiban.qp.expression.API.*;
 import static com.akiban.qp.physicaloperator.API.JoinType;
 import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;
-
-import java.util.*;
 
 /**
  * An SQL DML statement turned into a simpler form for the interim
@@ -666,7 +675,7 @@ public class SimplifiedQuery
         }
     }
 
-    protected void fillFromValues(ResultSetNode resultSet) {
+    protected final void fillFromValues(ResultSetNode resultSet) {
         if (resultSet instanceof RowResultSetNode) {
             ResultColumnList resultColumns = resultSet.getResultColumns();
             List<SimpleExpression> row = new ArrayList<SimpleExpression>(resultColumns.size());
@@ -905,6 +914,9 @@ public class SimplifiedQuery
                                                    (joinType == JoinType.FULL_JOIN))),
                              joinType);
         }
+        else if (fromTable instanceof CurrentOfNode) {
+            throw new UnsupportedSQLException("Unsupported WHERE CURRENT OF", fromTable);
+        }
         else
             throw new UnsupportedSQLException("Unsupported FROM non-table", fromTable);
     }
@@ -1004,7 +1016,7 @@ public class SimplifiedQuery
         }
         if (errmsg == null)
             return null;
-        throw new UnsupportedSQLException(errmsg, value);
+        throw new ColumnNotBoundException (value.getColumnName(), errmsg);
     }
 
     // Get the constant integer value that this node represents or else throw error.
