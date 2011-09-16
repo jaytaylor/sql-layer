@@ -326,7 +326,11 @@ public class FoldConstants extends BaseRule
         }
 
         protected boolean isNullSubquery(Subquery subquery) {
-            return (subquery.getInput() instanceof NullSource);
+            PlanNode node = subquery;
+            while ((node instanceof Subquery) ||
+                   (node instanceof ResultSet))
+                node = ((BasePlanWithInput)node).getInput();
+            return (node instanceof NullSource);
         }
 
         protected void aggregateSource(AggregateSource aggr) {
