@@ -23,8 +23,12 @@ import com.akiban.qp.physicaloperator.UndefBindings;
 
 import java.io.IOException;
 
+import com.akiban.server.service.dxl.DXLReadWriteLockHook;
+import com.akiban.server.service.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
 
 /**
  * An SQL modifying DML statement transformed into an operator tree
@@ -49,8 +53,15 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
 
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
-        final UpdateResult updateResult = resultOperator.run(bindings, server.getStore());
-        
+        Session session = server.getSession();
+        final UpdateResult updateResult;
+        try {
+            lock(session);
+            updateResult = resultOperator.run(bindings, server.getStore());
+        } finally {
+            unlock(session);
+        }
+
         LOG.debug("Statement: {}, result: {}", statementType, updateResult);
         
         messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
@@ -97,4 +108,13 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
                                   getParameterBindings(parameters));
     }
 
+    private void lock(Session session)
+    {
+        DXLReadWriteLockHook.only().hookFunctionIn(session, UNSPECIFIED_DML_WRITE);
+    }
+
+    private void unlock(Session session)
+    {
+        DXLReadWriteLockHook.only().hookFunctionFinally(session, UNSPECIFIED_DML_WRITE, null);
+    }
 }

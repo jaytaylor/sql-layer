@@ -15,6 +15,8 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.service.dxl.DXLReadWriteLockHook;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.Bindings;
@@ -26,6 +28,8 @@ import com.akiban.qp.rowtype.RowType;
 
 import java.util.*;
 import java.io.IOException;
+
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
 
 /**
  * An SQL SELECT transformed into an operator tree
@@ -53,15 +57,18 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         throws IOException {
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
+        Session session = server.getSession();
         RowType resultRowType = resultOperator.rowType();
-        Cursor cursor = API.cursor(resultOperator, server.getStore());
         int nskip = offset;
         if (limit > 0) {
             if ((maxrows <= 0) || (maxrows > limit))
                 maxrows = limit;
         }
         int nrows = 0;
+        Cursor cursor = null;
         try {
+            lock(session);
+            cursor = API.cursor(resultOperator, server.getStore());
             cursor.open(bindings);
             List<PostgresType> columnTypes = getColumnTypes();
             int ncols = columnTypes.size();
@@ -96,7 +103,10 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             }
         }
         finally {
-            cursor.close();
+            if (cursor != null) {
+                cursor.close();
+            }
+            unlock(session);
         }
         {        
             messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
@@ -163,4 +173,13 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                                   columnBinary, defaultColumnBinary);
     }
 
+    private void lock(Session session)
+    {
+        DXLReadWriteLockHook.only().hookFunctionIn(session, UNSPECIFIED_DML_WRITE);
+    }
+
+    private void unlock(Session session)
+    {
+        DXLReadWriteLockHook.only().hookFunctionFinally(session, UNSPECIFIED_DML_WRITE, null);
+    }
 }
