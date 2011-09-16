@@ -27,4 +27,9 @@ public class FunctionCondition extends FunctionExpression implements ConditionEx
                              DataTypeDescriptor sqlType, ValueNode sqlSource) {
         super(function, operands, sqlType, sqlSource);
     }
+
+    @Override
+    public Implementation getImplementation() {
+        return Implementation.NORMAL;
+    }
 }

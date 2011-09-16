@@ -90,7 +90,7 @@ public class RulesTest extends OptimizerTestBase implements TestBase.GenerateAnd
 
     @Before
     public void loadDDL() throws Exception {
-        loadSchema(schemaFile);
+        RulesTestHelper.ensureRowDefs(loadSchema(schemaFile));
     }
 
     @Test

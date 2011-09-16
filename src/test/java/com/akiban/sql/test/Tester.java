@@ -37,7 +37,6 @@ import com.akiban.sql.optimizer.rule.BaseRule;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
 import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.parser.DMLStatementNode;
-import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.DeleteNode;
 import com.akiban.sql.parser.InsertNode;
 import com.akiban.sql.parser.NodeTypes;
@@ -219,6 +218,8 @@ public class Tester
             binder = new AISBinder(ais, "user");
         if (actions.indexOf(Action.OPERATORS) >= 0)
             operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, "user");
+        if (planRules != null)
+            RulesTestHelper.ensureRowDefs(ais);
     }
 
     public void addView(String sql) throws Exception {

@@ -14,23 +14,10 @@
  */
 package com.akiban.server.error;
 
-import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.QueryTreeNode;
-import com.akiban.sql.unparser.NodeToString;
 
-public class UnsupportedSQLException extends InvalidOperationException {
+public class UnsupportedSQLException extends BaseSQLException {
     public UnsupportedSQLException(String msg, QueryTreeNode sql) {
-        super (ErrorCode.UNSUPPORTED_SQL,msg, formatSQL(sql));
-    }
-    
-    protected static String formatSQL(QueryTreeNode sql) {
-        if (sql == null)
-            return null;
-        try {
-            return new NodeToString().toString(sql);
-        }
-        catch (StandardException ex) {
-            return sql.toString();
-        }
+        super(ErrorCode.UNSUPPORTED_SQL, msg, sql);
     }
 }

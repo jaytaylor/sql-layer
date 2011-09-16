@@ -15,7 +15,6 @@
 
 package com.akiban.sql.optimizer.plan;
 
-/** Marker interface that a Duplicatable should be entered into the map. */
-public interface DuplicatableOnce
+public abstract class BasePlanElement extends BaseDuplicatable implements PlanElement
 {
 }

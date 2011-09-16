@@ -68,12 +68,13 @@ public class OptimizerTestBase extends ASTTransformTestBase
         grouper = new Grouper(parser);
     }
 
-    protected void loadSchema(File schema) throws Exception {
+    protected AkibanInformationSchema loadSchema(File schema) throws Exception {
         String sql = fileContents(schema);
         SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
         SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
         AkibanInformationSchema ais = toAis.getAis();
         binder = new AISBinder(ais, "user");
+        return ais;
     }
 
     protected void loadView(File view) throws Exception {

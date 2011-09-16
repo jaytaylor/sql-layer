@@ -32,6 +32,11 @@ public class PromoteOuterJoins extends BaseRule
     static class WhereFinder implements PlanVisitor, ExpressionVisitor {
         List<Filter> result = new ArrayList<Filter>();
 
+        public List<Filter> find(PlanNode root) {
+            root.accept(this);
+            return result;
+        }
+
         @Override
         public boolean visitEnter(PlanNode n) {
             return visit(n);
@@ -71,9 +76,8 @@ public class PromoteOuterJoins extends BaseRule
 
     @Override
     public PlanNode apply(PlanNode plan) {
-        WhereFinder wheres = new WhereFinder();
-        plan.accept(wheres);
-        for (Filter filter : wheres.result) {
+        List<Filter> wheres = new WhereFinder().find(plan);
+        for (Filter filter : wheres) {
             doJoins(filter);
         }
         return plan;

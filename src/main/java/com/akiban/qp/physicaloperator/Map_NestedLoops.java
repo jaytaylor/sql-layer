@@ -145,6 +145,7 @@ class Map_NestedLoops extends PhysicalOperator
         public void close()
         {
             if (!closed) {
+                innerInput.close();
                 closeOuter();
                 closed = true;
             }

@@ -15,7 +15,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
-public abstract class BasePlanNode extends BaseDuplicatable implements PlanNode
+public abstract class BasePlanNode extends BasePlanElement implements PlanNode
 {
     private PlanWithInput output;
 
