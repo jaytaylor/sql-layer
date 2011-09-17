@@ -1,0 +1,7 @@
+SelectQuery@56f449b8
+  ResultSet@4013fba1[MIN(user.items.sku), MAX(user.items.sku)]
+    Filter@5fed27e4[]
+      AggregateSource@4ad61aef(SORT,[user.items.quan],[])
+        Filter@2e82674b[]
+          AncestorLookup@734b84c7(user.items -> user.items)
+            IndexScan@62fa5ff3(Index(user.items.__akiban_fk_1[IndexColumn(oid)]), NONE, =$0)

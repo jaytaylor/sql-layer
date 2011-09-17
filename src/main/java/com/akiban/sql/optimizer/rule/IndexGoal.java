@@ -91,8 +91,8 @@ public class IndexGoal implements Comparator<IndexScan>
     // still be sorted by those coming out. It's hard to write such a
     // query in SQL, since the ORDER BY can't contain columns not in
     // the GROUP BY, and non-columns won't appear in the index.
-    private List<ExpressionNode> grouping;
-    private List<OrderByExpression> ordering;
+    private AggregateSource grouping;
+    private Sort ordering;
 
     // All the columns besides those in conditions that will be needed.
     private RequiredColumns requiredColumns;
@@ -100,8 +100,8 @@ public class IndexGoal implements Comparator<IndexScan>
     public IndexGoal(PlanNode plan,
                      Set<TableSource> boundTables, 
                      List<ConditionExpression> conditions,
-                     List<ExpressionNode> grouping,
-                     List<OrderByExpression> ordering,
+                     AggregateSource grouping,
+                     Sort ordering,
                      Collection<TableSource> tables) {
         this.boundTables = boundTables;
         this.conditions = conditions;
@@ -172,15 +172,15 @@ public class IndexGoal implements Comparator<IndexScan>
                     }
                 }
             }
-            List<OrderByExpression> ordering = 
+            List<OrderByExpression> orderBy = 
                 new ArrayList<OrderByExpression>(ncols - nequals);
             for (int i = nequals; i < ncols; i++) {
                 indexExpression = indexExpressions.get(i);
                 if (indexExpression == null) break;
-                ordering.add(new OrderByExpression(indexExpression, 
-                                                   indexColumns.get(i).isAscending()));
+                orderBy.add(new OrderByExpression(indexExpression, 
+                                                  indexColumns.get(i).isAscending()));
             }
-            index.setOrdering(ordering);
+            index.setOrdering(orderBy);
         }
         index.setOrderEffectiveness(determineOrderEffectiveness(index));
         if ((index.getOrderEffectiveness() == IndexScan.OrderEffectiveness.NONE) &&
@@ -203,7 +203,7 @@ public class IndexGoal implements Comparator<IndexScan>
         if (ordering != null) {
             Boolean reverse = null;
             int idx = 0;
-            for (OrderByExpression targetColumn : ordering) {
+            for (OrderByExpression targetColumn : ordering.getOrderBy()) {
                 ExpressionNode targetExpression = targetColumn.getExpression();
                 OrderByExpression indexColumn = null;
                 if (idx < indexOrdering.size())
@@ -236,7 +236,8 @@ public class IndexGoal implements Comparator<IndexScan>
         }
         if (grouping != null) {
             boolean anyFound = false, allFound = true;
-            for (ExpressionNode targetExpression : grouping) {
+            List<ExpressionNode> groupBy = grouping.getGroupBy();
+            for (ExpressionNode targetExpression : groupBy) {
                 int found = -1;
                 for (int i = 0; i < indexOrdering.size(); i++) {
                     if (targetExpression.equals(indexOrdering.get(i).getExpression())) {
@@ -250,7 +251,7 @@ public class IndexGoal implements Comparator<IndexScan>
                         !equalityComparands.contains(targetExpression))
                         continue;
                 }
-                else if (found >= grouping.size()) {
+                else if (found >= groupBy.size()) {
                     // Ordered by this column, but after some other
                     // stuff which will break up the group. Only
                     // partially grouped.
@@ -476,7 +477,7 @@ public class IndexGoal implements Comparator<IndexScan>
         }
     }
 
-    public boolean determineCovering(IndexScan index) {
+    protected boolean determineCovering(IndexScan index) {
         // The non-condition requirements.
         RequiredColumns requiredAfter = new RequiredColumns(requiredColumns);
         RequiredColumnsFiller filler = new RequiredColumnsFiller(requiredAfter);
@@ -503,4 +504,46 @@ public class IndexGoal implements Comparator<IndexScan>
         return requiredAfter.isEmpty();
     }
 
+    /** Change WHERE, GROUP BY, and ORDER BY upstream of
+     * <code>node</code> as a consequence of <code>index</code> being
+     * used.
+     */
+    public void installUpstream(IndexScan index, PlanNode node) {
+        if (index.getConditions() != null) {
+            for (ConditionExpression condition : index.getConditions()) {
+                // TODO: This depends on conditions being the original
+                // from the Filter, and not some copy merged with join
+                // conditions, etc. When it is, more work will be
+                // needed to track down where to remove, though
+                // setting the implementation may be enough.
+                conditions.remove(condition);
+                if (condition instanceof ComparisonCondition) {
+                    ((ComparisonCondition)condition).setImplementation(ConditionExpression.Implementation.INDEX);
+                }
+            }
+        }
+        if (grouping != null) {
+            AggregateSource.Implementation implementation;
+            switch (index.getOrderEffectiveness()) {
+            case SORTED:
+            case GROUPED:
+                implementation = AggregateSource.Implementation.PRESORTED;
+                break;
+            case PARTIAL_GROUPED:
+                implementation = AggregateSource.Implementation.PREAGGREGATE_RESORT;
+                break;
+            default:
+                implementation = AggregateSource.Implementation.SORT;
+                break;
+            }
+            grouping.setImplementation(implementation);
+        }
+        if (ordering != null) {
+            if (index.getOrderEffectiveness() == IndexScan.OrderEffectiveness.SORTED) {
+                // Sort not needed: splice it out.
+                ordering.getOutput().replaceInput(ordering, ordering.getInput());
+            }
+        }
+    }
+    
 }

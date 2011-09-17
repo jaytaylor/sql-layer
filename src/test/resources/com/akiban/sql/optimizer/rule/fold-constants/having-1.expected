@@ -1,6 +1,6 @@
 SelectQuery@10e35d5
   ResultSet@1f03691[GROUP[0]]
     Filter@18e8541[GROUP[0] > M]
-      AggregateSource@caf6c1[][MAX(user.customers.name)]
+      AggregateSource@caf6c1([],[MAX(user.customers.name)])
         Filter@1ce85c4[]
           TableSource@1fcc0a2(user.customers)

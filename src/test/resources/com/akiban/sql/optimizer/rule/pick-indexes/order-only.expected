@@ -1,6 +1,5 @@
 SelectQuery@788390b0
   ResultSet@59050a0[user.items.iid, user.items.oid, user.items.sku, user.items.quan]
-    Sort@459d3b3a[user.items.sku]
-      Filter@559b808a[user.items.quan > 100]
-        AncestorLookup@54140fee(user.items -> user.items)
-          IndexScan@7121fd61(Index(user.items.sku[IndexColumn(sku)]), SORTED)
+    Filter@559b808a[user.items.quan > 100]
+      AncestorLookup@54140fee(user.items -> user.items)
+        IndexScan@7121fd61(Index(user.items.sku[IndexColumn(sku)]), SORTED)

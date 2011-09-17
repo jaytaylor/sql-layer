@@ -1,5 +1,4 @@
 SelectQuery@df8b14
   ResultSet@23d08b[user.customers.name]
-    Sort@1508f31[user.customers.name]
-      Filter@1e8fa70[]
-        IndexScan@15c929a(Index(user.customers.name[IndexColumn(name)]), covering/SORTED)
+    Filter@1e8fa70[]
+      IndexScan@15c929a(Index(user.customers.name[IndexColumn(name)]), covering/SORTED)

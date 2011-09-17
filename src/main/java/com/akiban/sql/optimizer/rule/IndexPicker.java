@@ -55,18 +55,7 @@ public class IndexPicker extends BaseRule
                 indexTable = index.getLeafMostTable();
         }
         if (index != null) {
-            List<ConditionExpression> filterConditions = null;
-            if (joins.getOutput() instanceof Filter)
-                filterConditions = ((Filter)joins.getOutput()).getConditions();
-            if (index.getConditions() != null) {
-                for (ConditionExpression condition : index.getConditions()) {
-                    if (filterConditions != null)
-                        filterConditions.remove(condition);
-                    if (condition instanceof ComparisonCondition) {
-                        ((ComparisonCondition)condition).setImplementation(ConditionExpression.Implementation.INDEX);
-                    }
-                }
-            }
+            goal.installUpstream(index, joins);
         }
         PlanNode scan = index;
         if (index == null) {
@@ -149,8 +138,8 @@ public class IndexPicker extends BaseRule
                                            PlanNode plan,
                                            Collection<TableSource> tables) {
         List<ConditionExpression> conditions;
-        List<ExpressionNode> grouping = null;
-        List<OrderByExpression> ordering = null;
+        Sort ordering = null;
+        AggregateSource grouping = null;
         input = input.getOutput();
         if (input instanceof Filter)
             conditions = ((Filter)input).getConditions();
@@ -158,18 +147,19 @@ public class IndexPicker extends BaseRule
             return null;
         input = input.getOutput();
         if (input instanceof Sort) {
-            ordering = ((Sort)input).getOrderBy();
+            ordering = (Sort)input;
         }
         else if (input instanceof AggregateSource) {
-            grouping = ((AggregateSource)input).getGroupBy();
+            grouping = (AggregateSource)input;
             input = input.getOutput();
             if (input instanceof Filter)
                 input = input.getOutput();
             if (input instanceof Sort) {
                 // Needs to be possible to satisfy both.
-                ordering = ((Sort)input).getOrderBy();
-                for (OrderByExpression orderBy : ordering) {
-                    if (!grouping.contains(orderBy.getExpression())) {
+                ordering = (Sort)input;
+                List<ExpressionNode> groupBy = grouping.getGroupBy();
+                for (OrderByExpression orderBy : ordering.getOrderBy()) {
+                    if (!groupBy.contains(orderBy.getExpression())) {
                         ordering = null;
                         break;
                     }

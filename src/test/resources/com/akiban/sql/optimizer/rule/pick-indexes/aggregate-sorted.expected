@@ -1,8 +1,7 @@
 SelectQuery@734b84c7
   ResultSet@62fa5ff3[user.customers.name, user.items.sku, SUM(user.items.quan)]
-    Sort@23b17d49[user.customers.name]
-      Filter@599855ed[]
-        AggregateSource@2031688f[user.customers.name, user.items.sku][]
-          Filter@bc794cc[]
-            AncestorLookup@5bf9e31e(user.items -> user.customers, user.orders, user.items)
-              IndexScan@72adf5be(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), SORTED)
+    Filter@599855ed[]
+      AggregateSource@2031688f(PRESORTED,[user.customers.name, user.items.sku],[])
+        Filter@bc794cc[]
+          AncestorLookup@5bf9e31e(user.items -> user.customers, user.orders, user.items)
+            IndexScan@72adf5be(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), SORTED)

@@ -1,6 +1,5 @@
 SelectQuery@594ab51b
   ResultSet@37b82d69[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date, user.items.iid, user.items.oid, user.items.sku, user.items.quan]
-    Sort@1cad6513[user.orders.order_date DESC]
-      Filter@3bc6d11a[]
-        AncestorLookup@79ca209e(user.items -> user.customers, user.orders, user.items)
-          IndexScan@4523a389(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), SORTED/reverse, =1234)
+    Filter@3bc6d11a[]
+      AncestorLookup@79ca209e(user.items -> user.customers, user.orders, user.items)
+        IndexScan@4523a389(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), SORTED/reverse, =1234)

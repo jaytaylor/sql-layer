@@ -20,8 +20,14 @@ import java.util.ArrayList;
 
 public class AggregateSource extends BasePlanWithInput implements ColumnSource
 {
+    public static enum Implementation {
+        PRESORTED, PREAGGREGATE_RESORT, SORT, HASH
+    }
+
     private List<ExpressionNode> groupBy;
     private List<AggregateFunctionExpression> aggregates;
+
+    private Implementation implementation;
 
     public AggregateSource(PlanNode input,
                            List<ExpressionNode> groupBy) {
@@ -42,6 +48,13 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
         int position = groupBy.size() + aggregates.size();
         aggregates.add(aggregate);
         return position;
+    }
+
+    public Implementation getImplementation() {
+        return implementation;
+    }
+    public void setImplementation(Implementation implementation) {
+        this.implementation = implementation;
     }
 
     public String getName() {
@@ -80,7 +93,17 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
     
     @Override
     public String summaryString() {
-        return super.summaryString() + groupBy + aggregates;
+        StringBuilder str = new StringBuilder(super.summaryString());
+        str.append("(");
+        if (implementation != null) {
+            str.append(implementation);
+            str.append(",");
+        }
+        str.append(groupBy);
+        str.append(",");
+        str.append(aggregates);
+        str.append(")");
+        return str.toString();
     }
 
     @Override
