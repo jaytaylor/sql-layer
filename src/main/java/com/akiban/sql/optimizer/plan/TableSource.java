@@ -26,7 +26,6 @@ public class TableSource extends BaseJoinable implements ColumnSource
     private TableGroup group;
     private TableGroupJoin parentJoin;
     private boolean required;
-    private Set<ColumnExpression> columnsUsed;
 
     public TableSource(TableNode table, boolean required) {
         this.table = table;
@@ -71,13 +70,6 @@ public class TableSource extends BaseJoinable implements ColumnSource
         this.required = required;
     }
 
-    public Set<ColumnExpression> getColumnsUsed() {
-        return columnsUsed;
-    }
-    public void setColumnsUsed(Set<ColumnExpression> columnsUsed) {
-        this.columnsUsed = columnsUsed;
-    }
-
     @Override
     public String getName() {
         return table.getTable().getName().toString();
@@ -120,8 +112,6 @@ public class TableSource extends BaseJoinable implements ColumnSource
         super.deepCopy(map);
         table = map.duplicate(table);
         table.addUse(this);
-        if (columnsUsed != null)
-            columnsUsed = duplicateSet(columnsUsed, map);
     }
 
 }
