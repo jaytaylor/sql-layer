@@ -15,17 +15,22 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.expression.IndexBound;
-import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.ais.model.GroupTable;
+import com.akiban.qp.persistitadapter.OperatorStore;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.row.RowBase;
-import com.akiban.server.api.dml.SetColumnSelector;
+import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.store.PersistitStore;
+import com.akiban.server.store.Store;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
+import java.util.Collections;
 
 import static com.akiban.qp.physicaloperator.API.*;
 
@@ -34,451 +39,269 @@ public class BranchLookup_NestedIT extends PhysicalOperatorITBase
     @Before
     public void before()
     {
-        super.before();
-        NewRow[] dbWithOrphans = new NewRow[]{
-            createNewRow(customer, 1L, "northbridge"),
-            createNewRow(customer, 2L, "foundation"),
-            createNewRow(customer, 4L, "highland"),
-            createNewRow(address, 1001L, 1L, "111 1111 st"),
-            createNewRow(address, 1002L, 1L, "111 2222 st"),
-            createNewRow(address, 2001L, 2L, "222 1111 st"),
-            createNewRow(address, 2002L, 2L, "222 2222 st"),
-            createNewRow(address, 4001L, 4L, "444 1111 st"),
-            createNewRow(address, 4002L, 4L, "444 2222 st"),
-            createNewRow(order, 11L, 1L, "ori"),
-            createNewRow(order, 12L, 1L, "david"),
-            createNewRow(order, 21L, 2L, "tom"),
-            createNewRow(order, 22L, 2L, "jack"),
-            createNewRow(order, 31L, 3L, "peter"),
-            createNewRow(item, 111L, 11L),
-            createNewRow(item, 112L, 11L),
-            createNewRow(item, 121L, 12L),
-            createNewRow(item, 122L, 12L),
-            createNewRow(item, 211L, 21L),
-            createNewRow(item, 212L, 21L),
-            createNewRow(item, 221L, 22L),
-            createNewRow(item, 222L, 22L),
-            // orphans
-            createNewRow(address, 5001L, 5L, "555 1111 st"),
-            createNewRow(item, 311L, 31L),
-            createNewRow(item, 312L, 31L)};
-        use(dbWithOrphans);
+        // Don't call super.before(). This is a different schema from most operator ITs.
+        r = createTable(
+            "schema", "r",
+            "rid int not null key",
+            "rvalue varchar(20)," +
+            "index(rvalue)");
+        a = createTable(
+            "schema", "a",
+            "aid int not null key",
+            "rid int",
+            "avalue varchar(20)",
+            "constraint __akiban_ra foreign key __akiban_ra(rid) references r(rid)",
+            "index(avalue)");
+        b = createTable(
+            "schema", "b",
+            "bid int not null key",
+            "rid int",
+            "bvalue varchar(20)",
+            "constraint __akiban_rb foreign key __akiban_rb(rid) references r(rid)",
+            "index(bvalue)");
+        c = createTable(
+            "schema", "c",
+            "cid int not null key",
+            "rid int",
+            "cvalue varchar(20)",
+            "constraint __akiban_rc foreign key __akiban_rc(rid) references r(rid)",
+            "index(cvalue)");
+        schema = new Schema(rowDefCache().ais());
+        rRowType = schema.userTableRowType(userTable(r));
+        aRowType = schema.userTableRowType(userTable(a));
+        bRowType = schema.userTableRowType(userTable(b));
+        cRowType = schema.userTableRowType(userTable(c));
+        aValueIndexRowType = indexType(a, "avalue");
+        rValueIndexRowType = indexType(r, "rvalue");
+        rabc = groupTable(r);
+        db = new NewRow[]{createNewRow(r, 1L, "r1"),
+                          createNewRow(r, 2L, "r2"),
+                          createNewRow(a, 13L, 1L, "a13"),
+                          createNewRow(a, 14L, 1L, "a14"),
+                          createNewRow(a, 23L, 2L, "a23"),
+                          createNewRow(a, 24L, 2L, "a24"),
+                          createNewRow(b, 15L, 1L, "b15"),
+                          createNewRow(b, 16L, 1L, "b16"),
+                          createNewRow(b, 25L, 2L, "b25"),
+                          createNewRow(b, 26L, 2L, "b26"),
+                          createNewRow(c, 17L, 1L, "c17"),
+                          createNewRow(c, 18L, 1L, "c18"),
+                          createNewRow(c, 27L, 2L, "c27"),
+                          createNewRow(c, 28L, 2L, "c28"),
+        };
+        Store plainStore = store();
+        final PersistitStore persistitStore;
+        if (plainStore instanceof OperatorStore) {
+            OperatorStore operatorStore = (OperatorStore) plainStore;
+            persistitStore = operatorStore.getPersistitStore();
+        } else {
+            persistitStore = (PersistitStore) plainStore;
+        }
+        adapter = new PersistitAdapter(schema, persistitStore, null, session());
+        use(db);
     }
 
-    // IllegalArumentException tests
+    // Test argument validation
 
     @Test(expected = IllegalArgumentException.class)
-    public void testNullGroupTable()
+    public void testBLNGroupTableNull()
     {
-        branchLookup_Nested(
-            null,
-            customerRowType,
-            orderRowType,
-            LookupOption.KEEP_INPUT,
-            0);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testNullInputRowType()
-    {
-        branchLookup_Nested(
-            coi,
-            null,
-            orderRowType,
-            LookupOption.KEEP_INPUT,
-            0);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testNullOutputRowType()
-    {
-        branchLookup_Nested(
-            coi,
-            customerRowType,
-            null,
-            LookupOption.KEEP_INPUT,
-            0);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testNegativeInputBindingPosition()
-    {
-        branchLookup_Nested(
-            coi,
-            customerRowType,
-            orderRowType,
-            LookupOption.KEEP_INPUT,
-            -1);
+        branchLookup_Nested(null, aRowType, bRowType, LookupOption.KEEP_INPUT, 0);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testLookupSelf()
+    public void testBLNInputRowTypeNull()
     {
-        branchLookup_Nested(
-            coi,
-            customerRowType,
-            customerRowType,
-            LookupOption.KEEP_INPUT,
-            0);
-    }
-
-    @Test
-    public void testLookupSelfFromIndex()
-    {
-        branchLookup_Nested(
-            coi,
-            customerNameIndexRowType,
-            customerRowType,
-            LookupOption.DISCARD_INPUT,
-            0);
+        branchLookup_Nested(rabc, null, bRowType, LookupOption.KEEP_INPUT, 0);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testKeepIndexInput()
+    public void testBLNOutputRowTypeNull()
     {
-        branchLookup_Nested(
-            coi,
-            customerNameIndexRowType,
-            customerRowType,
-            LookupOption.KEEP_INPUT,
-            0);
+        branchLookup_Nested(rabc, aRowType, null, LookupOption.KEEP_INPUT, 0);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testBranchNonRootLookup()
+    public void testBLNLookupOptionNull()
     {
-        branchLookup_Nested(
-            coi,
-            addressRowType,
-            itemRowType,
-            LookupOption.KEEP_INPUT,
-            0);
+        branchLookup_Nested(rabc, aRowType, bRowType, null, 0);
     }
 
-    @Test
-    public void testBranchRootLookup()
+    @Test(expected = IllegalArgumentException.class)
+    public void testBLNBadInputBindingPosition()
     {
-        branchLookup_Nested(
-            coi,
-            addressRowType,
-            orderRowType,
-            LookupOption.KEEP_INPUT,
-            0);
+        branchLookup_Nested(rabc, aRowType, bRowType, LookupOption.KEEP_INPUT, -1);
     }
 
-    // customer index -> customer + descendents
-
-/*
-    @Test
-    public void testCustomerIndexToMissingCustomer()
-    {
-        PhysicalOperator plan = customerNameToCustomerPlan("matrix");
-        Cursor cursor = cursor(plan, adapter);
-        RowBase[] expected = new RowBase[]{};
-        compareRows(expected, cursor);
-    }
+    // Test operator execution
 
     @Test
-    public void testCustomerIndexToCustomer()
+    public void testAIndexToR()
     {
-        PhysicalOperator plan = customerNameToCustomerPlan("northbridge");
+        PhysicalOperator plan =
+            map_NestedLoops(
+                indexScan_Default(aValueIndexRowType),
+                branchLookup_Nested(rabc, aValueIndexRowType, rRowType, LookupOption.DISCARD_INPUT, 0),
+                0);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
-            row(customerRowType, 1L, "northbridge"),
-            row(orderRowType, 11L, 1L, "ori"),
-            row(itemRowType, 111L, 11L),
-            row(itemRowType, 112L, 11L),
-            row(orderRowType, 12L, 1L, "david"),
-            row(itemRowType, 121L, 12L),
-            row(itemRowType, 122L, 12L),
-            row(addressRowType, 1001L, 1L, "111 1111 st"),
-            row(addressRowType, 1002L, 1L, "111 2222 st")
+            // Each r row, and everything below it, is duplicated, because the A index refers to each r value twice.
+            row(rRowType, 1L, "r1"),
+            row(aRowType, 13L, 1L, "a13"),
+            row(aRowType, 14L, 1L, "a14"),
+            row(bRowType, 15L, 1L, "b15"),
+            row(bRowType, 16L, 1L, "b16"),
+            row(cRowType, 17L, 1L, "c17"),
+            row(cRowType, 18L, 1L, "c18"),
+            row(rRowType, 1L, "r1"),
+            row(aRowType, 13L, 1L, "a13"),
+            row(aRowType, 14L, 1L, "a14"),
+            row(bRowType, 15L, 1L, "b15"),
+            row(bRowType, 16L, 1L, "b16"),
+            row(cRowType, 17L, 1L, "c17"),
+            row(cRowType, 18L, 1L, "c18"),
+            row(rRowType, 2L, "r2"),
+            row(aRowType, 23L, 2L, "a23"),
+            row(aRowType, 24L, 2L, "a24"),
+            row(bRowType, 25L, 2L, "b25"),
+            row(bRowType, 26L, 2L, "b26"),
+            row(cRowType, 27L, 2L, "c27"),
+            row(cRowType, 28L, 2L, "c28"),
+            row(rRowType, 2L, "r2"),
+            row(aRowType, 23L, 2L, "a23"),
+            row(aRowType, 24L, 2L, "a24"),
+            row(bRowType, 25L, 2L, "b25"),
+            row(bRowType, 26L, 2L, "b26"),
+            row(cRowType, 27L, 2L, "c27"),
+            row(cRowType, 28L, 2L, "c28"),
         };
         compareRows(expected, cursor);
     }
 
     @Test
-    public void testCustomerIndexToCustomerWithNoOrders()
+    public void testAToR()
     {
-        PhysicalOperator plan = customerNameToCustomerPlan("highland");
-        Cursor cursor = cursor(plan, adapter);
-        RowBase[] expected = new RowBase[]{
-            row(customerRowType, 4L, "highland"),
-            row(addressRowType, 4001L, 4L, "444 1111 st"),
-            row(addressRowType, 4002L, 4L, "444 2222 st")
-        };
-        compareRows(expected, cursor);
-    }
-
-    // address index -> customer + descendents
-
-    @Test
-    public void testAddressIndexToMissingCustomer()
-    {
-        PhysicalOperator plan = addressAddressToCustomerPlan("555 1111 st");
-        Cursor cursor = cursor(plan, adapter);
-        RowBase[] expected = new RowBase[]{
-            row(addressRowType, 5001L, 5L, "555 1111 st"),
-        };
-        compareRows(expected, cursor);
-    }
-
-    @Test
-    public void testAddressIndexToCustomer()
-    {
-        PhysicalOperator plan = addressAddressToCustomerPlan("222 2222 st");
-        Cursor cursor = cursor(plan, adapter);
-        RowBase[] expected = new RowBase[]{
-            row(customerRowType, 2L, "foundation"),
-            row(orderRowType, 21L, 2L, "tom"),
-            row(itemRowType, 211L, 21L),
-            row(itemRowType, 212L, 21L),
-            row(orderRowType, 22L, 2L, "jack"),
-            row(itemRowType, 221L, 22L),
-            row(itemRowType, 222L, 22L),
-            row(addressRowType, 2001L, 2L, "222 1111 st"),
-            row(addressRowType, 2002L, 2L, "222 2222 st")
-        };
-        compareRows(expected, cursor);
-    }
-
-    // address row -> customer + descendents
-
-    @Test
-    public void testAddressToMissingCustomer()
-    {
-        PhysicalOperator plan = addressToCustomerPlan("555 1111 st");
-        Cursor cursor = cursor(plan, adapter);
-        RowBase[] expected = new RowBase[]{
-            row(addressRowType, 5001L, 5L, "555 1111 st"),
-        };
-        compareRows(expected, cursor);
-    }
-
-    @Test
-    public void testAddressToCustomer()
-    {
-        PhysicalOperator plan = addressToCustomerPlan("222 2222 st");
-        Cursor cursor = cursor(plan, adapter);
-        RowBase[] expected = new RowBase[]{
-            row(customerRowType, 2L, "foundation"),
-            row(orderRowType, 21L, 2L, "tom"),
-            row(itemRowType, 211L, 21L),
-            row(itemRowType, 212L, 21L),
-            row(orderRowType, 22L, 2L, "jack"),
-            row(itemRowType, 221L, 22L),
-            row(itemRowType, 222L, 22L),
-            row(addressRowType, 2001L, 2L, "222 1111 st"),
-            row(addressRowType, 2002L, 2L, "222 2222 st")
-        };
-        compareRows(expected, cursor);
-    }
-
-    // address row -> order + descendents
-
-    @Test
-    public void testAddressToOrder()
-    {
-        PhysicalOperator plan = addressToOrderPlan("222 2222 st", false);
-        Cursor cursor = cursor(plan, adapter);
-        RowBase[] expected = new RowBase[]{
-            row(orderRowType, 21L, 2L, "tom"),
-            row(itemRowType, 211L, 21L),
-            row(itemRowType, 212L, 21L),
-            row(orderRowType, 22L, 2L, "jack"),
-            row(itemRowType, 221L, 22L),
-            row(itemRowType, 222L, 22L)
-        };
-        compareRows(expected, cursor);
-    }
-
-    @Test
-    public void testAddressToMissingOrder()
-    {
-        PhysicalOperator plan = addressToOrderPlan("444 2222 st", false);
-        Cursor cursor = cursor(plan, adapter);
-        RowBase[] expected = new RowBase[]{
-        };
-        compareRows(expected, cursor);
-    }
-
-    // Ordering of input row relative to branch
-
-    @Test
-    public void testAddressToOrderAndAddress()
-    {
-        PhysicalOperator plan = addressToOrderPlan("222 2222 st", true);
-        Cursor cursor = cursor(plan, adapter);
-        RowBase[] expected = new RowBase[]{
-            row(orderRowType, 21L, 2L, "tom"),
-            row(itemRowType, 211L, 21L),
-            row(itemRowType, 212L, 21L),
-            row(orderRowType, 22L, 2L, "jack"),
-            row(itemRowType, 221L, 22L),
-            row(itemRowType, 222L, 22L),
-            row(addressRowType, 2002L, 2L, "222 2222 st"),
-        };
-        compareRows(expected, cursor);
-    }
-
-    @Test
-    public void testOrderToOrderAndAddress()
-    {
-        PhysicalOperator plan = orderToAddressPlan("tom", true);
-        Cursor cursor = cursor(plan, adapter);
-        RowBase[] expected = new RowBase[]{
-            row(orderRowType, 21L, 2L, "tom"),
-            row(addressRowType, 2001L, 2L, "222 1111 st"),
-            row(addressRowType, 2002L, 2L, "222 2222 st")
-        };
-        compareRows(expected, cursor);
-    }
-
-    @Test
-    public void testItemToItemAndAddress()
-    {
-        PhysicalOperator plan = itemToAddressPlan(111L, true);
-        Cursor cursor = cursor(plan, adapter);
-        RowBase[] expected = new RowBase[]{
-            row(itemRowType, 111L, 11L),
-            row(addressRowType, 1001L, 1L, "111 1111 st"),
-            row(addressRowType, 1002L, 1L, "111 2222 st"),
-        };
-        compareRows(expected, cursor);
-    }
-*/
-
-    // For use by this class
-
-/*
-    private PhysicalOperator customerNameToCustomerPlan(String customerName)
-    {
-        return
-            branchLookup_Default(
-                indexScan_Default(customerNameIndexRowType, false, customerNameEQ(customerName)),
-                coi,
-                customerNameIndexRowType,
-                customerRowType,
-                LookupOption.DISCARD_INPUT);
-    }
-
-    private PhysicalOperator addressAddressToCustomerPlan(String address)
-    {
-        return
-            branchLookup_Nested(
-                indexScan_Default(addressAddressIndexRowType, false, addressAddressEQ(address)),
-                coi,
-                addressAddressIndexRowType,
-                customerRowType,
-                LookupOption.DISCARD_INPUT);
-    }
-
-    private PhysicalOperator addressToCustomerPlan(String address)
-    {
-        return
-            branchLookup_Nested(
-                    branchLookup_Nested(
-                        indexScan_Default(addressAddressIndexRowType, false, addressAddressEQ(address)),
-                        coi,
-                        addressAddressIndexRowType,
-                        addressRowType,
-                        LookupOption.DISCARD_INPUT),
-                    coi,
-                    addressRowType,
-                    customerRowType,
-                    LookupOption.DISCARD_INPUT);
-    }
-
-    private PhysicalOperator addressToOrderPlan(String address, boolean keepInput)
-    {
-        return
-            branchLookup_Nested(
+        PhysicalOperator plan =
+            map_NestedLoops(
                 ancestorLookup_Default(
-                    indexScan_Default(addressAddressIndexRowType, false, addressAddressEQ(address)),
-                    coi,
-                    addressAddressIndexRowType,
-                    Arrays.asList(addressRowType),
+                    indexScan_Default(aValueIndexRowType),
+                    rabc,
+                    aValueIndexRowType,
+                    Collections.singleton(aRowType),
                     LookupOption.DISCARD_INPUT),
-                coi,
-                addressRowType,
-                orderRowType,
-                keepInput ? LookupOption.KEEP_INPUT : LookupOption.DISCARD_INPUT);
+                branchLookup_Nested(rabc, aRowType, rRowType, LookupOption.DISCARD_INPUT, 0),
+                0);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+            // Each r row, and everything below it, is duplicated, because the A index refers to each r value twice.
+            row(rRowType, 1L, "r1"),
+            row(aRowType, 13L, 1L, "a13"),
+            row(aRowType, 14L, 1L, "a14"),
+            row(bRowType, 15L, 1L, "b15"),
+            row(bRowType, 16L, 1L, "b16"),
+            row(cRowType, 17L, 1L, "c17"),
+            row(cRowType, 18L, 1L, "c18"),
+            row(rRowType, 1L, "r1"),
+            row(aRowType, 13L, 1L, "a13"),
+            row(aRowType, 14L, 1L, "a14"),
+            row(bRowType, 15L, 1L, "b15"),
+            row(bRowType, 16L, 1L, "b16"),
+            row(cRowType, 17L, 1L, "c17"),
+            row(cRowType, 18L, 1L, "c18"),
+            row(rRowType, 2L, "r2"),
+            row(aRowType, 23L, 2L, "a23"),
+            row(aRowType, 24L, 2L, "a24"),
+            row(bRowType, 25L, 2L, "b25"),
+            row(bRowType, 26L, 2L, "b26"),
+            row(cRowType, 27L, 2L, "c27"),
+            row(cRowType, 28L, 2L, "c28"),
+            row(rRowType, 2L, "r2"),
+            row(aRowType, 23L, 2L, "a23"),
+            row(aRowType, 24L, 2L, "a24"),
+            row(bRowType, 25L, 2L, "b25"),
+            row(bRowType, 26L, 2L, "b26"),
+            row(cRowType, 27L, 2L, "c27"),
+            row(cRowType, 28L, 2L, "c28"),
+        };
+        compareRows(expected, cursor);
     }
 
-    private PhysicalOperator orderToAddressPlan(String salesman, boolean keepInput)
+    @Test
+    public void testAToB()
     {
-        return
-            branchLookup_Nested(
-                ancestorLookup_Default(
-                    indexScan_Default(orderSalesmanIndexRowType, false, orderSalesmanEQ(salesman)),
-                    coi,
-                    orderSalesmanIndexRowType,
-                    Arrays.asList(orderRowType),
-                    LookupOption.DISCARD_INPUT),
-                coi,
-                orderRowType,
-                addressRowType,
-                keepInput ? LookupOption.KEEP_INPUT : LookupOption.DISCARD_INPUT);
+        PhysicalOperator plan =
+            map_NestedLoops(
+                filter_Default(
+                    groupScan_Default(rabc),
+                    Collections.singleton(aRowType)),
+                branchLookup_Nested(rabc, aRowType, bRowType, LookupOption.DISCARD_INPUT, 0),
+                0);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+            row(bRowType, 15L, 1L, "b15"),
+            row(bRowType, 16L, 1L, "b16"),
+            row(bRowType, 15L, 1L, "b15"),
+            row(bRowType, 16L, 1L, "b16"),
+            row(bRowType, 25L, 2L, "b25"),
+            row(bRowType, 26L, 2L, "b26"),
+            row(bRowType, 25L, 2L, "b25"),
+            row(bRowType, 26L, 2L, "b26"),
+        };
+        compareRows(expected, cursor);
     }
 
-    private PhysicalOperator itemToAddressPlan(long iid, boolean keepInput)
+    @Test
+    public void testAToBAndC()
     {
-        return
-            branchLookup_Nested(
-                ancestorLookup_Default(
-                    indexScan_Default(itemIidIndexRowType, false, itemIidEQ(iid)),
-                    coi,
-                    itemIidIndexRowType,
-                    Arrays.asList(itemRowType),
-                    LookupOption.DISCARD_INPUT),
-                coi,
-                itemRowType,
-                addressRowType,
-                keepInput ? LookupOption.KEEP_INPUT : LookupOption.DISCARD_INPUT);
-    }
-*/
-
-    private IndexKeyRange customerNameEQ(String name)
-    {
-        IndexBound bound = customerNameIndexBound(name);
-        return new IndexKeyRange(bound, true, bound, true);
-    }
-
-    private IndexKeyRange addressAddressEQ(String address)
-    {
-        IndexBound bound = addressAddressIndexBound(address);
-        return new IndexKeyRange(bound, true, bound, true);
-    }
-
-    private IndexKeyRange orderSalesmanEQ(String salesman)
-    {
-        IndexBound bound = orderSalesmanIndexBound(salesman);
-        return new IndexKeyRange(bound, true, bound, true);
-    }
-
-    private IndexKeyRange itemIidEQ(long iid)
-    {
-        IndexBound bound = itemIidIndexBound(iid);
-        return new IndexKeyRange(bound, true, bound, true);
-    }
-
-    private IndexBound customerNameIndexBound(String name)
-    {
-        return new IndexBound(row(customerNameIndexRowType, name), new SetColumnSelector(0));
+        PhysicalOperator plan =
+            map_NestedLoops(
+                map_NestedLoops(
+                    filter_Default(
+                        groupScan_Default(rabc),
+                        Collections.singleton(aRowType)),
+                    branchLookup_Nested(rabc, aRowType, bRowType, LookupOption.DISCARD_INPUT, 0),
+                    0),
+                branchLookup_Nested(rabc, bRowType, cRowType, LookupOption.KEEP_INPUT, 1),
+                1);
+        Cursor cursor = cursor(plan, adapter);
+        RowBase[] expected = new RowBase[]{
+            row(bRowType, 15L, 1L, "b15"),
+            row(cRowType, 17L, 1L, "c17"),
+            row(cRowType, 18L, 1L, "c18"),
+            row(bRowType, 16L, 1L, "b16"),
+            row(cRowType, 17L, 1L, "c17"),
+            row(cRowType, 18L, 1L, "c18"),
+            row(bRowType, 15L, 1L, "b15"),
+            row(cRowType, 17L, 1L, "c17"),
+            row(cRowType, 18L, 1L, "c18"),
+            row(bRowType, 16L, 1L, "b16"),
+            row(cRowType, 17L, 1L, "c17"),
+            row(cRowType, 18L, 1L, "c18"),
+            row(bRowType, 25L, 2L, "b25"),
+            row(cRowType, 27L, 2L, "c27"),
+            row(cRowType, 28L, 2L, "c28"),
+            row(bRowType, 26L, 2L, "b26"),
+            row(cRowType, 27L, 2L, "c27"),
+            row(cRowType, 28L, 2L, "c28"),
+            row(bRowType, 25L, 2L, "b25"),
+            row(cRowType, 27L, 2L, "c27"),
+            row(cRowType, 28L, 2L, "c28"),
+            row(bRowType, 26L, 2L, "b26"),
+            row(cRowType, 27L, 2L, "c27"),
+            row(cRowType, 28L, 2L, "c28"),
+        };
+        compareRows(expected, cursor);
     }
 
-    private IndexBound addressAddressIndexBound(String addr)
-    {
-        return new IndexBound(row(addressAddressIndexRowType, addr), new SetColumnSelector(0));
-    }
-
-    private IndexBound orderSalesmanIndexBound(String salesman)
-    {
-        return new IndexBound(row(orderSalesmanIndexRowType, salesman), new SetColumnSelector(0));
-    }
-
-    private IndexBound itemIidIndexBound(long iid)
-    {
-        return new IndexBound(row(itemIidIndexRowType, iid), new SetColumnSelector(0));
-    }
+    protected int r;
+    protected int a;
+    protected int c;
+    protected int b;
+    protected RowType rRowType;
+    protected RowType aRowType;
+    protected RowType cRowType;
+    protected RowType bRowType;
+    protected IndexRowType aValueIndexRowType;
+    protected IndexRowType rValueIndexRowType;
+    protected GroupTable rabc;
 }

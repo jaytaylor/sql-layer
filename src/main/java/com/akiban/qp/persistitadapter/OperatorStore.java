@@ -86,7 +86,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             throw new RuntimeException("group index maintence won't work with partial rows");
         }
 
-        PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), persistitStore, session);
+        PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), persistitStore, treeService, session);
         Schema schema = adapter.schema();
 
         UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);
@@ -152,7 +152,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 super.writeRow(session, rowData);
 
                 AkibanInformationSchema ais = aisHolder.getAis();
-                PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
+                PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), treeService, session);
                 UserTable uTable = ais.getUserTable(rowData.getRowDefId());
                 maintainGroupIndexes(
                         session, ais, adapter,
@@ -179,7 +179,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             try {
                 transaction.begin();
                 AkibanInformationSchema ais = aisHolder.getAis();
-                PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
+                PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), treeService, session);
                 UserTable uTable = ais.getUserTable(rowData.getRowDefId());
                 maintainGroupIndexes(
                         session, ais, adapter,
@@ -220,7 +220,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
 
         AkibanInformationSchema ais = aisHolder.getAis();
-        PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), session);
+        PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), treeService, session);
         for(GroupIndex groupIndex : groupIndexes) {
             PhysicalOperator plan = OperatorStoreMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
             runMaintenancePlan(

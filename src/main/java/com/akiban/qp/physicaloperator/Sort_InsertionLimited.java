@@ -15,7 +15,6 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
@@ -69,21 +68,16 @@ class Sort_InsertionLimited extends PhysicalOperator
     // Sort_InsertionLimited interface
 
     public Sort_InsertionLimited(PhysicalOperator inputOperator, 
-                                 RowType sortType, 
-                                 List<Expression> sortExpressions,
-                                 List<Boolean> sortDescendings,
+                                 RowType sortType,
+                                 API.Ordering ordering,
                                  int limit)
     {
         ArgumentValidation.notNull("sortType", sortType);
-        ArgumentValidation.notEmpty("sortExpressions", sortExpressions);
-        ArgumentValidation.notNull("sortDescendings", sortDescendings);
-        ArgumentValidation.isEQ("sortExpressions.size()", sortExpressions.size(),
-                                "sortDescendings.size()", sortDescendings.size());
+        ArgumentValidation.isGT("ordering.columns()", ordering.sortFields(), 0);
         ArgumentValidation.isGT("limit", limit, 0);
         this.inputOperator = inputOperator;
         this.sortType = sortType;
-        this.sortExpressions = sortExpressions;
-        this.sortDescendings = sortDescendings;
+        this.ordering = ordering;
         this.limit = limit;
     }
 
@@ -91,13 +85,12 @@ class Sort_InsertionLimited extends PhysicalOperator
 
     private final PhysicalOperator inputOperator;
     private final RowType sortType;
-    private final List<Expression> sortExpressions;
-    private final List<Boolean> sortDescendings;
+    private final API.Ordering ordering;
     private final int limit;
 
     // Inner classes
 
-    private enum State { CLOSED, FILLING, EMPTYING };
+    private enum State { CLOSED, FILLING, EMPTYING }
 
     private class Execution implements Cursor
     {
@@ -121,28 +114,27 @@ class Sort_InsertionLimited extends PhysicalOperator
                     int count = 0;
                     Row row;
                     while ((row = input.next()) != null) {
-                        if (row.rowType() == sortType) {
-                            Holder holder = new Holder(count++, row, bindings);
-                            if (sorted.size() < limit) {
-                                // Still room: add it in.
+                        assert row.rowType() == sortType : row;
+                        Holder holder = new Holder(count++, row, bindings);
+                        if (sorted.size() < limit) {
+                            // Still room: add it in.
+                            boolean added = sorted.add(holder);
+                            assert added;
+                        }
+                        else {
+                            // Current greatest element.
+                            Holder last = sorted.last();
+                            if (last.compareTo(holder) > 0) {
+                                // New row is less, so keep it
+                                // instead.
+                                sorted.remove(last);
+                                last.empty();
                                 boolean added = sorted.add(holder);
                                 assert added;
                             }
                             else {
-                                // Current greatest element.
-                                Holder last = sorted.last();
-                                if (last.compareTo(holder) > 0) {
-                                    // New row is less, so keep it
-                                    // instead.
-                                    sorted.remove(last);
-                                    last.empty();
-                                    boolean added = sorted.add(holder);
-                                    assert added;
-                                }
-                                else {
-                                    // Will not be using new row.
-                                    holder.empty();
-                                }
+                                // Will not be using new row.
+                                holder.empty();
                             }
                         }
                     }
@@ -214,9 +206,9 @@ class Sort_InsertionLimited extends PhysicalOperator
             row = new RowHolder();
             row.set(arow);
 
-            values = new Comparable[sortExpressions.size()];
+            values = new Comparable[ordering.sortFields()];
             for (int i = 0; i < values.length; i++) {
-                values[i] = (Comparable)sortExpressions.get(i).evaluate(arow, bindings);
+                values[i] = (Comparable)ordering.expression(i).evaluate(arow, bindings);
             }
         }
 
@@ -231,13 +223,13 @@ class Sort_InsertionLimited extends PhysicalOperator
                 Comparable v1 = values[i];
                 Comparable v2 = other.values[i];
                 int less, greater;
-                if (sortDescendings.get(i).booleanValue()) {
-                    less = +1;
-                    greater = -1;
-                }
-                else {
+                if (ordering.ascending(i)) {
                     less = -1;
                     greater = +1;
+                }
+                else {
+                    less = +1;
+                    greater = -1;
                 }
                 if (v1 == null) {
                     if (v2 == null) {

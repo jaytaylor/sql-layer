@@ -15,63 +15,19 @@
 
 package com.akiban.qp.physicaloperator;
 
+import java.util.Collection;
+
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.Deque;
 
-public final class TestOperator extends PhysicalOperator {
-    
-    // PhysicalOperator interface
-
-    @Override
-    public RowType rowType() {
-        return rowType;
-    }
-
-    @Override
-    protected Cursor cursor(StoreAdapter adapter) {
-        return new InternalCursor(rows);
-    }
+public final class TestOperator extends ValuesScan_Default {
 
     public TestOperator(RowsBuilder rowsBuilder) {
-        this(rowsBuilder.rows(), rowsBuilder.rowType());
+        super (rowsBuilder.rows(), rowsBuilder.rowType());
     }
-
-    public TestOperator(Collection<? extends Row> rows, RowType rowType) {
-        this.rows = new ArrayDeque<Row>(rows);
-        this.rowType = rowType;
-    }
-
-    private final Deque<Row> rows;
-    private final RowType rowType;
-
-    // object state
-
-    private static class InternalCursor implements Cursor {
-        @Override
-        public void open(Bindings bindings) {
-            cursorValues.clear();
-            cursorValues.addAll(allValues);
-        }
-
-        @Override
-        public Row next() {
-            return cursorValues.poll();
-        }
-
-        @Override
-        public void close() {
-            cursorValues.clear();
-        }
-
-        private InternalCursor(Deque<Row> rows) {
-            allValues = new ArrayDeque<Row>(rows);
-        }
-
-        private final Deque<Row> allValues;
-        private final Deque<Row> cursorValues = new ArrayDeque<Row>();
+    
+    public TestOperator (Collection<? extends Row> rows, RowType rowType) {
+        super(rows, rowType);
     }
 }

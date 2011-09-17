@@ -17,12 +17,6 @@ package com.akiban.qp.exec;
 
 public interface UpdateResult {
     /**
-     * <p>How long the query took to execute, in milliseconds.</p>
-     * @return the amount of time it took to execute this CUD query. May not be negative.
-     */
-    long executionTimeInMS();
-
-    /**
      * <p>The number of rows that were touched by this query, including those which were not modified.</p>
      *
      * <p>For instance, if you had {@code UPDATE my_table SET name='Robert'}, this would be the total number of

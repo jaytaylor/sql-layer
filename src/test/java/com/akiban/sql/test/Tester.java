@@ -37,7 +37,6 @@ import com.akiban.sql.optimizer.rule.BaseRule;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
 import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.parser.DMLStatementNode;
-import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.DeleteNode;
 import com.akiban.sql.parser.InsertNode;
 import com.akiban.sql.parser.NodeTypes;

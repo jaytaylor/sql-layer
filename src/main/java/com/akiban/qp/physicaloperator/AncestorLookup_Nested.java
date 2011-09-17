@@ -63,7 +63,11 @@ class AncestorLookup_Nested extends PhysicalOperator
                                  Collection<? extends RowType> ancestorTypes,
                                  int inputBindingPosition)
     {
+        ArgumentValidation.notNull("groupTable", groupTable);
+        ArgumentValidation.notNull("rowType", rowType);
+        ArgumentValidation.notNull("ancestorTypes", ancestorTypes);
         ArgumentValidation.notEmpty("ancestorTypes", ancestorTypes);
+        ArgumentValidation.isTrue("inputBindingPosition >= 0", inputBindingPosition >= 0);
         // Keeping index rows not currently supported
         boolean inputFromIndex = rowType instanceof IndexRowType;
         RowType tableRowType =

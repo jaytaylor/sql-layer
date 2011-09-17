@@ -16,7 +16,7 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.qp.expression.Expression;
+
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.util.ArgumentValidation;

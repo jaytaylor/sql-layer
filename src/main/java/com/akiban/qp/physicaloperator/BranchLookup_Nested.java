@@ -75,6 +75,7 @@ public class BranchLookup_Nested extends PhysicalOperator
         ArgumentValidation.notNull("groupTable", groupTable);
         ArgumentValidation.notNull("inputRowType", inputRowType);
         ArgumentValidation.notNull("outputRowType", outputRowType);
+        ArgumentValidation.notNull("flag", flag);
         ArgumentValidation.isTrue("inputRowType instanceof IndexRowType || outputRowType != inputRowType",
                                   inputRowType instanceof IndexRowType || outputRowType != inputRowType);
         ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT",

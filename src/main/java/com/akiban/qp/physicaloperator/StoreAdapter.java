@@ -41,8 +41,14 @@ public abstract class StoreAdapter
     }
 
     public abstract void updateRow(Row oldRow, Row newRow, Bindings bindings);
+    
+    public abstract void writeRow (Row newRow, Bindings bindings);
+    
+    public abstract void deleteRow (Row oldRow, Bindings bindings);
 
     public abstract RowData rowData(RowDef rowDef, RowBase row, Bindings bindings);
+
+    public abstract Cursor sort(Cursor input, RowType rowType, API.Ordering ordering, Bindings bindings);
 
     // For use by subclasses
 

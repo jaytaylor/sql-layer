@@ -15,9 +15,13 @@
 
 package com.akiban.sql.optimizer.simplified;
 
-import com.akiban.sql.parser.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
-import java.util.*;
+import com.akiban.ais.model.Column;
+import com.akiban.sql.parser.DeleteNode;
+import com.akiban.sql.parser.ValueNode;
 
 /**
  * An SQL DELETE statement turned into a simpler form for the interim
@@ -25,9 +29,34 @@ import java.util.*;
  */
 public class SimplifiedDeleteStatement extends SimplifiedTableStatement
 {
-
+    private List<SimpleSelectColumn> queryColumns = null;
+    private List<TargetColumn> targetColumns = null;
+    
     public SimplifiedDeleteStatement(DeleteNode delete, Set<ValueNode> joinConditions) {
         super(delete, joinConditions);
+        
+        int table_cols = getTargetTable().getTable().getColumnsIncludingInternal().size();
+        
+        queryColumns = new ArrayList<SimpleSelectColumn>(table_cols);
+        targetColumns = new ArrayList<TargetColumn>(table_cols);
+        
+        for (Column column : getTargetTable().getTable().getColumnsIncludingInternal()) {
+            ColumnExpression expr = getColumnExpression(column);
+            SimpleSelectColumn selectCol = new SimpleSelectColumn(column.getName(), true,
+                    expr,
+                    null);
+            queryColumns.add(selectCol);
+            expr.getTable().addSelectColumn(selectCol);
+            targetColumns.add(new TargetColumn(column, getColumnExpression(column)));
+        }
+    }
+    /**
+     * Override the select columns to turn the query into a 
+     * SELECT * FROM <target table>. 
+     */
+    @Override
+    public List<SimpleSelectColumn> getSelectColumns() {
+        return queryColumns;
     }
 
     public String toString() {
@@ -42,6 +71,16 @@ public class SimplifiedDeleteStatement extends SimplifiedTableStatement
             }
         }
         return str.toString();
+    }
+
+    @Override
+    public List<TargetColumn> getTargetColumns() {
+        return targetColumns;
+    }
+
+    @Override
+    public ColumnExpressionToIndex getFieldOffset() {
+        return null;
     }
 
 }
