@@ -86,7 +86,8 @@ public class IndexPicker extends BaseRule
             if (!ancestors.isEmpty())
                 scan = new AncestorLookup(scan, indexTable, ancestors);
         }
-        // TODO: Now add flatten joins before we forget about joins.
+        scan = new Flatten(scan, joins);
+        // TODO: Can now prepone some of the conditions before the flatten.
         joins.getOutput().replaceInput(joins, scan);
     }
     

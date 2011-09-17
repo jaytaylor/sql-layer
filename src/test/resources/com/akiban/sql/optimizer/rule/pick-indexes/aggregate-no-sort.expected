@@ -3,5 +3,7 @@ SelectQuery@56f449b8
     Filter@5fed27e4[]
       AggregateSource@4ad61aef(SORT,[user.items.quan],[])
         Filter@2e82674b[]
-          AncestorLookup@734b84c7(user.items -> user.items)
-            IndexScan@62fa5ff3(Index(user.items.__akiban_fk_1[IndexColumn(oid)]), NONE, =$0)
+          Flatten@4013fba1
+            AncestorLookup@734b84c7(user.items -> user.items)
+              IndexScan@62fa5ff3(Index(user.items.__akiban_fk_1[IndexColumn(oid)]), NONE, =$0)
+            TableSource@25a41cc7(user.items - TableGroup@2e82674b(customers))

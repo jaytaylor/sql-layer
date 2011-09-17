@@ -1,4 +1,6 @@
 SelectQuery@df8b14
   ResultSet@23d08b[user.customers.name]
     Filter@1e8fa70[]
-      IndexScan@15c929a(Index(user.customers.name[IndexColumn(name)]), covering/SORTED)
+      Flatten@1343a083
+        IndexScan@15c929a(Index(user.customers.name[IndexColumn(name)]), covering/SORTED)
+        TableSource@424c414(user.customers - TableGroup@55127b52(customers))
