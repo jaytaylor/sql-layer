@@ -49,7 +49,9 @@ public class ASTStatementLoader extends BaseRule
 {
     @Override
     public PlanNode apply(PlanNode plan) {
-        DMLStatementNode stmt = ((AST)plan).getStatement();
+        AST ast = (AST)plan;
+        // TODO: Put parameter types on whiteboard.
+        DMLStatementNode stmt = ast.getStatement();
         try {
             return toStatement(stmt);
         }

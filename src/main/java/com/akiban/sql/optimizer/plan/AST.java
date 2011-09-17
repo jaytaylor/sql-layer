@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.DMLStatementNode;
+import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.unparser.NodeToString;
 
 /** A parsed (and type-bound, normalized, etc.) SQL query.
@@ -24,13 +25,23 @@ import com.akiban.sql.unparser.NodeToString;
 public class AST extends BasePlanNode
 {
     private DMLStatementNode statement;
+    private List<ParameterNode> parameters;
 
     public AST(DMLStatementNode statement) {
         this.statement = statement;
     }
     
+    public AST(DMLStatementNode statement, List<ParameterNode> parameters) {
+        this.statement = statement;
+        this.parameters = parameters;
+    }
+    
     public DMLStatementNode getStatement() {
         return statement;
+    }
+
+    public List<ParameterNode> getParameters() {
+        return parameters;
     }
 
     @Override
