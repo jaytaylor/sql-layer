@@ -22,11 +22,6 @@ public final class StandardUpdateResult implements UpdateResult {
 
     // CudResult interface
     @Override
-    public long executionTimeInMS() {
-        return time;
-    }
-
-    @Override
     public int rowsTouched() {
         return touched;
     }
@@ -42,9 +37,7 @@ public final class StandardUpdateResult implements UpdateResult {
     @Override
     public String toString() {
         return String.format(
-                "CudResult(time: %dms (%.2fs), touched: %d, modified: %d)",
-                time,
-                ((double)time)/1000L,
+                "CudResult(touched: %d, modified: %d)",
                 touched,
                 modified
         );
@@ -57,13 +50,13 @@ public final class StandardUpdateResult implements UpdateResult {
 
         StandardUpdateResult that = (StandardUpdateResult) o;
 
-        return modified == that.modified && time == that.time && touched == that.touched;
+        return modified == that.modified && touched == that.touched;
 
     }
 
     @Override
     public int hashCode() {
-        int result = (int) (time ^ (time >>> 32));
+        int result = 0;
         result = 31 * result + touched;
         result = 31 * result + modified;
         return result;
@@ -71,15 +64,12 @@ public final class StandardUpdateResult implements UpdateResult {
 
     // StandardCudResult interface
 
-    public StandardUpdateResult(long timeTookMS, int rowsTouched, int rowsModified) {
-        this.time = timeTookMS;
+    public StandardUpdateResult(int rowsTouched, int rowsModified) {
         this.touched = rowsTouched;
         this.modified = rowsModified;
     }
 
     // state
-
-    private final long time;
     private final int touched;
     private final int modified;
 }

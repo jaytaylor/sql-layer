@@ -61,7 +61,7 @@ class Filter_Default extends PhysicalOperator
         return describePlan(inputOperator);
     }
 
-    // ExtractScan_Default interface
+    // Filter_Default interface
 
     public Filter_Default(PhysicalOperator inputOperator, Collection<RowType> keepTypes)
     {
