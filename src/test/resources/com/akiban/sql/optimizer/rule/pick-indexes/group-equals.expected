@@ -1,5 +1,5 @@
 SelectQuery@2b76086d
   ResultSet@52234265[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date, user.items.iid, user.items.oid, user.items.sku, user.items.quan]
-    Filter@8dc1f04[user.customers.name == Smith, user.items.sku == 1234]
+    Filter@8dc1f04[]
       AncestorLookup@2b784427(user.items -> user.customers, user.orders, user.items)
         IndexScan@64c272bc(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), NONE, =Smith, =1234)

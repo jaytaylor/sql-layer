@@ -33,6 +33,49 @@ import java.util.*;
 /** A goal for indexing: conditions on joined tables and ordering / grouping. */
 public class IndexGoal implements Comparator<IndexScan>
 {
+    public static class RequiredColumns {
+        private Map<TableSource,Set<ColumnExpression>> map;
+        
+        public RequiredColumns(Collection<TableSource> tables) {
+            map = new HashMap<TableSource,Set<ColumnExpression>>(tables.size());
+            for (TableSource table : tables) {
+                map.put(table, new HashSet<ColumnExpression>());
+            }
+        }
+
+        public RequiredColumns(RequiredColumns other) {
+            map = new HashMap<TableSource,Set<ColumnExpression>>(other.map.size());
+            for (Map.Entry<TableSource,Set<ColumnExpression>> entry : other.map.entrySet()) {
+                map.put(entry.getKey(), new HashSet<ColumnExpression>(entry.getValue()));
+            }
+        }
+
+        public Set<TableSource> getTables() {
+            return map.keySet();
+        }
+        
+        public boolean isEmpty() {
+            boolean empty = true;
+            for (Set<ColumnExpression> entry : map.values())
+                if (!entry.isEmpty())
+                    return false;
+            return empty;
+        }
+
+        public void require(ColumnExpression expr) {
+            Set<ColumnExpression> entry = map.get(expr.getTable());
+            if (entry != null)
+                entry.add(expr);
+        }
+
+        /** Opposite of {@link require}: note that we have a source for this column. */
+        public void have(ColumnExpression expr) {
+            Set<ColumnExpression> entry = map.get(expr.getTable());
+            if (entry != null)
+                entry.remove(expr);
+        }
+    }
+
     // Tables already bound outside.
     private Set<TableSource> boundTables;
 
@@ -51,14 +94,21 @@ public class IndexGoal implements Comparator<IndexScan>
     private List<ExpressionNode> grouping;
     private List<OrderByExpression> ordering;
 
-    public IndexGoal(Set<TableSource> boundTables, 
+    // All the columns besides those in conditions that will be needed.
+    private RequiredColumns requiredColumns;
+
+    public IndexGoal(PlanNode plan,
+                     Set<TableSource> boundTables, 
                      List<ConditionExpression> conditions,
                      List<ExpressionNode> grouping,
-                     List<OrderByExpression> ordering) {
+                     List<OrderByExpression> ordering,
+                     Collection<TableSource> tables) {
         this.boundTables = boundTables;
         this.conditions = conditions;
         this.grouping = grouping;
         this.ordering = ordering;
+        this.requiredColumns = new RequiredColumns(tables);
+        plan.accept(new RequiredColumnsFiller(requiredColumns, conditions));
     }
 
     /** Populate given index usage according to goal.
@@ -133,8 +183,11 @@ public class IndexGoal implements Comparator<IndexScan>
             index.setOrdering(ordering);
         }
         index.setOrderEffectiveness(determineOrderEffectiveness(index));
-        return ((index.getOrderEffectiveness() != IndexScan.OrderEffectiveness.NONE) ||
-                (index.getConditions() != null));
+        if ((index.getOrderEffectiveness() == IndexScan.OrderEffectiveness.NONE) &&
+            (index.getConditions() == null))
+            return false;
+        index.setCovering(determineCovering(index));
+        return true;
     }
 
     // Determine how well this index does against the target.
@@ -322,6 +375,12 @@ public class IndexGoal implements Comparator<IndexScan>
         if (i1.getOrderEffectiveness() != i2.getOrderEffectiveness())
             // These are ordered worst to best.
             return i1.getOrderEffectiveness().compareTo(i2.getOrderEffectiveness());
+        if (i1.isCovering()) {
+            if (!i2.isCovering())
+                return +1;
+        }
+        else if (i2.isCovering())
+            return -1;
         if (i1.getEqualityComparands() != null) {
             if (i2.getEqualityComparands() == null)
                 return +1;
@@ -354,6 +413,94 @@ public class IndexGoal implements Comparator<IndexScan>
                 ? +1 : -1;
         // Deeper better than shallower.
         return i1.getLeafMostTable().getTable().getTable().getTableId().compareTo(i2.getLeafMostTable().getTable().getTable().getTableId());
+    }
+
+    static class RequiredColumnsFiller implements PlanVisitor, ExpressionVisitor {
+        private RequiredColumns requiredColumns;
+        // TODO: Maybe make this use pointer equality instead of equals().
+        private Set<ExpressionNode> excluded;
+        private int excludeDepth = 0;
+
+        public RequiredColumnsFiller(RequiredColumns requiredColumns) {
+            this.requiredColumns = requiredColumns;
+            excluded = new HashSet<ExpressionNode>();
+        }
+
+        public RequiredColumnsFiller(RequiredColumns requiredColumns,
+                                     Collection<ConditionExpression> conditions) {
+            this(requiredColumns);
+            excluded.addAll(conditions);
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            return visit(n);
+        }
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            return true;
+        }
+        @Override
+        public boolean visit(PlanNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visitEnter(ExpressionNode n) {
+            if (exclude(n))
+                excludeDepth++;
+            return visit(n);
+        }
+        @Override
+        public boolean visitLeave(ExpressionNode n) {
+            if (exclude(n))
+                excludeDepth--;
+            return true;
+        }
+        @Override
+        public boolean visit(ExpressionNode n) {
+            if (excludeDepth == 0) {
+                if (n instanceof ColumnExpression)
+                    requiredColumns.require((ColumnExpression)n);
+            }
+            return true;
+        }
+
+        // Should this expression be excluded from requirement?
+        protected boolean exclude(ExpressionNode expr) {
+            return (excluded.contains(expr) ||
+                    // Group join conditions are handled specially.
+                    ((expr instanceof ConditionExpression) &&
+                     (((ConditionExpression)expr).getImplementation() ==
+                      ConditionExpression.Implementation.GROUP_JOIN)));
+        }
+    }
+
+    public boolean determineCovering(IndexScan index) {
+        // The non-condition requirements.
+        RequiredColumns requiredAfter = new RequiredColumns(requiredColumns);
+        RequiredColumnsFiller filler = new RequiredColumnsFiller(requiredAfter);
+        // Add in any conditions not handled by the index.
+        for (ConditionExpression condition : conditions) {
+            boolean found = false;
+            if (index.getConditions() != null) {
+                for (ConditionExpression indexCondition : index.getConditions()) {
+                    if (indexCondition == condition) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (!found)
+                condition.accept(filler);
+        }
+        // Remove the columns we do have from the index.
+        for (ExpressionNode column : index.getColumns()) {
+            if (column instanceof ColumnExpression) {
+                requiredAfter.have((ColumnExpression)column);
+            }
+        }
+        return requiredAfter.isEmpty();
     }
 
 }

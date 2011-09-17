@@ -1,5 +1,5 @@
 SelectQuery@6b98e8b4
   ResultSet@3d5b89c[user.customers.cid, user.customers.name]
-    Filter@444b0bbb[user.customers.name == Smith]
+    Filter@444b0bbb[]
       AncestorLookup@1aef4504(user.customers -> user.customers)
         IndexScan@529c176c(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith)

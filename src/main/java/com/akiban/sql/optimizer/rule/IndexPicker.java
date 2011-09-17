@@ -37,28 +37,42 @@ public class IndexPicker extends BaseRule
         if (islands.size() > 1)
             throw new UnsupportedSQLException("Joins are too complex: " + islands, null);
         Joinable joins = islands.get(0);
-        pickIndexes(joins);
+        pickIndexes(joins, plan);
         return plan;
     }
 
-    protected void pickIndexes(Joinable joins) {
+    protected void pickIndexes(Joinable joins, PlanNode plan) {
         Collection<TableSource> tables = new ArrayList<TableSource>();
         Collection<TableSource> required = new ArrayList<TableSource>();
         TableGroup group = onlyTableGroup(null, true, joins, tables, required);
         if (group == null) return;
         IndexScan index = null;
         TableSource indexTable = null;
-        IndexGoal goal = determineIndexGoal(joins);
+        IndexGoal goal = determineIndexGoal(joins, plan, group.getTables());
         if (goal != null) {
             index = goal.pickBestIndex(required);
             if (index != null)
                 indexTable = index.getLeafMostTable();
         }
+        if (index != null) {
+            List<ConditionExpression> filterConditions = null;
+            if (joins.getOutput() instanceof Filter)
+                filterConditions = ((Filter)joins.getOutput()).getConditions();
+            if (index.getConditions() != null) {
+                for (ConditionExpression condition : index.getConditions()) {
+                    if (filterConditions != null)
+                        filterConditions.remove(condition);
+                    if (condition instanceof ComparisonCondition) {
+                        ((ComparisonCondition)condition).setImplementation(ConditionExpression.Implementation.INDEX);
+                    }
+                }
+            }
+        }
         PlanNode scan = index;
         if (index == null) {
             scan = new GroupScan(group);
         }
-        else {
+        else if (!index.isCovering()) {
             List<TableSource> ancestors = new ArrayList<TableSource>();
             TableSource branch = null;
             for (TableSource table : tables) {
@@ -131,7 +145,9 @@ public class IndexPicker extends BaseRule
         throw new UnsupportedSQLException("Joins other than one group: " + joins, null);
     }
 
-    protected IndexGoal determineIndexGoal(PlanNode input) {
+    protected IndexGoal determineIndexGoal(PlanNode input, 
+                                           PlanNode plan,
+                                           Collection<TableSource> tables) {
         List<ConditionExpression> conditions;
         List<ExpressionNode> grouping = null;
         List<OrderByExpression> ordering = null;
@@ -160,8 +176,8 @@ public class IndexPicker extends BaseRule
                 }
             }
         }
-        return new IndexGoal(Collections.<TableSource>emptySet(),
-                             conditions, grouping, ordering);
+        return new IndexGoal(plan, Collections.<TableSource>emptySet(),
+                             conditions, grouping, ordering, tables);
     }
 
 }

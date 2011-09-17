@@ -46,9 +46,6 @@ public class IndexScan extends BasePlanNode implements ColumnExpressionToIndex
     // May need building of index keys in the expressions subsystem.
     private boolean lowInclusive, highInclusive;
 
-    // Columns in order, should the index be used as covering.
-    private List<ExpressionNode> columns;
-
     // This is how the indexed result will be ordered from using this index.
     // TODO: Is this right? Are we allowed to switch directions
     // between segments, in which case something else figures out
@@ -57,6 +54,10 @@ public class IndexScan extends BasePlanNode implements ColumnExpressionToIndex
     private boolean reverseScan;
 
     private OrderEffectiveness orderEffectiveness;
+
+    // Columns in order, should the index be used as covering.
+    private List<ExpressionNode> columns;
+    private boolean covering;
 
     public IndexScan(Index index, 
                      TableSource leafMostTable, TableSource rootMostTable) {
@@ -189,6 +190,13 @@ public class IndexScan extends BasePlanNode implements ColumnExpressionToIndex
         }
     }
 
+    public boolean isCovering() {
+        return covering;
+    }
+    public void setCovering(boolean covering) {
+        this.covering = covering;
+    }
+
     @Override
     // For when used as covering index.
     public int getIndex(ColumnExpression column) {
@@ -225,6 +233,8 @@ public class IndexScan extends BasePlanNode implements ColumnExpressionToIndex
         str.append("(");
         str.append(index);
         str.append(", ");
+        if (covering)
+            str.append("covering/");
         str.append(orderEffectiveness);
         if (reverseScan)
             str.append("/reverse");
