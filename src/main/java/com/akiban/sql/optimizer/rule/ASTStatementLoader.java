@@ -17,7 +17,7 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode;
-import com.akiban.sql.optimizer.plan.PlanContext.WhiteboardMarker;
+import static com.akiban.sql.optimizer.plan.PlanContext.*;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultExpression;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
@@ -48,7 +48,8 @@ import java.util.*;
  */
 public class ASTStatementLoader extends BaseRule
 {
-    public static final WhiteboardMarker<AST> MARKER = new WhiteboardMarker<AST>();
+    public static final WhiteboardMarker<AST> MARKER = 
+        new DefaultWhiteboardMarker<AST>();
 
     /** Recover the {@link AST} put on the whiteboard when loaded. */
     public static AST getAST(PlanContext plan) {
