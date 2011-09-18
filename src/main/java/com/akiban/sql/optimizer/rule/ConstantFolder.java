@@ -30,11 +30,11 @@ import java.util.*;
 public class ConstantFolder extends BaseRule 
 {
     @Override
-    public PlanNode apply(PlanNode plan) {
+    public void apply(PlanContext planContext) {
+        PlanNode plan = planContext.getPlan();
         Folder folder = new Folder();
         while (folder.foldConstants(plan));
         folder.finishAggregates(plan);
-        return plan;
     }
 
     static class Folder implements PlanVisitor, ExpressionRewriteVisitor {
