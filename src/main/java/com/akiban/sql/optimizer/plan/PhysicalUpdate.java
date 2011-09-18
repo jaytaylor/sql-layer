@@ -36,4 +36,14 @@ public class PhysicalUpdate extends BasePlannable
         return true;
     }
 
+    @Override
+    public String summaryString() {
+        StringBuilder str = new StringBuilder(super.summaryString());
+        for (String operator : explainPlan()) {
+            str.append("\n  ");
+            str.append(operator);
+        }
+        return str.toString();
+    }
+
 }

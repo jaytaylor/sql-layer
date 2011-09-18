@@ -1,0 +1,5 @@
+PhysicalUpdate@40158291
+  Update_Default(Filter_Default([user.items]) -> ExpressionRowUpdateFunction([null, null, Literal(ABCX), null, null]))
+    Filter_Default([user.items])
+ need ancestor here
+      IndexScan_Default(Index(user.items.sku[IndexColumn(sku)]) (>=UnboundExpressions[Literal(ABCD)],<=UnboundExpressions[Literal(ABCD)]))

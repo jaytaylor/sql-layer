@@ -21,6 +21,7 @@ import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultExpression;
+import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 
 import com.akiban.sql.types.DataTypeDescriptor;
@@ -36,13 +37,17 @@ import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.physicaloperator.Delete_Default;
 import com.akiban.qp.rowtype.*;
 
-import static com.akiban.qp.expression.API.literal;
+import static com.akiban.qp.expression.API.*;
 import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.expression.RowBasedUnboundExpressions;
+import com.akiban.qp.expression.UnboundExpressions;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.GroupTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
@@ -200,14 +205,23 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleIndexScan(IndexScan indexScan) {
-            return null;
+            RowStream stream = new RowStream();
+            IndexRowType indexRowType = schema.indexRowType(indexScan.getIndex());
+            stream.operator = indexScan_Default(indexRowType, 
+                                                indexScan.isReverseScan(),
+                                                assembleIndexKeyRange(indexScan, null),
+                                                tableRowType(indexScan.getLeafMostTable()));
+            stream.rowType = indexRowType;
+            stream.fieldOffsets = indexScan;
+            return stream;
         }
 
         protected RowStream assembleGroupScan(GroupScan groupScan) {
+            RowStream stream = new RowStream();
             GroupTable groupTable = groupScan.getGroup().getGroup().getGroupTable();
-            RowStream result = new RowStream();
-            result.operator = groupScan_Default(groupTable);
-            return result;
+            stream.operator = groupScan_Default(groupTable);
+            stream.unknownTypesPresent = true;
+            return stream;
         }
 
         protected RowStream assembleFilter(Filter filter) {
@@ -218,47 +232,214 @@ public class OperatorAssembler extends BaseRule
                 // types and field offsets.
                 stream.operator = select_HKeyOrdered(stream.operator,
                                                      stream.rowType,
-                                                     condition.generateExpression(stream.fieldOffsets));
+                                                     assembleExpression(condition, stream.fieldOffsets));
             return stream;
         }
 
         protected RowStream assembleFlatten(Flatten flatten) {
             RowStream stream = assembleStream(flatten.getInput());
+            Joinable joins = flatten.getJoins();
+            if (joins instanceof TableSource) {
+                TableSource table = (TableSource)joins;
+                stream.rowType = tableRowType(table);
+                stream.fieldOffsets = new ColumnSourceFieldOffsets(table);
+            }
+            else {
+                Flattened flattened = flattened(joins, stream);
+                stream.rowType = flattened.rowType;
+                stream.fieldOffsets = flattened;
+            }
+            if (stream.unknownTypesPresent) {
+                stream.operator = filter_Default(stream.operator,
+                                                 Collections.singletonList(stream.rowType));
+                stream.unknownTypesPresent = false;
+            }
             return stream;
+        }
+
+        protected Flattened flattened(Joinable joinable, RowStream stream) {
+            if (joinable instanceof TableSource) {
+                TableSource table = (TableSource)joinable;
+                Flattened f = new Flattened();
+                f.rowType = tableRowType(table);
+                f.tableOffsets = new HashMap<TableSource,Integer>();
+                f.tableOffsets.put(table, 0);
+                return f;
+            }
+            else {
+                JoinNode join = (JoinNode)joinable;
+                Flattened fleft = flattened(join.getLeft(), stream);
+                Flattened fright = flattened(join.getRight(), stream);
+                stream.operator = flatten_HKeyOrdered(stream.operator,
+                                                      fleft.rowType,
+                                                      fright.rowType,
+                                                      join.getJoinType());
+                int offset = fleft.rowType.nFields();
+                fleft.rowType = stream.operator.rowType();
+                for (Map.Entry<TableSource,Integer> entry : fright.tableOffsets.entrySet())
+                    if (!fleft.tableOffsets.containsKey(entry.getKey()))
+                        fleft.tableOffsets.put(entry.getKey(), 
+                                               entry.getValue() + offset);
+                return fleft;
+            }
+        }
+
+        static class Flattened implements ColumnExpressionToIndex {
+            RowType rowType;
+            Map<TableSource,Integer> tableOffsets;
+
+            @Override
+            public int getIndex(ColumnExpression column) {
+                Integer tableOffset = tableOffsets.get(column.getTable());
+                if (tableOffset == null)
+                    return -1;
+                return tableOffset + column.getPosition();
+            }
         }
 
         protected RowStream assembleAncestorLookup(AncestorLookup ancestorLookup) {
             RowStream stream = assembleStream(ancestorLookup.getInput());
+            GroupTable groupTable = ancestorLookup.getDescendant().getTable().getGroup().getGroupTable();
+            RowType inputRowType = stream.rowType; // The index row type.
+            LookupOption flag = LookupOption.DISCARD_INPUT;
+            if (!(inputRowType instanceof IndexRowType)) {
+                // Getting from branch lookup.
+                inputRowType = tableRowType(ancestorLookup.getDescendant());
+                flag = LookupOption.KEEP_INPUT;
+            }
+            List<RowType> ancestorTypes = 
+                new ArrayList<RowType>(ancestorLookup.getAncestors().size());
+            for (TableSource table : ancestorLookup.getAncestors()) {
+                ancestorTypes.add(tableRowType(table));
+            }
+            stream.operator = ancestorLookup_Default(stream.operator,
+                                                     groupTable,
+                                                     inputRowType,
+                                                     ancestorTypes,
+                                                     flag);
+            stream.fieldOffsets = null;
             return stream;
         }
 
         protected RowStream assembleBranchLookup(BranchLookup branchLookup) {
             RowStream stream = assembleStream(branchLookup.getInput());
+            RowType inputRowType = stream.rowType; // The index row type.
+            LookupOption flag = LookupOption.DISCARD_INPUT;
+            if (!(inputRowType instanceof IndexRowType)) {
+                // Getting from ancestor lookup.
+                inputRowType = tableRowType(branchLookup.getSource());
+                flag = LookupOption.KEEP_INPUT;
+            }
+            GroupTable groupTable = branchLookup.getSource().getTable().getGroup().getGroupTable();
+            stream.operator = branchLookup_Default(stream.operator, 
+                                                   groupTable, 
+                                                   inputRowType,
+                                                   tableRowType(branchLookup.getBranch()), 
+                                                   flag);
+            stream.rowType = null;
+            stream.unknownTypesPresent = true;
+            stream.fieldOffsets = null;
             return stream;
         }
 
         protected RowStream assembleAggregateSource(AggregateSource aggregateSource) {
             RowStream stream = assembleStream(aggregateSource.getInput());
+            int nkeys = aggregateSource.getGroupBy().size();
+            int naggs = aggregateSource.getAggregates().size();
+            List<Expression> expressions = new ArrayList<Expression>(nkeys + naggs);
+            List<String> aggregatorNames = new ArrayList<String>(naggs);
+            for (ExpressionNode groupBy : aggregateSource.getGroupBy()) {
+                expressions.add(assembleExpression(groupBy, stream.fieldOffsets));
+            }
+            for (AggregateFunctionExpression aggr : aggregateSource.getAggregates()) {
+                // Should have been split up by now.
+                assert !aggr.isDistinct();
+                expressions.add(assembleExpression(aggr.getOperand(),
+                                                   stream.fieldOffsets));
+                aggregatorNames.add(aggr.getFunction());
+            }
+            stream.operator = project_Default(stream.operator, stream.rowType, 
+                                              expressions);
+            stream.rowType = stream.operator.rowType();
+            if (aggregateSource.getImplementation() != AggregateSource.Implementation.PRESORTED) {
+                // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
+                Ordering ordering = ordering();
+                for (int i = 0; i < nkeys; i++) {
+                    ordering.append(field(i), true);
+                }
+                stream.operator = sort_Tree(stream.operator, stream.rowType, ordering);
+            }
+            // TODO: Where do we get the AggregatorFactory from?
+            stream.operator = aggregate(stream.operator, nkeys, 
+                                        null, aggregatorNames);
+            stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource);
             return stream;
         }
 
         protected RowStream assembleDistinct(Distinct distinct) {
             RowStream stream = assembleStream(distinct.getInput());
+            // TODO: This should be called aggregate_Partial, like the operator.
+            stream.operator = aggregate(stream.operator,
+                                        stream.rowType.nFields(),
+                                        null,
+                                        Collections.<String>emptyList());
+            // TODO: Probably want separate Distinct operator so that
+            // row type does not change.
+            stream.rowType = stream.operator.rowType();
+            stream.fieldOffsets = null;
             return stream;
         }
 
+        static final int INSERTION_SORT_MAX_LIMIT = 100;
+
         protected RowStream assembleSort(Sort sort) {
             RowStream stream = assembleStream(sort.getInput());
+            Ordering ordering = ordering();
+            for (OrderByExpression orderBy : sort.getOrderBy()) {
+                ordering.append(assembleExpression(orderBy.getExpression(),
+                                                   stream.fieldOffsets),
+                                orderBy.isAscending());
+            }
+            int maxrows = -1;
+            if (sort.getOutput() instanceof Limit) {
+                Limit limit = (Limit)sort.getOutput();
+                if (!limit.isOffsetParameter() && !limit.isLimitParameter()) {
+                    maxrows = limit.getOffset() + limit.getLimit();
+                }
+            }
+            else {
+                // TODO: Also if input is VALUES, whose size we know in advance.
+            }
+            if ((maxrows >= 0) && (maxrows <= INSERTION_SORT_MAX_LIMIT))
+                stream.operator = sort_InsertionLimited(stream.operator, stream.rowType,
+                                                        ordering, maxrows);
+            else
+                stream.operator = sort_Tree(stream.operator, stream.rowType, ordering);
             return stream;
         }
 
         protected RowStream assembleLimit(Limit limit) {
             RowStream stream = assembleStream(limit.getInput());
+            if (limit.getOffset() > 0)
+                throw new UnsupportedSQLException("LIMIT OFFSET", null);
+            if (limit.isLimitParameter())
+                throw new UnsupportedSQLException("LIMIT using parameter", null);
+            stream.operator = limit_Default(stream.operator, limit.getLimit());
             return stream;
         }
 
         protected RowStream assembleResultSet(ResultSet resultSet) {
             RowStream stream = assembleStream(resultSet.getInput());
+            stream.operator = project_Default(stream.operator,
+                                              stream.rowType,
+                                              assembleExpressions(resultSet.getResults(),
+                                                                  stream.fieldOffsets));
+            stream.rowType = stream.operator.rowType();
+            // TODO: If ResultSet were a ColumnSource, could use it to
+            // calculate intermediate results and change downstream
+            // references to use it instead of expressions. Then could
+            // have a straight map of references into projected row.
+            stream.fieldOffsets = null;
             return stream;
         }
 
@@ -298,8 +479,101 @@ public class OperatorAssembler extends BaseRule
             return result;
         }
 
+        // Generate key range bounds.
+        protected IndexKeyRange assembleIndexKeyRange(IndexScan index,
+                                                      ColumnExpressionToIndex fieldOffsets) {
+            List<ExpressionNode> equalityComparands = index.getEqualityComparands();
+            ExpressionNode lowComparand = index.getLowComparand();
+            ExpressionNode highComparand = index.getHighComparand();
+            if ((equalityComparands == null) &&
+                (lowComparand == null) && (highComparand == null))
+                return new IndexKeyRange(null, false, null, false);
+
+            int nkeys = index.getIndex().getColumns().size();
+            Expression[] keys = new Expression[nkeys];
+
+            int kidx = 0;
+            if (equalityComparands != null) {
+                for (ExpressionNode comp : equalityComparands) {
+                    keys[kidx++] = assembleExpression(comp, fieldOffsets);
+                }
+            }
+
+            if ((lowComparand == null) && (lowComparand == null)) {
+                IndexBound eq = getIndexBound(index.getIndex(), keys, kidx);
+                return new IndexKeyRange(eq, true, eq, true);
+            }
+            else {
+                Expression[] lowKeys = null, highKeys = null;
+                boolean lowInc = false, highInc = false;
+                int lidx = kidx, hidx = kidx;
+                if (lowComparand != null) {
+                    lowKeys = keys;
+                    if (highComparand != null) {
+                        highKeys = new Expression[nkeys];
+                        System.arraycopy(keys, 0, highKeys, 0, kidx);
+                    }
+                }
+                else if (highComparand != null) {
+                    highKeys = keys;
+                }
+                if (lowComparand != null) {
+                    lowKeys[lidx++] = assembleExpression(lowComparand, fieldOffsets);
+                    lowInc = index.isLowInclusive();
+                }
+                if (highComparand != null) {
+                    highKeys[hidx++] = assembleExpression(highComparand, fieldOffsets);
+                    highInc = index.isHighInclusive();
+                }
+                IndexBound lo = getIndexBound(index.getIndex(), lowKeys, lidx);
+                IndexBound hi = getIndexBound(index.getIndex(), highKeys, hidx);
+                return new IndexKeyRange(lo, lowInc, hi, highInc);
+            }
+        }
+
+        protected UserTableRowType tableRowType(TableSource table) {
+            return tableRowType(table.getTable());
+        }
+
         protected UserTableRowType tableRowType(TableNode table) {
             return schema.userTableRowType(table.getTable());
+        }
+
+        protected ValuesRowType valuesRowType (int nfields) {
+            return schema.newValuesType(nfields);
+        }
+    
+        /** Return an index bound for the given index and expressions.
+         * @param index the index in use
+         * @param keys {@link Expression}s for index lookup key
+         * @param nkeys number of keys actually in use
+         */
+        protected IndexBound getIndexBound(Index index, Expression[] keys, int nkeys) {
+            if (keys == null) 
+                return null;
+            return new IndexBound(getIndexExpressionRow(index, keys),
+                                  getIndexColumnSelector(index, nkeys));
+        }
+
+        /** Return a column selector that enables the first <code>nkeys</code> fields
+         * of a row of the index's user table. */
+        protected ColumnSelector getIndexColumnSelector(final Index index, 
+                                                        final int nkeys) {
+            assert nkeys <= index.getColumns().size() : index + " " + nkeys;
+                return new ColumnSelector() {
+                        public boolean includesColumn(int columnPosition) {
+                            return columnPosition < nkeys;
+                        }
+                    };
+        }
+
+        /** Return a {@link Row} for the given index containing the given
+         * {@link Expression} values.  
+         */
+        protected UnboundExpressions getIndexExpressionRow(Index index, 
+                                                           Expression[] keys) {
+            RowType rowType = schema.indexRowType(index);
+            return new RowBasedUnboundExpressions(rowType, keys);
         }
 
         // Get the required type for any parameters to the statement.
@@ -328,7 +602,24 @@ public class OperatorAssembler extends BaseRule
     static class RowStream {
         PhysicalOperator operator;
         RowType rowType;
+        boolean unknownTypesPresent;
         ColumnExpressionToIndex fieldOffsets;
+    }
+
+    static class ColumnSourceFieldOffsets implements ColumnExpressionToIndex {
+        private ColumnSource source;
+
+        public ColumnSourceFieldOffsets(ColumnSource source) {
+            this.source = source;
+        }
+
+        @Override
+        public int getIndex(ColumnExpression column) {
+            if (column.getTable() != source) 
+                return -1;
+            else
+                return column.getPosition();
+        }
     }
 
 }
