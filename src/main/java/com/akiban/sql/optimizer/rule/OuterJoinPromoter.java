@@ -75,12 +75,11 @@ public class OuterJoinPromoter extends BaseRule
     }
 
     @Override
-    public PlanNode apply(PlanNode plan) {
-        List<Filter> wheres = new WhereFinder().find(plan);
+    public void apply(PlanContext plan) {
+        List<Filter> wheres = new WhereFinder().find(plan.getPlan());
         for (Filter filter : wheres) {
             doJoins(filter);
         }
-        return plan;
     }
 
     static class RequiredSources implements ExpressionVisitor {

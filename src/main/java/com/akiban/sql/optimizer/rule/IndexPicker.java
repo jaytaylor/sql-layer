@@ -30,15 +30,15 @@ import java.util.*;
 public class IndexPicker extends BaseRule
 {
     @Override
-    public PlanNode apply(PlanNode plan) {
+      public void apply(PlanContext planContext) {
+        PlanNode plan = planContext.getPlan();
         List<Joinable> islands = new JoinIslandFinder().find(plan);
         // TODO: For now, very conservative about everything being simple.
-        if (islands.isEmpty()) return plan;
+        if (islands.isEmpty()) return;
         if (islands.size() > 1)
             throw new UnsupportedSQLException("Joins are too complex: " + islands, null);
         Joinable joins = islands.get(0);
         pickIndexes(joins, plan);
-        return plan;
     }
 
     protected void pickIndexes(Joinable joins, PlanNode plan) {

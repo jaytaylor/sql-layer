@@ -15,17 +15,14 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.service.EventTypes;
+import com.akiban.ais.model.AkibanInformationSchema;
 
-import com.akiban.sql.optimizer.plan.PlanContext;
+import java.util.List;
 
-public abstract class BaseRule
+public class RulesTestContext extends RulesContext
 {
-    private final String traceName;
-
-    public BaseRule() {
-        traceName = EventTypes.OPTIMIZE + ": " + getClass().getSimpleName();
+    public RulesTestContext(AkibanInformationSchema ais, List<BaseRule> rules) {
+        super(rules);
+        RulesTestHelper.ensureRowDefs(ais);
     }
-
-    public abstract void apply(PlanContext plan);
 }

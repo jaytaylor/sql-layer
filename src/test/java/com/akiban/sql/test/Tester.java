@@ -31,9 +31,11 @@ import com.akiban.sql.optimizer.simplified.SimplifiedInsertStatement;
 import com.akiban.sql.optimizer.simplified.SimplifiedSelectQuery;
 import com.akiban.sql.optimizer.simplified.SimplifiedUpdateStatement;
 import com.akiban.sql.optimizer.plan.AST;
-import com.akiban.sql.optimizer.plan.PlanNode;
+import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanToString;
 import com.akiban.sql.optimizer.rule.BaseRule;
+import com.akiban.sql.optimizer.rule.RulesContext;
+import com.akiban.sql.optimizer.rule.RulesTestContext;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
 import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.parser.DMLStatementNode;
@@ -76,6 +78,7 @@ public class Tester
     Grouper grouper;
     OperatorCompiler operatorCompiler;
     List<BaseRule> planRules;
+    RulesContext rulesContext;
     int repeat;
 
     public Tester() {
@@ -172,11 +175,12 @@ public class Tester
                 break;
             case PLAN:
                 {
-                    PlanNode plan = new AST((DMLStatementNode)stmt);
-                    for (BaseRule rule : planRules) {
-                        plan = rule.apply(plan);
-                    }
-                    System.out.println(PlanToString.of(plan));
+                    PlanContext plan = 
+                        new PlanContext(rulesContext, 
+                                        new AST((DMLStatementNode)stmt,
+                                                parser.getParameterList()));
+                    rulesContext.applyRules(plan);
+                    System.out.println(PlanToString.of(plan.getPlan()));
                 }
                 break;
             case OPERATORS:
@@ -214,12 +218,12 @@ public class Tester
         SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
         SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
         AkibanInformationSchema ais = toAis.getAis();
-        if (actions.indexOf(Action.BIND) >= 0)
+        if (actions.contains(Action.BIND))
             binder = new AISBinder(ais, "user");
-        if (actions.indexOf(Action.OPERATORS) >= 0)
+        if (actions.contains(Action.OPERATORS))
             operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, "user");
-        if (planRules != null)
-            RulesTestHelper.ensureRowDefs(ais);
+        if (actions.contains(Action.PLAN))
+            rulesContext = new RulesTestContext(ais, planRules);
     }
 
     public void addView(String sql) throws Exception {
