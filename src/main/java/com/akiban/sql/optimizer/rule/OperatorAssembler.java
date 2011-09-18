@@ -47,6 +47,9 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.expression.UnboundExpressions;
 
+import com.akiban.server.aggregation.Aggregator;
+import com.akiban.server.aggregation.AggregatorFactory;
+
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
@@ -401,9 +404,18 @@ public class OperatorAssembler extends BaseRule
                 }
                 stream.operator = sort_Tree(stream.operator, stream.rowType, ordering);
             }
-            // TODO: Where do we get the AggregatorFactory from?
+            // TODO: Where do we really get the AggregatorFactory from?
+            AggregatorFactory aggregatorFactory = new AggregatorFactory() {
+                    @Override
+                    public Aggregator get(String name) {
+                        throw new UnsupportedSQLException(name, null);
+                    }
+                    @Override
+                    public void validateNames(List<String> names) {
+                    }
+                };
             stream.operator = aggregate(stream.operator, nkeys, 
-                                        null, aggregatorNames);
+                                        aggregatorFactory, aggregatorNames);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource);
             return stream;
         }
