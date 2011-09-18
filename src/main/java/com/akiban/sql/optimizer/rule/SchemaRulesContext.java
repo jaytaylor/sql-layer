@@ -17,12 +17,22 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 
+import com.akiban.qp.rowtype.Schema;
+
 import java.util.List;
 
-public class RulesTestContext extends SchemaRulesContext
+/** The context associated with an AIS schema. */
+public class SchemaRulesContext extends RulesContext
 {
-    public RulesTestContext(AkibanInformationSchema ais, List<BaseRule> rules) {
-        super(ais, rules);
-        RulesTestHelper.ensureRowDefs(ais);
+    private Schema schema;
+
+    public SchemaRulesContext(AkibanInformationSchema ais, List<BaseRule> rules) {
+        super(rules);
+        schema = new Schema(ais);
     }
+
+    public Schema getSchema() {
+        return schema;
+    }
+
 }
