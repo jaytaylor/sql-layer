@@ -110,7 +110,8 @@ public class IndexGoal implements Comparator<IndexScan>
         this.grouping = grouping;
         this.ordering = ordering;
         
-        attemptCovering = !(plan instanceof BaseUpdateStatement);
+        attemptCovering = !((plan instanceof UpdateStatement) ||
+                            (plan instanceof DeleteStatement));
 
         requiredColumns = new RequiredColumns(tables);
         plan.accept(new RequiredColumnsFiller(requiredColumns, conditions));

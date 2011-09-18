@@ -28,6 +28,7 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
 import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.physicaloperator.UndefBindings;
 import static com.akiban.qp.physicaloperator.API.*;
 // TODO: Why aren't these in API?
 import com.akiban.qp.exec.UpdatePlannable;
@@ -35,6 +36,7 @@ import com.akiban.qp.physicaloperator.UpdateFunction;
 import com.akiban.qp.physicaloperator.Insert_Default;
 import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.physicaloperator.Delete_Default;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.*;
 
 import static com.akiban.qp.expression.API.*;
@@ -200,6 +202,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleLimit((Limit)node);
             else if (node instanceof ResultSet)
                 return assembleResultSet((ResultSet)node);
+            else if (node instanceof ExpressionsSource)
+                return assembleExpressionsSource((ExpressionsSource)node);
             else
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }
@@ -221,6 +225,26 @@ public class OperatorAssembler extends BaseRule
             GroupTable groupTable = groupScan.getGroup().getGroup().getGroupTable();
             stream.operator = groupScan_Default(groupTable);
             stream.unknownTypesPresent = true;
+            return stream;
+        }
+
+        protected RowStream assembleExpressionsSource(ExpressionsSource expressionsSource) {
+            RowStream stream = new RowStream();
+            stream.rowType = valuesRowType(expressionsSource.getNFields());
+            List<Row> rows = new ArrayList<Row>(expressionsSource.getExpressions().size());
+            for (List<ExpressionNode> exprs : expressionsSource.getExpressions()) {
+                // TODO: Maybe it would be simpler if ExpressionRow used Lists instead
+                // of arrays.
+                int nexpr = exprs.size();
+                Expression[] expressions = new Expression[nexpr];
+                for (int i = 0; i < nexpr; i++) {
+                    expressions[i] = assembleExpression(exprs.get(i), 
+                                                        stream.fieldOffsets);
+                }
+                rows.add(new ExpressionRow(stream.rowType, UndefBindings.only(), 
+                                           expressions));
+            }
+            stream.operator = valuesScan_Default(rows, stream.rowType);
             return stream;
         }
 
@@ -539,7 +563,7 @@ public class OperatorAssembler extends BaseRule
             return schema.userTableRowType(table.getTable());
         }
 
-        protected ValuesRowType valuesRowType (int nfields) {
+        protected ValuesRowType valuesRowType(int nfields) {
             return schema.newValuesType(nfields);
         }
     
