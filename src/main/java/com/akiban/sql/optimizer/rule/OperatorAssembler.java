@@ -43,6 +43,7 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.GroupTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
 
@@ -83,29 +84,32 @@ public class OperatorAssembler extends BaseRule
 
         protected PhysicalSelect selectQuery(SelectQuery selectQuery) {
             PlanNode planQuery = selectQuery.getQuery();
-            PhysicalOperator operator = assembleQuery(planQuery);
+            RowStream stream = assembleQuery(planQuery);
             List<PhysicalResultColumn> resultColumns;
             if (planQuery instanceof ResultSet) {
                 List<ResultExpression> results = ((ResultSet)planQuery).getResults();
-                operator = project_Default(operator, operator.rowType(),
-                                           assembleExpressions(results));
+                stream.operator = 
+                    project_Default(stream.operator, stream.rowType,
+                                    assembleExpressions(results, stream.fieldOffsets));
                 resultColumns = getResultColumns(results);
             }
             else {
                 // VALUES results in column1, column2, ...
-                resultColumns = getResultColumns(operator.rowType().nFields());
+                resultColumns = getResultColumns(stream.rowType.nFields());
             }
-            return new PhysicalSelect(operator, resultColumns, getParameterTypes());
+            return new PhysicalSelect(stream.operator, resultColumns,
+                                      getParameterTypes());
         }
 
         protected PhysicalUpdate insertStatement(InsertStatement insertStatement) {
             PlanNode planQuery = insertStatement.getQuery();
-            PhysicalOperator operator = assembleQuery(planQuery);
+            RowStream stream = assembleQuery(planQuery);
             UserTableRowType targetRowType = 
                 tableRowType(insertStatement.getTargetTable());
             List<Expression> inserts = null;
             if (planQuery instanceof ResultSet) {
-                inserts = assembleExpressions(((ResultSet)planQuery).getResults());
+                inserts = assembleExpressions(((ResultSet)planQuery).getResults(),
+                                              stream.fieldOffsets);
             }
             // Have a list of expressions in the order specified.
             // Want a list as wide as the target row with NULL
@@ -120,18 +124,20 @@ public class OperatorAssembler extends BaseRule
                 row[column.getPosition()] = inserts.get(i);
             }
             inserts = Arrays.asList(row);
-            operator = project_Table(operator, operator.rowType(),
-                                     targetRowType, inserts);
-            UpdatePlannable plan = new Insert_Default(operator);
+            stream.operator = project_Table(stream.operator, stream.rowType,
+                                            targetRowType, inserts);
+            UpdatePlannable plan = new Insert_Default(stream.operator);
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
         protected PhysicalUpdate updateStatement(UpdateStatement updateStatement) {
-            PhysicalOperator operator = assembleQuery(updateStatement.getQuery());
+            RowStream stream = assembleQuery(updateStatement.getQuery());
             UserTableRowType targetRowType = 
                 tableRowType(updateStatement.getTargetTable());
+            assert (stream.rowType == targetRowType);
             List<UpdateColumn> updateColumns = updateStatement.getUpdateColumns();
-            List<Expression> updates = assembleExpressions(updateColumns);
+            List<Expression> updates = assembleExpressions(updateColumns,
+                                                           stream.fieldOffsets);
             // Have a list of expressions in the order specified.
             // Want a list as wide as the target row with Java nulls
             // for the gaps.
@@ -145,14 +151,151 @@ public class OperatorAssembler extends BaseRule
             updates = Arrays.asList(row);
             UpdateFunction updateFunction = 
                 new ExpressionRowUpdateFunction(updates, targetRowType);
-            UpdatePlannable plan = new Update_Default(operator, updateFunction);
+            UpdatePlannable plan = new Update_Default(stream.operator, updateFunction);
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
         protected PhysicalUpdate deleteStatement(DeleteStatement deleteStatement) {
-            PhysicalOperator operator = assembleQuery(deleteStatement.getQuery());
-            UpdatePlannable plan = new Delete_Default(operator);
+            RowStream stream = assembleQuery(deleteStatement.getQuery());
+            assert (stream.rowType == tableRowType(deleteStatement.getTargetTable()));
+            UpdatePlannable plan = new Delete_Default(stream.operator);
             return new PhysicalUpdate(plan, getParameterTypes());
+        }
+
+        // Assemble the top-level query. If there is a ResultSet at
+        // the top, it is not handled here, since its meaning is
+        // different for the different statement types.
+        protected RowStream assembleQuery(PlanNode planQuery) {
+            if (planQuery instanceof ResultSet)
+                planQuery = ((ResultSet)planQuery).getInput();
+            return assembleStream(planQuery);
+        }
+
+        // Assemble an ordinary stream node.
+        protected RowStream assembleStream(PlanNode node) {
+            if (node instanceof IndexScan)
+                return assembleIndexScan((IndexScan)node);
+            else if (node instanceof GroupScan)
+                return assembleGroupScan((GroupScan)node);
+            else if (node instanceof Filter)
+                return assembleFilter((Filter)node);
+            else if (node instanceof Flatten)
+                return assembleFlatten((Flatten)node);
+            else if (node instanceof AncestorLookup)
+                return assembleAncestorLookup((AncestorLookup)node);
+            else if (node instanceof BranchLookup)
+                return assembleBranchLookup((BranchLookup)node);
+            else if (node instanceof AggregateSource)
+                return assembleAggregateSource((AggregateSource)node);
+            else if (node instanceof Distinct)
+                return assembleDistinct((Distinct)node);
+            else if (node instanceof Sort            )
+                return assembleSort((Sort)node);
+            else if (node instanceof Limit)
+                return assembleLimit((Limit)node);
+            else if (node instanceof ResultSet)
+                return assembleResultSet((ResultSet)node);
+            else
+                throw new UnsupportedSQLException("Plan node " + node, null);
+        }
+
+        protected RowStream assembleIndexScan(IndexScan indexScan) {
+            return null;
+        }
+
+        protected RowStream assembleGroupScan(GroupScan groupScan) {
+            GroupTable groupTable = groupScan.getGroup().getGroup().getGroupTable();
+            RowStream result = new RowStream();
+            result.operator = groupScan_Default(groupTable);
+            return result;
+        }
+
+        protected RowStream assembleFilter(Filter filter) {
+            RowStream stream = assembleStream(filter.getInput());
+            for (ConditionExpression condition : filter.getConditions())
+                // TODO: Only works for fully flattened; for earlier
+                // conditions, need more complex mapping between row
+                // types and field offsets.
+                stream.operator = select_HKeyOrdered(stream.operator,
+                                                     stream.rowType,
+                                                     condition.generateExpression(stream.fieldOffsets));
+            return stream;
+        }
+
+        protected RowStream assembleFlatten(Flatten flatten) {
+            RowStream stream = assembleStream(flatten.getInput());
+            return stream;
+        }
+
+        protected RowStream assembleAncestorLookup(AncestorLookup ancestorLookup) {
+            RowStream stream = assembleStream(ancestorLookup.getInput());
+            return stream;
+        }
+
+        protected RowStream assembleBranchLookup(BranchLookup branchLookup) {
+            RowStream stream = assembleStream(branchLookup.getInput());
+            return stream;
+        }
+
+        protected RowStream assembleAggregateSource(AggregateSource aggregateSource) {
+            RowStream stream = assembleStream(aggregateSource.getInput());
+            return stream;
+        }
+
+        protected RowStream assembleDistinct(Distinct distinct) {
+            RowStream stream = assembleStream(distinct.getInput());
+            return stream;
+        }
+
+        protected RowStream assembleSort(Sort sort) {
+            RowStream stream = assembleStream(sort.getInput());
+            return stream;
+        }
+
+        protected RowStream assembleLimit(Limit limit) {
+            RowStream stream = assembleStream(limit.getInput());
+            return stream;
+        }
+
+        protected RowStream assembleResultSet(ResultSet resultSet) {
+            RowStream stream = assembleStream(resultSet.getInput());
+            return stream;
+        }
+
+        // Assemble a list of expressions from the given nodes.
+        protected List<Expression> 
+            assembleExpressions(List<? extends AnnotatedExpression> expressions,
+                                ColumnExpressionToIndex fieldOffsets) {
+            List<Expression> result = new ArrayList<Expression>(expressions.size());
+            for (AnnotatedExpression aexpr : expressions) {
+                result.add(assembleExpression(aexpr.getExpression(), fieldOffsets));
+            }
+            return result;
+        }
+
+        // Assemble an expression against the given row offsets.
+        protected Expression assembleExpression(ExpressionNode expr,
+                                                ColumnExpressionToIndex fieldOffsets) {
+            return expr.generateExpression(fieldOffsets);
+        }
+
+        // Get a list of result columns based on ResultSet expression names.
+        protected List<PhysicalResultColumn> 
+            getResultColumns(List<ResultExpression> results) {
+            List<PhysicalResultColumn> result = 
+                new ArrayList<PhysicalResultColumn>(results.size());
+            // TODO: ...
+            return result;
+        }
+
+        // Get a list of result columns for unnamed columns.
+        // This would correspond to top-level VALUES, which the parser
+        // does not currently support.
+        protected List<PhysicalResultColumn> getResultColumns(int ncols) {
+            List<PhysicalResultColumn> result = 
+                new ArrayList<PhysicalResultColumn>(ncols);
+            // TODO: ...
+            return result;
         }
 
         protected UserTableRowType tableRowType(TableNode table) {
@@ -179,45 +322,13 @@ public class OperatorAssembler extends BaseRule
             return result;
         }
         
-        // Assemble the top-level query. If there is a ResultSet at
-        // the top, it is not handled here, since its meaning is
-        // different for the different statement types.
-        protected PhysicalOperator assembleQuery(PlanNode planQuery) {
-            return null;
-        }
-
-        // Assemble a list of expressions from the given nodes.
-        protected List<Expression> assembleExpressions(List<? extends AnnotatedExpression> expressions) {
-            List<Expression> result = new ArrayList<Expression>(expressions.size());
-            for (AnnotatedExpression aexpr : expressions) {
-                result.add(assembleExpression(aexpr.getExpression()));
-            }
-            return result;
-        }
-
-        // Assemble an expression against the given row offsets.
-        // TODO: Need field offsets.
-        protected Expression assembleExpression(ExpressionNode expr) {
-            return null;
-        }
-
-        // Get a list of result columns based on ResultSet expression names.
-        protected List<PhysicalResultColumn> getResultColumns(List<ResultExpression> results) {
-            List<PhysicalResultColumn> result = 
-                new ArrayList<PhysicalResultColumn>(results.size());
-            // TODO: ...
-            return result;
-        }
-
-        // Get a list of result columns for unnamed columns.
-        // This would correspond to top-level VALUES, which the parser
-        // does not currently support.
-        protected List<PhysicalResultColumn> getResultColumns(int ncols) {
-            List<PhysicalResultColumn> result = 
-                new ArrayList<PhysicalResultColumn>(ncols);
-            // TODO: ...
-            return result;
-        }
-
     }
+
+    // Struct for multiple value return from assembly.
+    static class RowStream {
+        PhysicalOperator operator;
+        RowType rowType;
+        ColumnExpressionToIndex fieldOffsets;
+    }
+
 }
