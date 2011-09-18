@@ -17,7 +17,34 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
+import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
+import com.akiban.sql.optimizer.plan.ResultSet.ResultExpression;
+import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
+
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ParameterNode;
+
+import com.akiban.qp.physicaloperator.PhysicalOperator;
+import static com.akiban.qp.physicaloperator.API.*;
+// TODO: Why aren't these in API?
+import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.physicaloperator.UpdateFunction;
+import com.akiban.qp.physicaloperator.Insert_Default;
+import com.akiban.qp.physicaloperator.Update_Default;
+import com.akiban.qp.physicaloperator.Delete_Default;
+import com.akiban.qp.rowtype.*;
+
+import static com.akiban.qp.expression.API.literal;
+import com.akiban.qp.expression.Comparison;
+import com.akiban.qp.expression.Expression;
+import com.akiban.qp.expression.IndexBound;
+import com.akiban.qp.expression.IndexKeyRange;
+
+import com.akiban.ais.model.Column;
+
+import com.akiban.server.api.dml.ColumnSelector;
 
 import java.util.*;
 
@@ -72,20 +99,27 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected PhysicalUpdate insertStatement(InsertStatement insertStatement) {
-            PlanNode planQuery = selectQuery.getQuery();
+            PlanNode planQuery = insertStatement.getQuery();
             PhysicalOperator operator = assembleQuery(planQuery);
             UserTableRowType targetRowType = 
                 tableRowType(insertStatement.getTargetTable());
             List<Expression> inserts = null;
-            /** TODO: figure this out.
             if (planQuery instanceof ResultSet) {
-                projections = assembleExpressions(((ResultSet)planQuery).getResults());
+                inserts = assembleExpressions(((ResultSet)planQuery).getResults());
             }
-            else {
-                // VALUES projects to [Field(1), Field(2), ...].
-                projections = assembleExpressions(operator.rowType().nFields());
+            // Have a list of expressions in the order specified.
+            // Want a list as wide as the target row with NULL
+            // literals for the gaps.
+            // TODO: That doesn't seem right. How are explicit NULLs
+            // to be distinguished from the column's default value?
+            Expression[] row = new Expression[targetRowType.nFields()];
+            Arrays.fill(row, literal(null));
+            int ncols = inserts.size();
+            for (int i = 0; i < ncols; i++) {
+                Column column = insertStatement.getTargetColumns().get(i);
+                row[column.getPosition()] = inserts.get(i);
             }
-            **/
+            inserts = Arrays.asList(row);
             operator = project_Table(operator, operator.rowType(),
                                      targetRowType, inserts);
             UpdatePlannable plan = new Insert_Default(operator);
@@ -93,11 +127,22 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected PhysicalUpdate updateStatement(UpdateStatement updateStatement) {
-            PhysicalOperator operator = assembleQuery(deleteStatement.getQuery());
+            PhysicalOperator operator = assembleQuery(updateStatement.getQuery());
             UserTableRowType targetRowType = 
-                tableRowType(insertStatement.getTargetTable());
-            List<Expression> updates = null;
-            // TODO: figure this out.
+                tableRowType(updateStatement.getTargetTable());
+            List<UpdateColumn> updateColumns = updateStatement.getUpdateColumns();
+            List<Expression> updates = assembleExpressions(updateColumns);
+            // Have a list of expressions in the order specified.
+            // Want a list as wide as the target row with Java nulls
+            // for the gaps.
+            // TODO: It might be simpler to have an update function
+            // that knew about column offsets for ordered expressions.
+            Expression[] row = new Expression[targetRowType.nFields()];
+            for (int i = 0; i < updateColumns.size(); i++) {
+                UpdateColumn column = updateColumns.get(i);
+                row[column.getColumn().getPosition()] = updates.get(i);
+            }
+            updates = Arrays.asList(row);
             UpdateFunction updateFunction = 
                 new ExpressionRowUpdateFunction(updates, targetRowType);
             UpdatePlannable plan = new Update_Default(operator, updateFunction);
@@ -114,6 +159,7 @@ public class OperatorAssembler extends BaseRule
             return schema.userTableRowType(table.getTable());
         }
 
+        // Get the required type for any parameters to the statement.
         protected DataTypeDescriptor[] getParameterTypes() {
             AST ast = ASTStatementLoader.getAST(planContext);
             if (ast == null)
@@ -133,10 +179,14 @@ public class OperatorAssembler extends BaseRule
             return result;
         }
         
+        // Assemble the top-level query. If there is a ResultSet at
+        // the top, it is not handled here, since its meaning is
+        // different for the different statement types.
         protected PhysicalOperator assembleQuery(PlanNode planQuery) {
             return null;
         }
 
+        // Assemble a list of expressions from the given nodes.
         protected List<Expression> assembleExpressions(List<? extends AnnotatedExpression> expressions) {
             List<Expression> result = new ArrayList<Expression>(expressions.size());
             for (AnnotatedExpression aexpr : expressions) {
@@ -145,13 +195,26 @@ public class OperatorAssembler extends BaseRule
             return result;
         }
 
+        // Assemble an expression against the given row offsets.
         // TODO: Need field offsets.
         protected Expression assembleExpression(ExpressionNode expr) {
             return null;
         }
 
+        // Get a list of result columns based on ResultSet expression names.
         protected List<PhysicalResultColumn> getResultColumns(List<ResultExpression> results) {
-            List<PhysicalResultColumn> result = new ArrayList<PhysicalResultColumn>(results.size());
+            List<PhysicalResultColumn> result = 
+                new ArrayList<PhysicalResultColumn>(results.size());
+            // TODO: ...
+            return result;
+        }
+
+        // Get a list of result columns for unnamed columns.
+        // This would correspond to top-level VALUES, which the parser
+        // does not currently support.
+        protected List<PhysicalResultColumn> getResultColumns(int ncols) {
+            List<PhysicalResultColumn> result = 
+                new ArrayList<PhysicalResultColumn>(ncols);
             // TODO: ...
             return result;
         }

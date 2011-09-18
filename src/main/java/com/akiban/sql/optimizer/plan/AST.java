@@ -34,11 +34,6 @@ public class AST extends BasePlanNode
         this.parameters = parameters;
     }
     
-    public AST(DMLStatementNode statement, List<ParameterNode> parameters) {
-        this.statement = statement;
-        this.parameters = parameters;
-    }
-    
     public DMLStatementNode getStatement() {
         return statement;
     }

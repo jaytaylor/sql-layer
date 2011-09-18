@@ -67,8 +67,8 @@ public class PhysicalSelect extends BasePlannable
     @Override
     public String summaryString() {
         StringBuilder str = new StringBuilder(super.summaryString());
-        if (parameterTypes != null)
-            str.append(parameterTypes);
+        if (getParameterTypes() != null)
+            str.append(getParameterTypes());
         str.append(resultColumns);
         for (String operator : explainPlan()) {
             str.append("\n  ");
