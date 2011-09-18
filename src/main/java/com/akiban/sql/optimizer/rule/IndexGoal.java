@@ -94,6 +94,8 @@ public class IndexGoal implements Comparator<IndexScan>
     private AggregateSource grouping;
     private Sort ordering;
 
+    private boolean attemptCovering;
+
     // All the columns besides those in conditions that will be needed.
     private RequiredColumns requiredColumns;
 
@@ -107,7 +109,10 @@ public class IndexGoal implements Comparator<IndexScan>
         this.conditions = conditions;
         this.grouping = grouping;
         this.ordering = ordering;
-        this.requiredColumns = new RequiredColumns(tables);
+        
+        attemptCovering = !(plan instanceof BaseUpdateStatement);
+
+        requiredColumns = new RequiredColumns(tables);
         plan.accept(new RequiredColumnsFiller(requiredColumns, conditions));
     }
 
@@ -186,7 +191,8 @@ public class IndexGoal implements Comparator<IndexScan>
         if ((index.getOrderEffectiveness() == IndexScan.OrderEffectiveness.NONE) &&
             (index.getConditions() == null))
             return false;
-        index.setCovering(determineCovering(index));
+        if (attemptCovering)
+            index.setCovering(determineCovering(index));
         return true;
     }
 

@@ -1,5 +1,4 @@
-PhysicalUpdate@40158291
-  Update_Default(Filter_Default([user.items]) -> ExpressionRowUpdateFunction([null, null, Literal(ABCX), null, null]))
-    Filter_Default([user.items])
- need ancestor here
+PhysicalUpdate@3b58f1fa
+  Update_Default(AncestorLookup_Default(Index(user.items.sku[IndexColumn(sku)]) -> [user.items]) -> ExpressionRowUpdateFunction([null, null, Literal(ABCX), null, null]))
+    AncestorLookup_Default(Index(user.items.sku[IndexColumn(sku)]) -> [user.items])
       IndexScan_Default(Index(user.items.sku[IndexColumn(sku)]) (>=UnboundExpressions[Literal(ABCD)],<=UnboundExpressions[Literal(ABCD)]))
