@@ -54,7 +54,7 @@ public class PostgresSessionStatement implements PostgresStatement
             throws IOException {
         if (always) {
             PostgresMessenger messenger = server.getMessenger();
-            messenger.beginMessage(PostgresMessenger.NO_DATA_TYPE);
+            messenger.beginMessage(PostgresMessages.NO_DATA_TYPE.code());
             messenger.sendMessage();
         }
     }
@@ -65,7 +65,7 @@ public class PostgresSessionStatement implements PostgresStatement
         doOperation(server);
         {        
             PostgresMessenger messenger = server.getMessenger();
-            messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
             messenger.writeString(statement.statementToString());
             messenger.sendMessage();
         }

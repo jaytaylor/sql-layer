@@ -161,9 +161,9 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         boolean startupComplete = false;
         try {
             while (running) {
-                int type = messenger.readMessage(startupComplete);
+                PostgresMessages type = messenger.readMessage(startupComplete);
                 if (ignoreUntilSync) {
-                    if ((type != -1) && (type != PostgresMessenger.SYNC_TYPE))
+                    if ((type != PostgresMessages.EOF_TYPE) && (type != PostgresMessages.SYNC_TYPE))
                         continue;
                     ignoreUntilSync = false;
                 }
@@ -171,53 +171,52 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 try {
                     sessionTracer.beginEvent(EventTypes.PROCESS);
                     switch (type) {
-                    case -1:                                    // EOF
+                    case EOF_TYPE: // EOF
                         stop();
                         break;
-                    case PostgresMessenger.SYNC_TYPE:
+                    case SYNC_TYPE:
                         readyForQuery();
                         break;
-                    case PostgresMessenger.STARTUP_MESSAGE_TYPE:
+                    case STARTUP_MESSAGE_TYPE:
                         startupComplete = processStartupMessage();
                         break;
-                    case PostgresMessenger.PASSWORD_MESSAGE_TYPE:
+                    case PASSWORD_MESSAGE_TYPE:
                         processPasswordMessage();
                         break;
-                    case PostgresMessenger.QUERY_TYPE:
+                    case QUERY_TYPE:
                         errorMode = ErrorMode.SIMPLE;
                         processQuery();
                         break;
-                    case PostgresMessenger.PARSE_TYPE:
+                    case PARSE_TYPE:
                         errorMode = ErrorMode.EXTENDED;
                         processParse();
                         break;
-                    case PostgresMessenger.BIND_TYPE:
+                    case BIND_TYPE:
                         errorMode = ErrorMode.EXTENDED;
                         processBind();
                         break;
-                    case PostgresMessenger.DESCRIBE_TYPE:
+                    case DESCRIBE_TYPE:
                         errorMode = ErrorMode.EXTENDED;
                         processDescribe();
                         break;
-                    case PostgresMessenger.EXECUTE_TYPE:
+                    case EXECUTE_TYPE:
                         errorMode = ErrorMode.EXTENDED;
                         processExecute();
                         break;
-                    case PostgresMessenger.CLOSE_TYPE:
+                    case CLOSE_TYPE:
                         processClose();
                         break;
-                    case PostgresMessenger.TERMINATE_TYPE:
+                    case TERMINATE_TYPE:
                         processTerminate();
                         break;
-                    default:
-                        throw new IOException("Unknown message type: " + (char)type);
                     }
                 }
                 catch (InvalidOperationException ex) {
                     logger.warn("Error in query: {}",ex.getMessage());
+                    logger.debug("StackTrace: {}", ex);
                     if (errorMode == ErrorMode.NONE ) throw ex;
                     else {
-                        messenger.beginMessage(PostgresMessenger.ERROR_RESPONSE_TYPE);
+                        messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
                         messenger.write('S');
                         messenger.writeString("ERROR");
                         messenger.write('C');
@@ -234,9 +233,10 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 } catch (Exception e) {
                     final String message = (e.getMessage() == null ? e.getClass().toString() : e.getMessage()); 
                     logger.warn("Unexpected error in query", e);
+                    logger.debug("Stack Trace: {}", e);
                     if (errorMode == ErrorMode.NONE) throw e;
                     else {
-                        messenger.beginMessage(PostgresMessenger.ERROR_RESPONSE_TYPE);
+                        messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
                         messenger.write('S');
                         messenger.writeString("ERROR");
                         messenger.write('C');
@@ -267,7 +267,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     protected void readyForQuery() throws IOException {
-        messenger.beginMessage(PostgresMessenger.READY_FOR_QUERY_TYPE);
+        messenger.beginMessage(PostgresMessages.READY_FOR_QUERY_TYPE.code());
         messenger.writeByte('I'); // Idle ('T' -> xact open; 'E' -> xact abort)
         messenger.sendMessage(true);
     }
@@ -307,7 +307,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         updateAIS();
 
         {
-            messenger.beginMessage(PostgresMessenger.AUTHENTICATION_TYPE);
+            messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());
             messenger.writeInt(PostgresMessenger.AUTHENTICATION_CLEAR_TEXT);
             messenger.sendMessage(true);
         }
@@ -342,18 +342,18 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         status.put("session_authorization", user);
         
         {
-            messenger.beginMessage(PostgresMessenger.AUTHENTICATION_TYPE);
+            messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());
             messenger.writeInt(PostgresMessenger.AUTHENTICATION_OK);
             messenger.sendMessage();
         }
         for (String prop : status.stringPropertyNames()) {
-            messenger.beginMessage(PostgresMessenger.PARAMETER_STATUS_TYPE);
+            messenger.beginMessage(PostgresMessages.PARAMETER_STATUS_TYPE.code());
             messenger.writeString(prop);
             messenger.writeString(status.getProperty(prop));
             messenger.sendMessage();
         }
         {
-            messenger.beginMessage(PostgresMessenger.BACKEND_KEY_DATA_TYPE);
+            messenger.beginMessage(PostgresMessages.BACKEND_KEY_DATA_TYPE.code());
             messenger.writeInt(pid);
             messenger.writeInt(secret);
             messenger.sendMessage();
@@ -457,7 +457,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 statementCache.put(sql, pstmt);
         }
         preparedStatements.put(stmtName, pstmt);
-        messenger.beginMessage(PostgresMessenger.PARSE_COMPLETE_TYPE);
+        messenger.beginMessage(PostgresMessages.PARSE_COMPLETE_TYPE.code());
         messenger.sendMessage();
     }
 
@@ -511,7 +511,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         boundPortals.put(portalName, 
                          pstmt.getBoundStatement(params, 
                                                  resultsBinary, defaultResultsBinary));
-        messenger.beginMessage(PostgresMessenger.BIND_COMPLETE_TYPE);
+        messenger.beginMessage(PostgresMessages.BIND_COMPLETE_TYPE.code());
         messenger.sendMessage();
     }
 
@@ -566,7 +566,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         default:
             throw new IOException("Unknown describe source: " + (char)source);
         }
-        messenger.beginMessage(PostgresMessenger.CLOSE_COMPLETE_TYPE);
+        messenger.beginMessage(PostgresMessages.CLOSE_COMPLETE_TYPE.code());
         messenger.sendMessage();
     }
     
