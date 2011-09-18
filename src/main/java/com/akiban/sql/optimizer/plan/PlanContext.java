@@ -44,7 +44,10 @@ public class PlanContext
         this.plan = plan;
     }
     
-    public static final class WhiteboardMarker<T> {
+    public interface WhiteboardMarker<T> {
+    }
+
+    public static final class DefaultWhiteboardMarker<T> implements WhiteboardMarker<T> {
     }
 
     private Map<WhiteboardMarker<?>,Object> whiteboard = 
