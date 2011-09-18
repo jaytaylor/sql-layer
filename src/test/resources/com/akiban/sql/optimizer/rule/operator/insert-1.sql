@@ -1,1 +1,1 @@
-INSERT INTO child(id, pid, name) VALUES(1, 1, 'Judy'),(2, 1, 'Elroy')
+INSERT INTO child(pid, id, name) VALUES(1, 1, 'Judy'),(1, 2, 'Elroy')

@@ -118,6 +118,14 @@ public class OperatorAssembler extends BaseRule
                 inserts = assembleExpressions(((ResultSet)planQuery).getResults(),
                                               stream.fieldOffsets);
             }
+            else {
+                // VALUES just needs each field, which will get rearranged below.
+                int nfields = stream.rowType.nFields();
+                inserts = new ArrayList<Expression>(nfields);
+                for (int i = 0; i < nfields; i++) {
+                    inserts.add(field(i));
+                }
+            }
             // Have a list of expressions in the order specified.
             // Want a list as wide as the target row with NULL
             // literals for the gaps.

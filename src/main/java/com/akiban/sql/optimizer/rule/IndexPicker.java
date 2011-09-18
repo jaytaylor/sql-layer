@@ -38,6 +38,8 @@ public class IndexPicker extends BaseRule
         if (islands.size() > 1)
             throw new UnsupportedSQLException("Joins are too complex: " + islands, null);
         Joinable joins = islands.get(0);
+        if (joins instanceof ExpressionsSource)
+            return;             // Already set to scan.
         pickIndexes(joins, plan);
     }
 
