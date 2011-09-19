@@ -503,7 +503,9 @@ public class IndexGoal implements Comparator<IndexScan>
         }
 
         // Record what tables are required: within the index if any
-        // columns still needed, others if joined at all.
+        // columns still needed, others if joined at all. Do this
+        // before taking account of columns from a covering index,
+        // since may not use it that way.
         {
             Collection<TableSource> joined = index.getTables();
             Set<TableSource> required = new HashSet<TableSource>();

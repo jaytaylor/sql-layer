@@ -42,13 +42,16 @@ public class IndexPicker extends BaseRule
     }
 
     protected void pickIndexes(Joinable joins, PlanNode plan) {
+        // Goal is to get all the tables joined right here. Others in
+        // the group can come via XxxLookup in a nested loop. Can only
+        // consider indexes on the inner joined tables.
         Collection<TableSource> tables = new ArrayList<TableSource>();
         Collection<TableSource> required = new ArrayList<TableSource>();
         TableGroup group = onlyTableGroup(null, true, joins, tables, required);
         if (group == null) return;
         IndexScan index = null;
         TableSource indexTable = null;
-        IndexGoal goal = determineIndexGoal(joins, plan, group.getTables());
+        IndexGoal goal = determineIndexGoal(joins, plan, tables);
         if (goal != null) {
             index = goal.pickBestIndex(required);
             if (index != null)
@@ -64,7 +67,7 @@ public class IndexPicker extends BaseRule
         else if (!index.isCovering()) {
             List<TableSource> ancestors = new ArrayList<TableSource>();
             TableSource branch = null;
-            for (TableSource table : tables) {
+            for (TableSource table : index.getRequiredTables()) {
                 if (ancestorOf(table, indexTable)) {
                     ancestors.add(table);
                 }
@@ -72,25 +75,37 @@ public class IndexPicker extends BaseRule
                     if (branch == null)
                         branch = indexTable;
                 }
-                else {
-                    // TODO: Can take another branch if don't actually
-                    // need anything up to branch point. (That is,
-                    // JoJo-style w/o Product.)
-                    throw new UnsupportedSQLException("Sibling branch: " + joins, null);
+                else if ((branch == null) ||
+                         ancestorOf(table, branch)) {
+                    branch = table;
+                }
+                else if (!ancestorOf(branch, table)) {
+                    throw new UnsupportedSQLException("Sibling branches: " + table + 
+                                                      " and " + branch,
+                                                      null);
                 }
             }
             if (branch != null) {
                 ancestors.remove(indexTable);
                 scan = new BranchLookup(scan, indexTable, branch);
             }
-            if (!ancestors.isEmpty())
+            if (!ancestors.isEmpty()) {
+                // Access in stable order.
+                Collections.sort(ancestors,
+                                 new Comparator<TableSource>() {
+                                     public int compare(TableSource t1, TableSource t2) {
+                                         return t1.getTable().getTable().getTableId().compareTo(t2.getTable().getTable().getTableId());
+                                     }
+                                 });
                 scan = new AncestorLookup(scan, indexTable, ancestors);
+            }
         }
         scan = new Flatten(scan, joins);
         // TODO: Can now prepone some of the conditions before the flatten.
         joins.getOutput().replaceInput(joins, scan);
     }
     
+    /** Is <code>t1</code> an ancestor of <code>t2</code>? */
     protected boolean ancestorOf(TableSource t1, TableSource t2) {
         do {
             if (t1 == t2) return true;
