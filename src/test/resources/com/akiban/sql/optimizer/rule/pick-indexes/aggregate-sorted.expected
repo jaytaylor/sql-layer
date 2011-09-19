@@ -1,0 +1,11 @@
+SelectQuery@6d7f11fb
+  ResultSet@3175ade6[user.customers.name, user.items.sku, SUM(user.items.quan)]
+    Sort@24ebf068[user.customers.name]
+      Filter@7df44ec7[]
+        AggregateSource@32602b6b[user.customers.name, user.items.sku][]
+          Filter@47c297a3[]
+            JoinNode@38717323(INNER_JOIN[user.items.oid == user.orders.oid] - TableGroupJoin@203e1bc8(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+              JoinNode@4d91f801(INNER_JOIN[user.orders.cid == user.customers.cid] - TableGroupJoin@2a313170(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+                TableSource@7d15d06c(user.customers - TableGroup@3a4c5b4(customers) - AncestorLookup@36afae4a(com.akiban.sql.optimizer.plan.TableSource@3d7dc1cb))
+                TableSource@2326a29c(user.orders - TableGroupJoin@2a313170(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))) - AncestorLookup@36afae4a(com.akiban.sql.optimizer.plan.TableSource@3d7dc1cb))
+              TableSource@3d7dc1cb(user.items - TableGroupJoin@203e1bc8(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))) - IndexUsage@47db9852(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), SORTED))

@@ -202,13 +202,18 @@ public class PromoteOuterJoins extends BaseRule
         return false;
     }
 
+    // Walk back down recomputing the required/optional flag.
     protected void promotedOuterJoin(Joinable joinable) {
         if (joinable instanceof JoinNode) {
             JoinNode join = (JoinNode)joinable;
-            promotedOuterJoin(join.getLeft());
-            promotedOuterJoin(join.getRight());
+            if (join.getJoinType() == JoinType.INNER_JOIN) {
+                promotedOuterJoin(join.getLeft());
+                promotedOuterJoin(join.getRight());
+            }
         }
-        // TODO: Mark not optional once we have that state.
+        else if (joinable instanceof TableSource) {
+            ((TableSource)joinable).setRequired(true);
+        }
     }
     
 }

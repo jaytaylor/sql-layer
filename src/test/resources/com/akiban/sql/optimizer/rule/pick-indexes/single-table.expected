@@ -1,0 +1,4 @@
+SelectQuery@4245c97b
+  ResultSet@73aecc3a[user.customers.cid, user.customers.name]
+    Filter@58e22f2b[user.customers.name == Smith]
+      TableSource@c569c60(user.customers - TableGroup@6986dda3(customers) - IndexUsage@15412e75(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith))

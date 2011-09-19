@@ -31,6 +31,9 @@ public class Sort extends BasePlanWithInput
         public boolean isAscending() {
             return ascending;
         }
+        public void setAscending(boolean ascending) {
+            this.ascending = ascending;
+        }
 
         public String toString() {
             if (ascending)

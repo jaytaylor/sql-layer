@@ -30,13 +30,18 @@ import com.akiban.sql.views.ViewDefinition;
 import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.GroupIndex;
+import com.akiban.server.util.GroupIndexCreator;
 
 import org.junit.Before;
 import org.junit.Ignore;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.io.FileReader;
+import java.io.Reader;
 
 @Ignore
 public class OptimizerTestBase extends ASTTransformTestBase
@@ -68,11 +73,15 @@ public class OptimizerTestBase extends ASTTransformTestBase
         grouper = new Grouper(parser);
     }
 
-    protected AkibanInformationSchema loadSchema(File schema) throws Exception {
+    protected static AkibanInformationSchema parseSchema(File schema) throws Exception {
         String sql = fileContents(schema);
         SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
         SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
-        AkibanInformationSchema ais = toAis.getAis();
+        return toAis.getAis();
+    }
+
+    protected AkibanInformationSchema loadSchema(File schema) throws Exception {
+        AkibanInformationSchema ais = parseSchema(schema);
         binder = new AISBinder(ais, "user");
         return ais;
     }
@@ -80,6 +89,34 @@ public class OptimizerTestBase extends ASTTransformTestBase
     protected void loadView(File view) throws Exception {
         String sql = fileContents(view);
         binder.addView(new ViewDefinition(sql, parser));
+    }
+
+    protected static void loadGroupIndexes(AkibanInformationSchema ais, File file) 
+            throws Exception {
+        Reader rdr = null;
+        try {
+            rdr = new FileReader(file);
+            BufferedReader brdr = new BufferedReader(rdr);
+            while (true) {
+                String line = brdr.readLine();
+                if (line == null) break;
+                String defn[] = line.split("\t");
+                GroupIndex index = GroupIndexCreator.createIndex(ais,
+                                                                 defn[0], 
+                                                                 defn[1],
+                                                                 defn[2]);
+                index.getGroup().addIndex(index);
+            }
+        }
+        finally {
+            if (rdr != null) {
+                try {
+                    rdr.close();
+                }
+                catch (IOException ex) {
+                }
+            }
+        }
     }
 
 }

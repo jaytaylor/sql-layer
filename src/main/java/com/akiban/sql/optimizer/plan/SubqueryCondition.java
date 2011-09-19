@@ -32,9 +32,9 @@ public class SubqueryCondition extends BaseExpression implements ConditionExpres
     }
     
     private Kind kind;
-    private PlanNode subquery;
+    private Subquery subquery;
 
-    public SubqueryCondition(Kind kind, PlanNode subquery, 
+    public SubqueryCondition(Kind kind, Subquery subquery, 
                              DataTypeDescriptor sqlType, ValueNode sqlSource) {
         super(sqlType, sqlSource);
         this.kind = kind;
@@ -45,7 +45,7 @@ public class SubqueryCondition extends BaseExpression implements ConditionExpres
         return kind;
     }
 
-    public PlanNode getSubquery() {
+    public Subquery getSubquery() {
         return subquery;
     }
 
@@ -97,7 +97,7 @@ public class SubqueryCondition extends BaseExpression implements ConditionExpres
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        subquery = (PlanNode)subquery.duplicate(map);
+        subquery = (Subquery)subquery.duplicate(map);
     }
 
 }
