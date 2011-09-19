@@ -18,8 +18,8 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.sql.TestBase;
 
 import com.akiban.sql.optimizer.OptimizerTestBase;
-import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.AST;
+import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanToString;
 
 import com.akiban.sql.parser.DMLStatementNode;
@@ -88,19 +88,14 @@ public class RulesTest extends OptimizerTestBase implements TestBase.GenerateAnd
         this.indexFile = indexFile;
     }
 
-    protected List<BaseRule> rules;
-
-    @Before
-    public void loadRules() throws Exception {
-        rules = RulesTestHelper.loadRules(rulesFile);
-    }
+    protected RulesContext rules;
 
     @Before
     public void loadDDL() throws Exception {
         AkibanInformationSchema ais = loadSchema(schemaFile);
         if (indexFile != null)
             OptimizerTestBase.loadGroupIndexes(ais, indexFile);
-        RulesTestHelper.ensureRowDefs(ais);
+        rules = new RulesTestContext(ais, RulesTestHelper.loadRules(rulesFile));
     }
 
     @Test
@@ -118,11 +113,11 @@ public class RulesTest extends OptimizerTestBase implements TestBase.GenerateAnd
         typeComputer.compute(stmt);
         stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
         // Turn parsed AST into intermediate form as starting point.
-        PlanNode plan = new AST((DMLStatementNode)stmt);
-        for (BaseRule rule : rules) {
-            plan = rule.apply(plan);
-        }
-        return PlanToString.of(plan);
+        PlanContext plan = new PlanContext(rules, 
+                                           new AST((DMLStatementNode)stmt,
+                                                   parser.getParameterList()));
+        rules.applyRules(plan);
+        return PlanToString.of(plan.getPlan());
     }
 
     @Override

@@ -30,14 +30,13 @@ import java.util.*;
 public class AggregateMapper extends BaseRule
 {
     @Override
-    public PlanNode apply(PlanNode plan) {
+    public void apply(PlanContext plan) {
         Collector c = new Collector();
-        plan.accept(c);
+        plan.getPlan().accept(c);
         for (AggregateSource source : c.found) {
             Mapper m = new Mapper(source);
             m.remap(source);
         }
-        return plan;
     }
 
     static class Collector implements PlanVisitor, ExpressionVisitor {

@@ -15,17 +15,35 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.service.EventTypes;
-
 import com.akiban.sql.optimizer.plan.PlanContext;
 
-public abstract class BaseRule
-{
-    private final String traceName;
+import java.util.List;
 
-    public BaseRule() {
-        traceName = EventTypes.OPTIMIZE + ": " + getClass().getSimpleName();
+/** The context / owner of a {@link PlanContext}, shared among several of them. */
+public class RulesContext
+{
+    // TODO: Need more much sophisticated invocation mechanism.
+    private List<BaseRule> rules;
+
+    public RulesContext(List<BaseRule> rules) {
+        this.rules = rules;
     }
 
-    public abstract void apply(PlanContext plan);
+    public void applyRules(PlanContext plan) {
+        for (BaseRule rule : rules) {
+            beginRule(rule);
+            try {
+                rule.apply(plan);
+            }
+            finally {
+                endRule(rule);
+            }
+        }
+    }
+
+    /** Extend this to implement tracing, etc. */
+    public void beginRule(BaseRule rule) {
+    }
+    public void endRule(BaseRule rule) {
+    }
 }

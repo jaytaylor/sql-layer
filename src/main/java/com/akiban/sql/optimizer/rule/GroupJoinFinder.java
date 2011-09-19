@@ -75,12 +75,11 @@ public class GroupJoinFinder extends BaseRule
     }
 
     @Override
-    public PlanNode apply(PlanNode plan) {
-        List<Joinable> islands = new JoinIslandFinder().find(plan);
+    public void apply(PlanContext plan) {
+        List<Joinable> islands = new JoinIslandFinder().find(plan.getPlan());
         moveAndNormalizeWhereConditions(islands);
         reorderJoins(islands);
         findGroupJoins(islands);
-        return plan;
     }
     
     // First pass: find all the WHERE conditions above inner joins

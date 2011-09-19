@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode;
+import static com.akiban.sql.optimizer.plan.PlanContext.*;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultExpression;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
@@ -47,13 +48,24 @@ import java.util.*;
  */
 public class ASTStatementLoader extends BaseRule
 {
+    public static final WhiteboardMarker<AST> MARKER = 
+        new DefaultWhiteboardMarker<AST>();
+
+    /** Recover the {@link AST} put on the whiteboard when loaded. */
+    public static AST getAST(PlanContext plan) {
+        return plan.getWhiteboard(MARKER);
+    }
+
     @Override
-    public PlanNode apply(PlanNode plan) {
-        DMLStatementNode stmt = ((AST)plan).getStatement();
+    public void apply(PlanContext plan) {
+        AST ast = (AST)plan.getPlan();
+        plan.putWhiteboard(MARKER, ast);
+        DMLStatementNode stmt = ast.getStatement();
         try {
-            return toStatement(stmt);
+            plan.setPlan(toStatement(stmt));
         }
         catch (StandardException ex) {
+            // TODO: Separate out Parser subsystem error from true parse error.
             throw new ParseException("", ex.getMessage(), "");
         }
     }
