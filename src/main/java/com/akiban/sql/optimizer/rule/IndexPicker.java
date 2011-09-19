@@ -63,6 +63,7 @@ public class IndexPicker extends BaseRule
         PlanNode scan = index;
         if (index == null) {
             scan = new GroupScan(group);
+            scan = new Flatten(scan, trimJoins(joins, null));
         }
         else if (!index.isCovering()) {
             List<TableSource> ancestors = new ArrayList<TableSource>();
@@ -107,12 +108,66 @@ public class IndexPicker extends BaseRule
                                          ancestors.get(0)), 
                                         branch);
             }
+            Joinable requiredJoins = trimJoins(joins, index.getRequiredTables());
+            if (requiredJoins != null)
+                scan = new Flatten(scan, requiredJoins);
         }
-        scan = new Flatten(scan, joins);
         // TODO: Can now prepone some of the conditions before the flatten.
         joins.getOutput().replaceInput(joins, scan);
     }
     
+    protected Joinable trimJoins(Joinable joinable, Set<TableSource> requiredTables) {
+        if (joinable instanceof TableSource) {
+            if ((requiredTables == null) || requiredTables.contains(joinable))
+                return joinable;
+            else
+                return null;
+        }
+        else if (joinable instanceof JoinNode) {
+            JoinNode join = (JoinNode)joinable;
+            removeGroupJoin(join);
+            Joinable oleft = join.getLeft();
+            Joinable oright = join.getRight();
+            Joinable nleft = trimJoins(oleft, requiredTables);
+            Joinable nright = trimJoins(oright, requiredTables);
+            if ((oleft == nleft) && (oright == nright))
+                return joinable;
+            else if (nleft == null)
+                return nright;
+            else if (nright == null)
+                return nleft;
+            else {
+                join.setLeft(nleft);
+                join.setRight(nright);
+                return join;
+            }
+        }
+        else
+            return joinable;
+    }
+
+    // We only want joins for their flattening pattern.
+    // Make explain output more obvious by removing group join traces.
+    // TODO: Also rejecting non-group joins; those could be supported with Select.
+    protected void removeGroupJoin(JoinNode join) {
+        List<ConditionExpression> conditions = join.getJoinConditions();
+        int i = 0;
+        while (i < conditions.size()) {
+            ConditionExpression cond = conditions.get(i);
+            if (cond.getImplementation() == 
+                ConditionExpression.Implementation.GROUP_JOIN) {
+                conditions.remove(i);
+            }
+            else {
+                i++;
+            }
+        }
+        if (!conditions.isEmpty())
+            throw new UnsupportedSQLException("Non group join",
+                                              conditions.get(0).getSQLsource());
+        join.setGroupJoin(null);
+    }
+
     /** Is <code>t1</code> an ancestor of <code>t2</code>? */
     protected boolean ancestorOf(TableSource t1, TableSource t2) {
         do {
