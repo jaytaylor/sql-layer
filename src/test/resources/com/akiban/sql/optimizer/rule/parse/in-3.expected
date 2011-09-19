@@ -6,6 +6,6 @@ SelectQuery@d02b2b6
 Subquery@1e670479
   ResultSet@614a75bb[MAX(user.child.name)]
     Filter@1ce3570c[user.customers.name == MAX(user.child.name)]
-      AggregateSource@1167e3a5[user.child.pid][]
+      AggregateSource@1167e3a5([user.child.pid],[])
         Filter@3b926e90[]
           TableSource@a98ce7e(user.child)

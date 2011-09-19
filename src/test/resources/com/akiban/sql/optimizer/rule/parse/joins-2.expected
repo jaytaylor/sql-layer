@@ -6,7 +6,7 @@ SelectQuery@344977e2
           Subquery@578b1f8f
             ResultSet@281ec58a[user.customers.name, MAX(times(user.items.price,user.items.quan))]
               Filter@7c3afb99[]
-                AggregateSource@45c3987[user.customers.name][]
+                AggregateSource@45c3987([user.customers.name],[])
                   Filter@42c4d04d[]
                     JoinNode@747917a(INNER_JOIN[user.orders.oid == user.items.oid])
                       JoinNode@6b9fe451(INNER_JOIN[user.customers.cid == user.orders.cid])
@@ -17,7 +17,7 @@ SelectQuery@344977e2
           Subquery@3c63e8c
             ResultSet@643f96ee[user.customers.name, MIN(times(user.items.price,user.items.quan))]
               Filter@ace16ad[]
-                AggregateSource@6032bd65[user.customers.name][]
+                AggregateSource@6032bd65([user.customers.name],[])
                   Filter@2330633a[]
                     JoinNode@3dc286e2(INNER_JOIN[user.orders.oid == user.items.oid])
                       JoinNode@2e257f1b(INNER_JOIN[user.customers.cid == user.orders.cid])

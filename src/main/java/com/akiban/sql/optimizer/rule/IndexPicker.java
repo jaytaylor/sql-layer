@@ -20,6 +20,8 @@ import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import static com.akiban.sql.optimizer.rule.GroupJoinFinder.*;
 
+import com.akiban.qp.physicaloperator.API.JoinType;
+
 import com.akiban.server.error.UnsupportedSQLException;
 
 import java.util.*;
@@ -35,50 +37,58 @@ public class IndexPicker extends BaseRule
         if (islands.size() > 1)
             throw new UnsupportedSQLException("Joins are too complex: " + islands, null);
         Joinable joins = islands.get(0);
-        pickIndexes(joins);
+        pickIndexes(joins, plan);
         return plan;
     }
 
-    protected void pickIndexes(Joinable joins) {
-        TableGroup group = onlyTableGroup(joins);
-        Collection<TableSource> tables, required;
-        tables = group.getTables();
-        required = new ArrayList<TableSource>();
-        for (TableSource table : tables)
-            if (table.isRequired())
-                required.add(table);
-        IndexUsage index = null;
+    protected void pickIndexes(Joinable joins, PlanNode plan) {
+        Collection<TableSource> tables = new ArrayList<TableSource>();
+        Collection<TableSource> required = new ArrayList<TableSource>();
+        TableGroup group = onlyTableGroup(null, true, joins, tables, required);
+        if (group == null) return;
+        IndexScan index = null;
         TableSource indexTable = null;
-        IndexGoal goal = determineIndexGoal(joins);
+        IndexGoal goal = determineIndexGoal(joins, plan, group.getTables());
         if (goal != null) {
             index = goal.pickBestIndex(required);
             if (index != null)
                 indexTable = index.getLeafMostTable();
         }
-        TableAccessPath groupScan = null, ancestorLookup = null, branchLookup = null;
-        for (TableSource table : tables) {
-            TableAccessPath accessPath;
-            if (indexTable == null) {
-                if (groupScan == null)
-                    groupScan = new GroupScan(group);
-                accessPath = groupScan;
-            }
-            else if (table == indexTable) {
-                accessPath = index;
-            }
-            else if (ancestorOf(table, indexTable)) {
-                if (ancestorLookup == null)
-                    ancestorLookup = new AncestorLookup(indexTable);
-                accessPath = ancestorLookup;
-            }
-            // TODO: Need to find separate subbranches, not one for all.
-            else {
-                if (branchLookup == null)
-                    branchLookup = new BranchLookup(indexTable);
-                accessPath = branchLookup;
-            }
-            table.setAccessPath(accessPath);
+        if (index != null) {
+            goal.installUpstream(index, joins);
         }
+        PlanNode scan = index;
+        if (index == null) {
+            scan = new GroupScan(group);
+        }
+        else if (!index.isCovering()) {
+            List<TableSource> ancestors = new ArrayList<TableSource>();
+            TableSource branch = null;
+            for (TableSource table : tables) {
+                if (ancestorOf(table, indexTable)) {
+                    ancestors.add(table);
+                }
+                else if (ancestorOf(indexTable, table)) {
+                    if (branch == null)
+                        branch = indexTable;
+                }
+                else {
+                    // TODO: Can take another branch if don't actually
+                    // need anything up to branch point. (That is,
+                    // JoJo-style w/o Product.)
+                    throw new UnsupportedSQLException("Sibling branch: " + joins, null);
+                }
+            }
+            if (branch != null) {
+                ancestors.remove(indexTable);
+                scan = new BranchLookup(scan, indexTable, branch);
+            }
+            if (!ancestors.isEmpty())
+                scan = new AncestorLookup(scan, indexTable, ancestors);
+        }
+        scan = new Flatten(scan, joins);
+        // TODO: Can now prepone some of the conditions before the flatten.
+        joins.getOutput().replaceInput(joins, scan);
     }
     
     protected boolean ancestorOf(TableSource t1, TableSource t2) {
@@ -89,26 +99,48 @@ public class IndexPicker extends BaseRule
         return false;
     }
 
-    protected TableGroup onlyTableGroup(Joinable joins) {
+    protected TableGroup onlyTableGroup(TableGroup group,
+                                        boolean inRequired,
+                                        Joinable joins,
+                                        Collection<TableSource> tables,
+                                        Collection<TableSource> required) {
         if (joins instanceof JoinNode) {
             JoinNode join = (JoinNode)joins;
-            TableGroup gl = onlyTableGroup(join.getLeft());
-            TableGroup gr = onlyTableGroup(join.getRight());
+            TableGroup gl = onlyTableGroup(group, 
+                                           (inRequired && 
+                                            (join.getJoinType() != JoinType.RIGHT_JOIN)),
+                                           join.getLeft(),
+                                           tables, required);
+            TableGroup gr = onlyTableGroup(group, 
+                                           (inRequired && 
+                                            (join.getJoinType() != JoinType.LEFT_JOIN)),
+                                           join.getRight(),
+                                           tables, required);
             if (gl == gr) return gl;
         }
         else if (joins instanceof TableSource) {
-            TableGroup g = ((TableSource)joins).getGroup();
+            TableSource t = (TableSource)joins;
+            TableGroup g = t.getGroup();
             if (g == null)
                 throw new UnsupportedSQLException("Joins without group: " + joins, null);
-            return g;
+            if (group == null)
+                group = g;
+            if (group == g) {
+                tables.add(t);
+                if (inRequired)
+                    required.add(t);
+                return g;
+            }
         }
         throw new UnsupportedSQLException("Joins other than one group: " + joins, null);
     }
 
-    protected IndexGoal determineIndexGoal(PlanNode input) {
+    protected IndexGoal determineIndexGoal(PlanNode input, 
+                                           PlanNode plan,
+                                           Collection<TableSource> tables) {
         List<ConditionExpression> conditions;
-        List<ExpressionNode> grouping = null;
-        List<OrderByExpression> ordering = null;
+        Sort ordering = null;
+        AggregateSource grouping = null;
         input = input.getOutput();
         if (input instanceof Filter)
             conditions = ((Filter)input).getConditions();
@@ -116,26 +148,27 @@ public class IndexPicker extends BaseRule
             return null;
         input = input.getOutput();
         if (input instanceof Sort) {
-            ordering = ((Sort)input).getOrderBy();
+            ordering = (Sort)input;
         }
         else if (input instanceof AggregateSource) {
-            grouping = ((AggregateSource)input).getGroupBy();
+            grouping = (AggregateSource)input;
             input = input.getOutput();
             if (input instanceof Filter)
                 input = input.getOutput();
             if (input instanceof Sort) {
                 // Needs to be possible to satisfy both.
-                ordering = ((Sort)input).getOrderBy();
-                for (OrderByExpression orderBy : ordering) {
-                    if (!grouping.contains(orderBy.getExpression())) {
+                ordering = (Sort)input;
+                List<ExpressionNode> groupBy = grouping.getGroupBy();
+                for (OrderByExpression orderBy : ordering.getOrderBy()) {
+                    if (!groupBy.contains(orderBy.getExpression())) {
                         ordering = null;
                         break;
                     }
                 }
             }
         }
-        return new IndexGoal(Collections.<TableSource>emptySet(),
-                             conditions, grouping, ordering);
+        return new IndexGoal(plan, Collections.<TableSource>emptySet(),
+                             conditions, grouping, ordering, tables);
     }
 
 }

@@ -15,35 +15,36 @@
 
 package com.akiban.sql.optimizer.plan;
 
-public class BranchLookup extends BasePlanWithInput
+/** Take heterogeneous rows and join into single rowset. */
+// TODO: Decide whether this does product or only a single branch.
+// Also whether non-group join conditions are moved out beforehand.
+public class Flatten extends BasePlanWithInput
 {
-    private TableSource source, branch;
+    private Joinable joins;
 
-    public BranchLookup(PlanNode input, TableSource source, TableSource branch) {
+    public Flatten(PlanNode input, Joinable joins) {
         super(input);
-        this.source = source;
-        this.branch = branch;
+        this.joins = joins;
     }
 
-    public TableSource getSource() {
-        return source;
+    public Joinable getJoins() {
+        return joins;
     }
 
-    public TableSource getBranch() {
-        return branch;
+    @Override
+    public boolean accept(PlanVisitor v) {
+        if (v.visitEnter(this)) {
+            if (getInput().accept(v)) {
+                joins.accept(v);
+            }
+        }
+        return v.visitLeave(this);
     }
 
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        source = (TableSource)source.duplicate();
-        branch = (TableSource)branch.duplicate();
-    }
-
-    @Override
-    public String summaryString() {
-        return super.summaryString() +
-            "(" + source.getTable() + " -> " + branch.getTable() + ")";
+        joins = (Joinable)joins.duplicate(map);
     }
 
 }

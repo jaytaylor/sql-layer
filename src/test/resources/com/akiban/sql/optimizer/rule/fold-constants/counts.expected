@@ -1,7 +1,7 @@
 SelectQuery@14a7a12
   ResultSet@9444d1[GROUP[0], GROUP[1], GROUP[2], GROUP[3], GROUP[4]]
     Filter@32060c[]
-      AggregateSource@15ed659[user.customers.name][COUNT(*), COUNT(*), COUNT(DISTINCT user.orders.order_date), COUNT(user.orders.special)]
+      AggregateSource@15ed659([user.customers.name],[COUNT(*), COUNT(*), COUNT(DISTINCT user.orders.order_date), COUNT(user.orders.special)])
         Filter@2b323e[]
           JoinNode@1fa6d18(INNER_JOIN[user.customers.cid == user.orders.cid])
             TableSource@983d95(user.customers)

@@ -1,8 +1,11 @@
-SelectQuery@315b0333
-  ResultSet@4e2f2295[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date, user.items.iid, user.items.oid, user.items.sku, user.items.quan]
-    Filter@78878c4c[user.customers.name == Smith, user.items.sku == 1234]
-      JoinNode@b0c0f66(INNER_JOIN[user.items.oid == user.orders.oid] - TableGroupJoin@44c6f734(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
-        JoinNode@628f9a32(INNER_JOIN[user.orders.cid == user.customers.cid] - TableGroupJoin@41d47b2b(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-          TableSource@4d91f801(user.customers - TableGroup@64e265d0(customers) - AncestorLookup@4b8a6e6e(com.akiban.sql.optimizer.plan.TableSource@3a4c5b4))
-          TableSource@2a313170(user.orders - TableGroupJoin@41d47b2b(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))) - AncestorLookup@4b8a6e6e(com.akiban.sql.optimizer.plan.TableSource@3a4c5b4))
-        TableSource@3a4c5b4(user.items - TableGroupJoin@44c6f734(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))) - IndexUsage@716de067(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), NONE, =Smith, =1234))
+SelectQuery@2b76086d
+  ResultSet@52234265[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date, user.items.iid, user.items.oid, user.items.sku, user.items.quan]
+    Filter@8dc1f04[]
+      Flatten@c292cb2
+        AncestorLookup@2b784427(user.items -> user.customers, user.orders, user.items)
+          IndexScan@64c272bc(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), NONE, =Smith, =1234)
+        JoinNode@355ccfb1(INNER_JOIN[user.items.oid == user.orders.oid] - TableGroupJoin@604788d5(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+          JoinNode@78688954(INNER_JOIN[user.orders.cid == user.customers.cid] - TableGroupJoin@1710278e(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+            TableSource@5d185844(user.customers - TableGroup@2594e776(customers))
+            TableSource@694b081b(user.orders - TableGroupJoin@1710278e(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+          TableSource@3d015a9e(user.items - TableGroupJoin@604788d5(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
