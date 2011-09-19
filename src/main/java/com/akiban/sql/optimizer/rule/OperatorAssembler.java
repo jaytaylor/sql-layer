@@ -352,6 +352,7 @@ public class OperatorAssembler extends BaseRule
                                                      inputRowType,
                                                      ancestorTypes,
                                                      flag);
+            stream.rowType = null;
             stream.fieldOffsets = null;
             return stream;
         }
