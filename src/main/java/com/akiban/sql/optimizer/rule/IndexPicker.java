@@ -85,9 +85,10 @@ public class IndexPicker extends BaseRule
                                                       null);
                 }
             }
-            if (branch != null) {
+            if (branch == indexTable) {
                 ancestors.remove(indexTable);
                 scan = new BranchLookup(scan, indexTable, branch);
+                branch = null;
             }
             if (!ancestors.isEmpty()) {
                 // Access in stable order.
@@ -98,6 +99,13 @@ public class IndexPicker extends BaseRule
                                      }
                                  });
                 scan = new AncestorLookup(scan, indexTable, ancestors);
+            }
+            if (branch != null) {
+                scan = new BranchLookup(scan, 
+                                        (ancestors.isEmpty() ? 
+                                         indexTable : 
+                                         ancestors.get(0)), 
+                                        branch);
             }
         }
         scan = new Flatten(scan, joins);
