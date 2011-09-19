@@ -24,7 +24,6 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
-import com.akiban.sql.optimizer.plan.PlanToString;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
 
 import org.junit.Test;
@@ -153,7 +152,7 @@ public class OperatorCompilerTest_New extends TestBase implements TestBase.Gener
         StatementNode stmt = parser.parseStatement(sql);
         BasePlannable result = compiler.compile((DMLStatementNode)stmt, 
                                                 parser.getParameterList());
-        return PlanToString.of(result);
+        return result.toString();
     }
 
     @Override

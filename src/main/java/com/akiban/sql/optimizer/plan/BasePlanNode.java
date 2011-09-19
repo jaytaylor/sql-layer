@@ -37,6 +37,10 @@ public abstract class BasePlanNode extends BasePlanElement implements PlanNode
         return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16);
     }
 
+    @Override
+    public String toString() {
+        return PlanToString.of(this);
+    }
 
     @Override
     protected void deepCopy(DuplicateMap map) {

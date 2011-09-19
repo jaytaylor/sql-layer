@@ -46,7 +46,7 @@ import java.util.*;
 public class PostgresOperatorCompiler_New extends OperatorCompiler_New
                                       implements PostgresStatementGenerator
 {
-    private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorCompiler.class);
+    private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorCompiler_New.class);
 
     private SessionTracer tracer;
 
