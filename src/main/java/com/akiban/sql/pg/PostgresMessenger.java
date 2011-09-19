@@ -127,9 +127,13 @@ public class PostgresMessenger implements DataInput, DataOutput
             if ((len < 0) || (len > type.maxSize()))
                 throw new IOException(String.format("Implausible message length (%d) received.", len));
             len -= 4;
-            byte[] msg = new byte[len];
-            dataInput.readFully(msg, 0, len);
-            messageInput = new DataInputStream(new ByteArrayInputStream(msg));
+            try {
+                byte[] msg = new byte[len];
+                dataInput.readFully(msg, 0, len);
+                messageInput = new DataInputStream(new ByteArrayInputStream(msg));
+            } catch (OutOfMemoryError ex) {
+                throw new IOException (String.format("Unable to allocate read buffer of length (%d)", len));
+            }
             return type;
         }
         finally {
@@ -153,6 +157,10 @@ public class PostgresMessenger implements DataInput, DataOutput
     protected void sendMessage(boolean flush) throws IOException {
         messageOutput.flush();
         byte[] msg = byteOutput.toByteArray();
+        
+        // check we're writing an allowed message. 
+        assert PostgresMessages.writeMessages.containsKey(msg[0]) : "Invalid write message: " + (char)msg[0];
+        
         int len = msg.length - 1;
         msg[1] = (byte)(len >> 24);
         msg[2] = (byte)(len >> 16);
