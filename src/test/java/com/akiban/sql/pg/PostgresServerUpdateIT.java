@@ -25,7 +25,6 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
 
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 
 import java.io.File;
 import java.util.Collection;

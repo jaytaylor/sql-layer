@@ -19,6 +19,7 @@ import com.akiban.qp.expression.Expression;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.ProjectedRowType;
+import com.akiban.qp.rowtype.ProjectedUserTableRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 
@@ -33,7 +34,11 @@ class Project_Default extends PhysicalOperator
     @Override
     public String toString()
     {
-        return String.format("project(%s)", projections);
+        if (projectType.hasUserTable()) {
+            return String.format("project to table %s (%s)", projectType.userTable(), projections);
+        } else {
+            return String.format("project(%s)", projections);
+        }
     }
 
     // PhysicalOperator interface
@@ -82,13 +87,31 @@ class Project_Default extends PhysicalOperator
         this.projections = new ArrayList<Expression>(projections);
         projectType = rowType.schema().newProjectType(this.projections);
     }
+    
+    // Project_Default constructor, returns ProjectedUserTableRowType rows 
+    public Project_Default(PhysicalOperator inputOperator, RowType inputRowType,
+            RowType projectTableRowType, List<Expression> projections)
+    {
+        ArgumentValidation.notNull("inputRowType", inputRowType);
+        ArgumentValidation.notEmpty("projections", projections);
+        
+        this.inputOperator = inputOperator;
+        this.rowType = inputRowType;
+        this.projections = new ArrayList<Expression>(projections);
+        
+        ArgumentValidation.notNull("projectRowType", projectTableRowType);
+        ArgumentValidation.isTrue("RowType has UserTable", projectTableRowType.hasUserTable());
+        projectType = new ProjectedUserTableRowType (projectTableRowType.schema(), 
+                projectTableRowType.userTable(), projections);
+    }
+
 
     // Object state
 
-    private final PhysicalOperator inputOperator;
-    private final RowType rowType;
-    private final List<Expression> projections;
-    private final ProjectedRowType projectType;
+    protected final PhysicalOperator inputOperator;
+    protected final RowType rowType;
+    protected final List<Expression> projections;
+    protected ProjectedRowType projectType;
 
     // Inner classes
 

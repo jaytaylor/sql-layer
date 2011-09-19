@@ -48,10 +48,15 @@ public class UserTableRowType extends RowType
     }
 
     // UserTableRowType interface
-
+    @Override
     public UserTable userTable()
     {
         return table;
+    }
+
+    @Override
+    public boolean hasUserTable() {
+        return table != null;
     }
 
     public IndexRowType indexRowType(Index index)
