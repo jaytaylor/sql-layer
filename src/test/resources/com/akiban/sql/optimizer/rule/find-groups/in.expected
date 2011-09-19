@@ -1,7 +1,8 @@
-SelectQuery@727f3b8a
-  ResultSet@7f1e1bbf[user.customers.cid, user.customers.name]
-    Filter@11afd9cc[EXISTS Filter@3003e926[user.customers.name == VALUES[0]]]
-      TableSource@50bfd66a(user.customers)
+SelectQuery@7f81497d
+  ResultSet@ffeef1[user.customers.cid, user.customers.name]
+    Filter@22a010ba[EXISTS Subquery@3aaa3518]
+      TableSource@7c83d8be(user.customers - TableGroup@7f81497d(customers))
 
-Filter@3003e926[user.customers.name == VALUES[0]]
-  ExpressionsSource@6295f290[[Smith], [Jones], [Sanchez]]
+Subquery@3aaa3518
+  Filter@3aaa3518[user.customers.name == VALUES[0]]
+    ExpressionsSource@340ae1cf[[Smith], [Jones], [Sanchez]]

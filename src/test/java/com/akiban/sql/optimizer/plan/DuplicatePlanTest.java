@@ -16,7 +16,9 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.sql.optimizer.OptimizerTestBase;
-import com.akiban.sql.optimizer.rule.ASTToStatement;
+import com.akiban.sql.optimizer.rule.ASTStatementLoader;
+import com.akiban.sql.optimizer.rule.BaseRule;
+import com.akiban.sql.optimizer.rule.RulesContext;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
@@ -29,8 +31,7 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.ArrayList;
+import java.util.*;
 
 @RunWith(Parameterized.class)
 public class DuplicatePlanTest extends OptimizerTestBase
@@ -68,8 +69,14 @@ public class DuplicatePlanTest extends OptimizerTestBase
         typeComputer.compute(stmt);
         stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
         // Turn parsed AST into intermediate form.
-        PlanNode plan = new AST((DMLStatementNode)stmt);
-        plan = new ASTToStatement().apply(plan);
+        PlanNode plan = new AST((DMLStatementNode)stmt, parser.getParameterList());
+        {
+            RulesContext rulesContext = 
+                new RulesContext(Collections.<BaseRule>singletonList(new ASTStatementLoader()));
+            PlanContext planContext = new PlanContext(rulesContext, plan);
+            rulesContext.applyRules(planContext);
+            plan = planContext.getPlan();
+        }
         PlanNode duplicate = (PlanNode)plan.duplicate();
         assertFalse(plan == duplicate);
         assertEqualsWithoutHashes(caseName, 

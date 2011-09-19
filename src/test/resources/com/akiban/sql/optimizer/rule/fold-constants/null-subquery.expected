@@ -1,0 +1,4 @@
+SelectQuery@da90c
+  ResultSet@d58939[user.customers.name, null]
+    Filter@124111a[]
+      TableSource@27982(user.customers)

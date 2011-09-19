@@ -31,6 +31,9 @@ public class Sort extends BasePlanWithInput
         public boolean isAscending() {
             return ascending;
         }
+        public void setAscending(boolean ascending) {
+            this.ascending = ascending;
+        }
 
         public String toString() {
             if (ascending)
@@ -55,7 +58,12 @@ public class Sort extends BasePlanWithInput
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
             if (getInput().accept(v)) {
-                if (v instanceof ExpressionVisitor) {
+                if (v instanceof ExpressionRewriteVisitor) {
+                    for (OrderByExpression expr : orderBy) {
+                        expr.accept((ExpressionRewriteVisitor)v);
+                    }
+                }
+                else if (v instanceof ExpressionVisitor) {
                     for (OrderByExpression expr : orderBy) {
                         if (!expr.getExpression().accept((ExpressionVisitor)v)) {
                             break;

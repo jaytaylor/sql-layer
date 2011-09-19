@@ -34,6 +34,10 @@ public class ConstantExpression extends BaseExpression
         this.value = value;
     }
 
+    public ConstantExpression(Object value) {
+        this(value, null, null);
+    }
+
     @Override
     public boolean isConstant() {
         return true;
@@ -54,7 +58,7 @@ public class ConstantExpression extends BaseExpression
 
     @Override
     public int hashCode() {
-        return value.hashCode();
+        return (value == null) ? 0 : value.hashCode();
     }
 
     @Override

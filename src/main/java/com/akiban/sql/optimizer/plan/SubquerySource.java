@@ -18,15 +18,15 @@ package com.akiban.sql.optimizer.plan;
 /** A join to a subquery result. */
 public class SubquerySource extends BaseJoinable implements ColumnSource
 {
-    private PlanNode subquery;
+    private Subquery subquery;
     private String name;
 
-    public SubquerySource(PlanNode subquery, String name) {
+    public SubquerySource(Subquery subquery, String name) {
         this.subquery = subquery;
         this.name = name;
     }
 
-    public PlanNode getSubquery() {
+    public Subquery getSubquery() {
         return subquery;
     }
 
@@ -56,7 +56,7 @@ public class SubquerySource extends BaseJoinable implements ColumnSource
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        subquery = (PlanNode)subquery.duplicate(map);
+        subquery = (Subquery)subquery.duplicate(map);
     }
 
 }

@@ -54,9 +54,14 @@ public class ResultSet extends BasePlanWithInput
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
             if (getInput().accept(v)) {
-                if (v instanceof ExpressionVisitor) {
+                if (v instanceof ExpressionRewriteVisitor) {
                     for (ResultExpression result : results) {
-                        if (!result.getExpression().accept((ExpressionVisitor)v))
+                        result.accept((ExpressionRewriteVisitor)v);
+                    }
+                }
+                else if (v instanceof ExpressionVisitor) {
+                    for (ResultExpression result : results) {
+                        if (!result.accept((ExpressionVisitor)v))
                             break;
                     }
                 }

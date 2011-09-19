@@ -28,7 +28,7 @@ import java.util.*;
 
 /** Use join conditions to identify which tables are part of the same group.
  */
-public class FindGroupJoins extends BaseRule
+public class GroupJoinFinder extends BaseRule
 {
     static class JoinIslandFinder implements PlanVisitor, ExpressionVisitor {
         List<Joinable> result = new ArrayList<Joinable>();
@@ -75,12 +75,11 @@ public class FindGroupJoins extends BaseRule
     }
 
     @Override
-    public PlanNode apply(PlanNode plan) {
-        List<Joinable> islands = new JoinIslandFinder().find(plan);
+    public void apply(PlanContext plan) {
+        List<Joinable> islands = new JoinIslandFinder().find(plan.getPlan());
         moveAndNormalizeWhereConditions(islands);
         reorderJoins(islands);
         findGroupJoins(islands);
-        return plan;
     }
     
     // First pass: find all the WHERE conditions above inner joins
@@ -246,6 +245,9 @@ public class FindGroupJoins extends BaseRule
                 whereConditions = ((Filter)island.getOutput()).getConditions();
             findGroupJoins(island, null, whereConditions);
         }
+        for (Joinable island : islands) {
+            findSingleGroups(island);
+        }
     }
 
     protected void findGroupJoins(Joinable joinable, JoinNode output,
@@ -333,6 +335,21 @@ public class FindGroupJoins extends BaseRule
         }
         return new TableGroupJoin(group, parentTable, childTable, 
                                   groupJoinCondition, groupJoin);
+    }
+
+    protected void findSingleGroups(Joinable joinable) {
+        if (joinable.isTable()) {
+            TableSource table = (TableSource)joinable;
+            if (table.getGroup() == null) {
+                table.setGroup(new TableGroup(table.getTable().getTable().getGroup()));
+            }
+        }
+        else if (joinable.isJoin()) {
+            JoinNode join = (JoinNode)joinable;
+            Joinable right = join.getRight();
+            findSingleGroups(join.getLeft());
+            findSingleGroups(join.getRight());
+        }
     }
 
     protected static int compareColumnSources(ColumnSource c1, ColumnSource c2) {

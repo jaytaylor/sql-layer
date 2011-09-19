@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode;
+import static com.akiban.sql.optimizer.plan.PlanContext.*;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultExpression;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
@@ -45,15 +46,26 @@ import java.util.*;
 
 /** Turn a parsed SQL AST into this package's format.
  */
-public class ASTToStatement extends BaseRule
+public class ASTStatementLoader extends BaseRule
 {
+    public static final WhiteboardMarker<AST> MARKER = 
+        new DefaultWhiteboardMarker<AST>();
+
+    /** Recover the {@link AST} put on the whiteboard when loaded. */
+    public static AST getAST(PlanContext plan) {
+        return plan.getWhiteboard(MARKER);
+    }
+
     @Override
-    public PlanNode apply(PlanNode plan) {
-        DMLStatementNode stmt = ((AST)plan).getStatement();
+    public void apply(PlanContext plan) {
+        AST ast = (AST)plan.getPlan();
+        plan.putWhiteboard(MARKER, ast);
+        DMLStatementNode stmt = ast.getStatement();
         try {
-            return toStatement(stmt);
+            plan.setPlan(toStatement(stmt));
         }
         catch (StandardException ex) {
+            // TODO: Separate out Parser subsystem error from true parse error.
             throw new ParseException("", ex.getMessage(), "");
         }
     }
@@ -266,9 +278,9 @@ public class ASTToStatement extends BaseRule
         Joinable joins = null;
         for (FromTable fromTable : selectNode.getFromList()) {
             if (joins == null)
-                joins = toJoinNode(fromTable);
+                joins = toJoinNode(fromTable, true);
             else
-                joins = joinNodes(joins, toJoinNode(fromTable), JoinType.INNER_JOIN);
+                joins = joinNodes(joins, toJoinNode(fromTable, true), JoinType.INNER_JOIN);
         }
         List<ConditionExpression> conditions = toConditions(selectNode.getWhereClause());
         if (hasAggregateFunction(conditions))
@@ -280,7 +292,7 @@ public class ASTToStatement extends BaseRule
     protected Map<FromTable,Joinable> joinNodes =
         new HashMap<FromTable,Joinable>();
 
-    protected Joinable toJoinNode(FromTable fromTable)
+    protected Joinable toJoinNode(FromTable fromTable, boolean required)
             throws StandardException {
         Joinable result;
         if (fromTable instanceof FromBaseTable) {
@@ -289,7 +301,7 @@ public class ASTToStatement extends BaseRule
                 throw new UnsupportedSQLException("FROM table",
                                                   fromTable);
             TableNode table = getTableNode((UserTable)tb.getTable());
-            result = new TableSource(table);
+            result = new TableSource(table, required);
         }
         else if (fromTable instanceof com.akiban.sql.parser.JoinNode) {
             com.akiban.sql.parser.JoinNode joinNode = 
@@ -308,8 +320,10 @@ public class ASTToStatement extends BaseRule
             default:
                 throw new UnsupportedSQLException("Unsupported join type", joinNode);
             }
-            JoinNode join = joinNodes(toJoinNode((FromTable)joinNode.getLeftResultSet()),
-                                      toJoinNode((FromTable)joinNode.getRightResultSet()),
+            JoinNode join = joinNodes(toJoinNode((FromTable)joinNode.getLeftResultSet(),
+                                                 required && (joinType != JoinType.RIGHT_JOIN)),
+                                      toJoinNode((FromTable)joinNode.getRightResultSet(),
+                                                 required && (joinType != JoinType.LEFT_JOIN)),
                                       joinType);
             join.setJoinConditions(toConditions(joinNode.getJoinClause()));
             result = join;
@@ -320,7 +334,8 @@ public class ASTToStatement extends BaseRule
                                                  fromSubquery.getOrderByList(),
                                                  fromSubquery.getOffset(),
                                                  fromSubquery.getFetchFirst());
-            result = new SubquerySource(subquery, fromSubquery.getExposedName());
+            result = new SubquerySource(new Subquery(subquery), 
+                                        fromSubquery.getExposedName());
         }
         else
             throw new UnsupportedSQLException("Unsupported FROM non-table", fromTable);
@@ -414,7 +429,7 @@ public class ASTToStatement extends BaseRule
                 // FALSE = TRUE
                 conditions.add(new ComparisonCondition(Comparison.EQ,
                                                        toExpression(condition),
-                                                       new ConstantExpression(Boolean.TRUE, null, null),
+                                                       new BooleanConstantExpression(Boolean.TRUE),
                                                        condition.getType(), condition));
             }
             break;
@@ -467,7 +482,8 @@ public class ASTToStatement extends BaseRule
                                                                     left.getSQLtype(), null),
                                                in.getType(), null));
         PlanNode subquery = new Filter(source, innerConds);
-        conditions.add(new SubqueryCondition(SubqueryCondition.Kind.EXISTS, subquery, 
+        conditions.add(new SubqueryCondition(SubqueryCondition.Kind.EXISTS, 
+                                             new Subquery(subquery),
                                              in.getType(), in));
     }
     
@@ -581,7 +597,7 @@ public class ASTToStatement extends BaseRule
                                                    subqueryNode.getType(), 
                                                    subqueryNode));
         }
-        conditions.add(new SubqueryCondition(kind, subquery, 
+        conditions.add(new SubqueryCondition(kind, new Subquery(subquery), 
                                              subqueryNode.getType(), subqueryNode));
     }
 
@@ -748,7 +764,7 @@ public class ASTToStatement extends BaseRule
     protected ExpressionNode toExpression(ValueNode valueNode)
             throws StandardException {
         if (valueNode == null) {
-            return new ConstantExpression(null, null, null);
+            return new ConstantExpression(null);
         }
         DataTypeDescriptor type = valueNode.getType();
         if (valueNode instanceof ColumnReference) {
@@ -767,9 +783,14 @@ public class ASTToStatement extends BaseRule
                                             cb.getFromTable().getResultColumns().indexOf(cb.getResultColumn()), 
                                             type, valueNode);
         }
-        else if (valueNode instanceof ConstantNode)
-            return new ConstantExpression(((ConstantNode)valueNode).getValue(), 
-                                          type, valueNode);
+        else if (valueNode instanceof ConstantNode) {
+            if (valueNode instanceof BooleanConstantNode)
+                return new BooleanConstantExpression((Boolean)((ConstantNode)valueNode).getValue(), 
+                                                     type, valueNode);
+            else
+                return new ConstantExpression(((ConstantNode)valueNode).getValue(), 
+                                              type, valueNode);
+        }
         else if (valueNode instanceof ParameterNode)
             return new ParameterExpression(((ParameterNode)valueNode)
                                            .getParameterNumber(),
@@ -836,10 +857,11 @@ public class ASTToStatement extends BaseRule
         }
         else if (valueNode instanceof SubqueryNode) {
             SubqueryNode subqueryNode = (SubqueryNode)valueNode;
-            return new SubqueryExpression(toQueryForSelect(subqueryNode.getResultSet(),
-                                                           subqueryNode.getOrderByList(),
-                                                           subqueryNode.getOffset(),
-                                                           subqueryNode.getFetchFirst()),
+            PlanNode subquery = toQueryForSelect(subqueryNode.getResultSet(),
+                                                 subqueryNode.getOrderByList(),
+                                                 subqueryNode.getOffset(),
+                                                 subqueryNode.getFetchFirst());
+            return new SubqueryExpression(new Subquery(subquery),
                                           subqueryNode.getType(), subqueryNode);
         }
         else if (valueNode instanceof JavaToSQLValueNode) {

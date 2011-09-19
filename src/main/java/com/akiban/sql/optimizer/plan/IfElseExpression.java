@@ -80,12 +80,15 @@ public class IfElseExpression extends BaseExpression
 
     @Override
     public ExpressionNode accept(ExpressionRewriteVisitor v) {
-        ExpressionNode result = v.visit(this);
-        if (result != this) return result;
+        boolean childrenFirst = v.visitChildrenFirst(this);
+        if (!childrenFirst) {
+            ExpressionNode result = v.visit(this);
+            if (result != this) return result;
+        }
         testCondition = (ConditionExpression)testCondition.accept(v);
         thenExpression = thenExpression.accept(v);
         elseExpression = elseExpression.accept(v);
-        return this;
+        return (childrenFirst) ? v.visit(this) : this;
     }
 
     @Override

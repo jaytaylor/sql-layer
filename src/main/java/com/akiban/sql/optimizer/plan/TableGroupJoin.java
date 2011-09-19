@@ -36,6 +36,7 @@ public class TableGroupJoin extends BasePlanElement
          condition).setImplementation(ConditionExpression.Implementation.GROUP_JOIN);
         child.setParentJoin(this);
         this.join = join;
+        group.addJoin(this);
     }
 
     public TableGroup getGroup() {
