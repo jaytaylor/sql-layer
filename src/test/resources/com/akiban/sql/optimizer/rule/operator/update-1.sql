@@ -1,0 +1,1 @@
+UPDATE ITEMS SET sku = 'ABCX' WHERE sku = 'ABCD'

@@ -100,6 +100,8 @@ public class IndexGoal implements Comparator<IndexScan>
     private AggregateSource grouping;
     private Sort ordering;
 
+    private TableNode updateTarget;
+
     // All the columns besides those in conditions that will be needed.
     private RequiredColumns requiredColumns;
 
@@ -113,7 +115,12 @@ public class IndexGoal implements Comparator<IndexScan>
         this.conditions = conditions;
         this.grouping = grouping;
         this.ordering = ordering;
-        this.requiredColumns = new RequiredColumns(tables);
+        
+        if ((plan instanceof UpdateStatement) ||
+            (plan instanceof DeleteStatement))
+          updateTarget = ((BaseUpdateStatement)plan).getTargetTable();
+
+        requiredColumns = new RequiredColumns(tables);
         plan.accept(new RequiredColumnsFiller(requiredColumns, conditions));
     }
 
@@ -510,13 +517,20 @@ public class IndexGoal implements Comparator<IndexScan>
             Collection<TableSource> joined = index.getTables();
             Set<TableSource> required = new HashSet<TableSource>();
             for (TableSource table : requiredAfter.getTables()) {
-                if (!joined.contains(table) || requiredAfter.hasColumns(table)) {
+                if (!joined.contains(table) || 
+                    requiredAfter.hasColumns(table) ||
+                    (table.getTable() == updateTarget)) {
                     required.add(table);
                 }
             }
             index.setRequiredTables(required);
         }
-          
+
+        if (updateTarget != null) {
+          // UPDATE statements need the whole target row and are thus never covering.
+          return false;
+        }
+
         // Remove the columns we do have from the index.
         for (ExpressionNode column : index.getColumns()) {
             if (column instanceof ColumnExpression) {

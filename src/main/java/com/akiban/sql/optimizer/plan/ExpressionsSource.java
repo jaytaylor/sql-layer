@@ -33,6 +33,13 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource
         return expressions;
     }
 
+    public int getNFields() {
+        if (expressions.isEmpty())
+            return 0;
+        else
+            return expressions.get(0).size();
+    }
+
     @Override
     public String getName() {
         return "VALUES";
