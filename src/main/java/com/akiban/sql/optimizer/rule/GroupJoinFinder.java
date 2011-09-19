@@ -28,7 +28,7 @@ import java.util.*;
 
 /** Use join conditions to identify which tables are part of the same group.
  */
-public class FindGroupJoins extends BaseRule
+public class GroupJoinFinder extends BaseRule
 {
     static class JoinIslandFinder implements PlanVisitor, ExpressionVisitor {
         List<Joinable> result = new ArrayList<Joinable>();

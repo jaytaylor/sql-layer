@@ -18,17 +18,18 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
+import static com.akiban.sql.optimizer.rule.GroupJoinFinder.*;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
 import java.util.*;
 
 /** A goal for indexing: conditions on joined tables and ordering / grouping. */
-public class PickIndexes extends BaseRule
+public class IndexPicker extends BaseRule
 {
     @Override
     public PlanNode apply(PlanNode plan) {
-        List<Joinable> islands = new FindGroupJoins.JoinIslandFinder().find(plan);
+        List<Joinable> islands = new JoinIslandFinder().find(plan);
         // TODO: For now, very conservative about everything being simple.
         if (islands.isEmpty()) return plan;
         if (islands.size() > 1)
