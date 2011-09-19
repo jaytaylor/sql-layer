@@ -140,7 +140,7 @@ public class PersistitAdapter extends StoreAdapter
         return persistit.getRowDefCache().getRowDef(tableId);
     }
 
-    public NiceRow niceRow(RowDef rowDef)
+    public NewRow newRow(RowDef rowDef)
     {
         NiceRow row = new NiceRow(rowDef.getRowDefId(), rowDef);
         UserTable table = rowDef.userTable();
@@ -159,7 +159,7 @@ public class PersistitAdapter extends StoreAdapter
             return ((PersistitGroupRow) row).rowData();
         }
         ToObjectValueTarget target = new ToObjectValueTarget();
-        NewRow niceRow = niceRow(rowDef);
+        NewRow niceRow = newRow(rowDef);
         for(int i = 0; i < row.rowType().nFields(); ++i) {
             ValueSource source = row.eval(i);
             niceRow.put(i, target.convertFromSource(source));

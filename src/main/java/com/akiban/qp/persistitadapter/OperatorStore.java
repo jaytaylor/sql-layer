@@ -46,7 +46,6 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.NoRowsUpdatedException;
 import com.akiban.server.error.TooManyRowsUpdatedException;
 import com.akiban.server.error.UnsupportedUniqueGroupIndexException;
@@ -457,7 +456,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 return PersistitGroupRow.newPersistitGroupRow(adapter, newRowData);
             }
             // Note: some encodings are untested except as necessary for mtr
-            NewRow newRow = adapter.niceRow(rowDef);
+            NewRow newRow = adapter.newRow(rowDef);
             ToObjectValueTarget target = new ToObjectValueTarget();
             for (int i=0; i < original.rowType().nFields(); ++i) {
                 if (columnSelector.includesColumn(i)) {
