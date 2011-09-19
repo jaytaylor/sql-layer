@@ -159,7 +159,7 @@ public class PostgresMessenger implements DataInput, DataOutput
         byte[] msg = byteOutput.toByteArray();
         
         // check we're writing an allowed message. 
-        assert PostgresMessages.writeMessages.containsKey(msg[0]) : "Invalid write message: " + (char)msg[0];
+        assert PostgresMessages.writeMessages.containsKey((int)msg[0]) : "Invalid write message: " + (char)msg[0];
         
         int len = msg.length - 1;
         msg[1] = (byte)(len >> 24);

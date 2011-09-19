@@ -154,7 +154,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
     }
 
-    protected enum ErrorMode { NONE, SIMPLE, EXTENDED };
+    //protected enum ErrorMode { NONE, SIMPLE, EXTENDED };
 
     protected void topLevel() throws IOException, Exception {
         logger.info("Connect from {}" + socket.getRemoteSocketAddress());
@@ -167,7 +167,6 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                         continue;
                     ignoreUntilSync = false;
                 }
-                ErrorMode errorMode = ErrorMode.NONE;
                 try {
                     sessionTracer.beginEvent(EventTypes.PROCESS);
                     switch (type) {
@@ -184,23 +183,18 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                         processPasswordMessage();
                         break;
                     case QUERY_TYPE:
-                        errorMode = ErrorMode.SIMPLE;
                         processQuery();
                         break;
                     case PARSE_TYPE:
-                        errorMode = ErrorMode.EXTENDED;
                         processParse();
                         break;
                     case BIND_TYPE:
-                        errorMode = ErrorMode.EXTENDED;
                         processBind();
                         break;
                     case DESCRIBE_TYPE:
-                        errorMode = ErrorMode.EXTENDED;
                         processDescribe();
                         break;
                     case EXECUTE_TYPE:
-                        errorMode = ErrorMode.EXTENDED;
                         processExecute();
                         break;
                     case CLOSE_TYPE:
@@ -214,7 +208,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 catch (InvalidOperationException ex) {
                     logger.warn("Error in query: {}",ex.getMessage());
                     logger.debug("StackTrace: {}", ex);
-                    if (errorMode == ErrorMode.NONE ) throw ex;
+                    if (type.errorMode() == PostgresMessages.ErrorMode.NONE ) throw ex;
                     else {
                         messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
                         messenger.write('S');
@@ -226,7 +220,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                         messenger.write(0);
                         messenger.sendMessage(true);
                     }
-                    if (errorMode == ErrorMode.EXTENDED)
+                    if (type.errorMode() == PostgresMessages.ErrorMode.EXTENDED)
                         ignoreUntilSync = true;
                     else
                         readyForQuery();
@@ -234,7 +228,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                     final String message = (e.getMessage() == null ? e.getClass().toString() : e.getMessage()); 
                     logger.warn("Unexpected error in query", e);
                     logger.debug("Stack Trace: {}", e);
-                    if (errorMode == ErrorMode.NONE) throw e;
+                    if (type.errorMode() == PostgresMessages.ErrorMode.NONE) throw e;
                     else {
                         messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
                         messenger.write('S');
@@ -246,12 +240,11 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                         messenger.write(0);
                         messenger.sendMessage(true);
                     }
-                    if (errorMode == ErrorMode.EXTENDED)
+                    if (type.errorMode() == PostgresMessages.ErrorMode.EXTENDED)
                         ignoreUntilSync = true;
                     else
                         readyForQuery();
                 }
-                
                 finally {
                     sessionTracer.endEvent();
                 }

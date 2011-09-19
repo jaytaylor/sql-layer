@@ -20,10 +20,10 @@ import java.util.Map;
 
 public enum PostgresMessages {
 
-    EOF_TYPE                (-1,  0, true, true),  // (F&B)
+    EOF_TYPE                (-1,  0, true, true, ErrorMode.NONE),  // (F&B)
     AUTHENTICATION_TYPE     ('R', 8, false, true),  // (B)
     BACKEND_KEY_DATA_TYPE   ('K', 12, false, true), // (B)
-    BIND_TYPE               ('B', Integer.MAX_VALUE, true, false), // (F)
+    BIND_TYPE               ('B', Integer.MAX_VALUE, true, false, ErrorMode.EXTENDED), // (F)
     BIND_COMPLETE_TYPE      ('2', 4,  false, true),  // (B)
     CLOSE_TYPE              ('C', 1024, true, false), // (F)
     CLOSE_COMPLETE_TYPE     ('3', 4,  false, true),  // (B)
@@ -35,10 +35,10 @@ public enum PostgresMessages {
     COPY_OUT_RESPONSE_TYPE  ('H', 1024, false, true), // (B) -> 508 columns 
     COPY_BOTH_RESPONSE_TYPE ('W', 1024, false, true), // (B)
     DATA_ROW_TYPE           ('D', Integer.MAX_VALUE, false, true), // (B)
-    DESCRIBE_TYPE           ('D', 1024, true, false), // (F)
+    DESCRIBE_TYPE           ('D', 1024, true, false, ErrorMode.EXTENDED), // (F)
     EMPTY_QUERY_RESPONSE_TYPE('I', 4, false, true), // (B)
     ERROR_RESPONSE_TYPE     ('E', 1024, false, true), // (B)
-    EXECUTE_TYPE            ('E', 1024, true, false), // (F)
+    EXECUTE_TYPE            ('E', 1024, true, false, ErrorMode.EXTENDED), // (F)
     FLUSH_TYPE              ('H', 4,   true, false), // (F)
     FUNCTION_CALL_TYPE      ('F', Integer.MAX_VALUE,  true, false), // (F)
     FUNCTION_CALL_RESPONSE_TYPE('V', -1,  false, true), // (B)
@@ -47,30 +47,41 @@ public enum PostgresMessages {
     NOTIFICATION_RESPONSE_TYPE ('A', 1024, false, true), // (B)
     PARAMETER_DESCRIPTION_TYPE ('t', 1024, false, true), // (B)
     PARAMETER_STATUS_TYPE   ('S', 1024, false, true), // (B)
-    PARSE_TYPE              ('P', Integer.MAX_VALUE, true, false), // (F)
+    PARSE_TYPE              ('P', Integer.MAX_VALUE, true, false, ErrorMode.EXTENDED), // (F)
     PARSE_COMPLETE_TYPE     ('1', 4, false, true), // (B)
     PASSWORD_MESSAGE_TYPE   ('p', 1024, true, false), // (F)
     PORTAL_SUSPENDED_TYPE   ('s', 4, false, true), // (B)
-    QUERY_TYPE              ('Q', Integer.MAX_VALUE, true, false), // (F)
+    QUERY_TYPE              ('Q', Integer.MAX_VALUE, true, false, ErrorMode.SIMPLE), // (F)
     READY_FOR_QUERY_TYPE    ('Z', 5, false, true), // (B)
     ROW_DESCRIPTION_TYPE    ('T', Integer.MAX_VALUE, false, true), // (B)
     STARTUP_MESSAGE_TYPE    (0,   Integer.MAX_VALUE, true, false), // (F)
     SYNC_TYPE               ('S', 4, true, false), // (F)
     TERMINATE_TYPE          ('X', 4, true, false); // (F)
     
+    // ErrorMode determines how server errors are recovered from when they occur. 
+    // NONE - no recovery - connection is closed.
+    // SIMPLE - error sent to user, server reset for next message.
+    // EXTENDED - error sent to user, server waits for sync message. 
+    public static enum ErrorMode { NONE, SIMPLE, EXTENDED };
+    
     private final int code;
     private final int size; 
     private final boolean readType;
     private final boolean writeType;
+    private final ErrorMode errorMode;
     
-    public static Map<Integer, PostgresMessages> readMessages;
-    public static Map<Integer, PostgresMessages> writeMessages; 
+    public final static Map<Integer, PostgresMessages> readMessages;
+    public final static Map<Integer, PostgresMessages> writeMessages; 
     
     private PostgresMessages (int code, int size, boolean read, boolean write) {
+        this (code, size, read, write, ErrorMode.NONE);
+    }
+    private PostgresMessages (int code, int size, boolean read, boolean write, ErrorMode error) {
         this.code = code;
         this.size = size;
         this.readType = read;
         this.writeType = write;
+        this.errorMode = error;
     }
     
     public int code() { return this.code; }
@@ -80,6 +91,8 @@ public enum PostgresMessages {
     public boolean isReadMessage() { return this.readType; }
     
     public boolean isWriteMessage() { return this.writeType; }
+    
+    public ErrorMode errorMode() { return this.errorMode; }
     
     static {
         readMessages = new HashMap<Integer,PostgresMessages>();
