@@ -15,6 +15,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.error.InvalidPortException;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
@@ -65,7 +66,7 @@ public class PostgresServerManager implements PostgresService, Service<PostgresS
             server = new PostgresServer(port, statementCacheCapacity, reqs);
             server.start();
         } else {
-            throw new ServiceStartupException("Invalid port specified for Postgres Server");
+            throw new InvalidPortException(port);
         }
     }
 

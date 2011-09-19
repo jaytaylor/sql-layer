@@ -53,7 +53,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         
         LOG.debug("Statement: {}, result: {}", statementType, updateResult);
         
-        messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+        messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
         //TODO: Find a way to extract InsertNode#statementToString() or equivalent
         if (statementType.equals("INSERT")) {
             messenger.writeString(statementType + " 0 " + updateResult.rowsModified());

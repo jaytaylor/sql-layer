@@ -188,6 +188,7 @@ public enum ErrorCode {
     SET_FILTER_FAIL      (29, 12, Importance.ERROR, DisplayFilterSetException.class),
     SCHEMA_LOAD_IO_ERROR (29, 13, Importance.ERROR, SchemaLoadIOException.class),
     QUERY_LOG_CLOSE_FAIL (29, 14, Importance.ERROR, QueryLogCloseException.class),
+    INVALID_PORT         (29, 15, Importance.ERROR, InvalidPortException.class), 
     
     // AkSserver errors
     MULTIGENERATIONAL_TABLE(30, 900, Importance.ERROR, null),
