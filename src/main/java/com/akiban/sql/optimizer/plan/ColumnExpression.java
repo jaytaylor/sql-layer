@@ -63,6 +63,10 @@ public class ColumnExpression extends BaseExpression
         return position;
     }
 
+    public void setPosition(int position) {
+        this.position = position;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof ColumnExpression)) return false;

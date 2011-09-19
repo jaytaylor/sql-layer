@@ -15,11 +15,30 @@
 
 package com.akiban.sql.optimizer.plan;
 
-/** A visitor that can rewrite portions of the expression as it goes. */
-public interface ExpressionRewriteVisitor
+/** A source that never outputs any rows. */
+public class NullSource extends BaseJoinable implements ColumnSource
 {
-    /** Return a replacement for this node (or the node itself). */
-    public ExpressionNode visit(ExpressionNode n);
-    /** Return <code>true</code> to visit the children first, <code>false</code> the node first. */
-    public boolean visitChildrenFirst(ExpressionNode n);
+    public NullSource() {
+    }
+
+    @Override
+    public String getName() {
+        return "NULL";
+    }
+
+    @Override
+    public boolean isTable() {
+        return false;
+    }
+
+    @Override
+    public boolean accept(PlanVisitor v) {
+        return v.visit(this);
+    }
+
+    @Override
+    protected boolean maintainInDuplicateMap() {
+        return true;
+    }
+
 }

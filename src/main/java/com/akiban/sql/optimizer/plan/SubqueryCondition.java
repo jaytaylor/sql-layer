@@ -73,7 +73,7 @@ public class SubqueryCondition extends BaseExpression implements ConditionExpres
     @Override
     public boolean accept(ExpressionVisitor v) {
         if (v.visitEnter(this)) {
-            if (v instanceof PlanVisitor)
+          if (v instanceof PlanVisitor)
                 subquery.accept((PlanVisitor)v);
         }
         return v.visitLeave(this);
@@ -81,7 +81,14 @@ public class SubqueryCondition extends BaseExpression implements ConditionExpres
 
     @Override
     public ExpressionNode accept(ExpressionRewriteVisitor v) {
-        return v.visit(this);
+        boolean childrenFirst = v.visitChildrenFirst(this);
+        if (!childrenFirst) {
+            ExpressionNode result = v.visit(this);
+            if (result != this) return result;
+        }
+        if (v instanceof PlanVisitor)
+          subquery.accept((PlanVisitor)v);
+        return (childrenFirst) ? v.visit(this) : this;
     }
 
     @Override

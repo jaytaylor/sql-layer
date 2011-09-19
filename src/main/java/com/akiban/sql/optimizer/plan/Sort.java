@@ -58,7 +58,12 @@ public class Sort extends BasePlanWithInput
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
             if (getInput().accept(v)) {
-                if (v instanceof ExpressionVisitor) {
+                if (v instanceof ExpressionRewriteVisitor) {
+                    for (OrderByExpression expr : orderBy) {
+                        expr.accept((ExpressionRewriteVisitor)v);
+                    }
+                }
+                else if (v instanceof ExpressionVisitor) {
                     for (OrderByExpression expr : orderBy) {
                         if (!expr.getExpression().accept((ExpressionVisitor)v)) {
                             break;

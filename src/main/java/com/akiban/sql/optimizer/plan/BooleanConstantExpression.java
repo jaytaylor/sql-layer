@@ -15,11 +15,24 @@
 
 package com.akiban.sql.optimizer.plan;
 
-/** A visitor that can rewrite portions of the expression as it goes. */
-public interface ExpressionRewriteVisitor
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ValueNode;
+
+public class BooleanConstantExpression extends ConstantExpression 
+                                       implements ConditionExpression 
 {
-    /** Return a replacement for this node (or the node itself). */
-    public ExpressionNode visit(ExpressionNode n);
-    /** Return <code>true</code> to visit the children first, <code>false</code> the node first. */
-    public boolean visitChildrenFirst(ExpressionNode n);
+    public BooleanConstantExpression(Object value, 
+                                     DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        super(value, sqlType, sqlSource);
+    }
+
+    public BooleanConstantExpression(Boolean value) {
+        super(value);
+    }
+    
+    @Override
+    public Implementation getImplementation() {
+        return null;
+    }
+
 }

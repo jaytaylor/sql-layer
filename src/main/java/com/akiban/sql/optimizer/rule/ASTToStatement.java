@@ -417,7 +417,7 @@ public class ASTToStatement extends BaseRule
                 // FALSE = TRUE
                 conditions.add(new ComparisonCondition(Comparison.EQ,
                                                        toExpression(condition),
-                                                       new ConstantExpression(Boolean.TRUE, null, null),
+                                                       new BooleanConstantExpression(Boolean.TRUE),
                                                        condition.getType(), condition));
             }
             break;
@@ -752,7 +752,7 @@ public class ASTToStatement extends BaseRule
     protected ExpressionNode toExpression(ValueNode valueNode)
             throws StandardException {
         if (valueNode == null) {
-            return new ConstantExpression(null, null, null);
+            return new ConstantExpression(null);
         }
         DataTypeDescriptor type = valueNode.getType();
         if (valueNode instanceof ColumnReference) {
@@ -771,9 +771,14 @@ public class ASTToStatement extends BaseRule
                                             cb.getFromTable().getResultColumns().indexOf(cb.getResultColumn()), 
                                             type, valueNode);
         }
-        else if (valueNode instanceof ConstantNode)
-            return new ConstantExpression(((ConstantNode)valueNode).getValue(), 
-                                          type, valueNode);
+        else if (valueNode instanceof ConstantNode) {
+            if (valueNode instanceof BooleanConstantNode)
+                return new BooleanConstantExpression((Boolean)((ConstantNode)valueNode).getValue(), 
+                                                     type, valueNode);
+            else
+                return new ConstantExpression(((ConstantNode)valueNode).getValue(), 
+                                              type, valueNode);
+        }
         else if (valueNode instanceof ParameterNode)
             return new ParameterExpression(((ParameterNode)valueNode)
                                            .getParameterNumber(),

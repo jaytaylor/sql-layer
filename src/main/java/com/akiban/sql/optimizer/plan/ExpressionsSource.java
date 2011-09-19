@@ -41,7 +41,14 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource
     @Override
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
-            if (v instanceof ExpressionVisitor) {
+            if (v instanceof ExpressionRewriteVisitor) {
+                for (List<ExpressionNode> row : expressions) {
+                    for (int i = 0; i < row.size(); i++) {
+                        row.set(i, row.get(i).accept((ExpressionRewriteVisitor)v));
+                    }
+                }                
+            }
+            else if (v instanceof ExpressionVisitor) {
                 expressions:
                 for (List<ExpressionNode> row : expressions) {
                     for (ExpressionNode expr : row) {
