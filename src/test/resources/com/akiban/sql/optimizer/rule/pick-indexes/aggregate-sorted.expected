@@ -4,10 +4,8 @@ SelectQuery@734b84c7
       AggregateSource@2031688f(PRESORTED,[user.customers.name, user.items.sku],[])
         Filter@bc794cc[]
           Flatten@1d716fa0
-            AncestorLookup@5bf9e31e(user.items -> user.customers, user.orders, user.items)
+            AncestorLookup@5bf9e31e(user.items -> user.customers, user.items)
               IndexScan@72adf5be(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), SORTED)
-            JoinNode@dc67248(INNER_JOIN[user.items.oid == user.orders.oid] - TableGroupJoin@5f78dc08(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
-              JoinNode@77b5c22f(INNER_JOIN[user.orders.cid == user.customers.cid] - TableGroupJoin@3ddfd90f(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-                TableSource@7a578dfb(user.customers - TableGroup@33238785(customers))
-                TableSource@a2a987d(user.orders - TableGroupJoin@3ddfd90f(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+            JoinNode@1c7f37d(INNER_JOIN[])
+              TableSource@7a578dfb(user.customers - TableGroup@33238785(customers))
               TableSource@72813bc1(user.items - TableGroupJoin@5f78dc08(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
