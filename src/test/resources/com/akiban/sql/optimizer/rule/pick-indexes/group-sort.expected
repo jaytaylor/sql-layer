@@ -4,8 +4,8 @@ SelectQuery@594ab51b
       Flatten@1664a9b
         AncestorLookup@79ca209e(user.items -> user.customers, user.orders, user.items)
           IndexScan@4523a389(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), SORTED/reverse, =1234)
-        JoinNode@5fb11b79(INNER_JOIN[user.items.oid == user.orders.oid] - TableGroupJoin@6482d603(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
-          JoinNode@49b09282(INNER_JOIN[user.orders.cid == user.customers.cid] - TableGroupJoin@6762ba99(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+        JoinNode@5fb11b79(INNER_JOIN[])
+          JoinNode@49b09282(INNER_JOIN[])
             TableSource@6b98e8b4(user.customers - TableGroup@2c8c7d6(customers))
             TableSource@3d5b89c(user.orders - TableGroupJoin@6762ba99(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
           TableSource@444b0bbb(user.items - TableGroupJoin@6482d603(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))

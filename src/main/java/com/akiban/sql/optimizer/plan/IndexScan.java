@@ -59,6 +59,9 @@ public class IndexScan extends BasePlanNode implements ColumnExpressionToIndex
     private List<ExpressionNode> columns;
     private boolean covering;
 
+    // Tables that would still need to be fetched if this index were used.
+    private Set<TableSource> requiredTables;
+
     public IndexScan(Index index, 
                      TableSource leafMostTable, TableSource rootMostTable) {
         this.index = index;
@@ -75,6 +78,17 @@ public class IndexScan extends BasePlanNode implements ColumnExpressionToIndex
     }
     public TableSource getRootMostTable() {
         return rootMostTable;
+    }
+    /** Return tables included in the index, leafmost to rootmost. */
+    public List<TableSource> getTables() {
+        List<TableSource> tables = new ArrayList<TableSource>();
+        TableSource table = leafMostTable;
+        while (true) {
+            tables.add(table);
+            if (table == rootMostTable) break;
+            table = table.getParentTable();
+        }
+        return tables;
     }
 
     public List<ConditionExpression> getConditions() {
@@ -195,6 +209,13 @@ public class IndexScan extends BasePlanNode implements ColumnExpressionToIndex
     }
     public void setCovering(boolean covering) {
         this.covering = covering;
+    }
+
+    public Set<TableSource> getRequiredTables() {
+        return requiredTables;
+    }
+    public void setRequiredTables(Set<TableSource> requiredTables) {
+        this.requiredTables = requiredTables;
     }
 
     @Override
