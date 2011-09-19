@@ -44,15 +44,21 @@ public class PlanContext
         this.plan = plan;
     }
     
+    /** Type safe tag for storing objects on the context whiteboard. */
     public interface WhiteboardMarker<T> {
     }
 
+    /** A marker class if no other conveniently unique object exists. */
     public static final class DefaultWhiteboardMarker<T> implements WhiteboardMarker<T> {
     }
 
     private Map<WhiteboardMarker<?>,Object> whiteboard = 
         new HashMap<WhiteboardMarker<?>,Object>();
 
+    /** Store information associated with the plan for use by more
+     * than one rule, but not associated directly with any part of the
+     * plan tree.
+     */
     public <T> T getWhiteboard(WhiteboardMarker<T> marker) {
         return (T)whiteboard.get(marker);
     }
