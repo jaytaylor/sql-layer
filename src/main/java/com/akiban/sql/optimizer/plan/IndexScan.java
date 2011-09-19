@@ -200,7 +200,7 @@ public class IndexScan extends BasePlanNode implements ColumnExpressionToIndex
     @Override
     // Access field of the index row itself.
     public int getIndex(ColumnExpression column) {
-        assert covering : "Direct access of index field when not covering";
+        assert covering : "Direct access to index field when not covering";
         return columns.indexOf(column);
     }
 
