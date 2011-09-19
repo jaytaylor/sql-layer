@@ -20,8 +20,12 @@ import com.akiban.sql.TestBase;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.SQLParser;
+import com.akiban.sql.types.DataTypeDescriptor;
 
+import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
+import com.akiban.sql.optimizer.plan.PlanToString;
+import com.akiban.sql.optimizer.rule.RulesTestHelper;
 
 import org.junit.Test;
 import org.junit.runners.Parameterized;
@@ -62,7 +66,7 @@ public class OperatorCompilerTest_New extends TestBase implements TestBase.Gener
     static class TestResultColumn extends PhysicalResultColumn {
         private String type;
 
-        public PhysicalResultColumn(String name, String type) {
+        public TestResultColumn(String name, String type) {
             super(name);
             this.type = type;
         }
@@ -92,14 +96,14 @@ public class OperatorCompilerTest_New extends TestBase implements TestBase.Gener
         }
 
         @Override
-        public PhysicalResultColumn getResultColumn(String name, DataTypeDescriptor type,
+        public PhysicalResultColumn getResultColumn(String name, DataTypeDescriptor sqlType,
                                                     boolean nameDefaulted, Column column) {
-            String typename = String.valueOf(type);
+            String type = String.valueOf(sqlType);
             if (column != null) {
                 if (nameDefaulted)
                     // Prefer the case stored in AIS to parser's standardized form.
                     name = column.getName();
-                typename = column.getTypeDescription() +
+                type = column.getTypeDescription() +
                     "[" + column.getType().encoding() + "]";
             }
             return new TestResultColumn(name, type);
