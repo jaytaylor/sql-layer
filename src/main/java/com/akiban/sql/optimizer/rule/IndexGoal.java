@@ -54,6 +54,12 @@ public class IndexGoal implements Comparator<IndexScan>
             return map.keySet();
         }
         
+        public boolean hasColumns(TableSource table) {
+            Set<ColumnExpression> entry = map.get(table);
+            if (entry == null) return false;
+            return !entry.isEmpty();
+        }
+
         public boolean isEmpty() {
             boolean empty = true;
             for (Set<ColumnExpression> entry : map.values())
@@ -478,7 +484,7 @@ public class IndexGoal implements Comparator<IndexScan>
     }
 
     protected boolean determineCovering(IndexScan index) {
-        // The non-condition requirements.
+        // Include the non-condition requirements.
         RequiredColumns requiredAfter = new RequiredColumns(requiredColumns);
         RequiredColumnsFiller filler = new RequiredColumnsFiller(requiredAfter);
         // Add in any conditions not handled by the index.
@@ -495,6 +501,20 @@ public class IndexGoal implements Comparator<IndexScan>
             if (!found)
                 condition.accept(filler);
         }
+
+        // Record what tables are required: within the index if any
+        // columns still needed, others if joined at all.
+        {
+            Collection<TableSource> joined = index.getTables();
+            Set<TableSource> required = new HashSet<TableSource>();
+            for (TableSource table : requiredAfter.getTables()) {
+                if (!joined.contains(table) || requiredAfter.hasColumns(table)) {
+                    required.add(table);
+                }
+            }
+            index.setRequiredTables(required);
+        }
+          
         // Remove the columns we do have from the index.
         for (ExpressionNode column : index.getColumns()) {
             if (column instanceof ColumnExpression) {
