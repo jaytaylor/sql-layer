@@ -1,4 +1,4 @@
-PhysicalSelect@1a0b53e[]
+PhysicalSelect@1a0b53e[name, order_date]
   project([Field(1), Field(4)])
     Filter_Default([flatten(user.customers, user.orders)])
       Flatten_HKeyOrdered(user.customers LEFT user.orders)
