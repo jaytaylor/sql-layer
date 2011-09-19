@@ -41,7 +41,7 @@ public class ProjectedUserTableRowType extends ProjectedRowType {
     @Override
     public int nFields()
     {
-        return table.getColumnsIncludingInternal().size();
+        return table.getColumns().size();
     }
 
     @Override

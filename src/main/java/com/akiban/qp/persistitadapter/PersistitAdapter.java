@@ -17,6 +17,7 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.persistitadapter.sort.Sorter;
@@ -132,27 +133,38 @@ public class PersistitAdapter extends StoreAdapter
         }
     }
 
-    public RowData rowData(RowDef rowDef, RowBase row, Bindings bindings)
-    {
-        if (row instanceof PersistitGroupRow) {
-            return ((PersistitGroupRow) row).rowData();
-        }
-
-        ToObjectValueTarget target = new ToObjectValueTarget();
-        NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
-
-        for(int i=0; i < row.rowType().nFields(); ++i) {
-            ValueSource source = row.eval(i);
-            niceRow.put(i, target.convertFromSource(source));
-        }
-        return niceRow.toRowData();
-    }
-
     // PersistitAdapter interface
 
     public RowDef rowDef(int tableId)
     {
         return persistit.getRowDefCache().getRowDef(tableId);
+    }
+
+    public NewRow newRow(RowDef rowDef)
+    {
+        NiceRow row = new NiceRow(rowDef.getRowDefId(), rowDef);
+        UserTable table = rowDef.userTable();
+        PrimaryKey primaryKey = table.getPrimaryKeyIncludingInternal();
+        if (primaryKey != null && table.getPrimaryKey() == null) {
+            // Akiban-generated PK. Initialize its value to a dummy value, which will be replaced later. The
+            // important thing is that the value be non-null.
+            row.put(table.getColumnsIncludingInternal().size() - 1, -1L);
+        }
+        return row;
+    }
+
+    public RowData rowData(RowDef rowDef, RowBase row, Bindings bindings)
+    {
+        if (row instanceof PersistitGroupRow) {
+            return ((PersistitGroupRow) row).rowData();
+        }
+        ToObjectValueTarget target = new ToObjectValueTarget();
+        NewRow niceRow = newRow(rowDef);
+        for(int i = 0; i < row.rowType().nFields(); ++i) {
+            ValueSource source = row.eval(i);
+            niceRow.put(i, target.convertFromSource(source));
+        }
+        return niceRow.toRowData();
     }
 
     public PersistitGroupRow newGroupRow()

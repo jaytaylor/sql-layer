@@ -21,11 +21,8 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
 
 public abstract class StoreAdapter
 {
@@ -45,8 +42,6 @@ public abstract class StoreAdapter
     public abstract void writeRow (Row newRow, Bindings bindings);
     
     public abstract void deleteRow (Row oldRow, Bindings bindings);
-
-    public abstract RowData rowData(RowDef rowDef, RowBase row, Bindings bindings);
 
     public abstract Cursor sort(Cursor input, RowType rowType, API.Ordering ordering, Bindings bindings);
 

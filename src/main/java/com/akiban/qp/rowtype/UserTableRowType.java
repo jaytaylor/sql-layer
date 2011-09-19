@@ -38,7 +38,7 @@ public class UserTableRowType extends RowType
     @Override
     public int nFields()
     {
-        return table.getColumnsIncludingInternal().size();
+        return table.getColumns().size();
     }
 
     @Override
