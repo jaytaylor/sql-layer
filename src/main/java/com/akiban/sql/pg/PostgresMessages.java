@@ -70,8 +70,8 @@ public enum PostgresMessages {
     private final boolean writeType;
     private final ErrorMode errorMode;
     
-    public final static Map<Integer, PostgresMessages> readMessages;
-    public final static Map<Integer, PostgresMessages> writeMessages; 
+    private final static Map<Integer, PostgresMessages> readMessages;
+    private final static Map<Integer, PostgresMessages> writeMessages; 
     
     private PostgresMessages (int code, int size, boolean read, boolean write) {
         this (code, size, read, write, ErrorMode.NONE);
@@ -93,6 +93,11 @@ public enum PostgresMessages {
     public boolean isWriteMessage() { return this.writeType; }
     
     public ErrorMode errorMode() { return this.errorMode; }
+    
+    public static boolean readTypeCorrect (final int type) { return readMessages.containsKey(type); }
+    public static boolean writeTypeCorrect (final int type) { return writeMessages.containsKey(type); }
+    
+    public static PostgresMessages messageType (final int typeCode) { return readMessages.get(typeCode); }
     
     static {
         readMessages = new HashMap<Integer,PostgresMessages>();

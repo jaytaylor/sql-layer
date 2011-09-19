@@ -105,10 +105,10 @@ public class PostgresMessenger implements DataInput, DataOutput
             try {
                 waitTap.in();
                 code = dataInput.read();
-                if (!PostgresMessages.readMessages.containsKey(code)) {
+                if (!PostgresMessages.readTypeCorrect(code)) {
                     throw new IOException ("Bad protocol read message: " + (char)code);
                 }
-                type = PostgresMessages.readMessages.get(code);
+                type = PostgresMessages.messageType(code);
             }
             finally {
                 waitTap.out();
@@ -159,7 +159,7 @@ public class PostgresMessenger implements DataInput, DataOutput
         byte[] msg = byteOutput.toByteArray();
         
         // check we're writing an allowed message. 
-        assert PostgresMessages.writeMessages.containsKey((int)msg[0]) : "Invalid write message: " + (char)msg[0];
+        assert PostgresMessages.writeTypeCorrect((int)msg[0]) : "Invalid write message: " + (char)msg[0];
         
         int len = msg.length - 1;
         msg[1] = (byte)(len >> 24);
