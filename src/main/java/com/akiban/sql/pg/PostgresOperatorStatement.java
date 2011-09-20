@@ -73,7 +73,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                     nskip--;
                     continue;
                 }
-                messenger.beginMessage(PostgresMessenger.DATA_ROW_TYPE);
+                messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
                 messenger.writeShort(ncols);
                 for (int i = 0; i < ncols; i++) {
                     Object field = target.convertFromSource(row.eval(i));
@@ -99,7 +99,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             cursor.close();
         }
         {        
-            messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
             messenger.writeString("SELECT " + nrows);
             messenger.sendMessage();
         }

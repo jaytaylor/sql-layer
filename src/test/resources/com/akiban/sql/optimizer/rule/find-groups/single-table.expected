@@ -1,0 +1,4 @@
+SelectQuery@7bd349e2
+  ResultSet@6c97d3f0[user.customers.cid, user.customers.name]
+    Filter@63db6942[user.customers.name == Smith]
+      TableSource@59db9f45(user.customers - TableGroup@14800aa1(customers))

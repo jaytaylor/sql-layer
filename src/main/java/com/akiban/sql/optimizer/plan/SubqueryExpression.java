@@ -27,15 +27,15 @@ import com.akiban.qp.expression.Expression;
  */
 public class SubqueryExpression extends BaseExpression 
 {
-    private PlanNode subquery;
+    private Subquery subquery;
 
-    public SubqueryExpression(PlanNode subquery, 
+    public SubqueryExpression(Subquery subquery, 
                               DataTypeDescriptor sqlType, ValueNode sqlSource) {
         super(sqlType, sqlSource);
         this.subquery = subquery;
     }
 
-    public PlanNode getSubquery() {
+    public Subquery getSubquery() {
         return subquery;
     }
 
@@ -63,7 +63,14 @@ public class SubqueryExpression extends BaseExpression
 
     @Override
     public ExpressionNode accept(ExpressionRewriteVisitor v) {
-        return v.visit(this);
+        boolean childrenFirst = v.visitChildrenFirst(this);
+        if (!childrenFirst) {
+            ExpressionNode result = v.visit(this);
+            if (result != this) return result;
+        }
+        if (v instanceof PlanVisitor)
+          subquery.accept((PlanVisitor)v);
+        return (childrenFirst) ? v.visit(this) : this;
     }
 
     @Override
@@ -79,7 +86,7 @@ public class SubqueryExpression extends BaseExpression
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        subquery = (PlanNode)subquery.duplicate(map);
+        subquery = (Subquery)subquery.duplicate(map);
     }
 
 }

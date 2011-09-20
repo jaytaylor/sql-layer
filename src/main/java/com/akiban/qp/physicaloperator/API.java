@@ -18,10 +18,12 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
+
 import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
@@ -51,7 +53,14 @@ public class API
     {
         return new Project_Default(inputOperator, rowType, wrapAll(projections));
     }
-
+    
+    public static PhysicalOperator project_Table(PhysicalOperator inputOperator, 
+                                                 RowType inputRowType,
+                                                 RowType outputRowType,
+                                                 List<Expression>projections) 
+    {
+        return new Project_Default (inputOperator, inputRowType, outputRowType, projections);
+    }
     // Flatten
 
     public static PhysicalOperator flatten_HKeyOrdered(PhysicalOperator inputOperator,
@@ -113,6 +122,10 @@ public class API
         );
     }
 
+    public static PhysicalOperator valuesScan_Default (Collection<? extends Row> rows, RowType rowType)
+    {
+        return new ValuesScan_Default (rows, rowType);
+    }
     // BranchLookup
 
     public static PhysicalOperator branchLookup_Default(PhysicalOperator inputOperator,

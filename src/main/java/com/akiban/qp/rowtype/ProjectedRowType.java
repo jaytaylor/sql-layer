@@ -45,7 +45,7 @@ public class ProjectedRowType extends DerivedRowType
         super(schema, typeId);
         this.projections = projections;
     }
-
+    
     // Object state
 
     private final List<Expression> projections;

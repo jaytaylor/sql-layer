@@ -15,6 +15,12 @@
 
 package com.akiban.sql.optimizer.rule;
 
+// TODO: Think about all this.
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.UserTable;
+import com.akiban.server.TableStatus;
+import com.akiban.server.rowdata.RowDef;
+
 import org.yaml.snakeyaml.Yaml;
 
 import java.util.ArrayList;
@@ -45,7 +51,10 @@ public class RulesTestHelper
         List<BaseRule> result = new ArrayList<BaseRule>();
         for (Object obj : list) {
             if (obj instanceof String) {
-                result.add((BaseRule)Class.forName((String)obj).newInstance());
+                String cname = (String)obj;
+                if (cname.indexOf('.') < 0)
+                    cname = RulesTestHelper.class.getPackage().getName() + '.' + cname;
+                result.add((BaseRule)Class.forName(cname).newInstance());
             }
             else {
                 // TODO: Someday parse options from hash, etc.
@@ -53,6 +62,18 @@ public class RulesTestHelper
             }
         }
         return result;
+    }
+
+    // This just needs to be enough to keep from UserTableRowType
+    // constructor from getting NPE.
+    // TODO: Think about where this really goes.
+    public static void ensureRowDefs(AkibanInformationSchema ais) {
+        for (UserTable userTable : ais.getUserTables().values()) {
+            int tableId = userTable.getTableId();
+            TableStatus ts = new TableStatus(tableId);
+            ts.setOrdinal(tableId);
+            new RowDef(userTable, ts);
+        }
     }
 
 }

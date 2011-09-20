@@ -18,30 +18,13 @@ package com.akiban.server.types.conversion;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
+import com.akiban.server.types.extract.Extractors;
 
 import java.math.BigDecimal;
 
 final class ConverterForBigDecimal extends ObjectConverter<BigDecimal> {
 
     static final ObjectConverter<BigDecimal> INSTANCE = new ConverterForBigDecimal();
-
-    @Override
-    public BigDecimal getObject(ValueSource source) {
-        AkType type = source.getConversionType();
-        switch (type) {
-        case DECIMAL:   return source.getDecimal();
-        case TEXT:      return new BigDecimal(source.getText());
-        case VARCHAR:   return new BigDecimal(source.getString());
-        case LONG:      return BigDecimal.valueOf(source.getLong());
-        case INT:       return BigDecimal.valueOf(source.getInt());
-        case U_INT:     return BigDecimal.valueOf(source.getUInt());
-        case FLOAT:     return BigDecimal.valueOf(source.getFloat());
-        case U_FLOAT:   return BigDecimal.valueOf(source.getUFloat());
-        case DOUBLE:    return BigDecimal.valueOf(source.getDouble());
-        case U_DOUBLE:  return BigDecimal.valueOf(source.getUDouble());
-        default: throw unsupportedConversion(type);
-        }
-    }
 
     @Override
     protected void putObject(ValueTarget target, BigDecimal value) {
@@ -55,5 +38,7 @@ final class ConverterForBigDecimal extends ObjectConverter<BigDecimal> {
         return AkType.DECIMAL;
     }
 
-    private ConverterForBigDecimal() {}
+    private ConverterForBigDecimal() {
+        super(Extractors.getDecimalExtractor());
+    }
 }

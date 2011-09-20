@@ -1,10 +1,11 @@
 SelectQuery@7826f9e5
-  ResultSet@46e06703[user.orders.order_date, ResultSet@368b1a4f[MAX(user.items.price)]]
+  ResultSet@46e06703[user.orders.order_date, Subquery@14d964af]
     Filter@666c5482[]
       TableSource@52205756(user.orders)
 
-ResultSet@368b1a4f[MAX(user.items.price)]
-  Filter@4945f939[]
-    AggregateSource@10ed32c4[][]
-      Filter@449fea8a[user.items.oid == user.orders.oid]
-        TableSource@5edf2d38(user.items)
+Subquery@14d964af
+  ResultSet@368b1a4f[MAX(user.items.price)]
+    Filter@4945f939[]
+      AggregateSource@10ed32c4([],[])
+        Filter@449fea8a[user.items.oid == user.orders.oid]
+          TableSource@5edf2d38(user.items)

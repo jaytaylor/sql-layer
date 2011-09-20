@@ -53,6 +53,11 @@ public class BooleanOperationExpression extends BaseExpression
     public ConditionExpression getRight() {
         return right;
     }
+    
+    @Override
+    public Implementation getImplementation() {
+        return Implementation.NORMAL;
+    }
 
     @Override
     public boolean equals(Object obj) {
@@ -82,11 +87,14 @@ public class BooleanOperationExpression extends BaseExpression
 
     @Override
     public ExpressionNode accept(ExpressionRewriteVisitor v) {
-        ExpressionNode result = v.visit(this);
-        if (result != this) return result;
+        boolean childrenFirst = v.visitChildrenFirst(this);
+        if (!childrenFirst) {
+            ExpressionNode result = v.visit(this);
+            if (result != this) return result;
+        }
         left = (ConditionExpression)left.accept(v);
         right = (ConditionExpression)right.accept(v);
-        return this;
+        return (childrenFirst) ? v.visit(this) : this;
     }
 
     @Override

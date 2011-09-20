@@ -35,24 +35,6 @@ abstract class ConverterForFloat extends FloatConverter {
         }
     };
 
-    @Override
-    public float getFloat(ValueSource source) {
-        AkType type = source.getConversionType();
-        switch (type) {
-        case DOUBLE:    return (float) source.getDouble();
-        case FLOAT:     return source.getFloat();
-        case DECIMAL:   return source.getDecimal().floatValue();
-        case LONG:      return source.getLong();
-        case INT:       return source.getInt();
-        case U_INT:     return source.getUInt();
-        case U_FLOAT:   return source.getUFloat();
-        case U_DOUBLE:  return (float) source.getUDouble();
-        case TEXT:      return Float.parseFloat(source.getText());
-        case VARCHAR:   return Float.parseFloat(source.getString());
-        default: throw unsupportedConversion(type);
-        }
-    }
-
     // AbstractConverter interface
 
     @Override

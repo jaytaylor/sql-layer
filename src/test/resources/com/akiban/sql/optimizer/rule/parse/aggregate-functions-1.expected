@@ -1,6 +1,6 @@
 SelectQuery@59d0d45b
   ResultSet@1d25d06e[MAX(user.items.price), MIN(user.items.price), SUM(user.items.quan), AVG(user.items.quan), COUNT(user.items.oid), COUNT(*), COUNT(DISTINCT user.items.oid)]
     Filter@1d96f4b5[]
-      AggregateSource@219ba640[][]
+      AggregateSource@219ba640([],[])
         Filter@71bfc4fc[]
           TableSource@651db6bb(user.items)

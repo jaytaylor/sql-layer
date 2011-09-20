@@ -20,6 +20,7 @@ import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Strings;
+import com.akiban.util.Tap;
 
 import java.util.Collections;
 import java.util.List;
@@ -47,7 +48,7 @@ public final class Update_Default implements UpdatePlannable {
     @Override
     public UpdateResult run(Bindings bindings, StoreAdapter adapter) {
         int seen = 0, modified = 0;
-        long start = System.currentTimeMillis();
+        UPDATE_TAP.in();
         Cursor inputCursor = inputOperator.cursor(adapter);
         inputCursor.open(bindings);
         try {
@@ -62,9 +63,9 @@ public final class Update_Default implements UpdatePlannable {
             }
         } finally {
             inputCursor.close();
+            UPDATE_TAP.out();
         }
-        long end = System.currentTimeMillis();
-        return new StandardUpdateResult(end - start, seen, modified);
+        return new StandardUpdateResult(seen, modified);
     }
 
     // Plannable interface
@@ -89,5 +90,6 @@ public final class Update_Default implements UpdatePlannable {
 
     private final PhysicalOperator inputOperator;
     private final UpdateFunction updateFunction;
+    private static final Tap.InOutTap UPDATE_TAP = Tap.createTimer("operator: update");
     
 }

@@ -15,19 +15,59 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.server.error.InvalidOperationException;
+
+import java.util.Set;
+
 /** A join to an actual table. */
 public class TableSource extends BaseJoinable implements ColumnSource
 {
     private TableNode table;
-    // TODO: Add conditions, correlation name?, ...
+    private TableGroup group;
+    private TableGroupJoin parentJoin;
+    private boolean required;
 
-    public TableSource(TableNode table) {
+    public TableSource(TableNode table, boolean required) {
         this.table = table;
         table.addUse(this);
+        this.required = required;
     }
 
     public TableNode getTable() {
         return table;
+    }
+
+    public TableGroup getGroup() {
+        return group;
+    }
+    public void setGroup(TableGroup group) {
+        this.group = group;
+        group.getTables().add(this);
+    }
+
+    public TableGroupJoin getParentJoin() {
+        return parentJoin;
+    }
+    public void setParentJoin(TableGroupJoin parentJoin) {
+        this.parentJoin = parentJoin;
+        this.group = parentJoin.getGroup();
+    }
+
+    public TableSource getParentTable() {
+        if (parentJoin == null)
+            return null;
+        else
+            return parentJoin.getParent();
+    }
+
+    public boolean isRequired() {
+        return required;
+    }
+    public boolean isOptional() {
+        return !required;
+    }
+    public void setRequired(boolean required) {
+        this.required = required;
     }
 
     @Override
@@ -47,7 +87,24 @@ public class TableSource extends BaseJoinable implements ColumnSource
     
     @Override
     public String summaryString() {
-        return super.summaryString() + "(" + table.toString() + ")";
+        StringBuilder str = new StringBuilder(super.summaryString());
+        str.append("(");
+        str.append(table.toString());
+        if (parentJoin != null) {
+            str.append(" - ");
+            str.append(parentJoin);
+        }
+        else if (group != null) {
+            str.append(" - ");
+            str.append(group);
+        }
+        str.append(")");
+        return str.toString();
+    }
+
+    @Override
+    protected boolean maintainInDuplicateMap() {
+        return true;
     }
 
     @Override

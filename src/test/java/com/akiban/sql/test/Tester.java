@@ -31,12 +31,14 @@ import com.akiban.sql.optimizer.simplified.SimplifiedInsertStatement;
 import com.akiban.sql.optimizer.simplified.SimplifiedSelectQuery;
 import com.akiban.sql.optimizer.simplified.SimplifiedUpdateStatement;
 import com.akiban.sql.optimizer.plan.AST;
-import com.akiban.sql.optimizer.plan.PlanNode;
+import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanToString;
 import com.akiban.sql.optimizer.rule.BaseRule;
+import static com.akiban.sql.optimizer.rule.DefaultRules.*;
+import com.akiban.sql.optimizer.rule.RulesContext;
+import com.akiban.sql.optimizer.rule.RulesTestContext;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
 import com.akiban.sql.parser.CursorNode;
-import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.DeleteNode;
 import com.akiban.sql.parser.InsertNode;
@@ -77,6 +79,7 @@ public class Tester
     Grouper grouper;
     OperatorCompiler operatorCompiler;
     List<BaseRule> planRules;
+    RulesContext rulesContext;
     int repeat;
 
     public Tester() {
@@ -173,11 +176,12 @@ public class Tester
                 break;
             case PLAN:
                 {
-                    PlanNode plan = new AST((DMLStatementNode)stmt);
-                    for (BaseRule rule : planRules) {
-                        plan = rule.apply(plan);
-                    }
-                    System.out.println(PlanToString.of(plan));
+                    PlanContext plan = 
+                        new PlanContext(rulesContext, 
+                                        new AST((DMLStatementNode)stmt,
+                                                parser.getParameterList()));
+                    rulesContext.applyRules(plan);
+                    System.out.println(PlanToString.of(plan.getPlan()));
                 }
                 break;
             case OPERATORS:
@@ -215,10 +219,12 @@ public class Tester
         SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
         SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
         AkibanInformationSchema ais = toAis.getAis();
-        if (actions.indexOf(Action.BIND) >= 0)
+        if (actions.contains(Action.BIND))
             binder = new AISBinder(ais, "user");
-        if (actions.indexOf(Action.OPERATORS) >= 0)
+        if (actions.contains(Action.OPERATORS))
             operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, "user");
+        if (actions.contains(Action.PLAN))
+            rulesContext = new RulesTestContext(ais, planRules);
     }
 
     public void addView(String sql) throws Exception {
@@ -227,6 +233,10 @@ public class Tester
             binder.addView(view);
         if (operatorCompiler != null)
             operatorCompiler.addView(view);
+    }
+
+    public void defaultPlanRules() throws Exception {
+        planRules = DEFAULT_RULES;
     }
 
     public void loadPlanRules(File file) throws Exception {
@@ -311,6 +321,8 @@ public class Tester
                     String rules = args[i++];
                     if (rules.startsWith("@"))
                         tester.loadPlanRules(new File(rules.substring(1)));
+                    else if (rules.equals("default"))
+                        tester.defaultPlanRules();
                     else
                         tester.parsePlanRules(rules);
                     tester.addAction(Action.PLAN);

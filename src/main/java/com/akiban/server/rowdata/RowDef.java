@@ -48,6 +48,8 @@ public class RowDef implements TreeLink {
 
     private final Table table;
 
+    private final boolean hasAkibanPK;
+
     private final TableStatus tableStatus;
 
     /**
@@ -147,11 +149,18 @@ public class RowDef implements TreeLink {
                 tableStatus.setAutoIncrement(true);
                 tableStatus.updateAutoIncrementValue(initialAutoIncrementValue);
             }
+            this.hasAkibanPK = userTable.getPrimaryKeyIncludingInternal().isAkibanPK();
+        } else {
+            this.hasAkibanPK = false;
         }
     }
 
     public Table table() {
         return table;
+    }
+
+    public boolean hasAkibanPK() {
+        return hasAkibanPK;
     }
 
     public UserTable userTable() {

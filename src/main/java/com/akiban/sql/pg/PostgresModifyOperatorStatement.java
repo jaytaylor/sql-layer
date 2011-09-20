@@ -23,6 +23,9 @@ import com.akiban.qp.physicaloperator.UndefBindings;
 
 import java.io.IOException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * An SQL modifying DML statement transformed into an operator tree
  * @see PostgresOperatorCompiler
@@ -31,6 +34,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
 {
     private String statementType;
     private UpdatePlannable resultOperator;
+    private static final Logger LOG = LoggerFactory.getLogger(PostgresModifyOperatorStatement.class);
         
     public PostgresModifyOperatorStatement(String statementType,
                                            UpdatePlannable resultOperator,
@@ -42,12 +46,20 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
     
     public int execute(PostgresServerSession server, int maxrows)
         throws IOException {
+
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
-        UpdateResult updateResult;
-        updateResult = resultOperator.run(bindings, server.getStore());
-        messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
-        messenger.writeString(statementType + " " + updateResult.rowsModified());
+        final UpdateResult updateResult = resultOperator.run(bindings, server.getStore());
+        
+        LOG.debug("Statement: {}, result: {}", statementType, updateResult);
+        
+        messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
+        //TODO: Find a way to extract InsertNode#statementToString() or equivalent
+        if (statementType.equals("INSERT")) {
+            messenger.writeString(statementType + " 0 " + updateResult.rowsModified());
+        } else {
+            messenger.writeString(statementType + " " + updateResult.rowsModified());
+        }
         messenger.sendMessage();
         return 0;
     }

@@ -26,6 +26,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.physicaloperator.StoreAdapter;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
@@ -154,70 +155,63 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
     }
 
-    protected enum ErrorMode { NONE, SIMPLE, EXTENDED };
+    //protected enum ErrorMode { NONE, SIMPLE, EXTENDED };
 
     protected void topLevel() throws IOException, Exception {
         logger.info("Connect from {}" + socket.getRemoteSocketAddress());
         boolean startupComplete = false;
         try {
             while (running) {
-                int type = messenger.readMessage(startupComplete);
+                PostgresMessages type = messenger.readMessage(startupComplete);
                 if (ignoreUntilSync) {
-                    if ((type != -1) && (type != PostgresMessenger.SYNC_TYPE))
+                    if ((type != PostgresMessages.EOF_TYPE) && (type != PostgresMessages.SYNC_TYPE))
                         continue;
                     ignoreUntilSync = false;
                 }
-                ErrorMode errorMode = ErrorMode.NONE;
                 try {
                     sessionTracer.beginEvent(EventTypes.PROCESS);
                     switch (type) {
-                    case -1:                                    // EOF
+                    case EOF_TYPE: // EOF
                         stop();
                         break;
-                    case PostgresMessenger.SYNC_TYPE:
+                    case SYNC_TYPE:
                         readyForQuery();
                         break;
-                    case PostgresMessenger.STARTUP_MESSAGE_TYPE:
+                    case STARTUP_MESSAGE_TYPE:
                         startupComplete = processStartupMessage();
                         break;
-                    case PostgresMessenger.PASSWORD_MESSAGE_TYPE:
+                    case PASSWORD_MESSAGE_TYPE:
                         processPasswordMessage();
                         break;
-                    case PostgresMessenger.QUERY_TYPE:
-                        errorMode = ErrorMode.SIMPLE;
+                    case QUERY_TYPE:
                         processQuery();
                         break;
-                    case PostgresMessenger.PARSE_TYPE:
-                        errorMode = ErrorMode.EXTENDED;
+                    case PARSE_TYPE:
                         processParse();
                         break;
-                    case PostgresMessenger.BIND_TYPE:
-                        errorMode = ErrorMode.EXTENDED;
+                    case BIND_TYPE:
                         processBind();
                         break;
-                    case PostgresMessenger.DESCRIBE_TYPE:
-                        errorMode = ErrorMode.EXTENDED;
+                    case DESCRIBE_TYPE:
                         processDescribe();
                         break;
-                    case PostgresMessenger.EXECUTE_TYPE:
-                        errorMode = ErrorMode.EXTENDED;
+                    case EXECUTE_TYPE:
                         processExecute();
                         break;
-                    case PostgresMessenger.CLOSE_TYPE:
+                    case CLOSE_TYPE:
                         processClose();
                         break;
-                    case PostgresMessenger.TERMINATE_TYPE:
+                    case TERMINATE_TYPE:
                         processTerminate();
                         break;
-                    default:
-                        throw new IOException("Unknown message type: " + (char)type);
                     }
                 }
                 catch (InvalidOperationException ex) {
                     logger.warn("Error in query: {}",ex.getMessage());
-                    if (errorMode == ErrorMode.NONE ) throw ex;
+                    logger.debug("StackTrace: {}", ex);
+                    if (type.errorMode() == PostgresMessages.ErrorMode.NONE ) throw ex;
                     else {
-                        messenger.beginMessage(PostgresMessenger.ERROR_RESPONSE_TYPE);
+                        messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
                         messenger.write('S');
                         messenger.writeString("ERROR");
                         messenger.write('C');
@@ -227,16 +221,17 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                         messenger.write(0);
                         messenger.sendMessage(true);
                     }
-                    if (errorMode == ErrorMode.EXTENDED)
+                    if (type.errorMode() == PostgresMessages.ErrorMode.EXTENDED)
                         ignoreUntilSync = true;
                     else
                         readyForQuery();
                 } catch (Exception e) {
                     final String message = (e.getMessage() == null ? e.getClass().toString() : e.getMessage()); 
                     logger.warn("Unexpected error in query", e);
-                    if (errorMode == ErrorMode.NONE) throw e;
+                    logger.debug("Stack Trace: {}", e);
+                    if (type.errorMode() == PostgresMessages.ErrorMode.NONE) throw e;
                     else {
-                        messenger.beginMessage(PostgresMessenger.ERROR_RESPONSE_TYPE);
+                        messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
                         messenger.write('S');
                         messenger.writeString("ERROR");
                         messenger.write('C');
@@ -246,12 +241,11 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                         messenger.write(0);
                         messenger.sendMessage(true);
                     }
-                    if (errorMode == ErrorMode.EXTENDED)
+                    if (type.errorMode() == PostgresMessages.ErrorMode.EXTENDED)
                         ignoreUntilSync = true;
                     else
                         readyForQuery();
                 }
-                
                 finally {
                     sessionTracer.endEvent();
                 }
@@ -267,7 +261,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     protected void readyForQuery() throws IOException {
-        messenger.beginMessage(PostgresMessenger.READY_FOR_QUERY_TYPE);
+        messenger.beginMessage(PostgresMessages.READY_FOR_QUERY_TYPE.code());
         messenger.writeByte('I'); // Idle ('T' -> xact open; 'E' -> xact abort)
         messenger.sendMessage(true);
     }
@@ -307,7 +301,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         updateAIS();
 
         {
-            messenger.beginMessage(PostgresMessenger.AUTHENTICATION_TYPE);
+            messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());
             messenger.writeInt(PostgresMessenger.AUTHENTICATION_CLEAR_TEXT);
             messenger.sendMessage(true);
         }
@@ -342,18 +336,18 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         status.put("session_authorization", user);
         
         {
-            messenger.beginMessage(PostgresMessenger.AUTHENTICATION_TYPE);
+            messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());
             messenger.writeInt(PostgresMessenger.AUTHENTICATION_OK);
             messenger.sendMessage();
         }
         for (String prop : status.stringPropertyNames()) {
-            messenger.beginMessage(PostgresMessenger.PARAMETER_STATUS_TYPE);
+            messenger.beginMessage(PostgresMessages.PARAMETER_STATUS_TYPE.code());
             messenger.writeString(prop);
             messenger.writeString(status.getProperty(prop));
             messenger.sendMessage();
         }
         {
-            messenger.beginMessage(PostgresMessenger.BACKEND_KEY_DATA_TYPE);
+            messenger.beginMessage(PostgresMessages.BACKEND_KEY_DATA_TYPE.code());
             messenger.writeInt(pid);
             messenger.writeInt(secret);
             messenger.sendMessage();
@@ -457,7 +451,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 statementCache.put(sql, pstmt);
         }
         preparedStatements.put(stmtName, pstmt);
-        messenger.beginMessage(PostgresMessenger.PARSE_COMPLETE_TYPE);
+        messenger.beginMessage(PostgresMessages.PARSE_COMPLETE_TYPE.code());
         messenger.sendMessage();
     }
 
@@ -511,7 +505,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         boundPortals.put(portalName, 
                          pstmt.getBoundStatement(params, 
                                                  resultsBinary, defaultResultsBinary));
-        messenger.beginMessage(PostgresMessenger.BIND_COMPLETE_TYPE);
+        messenger.beginMessage(PostgresMessages.BIND_COMPLETE_TYPE.code());
         messenger.sendMessage();
     }
 
@@ -566,7 +560,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         default:
             throw new IOException("Unknown describe source: " + (char)source);
         }
-        messenger.beginMessage(PostgresMessenger.CLOSE_COMPLETE_TYPE);
+        messenger.beginMessage(PostgresMessages.CLOSE_COMPLETE_TYPE.code());
         messenger.sendMessage();
     }
     
@@ -593,15 +587,33 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         // Temporary until completely removed.
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
-        PostgresOperatorCompiler compiler = new PostgresOperatorCompiler(this);
+        PostgresStatementGenerator compiler, explainer;
         {
+            Schema schema;
+            // TODO: Temporary choice of optimizer.
+            // There is an "options" property that psql allows in the
+            // connect string, but no way to pass it to the JDBC
+            // driver. So have to use what's available.
+            if (!"new-optimizer".equals(properties.getProperty("user"))) {
+                PostgresOperatorCompiler oc = new PostgresOperatorCompiler(this);
+                schema = oc.getSchema();
+                compiler = oc;
+                explainer = new PostgresExplainStatementGenerator(this);
+            }
+            else {
+                logger.info("Using new optimizer!");
+                PostgresOperatorCompiler_New nc = new PostgresOperatorCompiler_New(this);
+                schema = nc.getSchema();
+                compiler = nc;
+                explainer = new PostgresExplainStatementGenerator_New(this);
+            }
             final Store store = reqs.store();
             final PersistitStore persistitStore;
             if (store instanceof OperatorStore)
                 persistitStore = ((OperatorStore)store).getPersistitStore();
             else
                 persistitStore = (PersistitStore)store;
-            adapter = new PersistitAdapter(compiler.getSchema(),
+            adapter = new PersistitAdapter(schema,
                                            persistitStore,
                                            reqs.treeService(),
                                            session);
@@ -616,7 +628,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             compiler,
             new PostgresDDLStatementGenerator(this),
             new PostgresSessionStatementGenerator(this),
-            new PostgresExplainStatementGenerator(this)
+            explainer
         };
     }
 

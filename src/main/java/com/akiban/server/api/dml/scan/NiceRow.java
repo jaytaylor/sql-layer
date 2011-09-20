@@ -111,6 +111,10 @@ public class NiceRow extends NewRow {
         for (Map.Entry<Integer,Object> entry : fields.entrySet()) {
             objects[ entry.getKey() ] = entry.getValue();
         }
+        if (rowDef.hasAkibanPK() && fields.size() == rowDef.getFieldCount() - 1) {
+            // Last column will be filled in by the row id counter. Need a non-null value for now.
+            objects[fields.size()] = -1;
+        }
         final RowData retval = new RowData(new byte[INITIAL_ROW_DATA_SIZE]);
         retval.createRow(rowDef, objects, true);
 

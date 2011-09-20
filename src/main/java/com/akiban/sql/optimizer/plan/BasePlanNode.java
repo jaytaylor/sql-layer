@@ -15,7 +15,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
-public abstract class BasePlanNode extends BaseDuplicatable implements PlanNode
+public abstract class BasePlanNode extends BasePlanElement implements PlanNode
 {
     private PlanWithInput output;
 
@@ -37,6 +37,10 @@ public abstract class BasePlanNode extends BaseDuplicatable implements PlanNode
         return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16);
     }
 
+    @Override
+    public String toString() {
+        return PlanToString.of(this);
+    }
 
     @Override
     protected void deepCopy(DuplicateMap map) {

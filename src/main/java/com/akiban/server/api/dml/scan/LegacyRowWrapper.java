@@ -26,7 +26,7 @@ import java.util.Map;
 public final class LegacyRowWrapper extends NewRow
 {
     // Updates are handled by creating a NiceRow from the RowData and applying updates to the NiceRow.
-    // When this happens, rowData is set to null, and is regenerated lazily. If niceRow is null, then
+    // When this happens, rowData is set to null, and is regenerated lazily. If newRow is null, then
     // rowData is current.
     private RowData rowData;
     private NiceRow niceRow;
@@ -153,7 +153,7 @@ public final class LegacyRowWrapper extends NewRow
     @Override
     public String toString()
     {
-        // niceRow().toString() would be simpler, but there's a side-effect: If rowData != null, then
+        // newRow().toString() would be simpler, but there's a side-effect: If rowData != null, then
         // the rowData is converted to a NiceRow and rowData is set to null.
         return
             rowData == null && niceRow == null ? "null" :

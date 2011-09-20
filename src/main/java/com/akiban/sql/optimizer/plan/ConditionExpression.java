@@ -19,4 +19,9 @@ package com.akiban.sql.optimizer.plan;
  */
 public interface ConditionExpression extends ExpressionNode
 {
+    public static enum Implementation {
+        NORMAL, INDEX, GROUP_JOIN
+    }
+
+    public Implementation getImplementation();
 }

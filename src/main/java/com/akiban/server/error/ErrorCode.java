@@ -115,16 +115,19 @@ public enum ErrorCode {
     TABLE_BAD_SUBQUERY      (3, 28, Importance.DEBUG, TableIsBadSubqueryException.class),
     WRONG_FUNCTION_ARITY    (3, 29, Importance.DEBUG, WrongExpressionArityException.class),
     NO_SUCH_FUNCTION        (3, 31, Importance.DEBUG, NoSuchFunctionException.class),
+    ORDER_BY_NON_INTEGER_CONSTANT(3, 32, Importance.DEBUG, OrderByNonIntegerConstant.class),
+    ORDER_BY_INTEGER_OUT_OF_RANGE(3, 34, Importance.DEBUG, OrderByIntegerOutOfRange.class),
     
     ROW_OUTPUT              (4, 11, Importance.DEBUG, RowOutputException.class), 
     AIS_MYSQL_SQL_EXCEPTION (4, 12, Importance.DEBUG, AisSQLErrorException.class),
     AIS_CSV_ERROR           (4, 13, Importance.DEBUG, AisCSVErrorException.class),
+
+    INSERT_NULL_CHECK       (5, 01, Importance.DEBUG, InsertNullCheckFailedException.class),
     
     // Messaging errors
     MALFORMED_REQUEST       (21, 0, Importance.ERROR, null), 
     BAD_STATISTICS_TYPE     (21, 4, Importance.ERROR, BadStatisticsTypeException.class),
 
-    
     // AIS Validation errors, Attempts to modify and build an AIS failed
     // due to missing or invalid information.
     VALIDATION_FAILURE      (22, 0, Importance.DEBUG, null),
@@ -185,6 +188,7 @@ public enum ErrorCode {
     SET_FILTER_FAIL      (29, 12, Importance.ERROR, DisplayFilterSetException.class),
     SCHEMA_LOAD_IO_ERROR (29, 13, Importance.ERROR, SchemaLoadIOException.class),
     QUERY_LOG_CLOSE_FAIL (29, 14, Importance.ERROR, QueryLogCloseException.class),
+    INVALID_PORT         (29, 15, Importance.ERROR, InvalidPortException.class), 
     
     // AkSserver errors
     MULTIGENERATIONAL_TABLE(30, 900, Importance.ERROR, null),

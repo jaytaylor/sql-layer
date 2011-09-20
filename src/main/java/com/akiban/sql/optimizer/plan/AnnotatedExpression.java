@@ -30,6 +30,14 @@ public abstract class AnnotatedExpression extends BaseDuplicatable
         this.expression = expression;
     }
 
+    public boolean accept(ExpressionVisitor v) {
+        return expression.accept(v);
+    }
+
+    public void accept(ExpressionRewriteVisitor v) {
+        expression = expression.accept(v);
+    }
+
     @Override
     public String toString() {
         return expression.toString();

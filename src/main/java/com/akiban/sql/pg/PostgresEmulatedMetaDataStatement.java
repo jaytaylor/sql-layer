@@ -75,7 +75,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         }
 
         PostgresMessenger messenger = server.getMessenger();
-        messenger.beginMessage(PostgresMessenger.ROW_DESCRIPTION_TYPE);
+        messenger.beginMessage(PostgresMessages.ROW_DESCRIPTION_TYPE.code());
         messenger.writeShort(ncols);
         for (int i = 0; i < ncols; i++) {
             PostgresType type = types[i];
@@ -101,7 +101,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             break;
         }
         {        
-          messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+          messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
           messenger.writeString("SELECT " + nrows);
           messenger.sendMessage();
         }

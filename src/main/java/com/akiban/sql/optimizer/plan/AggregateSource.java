@@ -20,8 +20,14 @@ import java.util.ArrayList;
 
 public class AggregateSource extends BasePlanWithInput implements ColumnSource
 {
+    public static enum Implementation {
+        PRESORTED, PREAGGREGATE_RESORT, SORT, HASH
+    }
+
     private List<ExpressionNode> groupBy;
     private List<AggregateFunctionExpression> aggregates;
+
+    private Implementation implementation;
 
     public AggregateSource(PlanNode input,
                            List<ExpressionNode> groupBy) {
@@ -44,6 +50,13 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
         return position;
     }
 
+    public Implementation getImplementation() {
+        return implementation;
+    }
+    public void setImplementation(Implementation implementation) {
+        this.implementation = implementation;
+    }
+
     public String getName() {
         return "GROUP";         // TODO: Something unique needed?
     }
@@ -52,7 +65,15 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
             if (getInput().accept(v)) {
-                if (v instanceof ExpressionVisitor) {
+                if (v instanceof ExpressionRewriteVisitor) {
+                    for (int i = 0; i < groupBy.size(); i++) {
+                        groupBy.set(i, groupBy.get(i).accept((ExpressionRewriteVisitor)v));
+                    }
+                    for (int i = 0; i < aggregates.size(); i++) {
+                        aggregates.set(i, (AggregateFunctionExpression)aggregates.get(i).accept((ExpressionRewriteVisitor)v));
+                    }
+                }
+                else if (v instanceof ExpressionVisitor) {
                     children:
                     {
                         for (ExpressionNode child : groupBy) {
@@ -72,7 +93,22 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
     
     @Override
     public String summaryString() {
-        return super.summaryString() + groupBy + aggregates;
+        StringBuilder str = new StringBuilder(super.summaryString());
+        str.append("(");
+        if (implementation != null) {
+            str.append(implementation);
+            str.append(",");
+        }
+        str.append(groupBy);
+        str.append(",");
+        str.append(aggregates);
+        str.append(")");
+        return str.toString();
+    }
+
+    @Override
+    protected boolean maintainInDuplicateMap() {
+        return true;
     }
 
     @Override

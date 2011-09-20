@@ -18,20 +18,12 @@ package com.akiban.server.types.conversion;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
+import com.akiban.server.types.extract.Extractors;
 import com.akiban.util.ByteSource;
 
 final class ConverterForVarBinary extends ObjectConverter<ByteSource> {
 
     static final ObjectConverter<ByteSource> INSTANCE = new ConverterForVarBinary();
-
-    @Override
-    public ByteSource getObject(ValueSource source) {
-        AkType type = source.getConversionType();
-        switch (type) {
-        case VARBINARY:   return source.getVarBinary();
-        default: throw unsupportedConversion(type);
-        }
-    }
 
     @Override
     protected void putObject(ValueTarget target, ByteSource value) {
@@ -45,5 +37,7 @@ final class ConverterForVarBinary extends ObjectConverter<ByteSource> {
         return AkType.VARBINARY;
     }
 
-    private ConverterForVarBinary() {}
+    private ConverterForVarBinary() {
+        super(Extractors.getByteSourceExtractor());
+    }
 }
