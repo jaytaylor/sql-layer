@@ -608,6 +608,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 explainer = new PostgresExplainStatementGenerator(this);
             }
             else {
+                logger.info("Using new optimizer!");
                 PostgresOperatorCompiler_New nc = new PostgresOperatorCompiler_New(this);
                 schema = nc.getSchema();
                 compiler = nc;
