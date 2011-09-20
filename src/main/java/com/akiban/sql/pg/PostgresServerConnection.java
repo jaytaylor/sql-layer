@@ -26,6 +26,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.physicaloperator.StoreAdapter;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
@@ -586,15 +587,33 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         // Temporary until completely removed.
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
-        PostgresOperatorCompiler compiler = new PostgresOperatorCompiler(this);
+        PostgresStatementGenerator compiler, explainer;
         {
+            Schema schema;
+            // TODO: Temporary choice of optimizer.
+            // There is an "options" property that psql allows in the
+            // connect string, but no way to pass it to the JDBC
+            // driver. So have to use what's available.
+            if (!"new-optimizer".equals(properties.getProperty("user"))) {
+                PostgresOperatorCompiler oc = new PostgresOperatorCompiler(this);
+                schema = oc.getSchema();
+                compiler = oc;
+                explainer = new PostgresExplainStatementGenerator(this);
+            }
+            else {
+                logger.info("Using new optimizer!");
+                PostgresOperatorCompiler_New nc = new PostgresOperatorCompiler_New(this);
+                schema = nc.getSchema();
+                compiler = nc;
+                explainer = new PostgresExplainStatementGenerator_New(this);
+            }
             final Store store = reqs.store();
             final PersistitStore persistitStore;
             if (store instanceof OperatorStore)
                 persistitStore = ((OperatorStore)store).getPersistitStore();
             else
                 persistitStore = (PersistitStore)store;
-            adapter = new PersistitAdapter(compiler.getSchema(),
+            adapter = new PersistitAdapter(schema,
                                            persistitStore,
                                            reqs.treeService(),
                                            session);
@@ -609,7 +628,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             compiler,
             new PostgresDDLStatementGenerator(this),
             new PostgresSessionStatementGenerator(this),
-            new PostgresExplainStatementGenerator(this)
+            explainer
         };
     }
 

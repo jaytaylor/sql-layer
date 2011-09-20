@@ -34,6 +34,7 @@ import com.akiban.sql.optimizer.plan.AST;
 import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanToString;
 import com.akiban.sql.optimizer.rule.BaseRule;
+import static com.akiban.sql.optimizer.rule.DefaultRules.*;
 import com.akiban.sql.optimizer.rule.RulesContext;
 import com.akiban.sql.optimizer.rule.RulesTestContext;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
@@ -234,6 +235,10 @@ public class Tester
             operatorCompiler.addView(view);
     }
 
+    public void defaultPlanRules() throws Exception {
+        planRules = DEFAULT_RULES;
+    }
+
     public void loadPlanRules(File file) throws Exception {
         planRules = RulesTestHelper.loadRules(file);
     }
@@ -316,6 +321,8 @@ public class Tester
                     String rules = args[i++];
                     if (rules.startsWith("@"))
                         tester.loadPlanRules(new File(rules.substring(1)));
+                    else if (rules.equals("default"))
+                        tester.defaultPlanRules();
                     else
                         tester.parsePlanRules(rules);
                     tester.addAction(Action.PLAN);

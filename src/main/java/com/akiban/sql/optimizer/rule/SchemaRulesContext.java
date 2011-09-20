@@ -15,7 +15,12 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
+
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
+
+import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.rowtype.Schema;
 
@@ -33,6 +38,13 @@ public class SchemaRulesContext extends RulesContext
 
     public Schema getSchema() {
         return schema;
+    }
+
+    public PhysicalResultColumn getResultColumn(String name, DataTypeDescriptor type,
+                                                boolean nameDefaulted, Column column) {
+        if ((column != null) && nameDefaulted)
+            name = column.getName();
+        return new PhysicalResultColumn(name);
     }
 
 }

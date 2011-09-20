@@ -1,4 +1,4 @@
-PhysicalSelect@3445378f[]
+PhysicalSelect@3445378f[cid, name, oid, cid, order_date, iid, oid, sku, quan, price]
   project([Field(0), Field(1), Field(2), Field(3), Field(4), Field(5), Field(6), Field(7), Field(8), Field(9)])
     Flatten_HKeyOrdered(flatten(user.customers, user.orders) INNER user.items)
       Flatten_HKeyOrdered(user.customers INNER user.orders)

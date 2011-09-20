@@ -64,6 +64,8 @@ public class RulesTestHelper
         return result;
     }
 
+    // This just needs to be enough to keep from UserTableRowType
+    // constructor from getting NPE.
     // TODO: Think about where this really goes.
     public static void ensureRowDefs(AkibanInformationSchema ais) {
         for (UserTable userTable : ais.getUserTables().values()) {

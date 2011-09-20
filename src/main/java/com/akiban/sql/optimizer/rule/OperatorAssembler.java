@@ -68,11 +68,13 @@ public class OperatorAssembler extends BaseRule
 
     static class Assembler {
         private PlanContext planContext;
+        private SchemaRulesContext rulesContext;
         private Schema schema;
 
         public Assembler(PlanContext planContext) {
             this.planContext = planContext;
-            schema = ((SchemaRulesContext)planContext.getRulesContext()).getSchema();
+            rulesContext = (SchemaRulesContext)planContext.getRulesContext();
+            schema = rulesContext.getSchema();
         }
 
         public void apply() {
@@ -506,22 +508,38 @@ public class OperatorAssembler extends BaseRule
         }
 
         // Get a list of result columns based on ResultSet expression names.
-        protected List<PhysicalResultColumn> 
+        protected List<PhysicalResultColumn>
             getResultColumns(List<ResultExpression> results) {
-            List<PhysicalResultColumn> result = 
+            List<PhysicalResultColumn> columns = 
                 new ArrayList<PhysicalResultColumn>(results.size());
-            // TODO: ...
-            return result;
+            for (ResultExpression result : results) {
+                String name = result.getName();
+                boolean nameDefaulted = result.isNameDefaulted();
+                DataTypeDescriptor type = null;
+                Column column = null;
+                if (result.getExpression() != null) {
+                    ExpressionNode expression = result.getExpression();
+                    type = expression.getSQLtype();
+                    if (expression.isColumn())
+                        column = ((ColumnExpression)expression).getColumn();
+                }
+                columns.add(rulesContext.getResultColumn(name, type, 
+                                                         nameDefaulted, column));
+            }
+            return columns;
         }
 
         // Get a list of result columns for unnamed columns.
         // This would correspond to top-level VALUES, which the parser
         // does not currently support.
         protected List<PhysicalResultColumn> getResultColumns(int ncols) {
-            List<PhysicalResultColumn> result = 
+            List<PhysicalResultColumn> columns = 
                 new ArrayList<PhysicalResultColumn>(ncols);
-            // TODO: ...
-            return result;
+            for (int i = 0; i < ncols; i++) {
+                columns.add(rulesContext.getResultColumn("column" + (i+1), null,
+                                                         true, null));
+            }
+            return columns;
         }
 
         // Generate key range bounds.
@@ -544,7 +562,7 @@ public class OperatorAssembler extends BaseRule
                 }
             }
 
-            if ((lowComparand == null) && (lowComparand == null)) {
+            if ((lowComparand == null) && (highComparand == null)) {
                 IndexBound eq = getIndexBound(index.getIndex(), keys, kidx);
                 return new IndexKeyRange(eq, true, eq, true);
             }
