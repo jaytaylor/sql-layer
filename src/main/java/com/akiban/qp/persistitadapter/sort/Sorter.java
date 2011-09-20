@@ -15,7 +15,6 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapterException;
 import com.akiban.qp.physicaloperator.API;
@@ -23,7 +22,9 @@ import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.PersistitValueValueTarget;
+import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
@@ -33,6 +34,8 @@ import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.akiban.qp.expression.API.*;
 
 public class Sorter
 {
@@ -45,15 +48,17 @@ public class Sorter
         this.bindings = bindings;
         this.exchange = adapter.takeExchangeForSorting();
         this.key = exchange.getKey();
+        this.keyTarget = new PersistitKeyValueTarget();
+        this.keyTarget.attach(this.key);
         this.value = exchange.getValue();
         this.valueTarget = new PersistitValueValueTarget();
-        this.valueTarget.attach(exchange.getValue());
+        this.valueTarget.attach(this.value);
         this.rowFields = rowType.nFields();
         this.fieldTypes = new AkType[this.rowFields];
         // Append a count field as a sort key, to ensure key uniqueness for Persisit. By setting
         // the ascending flag equal to that of some other sort field, we don't change an all-ASC or all-DESC sort
         // into a less efficient mixed-mode sort.
-        this.ordering.append(null, ordering.ascending(0));
+        this.ordering.append(DUMMY_EXPRESSION, ordering.ascending(0));
     }
 
     public Cursor sort() throws PersistitException
@@ -114,9 +119,13 @@ public class Sorter
         key.clear();
         int sortFields = ordering.sortFields() - 1; // Don't include the artificial count field
         for (int i = 0; i < sortFields; i++) {
-            Expression expression = ordering.expression(i);
-            Object keyField = expression.evaluate(row, bindings);
-            key.append(keyField);
+            ExpressionEvaluation evaluation = ordering.evaluation(i);
+            evaluation.of(row);
+            ValueSource keySource = evaluation.eval();
+            // TODO: When ordering has server expressions instead of qp expressions: ordering.type(i));
+            // TODO: Or even better: fieldTypes[i]
+            keyTarget.expectingType(keySource.getConversionType());
+            Converters.convert(keySource, keyTarget);
         }
         key.append(rowCount++);
     }
@@ -138,6 +147,7 @@ public class Sorter
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(Sorter.class);
+    private static final com.akiban.qp.expression.Expression DUMMY_EXPRESSION = literal(null);
 
     // Object state
 
@@ -149,6 +159,7 @@ public class Sorter
     final Exchange exchange;
     final Key key;
     final Value value;
+    final PersistitKeyValueTarget keyTarget;
     final PersistitValueValueTarget valueTarget;
     final int rowFields;
     // TODO: Horrible hack. When we switch from qp.Expression to server.Expression, use Expression.valueType()

@@ -18,6 +18,10 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.*;
@@ -198,6 +202,7 @@ class Sort_InsertionLimited extends PhysicalOperator
     private class Holder implements Comparable<Holder> {
         private int index;
         private RowHolder row;
+        private ToObjectValueTarget target = new ToObjectValueTarget();
         private Comparable[] values;
 
         public Holder(int index, Row arow, Bindings bindings) {
@@ -208,7 +213,15 @@ class Sort_InsertionLimited extends PhysicalOperator
 
             values = new Comparable[ordering.sortFields()];
             for (int i = 0; i < values.length; i++) {
-                values[i] = (Comparable)ordering.expression(i).evaluate(arow, bindings);
+                ExpressionEvaluation evaluation = ordering.evaluation(i);
+                evaluation.of(arow);
+                evaluation.of(bindings);
+                ValueSource valueSource = evaluation.eval();
+                // TODO: Use ordering.type(i)) once qp expressions are gone. (Actually, valuesource's type should
+                // TODO: always work, but still...)
+                target.expectType(valueSource.getConversionType());
+                Converters.convert(valueSource, target);
+                values[i] = (Comparable) target.lastConvertedValue();
             }
         }
 

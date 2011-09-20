@@ -23,6 +23,8 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.aggregation.AggregatorFactory;
+import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.types.AkType;
 
 import java.util.*;
 
@@ -224,7 +226,7 @@ public class API
         return new Product_NestedLoops(outerInput, innerInput, outerType, innerType, inputBindingPosition);
     }
 
-    // Cut
+    // Count
 
     public static PhysicalOperator count_Default(PhysicalOperator input,
                                                  RowType countType)
@@ -326,12 +328,17 @@ public class API
 
         public int sortFields()
         {
-            return expressions.size();
+            return evaluations.size();
         }
 
-        public Expression expression(int i)
+        public ExpressionEvaluation evaluation(int i)
         {
-            return expressions.get(i);
+            return evaluations.get(i);
+        }
+
+        public AkType type(int i)
+        {
+            return expressions.get(i).valueType();
         }
 
         public boolean ascending(int i)
@@ -339,9 +346,11 @@ public class API
             return directions.get(i);
         }
 
-        public void append(Expression expression, boolean ascending)
+        public void append(Expression qpExpression, boolean ascending)
         {
+            com.akiban.server.expression.Expression expression = wrap(qpExpression);
             expressions.add(expression);
+            evaluations.add(expression.evaluation());
             directions.add(ascending);
         }
 
@@ -349,11 +358,14 @@ public class API
         {
             Ordering copy = new Ordering();
             copy.expressions.addAll(expressions);
+            copy.evaluations.addAll(evaluations);
             copy.directions.addAll(directions);
             return copy;
         }
 
-        private final List<Expression> expressions = new ArrayList<Expression>();
+        private final List<com.akiban.server.expression.Expression> expressions =
+            new ArrayList<com.akiban.server.expression.Expression>();
+        private final List<ExpressionEvaluation> evaluations = new ArrayList<ExpressionEvaluation>();
         private final List<Boolean> directions = new ArrayList<Boolean>(); // true: ascending, false: descending
     }
 
