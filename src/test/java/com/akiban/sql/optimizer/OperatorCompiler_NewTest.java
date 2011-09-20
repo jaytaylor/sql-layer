@@ -44,7 +44,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 
 @RunWith(Parameterized.class)
-public class OperatorCompilerTest_New extends TestBase implements TestBase.GenerateAndCheckResult
+public class OperatorCompiler_NewTest extends TestBase implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "operator-new");
@@ -135,7 +135,7 @@ public class OperatorCompilerTest_New extends TestBase implements TestBase.Gener
         return result;
     }
 
-    public OperatorCompilerTest_New(String caseName, File schemaFile, File indexFile,
+    public OperatorCompiler_NewTest(String caseName, File schemaFile, File indexFile,
                                 String sql, String expected, String error) {
         super(caseName, sql, expected, error);
         this.schemaFile = schemaFile;
