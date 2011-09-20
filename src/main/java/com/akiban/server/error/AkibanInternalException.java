@@ -14,13 +14,13 @@
  */
 package com.akiban.server.error;
 
-public class AkibanInternalError extends RuntimeException {
+public class AkibanInternalException extends RuntimeException {
     
-    public AkibanInternalError (String message) {
+    public AkibanInternalException(String message) {
         super (message);
     }
     
-    public AkibanInternalError (String message, Throwable cause)  {
+    public AkibanInternalException(String message, Throwable cause)  {
         super (message, cause);
     }
 

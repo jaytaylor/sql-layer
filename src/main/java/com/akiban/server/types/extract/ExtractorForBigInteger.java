@@ -13,31 +13,31 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.types.conversion;
+package com.akiban.server.types.extract;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueTarget;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.util.ByteSource;
 
-final class ConverterForVarBinary extends ObjectConverter<ByteSource> {
+import java.math.BigInteger;
 
-    static final ObjectConverter<ByteSource> INSTANCE = new ConverterForVarBinary();
-
+final class ExtractorForBigInteger extends ObjectExtractor<BigInteger> {
     @Override
-    protected void putObject(ValueTarget target, ByteSource value) {
-        target.putVarBinary(value);
+    public BigInteger getObject(ValueSource source) {
+        AkType type = source.getConversionType();
+        switch (type) {
+        case U_BIGINT:  return source.getUBigInt();
+        case TEXT:      return new BigInteger(source.getText());
+        case VARCHAR:   return new BigInteger(source.getString());
+        default: throw unsupportedConversion(type);
+        }
     }
 
-    // AbstractConverter interface
-
     @Override
-    protected AkType targetConversionType() {
-        return AkType.VARBINARY;
+    public BigInteger getObject(String string) {
+        return new BigInteger(string);
     }
 
-    private ConverterForVarBinary() {
-        super(Extractors.getByteSourceExtractor());
+    ExtractorForBigInteger() {
+        super(AkType.U_BIGINT);
     }
 }
