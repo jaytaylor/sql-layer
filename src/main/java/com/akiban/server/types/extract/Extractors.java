@@ -15,52 +15,78 @@
 
 package com.akiban.server.types.extract;
 
-import com.akiban.server.Quote;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.util.AkibanAppender;
+import com.akiban.util.ByteSource;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.EnumMap;
 import java.util.Map;
 
 public final class Extractors {
+    // Extractors interface
     public static LongExtractor getLongExtractor(AkType type) {
-        AbstractExtractor extractor = get(type);
-        if (extractor instanceof LongExtractor) {
-            return (LongExtractor) extractor;
+        return get(type, LongExtractor.class, true);
+    }
+
+    public static BooleanExtractor getBooleanExtractor() {
+        return BOOLEAN_EXTRACTOR;
+    }
+
+    public static DoubleExtractor getDoubleExtractor() {
+        return DOUBLE_EXTRACTOR;
+    }
+
+    public static ObjectExtractor<String> getStringExtractor() {
+        return STRING_EXTRACTOR;
+    }
+
+    public static ObjectExtractor<BigInteger> getUBigIntExtractor() {
+        return UBIGINT_EXTRACTOR;
+    }
+
+    public static ObjectExtractor<BigDecimal> getDecimalExtractor() {
+        return DECIMAL_EXTRACTOR;
+    }
+
+    public static ObjectExtractor<ByteSource> getByteSourceExtractor() {
+        return VARBINARY_EXTRACTOR;
+    }
+
+    // private methods
+
+    private static <E extends AbstractExtractor> E get(AkType type, Class<E> extractorClass, boolean nullDefault) {
+        AbstractExtractor extractor = readOnlyExtractorsMap.get(type);
+        if (extractorClass.isInstance(extractor)) {
+            return extractorClass.cast(extractor);
         }
-        return null;
+        if (nullDefault)
+            return null;
+        throw new AkibanInternalException(
+                "extractor for " + type + " is of class " + extractor.getClass() + ", required " + extractorClass
+        );
     }
 
-    public static boolean extractBoolean(ValueSource source) {
-        return source.getBool();
-    }
-
-    private static AbstractExtractor get(AkType type) {
-        return readOnlyExtractorsMap.get(type);
-    }
-
-    private static Map<AkType,AbstractExtractor> createExtractorsMap() {
-        Map<AkType,AbstractExtractor> result = new EnumMap<AkType, AbstractExtractor>(AkType.class);
+    private static Map<AkType,? extends LongExtractor> createLongExtractorsMap() {
+        Map<AkType,LongExtractor> result = new EnumMap<AkType,LongExtractor>(AkType.class);
         result.put(AkType.DATE, ExtractorsForDates.DATE);
         result.put(AkType.DATETIME, ExtractorsForDates.DATETIME);
-        result.put(AkType.DECIMAL, null);
-        result.put(AkType.DOUBLE, null);
-        result.put(AkType.FLOAT, null);
         result.put(AkType.INT, ExtractorsForLong.INT);
         result.put(AkType.LONG, ExtractorsForLong.LONG);
-        result.put(AkType.VARCHAR, null);
-        result.put(AkType.TEXT, null);
         result.put(AkType.TIME, ExtractorsForDates.TIME);
         result.put(AkType.TIMESTAMP, ExtractorsForDates.TIMESTAMP);
-        result.put(AkType.U_BIGINT, null);
-        result.put(AkType.U_DOUBLE, null);
-        result.put(AkType.U_FLOAT, null);
         result.put(AkType.U_INT, ExtractorsForLong.U_INT);
-        result.put(AkType.VARBINARY, null);
         result.put(AkType.YEAR, ExtractorsForDates.YEAR);
         return result;
     }
 
-    private static final Map<AkType,AbstractExtractor> readOnlyExtractorsMap = createExtractorsMap();
+    private static final BooleanExtractor BOOLEAN_EXTRACTOR = new BooleanExtractor();
+    private static final DoubleExtractor DOUBLE_EXTRACTOR = new DoubleExtractor();
+    private static final ExtractorForString STRING_EXTRACTOR = new ExtractorForString();
+    private static final ExtractorForBigInteger UBIGINT_EXTRACTOR = new ExtractorForBigInteger();
+    private static final ExtractorForBigDecimal DECIMAL_EXTRACTOR = new ExtractorForBigDecimal();
+    private static final ExtractorForVarBinary VARBINARY_EXTRACTOR = new ExtractorForVarBinary();
+
+    private static final Map<AkType,? extends LongExtractor> readOnlyExtractorsMap = createLongExtractorsMap();
 }
