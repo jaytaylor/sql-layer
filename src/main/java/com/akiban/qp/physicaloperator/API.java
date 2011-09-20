@@ -57,9 +57,9 @@ public class API
     public static PhysicalOperator project_Table(PhysicalOperator inputOperator, 
                                                  RowType inputRowType,
                                                  RowType outputRowType,
-                                                 List<Expression>projections) 
+                                                 List<Expression> projections)
     {
-        return new Project_Default (inputOperator, inputRowType, outputRowType, projections);
+        return new Project_Default (inputOperator, inputRowType, outputRowType, wrapAll(projections));
     }
     // Flatten
 

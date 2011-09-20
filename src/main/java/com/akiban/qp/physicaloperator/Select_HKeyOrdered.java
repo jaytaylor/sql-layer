@@ -104,7 +104,7 @@ class Select_HKeyOrdered extends PhysicalOperator
             while (row == null && inputRow != null) {
                 if (inputRow.rowType() == predicateRowType) {
                     evaluation.of(inputRow);
-                    if (Extractors.extractBoolean(evaluation.eval())) {
+                    if (Extractors.getBooleanExtractor().getBoolean(evaluation.eval())) {
                         // New row of predicateRowType
                         selectedRow.set(inputRow);
                         row = inputRow;

@@ -40,7 +40,7 @@ public class ProjectedRowType extends DerivedRowType
 
     // ProjectedRowType interface
 
-    public ProjectedRowType(Schema schema, int typeId, List<Expression> projections)
+    public ProjectedRowType(Schema schema, int typeId, List<? extends Expression> projections)
     {
         super(schema, typeId);
         this.projections = projections;
@@ -48,5 +48,5 @@ public class ProjectedRowType extends DerivedRowType
     
     // Object state
 
-    private final List<Expression> projections;
+    private final List<? extends Expression> projections;
 }

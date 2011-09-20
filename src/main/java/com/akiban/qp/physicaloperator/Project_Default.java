@@ -90,7 +90,7 @@ class Project_Default extends PhysicalOperator
     
     // Project_Default constructor, returns ProjectedUserTableRowType rows 
     public Project_Default(PhysicalOperator inputOperator, RowType inputRowType,
-            RowType projectTableRowType, List<Expression> projections)
+            RowType projectTableRowType, List<? extends Expression> projections)
     {
         ArgumentValidation.notNull("inputRowType", inputRowType);
         ArgumentValidation.notEmpty("projections", projections);
@@ -101,8 +101,9 @@ class Project_Default extends PhysicalOperator
         
         ArgumentValidation.notNull("projectRowType", projectTableRowType);
         ArgumentValidation.isTrue("RowType has UserTable", projectTableRowType.hasUserTable());
-        projectType = new ProjectedUserTableRowType (projectTableRowType.schema(), 
-                projectTableRowType.userTable(), projections);
+        projectType = new ProjectedUserTableRowType(projectTableRowType.schema(),
+                                                    projectTableRowType.userTable(),
+                                                    projections);
     }
 
 
