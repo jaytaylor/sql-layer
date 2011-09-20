@@ -562,7 +562,7 @@ public class OperatorAssembler extends BaseRule
                 }
             }
 
-            if ((lowComparand == null) && (lowComparand == null)) {
+            if ((lowComparand == null) && (highComparand == null)) {
                 IndexBound eq = getIndexBound(index.getIndex(), keys, kidx);
                 return new IndexKeyRange(eq, true, eq, true);
             }
