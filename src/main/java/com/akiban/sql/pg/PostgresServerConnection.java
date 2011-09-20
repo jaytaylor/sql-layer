@@ -597,7 +597,11 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         PostgresStatementGenerator compiler, explainer;
         {
             Schema schema;
-            if (getProperty("options", "").indexOf("new-optimizer") < 0) {
+            // TODO: Temporary choice of optimizer.
+            // There is an "options" property that psql allows in the
+            // connect string, but no way to pass it to the JDBC
+            // driver. So have to use what's available.
+            if (!"new-optimizer".equals(properties.getProperty("user"))) {
                 PostgresOperatorCompiler oc = new PostgresOperatorCompiler(this);
                 schema = oc.getSchema();
                 compiler = oc;
