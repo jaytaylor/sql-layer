@@ -467,11 +467,12 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleLimit(Limit limit) {
             RowStream stream = assembleStream(limit.getInput());
-            if (limit.getOffset() > 0)
-                throw new UnsupportedSQLException("LIMIT OFFSET", null);
             if (limit.isLimitParameter())
                 throw new UnsupportedSQLException("LIMIT using parameter", null);
-            stream.operator = limit_Default(stream.operator, limit.getLimit());
+            int nrows = limit.getLimit();
+            if (nrows < 0)
+                nrows = Integer.MAX_VALUE;
+            stream.operator = limit_Default(stream.operator, limit.getOffset(), nrows);
             return stream;
         }
 

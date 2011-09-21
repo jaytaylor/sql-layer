@@ -152,9 +152,14 @@ public class API
 
     // Limit
 
-    public static PhysicalOperator limit_Default(PhysicalOperator inputOperator, int rows)
+    public static PhysicalOperator limit_Default(PhysicalOperator inputOperator, int limitRows)
     {
-        return new Limit_Default(inputOperator, rows);
+        return new Limit_Default(inputOperator, limitRows);
+    }
+
+    public static PhysicalOperator limit_Default(PhysicalOperator inputOperator, int skipRows, int limitRows)
+    {
+        return new Limit_Default(inputOperator, skipRows, limitRows);
     }
 
     // AncestorLookup

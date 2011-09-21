@@ -29,7 +29,7 @@ final class Limit_Default extends PhysicalOperator {
 
     @Override
     protected Cursor cursor(StoreAdapter adapter) {
-        return new Execution(limit(), inputOperator.cursor(adapter));
+        return new Execution(skip(), limit(), inputOperator.cursor(adapter));
     }
 
     // Plannable interface
@@ -54,24 +54,44 @@ final class Limit_Default extends PhysicalOperator {
 
     @Override
     public String toString() {
-        return String.format("%s(limit=%d: %s)", getClass().getSimpleName(), limit(), inputOperator);
+        StringBuilder str = new StringBuilder(getClass().getSimpleName());
+        str.append("(");
+        if (skip > 0) {
+            str.append(String.format("skip=%d", skip));
+        }
+        if (limit < Integer.MAX_VALUE) {
+            str.append(String.format("limit=%d", skip));
+        }
+        str.append(": ");
+        str.append(inputOperator);
+        str.append(")");
+        return str.toString();
     }
 
     // Limit_Default interface
 
     Limit_Default(PhysicalOperator inputOperator, int limit) {
+        this(inputOperator, 0, limit);
+    }
+
+    Limit_Default(PhysicalOperator inputOperator, int skip, int limit) {
+        ArgumentValidation.isGTE("skip", skip, 0);
         ArgumentValidation.isGTE("limit", limit, 0);
+        this.skip = skip;
         this.limit = limit;
         this.inputOperator = inputOperator;
     }
 
+    public int skip() {
+        return skip;
+    }
     public int limit() {
         return limit;
     }
 
     // Object state
 
-    private final int limit;
+    private final int skip, limit;
     private final PhysicalOperator inputOperator;
 
     // internal classes
@@ -82,6 +102,15 @@ final class Limit_Default extends PhysicalOperator {
 
         @Override
         public Row next() {
+            Row row;
+            while (skipLeft > 0) {
+                if ((row = input.next()) == null) {
+                    skipLeft = 0;
+                    rowsLeft = -1;
+                    return null;
+                }
+                skipLeft--;
+            }
             if (rowsLeft < 0) {
                 return null;
             }
@@ -89,7 +118,6 @@ final class Limit_Default extends PhysicalOperator {
                 input.close();
                 return null;
             }
-            Row row;
             if ((row = input.next()) == null) {
                 rowsLeft = -1;
                 return null;
@@ -99,14 +127,16 @@ final class Limit_Default extends PhysicalOperator {
         }
 
         // Execution interface
-        Execution(int limit, Cursor input) {
+        Execution(int skip, int limit, Cursor input) {
             super(input);
+            assert skip >= 0;
             assert limit >= 0;
+            this.skipLeft = skip;
             this.rowsLeft = limit;
         }
 
         // class state
 
-        private int rowsLeft;
+        private int skipLeft, rowsLeft;
     }
 }
