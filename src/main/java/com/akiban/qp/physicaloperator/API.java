@@ -16,6 +16,7 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
@@ -31,12 +32,13 @@ import java.util.*;
 public class API
 {
     // Aggregate
-    public static PhysicalOperator aggregate(PhysicalOperator inputOperator,
+
+    public static PhysicalOperator aggregate_Partial(PhysicalOperator inputOperator,
                                              int inputsIndex,
                                              AggregatorFactory factory,
                                              List<String> aggregatorNames)
     {
-        return new Aggregation_Partial(inputOperator, inputsIndex, factory, aggregatorNames);
+        return new Aggregate_Partial(inputOperator, inputsIndex, factory, aggregatorNames);
     }
 
     // Project
@@ -277,6 +279,29 @@ public class API
                                                    int inputBindingPosition)
     {
         return new Map_NestedLoops(outerInput, innerInput, outerJoinRowType, outerJoinRowExpressions, inputBindingPosition);
+    }
+
+    // Insert
+
+    public static UpdatePlannable insert_Default(PhysicalOperator inputOperator)
+    {
+        return new Insert_Default(inputOperator);
+    }
+
+
+    // Update
+
+    public static UpdatePlannable update_Default(PhysicalOperator inputOperator, 
+                                                 UpdateFunction updateFunction)
+    {
+        return new Update_Default(inputOperator, updateFunction);
+    }
+    
+    // Delete
+
+    public static UpdatePlannable delete_Default(PhysicalOperator inputOperator)
+    {
+        return new Delete_Default(inputOperator);
     }
 
     // Execution interface

@@ -26,7 +26,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.util.Strings;
 import com.akiban.util.Tap;
 
-public final class Insert_Default implements UpdatePlannable {
+class Insert_Default implements UpdatePlannable {
 
     public Insert_Default(PhysicalOperator inputOperator) {
         this.inputOperator = inputOperator;

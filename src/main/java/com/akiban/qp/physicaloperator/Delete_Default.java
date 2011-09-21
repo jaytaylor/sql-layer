@@ -23,7 +23,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.util.Strings;
 import com.akiban.util.Tap;
 
-public class Delete_Default implements UpdatePlannable {
+class Delete_Default implements UpdatePlannable {
 
     // constructor
 

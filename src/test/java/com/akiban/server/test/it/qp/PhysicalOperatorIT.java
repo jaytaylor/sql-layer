@@ -25,7 +25,6 @@ import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UpdateFunction;
-import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -75,7 +74,7 @@ public class PhysicalOperatorIT extends PhysicalOperatorITBase
         };
 
         PhysicalOperator groupScan = groupScan_Default(coi);
-        UpdatePlannable updateOperator = new Update_Default(groupScan, updateFunction);
+        UpdatePlannable updateOperator = update_Default(groupScan, updateFunction);
         UpdateResult result = updateOperator.run(NO_BINDINGS, adapter);
         assertEquals("rows modified", 2, result.rowsModified());
         assertEquals("rows touched", db.length, result.rowsTouched());
