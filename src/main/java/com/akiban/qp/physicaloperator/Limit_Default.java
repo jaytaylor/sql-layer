@@ -18,6 +18,7 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.server.error.NegativeLimitException;
 
 import java.util.Collections;
 import java.util.List;
@@ -29,7 +30,7 @@ final class Limit_Default extends PhysicalOperator {
 
     @Override
     protected Cursor cursor(StoreAdapter adapter) {
-        return new Execution(limit(), inputOperator.cursor(adapter));
+        return new Execution(inputOperator.cursor(adapter));
     }
 
     // Plannable interface
@@ -54,59 +55,123 @@ final class Limit_Default extends PhysicalOperator {
 
     @Override
     public String toString() {
-        return String.format("%s(limit=%d: %s)", getClass().getSimpleName(), limit(), inputOperator);
+        StringBuilder str = new StringBuilder(getClass().getSimpleName());
+        str.append("(");
+        if (skip > 0) {
+            str.append(String.format("skip=%d", skip));
+        }
+        if ((limit >= 0) && (limit < Integer.MAX_VALUE)) {
+            str.append(String.format("limit=%d", limit));
+        }
+        str.append(": ");
+        str.append(inputOperator);
+        str.append(")");
+        return str.toString();
     }
 
     // Limit_Default interface
 
     Limit_Default(PhysicalOperator inputOperator, int limit) {
+        this(inputOperator, 0, false, limit, false);
+    }
+
+    Limit_Default(PhysicalOperator inputOperator, 
+                  int skip, boolean skipIsBinding,
+                  int limit, boolean limitIsBinding) {
+        ArgumentValidation.isGTE("skip", skip, 0);
         ArgumentValidation.isGTE("limit", limit, 0);
+        this.skip = skip;
+        this.skipIsBinding = skipIsBinding;
         this.limit = limit;
+        this.limitIsBinding = limitIsBinding;
         this.inputOperator = inputOperator;
     }
 
+    public int skip() {
+        return skip;
+    }
+    public boolean isSkipBinding() {
+        return skipIsBinding;
+    }
     public int limit() {
         return limit;
+    }
+    public boolean isLimitBinding() {
+        return limitIsBinding;
     }
 
     // Object state
 
-    private final int limit;
+    private final int skip, limit;
+    private final boolean skipIsBinding, limitIsBinding;
     private final PhysicalOperator inputOperator;
 
     // internal classes
 
-    private static class Execution extends ChainedCursor {
+    private class Execution extends ChainedCursor {
 
         // Cursor interface
 
         @Override
+        public void open(Bindings bindings) {
+            super.open(bindings);
+            if (isSkipBinding()) {
+                Integer i = (Integer)bindings.get(skip());
+                if (i != null)
+                    this.skipLeft = i.intValue();
+            }
+            else {
+                this.skipLeft = skip();
+            }
+            if (skipLeft < 0)
+                throw new NegativeLimitException("OFFSET", skipLeft);
+            if (isLimitBinding()) {
+                Integer i = (Integer)bindings.get(limit());
+                if (i == null)
+                    this.limitLeft = Integer.MAX_VALUE;
+                else
+                    this.limitLeft = i.intValue();
+            }
+            else {
+                this.limitLeft = limit();
+            }
+            if (limitLeft < 0)
+                throw new NegativeLimitException("LIMIT", limitLeft);
+        }
+
+        @Override
         public Row next() {
-            if (rowsLeft < 0) {
+            Row row;
+            while (skipLeft > 0) {
+                if ((row = input.next()) == null) {
+                    skipLeft = 0;
+                    limitLeft = -1;
+                    return null;
+                }
+                skipLeft--;
+            }
+            if (limitLeft < 0) {
                 return null;
             }
-            if (rowsLeft == 0) {
+            if (limitLeft == 0) {
                 input.close();
                 return null;
             }
-            Row row;
             if ((row = input.next()) == null) {
-                rowsLeft = -1;
+                limitLeft = -1;
                 return null;
             }
-            --rowsLeft;
+            --limitLeft;
             return row;
         }
 
         // Execution interface
-        Execution(int limit, Cursor input) {
+        Execution(Cursor input) {
             super(input);
-            assert limit >= 0;
-            this.rowsLeft = limit;
         }
 
         // class state
 
-        private int rowsLeft;
+        private int skipLeft, limitLeft;
     }
 }
