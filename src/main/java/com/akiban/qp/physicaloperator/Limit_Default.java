@@ -60,8 +60,8 @@ final class Limit_Default extends PhysicalOperator {
         if (skip > 0) {
             str.append(String.format("skip=%d", skip));
         }
-        if (limit < Integer.MAX_VALUE) {
-            str.append(String.format("limit=%d", skip));
+        if ((limit >= 0) && (limit < Integer.MAX_VALUE)) {
+            str.append(String.format("limit=%d", limit));
         }
         str.append(": ");
         str.append(inputOperator);
