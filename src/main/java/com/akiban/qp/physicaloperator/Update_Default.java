@@ -25,7 +25,7 @@ import com.akiban.util.Tap;
 import java.util.Collections;
 import java.util.List;
 
-public final class Update_Default implements UpdatePlannable {
+class Update_Default implements UpdatePlannable {
 
     // Object interface
 

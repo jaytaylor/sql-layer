@@ -30,12 +30,8 @@ import com.akiban.sql.parser.ParameterNode;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import static com.akiban.qp.physicaloperator.API.*;
-// TODO: Why aren't these in API?
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.physicaloperator.UpdateFunction;
-import com.akiban.qp.physicaloperator.Insert_Default;
-import com.akiban.qp.physicaloperator.Update_Default;
-import com.akiban.qp.physicaloperator.Delete_Default;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.*;
 
@@ -147,7 +143,7 @@ public class OperatorAssembler extends BaseRule
             inserts = Arrays.asList(row);
             stream.operator = project_Table(stream.operator, stream.rowType,
                                             targetRowType, inserts);
-            UpdatePlannable plan = new Insert_Default(stream.operator);
+            UpdatePlannable plan = insert_Default(stream.operator);
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
@@ -172,14 +168,14 @@ public class OperatorAssembler extends BaseRule
             updates = Arrays.asList(row);
             UpdateFunction updateFunction = 
                 new ExpressionRowUpdateFunction(updates, targetRowType);
-            UpdatePlannable plan = new Update_Default(stream.operator, updateFunction);
+            UpdatePlannable plan = update_Default(stream.operator, updateFunction);
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
         protected PhysicalUpdate deleteStatement(DeleteStatement deleteStatement) {
             RowStream stream = assembleQuery(deleteStatement.getQuery());
             assert (stream.rowType == tableRowType(deleteStatement.getTargetTable()));
-            UpdatePlannable plan = new Delete_Default(stream.operator);
+            UpdatePlannable plan = delete_Default(stream.operator);
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
@@ -408,7 +404,7 @@ public class OperatorAssembler extends BaseRule
                 }
                 stream.operator = sort_Tree(stream.operator, stream.rowType, ordering);
             }
-            // TODO: Where do we really get the AggregatorFactory from?
+            // TODO: Need to get real AggregatorFactory from RulesContext.
             AggregatorFactory aggregatorFactory = new AggregatorFactory() {
                     @Override
                     public Aggregator get(String name) {
@@ -418,19 +414,18 @@ public class OperatorAssembler extends BaseRule
                     public void validateNames(List<String> names) {
                     }
                 };
-            stream.operator = aggregate(stream.operator, nkeys, 
-                                        aggregatorFactory, aggregatorNames);
+            stream.operator = aggregate_Partial(stream.operator, nkeys, 
+                                                aggregatorFactory, aggregatorNames);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource);
             return stream;
         }
 
         protected RowStream assembleDistinct(Distinct distinct) {
             RowStream stream = assembleStream(distinct.getInput());
-            // TODO: This should be called aggregate_Partial, like the operator.
-            stream.operator = aggregate(stream.operator,
-                                        stream.rowType.nFields(),
-                                        null,
-                                        Collections.<String>emptyList());
+            stream.operator = aggregate_Partial(stream.operator,
+                                                stream.rowType.nFields(),
+                                                null,
+                                                Collections.<String>emptyList());
             // TODO: Probably want separate Distinct operator so that
             // row type does not change.
             stream.rowType = stream.operator.rowType();

@@ -32,7 +32,6 @@ import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.physicaloperator.UpdateFunction;
-import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -109,7 +108,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         // and therefore scan through two rows -- once to update old -> new, then to update new -> copy of new
         scanOp = com.akiban.qp.physicaloperator.API.limit_Default(scanOp, 1);
 
-        Update_Default updateOp = new Update_Default(scanOp, updateFunction);
+        UpdatePlannable updateOp = com.akiban.qp.physicaloperator.API.update_Default(scanOp, updateFunction);
 
         Transaction transaction = treeService.getTransaction(session);
         for(int retryCount=0; ; ++retryCount) {
