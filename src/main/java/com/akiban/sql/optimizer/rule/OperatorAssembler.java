@@ -42,6 +42,7 @@ import com.akiban.qp.rowtype.*;
 import static com.akiban.qp.expression.API.*;
 import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;
+import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
@@ -255,7 +256,7 @@ public class OperatorAssembler extends BaseRule
                                                         stream.fieldOffsets);
                 }
                 rows.add(new ExpressionRow(stream.rowType, UndefBindings.only(), 
-                                           expressions));
+                                           Arrays.asList(expressions)));
             }
             stream.operator = valuesScan_Default(rows, stream.rowType);
             return stream;
@@ -636,7 +637,7 @@ public class OperatorAssembler extends BaseRule
         protected UnboundExpressions getIndexExpressionRow(Index index, 
                                                            Expression[] keys) {
             RowType rowType = schema.indexRowType(index);
-            return new RowBasedUnboundExpressions(rowType, keys);
+            return new RowBasedUnboundExpressions(rowType, Arrays.asList(keys));
         }
 
         // Get the required type for any parameters to the statement.

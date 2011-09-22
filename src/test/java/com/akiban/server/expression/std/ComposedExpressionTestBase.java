@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
@@ -23,7 +24,6 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.sql.optimizer.ExpressionRow;
 import org.junit.Test;
 
 import java.util.ArrayList;

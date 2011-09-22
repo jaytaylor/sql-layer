@@ -27,6 +27,7 @@ import java.util.Map;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.Expression;
+import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.rowtype.RowType;
@@ -154,7 +155,7 @@ public class CUDCompiler {
                 expressions[i] = expr.generateExpression(stmt.getFieldOffset());
                 i++;
             }
-            exprRowList.add(new ExpressionRow(rowType, UndefBindings.only(), expressions));
+            exprRowList.add(new ExpressionRow(rowType, UndefBindings.only(), Arrays.asList(expressions)));
         }
         return valuesScan_Default (exprRowList, rowType);
         
