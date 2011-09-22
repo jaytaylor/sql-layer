@@ -17,8 +17,9 @@ package com.akiban.server.expression;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.util.Shareable;
 
-public interface Expression {
+public interface Expression extends Shareable {
     /**
      * <p>Whether this expression, including any child expressions, is a constant.</p>
      * <p>If an expression is constant, it must return {@code false} for both

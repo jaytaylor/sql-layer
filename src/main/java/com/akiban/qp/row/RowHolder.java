@@ -15,6 +15,8 @@
 
 package com.akiban.qp.row;
 
+import com.akiban.util.ShareHolder;
+
 public class RowHolder<MR extends Row>
 {
     // Object interface
@@ -22,35 +24,32 @@ public class RowHolder<MR extends Row>
     @Override
     public String toString()
     {
-        return String.valueOf(row);
+        return holder.toString();
     }
 
     // RowHolder interface
 
     public MR get()
     {
-        return row;
+        return holder.get();
     }
 
     public void set(MR newRow)
     {
-        if (row != null) {
-            row.release();
-        }
-        if (newRow != null) {
-            newRow.share();
-        }
-        row = newRow;
+        if (newRow == null)
+            holder.releaseIf();
+        else
+            holder.hold(newRow);
     }
 
     public boolean isNull()
     {
-        return row == null;
+        return ! holder.hasItem();
     }
 
     public boolean isNotNull()
     {
-        return row != null;
+        return holder.hasItem();
     }
 
     public RowHolder(MR row)
@@ -60,10 +59,9 @@ public class RowHolder<MR extends Row>
 
     public RowHolder()
     {
-        set(null);
     }
 
     // Object state
 
-    private MR row;
+    private final ShareHolder<MR> holder = new ShareHolder<MR>();
 }
