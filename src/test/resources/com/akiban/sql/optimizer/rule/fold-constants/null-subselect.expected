@@ -1,4 +1,5 @@
 SelectQuery@691177
-  ResultSet@1f99eea[user.customers.name, null]
-    Filter@13043d2[]
-      TableSource@d55986(user.customers)
+  ResultSet@6defe475[name, v]
+    Project@207ff5b6[user.customers.name, null]
+      Filter@13043d2[]
+        TableSource@d55986(user.customers)

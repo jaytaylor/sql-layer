@@ -19,9 +19,10 @@ import com.akiban.sql.StandardException;
 
 import com.akiban.sql.optimizer.OperatorCompiler_New;
 import com.akiban.sql.optimizer.plan.BasePlannable;
-import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.PhysicalSelect;
+import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.PhysicalUpdate;
+import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.SQLParser;
@@ -103,18 +104,15 @@ public class PostgresOperatorCompiler_New extends OperatorCompiler_New
     }
 
     @Override
-    public PhysicalResultColumn getResultColumn(String name, DataTypeDescriptor sqlType,
-                                                boolean nameDefaulted, Column column) {
+    public PhysicalResultColumn getResultColumn(ResultField field) {
         PostgresType pgType = null;
-        if (column != null) {
-            if (nameDefaulted)
-                name = column.getName(); // User-preferred case.
-            pgType = PostgresType.fromAIS(column);
+        if (field.getAIScolumn() != null) {
+            pgType = PostgresType.fromAIS(field.getAIScolumn());
         }
-        else if (sqlType != null) {
-            pgType = PostgresType.fromDerby(sqlType);
+        else if (field.getSQLtype() != null) {
+            pgType = PostgresType.fromDerby(field.getSQLtype());
         }
-        return new PostgresResultColumn(name, pgType);
+        return new PostgresResultColumn(field.getName(), pgType);
     }
 
     @Override

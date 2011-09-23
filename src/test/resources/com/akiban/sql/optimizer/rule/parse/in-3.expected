@@ -1,11 +1,13 @@
 SelectQuery@d02b2b6
-  ResultSet@2c22d166[user.customers.cid, user.customers.name]
-    Filter@21e1962d[EXISTS Subquery@1e670479]
-      TableSource@5f7779e3(user.customers)
+  ResultSet@6fe22c75[cid, name]
+    Project@69d4eeb5[user.customers.cid, user.customers.name]
+      Filter@21e1962d[EXISTS Subquery@1e670479]
+        TableSource@5f7779e3(user.customers)
 
 Subquery@1e670479
-  ResultSet@614a75bb[MAX(user.child.name)]
-    Filter@1ce3570c[user.customers.name == MAX(user.child.name)]
-      AggregateSource@1167e3a5([user.child.pid],[])
-        Filter@3b926e90[]
-          TableSource@a98ce7e(user.child)
+  ResultSet@154d659d[_SQL_COL_1]
+    Project@5aed8eb5[MAX(user.child.name)]
+      Filter@1ce3570c[user.customers.name == MAX(user.child.name)]
+        AggregateSource@1167e3a5([user.child.pid],[])
+          Filter@3b926e90[]
+            TableSource@a98ce7e(user.child)

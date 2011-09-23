@@ -18,7 +18,7 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode;
 import static com.akiban.sql.optimizer.plan.PlanContext.*;
-import com.akiban.sql.optimizer.plan.ResultSet.ResultExpression;
+import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 
@@ -124,6 +124,8 @@ public class ASTStatementLoader extends BaseRule
                                           insertNode.getOrderByList(),
                                           insertNode.getOffset(),
                                           insertNode.getFetchFirst());
+        if (query instanceof ResultSet)
+            query = ((ResultSet)query).getInput();
         TableNode targetTable = getTargetTable(insertNode);
         List<Column> targetColumns;
         ResultColumnList rcl = insertNode.getTargetColumnList();
@@ -170,33 +172,22 @@ public class ASTStatementLoader extends BaseRule
                                     offsetClause,
                                     fetchFirstClause);
         else if (resultSet instanceof RowResultSetNode) {
-            ResultColumnList resultColumns = resultSet.getResultColumns();
-            List<ExpressionNode> row = new ArrayList<ExpressionNode>(resultColumns.size());
-            for (ResultColumn resultColumn : resultColumns) {
-                row.add(toExpression(resultColumn.getExpression()));
-            }
+            List<ExpressionNode> row = toExpressionsRow(resultSet);
             List<List<ExpressionNode>> rows = new ArrayList<List<ExpressionNode>>();
             rows.add(row);
             return new ExpressionsSource(rows);
         }
         else if (resultSet instanceof UnionNode) {
             UnionNode union = (UnionNode)resultSet;
-            PlanNode left = toQueryForSelect(union.getLeftResultSet(), 
-                                             null, null, null);
-            PlanNode right = toQueryForSelect(union.getRightResultSet(), 
-                                              null, null, null);
             boolean all = union.isAll();
+            PlanNode left = toQueryForSelect(union.getLeftResultSet());
             if (all &&
                 (left instanceof ExpressionsSource) &&
-                (right instanceof ExpressionsSource)) {
-                ExpressionsSource result = (ExpressionsSource)left;
-                result.getExpressions().addAll(((ExpressionsSource)
-                                                right).getExpressions());
-                return result;
-            }
-            else {
-                return new Union(left, right, all);
-            }
+                ((union.getRightResultSet() instanceof RowResultSetNode) ||
+                 (union.getRightResultSet() instanceof UnionNode)))
+                return addMoreExpressions((ExpressionsSource)left, union);
+            PlanNode right = toQueryForSelect(union.getRightResultSet());
+            return new Union(left, right, all);
         }
         else
             throw new UnsupportedSQLException("Unsupported query", resultSet);
@@ -211,15 +202,23 @@ public class ASTStatementLoader extends BaseRule
         PlanNode query = toQuery(selectNode);
 
         ResultColumnList rcl = selectNode.getResultColumns();
-        List<ResultExpression> results = new ArrayList<ResultExpression>(rcl.size());
+        List<ExpressionNode> projects = new ArrayList<ExpressionNode>(rcl.size());
+        List<ResultField> results = new ArrayList<ResultField>(rcl.size());
         for (ResultColumn result : rcl) {
-            ExpressionNode expr = toExpression(result.getExpression());
             String name = result.getName();
+            DataTypeDescriptor type = result.getType();
             boolean nameDefaulted =
                 (result.getExpression() instanceof ColumnReference) &&
                 (name == ((ColumnReference)result.getExpression()).getColumnName());
-            ResultExpression rexpr = new ResultExpression(expr, name, nameDefaulted);
-            results.add(rexpr);
+            Column column = null;
+            ExpressionNode expr = toExpression(result.getExpression());
+            projects.add(expr);
+            if (expr instanceof ColumnExpression) {
+                column = ((ColumnExpression)expr).getColumn();
+                if ((column != null) && nameDefaulted)
+                    name = column.getName();
+            }
+            results.add(new ResultField(name, type, column));
         }
 
         List<OrderByExpression> sorts = new ArrayList<OrderByExpression>();
@@ -232,7 +231,7 @@ public class ASTStatementLoader extends BaseRule
                         int i = ((Long)value).intValue();
                         if ((i <= 0) || (i > results.size()))
                             throw new OrderByIntegerOutOfRange(i, results.size());
-                        expression = results.get(i-1).getExpression();
+                        expression = projects.get(i-1);
                     }
                     else
                         throw new OrderByNonIntegerConstant(expression.getSQLsource());
@@ -247,29 +246,72 @@ public class ASTStatementLoader extends BaseRule
         //  SELECT 1 FROM t HAVING MAX(c) > 0; 
         if ((selectNode.getGroupByList() != null) ||
             (selectNode.getHavingClause() != null) ||
-            hasAggregateFunctionA(results) ||
+            hasAggregateFunction(projects) ||
             hasAggregateFunctionA(sorts)) {
             query = toAggregateSource(query, selectNode.getGroupByList());
             query = new Filter(query, toConditions(selectNode.getHavingClause()));
         }
 
-        if (!sorts.isEmpty()) {
-            query = new Sort(query, sorts);
-        }
-
-        query = new ResultSet(query, results);
-
         if (selectNode.hasWindows())
             throw new UnsupportedSQLException("WINDOW", selectNode);
         
         if (selectNode.isDistinct())
-            query = new Distinct(query);
+            query = new Distinct(query, projects);
+
+        if (!sorts.isEmpty()) {
+            query = new Sort(query, sorts);
+        }
 
         if ((offsetClause != null) || 
             (fetchFirstClause != null))
             query = toLimit(query, offsetClause, fetchFirstClause);
 
+        query = new Project(query, projects);
+        query = new ResultSet(query, results);
+
         return query;
+    }
+
+    protected PlanNode toQueryForSelect(ResultSetNode resultSet)
+            throws StandardException {
+        return toQueryForSelect(resultSet, null, null, null);
+    }
+
+    protected List<ExpressionNode> toExpressionsRow(ResultSetNode resultSet)
+            throws StandardException {
+        ResultColumnList resultColumns = resultSet.getResultColumns();
+        List<ExpressionNode> row = new ArrayList<ExpressionNode>(resultColumns.size());
+        for (ResultColumn resultColumn : resultColumns) {
+            row.add(toExpression(resultColumn.getExpression()));
+        }
+        return row;
+    }
+
+    /** If start with VALUES, handle more of them right recursively
+     * without using the stack. */
+    protected PlanNode addMoreExpressions(ExpressionsSource into,
+                                          UnionNode union) throws StandardException {
+        while (true) {
+            // The left is already in and this is a UNION ALL.
+            if (union.getRightResultSet() instanceof RowResultSetNode) {
+                // Last row.
+                into.getExpressions().add(toExpressionsRow(union.getRightResultSet()));
+                return into;
+            }
+            if (!(union.getRightResultSet() instanceof UnionNode)) {
+                return new Union(into, 
+                                 toQueryForSelect(union.getRightResultSet()), 
+                                 true);
+            }
+            union = (UnionNode)union.getRightResultSet();
+            if (!union.isAll() ||
+                !((union.getLeftResultSet() instanceof RowResultSetNode))) {
+                return new Union(into,
+                                 toQueryForSelect(union),
+                                 true);
+            }
+            into.getExpressions().add(toExpressionsRow(union.getLeftResultSet()));
+        }
     }
 
     /** The common top-level filtered joins part of all statements. */
@@ -570,14 +612,14 @@ public class ASTStatementLoader extends BaseRule
                 if (!(plan instanceof BasePlanWithInput))
                     break;
                 PlanNode next = ((BasePlanWithInput)plan).getInput();
-                if (plan instanceof ResultSet) {
-                    ResultSet rs = (ResultSet)plan;
+                if (plan instanceof Project) {
+                    Project project = (Project)plan;
                     if (needOperand) {
-                        if (rs.getResults().size() != 1)
+                        if (project.getFields().size() != 1)
                             throw new UnsupportedSQLException("Subquery must have exactly one column", subqueryNode);
-                        operand = rs.getResults().get(0).getExpression();
+                        operand = project.getFields().get(0);
                     }
-                    // Don't need result set any more.
+                    // Don't need project any more.
                     if (prev != null)
                         prev.replaceInput(plan, next);
                 }
@@ -586,7 +628,9 @@ public class ASTStatementLoader extends BaseRule
                     innerConds = f.getConditions();
                     break;
                 }
-                prev = (PlanWithInput)plan;
+                if (!(plan instanceof ResultSet)) {
+                    prev = (PlanWithInput)plan;
+                }
                 plan = next;
             }
         }

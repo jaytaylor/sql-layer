@@ -1,12 +1,13 @@
 SelectQuery@4c221e9e
-  ResultSet@54083e1e[user.parent.id, user.parent.name, user.parent.state, user.child.id, user.child.pid, user.child.name, user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date, user.items.iid, user.items.oid, user.items.sku, user.items.quan, user.items.price]
-    Filter@69264eab[]
-      JoinNode@51f6f27b(INNER_JOIN[user.parent.name == user.customers.name, user.child.name == user.items.sku])
-        JoinNode@2ba99347(LEFT_JOIN[user.parent.id == user.child.pid])
-          TableSource@a0430b6(user.parent)
-          TableSource@191a01dd(user.child)
-        JoinNode@7a70610a(LEFT_JOIN[user.orders.oid == user.items.oid])
-          JoinNode@67f31652(LEFT_JOIN[user.customers.cid == user.orders.cid])
-            TableSource@83e96cf(user.customers)
-            TableSource@451ef443(user.orders)
-          TableSource@73367e28(user.items)
+  ResultSet@71412b61[id, name, state, id, pid, name, cid, name, oid, cid, order_date, iid, oid, sku, quan, price]
+    Project@6d87275d[user.parent.id, user.parent.name, user.parent.state, user.child.id, user.child.pid, user.child.name, user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date, user.items.iid, user.items.oid, user.items.sku, user.items.quan, user.items.price]
+      Filter@69264eab[]
+        JoinNode@51f6f27b(INNER_JOIN[user.parent.name == user.customers.name, user.child.name == user.items.sku])
+          JoinNode@2ba99347(LEFT_JOIN[user.parent.id == user.child.pid])
+            TableSource@a0430b6(user.parent)
+            TableSource@191a01dd(user.child)
+          JoinNode@7a70610a(LEFT_JOIN[user.orders.oid == user.items.oid])
+            JoinNode@67f31652(LEFT_JOIN[user.customers.cid == user.orders.cid])
+              TableSource@83e96cf(user.customers)
+              TableSource@451ef443(user.orders)
+            TableSource@73367e28(user.items)

@@ -20,7 +20,7 @@ import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
-import com.akiban.sql.optimizer.plan.ResultSet.ResultExpression;
+import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 
@@ -96,10 +96,7 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleQuery(planQuery);
             List<PhysicalResultColumn> resultColumns;
             if (planQuery instanceof ResultSet) {
-                List<ResultExpression> results = ((ResultSet)planQuery).getResults();
-                stream.operator = 
-                    project_Default(stream.operator, stream.rowType,
-                                    assembleExpressions(results, stream.fieldOffsets));
+                List<ResultField> results = ((ResultSet)planQuery).getFields();
                 resultColumns = getResultColumns(results);
             }
             else {
@@ -112,13 +109,20 @@ public class OperatorAssembler extends BaseRule
 
         protected PhysicalUpdate insertStatement(InsertStatement insertStatement) {
             PlanNode planQuery = insertStatement.getQuery();
+            List<ExpressionNode> projectFields = null;
+            if (planQuery instanceof Project) {
+                Project project = (Project)planQuery;
+                projectFields = project.getFields();
+                planQuery = project.getInput();
+            }
             RowStream stream = assembleQuery(planQuery);
             UserTableRowType targetRowType = 
                 tableRowType(insertStatement.getTargetTable());
             List<Expression> inserts = null;
-            if (planQuery instanceof ResultSet) {
-                inserts = assembleExpressions(((ResultSet)planQuery).getResults(),
-                                              stream.fieldOffsets);
+            if (projectFields != null) {
+                // In the common case, we can project into a wider row
+                // of the correct type directly.
+                inserts = assembleExpressions(projectFields, stream.fieldOffsets);
             }
             else {
                 // VALUES just needs each field, which will get rearranged below.
@@ -153,8 +157,8 @@ public class OperatorAssembler extends BaseRule
                 tableRowType(updateStatement.getTargetTable());
             assert (stream.rowType == targetRowType);
             List<UpdateColumn> updateColumns = updateStatement.getUpdateColumns();
-            List<Expression> updates = assembleExpressions(updateColumns,
-                                                           stream.fieldOffsets);
+            List<Expression> updates = assembleExpressionsA(updateColumns,
+                                                            stream.fieldOffsets);
             // Have a list of expressions in the order specified.
             // Want a list as wide as the target row with Java nulls
             // for the gaps.
@@ -210,8 +214,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleSort((Sort)node);
             else if (node instanceof Limit)
                 return assembleLimit((Limit)node);
-            else if (node instanceof ResultSet)
-                return assembleResultSet((ResultSet)node);
+            else if (node instanceof Project)
+                return assembleProject((Project)node);
             else if (node instanceof ExpressionsSource)
                 return assembleExpressionsSource((ExpressionsSource)node);
             else
@@ -472,14 +476,14 @@ public class OperatorAssembler extends BaseRule
             return stream;
         }
 
-        protected RowStream assembleResultSet(ResultSet resultSet) {
-            RowStream stream = assembleStream(resultSet.getInput());
+        protected RowStream assembleProject(Project project) {
+            RowStream stream = assembleStream(project.getInput());
             stream.operator = project_Default(stream.operator,
                                               stream.rowType,
-                                              assembleExpressions(resultSet.getResults(),
+                                              assembleExpressions(project.getFields(),
                                                                   stream.fieldOffsets));
             stream.rowType = stream.operator.rowType();
-            // TODO: If ResultSet were a ColumnSource, could use it to
+            // TODO: If Project were a ColumnSource, could use it to
             // calculate intermediate results and change downstream
             // references to use it instead of expressions. Then could
             // have a straight map of references into projected row.
@@ -488,9 +492,19 @@ public class OperatorAssembler extends BaseRule
         }
 
         // Assemble a list of expressions from the given nodes.
+        protected List<Expression> assembleExpressions(List<ExpressionNode> expressions,
+                                                       ColumnExpressionToIndex fieldOffsets) {
+            List<Expression> result = new ArrayList<Expression>(expressions.size());
+            for (ExpressionNode expr : expressions) {
+                result.add(assembleExpression(expr, fieldOffsets));
+            }
+            return result;
+        }
+
+        // Assemble a list of expressions from the given nodes.
         protected List<Expression> 
-            assembleExpressions(List<? extends AnnotatedExpression> expressions,
-                                ColumnExpressionToIndex fieldOffsets) {
+            assembleExpressionsA(List<? extends AnnotatedExpression> expressions,
+                                 ColumnExpressionToIndex fieldOffsets) {
             List<Expression> result = new ArrayList<Expression>(expressions.size());
             for (AnnotatedExpression aexpr : expressions) {
                 result.add(assembleExpression(aexpr.getExpression(), fieldOffsets));
@@ -505,23 +519,11 @@ public class OperatorAssembler extends BaseRule
         }
 
         // Get a list of result columns based on ResultSet expression names.
-        protected List<PhysicalResultColumn>
-            getResultColumns(List<ResultExpression> results) {
+        protected List<PhysicalResultColumn> getResultColumns(List<ResultField> fields) {
             List<PhysicalResultColumn> columns = 
-                new ArrayList<PhysicalResultColumn>(results.size());
-            for (ResultExpression result : results) {
-                String name = result.getName();
-                boolean nameDefaulted = result.isNameDefaulted();
-                DataTypeDescriptor type = null;
-                Column column = null;
-                if (result.getExpression() != null) {
-                    ExpressionNode expression = result.getExpression();
-                    type = expression.getSQLtype();
-                    if (expression.isColumn())
-                        column = ((ColumnExpression)expression).getColumn();
-                }
-                columns.add(rulesContext.getResultColumn(name, type, 
-                                                         nameDefaulted, column));
+                new ArrayList<PhysicalResultColumn>(fields.size());
+            for (ResultField field : fields) {
+                columns.add(rulesContext.getResultColumn(field));
             }
             return columns;
         }
@@ -533,8 +535,7 @@ public class OperatorAssembler extends BaseRule
             List<PhysicalResultColumn> columns = 
                 new ArrayList<PhysicalResultColumn>(ncols);
             for (int i = 0; i < ncols; i++) {
-                columns.add(rulesContext.getResultColumn("column" + (i+1), null,
-                                                         true, null));
+                columns.add(rulesContext.getResultColumn(new ResultField("column" + (i+1))));
             }
             return columns;
         }

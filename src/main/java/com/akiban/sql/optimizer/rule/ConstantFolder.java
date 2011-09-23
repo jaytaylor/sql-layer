@@ -404,7 +404,8 @@ public class ConstantFolder extends BaseRule
         protected boolean isNullSubquery(Subquery subquery) {
             PlanNode node = subquery;
             while ((node instanceof Subquery) ||
-                   (node instanceof ResultSet))
+                   (node instanceof ResultSet) ||
+                   (node instanceof Project))
                 node = ((BasePlanWithInput)node).getInput();
             return (node instanceof NullSource);
         }

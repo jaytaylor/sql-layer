@@ -1,9 +1,11 @@
 SelectQuery@50502819
-  ResultSet@3e78aa80[user.orders.order_date]
-    Filter@6401d98a[EXISTS Subquery@154e45b3]
-      TableSource@178aab40(user.orders)
+  ResultSet@201d592a[order_date]
+    Project@66c8e4de[user.orders.order_date]
+      Filter@6401d98a[EXISTS Subquery@154e45b3]
+        TableSource@178aab40(user.orders)
 
 Subquery@154e45b3
-  ResultSet@35712651[times(user.items.price,user.items.quan)]
-    Filter@10f102d3[user.items.oid == user.orders.oid, 100 < times(user.items.price,user.items.quan)]
-      TableSource@3ef07355(user.items)
+  ResultSet@1b8d4c9a[_SQL_COL_1]
+    Project@1fbbc779[times(user.items.price,user.items.quan)]
+      Filter@10f102d3[user.items.oid == user.orders.oid, 100 < times(user.items.price,user.items.quan)]
+        TableSource@3ef07355(user.items)
