@@ -17,9 +17,9 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
+import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.StoreAdapterRuntimeException;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;

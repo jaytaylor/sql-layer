@@ -74,7 +74,7 @@ public class PersistitIndexRow extends AbstractRow
         return hKey;
     }
 
-    // For use by PhysicalOperatorIT
+    // For use by OperatorIT
     public PersistitIndexRow(PersistitAdapter adapter, IndexRowType indexRowType, Object... values) throws PersistitException
     {
         this(adapter, indexRowType);

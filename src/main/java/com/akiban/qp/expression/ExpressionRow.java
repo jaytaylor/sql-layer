@@ -18,7 +18,7 @@ package com.akiban.qp.expression;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.RowType;

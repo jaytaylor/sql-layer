@@ -17,10 +17,10 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.*;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.Limit;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.UndefBindings;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Limit;
+import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
@@ -44,7 +44,7 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.operator.API.*;
 
 public abstract class OperatorBasedRowCollector implements RowCollector
 {
@@ -251,9 +251,9 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         Limit limit = new PersistitRowLimit(scanLimit(scanLimit, singleRow));
         boolean useIndex = predicateIndex != null && !predicateIndex.isHKeyEquivalent();
         GroupTable groupTable = queryRootTable.getGroup().getGroupTable();
-        PhysicalOperator plan;
+        Operator plan;
         if (useIndex) {
-            PhysicalOperator indexScan = indexScan_Default(predicateType.indexRowType(predicateIndex),
+            Operator indexScan = indexScan_Default(predicateType.indexRowType(predicateIndex),
                                                            descending,
                                                            indexKeyRange);
             plan = branchLookup_Default(indexScan,
@@ -290,7 +290,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         this.operator = plan;
     }
 
-    private Set<RowType> removeDescendentTypes(RowType type, PhysicalOperator plan)
+    private Set<RowType> removeDescendentTypes(RowType type, Operator plan)
     {
         Set<RowType> keepTypes = type.schema().allTableTypes();
         plan.findDerivedTypes(keepTypes);
@@ -384,7 +384,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     // rTables contains just queryRootTable
     // If we're querying a group table, it contains those user tables containing columns in the
     // columnBitMap.
-    private PhysicalOperator operator;
+    private Operator operator;
     protected final Set<UserTable> requiredUserTables = new HashSet<UserTable>();
     protected IndexKeyRange indexKeyRange;
     private Cursor cursor;

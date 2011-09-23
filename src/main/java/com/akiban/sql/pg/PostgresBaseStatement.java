@@ -15,8 +15,8 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.physicaloperator.ArrayBindings;
-import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.operator.ArrayBindings;
+import com.akiban.qp.operator.Bindings;
 
 import java.io.IOException;
 import java.util.List;

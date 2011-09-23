@@ -330,7 +330,7 @@ public final class SchemaManagerIT extends ITBase {
     public void tableIDsAreLow() throws Exception {
         // TODO: Delete this test, only confirming temporarily desired behavior
         // Purely testing initial table IDs start at 1 and don't change when adding new tables
-        // Partly required by com.akiban.qp.physicaloperator.AcenstorLookup_Default creating an array sized by max table id
+        // Partly required by com.akiban.qp.operator.AcenstorLookup_Default creating an array sized by max table id
         createTableDef(SCHEMA, T1_DDL);
         assertTablesInSchema(SCHEMA, T1_NAME);
         assertEquals("t1 id", 1, getUserTable(SCHEMA, T1_NAME).getTableId().intValue());

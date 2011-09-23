@@ -20,7 +20,7 @@ import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import static com.akiban.sql.optimizer.rule.GroupJoinFinder.*;
 
-import com.akiban.qp.physicaloperator.API.JoinType;
+import com.akiban.qp.operator.API.JoinType;
 
 import com.akiban.server.error.UnsupportedSQLException;
 

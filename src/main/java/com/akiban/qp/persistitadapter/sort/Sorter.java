@@ -17,9 +17,9 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapterException;
-import com.akiban.qp.physicaloperator.API;
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.Cursor;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.PersistitKeyValueTarget;

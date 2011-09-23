@@ -32,7 +32,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 
-import com.akiban.qp.physicaloperator.API.JoinType;
+import com.akiban.qp.operator.API.JoinType;
 
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ParseException;

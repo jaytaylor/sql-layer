@@ -42,7 +42,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
 
 import static com.akiban.qp.expression.API.*;
-import static com.akiban.qp.physicaloperator.API.JoinType;
+import static com.akiban.qp.operator.API.JoinType;
 import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;
 

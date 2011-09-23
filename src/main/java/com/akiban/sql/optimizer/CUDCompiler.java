@@ -14,11 +14,11 @@
  */
 package com.akiban.sql.optimizer;
 
-import static com.akiban.qp.physicaloperator.API.delete_Default;
-import static com.akiban.qp.physicaloperator.API.insert_Default;
-import static com.akiban.qp.physicaloperator.API.project_Table;
-import static com.akiban.qp.physicaloperator.API.update_Default;
-import static com.akiban.qp.physicaloperator.API.valuesScan_Default;
+import static com.akiban.qp.operator.API.delete_Default;
+import static com.akiban.qp.operator.API.insert_Default;
+import static com.akiban.qp.operator.API.project_Table;
+import static com.akiban.qp.operator.API.update_Default;
+import static com.akiban.qp.operator.API.valuesScan_Default;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -31,8 +31,8 @@ import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.ExpressionRow;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.UndefBindings;
+import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.rowtype.ValuesRowType;
@@ -70,7 +70,7 @@ public class CUDCompiler {
         
         SimplifiedTableStatement tableStmt = generateStatement(compiler, stmtNode);
         
-        PhysicalOperator resultOper = resultsOperator (tracer, compiler, tableStmt, stmtNode, params);
+        Operator resultOper = resultsOperator (tracer, compiler, tableStmt, stmtNode, params);
         
         List<Expression> updateRow = generateExpressions (compiler, tableStmt);
 
@@ -103,7 +103,7 @@ public class CUDCompiler {
         return tableStatement;
     }
     
-    private static Plannable generatePlan(int nodeType, PhysicalOperator resultOper,
+    private static Plannable generatePlan(int nodeType, Operator resultOper,
             List<Expression> updateRow, RowType rowType) {
         UpdatePlannable plan = null;
 
@@ -131,18 +131,18 @@ public class CUDCompiler {
         return plan;
     }
     
-    private static PhysicalOperator resultsOperator (SessionTracer tracer, OperatorCompiler compiler, SimplifiedTableStatement stmt,
+    private static Operator resultsOperator (SessionTracer tracer, OperatorCompiler compiler, SimplifiedTableStatement stmt,
             DMLStatementNode stmtNode, List<ParameterNode> params) {
 
         if (stmt.getValues() != null) {
             return values_Default (compiler, stmt);
         } else {
             Result result = compiler.compileSelect(tracer, stmt, stmtNode, params);
-            return (PhysicalOperator)result.getResultOperator();
+            return (Operator)result.getResultOperator();
         }
     }
 
-    private static PhysicalOperator values_Default(OperatorCompiler compiler, SimplifiedTableStatement stmt) {
+    private static Operator values_Default(OperatorCompiler compiler, SimplifiedTableStatement stmt) {
 
         List<List<SimpleExpression>>values = stmt.getValues();
         Deque<ExpressionRow> exprRowList = new ArrayDeque<ExpressionRow>(values.size());

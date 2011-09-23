@@ -15,7 +15,7 @@
 
 package com.akiban.qp.expression;
 
-import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.operator.Bindings;
 
 public interface UnboundExpressions {
     BoundExpressions get(Bindings bindings);
