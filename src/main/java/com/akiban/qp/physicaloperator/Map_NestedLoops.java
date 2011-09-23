@@ -219,7 +219,7 @@ class Map_NestedLoops extends PhysicalOperator
 
         private ShareHolder<ValuesHolderRow> unsharedOuterJoinRow()
         {
-            if (outerJoinRow.isShared()) {
+            if (outerJoinRow.isEmpty() || outerJoinRow.isShared()) {
                 ValuesHolderRow valuesHolderRow = new ValuesHolderRow(outerJoinRowType);
                 outerJoinRow.hold(valuesHolderRow);
             }
