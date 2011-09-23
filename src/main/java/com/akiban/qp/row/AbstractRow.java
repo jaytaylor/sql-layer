@@ -72,10 +72,8 @@ public abstract class AbstractRow implements Row
     @Override
     public final void release()
     {
-        assert references >= 0 : this;
-        if (references > 0) {
-            references--;
-        }
+        assert references > 0 : this;
+        --references;
     }
 
     @Override
