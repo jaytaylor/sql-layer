@@ -31,5 +31,4 @@ import com.akiban.util.Shareable;
 
 public interface Row extends RowBase, Shareable
 {
-    void afterRelease();
 }

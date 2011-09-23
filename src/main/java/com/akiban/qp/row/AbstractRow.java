@@ -73,13 +73,9 @@ public abstract class AbstractRow implements Row
     public final void release()
     {
         assert references > 0 : this;
-        --references;
-        afterRelease();
-    }
-
-    @Override
-    public void afterRelease()
-    {
+        if (--references <= 1) {
+            afterRelease();
+        }
     }
 
     @Override
@@ -96,6 +92,11 @@ public abstract class AbstractRow implements Row
         }
         builder.append(']');
         return builder.toString();
+    }
+
+    // for use by subclasses
+    protected void afterRelease()
+    {
     }
 
     // Object state
