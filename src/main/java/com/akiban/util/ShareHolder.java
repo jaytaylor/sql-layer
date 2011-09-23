@@ -20,32 +20,31 @@ public final class ShareHolder<T extends Shareable> {
     // ShareHolder interface
 
     public T get() {
-        if (held == null)
-            throw new IllegalStateException("nothing held");
         return held;
     }
 
     public void hold(T item) {
-        if (item == null) {
-            throw new IllegalArgumentException("can't hold null elements");
-        }
         if (isHolding()) {
-            release();
-        }
-        assert held == null : held;
-        held = item;
-        held.share();
-    }
-
-    public void release() {
-        if (held != null) {
             held.release();
             held = null;
         }
+        assert held == null : held;
+        if (item != null) {
+            held = item;
+            held.share();
+        }
+    }
+
+    public void release() {
+        hold(null);
     }
 
     public boolean isHolding() {
-        return held != null && held.isShared();
+        return held != null;
+    }
+
+    public boolean isShared() {
+        return isHolding() && held.isShared();
     }
 
     // object interface

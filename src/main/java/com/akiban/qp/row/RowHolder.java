@@ -31,17 +31,12 @@ public class RowHolder<MR extends Row>
 
     public MR get()
     {
-        return holder.isHolding() ? holder.get() : null;
+        return holder.get();
     }
 
     public void set(MR newRow)
     {
-        if (newRow == null) {
-            if (holder.isHolding())
-                holder.release();
-        }
-        else
-            holder.hold(newRow);
+        holder.hold(newRow);
     }
 
     public boolean isNull()

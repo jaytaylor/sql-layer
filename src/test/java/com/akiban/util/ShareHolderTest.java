@@ -29,6 +29,7 @@ public final class ShareHolderTest {
     @Test
     public void testSharing() {
         Shareable shareable = new DummyShareable();
+        shareable.share();
 
         ShareHolder<Shareable> holder = new ShareHolder<Shareable>();
         assertEquals("shared state A", false, holder.isHolding());
@@ -48,7 +49,7 @@ public final class ShareHolderTest {
         new ShareHolder<Shareable>().release();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void holdNull() {
         ShareHolder<Shareable> holder = new ShareHolder<Shareable>();
         holder.hold(null);
@@ -64,20 +65,21 @@ public final class ShareHolderTest {
 
         @Override
         public void share() {
-            ++sharedBy;
+            ++ownedBy;
         }
 
         @Override
         public boolean isShared() {
-            return sharedBy > 0;
+            return ownedBy > 1;
         }
 
         @Override
         public void release() {
-            assert sharedBy > 0 : sharedBy;
-            --sharedBy;
+            assert ownedBy >= 0 : ownedBy;
+            if (ownedBy > 0)
+                --ownedBy;
         }
 
-        private int sharedBy = 0;
+        private int ownedBy = 0;
     }
 }

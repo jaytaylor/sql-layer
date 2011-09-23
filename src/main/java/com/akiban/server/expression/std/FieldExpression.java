@@ -104,17 +104,17 @@ public final class FieldExpression implements Expression {
 
         @Override
         public void share() {
-            rowHolder.hold(row);
+            row.share();
         }
 
         @Override
         public boolean isShared() {
-            return rowHolder.isHolding();
+            return row.isShared();
         }
 
         @Override
         public void release() {
-            rowHolder.release();
+            row.release();
         }
 
         // private methods
@@ -130,7 +130,6 @@ public final class FieldExpression implements Expression {
         private final RowType rowType;
         private final int fieldIndex;
         private final AkType akType;
-        private final ShareHolder<Row> rowHolder = new ShareHolder<Row>();
         private Row row;
         private ValueSource rowSource;
     }
