@@ -15,26 +15,25 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.types.AkType;
+public enum Comparison
+{
+    EQ("=="),
+    LT("<"),
+    LE("<="),
+    GT(">"),
+    GE(">="),
+    NE("!=")
+    ;
 
-import java.util.List;
-
-public abstract class AbstractTwoArgExpression extends AbstractCompositeExpression {
-
-    protected final Expression left() {
-        return children().get(0);
+    public String toString()
+    {
+        return symbol;
     }
 
-    protected final Expression right() {
-        return children().get(1);
+    private Comparison(String symbol)
+    {
+        this.symbol = symbol;
     }
 
-    protected AbstractTwoArgExpression(AkType type, List<? extends Expression> children) {
-        super(type, children);
-        if (children().size() != 2) {
-            throw new WrongExpressionArityException(2, children().size());
-        }
-    }
+    private final String symbol;
 }
