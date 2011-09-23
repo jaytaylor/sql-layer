@@ -65,20 +65,17 @@ public abstract class AbstractRow implements Row
     @Override
     public final boolean isShared()
     {
-        assert references >= 1 : this;
+        assert references >= 0 : this;
         return references > 1;
     }
 
     @Override
     public final void release()
     {
-        references--;
-        afterRelease();
-    }
-
-    @Override
-    public void afterRelease()
-    {
+        assert references > 0 : this;
+        if (--references <= 1) {
+            afterRelease();
+        }
     }
 
     @Override
@@ -95,6 +92,11 @@ public abstract class AbstractRow implements Row
         }
         builder.append(']');
         return builder.toString();
+    }
+
+    // for use by subclasses
+    protected void afterRelease()
+    {
     }
 
     // Object state

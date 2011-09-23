@@ -175,6 +175,21 @@ public class API
             return source;
         }
 
+        @Override
+        public void share() {
+            row.share();
+        }
+
+        @Override
+        public boolean isShared() {
+            return row.isShared();
+        }
+
+        @Override
+        public void release() {
+            row.release();
+        }
+
         private NewExpressionEvaluationWrapper(Expression delegate)
         {
             this.delegate = delegate;

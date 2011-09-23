@@ -25,6 +25,8 @@ import java.util.List;
 
 public abstract class AbstractCompositeExpressionEvaluation implements ExpressionEvaluation {
 
+    // ExpressionEvaluation interface
+
     @Override
     public void of(Row row) {
         for (ExpressionEvaluation child : children) {
@@ -39,15 +41,45 @@ public abstract class AbstractCompositeExpressionEvaluation implements Expressio
         }
     }
 
-    protected final List<? extends ExpressionEvaluation> children() {
-        return children;
-    }
-
     public AbstractCompositeExpressionEvaluation(List<? extends ExpressionEvaluation> children) {
         this.children = children.isEmpty()
                 ? Collections.<ExpressionEvaluation>emptyList()
                 : Collections.unmodifiableList(new ArrayList<ExpressionEvaluation>(children));
     }
+
+    // Shareable interface
+
+    @Override
+    public void share() {
+        for (ExpressionEvaluation child : children) {
+            child.share();
+        }
+    }
+
+    @Override
+    public boolean isShared() {
+        for (ExpressionEvaluation child : children) {
+            if (child.isShared())
+                return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void release() {
+        for (ExpressionEvaluation child : children) {
+            child.release();
+        }
+    }
+
+
+    // for use by subclasses
+
+    protected final List<? extends ExpressionEvaluation> children() {
+        return children;
+    }
+
+    // object state
 
     private final List<? extends ExpressionEvaluation> children;
 }

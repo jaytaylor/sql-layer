@@ -105,6 +105,19 @@ public final class LiteralExpression implements Expression {
             return valueSource;
         }
 
+        @Override
+        public void share() {
+        }
+
+        @Override
+        public boolean isShared() {
+            return false;
+        }
+
+        @Override
+        public void release() {
+        }
+
         private InternalEvaluation(ValueSource valueSource) {
             this.valueSource = valueSource;
         }
