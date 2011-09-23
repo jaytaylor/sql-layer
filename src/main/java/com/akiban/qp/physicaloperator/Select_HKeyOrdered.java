@@ -16,12 +16,12 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.ShareHolder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -106,15 +106,15 @@ class Select_HKeyOrdered extends PhysicalOperator
                     evaluation.of(inputRow);
                     if (Extractors.getBooleanExtractor().getBoolean(evaluation.eval())) {
                         // New row of predicateRowType
-                        selectedRow.set(inputRow);
+                        selectedRow.hold(inputRow);
                         row = inputRow;
                     }
                 } else if (predicateRowType.ancestorOf(inputRow.rowType())) {
                     // Row's type is a descendent of predicateRowType.
-                    if (selectedRow.isNotNull() && selectedRow.get().ancestorOf(inputRow)) {
+                    if (selectedRow.isHolding() && selectedRow.get().ancestorOf(inputRow)) {
                         row = inputRow;
                     } else {
-                        selectedRow.set(null);
+                        selectedRow.release();
                     }
                 } else {
                     row = inputRow;
@@ -129,7 +129,7 @@ class Select_HKeyOrdered extends PhysicalOperator
         @Override
         public void close()
         {
-            selectedRow.set(null);
+            selectedRow.release();
             input.close();
         }
 
@@ -144,7 +144,7 @@ class Select_HKeyOrdered extends PhysicalOperator
         // Object state
 
         private final Cursor input;
-        private final RowHolder<Row> selectedRow = new RowHolder<Row>(); // The last input row with type = predicateRowType.
+        private final ShareHolder<Row> selectedRow = new ShareHolder<Row>(); // The last input row with type = predicateRowType.
         private final ExpressionEvaluation evaluation;
     }
 }

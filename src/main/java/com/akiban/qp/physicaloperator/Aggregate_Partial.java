@@ -16,7 +16,6 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.AggregatedRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -25,6 +24,7 @@ import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.ShareHolder;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -183,7 +183,7 @@ final class Aggregate_Partial extends PhysicalOperator {
         @Override
         public void close() {
             if (cursorState != CursorState.CLOSED) {
-                holder.set(null);
+                holder.release();
                 inputCursor.close();
                 cursorState = CursorState.CLOSED;
             }
@@ -261,9 +261,9 @@ final class Aggregate_Partial extends PhysicalOperator {
 
         private Row nextInput() {
             final Row result;
-            if (holder.isNotNull()) {
+            if (holder.isHolding()) {
                 result = holder.get();
-                holder.set(null);
+                holder.release();
             }
             else {
                 result = inputCursor.next();
@@ -272,9 +272,9 @@ final class Aggregate_Partial extends PhysicalOperator {
         }
 
         private void saveInput(Row input) {
-            assert holder.isNull() : holder;
+            assert holder.isEmpty() : holder;
             assert cursorState == CursorState.OPENING : cursorState;
-            holder.set(input);
+            holder.hold(input);
         }
 
         private ValuesHolderRow unsharedOutputRow() {
@@ -306,7 +306,7 @@ final class Aggregate_Partial extends PhysicalOperator {
         private final AggregatedRowType outputRowType;
         private final List<ValueHolder> keyValues;
         private final ValueHolder scratchValueHolder = new ValueHolder();
-        private final RowHolder<Row> holder = new RowHolder<Row>();
+        private final ShareHolder<Row> holder = new ShareHolder<Row>();
         private CursorState cursorState = CursorState.CLOSED;
         private boolean everSawInput = false;
     }

@@ -19,11 +19,11 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.ShareHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -186,23 +186,23 @@ public class BranchLookup_Nested extends PhysicalOperator
             }
             cursor.rebind(hKey, true);
             cursor.open(bindings);
-            inputRow.set(rowFromBindings);
+            inputRow.hold(rowFromBindings);
         }
 
         @Override
         public Row next()
         {
             Row row;
-            if (keepInput && inputPrecedesBranch && inputRow.isNotNull()) {
+            if (keepInput && inputPrecedesBranch && inputRow.isHolding()) {
                 row = inputRow.get();
-                inputRow.set(null);
+                inputRow.release();
             } else {
                 row = cursor.next();
                 if (row == null) {
                     if (keepInput && !inputPrecedesBranch) {
-                        assert inputRow.isNotNull();
+                        assert inputRow.isHolding();
                         row = inputRow.get();
-                        inputRow.set(null);
+                        inputRow.release();
                     }
                     close();
                 }
@@ -231,6 +231,6 @@ public class BranchLookup_Nested extends PhysicalOperator
 
         private final GroupCursor cursor;
         private final HKey hKey;
-        private RowHolder<Row> inputRow = new RowHolder<Row>();
+        private ShareHolder<Row> inputRow = new ShareHolder<Row>();
     }
 }

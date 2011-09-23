@@ -59,6 +59,7 @@ public abstract class AbstractRow implements Row
     public final void acquire()
     {
         assert references >= 0 : this;
+        beforeAcquire();
         references++;
     }
 
@@ -73,9 +74,8 @@ public abstract class AbstractRow implements Row
     public final void release()
     {
         assert references > 0 : this;
-        if (--references <= 1) {
-            afterRelease();
-        }
+        --references;
+        afterRelease();
     }
 
     @Override
@@ -95,9 +95,8 @@ public abstract class AbstractRow implements Row
     }
 
     // for use by subclasses
-    protected void afterRelease()
-    {
-    }
+    protected void afterRelease() {}
+    protected void beforeAcquire() {}
 
     // Object state
 

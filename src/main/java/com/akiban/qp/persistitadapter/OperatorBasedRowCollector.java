@@ -22,7 +22,6 @@ import com.akiban.qp.physicaloperator.Limit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
@@ -36,6 +35,7 @@ import com.akiban.server.service.memcache.hprocessor.PredicateLimit;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.RowCollector;
+import com.akiban.util.ShareHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,11 +71,11 @@ public abstract class OperatorBasedRowCollector implements RowCollector
          // the current row across these two invocations.
         boolean wroteToPayload = false;
         PersistitGroupRow row;
-        if (currentRow.isNull()) {
+        if (currentRow.isEmpty()) {
             row = (PersistitGroupRow) cursor.next();
         } else {
             row = (PersistitGroupRow) currentRow.get();
-            currentRow.set(null);
+            currentRow.release();
         }
         if (row == null) {
             close();
@@ -87,7 +87,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                 rowCount++;
             } catch (BufferOverflowException e) {
                 assert !wroteToPayload;
-                currentRow.set(row);
+                currentRow.hold(row);
             }
         }
         return wroteToPayload;
@@ -101,7 +101,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (row == null) {
             close();
         } else {
-            currentRow.set(row);
+            currentRow.hold(row);
             rowData = row.rowData();
             rowCount++;
         }
@@ -118,7 +118,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     public void close()
     {
         if (!closed) {
-            currentRow.set(null);
+            currentRow.release();
             if (cursor != null) {
                 cursor.close();
             }
@@ -389,7 +389,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     protected IndexKeyRange indexKeyRange;
     private Cursor cursor;
     private int rowCount = 0;
-    private RowHolder<Row> currentRow = new RowHolder<Row>();
+    private ShareHolder<Row> currentRow = new ShareHolder<Row>();
     private boolean closed = true; // Not false, so that initial call to hasMore, prior to open, will proceed to call open.
 
 //    // inner class

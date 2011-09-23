@@ -16,14 +16,12 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.row.ValuesHolderRow;
-import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.types.ValueSource;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.ShareHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -133,7 +131,7 @@ class Map_NestedLoops extends PhysicalOperator
                     if (row == null) {
                         close();
                     } else {
-                        outerRow.set(row);
+                        outerRow.hold(row);
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Map_NestedLoops: restart inner loop using current branch row");
                         }
@@ -178,7 +176,7 @@ class Map_NestedLoops extends PhysicalOperator
         private Row nextOutputRow()
         {
             Row outputRow = null;
-            if (outerRow.isNotNull()) {
+            if (outerRow.isHolding()) {
                 Row innerRow = innerInput.next();
                 if (innerRow == null) {
                     if (needOuterJoinRow) {
@@ -194,7 +192,7 @@ class Map_NestedLoops extends PhysicalOperator
                         // We're about to emit an outerjoin row. Don't do it again for this outer row.
                         needOuterJoinRow = false;
                     } else {
-                        outerRow.set(null);
+                        outerRow.release();
                     }
                 } else {
                     outputRow = innerRow;
@@ -206,8 +204,8 @@ class Map_NestedLoops extends PhysicalOperator
 
         private void closeOuter()
         {
-            outerRow.set(null);
-            outerJoinRow.set(null);
+            outerRow.release();
+            outerRow.release();
             outerInput.close();
         }
 
@@ -219,11 +217,11 @@ class Map_NestedLoops extends PhysicalOperator
             needOuterJoinRow = outerJoinRowType != null;
         }
 
-        private RowHolder<ValuesHolderRow> unsharedOuterJoinRow()
+        private ShareHolder<ValuesHolderRow> unsharedOuterJoinRow()
         {
-            if (outerJoinRow.isNull() || outerJoinRow.get().isShared()) {
+            if (outerJoinRow.isShared()) {
                 ValuesHolderRow valuesHolderRow = new ValuesHolderRow(outerJoinRowType);
-                outerJoinRow.set(valuesHolderRow);
+                outerJoinRow.hold(valuesHolderRow);
             }
             return outerJoinRow;
         }
@@ -232,9 +230,9 @@ class Map_NestedLoops extends PhysicalOperator
 
         private final Cursor outerInput;
         private final Cursor innerInput;
-        private final RowHolder<Row> outerRow = new RowHolder<Row>();
+        private final ShareHolder<Row> outerRow = new ShareHolder<Row>();
         private final List<ExpressionEvaluation> outerJoinRowEvaluations;
-        private final RowHolder<ValuesHolderRow> outerJoinRow = new RowHolder<ValuesHolderRow>();
+        private final ShareHolder<ValuesHolderRow> outerJoinRow = new ShareHolder<ValuesHolderRow>();
         private Bindings bindings;
         private boolean closed = false;
         private boolean needOuterJoinRow;

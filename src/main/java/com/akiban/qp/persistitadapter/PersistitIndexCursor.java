@@ -22,8 +22,8 @@ import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.util.ShareHolder;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
@@ -81,7 +81,7 @@ class PersistitIndexCursor implements Cursor
             adapter.returnExchange(exchange);
             exchange = null;
             indexFilter = null;
-            row.set(null);
+            row.release();
         }
     }
 
@@ -97,7 +97,7 @@ class PersistitIndexCursor implements Cursor
         this.keyRange = keyRange;
         this.adapter = adapter;
         this.indexRowType = indexRowType;
-        this.row = new RowHolder<PersistitIndexRow>(adapter.newIndexRow(indexRowType));
+        this.row = new ShareHolder<PersistitIndexRow>(adapter.newIndexRow(indexRowType));
         this.minimumDepth = innerJoinUntil.getDepth();
         if (reverse) {
             boundary = Key.AFTER;
@@ -110,10 +110,10 @@ class PersistitIndexCursor implements Cursor
 
     // For use by this class
 
-    private RowHolder<PersistitIndexRow> unsharedRow() throws PersistitException
+    private ShareHolder<PersistitIndexRow> unsharedRow() throws PersistitException
     {
         if (row.get().isShared()) {
-            row.set(adapter.newIndexRow(indexRowType));
+            row.hold(adapter.newIndexRow(indexRowType));
         }
         return row;
     }
@@ -135,7 +135,7 @@ class PersistitIndexCursor implements Cursor
 
     private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
-    private final RowHolder<PersistitIndexRow> row;
+    private final ShareHolder<PersistitIndexRow> row;
     private final Key.EdgeValue boundary;
     private final Key.Direction direction;
     private final IndexKeyRange keyRange;

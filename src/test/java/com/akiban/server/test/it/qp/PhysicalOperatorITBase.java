@@ -23,7 +23,6 @@ import com.akiban.qp.persistitadapter.PersistitIndexRow;
 import com.akiban.qp.physicaloperator.*;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
-import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -36,6 +35,7 @@ import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.util.ShareHolder;
 import com.persistit.exception.PersistitException;
 import com.akiban.util.Strings;
 import org.junit.Before;
@@ -196,7 +196,7 @@ public class PhysicalOperatorITBase extends ITBase
 
     protected void compareRows(RowBase[] expected, Cursor cursor, Bindings bindings)
     {
-        List<RowHolder<Row>> actualRows = new ArrayList<RowHolder<Row>>(); // So that result is viewable in debugger
+        List<ShareHolder<Row>> actualRows = new ArrayList<ShareHolder<Row>>(); // So that result is viewable in debugger
         try {
             cursor.open(bindings);
             RowBase actualRow;
@@ -215,7 +215,7 @@ public class PhysicalOperatorITBase extends ITBase
                         assertEquals(count + ": hkey", expectedTestRow.persistityString(), actualHKeyString);
                     }
                 }
-                actualRows.add(new RowHolder<Row>((Row) actualRow));
+                actualRows.add(new ShareHolder<Row>((Row) actualRow));
             }
         } finally {
             cursor.close();

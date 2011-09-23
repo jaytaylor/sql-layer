@@ -19,11 +19,11 @@ import com.akiban.ais.model.HKeySegment;
 import com.akiban.qp.row.FlattenedRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.ShareHolder;
 
 import java.util.*;
 
@@ -165,7 +165,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         {
             Row outputRow = pending.take();
             Row inputRow;
-            while (outputRow == null && (((inputRow = input.next()) != null) || parent.isNotNull())) {
+            while (outputRow == null && (((inputRow = input.next()) != null) || parent.isHolding())) {
                 if (readyForLeftJoinRow(inputRow)) {
                     // child rows are processed immediately. parent rows are not,
                     // because when seen, we don't know if the next row will be another
@@ -190,7 +190,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                         if (keepChild) {
                             addToPending(inputRow);
                         }
-                        if (parent.isNotNull() && parent.get().ancestorOf(inputRow)) {
+                        if (parent.isHolding() && parent.get().ancestorOf(inputRow)) {
                             // child is not an orphan
                             generateInnerJoinRow(parent.get(), inputRow);
                             childlessParent = false;
@@ -211,7 +211,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         @Override
         public void close()
         {
-            parent.set(null);
+            parent.release();
             pending.clear();
             input.close();
         }
@@ -273,7 +273,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
 
         private void setParent(Row newParent)
         {
-            parent.set(newParent);
+            parent.hold(newParent);
             if (leftJoin && newParent != null) {
                 computeLeftJoinHKey(newParent);
                 childlessParent = true;
@@ -293,7 +293,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         private boolean readyForLeftJoinRow(Row inputRow)
         {
             boolean readyForLeftJoinRow = false;
-            if (leftJoin && childlessParent && parent.isNotNull()) {
+            if (leftJoin && childlessParent && parent.isHolding()) {
                 if (inputRow == null) {
                     readyForLeftJoinRow = true;
                 } else if (!parent.get().ancestorOf(inputRow)) {
@@ -316,7 +316,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
 
         private final StoreAdapter adapter;
         private final Cursor input;
-        private final RowHolder<Row> parent = new RowHolder<Row>();
+        private final ShareHolder<Row> parent = new ShareHolder<Row>();
         private final PendingRows pending = new PendingRows(MAX_PENDING);
         private final HKey leftJoinHKey;
         private boolean childlessParent;

@@ -16,13 +16,13 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.ShareHolder;
 
 import java.util.*;
 
@@ -201,15 +201,15 @@ class Sort_InsertionLimited extends PhysicalOperator
     // not need to overload equals().
     private class Holder implements Comparable<Holder> {
         private int index;
-        private RowHolder row;
+        private ShareHolder<Row> row;
         private ToObjectValueTarget target = new ToObjectValueTarget();
         private Comparable[] values;
 
         public Holder(int index, Row arow, Bindings bindings) {
             this.index = index;
 
-            row = new RowHolder();
-            row.set(arow);
+            row = new ShareHolder<Row>();
+            row.hold(arow);
 
             values = new Comparable[ordering.sortFields()];
             for (int i = 0; i < values.length; i++) {
@@ -227,7 +227,7 @@ class Sort_InsertionLimited extends PhysicalOperator
 
         public Row empty() {
             Row result = row.get();
-            row.set(null);
+            row.release();
             return result;
         }
 
