@@ -66,7 +66,7 @@ public abstract class AbstractRow implements Row
     public final boolean isShared()
     {
         assert references >= 0 : this;
-        return references > 0;
+        return references > 1;
     }
 
     @Override
