@@ -16,6 +16,7 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
@@ -37,12 +38,12 @@ public class API
 {
     // Aggregate
 
-    public static PhysicalOperator aggregate(PhysicalOperator inputOperator,
-                                             int inputsIndex,
-                                             AggregatorFactory factory,
-                                             List<String> aggregatorNames)
+    public static PhysicalOperator aggregate_Partial(PhysicalOperator inputOperator,
+                                                     int inputsIndex,
+                                                     AggregatorFactory factory,
+                                                     List<String> aggregatorNames)
     {
-        return new Aggregation_Partial(inputOperator, inputsIndex, factory, aggregatorNames);
+        return new Aggregate_Partial(inputOperator, inputsIndex, factory, aggregatorNames);
     }
 
     // Project
@@ -158,9 +159,18 @@ public class API
 
     // Limit
 
-    public static PhysicalOperator limit_Default(PhysicalOperator inputOperator, int rows)
+    public static PhysicalOperator limit_Default(PhysicalOperator inputOperator, int limitRows)
     {
-        return new Limit_Default(inputOperator, rows);
+        return new Limit_Default(inputOperator, limitRows);
+    }
+
+    public static PhysicalOperator limit_Default(PhysicalOperator inputOperator,
+                                                 int skipRows,
+                                                 boolean skipIsBinding,
+                                                 int limitRows,
+                                                 boolean limitIsBinding)
+    {
+        return new Limit_Default(inputOperator, skipRows, skipIsBinding, limitRows, limitIsBinding);
     }
 
     // AncestorLookup
@@ -287,6 +297,29 @@ public class API
                                    outerJoinRowType,
                                    wrapAll(outerJoinRowExpressions),
                                    inputBindingPosition);
+    }
+
+    // Insert
+
+    public static UpdatePlannable insert_Default(PhysicalOperator inputOperator)
+    {
+        return new Insert_Default(inputOperator);
+    }
+
+
+    // Update
+
+    public static UpdatePlannable update_Default(PhysicalOperator inputOperator, 
+                                                 UpdateFunction updateFunction)
+    {
+        return new Update_Default(inputOperator, updateFunction);
+    }
+    
+    // Delete
+
+    public static UpdatePlannable delete_Default(PhysicalOperator inputOperator)
+    {
+        return new Delete_Default(inputOperator);
     }
 
     // Execution interface

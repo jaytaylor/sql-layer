@@ -1088,7 +1088,7 @@ public class OperatorCompiler
      */
     protected UnboundExpressions getIndexExpressionRow(Index index, Expression[] keys) {
         RowType rowType = schema.indexRowType(index);
-        return new RowBasedUnboundExpressions(rowType, keys);
+        return new RowBasedUnboundExpressions(rowType, Arrays.asList(keys));
     }
 
     protected DataTypeDescriptor[] getParameterTypes(List<ParameterNode> params) {

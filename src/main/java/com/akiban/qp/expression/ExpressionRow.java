@@ -13,13 +13,11 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.optimizer;
+package com.akiban.qp.expression;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
@@ -30,21 +28,22 @@ import com.akiban.server.types.FromObjectValueSource;
 public class ExpressionRow extends AbstractRow
 {
     private RowType rowType;
-    private Expression[] expressions;
+    private List<Expression> expressions;
 
-    public ExpressionRow(RowType rowType, Bindings bindings, Expression[] expressions) {
+    public ExpressionRow(RowType rowType, Bindings bindings, List<Expression> expressions) {
         this.rowType = rowType;
         this.expressions = expressions;
         this.bindings = bindings;
     }
 
     public Expression getExpression(int i) {
-        return expressions[i];
+        return expressions.get(i);
     }
     
     public List<Expression> getExpressions() {
-        return new ArrayList<Expression> (Arrays.asList(expressions));
+        return expressions;
     }
+
     /* AbstractRow */
 
     @Override
@@ -54,7 +53,8 @@ public class ExpressionRow extends AbstractRow
 
     @Override
     public ValueSource eval(int i) {
-        Object value = (expressions[i] == null) ? null : expressions[i].evaluate(null, bindings());
+        Expression expression = getExpression(i);
+        Object value = (expression == null) ? null : expression.evaluate(null, bindings());
         source.setReflectively(value);
         return source;
     }
@@ -74,8 +74,9 @@ public class ExpressionRow extends AbstractRow
         int nf = rowType().nFields();
         for (int i = 0; i < nf; i++) {
             if (i > 0) str.append(", ");
-            if (expressions[i] != null)
-                str.append(expressions[i]);
+            Expression expression = getExpression(i);
+            if (expression != null)
+                str.append(expression);
         }
         str.append(']');
         return str.toString();

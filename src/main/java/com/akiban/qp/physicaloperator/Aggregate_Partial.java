@@ -31,7 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-final class Aggregation_Partial extends PhysicalOperator {
+final class Aggregate_Partial extends PhysicalOperator {
 
     // PhysicalOperator interface
 
@@ -68,8 +68,8 @@ final class Aggregation_Partial extends PhysicalOperator {
 
     // AggregationOperator interface
 
-    public Aggregation_Partial(PhysicalOperator inputOperator, int inputsIndex, AggregatorFactory factory,
-                               List<String> aggregatorNames) {
+    public Aggregate_Partial(PhysicalOperator inputOperator, int inputsIndex, AggregatorFactory factory,
+                             List<String> aggregatorNames) {
         this(
                 inputOperator,
                 inputsIndex,
@@ -95,8 +95,8 @@ final class Aggregation_Partial extends PhysicalOperator {
 
     // package-private (for testing)
 
-    Aggregation_Partial(PhysicalOperator inputOperator, int inputsIndex, AggregatorFactory factory,
-                        List<String> aggregatorNames, AggregatedRowType outputType) {
+    Aggregate_Partial(PhysicalOperator inputOperator, int inputsIndex, AggregatorFactory factory,
+                      List<String> aggregatorNames, AggregatedRowType outputType) {
         this.inputOperator = inputOperator;
         this.inputsIndex = inputsIndex;
         this.factory = factory;
