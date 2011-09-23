@@ -25,8 +25,6 @@ import com.akiban.util.Tap;
 import java.io.IOException;
 import java.util.List;
 
-import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.UNSPECIFIED_DML_WRITE;
-
 /**
  * An ordinary SQL statement.
  */
@@ -35,8 +33,6 @@ public abstract class PostgresBaseStatement implements PostgresStatement
     private List<String> columnNames;
     private List<PostgresType> columnTypes;
     private PostgresType[] parameterTypes;
-
-    private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire lock");
 
     protected PostgresBaseStatement(PostgresType[] parameterTypes) {
         this.parameterTypes = parameterTypes;
@@ -103,19 +99,20 @@ public abstract class PostgresBaseStatement implements PostgresStatement
         return bindings;
     }
 
-    protected abstract Tap.InOutTap executionTap();
+    protected abstract Tap.InOutTap executeTap();
+    protected abstract Tap.InOutTap acquireLockTap();
 
     protected void lock(Session session, DXLFunctionsHook.DXLFunction operationType)
     {
-        ACQUIRE_LOCK_TAP.in();
-        executionTap().in();
+        acquireLockTap().in();
+        executeTap().in();
         DXLReadWriteLockHook.only().hookFunctionIn(session, operationType);
-        ACQUIRE_LOCK_TAP.out();
+        acquireLockTap().out();
     }
 
     protected void unlock(Session session, DXLFunctionsHook.DXLFunction operationType)
     {
         DXLReadWriteLockHook.only().hookFunctionFinally(session, operationType, null);
-        executionTap().out();
+        executeTap().out();
     }
 }

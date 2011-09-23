@@ -43,6 +43,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     private int limit = -1;
 
     private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresBaseStatement: execute shared");
+    private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire shared lock");
 
     public PostgresOperatorStatement(PhysicalOperator resultOperator,
                                      List<String> columnNames,
@@ -120,9 +121,15 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     }
 
     @Override
-    protected Tap.InOutTap executionTap()
+    protected Tap.InOutTap executeTap()
     {
         return EXECUTE_TAP;
+    }
+
+    @Override
+    protected Tap.InOutTap acquireLockTap()
+    {
+        return ACQUIRE_LOCK_TAP;
     }
 
     protected Bindings getBindings() {

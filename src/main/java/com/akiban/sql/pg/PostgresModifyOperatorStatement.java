@@ -41,6 +41,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
     private UpdatePlannable resultOperator;
 
     private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresBaseStatement: execute exclusive");
+    private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire exclusive lock");
     private static final Logger LOG = LoggerFactory.getLogger(PostgresModifyOperatorStatement.class);
         
     public PostgresModifyOperatorStatement(String statementType,
@@ -79,9 +80,15 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
     }
 
     @Override
-    protected Tap.InOutTap executionTap()
+    protected Tap.InOutTap executeTap()
     {
         return EXECUTE_TAP;
+    }
+
+    @Override
+    protected Tap.InOutTap acquireLockTap()
+    {
+        return ACQUIRE_LOCK_TAP;
     }
 
     protected Bindings getBindings() {
