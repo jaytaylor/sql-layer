@@ -31,7 +31,7 @@ public final class ShareHolder<T extends Shareable> {
         assert held == null : held;
         if (item != null) {
             held = item;
-            held.share();
+            held.acquire();
         }
     }
 

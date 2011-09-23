@@ -50,9 +50,9 @@ public abstract class AbstractCompositeExpressionEvaluation implements Expressio
     // Shareable interface
 
     @Override
-    public void share() {
+    public void acquire() {
         for (ExpressionEvaluation child : children) {
-            child.share();
+            child.acquire();
         }
     }
 

@@ -369,7 +369,7 @@ public final class AggregateOperatorTest {
         cursor.open(UndefBindings.only());
         try {
             for(Row row = cursor.next(); row != null; row = cursor.next()) {
-                row.share();
+                row.acquire();
                 rows.add(row);
             }
             return rows;

@@ -122,17 +122,17 @@ public final class FieldExpressionTest {
         assertEquals("row.isShared", false, row.isShared());
 
         // first acquire doesn't mean it's shared
-        evaluation.share();
+        evaluation.acquire();
         assertEquals("evaluation.isShared()", false, evaluation.isShared());
         assertEquals("row.isShared", false, row.isShared());
 
         // next does
-        evaluation.share();
+        evaluation.acquire();
         assertEquals("evaluation.isShared()", true, evaluation.isShared());
         assertEquals("row.isShared", true, row.isShared());
 
         // now, three own it (very shared!)
-        evaluation.share();
+        evaluation.acquire();
         assertEquals("evaluation.isShared()", true, evaluation.isShared());
         assertEquals("row.isShared", true, row.isShared());
 
