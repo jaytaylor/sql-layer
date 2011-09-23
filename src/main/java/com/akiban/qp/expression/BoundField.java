@@ -17,6 +17,7 @@ package com.akiban.qp.expression;
 
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.Row;
+import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 
 class BoundField implements Expression
@@ -28,7 +29,7 @@ class BoundField implements Expression
     {
         Row rowFromBindings = (Row) bindings.get(rowPosition);
         ValueSource source = rowFromBindings.eval(fieldPosition);
-        return ExpressionConversionHelper.objectFromValueSource(source);
+        return new ToObjectValueTarget().convertFromSource(source);
     }
 
     @Override

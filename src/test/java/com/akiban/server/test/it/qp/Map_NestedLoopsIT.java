@@ -147,15 +147,16 @@ public class Map_NestedLoopsIT extends PhysicalOperatorITBase
     public void testInnerJoin()
     {
         // customer order inner join, done as a general join
-        PhysicalOperator project = project_Default(
-            select_HKeyOrdered(
-                filter_Default(
-                    groupScan_Default(coi),
-                    Collections.singleton(orderRowType)),
+        PhysicalOperator project =
+            project_Default(
+                select_HKeyOrdered(
+                    filter_Default(
+                        groupScan_Default(coi),
+                        Collections.singleton(orderRowType)),
+                    orderRowType,
+                    compare(field(1) /* order.cid */, Comparison.EQ, boundField(0, 0) /* customer.cid */)),
                 orderRowType,
-                compare(field(1) /* order.cid */, Comparison.EQ, boundField(0, 0) /* customer.cid */)),
-            orderRowType,
-            Arrays.asList(boundField(0, 0) /* customer.cid */, field(0) /* order.oid */));
+                Arrays.asList(boundField(0, 0) /* customer.cid */, field(0) /* order.oid */));
         PhysicalOperator plan =
             map_NestedLoops(
                 filter_Default(

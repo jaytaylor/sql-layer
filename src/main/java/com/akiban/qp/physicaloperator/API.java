@@ -26,17 +26,22 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 
 import com.akiban.server.aggregation.AggregatorFactory;
+import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.types.AkType;
 
 import java.util.*;
+
+import static com.akiban.qp.expression.API.wrap;
+import static com.akiban.qp.expression.API.wrapAll;
 
 public class API
 {
     // Aggregate
 
     public static PhysicalOperator aggregate_Partial(PhysicalOperator inputOperator,
-                                             int inputsIndex,
-                                             AggregatorFactory factory,
-                                             List<String> aggregatorNames)
+                                                     int inputsIndex,
+                                                     AggregatorFactory factory,
+                                                     List<String> aggregatorNames)
     {
         return new Aggregate_Partial(inputOperator, inputsIndex, factory, aggregatorNames);
     }
@@ -47,15 +52,15 @@ public class API
                                                    RowType rowType,
                                                    List<Expression> projections)
     {
-        return new Project_Default(inputOperator, rowType, projections);
+        return new Project_Default(inputOperator, rowType, wrapAll(projections));
     }
     
     public static PhysicalOperator project_Table(PhysicalOperator inputOperator, 
                                                  RowType inputRowType,
                                                  RowType outputRowType,
-                                                 List<Expression>projections) 
+                                                 List<Expression> projections)
     {
-        return new Project_Default (inputOperator, inputRowType, outputRowType, projections);
+        return new Project_Default (inputOperator, inputRowType, outputRowType, wrapAll(projections));
     }
     // Flatten
 
@@ -159,7 +164,11 @@ public class API
         return new Limit_Default(inputOperator, limitRows);
     }
 
-    public static PhysicalOperator limit_Default(PhysicalOperator inputOperator, int skipRows, boolean skipIsBinding, int limitRows, boolean limitIsBinding)
+    public static PhysicalOperator limit_Default(PhysicalOperator inputOperator,
+                                                 int skipRows,
+                                                 boolean skipIsBinding,
+                                                 int limitRows,
+                                                 boolean limitIsBinding)
     {
         return new Limit_Default(inputOperator, skipRows, skipIsBinding, limitRows, limitIsBinding);
     }
@@ -209,7 +218,7 @@ public class API
                                                       RowType predicateRowType,
                                                       Expression predicate)
     {
-        return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate);
+        return new Select_HKeyOrdered(inputOperator, predicateRowType, wrap(predicate));
     }
 
     // Filter
@@ -240,7 +249,7 @@ public class API
         return new Product_NestedLoops(outerInput, innerInput, outerType, innerType, inputBindingPosition);
     }
 
-    // Cut
+    // Count
 
     public static PhysicalOperator count_Default(PhysicalOperator input,
                                                  RowType countType)
@@ -283,7 +292,11 @@ public class API
                                                    List<Expression> outerJoinRowExpressions,
                                                    int inputBindingPosition)
     {
-        return new Map_NestedLoops(outerInput, innerInput, outerJoinRowType, outerJoinRowExpressions, inputBindingPosition);
+        return new Map_NestedLoops(outerInput,
+                                   innerInput,
+                                   outerJoinRowType,
+                                   wrapAll(outerJoinRowExpressions),
+                                   inputBindingPosition);
     }
 
     // Insert
@@ -361,12 +374,17 @@ public class API
 
         public int sortFields()
         {
-            return expressions.size();
+            return evaluations.size();
         }
 
-        public Expression expression(int i)
+        public ExpressionEvaluation evaluation(int i)
         {
-            return expressions.get(i);
+            return evaluations.get(i);
+        }
+
+        public AkType type(int i)
+        {
+            return expressions.get(i).valueType();
         }
 
         public boolean ascending(int i)
@@ -374,9 +392,11 @@ public class API
             return directions.get(i);
         }
 
-        public void append(Expression expression, boolean ascending)
+        public void append(Expression qpExpression, boolean ascending)
         {
+            com.akiban.server.expression.Expression expression = wrap(qpExpression);
             expressions.add(expression);
+            evaluations.add(expression.evaluation());
             directions.add(ascending);
         }
 
@@ -384,11 +404,14 @@ public class API
         {
             Ordering copy = new Ordering();
             copy.expressions.addAll(expressions);
+            copy.evaluations.addAll(evaluations);
             copy.directions.addAll(directions);
             return copy;
         }
 
-        private final List<Expression> expressions = new ArrayList<Expression>();
+        private final List<com.akiban.server.expression.Expression> expressions =
+            new ArrayList<com.akiban.server.expression.Expression>();
+        private final List<ExpressionEvaluation> evaluations = new ArrayList<ExpressionEvaluation>();
         private final List<Boolean> directions = new ArrayList<Boolean>(); // true: ascending, false: descending
     }
 

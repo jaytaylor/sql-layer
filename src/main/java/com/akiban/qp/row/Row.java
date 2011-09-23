@@ -32,4 +32,5 @@ public interface Row extends RowBase
     void share();
     boolean isShared();
     void release();
+    void afterRelease();
 }
