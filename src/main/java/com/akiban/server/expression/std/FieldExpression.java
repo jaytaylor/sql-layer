@@ -23,6 +23,8 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.ShareHolder;
+import com.akiban.util.Shareable;
 
 public final class FieldExpression implements Expression {
 
@@ -68,6 +70,9 @@ public final class FieldExpression implements Expression {
     // nested classes
 
     private static class InnerEvaluation implements ExpressionEvaluation {
+
+        // ExpressionEvaluation interface
+
         @Override
         public void of(Row row) {
             RowType incomingType = row.rowType();
@@ -81,6 +86,7 @@ public final class FieldExpression implements Expression {
                         row + "[" + fieldIndex + "] had akType " + incomingAkType + "; expected " + akType
                 );
             }
+            rowHolder.reserve(row);
             this.rowSource = incomingSource;
         }
 
@@ -95,6 +101,25 @@ public final class FieldExpression implements Expression {
             return rowSource;
         }
 
+        // Shareable interface
+
+        @Override
+        public void share() {
+            rowHolder.share();
+        }
+
+        @Override
+        public boolean isShared() {
+            return rowHolder.isShared();
+        }
+
+        @Override
+        public void release() {
+            rowHolder.release();
+        }
+
+        // private methods
+
         private InnerEvaluation(RowType rowType, int fieldIndex, AkType akType) {
             assert rowType != null;
             assert akType != null;
@@ -106,6 +131,7 @@ public final class FieldExpression implements Expression {
         private final RowType rowType;
         private final int fieldIndex;
         private final AkType akType;
+        private final ShareHolder<Row> rowHolder = new ShareHolder<Row>();
         private ValueSource rowSource;
     }
 }

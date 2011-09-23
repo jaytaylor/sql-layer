@@ -15,7 +15,6 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.ValuesRowType;
@@ -109,5 +108,40 @@ public final class FieldExpressionTest {
     public void nullAkType() {
         ValuesRowType dummyType = new ValuesRowType(null, 1, 1);
         new FieldExpression(dummyType, 0, null);
+    }
+    
+    @Test
+    public void testSharing() {
+        ValuesRowType dummyType = new ValuesRowType(null, 1, 1);
+        ExpressionEvaluation evaluation = new FieldExpression(dummyType, 0, AkType.LONG).evaluation();
+
+        ValuesRow row = new ValuesRow(dummyType, new Object[]{27L});
+        evaluation.of(row);
+
+        assertEquals("evaluation.isShared()", false, evaluation.isShared());
+        assertEquals("row.isShared", false, row.isShared());
+
+        evaluation.share();
+        assertEquals("evaluation.isShared()", true, evaluation.isShared());
+        assertEquals("row.isShared", true, row.isShared());
+
+        evaluation.release();
+        assertEquals("evaluation.isShared()", false, evaluation.isShared());
+        assertEquals("row.isShared", false, row.isShared());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void releaseWithoutSharing() {
+        final ExpressionEvaluation evaluation;
+        try {
+            ValuesRowType dummyType = new ValuesRowType(null, 1, 1);
+            evaluation = new FieldExpression(dummyType, 0, AkType.LONG).evaluation();
+
+            ValuesRow row = new ValuesRow(dummyType, new Object[]{27L});
+            evaluation.of(row);
+        } catch (RuntimeException e) {
+            throw new RuntimeException("unexpected error!", e);
+        }
+        evaluation.release();
     }
 }

@@ -65,13 +65,17 @@ public abstract class AbstractRow implements Row
     @Override
     public final boolean isShared()
     {
-        assert references >= 1 : this;
-        return references > 1;
+        assert references >= 0 : this;
+        return references > 0;
     }
 
     @Override
     public final void release()
     {
+        assert references >= 0 : this;
+        if (references == 0) {
+            throw new IllegalStateException("can't release unshared row");
+        }
         references--;
     }
 

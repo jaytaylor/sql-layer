@@ -36,20 +36,23 @@ public class RowHolder<MR extends Row>
 
     public void set(MR newRow)
     {
-        if (newRow == null)
-            holder.releaseIf();
+        if (newRow == null) {
+            while (holder.isShared()) {
+                holder.release();
+            }
+        }
         else
             holder.hold(newRow);
     }
 
     public boolean isNull()
     {
-        return ! holder.hasItem();
+        return ! holder.isShared();
     }
 
     public boolean isNotNull()
     {
-        return holder.hasItem();
+        return holder.isShared();
     }
 
     public RowHolder(MR row)

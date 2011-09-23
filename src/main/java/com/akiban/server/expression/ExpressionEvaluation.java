@@ -18,6 +18,7 @@ package com.akiban.server.expression;
 import com.akiban.qp.physicaloperator.Bindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types.ValueSource;
+import com.akiban.util.Shareable;
 
 /**
  * <p>A statement run-time instance of a compiled {@link Expression}. Roughly speaking, ExpressionEvaluation is to
@@ -62,7 +63,7 @@ import com.akiban.server.types.ValueSource;
  * gave you this Row). If you need to save the evaluation's result, you must copy its value to a field you own. As
  * mentioned above, this would generally be managed by the Cursor that had created the ExpressionEvaluation.</p>
  */
-public interface ExpressionEvaluation {
+public interface ExpressionEvaluation extends Shareable {
     /**
      * Binds this evaluation to a row
      * @param row the row to be evaluated against
