@@ -15,7 +15,7 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
+import com.akiban.qp.operator.StoreAdapterRuntimeException;
 
 public class PersistitAdapterException extends StoreAdapterRuntimeException
 {

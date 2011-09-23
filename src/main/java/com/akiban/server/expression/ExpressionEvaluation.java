@@ -15,7 +15,7 @@
 
 package com.akiban.server.expression;
 
-import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.Shareable;

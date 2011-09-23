@@ -17,15 +17,15 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.SetColumnSelector;
 import org.junit.Test;
 
 import java.util.Arrays;
 
-import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.operator.API.*;
 
 /*
  * There are 4 usages of GroupScan_Default:
@@ -36,13 +36,13 @@ import static com.akiban.qp.physicaloperator.API.*;
  * These correspond to the four ways in which the underlying cursor can be used, (e.g. PersistitGroupCursor).
  */
 
-public class GroupScanIT extends PhysicalOperatorITBase
+public class GroupScanIT extends OperatorITBase
 {
     @Test
     public void testFullScan()
     {
         use(db);
-        PhysicalOperator groupScan = groupScan_Default(coi);
+        Operator groupScan = groupScan_Default(coi);
         Cursor cursor = cursor(groupScan, adapter);
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
                                            row(orderRowType, 11L, 1L, "ori"),
@@ -66,7 +66,7 @@ public class GroupScanIT extends PhysicalOperatorITBase
     public void testFullScan_EmptyDB()
     {
         use(emptyDB);
-        PhysicalOperator groupScan = groupScan_Default(coi);
+        Operator groupScan = groupScan_Default(coi);
         Cursor cursor = cursor(groupScan, adapter);
         compareRows(EMPTY_EXPECTED, cursor);
     }
@@ -80,8 +80,8 @@ public class GroupScanIT extends PhysicalOperatorITBase
         use(db);
         IndexBound tom = orderSalesmanIndexBound("tom");
         IndexKeyRange indexKeyRange = new IndexKeyRange(tom, true, tom, true);
-        PhysicalOperator groupScan = indexScan_Default(orderSalesmanIndexRowType, false, indexKeyRange);
-        PhysicalOperator ancestorLookup = ancestorLookup_Default(groupScan,
+        Operator groupScan = indexScan_Default(orderSalesmanIndexRowType, false, indexKeyRange);
+        Operator ancestorLookup = ancestorLookup_Default(groupScan,
                                                                  coi,
                                                                  orderSalesmanIndexRowType,
                                                                  Arrays.asList(customerRowType),
@@ -107,8 +107,8 @@ public class GroupScanIT extends PhysicalOperatorITBase
         use(db);
         IndexBound tom = orderSalesmanIndexBound("tom");
         IndexKeyRange indexKeyRange = new IndexKeyRange(tom, true, tom, true);
-        PhysicalOperator groupScan = indexScan_Default(orderSalesmanIndexRowType, false, indexKeyRange);
-        PhysicalOperator lookup = branchLookup_Default(groupScan, coi, orderSalesmanIndexRowType, orderRowType, LookupOption.DISCARD_INPUT  );
+        Operator groupScan = indexScan_Default(orderSalesmanIndexRowType, false, indexKeyRange);
+        Operator lookup = branchLookup_Default(groupScan, coi, orderSalesmanIndexRowType, orderRowType, LookupOption.DISCARD_INPUT  );
         Cursor cursor = cursor(lookup, adapter);
         RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
                                            row(itemRowType, 211L, 21L),

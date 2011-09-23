@@ -18,8 +18,8 @@ package com.akiban.server.test.it.qp;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -33,9 +33,9 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.operator.API.*;
 
-public class AncestorLookup_NestedIT extends PhysicalOperatorITBase
+public class AncestorLookup_NestedIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -139,7 +139,7 @@ public class AncestorLookup_NestedIT extends PhysicalOperatorITBase
     @Test
     public void testAIndexToA()
     {
-        PhysicalOperator plan =
+        Operator plan =
             map_NestedLoops(
                 indexScan_Default(aValueIndexRowType),
                 ancestorLookup_Nested(rabc, aValueIndexRowType, Collections.singleton(aRowType), 0),
@@ -157,7 +157,7 @@ public class AncestorLookup_NestedIT extends PhysicalOperatorITBase
     @Test
     public void testAIndexToAAndR()
     {
-        PhysicalOperator plan =
+        Operator plan =
             map_NestedLoops(
                 indexScan_Default(aValueIndexRowType),
                 ancestorLookup_Nested(rabc, aValueIndexRowType, Arrays.asList(aRowType, rRowType), 0),
@@ -179,7 +179,7 @@ public class AncestorLookup_NestedIT extends PhysicalOperatorITBase
     @Test
     public void testAIndexToARAndA()
     {
-        PhysicalOperator plan =
+        Operator plan =
             map_NestedLoops(
                 indexScan_Default(aValueIndexRowType),
                 ancestorLookup_Nested(rabc, aValueIndexRowType, Arrays.asList(rRowType, aRowType), 0),
@@ -201,7 +201,7 @@ public class AncestorLookup_NestedIT extends PhysicalOperatorITBase
     @Test
     public void testAIndexToAToR()
     {
-        PhysicalOperator plan =
+        Operator plan =
             map_NestedLoops(
                 map_NestedLoops(
                     indexScan_Default(aValueIndexRowType),

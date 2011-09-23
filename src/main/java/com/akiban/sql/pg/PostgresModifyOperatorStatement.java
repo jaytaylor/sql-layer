@@ -18,8 +18,8 @@ package com.akiban.sql.pg;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.UndefBindings;
+import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.UndefBindings;
 
 import java.io.IOException;
 

@@ -17,7 +17,7 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -27,10 +27,10 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.operator.API.*;
 import static com.akiban.qp.expression.API.*;
 
-public class Map_NestedLoopsIT extends PhysicalOperatorITBase
+public class Map_NestedLoopsIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -119,7 +119,7 @@ public class Map_NestedLoopsIT extends PhysicalOperatorITBase
     @Test
     public void testIndexLookup()
     {
-        PhysicalOperator plan =
+        Operator plan =
             map_NestedLoops(
                 indexScan_Default(itemOidIndexRowType, false, null),
                 ancestorLookup_Nested(coi, itemOidIndexRowType, Collections.singleton(itemRowType), 0),
@@ -147,7 +147,7 @@ public class Map_NestedLoopsIT extends PhysicalOperatorITBase
     public void testInnerJoin()
     {
         // customer order inner join, done as a general join
-        PhysicalOperator project =
+        Operator project =
             project_Default(
                 select_HKeyOrdered(
                     filter_Default(
@@ -157,7 +157,7 @@ public class Map_NestedLoopsIT extends PhysicalOperatorITBase
                     compare(field(1) /* order.cid */, Comparison.EQ, boundField(0, 0) /* customer.cid */)),
                 orderRowType,
                 Arrays.asList(boundField(0, 0) /* customer.cid */, field(0) /* order.oid */));
-        PhysicalOperator plan =
+        Operator plan =
             map_NestedLoops(
                 filter_Default(
                     groupScan_Default(coi),
@@ -181,7 +181,7 @@ public class Map_NestedLoopsIT extends PhysicalOperatorITBase
     public void testOuterJoin()
     {
         // customer order outer join, done as a general join
-        PhysicalOperator project = project_Default(
+        Operator project = project_Default(
             select_HKeyOrdered(
                 filter_Default(
                     groupScan_Default(coi),
@@ -191,7 +191,7 @@ public class Map_NestedLoopsIT extends PhysicalOperatorITBase
             orderRowType,
             Arrays.asList(boundField(0, 0) /* customer.cid */, field(0) /* order.oid */));
         RowType projectRowType = project.rowType();
-        PhysicalOperator plan =
+        Operator plan =
             map_NestedLoops(
                 filter_Default(
                     groupScan_Default(coi),

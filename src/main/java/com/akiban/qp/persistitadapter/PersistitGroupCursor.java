@@ -16,8 +16,8 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.GroupCursor;
+import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;

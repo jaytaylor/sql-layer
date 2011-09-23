@@ -15,7 +15,7 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.qp.physicaloperator.Limit;
+import com.akiban.qp.operator.Limit;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.scan.ScanLimit;
 

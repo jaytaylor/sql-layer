@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.qp.operator.Operator;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.sql.optimizer.*;
@@ -27,16 +28,15 @@ import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
-import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.UndefBindings;
-import static com.akiban.qp.physicaloperator.API.*;
+import com.akiban.qp.operator.UndefBindings;
+import static com.akiban.qp.operator.API.*;
 import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.physicaloperator.UpdateFunction;
+import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.*;
 
 import static com.akiban.qp.expression.API.*;
-import com.akiban.qp.expression.Comparison;
+
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.expression.IndexBound;
@@ -49,7 +49,6 @@ import com.akiban.server.aggregation.AggregatorFactory;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.GroupTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
@@ -660,7 +659,7 @@ public class OperatorAssembler extends BaseRule
 
     // Struct for multiple value return from assembly.
     static class RowStream {
-        PhysicalOperator operator;
+        Operator operator;
         RowType rowType;
         boolean unknownTypesPresent;
         ColumnExpressionToIndex fieldOffsets;

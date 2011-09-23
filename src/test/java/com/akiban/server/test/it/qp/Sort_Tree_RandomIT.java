@@ -15,14 +15,13 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.io.ArraySource;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.physicaloperator.API;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -34,13 +33,12 @@ import org.junit.Test;
 
 import java.util.*;
 
-import static com.akiban.qp.expression.API.compare;
 import static com.akiban.qp.expression.API.field;
-import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.operator.API.*;
 
 // More Sort_Tree testing, with randomly generated data
 
-public class Sort_Tree_RandomIT extends PhysicalOperatorITBase
+public class Sort_Tree_RandomIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -94,7 +92,7 @@ public class Sort_Tree_RandomIT extends PhysicalOperatorITBase
             boolean bAsc = (x & 4) != 0;
             boolean cAsc = (x & 2) != 0;
             boolean dAsc = (x & 1) != 0;
-            PhysicalOperator plan =
+            Operator plan =
                 sort_Tree(
                     groupScan_Default(group),
                     tRowType,

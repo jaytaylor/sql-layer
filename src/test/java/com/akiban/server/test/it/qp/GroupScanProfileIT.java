@@ -15,15 +15,15 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.UndefBindings;
+import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.UndefBindings;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static com.akiban.qp.physicaloperator.API.cursor;
-import static com.akiban.qp.physicaloperator.API.groupScan_Default;
+import static com.akiban.qp.operator.API.cursor;
+import static com.akiban.qp.operator.API.groupScan_Default;
 
 public class GroupScanProfileIT extends QPProfileITBase
 {
@@ -37,7 +37,7 @@ public class GroupScanProfileIT extends QPProfileITBase
         final int ITEMS_PER_ORDER = 2;
         populateDB(CUSTOMERS, ORDERS_PER_CUSTOMER, ITEMS_PER_ORDER);
         long start = System.nanoTime();
-        PhysicalOperator plan = groupScan_Default(coi);
+        Operator plan = groupScan_Default(coi);
         for (int s = 0; s < SCANS; s++) {
             Cursor cursor = cursor(plan, adapter);
             cursor.open(NO_BINDINGS);

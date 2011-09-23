@@ -15,7 +15,7 @@
 
 package com.akiban.qp.expression;
 
-import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.operator.Bindings;
 import com.akiban.server.api.dml.ColumnSelector;
 
 public class IndexBound

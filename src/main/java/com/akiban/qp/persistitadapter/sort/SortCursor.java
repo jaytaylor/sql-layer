@@ -15,7 +15,7 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.qp.physicaloperator.Cursor;
+import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.server.PersistitValueValueSource;

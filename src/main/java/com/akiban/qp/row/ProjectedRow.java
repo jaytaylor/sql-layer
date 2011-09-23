@@ -15,7 +15,7 @@
 
 package com.akiban.qp.row;
 
-import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;

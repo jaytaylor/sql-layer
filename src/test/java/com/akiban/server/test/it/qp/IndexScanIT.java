@@ -17,16 +17,16 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
 import com.akiban.server.api.dml.SetColumnSelector;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.akiban.qp.physicaloperator.API.cursor;
-import static com.akiban.qp.physicaloperator.API.indexScan_Default;
+import static com.akiban.qp.operator.API.cursor;
+import static com.akiban.qp.operator.API.indexScan_Default;
 
-public class IndexScanIT extends PhysicalOperatorITBase
+public class IndexScanIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -38,7 +38,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testExactMatchAbsent()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(299, true, 299, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(299, true, 299, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{};
         compareRenderedHKeys(expected, cursor);
@@ -47,7 +47,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testExactMatchPresent()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(212, true, 212, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(212, true, 212, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(2, 21, 212)};
         compareRenderedHKeys(expected, cursor);
@@ -56,7 +56,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testEmptyRange()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(218, true, 219, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(218, true, 219, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{};
         compareRenderedHKeys(expected, cursor);
@@ -72,7 +72,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoInclusiveMatchHiInclusiveMatch()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(121, true, 211, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(121, true, 211, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 12, 121), hkey(1, 12, 122), hkey(2, 21, 211)};
         compareRenderedHKeys(expected, cursor);
@@ -81,7 +81,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoInclusiveMatchHiInclusiveMiss()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(212, true, 223, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(212, true, 223, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(2, 21, 212), hkey(2, 22, 221), hkey(2, 22, 222)};
         compareRenderedHKeys(expected, cursor);
@@ -90,7 +90,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoInclusiveMatchHiExclusiveMatch()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(212, true, 222, false));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(212, true, 222, false));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(2, 21, 212), hkey(2, 22, 221)};
         compareRenderedHKeys(expected, cursor);
@@ -99,7 +99,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoInclusiveMatchHiExclusiveMiss()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(212, true, 223, false));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(212, true, 223, false));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(2, 21, 212), hkey(2, 22, 221), hkey(2, 22, 222)};
         compareRenderedHKeys(expected, cursor);
@@ -108,7 +108,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoInclusiveMissHiInclusiveMatch()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(100, true, 121, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(100, true, 121, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 11, 111), hkey(1, 11, 112), hkey(1, 12, 121)};
         compareRenderedHKeys(expected, cursor);
@@ -117,7 +117,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoInclusiveMissHiInclusiveMiss()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(100, true, 125, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(100, true, 125, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 11, 111), hkey(1, 11, 112), hkey(1, 12, 121), hkey(1, 12, 122)};
         compareRenderedHKeys(expected, cursor);
@@ -126,7 +126,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoInclusiveMissHiExclusiveMatch()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(100, true, 122, false));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(100, true, 122, false));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 11, 111), hkey(1, 11, 112), hkey(1, 12, 121)};
         compareRenderedHKeys(expected, cursor);
@@ -135,7 +135,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoInclusiveMissHiExclusiveMiss()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(100, true, 125, false));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(100, true, 125, false));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 11, 111), hkey(1, 11, 112), hkey(1, 12, 121), hkey(1, 12, 122)};
         compareRenderedHKeys(expected, cursor);
@@ -144,7 +144,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoExclusiveMatchHiInclusiveMatch()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(121, false, 211, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(121, false, 211, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 12, 122), hkey(2, 21, 211)};
         compareRenderedHKeys(expected, cursor);
@@ -153,7 +153,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoExclusiveMatchHiInclusiveMiss()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(212, false, 223, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(212, false, 223, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(2, 22, 221), hkey(2, 22, 222)};
         compareRenderedHKeys(expected, cursor);
@@ -162,7 +162,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoExclusiveMatchHiExclusiveMatch()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(212, false, 222, false));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(212, false, 222, false));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(2, 22, 221)};
         compareRenderedHKeys(expected, cursor);
@@ -171,7 +171,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoExclusiveMatchHiExclusiveMiss()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(212, false, 223, false));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(212, false, 223, false));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(2, 22, 221), hkey(2, 22, 222)};
         compareRenderedHKeys(expected, cursor);
@@ -180,7 +180,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoExclusiveMissHiInclusiveMatch()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(100, false, 121, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(100, false, 121, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 11, 111), hkey(1, 11, 112), hkey(1, 12, 121)};
         compareRenderedHKeys(expected, cursor);
@@ -189,7 +189,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoExclusiveMissHiInclusiveMiss()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(100, false, 125, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(100, false, 125, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 11, 111), hkey(1, 11, 112), hkey(1, 12, 121), hkey(1, 12, 122)};
         compareRenderedHKeys(expected, cursor);
@@ -198,7 +198,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoExclusiveMissHiExclusiveMatch()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(100, false, 122, false));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(100, false, 122, false));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 11, 111), hkey(1, 11, 112), hkey(1, 12, 121)};
         compareRenderedHKeys(expected, cursor);
@@ -207,7 +207,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoExclusiveMissHiExclusiveMiss()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(100, false, 125, false));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(100, false, 125, false));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 11, 111), hkey(1, 11, 112), hkey(1, 12, 121), hkey(1, 12, 122)};
         compareRenderedHKeys(expected, cursor);
@@ -218,7 +218,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testExactMatchAbsentReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(299, true, 299, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(299, true, 299, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{};
         compareRenderedHKeys(expected, cursor);
@@ -227,7 +227,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testExactMatchPresentReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(212, true, 212, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(212, true, 212, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(2, 21, 212)};
         compareRenderedHKeys(expected, cursor);
@@ -236,7 +236,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testEmptyRangeReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(218, true, 219, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(218, true, 219, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{};
         compareRenderedHKeys(expected, cursor);
@@ -245,7 +245,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoInclusiveMatchHiInclusiveMatchReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(121, true, 211, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(121, true, 211, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(2, 21, 211), hkey(1, 12, 122), hkey(1, 12, 121)};
         compareRenderedHKeys(expected, cursor);
@@ -254,7 +254,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoInclusiveMatchHiInclusiveMissReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(212, true, 223, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(212, true, 223, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(2, 22, 222), hkey(2, 22, 221), hkey(2, 21, 212)};
         compareRenderedHKeys(expected, cursor);
@@ -263,7 +263,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoInclusiveMatchHiExclusiveMatchReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(212, true, 222, false));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(212, true, 222, false));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(2, 22, 221), hkey(2, 21, 212)};
         compareRenderedHKeys(expected, cursor);
@@ -272,7 +272,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoInclusiveMatchHiExclusiveMissReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(212, true, 223, false));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(212, true, 223, false));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(2, 22, 222), hkey(2, 22, 221), hkey(2, 21, 212)};
         compareRenderedHKeys(expected, cursor);
@@ -281,7 +281,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoInclusiveMissHiInclusiveMatchReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(100, true, 121, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(100, true, 121, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
         compareRenderedHKeys(expected, cursor);
@@ -290,7 +290,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoInclusiveMissHiInclusiveMissReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(100, true, 125, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(100, true, 125, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 12, 122), hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
         compareRenderedHKeys(expected, cursor);
@@ -299,7 +299,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoInclusiveMissHiExclusiveMatchReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(100, true, 122, false));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(100, true, 122, false));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
         compareRenderedHKeys(expected, cursor);
@@ -308,7 +308,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoInclusiveMissHiExclusiveMissReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(100, true, 125, false));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(100, true, 125, false));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 12, 122), hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
         compareRenderedHKeys(expected, cursor);
@@ -317,7 +317,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoExclusiveMatchHiInclusiveMatchReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(121, false, 211, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(121, false, 211, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(2, 21, 211), hkey(1, 12, 122)};
         compareRenderedHKeys(expected, cursor);
@@ -326,7 +326,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoExclusiveMatchHiInclusiveMissReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(212, false, 223, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(212, false, 223, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(2, 22, 222), hkey(2, 22, 221)};
         compareRenderedHKeys(expected, cursor);
@@ -335,7 +335,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoExclusiveMatchHiExclusiveMatchReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(212, false, 222, false));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(212, false, 222, false));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(2, 22, 221)};
         compareRenderedHKeys(expected, cursor);
@@ -344,7 +344,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoExclusiveMatchHiExclusiveMissReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(212, false, 223, false));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(212, false, 223, false));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(2, 22, 222), hkey(2, 22, 221)};
         compareRenderedHKeys(expected, cursor);
@@ -353,7 +353,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoExclusiveMissHiInclusiveMatchReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(100, false, 121, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(100, false, 121, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
         compareRenderedHKeys(expected, cursor);
@@ -362,7 +362,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoExclusiveMissHiInclusiveMissReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(100, false, 125, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(100, false, 125, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 12, 122), hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
         compareRenderedHKeys(expected, cursor);
@@ -371,7 +371,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoExclusiveMissHiExclusiveMatchReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(100, false, 122, false));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(100, false, 122, false));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
         compareRenderedHKeys(expected, cursor);
@@ -380,7 +380,7 @@ public class IndexScanIT extends PhysicalOperatorITBase
     @Test
     public void testLoExclusiveMissHiExclusiveMissReverse()
     {
-        PhysicalOperator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(100, false, 125, false));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, indexKeyRange(100, false, 125, false));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 12, 122), hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
         compareRenderedHKeys(expected, cursor);

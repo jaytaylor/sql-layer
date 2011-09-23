@@ -18,11 +18,8 @@ package com.akiban.server.test.it.qp;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.physicaloperator.API;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.StoreAdapter;
-import com.akiban.qp.physicaloperator.UndefBindings;
+import com.akiban.qp.operator.*;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
@@ -42,7 +39,7 @@ public final class GroupIndexScanIT extends ITBase {
 
     @Test
     public void scanAtLeastO () {
-        PhysicalOperator plan = API.indexScan_Default(giRowType, false, null, uTableRowType(o));
+        Operator plan = API.indexScan_Default(giRowType, false, null, uTableRowType(o));
         compareResults(plan,
                 array("01-01-2001", null),
                 array("02-02-2002", "1111"),
@@ -53,7 +50,7 @@ public final class GroupIndexScanIT extends ITBase {
 
     @Test
     public void scanAtLeastI () {
-        PhysicalOperator plan = API.indexScan_Default(giRowType, false, null, uTableRowType(i));
+        Operator plan = API.indexScan_Default(giRowType, false, null, uTableRowType(i));
         compareResults(plan,
                 array("02-02-2002", "1111"),
                 array("03-03-2003", null),
@@ -63,8 +60,8 @@ public final class GroupIndexScanIT extends ITBase {
 
     @Test
     public void defaultDepth() {
-        PhysicalOperator explicit = API.indexScan_Default(giRowType, false, null, uTableRowType(i));
-        PhysicalOperator defaulted = API.indexScan_Default(giRowType, false, null);
+        Operator explicit = API.indexScan_Default(giRowType, false, null, uTableRowType(i));
+        Operator defaulted = API.indexScan_Default(giRowType, false, null);
 
         List<List<?>> explicitList = planToList(explicit);
         List<List<?>> defaultedList = planToList(defaulted);
@@ -123,11 +120,11 @@ public final class GroupIndexScanIT extends ITBase {
         return rowType;
     }
 
-    private void compareResults(PhysicalOperator plan, Object[]... expectedResults) {
+    private void compareResults(Operator plan, Object[]... expectedResults) {
         assertEqualLists("rows scanned", nestedList(expectedResults), planToList(plan));
     }
 
-    private List<List<?>> planToList(PhysicalOperator plan) {
+    private List<List<?>> planToList(Operator plan) {
         List<List<?>> actualResults = new ArrayList<List<?>>();
         Cursor cursor =  API.cursor(plan, adapter);
         cursor.open(UndefBindings.only());

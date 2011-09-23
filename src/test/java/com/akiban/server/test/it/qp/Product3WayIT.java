@@ -18,8 +18,8 @@ package com.akiban.server.test.it.qp;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -35,10 +35,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 
-import static com.akiban.qp.physicaloperator.API.FlattenOption.*;
-import static com.akiban.qp.physicaloperator.API.JoinType.*;
-import static com.akiban.qp.physicaloperator.API.LookupOption.*;
-import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.operator.API.FlattenOption.*;
+import static com.akiban.qp.operator.API.JoinType.*;
+import static com.akiban.qp.operator.API.LookupOption.*;
+import static com.akiban.qp.operator.API.*;
 import static org.junit.Assert.assertTrue;
 
 // Product_ByRun relies on run ids. Here is an explanation of why run ids are needed:
@@ -46,7 +46,7 @@ import static org.junit.Assert.assertTrue;
 // But no other operator relies on runs, and run ids can probably be omitted if we implement
 // a nested-loops form of product. This test uses a 3-way product, the case motivating run ids.
 
-public class Product3WayIT extends PhysicalOperatorITBase
+public class Product3WayIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -129,7 +129,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
     public void testProductAfterIndexScanOfA_ByRun()
     {
         // TODO: This plan is dumb. It does an AC product twice, once in the index lookup, once in ProductRABC.
-        PhysicalOperator flattenRC =
+        Operator flattenRC =
             flatten_HKeyOrdered(
                 branchLookup_Default(
                     ancestorLookup_Default(
@@ -146,7 +146,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
                 cRowType,
                 INNER_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator flattenRB =
+        Operator flattenRB =
             flatten_HKeyOrdered(
                 branchLookup_Default(
                     flattenRC,
@@ -158,7 +158,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
                 bRowType,
                 INNER_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator flattenRA =
+        Operator flattenRA =
             flatten_HKeyOrdered(
                 branchLookup_Default(
                     flattenRB,
@@ -169,8 +169,8 @@ public class Product3WayIT extends PhysicalOperatorITBase
                 rRowType,
                 aRowType,
                 INNER_JOIN);
-        PhysicalOperator productRAB = product_ByRun(flattenRA, flattenRA.rowType(), flattenRB.rowType());
-        PhysicalOperator productRABC = product_ByRun(productRAB, productRAB.rowType(), flattenRC.rowType());
+        Operator productRAB = product_ByRun(flattenRA, flattenRA.rowType(), flattenRB.rowType());
+        Operator productRABC = product_ByRun(productRAB, productRAB.rowType(), flattenRC.rowType());
         Cursor cursor = cursor(productRABC, adapter);
         RowType rabcRowType = productRABC.rowType();
         RowBase[] expected = new RowBase[]{
@@ -217,7 +217,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
     @Test
     public void testProductAfterIndexScanOfA_NestedLoops_RABC()
     {
-        PhysicalOperator RA =
+        Operator RA =
             flatten_HKeyOrdered(
                 ancestorLookup_Default(
                     indexScan_Default(aValueIndexRowType, false, null),
@@ -228,7 +228,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
                 rRowType,
                 aRowType,
                 INNER_JOIN);
-        PhysicalOperator RB =
+        Operator RB =
             flatten_HKeyOrdered(
                 branchLookup_Nested(
                     rabc,
@@ -239,7 +239,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
                 rRowType,
                 bRowType,
                 INNER_JOIN);
-        PhysicalOperator RC =
+        Operator RC =
             flatten_HKeyOrdered(
                 branchLookup_Nested(
                     rabc,
@@ -250,8 +250,8 @@ public class Product3WayIT extends PhysicalOperatorITBase
                 rRowType,
                 cRowType,
                 INNER_JOIN);
-        PhysicalOperator RAB = product_NestedLoops(RA, RB, RA.rowType(), RB.rowType(), 0);
-        PhysicalOperator RABC = product_NestedLoops(RAB, RC, RAB.rowType(), RC.rowType(), 0);
+        Operator RAB = product_NestedLoops(RA, RB, RA.rowType(), RB.rowType(), 0);
+        Operator RABC = product_NestedLoops(RAB, RC, RAB.rowType(), RC.rowType(), 0);
         Cursor cursor = cursor(RABC, adapter);
         RowType rabcRowType = RABC.rowType();
         RowBase[] expected = new RowBase[]{
@@ -279,7 +279,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
     public void testProductAfterIndexScanOfA_NestedLoops_RACB()
     {
         // Like testProductAfterIndexScanOfA_NestedLoops_RABC, but branches are included in a different order.
-        PhysicalOperator RA =
+        Operator RA =
             flatten_HKeyOrdered(
                 ancestorLookup_Default(
                     indexScan_Default(aValueIndexRowType, false, null),
@@ -290,7 +290,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
                 rRowType,
                 aRowType,
                 INNER_JOIN);
-        PhysicalOperator RB =
+        Operator RB =
             flatten_HKeyOrdered(
                 branchLookup_Nested(
                     rabc,
@@ -301,7 +301,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
                 rRowType,
                 bRowType,
                 INNER_JOIN);
-        PhysicalOperator RC =
+        Operator RC =
             flatten_HKeyOrdered(
                 branchLookup_Nested(
                     rabc,
@@ -312,8 +312,8 @@ public class Product3WayIT extends PhysicalOperatorITBase
                 rRowType,
                 cRowType,
                 INNER_JOIN);
-        PhysicalOperator RAC = product_NestedLoops(RA, RC, RA.rowType(), RC.rowType(), 0);
-        PhysicalOperator RACB = product_NestedLoops(RAC, RB, RAC.rowType(), RB.rowType(), 0);
+        Operator RAC = product_NestedLoops(RA, RC, RA.rowType(), RC.rowType(), 0);
+        Operator RACB = product_NestedLoops(RAC, RB, RAC.rowType(), RB.rowType(), 0);
         Cursor cursor = cursor(RACB, adapter);
         RowType racbRowType = RACB.rowType();
         RowBase[] expected = new RowBase[]{
@@ -340,14 +340,14 @@ public class Product3WayIT extends PhysicalOperatorITBase
     @Test
     public void testProductAfterIndexScanOfR()
     {
-        PhysicalOperator rScan =
+        Operator rScan =
             ancestorLookup_Default(
                 indexScan_Default(rValueIndexRowType, false, null),
                 rabc,
                 rValueIndexRowType,
                 Arrays.asList(rRowType),
                 DISCARD_INPUT);
-        PhysicalOperator flattenRA =
+        Operator flattenRA =
             flatten_HKeyOrdered(
                 branchLookup_Nested(
                     rabc,
@@ -358,7 +358,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
                 rRowType,
                 aRowType,
                 INNER_JOIN);
-        PhysicalOperator flattenRB =
+        Operator flattenRB =
             flatten_HKeyOrdered(
                 branchLookup_Nested(
                     rabc,
@@ -369,7 +369,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
                 rRowType,
                 bRowType,
                 INNER_JOIN);
-        PhysicalOperator flattenRC =
+        Operator flattenRC =
             flatten_HKeyOrdered(
                 branchLookup_Nested(
                     rabc,
@@ -380,9 +380,9 @@ public class Product3WayIT extends PhysicalOperatorITBase
                 rRowType,
                 cRowType,
                 INNER_JOIN);
-        PhysicalOperator RA = product_NestedLoops(rScan, flattenRA, rRowType, flattenRA.rowType(), 0);
-        PhysicalOperator RAB = product_NestedLoops(RA, flattenRB, RA.rowType(), flattenRB.rowType(), 0);
-        PhysicalOperator RABC = product_NestedLoops(RAB, flattenRC, RAB.rowType(), flattenRC.rowType(), 0);
+        Operator RA = product_NestedLoops(rScan, flattenRA, rRowType, flattenRA.rowType(), 0);
+        Operator RAB = product_NestedLoops(RA, flattenRB, RA.rowType(), flattenRB.rowType(), 0);
+        Operator RABC = product_NestedLoops(RAB, flattenRC, RAB.rowType(), flattenRC.rowType(), 0);
         Cursor cursor = cursor(RABC, adapter);
         RowType rabcRowType = RABC.rowType();
         RowBase[] expected = new RowBase[]{
@@ -411,7 +411,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
     @Test
     public void testProductAfterIndexScanOfA_BROKEN()
     {
-        PhysicalOperator flattenRA =
+        Operator flattenRA =
             flatten_HKeyOrdered(
                 ancestorLookup_Default(
                     indexScan_Default(aValueIndexRowType, false, null),
@@ -423,7 +423,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
                 aRowType,
                 INNER_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator flattenRB =
+        Operator flattenRB =
             flatten_HKeyOrdered(
                 branchLookup_Default(
                     flattenRA,
@@ -436,7 +436,7 @@ public class Product3WayIT extends PhysicalOperatorITBase
                 INNER_JOIN,
                 KEEP_PARENT);
         dumpToAssertion(flattenRB); // BROKEN: RB rows appear before RA rows
-        PhysicalOperator flattenRC =
+        Operator flattenRC =
             flatten_HKeyOrdered(
                 branchLookup_Default(
                     flattenRB,
@@ -447,8 +447,8 @@ public class Product3WayIT extends PhysicalOperatorITBase
                 rRowType,
                 cRowType,
                 INNER_JOIN);
-        PhysicalOperator productRAB = product_ByRun(flattenRC, flattenRA.rowType(), flattenRB.rowType());
-        PhysicalOperator productRABC = product_ByRun(productRAB, productRAB.rowType(), flattenRC.rowType());
+        Operator productRAB = product_ByRun(flattenRC, flattenRA.rowType(), flattenRB.rowType());
+        Operator productRABC = product_ByRun(productRAB, productRAB.rowType(), flattenRC.rowType());
         Cursor cursor = cursor(productRABC, adapter);
         RowType rabcRowType = productRABC.rowType();
         RowBase[] expected = new RowBase[]{

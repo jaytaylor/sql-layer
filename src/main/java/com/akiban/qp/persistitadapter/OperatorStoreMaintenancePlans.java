@@ -19,9 +19,9 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.physicaloperator.API;
-import com.akiban.qp.physicaloperator.NoLimit;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.NoLimit;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
@@ -63,10 +63,10 @@ final class OperatorStoreMaintenancePlans {
      * @param groupIndex GroupIndex
      * @return PhysicalOperator
      */
-    static PhysicalOperator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex) {
+    static Operator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex) {
         OperatorStoreMaintenancePlan.BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
 
-        PhysicalOperator plan = API.groupScan_Default(groupIndex.getGroup().getGroupTable(), NoLimit.instance());
+        Operator plan = API.groupScan_Default(groupIndex.getGroup().getGroupTable(), NoLimit.instance());
 
         RowType parentRowType = null;
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;

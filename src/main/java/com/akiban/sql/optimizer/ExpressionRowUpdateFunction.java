@@ -18,8 +18,8 @@ package com.akiban.sql.optimizer;
 import java.util.List;
 
 import com.akiban.qp.expression.Expression;
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.UpdateFunction;
+import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;

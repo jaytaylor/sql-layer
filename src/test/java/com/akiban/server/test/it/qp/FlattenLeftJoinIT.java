@@ -32,7 +32,7 @@ import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -43,13 +43,12 @@ import com.akiban.server.store.Store;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.akiban.qp.physicaloperator.API.FlattenOption.KEEP_PARENT;
-import static com.akiban.qp.physicaloperator.API.JoinType.INNER_JOIN;
-import static com.akiban.qp.physicaloperator.API.JoinType.LEFT_JOIN;
-import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
+import static com.akiban.qp.operator.API.JoinType.LEFT_JOIN;
+import static com.akiban.qp.operator.API.*;
 import static com.akiban.qp.expression.API.*;
 
-public class FlattenLeftJoinIT extends PhysicalOperatorITBase
+public class FlattenLeftJoinIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -125,7 +124,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase1()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -149,7 +148,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase2()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -172,7 +171,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase3()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -195,7 +194,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase4()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -219,7 +218,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase1FlattenPB()
     {
-        PhysicalOperator flattenPB =
+        Operator flattenPB =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -229,7 +228,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 beforeChildRowType,
                 LEFT_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 flattenPB,
                 parentRowType,
@@ -251,7 +250,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase2FlattenPB()
     {
-        PhysicalOperator flattenPB =
+        Operator flattenPB =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -261,7 +260,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 beforeChildRowType,
                 LEFT_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 flattenPB,
                 parentRowType,
@@ -283,7 +282,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase3FlattenPB()
     {
-        PhysicalOperator flattenPB =
+        Operator flattenPB =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -293,7 +292,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 beforeChildRowType,
                 LEFT_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 flattenPB,
                 parentRowType,
@@ -314,7 +313,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase4FlattenPB()
     {
-        PhysicalOperator flattenPB =
+        Operator flattenPB =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -324,7 +323,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 beforeChildRowType,
                 LEFT_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 flattenPB,
                 parentRowType,
@@ -348,7 +347,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase1FlattenPA()
     {
-        PhysicalOperator flattenPA =
+        Operator flattenPA =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -358,7 +357,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 afterChildRowType,
                 LEFT_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 flattenPA,
                 parentRowType,
@@ -380,7 +379,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase2FlattenPA()
     {
-        PhysicalOperator flattenPA =
+        Operator flattenPA =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -390,7 +389,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 afterChildRowType,
                 LEFT_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 flattenPA,
                 parentRowType,
@@ -411,7 +410,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase3FlattenPA()
     {
-        PhysicalOperator flattenPA =
+        Operator flattenPA =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -421,7 +420,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 afterChildRowType,
                 LEFT_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 flattenPA,
                 parentRowType,
@@ -443,7 +442,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase4FlattenPA()
     {
-        PhysicalOperator flattenPA =
+        Operator flattenPA =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -453,7 +452,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 afterChildRowType,
                 LEFT_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 flattenPA,
                 parentRowType,
@@ -480,7 +479,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testNotCompletelyHKeyOrdered()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 branchLookup_Default(
                     indexScan_Default(

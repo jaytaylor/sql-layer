@@ -25,7 +25,7 @@ import com.akiban.sql.parser.ParameterNode;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.physicaloperator.StoreAdapter;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.ErrorCode;

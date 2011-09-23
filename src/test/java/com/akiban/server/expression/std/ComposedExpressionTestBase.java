@@ -16,8 +16,8 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.qp.expression.ExpressionRow;
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.UndefBindings;
+import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
