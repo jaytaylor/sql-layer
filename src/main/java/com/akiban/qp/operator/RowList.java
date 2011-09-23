@@ -16,7 +16,7 @@
 package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowHolder;
+import com.akiban.util.ShareHolder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +26,7 @@ class RowList
     public void add(Row row)
     {
         ensureRoom();
-        list.get(count++).set(row);
+        list.get(count++).hold(row);
     }
 
     public Scan scan()
@@ -37,8 +37,8 @@ class RowList
 
     public void clear()
     {
-        for (RowHolder<Row> rowHolder : list) {
-            rowHolder.set(null);
+        for (ShareHolder<Row> rowHolder : list) {
+            rowHolder.release();
         }
         count = 0;
     }
@@ -46,7 +46,7 @@ class RowList
     public RowList()
     {
         for (int i = 0; i < INITIAL_CAPACITY; i++) {
-            list.add(new RowHolder<Row>());
+            list.add(new ShareHolder<Row>());
         }
     }
 
@@ -58,7 +58,7 @@ class RowList
         if (count == capacity) {
             int newCapacity = capacity * 2;
             for (int i = capacity; i < newCapacity; i++) {
-                list.add(new RowHolder<Row>());
+                list.add(new ShareHolder<Row>());
             }
             capacity = newCapacity;
         }
@@ -71,7 +71,7 @@ class RowList
 
     // Object state
 
-    private final List<RowHolder<Row>> list = new ArrayList<RowHolder<Row>>(INITIAL_CAPACITY);
+    private final List<ShareHolder<Row>> list = new ArrayList<ShareHolder<Row>>(INITIAL_CAPACITY);
     private int count = 0;
     private int capacity = INITIAL_CAPACITY;
     private final Scan scan = new Scan(); // There should be only one scan of a RowList at a time.

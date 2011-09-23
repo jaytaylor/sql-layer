@@ -68,10 +68,16 @@ public class ProjectedRow extends AbstractRow
 
     // AbstractRow interface
 
+
+    @Override
+    protected void beforeAcquire() {
+        row.acquire();
+    }
+
     @Override
     public void afterRelease()
     {
-        row.set(null);
+        row.release();
     }
 
     // ProjectedRow interface
@@ -79,7 +85,7 @@ public class ProjectedRow extends AbstractRow
     public ProjectedRow(ProjectedRowType rowType, Row row, Bindings bindings, List<Expression> expressions)
     {
         this.rowType = rowType;
-        this.row.set(row);
+        this.row = row;
         this.expressions = expressions;
         this.evaluations = createEvaluations(row, bindings);
         super.runId(row.runId());
@@ -102,7 +108,7 @@ public class ProjectedRow extends AbstractRow
     // Object state
 
     private final ProjectedRowType rowType;
-    private final RowHolder<Row> row = new RowHolder<Row>();
+    private final Row row;
     private final List<Expression> expressions;
     private final List<ExpressionEvaluation> evaluations;
 }

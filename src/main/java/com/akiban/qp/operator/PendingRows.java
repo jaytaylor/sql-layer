@@ -16,7 +16,10 @@
 package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowHolder;
+import com.akiban.util.ShareHolder;
+
+import java.util.ArrayList;
+import java.util.List;
 
 class PendingRows
 {
@@ -55,9 +58,9 @@ class PendingRows
     public PendingRows(int capacity)
     {
         this.capacity = capacity;
-        queue = new Object[capacity + 1];
+        queue = new ArrayList<ShareHolder<Row>>(capacity+1);
         for (int i = 0; i <= capacity; i++) {
-            this.queue[i] = new RowHolder<Row>();
+            queue.add(new ShareHolder<Row>());
         }
         this.start = 0;
         this.end = 0;
@@ -67,12 +70,12 @@ class PendingRows
 
     private Row row(int i)
     {
-        return ((RowHolder<Row>) queue[i]).get();
+        return queue.get(i).get();
     }
 
     private void row(int i, Row row)
     {
-        ((RowHolder<Row>) queue[i]).set(row);
+        queue.get(i).hold(row);
     }
 
     private boolean empty()
@@ -96,7 +99,7 @@ class PendingRows
     // Object state
 
     private final int capacity;
-    private final Object[] queue;
+    private final List<ShareHolder<Row>> queue;
     private int start;
     private int end;
 }

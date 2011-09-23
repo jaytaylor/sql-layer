@@ -19,11 +19,11 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.ShareHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -193,7 +193,7 @@ public class BranchLookup_Default extends Operator
         public Row next()
         {
             Row nextRow = null;
-            while (nextRow == null && inputRow.isNotNull()) {
+            while (nextRow == null && inputRow.isHolding()) {
                 switch (lookupState) {
                     case BEFORE:
                         if (keepInput && inputPrecedesBranch) {
@@ -203,7 +203,7 @@ public class BranchLookup_Default extends Operator
                         break;
                     case SCANNING:
                         advanceLookup();
-                        if (lookupRow.isNotNull()) {
+                        if (lookupRow.isHolding()) {
                             nextRow = lookupRow.get();
                         }
                         break;
@@ -216,7 +216,7 @@ public class BranchLookup_Default extends Operator
                 }
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("BranchLookup_Default: {}", lookupRow.isNull() ? null : lookupRow.get());
+                LOG.debug("BranchLookup_Default: {}", lookupRow.get());
             }
             return nextRow;
         }
@@ -225,9 +225,9 @@ public class BranchLookup_Default extends Operator
         public void close()
         {
             inputCursor.close();
-            inputRow.set(null);
+            inputRow.release();
             lookupCursor.close();
-            lookupRow.set(null);
+            lookupRow.release();
         }
 
         // Execution interface
@@ -247,34 +247,34 @@ public class BranchLookup_Default extends Operator
             if ((currentLookupRow = lookupCursor.next()) != null) {
                 if (limit.limitReached(currentLookupRow)) {
                     lookupState = LookupState.AFTER;
-                    lookupRow.set(null);
+                    lookupRow.release();
                     close();
                 } else {
                     currentLookupRow.runId(inputRow.get().runId());
-                    lookupRow.set(currentLookupRow);
+                    lookupRow.hold(currentLookupRow);
                 }
             } else {
                 lookupState = LookupState.AFTER;
-                lookupRow.set(null);
+                lookupRow.release();
             }
         }
 
         private void advanceInput()
         {
             lookupState = LookupState.BEFORE;
-            lookupRow.set(null);
+            lookupRow.release();
             lookupCursor.close();
             Row currentInputRow = inputCursor.next();
             if (currentInputRow != null) {
                 if (currentInputRow.rowType() == inputRowType) {
-                    lookupRow.set(null);
+                    lookupRow.release();
                     computeLookupRowHKey(currentInputRow.hKey());
                     lookupCursor.rebind(lookupRowHKey, true);
                     lookupCursor.open(UndefBindings.only());
                 }
-                inputRow.set(currentInputRow);
+                inputRow.hold(currentInputRow);
             } else {
-                inputRow.set(null);
+                inputRow.release();
             }
         }
 
@@ -290,9 +290,9 @@ public class BranchLookup_Default extends Operator
         // Object state
 
         private final Cursor inputCursor;
-        private final RowHolder<Row> inputRow = new RowHolder<Row>();
+        private final ShareHolder<Row> inputRow = new ShareHolder<Row>();
         private final GroupCursor lookupCursor;
-        private final RowHolder<Row> lookupRow = new RowHolder<Row>();
+        private final ShareHolder<Row> lookupRow = new ShareHolder<Row>();
         private final HKey lookupRowHKey;
         private LookupState lookupState;
     }

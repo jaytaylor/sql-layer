@@ -18,10 +18,10 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.ProductRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
-import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.ShareHolder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -110,8 +110,8 @@ class Product_ByRun extends Operator
             if (runState == RunState.RIGHT) {
                 row = nextProductRow();
             }
-            while (row == null && (runState.compareTo(RunState.AFTER_RIGHT) < 0 || inputRow.isNotNull())) {
-                inputRow.set(input.next());
+            while (row == null && (runState.compareTo(RunState.AFTER_RIGHT) < 0 || inputRow.isHolding())) {
+                inputRow.hold(input.next());
                 Row currentRow = inputRow.get();
                 if (currentRow == null) {
                     runState = RunState.AFTER_RIGHT;
@@ -166,7 +166,7 @@ class Product_ByRun extends Operator
         private Row nextProductRow()
         {
             Row productRow = null;
-            if (rightRow.isNotNull()) {
+            if (rightRow.isHolding()) {
                 Row leftRow = leftScan.next();
                 if (leftRow != null) {
                     productRow = new ProductRow(productType, leftRow, rightRow.get());
@@ -229,14 +229,14 @@ class Product_ByRun extends Operator
 
         private void rememberRightRow(Row row)
         {
-            rightRow.set(row);
+            rightRow.hold(row);
             leftScan = leftRows.scan();
         }
 
         private void terminateRunProduct()
         {
             leftRows.clear();
-            rightRow.set(null);
+            rightRow.release();
         }
 
         // Object state
@@ -244,8 +244,8 @@ class Product_ByRun extends Operator
         private final Cursor input;
         private final RowList leftRows = new RowList();
         private RowList.Scan leftScan;
-        private final RowHolder<Row> rightRow = new RowHolder<Row>();
-        private final RowHolder<Row> inputRow = new RowHolder<Row>();
+        private final ShareHolder<Row> rightRow = new ShareHolder<Row>();
+        private final ShareHolder<Row> inputRow = new ShareHolder<Row>();
         private int currentRunId = RowBase.UNDEFINED_RUN_ID;
         private RunState runState = RunState.BEFORE_LEFT;
     }

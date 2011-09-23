@@ -17,10 +17,10 @@ package com.akiban.qp.operator;
 
 import com.akiban.qp.row.ProductRow;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.ShareHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -139,14 +139,14 @@ class Product_NestedLoops extends Operator
                         if (rowType == outerType) {
                             Row branchRow = row.subRow(branchType);
                             assert branchRow != null : row;
-                            if (outerBranchRow.isNull() || !branchRow.hKey().equals(outerBranchRow.get().hKey())) {
+                            if (outerBranchRow.isEmpty() || !branchRow.hKey().equals(outerBranchRow.get().hKey())) {
                                 if (LOG.isDebugEnabled()) {
                                     LOG.debug("Product_NestedLoops: branch row {}", row);
                                 }
-                                outerBranchRow.set(branchRow);
+                                outerBranchRow.hold(branchRow);
                                 innerRows.newBranchRow(branchRow);
                             }
-                            outerRow.set(row);
+                            outerRow.hold(row);
                             if (LOG.isDebugEnabled()) {
                                 LOG.debug("Product_NestedLoops: restart inner loop using current branch row");
                             }
@@ -183,7 +183,7 @@ class Product_NestedLoops extends Operator
         private Row nextProductRow()
         {
             Row productRow = null;
-            if (outerRow.isNotNull()) {
+            if (outerRow.isHolding()) {
                 Row innerRow = innerRows.next();
                 if (innerRow == null) {
                     closeInner();
@@ -202,15 +202,15 @@ class Product_NestedLoops extends Operator
 
         private void closeInner()
         {
-            outerRow.set(null);
+            outerRow.release();
             innerRows.close();
         }
 
         // Object state
 
         private final Cursor outerInput;
-        private final RowHolder<Row> outerRow = new RowHolder<Row>();
-        private final RowHolder<Row> outerBranchRow = new RowHolder<Row>();
+        private final ShareHolder<Row> outerRow = new ShareHolder<Row>();
+        private final ShareHolder<Row> outerBranchRow = new ShareHolder<Row>();
         private final InnerRows innerRows;
         private Bindings bindings;
         private boolean closed = false;

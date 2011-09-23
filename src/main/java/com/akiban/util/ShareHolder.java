@@ -39,12 +39,22 @@ public final class ShareHolder<T extends Shareable> {
         hold(null);
     }
 
+    public boolean isEmpty() {
+        return ! isHolding();
+    }
+
     public boolean isHolding() {
         return held != null;
     }
 
     public boolean isShared() {
         return isHolding() && held.isShared();
+    }
+
+    public ShareHolder() {}
+
+    public ShareHolder(T item) {
+        hold(item);
     }
 
     // object interface
