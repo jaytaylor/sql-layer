@@ -518,15 +518,13 @@ public class ASTStatementLoader extends BaseRule
             rows.add(Collections.singletonList(toExpression(rightOperand)));
         }
         ExpressionsSource source = new ExpressionsSource(rows);
-        List<ConditionExpression> innerConds = new ArrayList<ConditionExpression>(1);
-        innerConds.add(new ComparisonCondition(Comparison.EQ, left,
-                                               new ColumnExpression(source, 0,
-                                                                    left.getSQLtype(), null),
-                                               in.getType(), null));
-        PlanNode subquery = new Filter(source, innerConds);
-        conditions.add(new SubqueryCondition(SubqueryCondition.Kind.EXISTS, 
-                                             new Subquery(subquery),
-                                             in.getType(), in));
+        ConditionExpression cond = new ComparisonCondition(Comparison.EQ, left,
+                                                           new ColumnExpression(source, 0,
+                                                                                left.getSQLtype(), null),
+                                                           in.getType(), null);
+        PlanNode subquery = new Project(source, 
+                                        Collections.<ExpressionNode>singletonList(cond));
+        conditions.add(new AnyCondition(new Subquery(subquery), in.getType(), in));
     }
     
     protected void addSubqueryCondition(List<ConditionExpression> conditions, 
@@ -536,7 +534,7 @@ public class ASTStatementLoader extends BaseRule
                                              subqueryNode.getOrderByList(),
                                              subqueryNode.getOffset(),
                                              subqueryNode.getFetchFirst());
-        SubqueryCondition.Kind kind = SubqueryCondition.Kind.EXISTS;
+        boolean negate = false;
         Comparison comp = Comparison.EQ;
         ExpressionNode operand = null;
         boolean needOperand = false;
@@ -545,14 +543,14 @@ public class ASTStatementLoader extends BaseRule
         case EXISTS:
             break;
         case NOT_EXISTS:
-            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            negate = true;
             break;
         case IN:
         case EQ_ANY: 
             needOperand = true;
             break;
         case EQ_ALL: 
-            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            negate = true;
             comp = Comparison.NE;
             needOperand = true;
             break;
@@ -562,7 +560,7 @@ public class ASTStatementLoader extends BaseRule
             needOperand = true;
             break;
         case NE_ALL: 
-            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            negate = true;
             comp = Comparison.EQ;
             needOperand = true;
             break;
@@ -571,7 +569,7 @@ public class ASTStatementLoader extends BaseRule
             needOperand = true;
             break;
         case GT_ALL: 
-            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            negate = true;
             comp = Comparison.LE;
             needOperand = true;
             break;
@@ -580,7 +578,7 @@ public class ASTStatementLoader extends BaseRule
             needOperand = true;
             break;
         case GE_ALL: 
-            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            negate = true;
             comp = Comparison.LT;
             needOperand = true;
             break;
@@ -589,7 +587,7 @@ public class ASTStatementLoader extends BaseRule
             needOperand = true;
             break;
         case LT_ALL: 
-            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            negate = true;
             comp = Comparison.GE;
             needOperand = true;
             break;
@@ -598,7 +596,7 @@ public class ASTStatementLoader extends BaseRule
             needOperand = true;
             break;
         case LE_ALL: 
-            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            negate = true;
             comp = Comparison.GT;
             needOperand = true;
             break;
@@ -622,27 +620,43 @@ public class ASTStatementLoader extends BaseRule
                     // Don't need project any more.
                     if (prev != null)
                         prev.replaceInput(plan, next);
-                }
-                else if (plan instanceof Filter) {
-                    Filter f = (Filter)plan;
-                    innerConds = f.getConditions();
+                    else
+                        subquery = next;
                     break;
                 }
-                if (!(plan instanceof ResultSet)) {
+                if (!(plan instanceof ResultSet)) { // Also remove ResultSet.
                     prev = (PlanWithInput)plan;
                 }
                 plan = next;
             }
         }
+        ConditionExpression condition;
         if (needOperand) {
-            assert ((operand != null) && (innerConds != null));
+            assert (operand != null);
             ExpressionNode left = toExpression(subqueryNode.getLeftOperand());
-            innerConds.add(new ComparisonCondition(comp, left, operand,
-                                                   subqueryNode.getType(), 
-                                                   subqueryNode));
+            ConditionExpression inner = new ComparisonCondition(comp, left, operand,
+                                                                subqueryNode.getType(), 
+                                                                subqueryNode);
+            // We take this condition back off from the top of the
+            // physical plan and move it to the expression, but it's
+            // easier to think about the scoping as evaluated at the
+            // end of the inner query.
+            subquery = new Project(subquery,
+                                   Collections.<ExpressionNode>singletonList(inner));
+            condition = new AnyCondition(new Subquery(subquery), 
+                                         subqueryNode.getType(), subqueryNode);
         }
-        conditions.add(new SubqueryCondition(kind, new Subquery(subquery), 
-                                             subqueryNode.getType(), subqueryNode));
+        else {
+            condition = new ExistsCondition(new Subquery(subquery), 
+                                            subqueryNode.getType(), subqueryNode);
+        }
+        if (negate) {
+            condition = new LogicalFunctionCondition("not", 
+                                                     Collections.singletonList(condition),
+                                                     subqueryNode.getType(), 
+                                                     subqueryNode);
+        }
+        conditions.add(condition);
     }
 
     protected void addFunctionCondition(List<ConditionExpression> conditions,
@@ -905,8 +919,8 @@ public class ASTStatementLoader extends BaseRule
                                                  subqueryNode.getOrderByList(),
                                                  subqueryNode.getOffset(),
                                                  subqueryNode.getFetchFirst());
-            return new SubqueryExpression(new Subquery(subquery),
-                                          subqueryNode.getType(), subqueryNode);
+            return new SubqueryValueExpression(new Subquery(subquery),
+                                               subqueryNode.getType(), subqueryNode);
         }
         else if (valueNode instanceof JavaToSQLValueNode) {
             return toExpression(((JavaToSQLValueNode)valueNode).getJavaValueNode(),

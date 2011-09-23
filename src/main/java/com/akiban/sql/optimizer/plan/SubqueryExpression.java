@@ -15,7 +15,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.error.AkibanInternalException;
 
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
@@ -23,9 +23,8 @@ import com.akiban.sql.parser.ValueNode;
 import com.akiban.qp.expression.Expression;
 
 /** An expression evaluated by a subquery.
- * TODO: Think about nested result sets.
  */
-public class SubqueryExpression extends BaseExpression 
+public abstract class SubqueryExpression extends BaseExpression 
 {
     private Subquery subquery;
 
@@ -37,19 +36,6 @@ public class SubqueryExpression extends BaseExpression
 
     public Subquery getSubquery() {
         return subquery;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof SubqueryExpression)) return false;
-        SubqueryExpression other = (SubqueryExpression)obj;
-        // Currently this is ==; don't match whole subquery.
-        return subquery.equals(other.subquery);
-    }
-
-    @Override
-    public int hashCode() {
-        return subquery.hashCode();
     }
 
     @Override
@@ -76,11 +62,6 @@ public class SubqueryExpression extends BaseExpression
     @Override
     public String toString() {
         return subquery.summaryString();
-    }
-
-    @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        throw new UnsupportedSQLException("NIY", null);
     }
 
     @Override
