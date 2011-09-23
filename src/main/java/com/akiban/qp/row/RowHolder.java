@@ -37,9 +37,8 @@ public class RowHolder<MR extends Row>
     public void set(MR newRow)
     {
         if (newRow == null) {
-            while (holder.isHolding()) {
+            if (holder.isHolding())
                 holder.release();
-            }
         }
         else
             holder.hold(newRow);
