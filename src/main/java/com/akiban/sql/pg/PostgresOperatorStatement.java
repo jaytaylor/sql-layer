@@ -25,6 +25,7 @@ import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.util.Tap;
 
 import java.util.*;
 import java.io.IOException;
@@ -40,7 +41,9 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     private PhysicalOperator resultOperator;
     private int offset = 0;
     private int limit = -1;
-        
+
+    private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresBaseStatement: execute shared");
+
     public PostgresOperatorStatement(PhysicalOperator resultOperator,
                                      List<String> columnNames,
                                      List<PostgresType> columnTypes,
@@ -67,7 +70,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         int nrows = 0;
         Cursor cursor = null;
         try {
-            lock(session);
+            lock(session, UNSPECIFIED_DML_READ);
             cursor = API.cursor(resultOperator, server.getStore());
             cursor.open(bindings);
             List<PostgresType> columnTypes = getColumnTypes();
@@ -106,7 +109,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             if (cursor != null) {
                 cursor.close();
             }
-            unlock(session);
+            unlock(session, UNSPECIFIED_DML_READ);
         }
         {        
             messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
@@ -114,6 +117,12 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             messenger.sendMessage();
         }
         return nrows;
+    }
+
+    @Override
+    protected Tap.InOutTap executionTap()
+    {
+        return EXECUTE_TAP;
     }
 
     protected Bindings getBindings() {
@@ -171,15 +180,5 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                                   getColumnNames(), getColumnTypes(),
                                   offset, limit, bindings, 
                                   columnBinary, defaultColumnBinary);
-    }
-
-    private void lock(Session session)
-    {
-        DXLReadWriteLockHook.only().hookFunctionIn(session, UNSPECIFIED_DML_WRITE);
-    }
-
-    private void unlock(Session session)
-    {
-        DXLReadWriteLockHook.only().hookFunctionFinally(session, UNSPECIFIED_DML_WRITE, null);
     }
 }

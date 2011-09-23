@@ -25,6 +25,7 @@ import java.io.IOException;
 
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
+import com.akiban.util.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +39,8 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
 {
     private String statementType;
     private UpdatePlannable resultOperator;
+
+    private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresBaseStatement: execute exclusive");
     private static final Logger LOG = LoggerFactory.getLogger(PostgresModifyOperatorStatement.class);
         
     public PostgresModifyOperatorStatement(String statementType,
@@ -56,10 +59,10 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         Session session = server.getSession();
         final UpdateResult updateResult;
         try {
-            lock(session);
+            lock(session, UNSPECIFIED_DML_WRITE);
             updateResult = resultOperator.run(bindings, server.getStore());
         } finally {
-            unlock(session);
+            unlock(session, UNSPECIFIED_DML_WRITE);
         }
 
         LOG.debug("Statement: {}, result: {}", statementType, updateResult);
@@ -73,6 +76,12 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         }
         messenger.sendMessage();
         return 0;
+    }
+
+    @Override
+    protected Tap.InOutTap executionTap()
+    {
+        return EXECUTE_TAP;
     }
 
     protected Bindings getBindings() {
@@ -106,15 +115,5 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
 
         return new BoundStatement(statementType, resultOperator, 
                                   getParameterBindings(parameters));
-    }
-
-    private void lock(Session session)
-    {
-        DXLReadWriteLockHook.only().hookFunctionIn(session, UNSPECIFIED_DML_WRITE);
-    }
-
-    private void unlock(Session session)
-    {
-        DXLReadWriteLockHook.only().hookFunctionFinally(session, UNSPECIFIED_DML_WRITE, null);
     }
 }
