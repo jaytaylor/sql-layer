@@ -59,8 +59,8 @@ public final class FromObjectValueSource implements ValueSource {
         else if (object instanceof Boolean)
              asType = AkType.BOOL;
         else if (object instanceof Character) {
-            object = String.valueOf(object);
-            asType = AkType.VARCHAR;
+             object = String.valueOf(object);
+             asType = AkType.VARCHAR;
         }
         else throw new UnsupportedOperationException("can't reflectively set " + object.getClass() + ": " + object);
 

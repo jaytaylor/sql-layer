@@ -18,12 +18,11 @@ import java.util.List;
 
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.expression.Expression;
+import com.akiban.server.expression.Expression;
 
 public class ProjectedUserTableRowType extends ProjectedRowType {
 
-    public ProjectedUserTableRowType(Schema schema, UserTable table,
-            List<Expression> projections) {
+    public ProjectedUserTableRowType(Schema schema, UserTable table, List<? extends Expression> projections) {
         super(schema, table.getTableId(), projections);
         this.table = table;
     }

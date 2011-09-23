@@ -125,7 +125,6 @@ class PersistitGroupCursor implements GroupCursor
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(PersistitGroupCursor.class);
-    private static final int VALUE_BYTES = Integer.MAX_VALUE;
 
     // Object state
 
@@ -141,16 +140,6 @@ class PersistitGroupCursor implements GroupCursor
      *  General:
      *  - exchange == null iff this cursor is closed
      */
-
-    Exchange exchange()
-    {
-        return exchange;
-    }
-
-    RowHolder<PersistitGroupRow> currentHeldRow()
-    {
-        return row;
-    }
 
     private final PersistitAdapter adapter;
     private final GroupTable groupTable;

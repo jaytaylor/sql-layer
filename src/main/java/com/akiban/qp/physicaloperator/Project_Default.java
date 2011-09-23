@@ -15,12 +15,12 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.ProjectedUserTableRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.expression.Expression;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.ArrayList;
@@ -78,7 +78,7 @@ class Project_Default extends PhysicalOperator
 
     // Project_Default interface
 
-    public Project_Default(PhysicalOperator inputOperator, RowType rowType, List<Expression> projections)
+    public Project_Default(PhysicalOperator inputOperator, RowType rowType, List<? extends Expression> projections)
     {
         ArgumentValidation.notNull("rowType", rowType);
         ArgumentValidation.notEmpty("projections", projections);
@@ -90,7 +90,7 @@ class Project_Default extends PhysicalOperator
     
     // Project_Default constructor, returns ProjectedUserTableRowType rows 
     public Project_Default(PhysicalOperator inputOperator, RowType inputRowType,
-            RowType projectTableRowType, List<Expression> projections)
+            RowType projectTableRowType, List<? extends Expression> projections)
     {
         ArgumentValidation.notNull("inputRowType", inputRowType);
         ArgumentValidation.notEmpty("projections", projections);
@@ -101,8 +101,9 @@ class Project_Default extends PhysicalOperator
         
         ArgumentValidation.notNull("projectRowType", projectTableRowType);
         ArgumentValidation.isTrue("RowType has UserTable", projectTableRowType.hasUserTable());
-        projectType = new ProjectedUserTableRowType (projectTableRowType.schema(), 
-                projectTableRowType.userTable(), projections);
+        projectType = new ProjectedUserTableRowType(projectTableRowType.schema(),
+                                                    projectTableRowType.userTable(),
+                                                    projections);
     }
 
 

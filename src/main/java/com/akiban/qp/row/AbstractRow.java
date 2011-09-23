@@ -53,7 +53,7 @@ public abstract class AbstractRow implements Row
         return rowType() == subRowType ? this : null;
     }
 
-    // ManagedRow interface
+    // Row interface
 
     @Override
     public final void share()
@@ -74,6 +74,12 @@ public abstract class AbstractRow implements Row
     {
         assert references > 0 : this;
         --references;
+        afterRelease();
+    }
+
+    @Override
+    public void afterRelease()
+    {
     }
 
     @Override

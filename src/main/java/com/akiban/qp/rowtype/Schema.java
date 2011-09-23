@@ -16,7 +16,7 @@
 package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.*;
-import com.akiban.qp.expression.Expression;
+import com.akiban.server.expression.Expression;
 
 import java.util.*;
 
