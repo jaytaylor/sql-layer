@@ -135,9 +135,13 @@ public abstract class ComposedExpressionTestBase {
         assertEquals("isShared", false, evaluation.isShared());
     }
 
-    @Test(expected = BadReleaseException.class)
+    @Test
     public void releasingWhenUnshared() {
-        evaluation().release();
+        EvaluationPair pair = evaluationPair();
+        ExpressionEvaluation evaluation = pair.evaluation;
+        List<String> messages = pair.messages;
+        evaluation.release();
+        assertEquals("messages.size", 0, messages.size());
     }
 
     private void checkMessages(List<String> messages, String singleMessage) {
@@ -273,10 +277,10 @@ public abstract class ComposedExpressionTestBase {
 
         @Override
         public void release() {
-            if (sharedBy <= 0)
-                throw new BadReleaseException();
-            messages.add(RELEASE);
-            --sharedBy;
+            if (sharedBy > 0) {
+                messages.add(RELEASE);
+                --sharedBy;
+            }
         }
 
         private DummyExpressionEvaluation(List<String> messages, Set<ExpressionAttribute> requirements) {
@@ -306,9 +310,5 @@ public abstract class ComposedExpressionTestBase {
 
         public final ExpressionEvaluation evaluation;
         public final List<String> messages;
-    }
-
-    private static class BadReleaseException extends RuntimeException {
-
     }
 }

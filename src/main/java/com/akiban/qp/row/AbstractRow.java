@@ -73,10 +73,9 @@ public abstract class AbstractRow implements Row
     public final void release()
     {
         assert references >= 0 : this;
-        if (references == 0) {
-            throw new IllegalStateException("can't release unshared row");
+        if (references > 0) {
+            references--;
         }
-        references--;
     }
 
     @Override

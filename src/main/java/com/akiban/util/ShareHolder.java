@@ -15,45 +15,37 @@
 
 package com.akiban.util;
 
-public final class ShareHolder<T extends Shareable> implements Shareable {
+public final class ShareHolder<T extends Shareable> {
 
     // ShareHolder interface
 
     public T get() {
+        if (held == null)
+            throw new IllegalStateException("nothing held");
         return held;
     }
 
     public void hold(T item) {
-        reserve(item);
-        share();
-    }
-
-    public void reserve(T item) {
         if (item == null) {
             throw new IllegalArgumentException("can't hold null elements");
         }
-        if (isShared()) {
-            throw new IllegalStateException("can't hold while another item is shared: " + held);
+        if (isHolding()) {
+            release();
         }
+        assert held == null : held;
         held = item;
-    }
-
-    // Shareable interface
-
-    @Override
-    public void share() {
-        checkHeld();
         held.share();
     }
 
-    @Override
-    public boolean isShared() {
-        return held != null && held.isShared();
+    public void release() {
+        if (held != null) {
+            held.release();
+            held = null;
+        }
     }
 
-    public void release() {
-        checkHeld();
-        held.release();
+    public boolean isHolding() {
+        return held != null && held.isShared();
     }
 
     // object interface
@@ -63,11 +55,6 @@ public final class ShareHolder<T extends Shareable> implements Shareable {
         if (held != null)
             return "Holder(" + held + ')';
         return "Holder( empty )";
-    }
-
-    // private methods
-    private void checkHeld() {
-        if (held == null) throw new IllegalStateException("no item held");
     }
 
     // object state

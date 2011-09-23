@@ -24,7 +24,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
-import com.akiban.util.Shareable;
 
 public final class FieldExpression implements Expression {
 
@@ -86,7 +85,7 @@ public final class FieldExpression implements Expression {
                         row + "[" + fieldIndex + "] had akType " + incomingAkType + "; expected " + akType
                 );
             }
-            rowHolder.reserve(row);
+            this.row = row;
             this.rowSource = incomingSource;
         }
 
@@ -105,12 +104,12 @@ public final class FieldExpression implements Expression {
 
         @Override
         public void share() {
-            rowHolder.share();
+            rowHolder.hold(row);
         }
 
         @Override
         public boolean isShared() {
-            return rowHolder.isShared();
+            return rowHolder.isHolding();
         }
 
         @Override
@@ -132,6 +131,7 @@ public final class FieldExpression implements Expression {
         private final int fieldIndex;
         private final AkType akType;
         private final ShareHolder<Row> rowHolder = new ShareHolder<Row>();
+        private Row row;
         private ValueSource rowSource;
     }
 }

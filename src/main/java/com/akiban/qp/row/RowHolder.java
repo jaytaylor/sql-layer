@@ -31,13 +31,13 @@ public class RowHolder<MR extends Row>
 
     public MR get()
     {
-        return holder.get();
+        return holder.isHolding() ? holder.get() : null;
     }
 
     public void set(MR newRow)
     {
         if (newRow == null) {
-            while (holder.isShared()) {
+            while (holder.isHolding()) {
                 holder.release();
             }
         }
@@ -47,12 +47,12 @@ public class RowHolder<MR extends Row>
 
     public boolean isNull()
     {
-        return ! holder.isShared();
+        return ! holder.isHolding();
     }
 
     public boolean isNotNull()
     {
-        return holder.isShared();
+        return holder.isHolding();
     }
 
     public RowHolder(MR row)

@@ -130,18 +130,12 @@ public final class FieldExpressionTest {
         assertEquals("row.isShared", false, row.isShared());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void releaseWithoutSharing() {
-        final ExpressionEvaluation evaluation;
-        try {
-            ValuesRowType dummyType = new ValuesRowType(null, 1, 1);
-            evaluation = new FieldExpression(dummyType, 0, AkType.LONG).evaluation();
-
-            ValuesRow row = new ValuesRow(dummyType, new Object[]{27L});
-            evaluation.of(row);
-        } catch (RuntimeException e) {
-            throw new RuntimeException("unexpected error!", e);
-        }
+        ValuesRowType dummyType = new ValuesRowType(null, 1, 1);
+        ExpressionEvaluation evaluation = new FieldExpression(dummyType, 0, AkType.LONG).evaluation();
+        ValuesRow row = new ValuesRow(dummyType, new Object[]{27L});
+        evaluation.of(row);
         evaluation.release();
     }
 }

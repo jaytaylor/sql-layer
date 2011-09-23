@@ -23,42 +23,35 @@ public final class ShareHolderTest {
 
     @Test
     public void totallyEmpty() {
-        assertEquals("shared state", false, new ShareHolder<Shareable>().isShared());
+        assertEquals("shared state", false, new ShareHolder<Shareable>().isHolding());
     }
 
     @Test
     public void testSharing() {
-        Shareable shareable = new DummyShareable(1);
+        Shareable shareable = new DummyShareable();
+
         ShareHolder<Shareable> holder = new ShareHolder<Shareable>();
-        holder.reserve(shareable);
-        assertEquals("shared state A", false, holder.isShared());
-        holder.share();
-        assertEquals("shared state B", true, holder.isShared());
+        assertEquals("shared state A", false, holder.isHolding());
+        assertEquals("shareable.isShared", false, shareable.isShared());
+
+        holder.hold(shareable);
+        assertEquals("shared state B", true, holder.isHolding());
+        assertEquals("shareable.isShared", true, shareable.isShared());
+
         holder.release();
-        assertEquals("shared state A", false, holder.isShared());
+        assertEquals("shared state A", false, holder.isHolding());
+        assertEquals("shareable.isShared", false, shareable.isShared());
     }
 
     @Test
-    public void autoShared() {
-        ShareHolder<Shareable> holder = new ShareHolder<Shareable>();
-        holder.reserve(new DummyShareable(0));
-        assertEquals("shared state", true, holder.isShared());
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void shareIllegally() {
-        new ShareHolder<Shareable>().share();
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void releaseIllegally() {
+    public void releaseWhenNotHeld() {
         new ShareHolder<Shareable>().release();
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void reserveNull() {
+    public void holdNull() {
         ShareHolder<Shareable> holder = new ShareHolder<Shareable>();
-        holder.reserve(null);
+        holder.hold(null);
     }
 
     /**
@@ -76,19 +69,15 @@ public final class ShareHolderTest {
 
         @Override
         public boolean isShared() {
-            return sharedBy >= sharedWhen;
+            return sharedBy > 0;
         }
 
         @Override
         public void release() {
+            assert sharedBy > 0 : sharedBy;
             --sharedBy;
         }
 
-        private DummyShareable(int sharedWhen) {
-            this.sharedWhen = sharedWhen;
-        }
-
-        private final int sharedWhen;
-        private int sharedBy;
+        private int sharedBy = 0;
     }
 }
