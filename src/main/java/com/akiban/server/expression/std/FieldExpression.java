@@ -23,7 +23,6 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.ArgumentValidation;
-import com.akiban.util.ShareHolder;
 
 public final class FieldExpression implements Expression {
 
@@ -103,8 +102,8 @@ public final class FieldExpression implements Expression {
         // Shareable interface
 
         @Override
-        public void share() {
-            row.share();
+        public void acquire() {
+            row.acquire();
         }
 
         @Override

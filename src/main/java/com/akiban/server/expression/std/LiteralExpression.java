@@ -106,7 +106,7 @@ public final class LiteralExpression implements Expression {
         }
 
         @Override
-        public void share() {
+        public void acquire() {
         }
 
         @Override

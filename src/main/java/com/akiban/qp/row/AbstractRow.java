@@ -56,7 +56,7 @@ public abstract class AbstractRow implements Row
     // Row interface
 
     @Override
-    public final void share()
+    public final void acquire()
     {
         assert references >= 0 : this;
         references++;

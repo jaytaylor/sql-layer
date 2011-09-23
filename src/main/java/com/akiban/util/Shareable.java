@@ -16,7 +16,7 @@
 package com.akiban.util;
 
 public interface Shareable {
-    void share();
+    void acquire();
     boolean isShared();
     void release();
 }

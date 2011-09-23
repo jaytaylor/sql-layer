@@ -115,12 +115,12 @@ public abstract class ComposedExpressionTestBase {
         assertEquals("messages.size", 0, messages.size());
 
         // share once
-        evaluation.share();
+        evaluation.acquire();
         checkMessages(messages, SHARE);
         assertEquals("isShared", true, evaluation.isShared());
 
         // share twice
-        evaluation.share();
+        evaluation.acquire();
         checkMessages(messages, SHARE);
         assertEquals("isShared", true, evaluation.isShared());
 
@@ -265,7 +265,7 @@ public abstract class ComposedExpressionTestBase {
         }
 
         @Override
-        public void share() {
+        public void acquire() {
             messages.add(SHARE);
             ++sharedBy;
         }

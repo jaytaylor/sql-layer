@@ -176,8 +176,8 @@ public class API
         }
 
         @Override
-        public void share() {
-            row.share();
+        public void acquire() {
+            row.acquire();
         }
 
         @Override

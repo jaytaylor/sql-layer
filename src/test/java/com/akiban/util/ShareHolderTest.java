@@ -29,7 +29,7 @@ public final class ShareHolderTest {
     @Test
     public void testSharing() {
         Shareable shareable = new DummyShareable();
-        shareable.share();
+        shareable.acquire();
 
         ShareHolder<Shareable> holder = new ShareHolder<Shareable>();
         assertEquals("shared state A", false, holder.isHolding());
@@ -58,13 +58,13 @@ public final class ShareHolderTest {
     /**
      * A dummy class which can be shared or released, but which only counts as being shared as long as
      * the number of shares is >= the number given in its constructor. For instance, if that number is 0,
-     * this object is shared by default. If it's 2, you'll have to call {@linkplain #share} twice for it to
+     * this object is shared by default. If it's 2, you'll have to call {@linkplain #acquire} twice for it to
      * be shared.
      */
     private static class DummyShareable implements Shareable {
 
         @Override
-        public void share() {
+        public void acquire() {
             ++ownedBy;
         }
 
