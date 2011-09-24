@@ -17,24 +17,19 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;
-import com.akiban.qp.expression.IndexBound;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
-import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-
 import static com.akiban.qp.expression.API.compare;
 import static com.akiban.qp.expression.API.field;
 import static com.akiban.qp.expression.API.literal;
-import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.operator.API.*;
 
-public class SelectIT extends PhysicalOperatorITBase
+public class SelectIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -89,7 +84,7 @@ public class SelectIT extends PhysicalOperatorITBase
     @Test
     public void testSelectCustomer()
     {
-        PhysicalOperator plan =
+        Operator plan =
             select_HKeyOrdered(
                 groupScan_Default(coi), customerRowType, customerNameEQ("northbridge"));
         Cursor cursor = cursor(plan, adapter);
@@ -111,7 +106,7 @@ public class SelectIT extends PhysicalOperatorITBase
     @Test
     public void testSelectOrder()
     {
-        PhysicalOperator plan =
+        Operator plan =
             select_HKeyOrdered(
                 groupScan_Default(coi), orderRowType, orderSalesmanEQ("tom"));
         Cursor cursor = cursor(plan, adapter);
@@ -136,7 +131,7 @@ public class SelectIT extends PhysicalOperatorITBase
     @Test
     public void testSelectItem()
     {
-        PhysicalOperator plan =
+        Operator plan =
             select_HKeyOrdered(
                 groupScan_Default(coi), itemRowType, itemOidEQ(12L));
         Cursor cursor = cursor(plan, adapter);

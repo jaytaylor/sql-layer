@@ -22,7 +22,7 @@ import com.akiban.sql.optimizer.plan.*;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.physicaloperator.API.JoinType;
+import com.akiban.qp.operator.API.JoinType;
 
 import java.util.*;
 

@@ -15,8 +15,8 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -24,14 +24,13 @@ import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.operator.API.*;
 
-public class FilterIT extends PhysicalOperatorITBase
+public class FilterIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -79,7 +78,7 @@ public class FilterIT extends PhysicalOperatorITBase
     @Test
     public void testCutBelowCustomer()
     {
-        PhysicalOperator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(customerRowType));
+        Operator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(customerRowType));
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
@@ -91,7 +90,7 @@ public class FilterIT extends PhysicalOperatorITBase
     @Test
     public void testCutBelowOrder()
     {
-        PhysicalOperator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(orderRowType));
+        Operator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(orderRowType));
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
@@ -111,7 +110,7 @@ public class FilterIT extends PhysicalOperatorITBase
     @Test
     public void testCutBelowItem()
     {
-        PhysicalOperator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(itemRowType));
+        Operator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(itemRowType));
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
@@ -139,7 +138,7 @@ public class FilterIT extends PhysicalOperatorITBase
     @Test
     public void testCutBelowAddress()
     {
-        PhysicalOperator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(addressRowType));
+        Operator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(addressRowType));
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
@@ -169,7 +168,7 @@ public class FilterIT extends PhysicalOperatorITBase
     @Test
     public void testExtractRoot()
     {
-        PhysicalOperator plan = filter_Default(groupScan_Default(coi), typeAndDescendents(customerRowType));
+        Operator plan = filter_Default(groupScan_Default(coi), typeAndDescendents(customerRowType));
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
@@ -197,7 +196,7 @@ public class FilterIT extends PhysicalOperatorITBase
     @Test
     public void testExtractLeaf()
     {
-        PhysicalOperator plan = filter_Default(groupScan_Default(coi), typeAndDescendents(itemRowType));
+        Operator plan = filter_Default(groupScan_Default(coi), typeAndDescendents(itemRowType));
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(itemRowType, 111L, 11L),
@@ -218,7 +217,7 @@ public class FilterIT extends PhysicalOperatorITBase
         Set<RowType> keepTypes = new HashSet<RowType>();
         keepTypes.addAll(typeAndDescendents(addressRowType));
         keepTypes.addAll(typeAndDescendents(orderRowType));
-        PhysicalOperator plan = filter_Default(groupScan_Default(coi), keepTypes);
+        Operator plan = filter_Default(groupScan_Default(coi), keepTypes);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 11L, 1L, "ori"),

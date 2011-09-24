@@ -21,7 +21,7 @@ import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.persistitadapter.sort.Sorter;
-import com.akiban.qp.physicaloperator.*;
+import com.akiban.qp.operator.*;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;

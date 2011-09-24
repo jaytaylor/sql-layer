@@ -15,7 +15,6 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.qp.physicaloperator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.ValuesRowType;
@@ -109,5 +108,47 @@ public final class FieldExpressionTest {
     public void nullAkType() {
         ValuesRowType dummyType = new ValuesRowType(null, 1, 1);
         new FieldExpression(dummyType, 0, null);
+    }
+    
+    @Test
+    public void testSharing() {
+        ValuesRowType dummyType = new ValuesRowType(null, 1, 1);
+        ExpressionEvaluation evaluation = new FieldExpression(dummyType, 0, AkType.LONG).evaluation();
+
+        ValuesRow row = new ValuesRow(dummyType, new Object[]{27L});
+        evaluation.of(row);
+
+        assertEquals("evaluation.isShared()", false, evaluation.isShared());
+        assertEquals("row.isShared", false, row.isShared());
+
+        // first acquire doesn't mean it's shared
+        evaluation.acquire();
+        assertEquals("evaluation.isShared()", false, evaluation.isShared());
+        assertEquals("row.isShared", false, row.isShared());
+
+        // next does
+        evaluation.acquire();
+        assertEquals("evaluation.isShared()", true, evaluation.isShared());
+        assertEquals("row.isShared", true, row.isShared());
+
+        // now, three own it (very shared!)
+        evaluation.acquire();
+        assertEquals("evaluation.isShared()", true, evaluation.isShared());
+        assertEquals("row.isShared", true, row.isShared());
+
+        // back down to two owners, still shared
+        evaluation.release();
+        assertEquals("evaluation.isShared()", true, evaluation.isShared());
+        assertEquals("row.isShared", true, row.isShared());
+
+        // down to one owner, not shared anymore
+        evaluation.release();
+        assertEquals("evaluation.isShared()", false, evaluation.isShared());
+        assertEquals("row.isShared", false, row.isShared());
+
+        // no owners, very not shared
+        evaluation.release();
+        assertEquals("evaluation.isShared()", false, evaluation.isShared());
+        assertEquals("row.isShared", false, row.isShared());
     }
 }

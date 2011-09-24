@@ -15,7 +15,7 @@
 
 package com.akiban.qp.expression;
 
-import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.Row;
 
 final class Variable implements Expression {

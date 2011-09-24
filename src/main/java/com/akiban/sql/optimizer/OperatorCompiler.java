@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.qp.operator.Operator;
 import com.akiban.sql.optimizer.simplified.*;
 import com.akiban.sql.optimizer.simplified.SimplifiedQuery.*;
 
@@ -49,8 +50,7 @@ import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 
-import com.akiban.qp.physicaloperator.PhysicalOperator;
-import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.operator.API.*;
 
 import com.akiban.qp.row.Row;
 
@@ -186,7 +186,7 @@ public class OperatorCompiler
                 sb.append("  ");
             sb.append(operator);
             into.add(sb.toString());
-            for (PhysicalOperator inputOperator : operator.getInputOperators()) {
+            for (Operator inputOperator : operator.getInputOperators()) {
                 explainPlan(inputOperator, into, depth+1);
             }
         }
@@ -245,7 +245,7 @@ public class OperatorCompiler
             tracer.endEvent();
         }
         
-        PhysicalOperator resultOperator;
+        Operator resultOperator;
         RowType resultRowType;
         ColumnExpressionToIndex fieldOffsets;
         boolean needFilter = false;
@@ -908,18 +908,18 @@ public class OperatorCompiler
     // Holds a partial operator tree while flattening, since need the
     // single return value for above per-branch result.
     class Flattener implements Comparator<FlattenState> {
-        private PhysicalOperator resultOperator;
+        private Operator resultOperator;
         private int nbranches;
         private Map<List<RowType>,RowType> flattensDone;
 
-        public Flattener(PhysicalOperator resultOperator, int nbranches) {
+        public Flattener(Operator resultOperator, int nbranches) {
             this.resultOperator = resultOperator;
             this.nbranches = nbranches;
             if (nbranches > 1)
                 flattensDone = new HashMap<List<RowType>,RowType>();
         }
         
-        public PhysicalOperator getResultOperator() {
+        public Operator getResultOperator() {
             return resultOperator;
         }
 
@@ -1021,7 +1021,7 @@ public class OperatorCompiler
         }
     }
     
-    protected PhysicalOperator maybeAddTableConditions(PhysicalOperator resultOperator,
+    protected Operator maybeAddTableConditions(Operator resultOperator,
                                                        SimplifiedQuery squery, 
                                                        Iterable<TableNode> tables) {
         for (TableNode table : tables) {

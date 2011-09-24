@@ -15,7 +15,7 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
@@ -68,6 +68,9 @@ public final class FieldExpression implements Expression {
     // nested classes
 
     private static class InnerEvaluation implements ExpressionEvaluation {
+
+        // ExpressionEvaluation interface
+
         @Override
         public void of(Row row) {
             RowType incomingType = row.rowType();
@@ -81,6 +84,7 @@ public final class FieldExpression implements Expression {
                         row + "[" + fieldIndex + "] had akType " + incomingAkType + "; expected " + akType
                 );
             }
+            this.row = row;
             this.rowSource = incomingSource;
         }
 
@@ -95,6 +99,25 @@ public final class FieldExpression implements Expression {
             return rowSource;
         }
 
+        // Shareable interface
+
+        @Override
+        public void acquire() {
+            row.acquire();
+        }
+
+        @Override
+        public boolean isShared() {
+            return row.isShared();
+        }
+
+        @Override
+        public void release() {
+            row.release();
+        }
+
+        // private methods
+
         private InnerEvaluation(RowType rowType, int fieldIndex, AkType akType) {
             assert rowType != null;
             assert akType != null;
@@ -106,6 +129,7 @@ public final class FieldExpression implements Expression {
         private final RowType rowType;
         private final int fieldIndex;
         private final AkType akType;
+        private Row row;
         private ValueSource rowSource;
     }
 }

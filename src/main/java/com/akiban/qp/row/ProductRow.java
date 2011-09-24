@@ -22,6 +22,7 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.AkibanAppender;
+import com.akiban.util.ShareHolder;
 
 public class ProductRow extends AbstractRow
 {
@@ -55,9 +56,9 @@ public class ProductRow extends AbstractRow
     public ValueSource eval(int i) {
         ValueSource source;
         if (i < nLeftFields) {
-            source = left.isNull() ? NullValueSource.only() : left.get().eval(i);
+            source = left.isEmpty() ? NullValueSource.only() : left.get().eval(i);
         } else {
-            source = right.isNull() ? NullValueSource.only() : right.get().eval(i - firstRightFieldOffset);
+            source = right.isEmpty() ? NullValueSource.only() : right.get().eval(i - firstRightFieldOffset);
         }
         return source;
     }
@@ -91,8 +92,8 @@ public class ProductRow extends AbstractRow
     public ProductRow(ProductRowType rowType, Row left, Row right)
     {
         this.rowType = rowType;
-        this.left.set(left);
-        this.right.set(right);
+        this.left.hold(left);
+        this.right.hold(right);
         this.nLeftFields = rowType.leftType().nFields();
         this.firstRightFieldOffset = nLeftFields - rowType.branchType().nFields();
         if (left != null && right != null) {
@@ -104,8 +105,8 @@ public class ProductRow extends AbstractRow
     // Object state
 
     private final ProductRowType rowType;
-    private final RowHolder<Row> left = new RowHolder<Row>();
-    private final RowHolder<Row> right = new RowHolder<Row>();
+    private final ShareHolder<Row> left = new ShareHolder<Row>();
+    private final ShareHolder<Row> right = new ShareHolder<Row>();
     private final int nLeftFields;
     private final int firstRightFieldOffset;
 }

@@ -15,8 +15,8 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -28,12 +28,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 
-import static com.akiban.qp.physicaloperator.API.FlattenOption.KEEP_PARENT;
-import static com.akiban.qp.physicaloperator.API.JoinType.INNER_JOIN;
-import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
+import static com.akiban.qp.operator.API.JoinType.INNER_JOIN;
+import static com.akiban.qp.operator.API.*;
 import static org.junit.Assert.assertTrue;
 
-public class Product_NestedLoopsIT extends PhysicalOperatorITBase
+public class Product_NestedLoopsIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -126,7 +126,7 @@ public class Product_NestedLoopsIT extends PhysicalOperatorITBase
     @Test
     public void testProductAfterIndexScanOfRoot()
     {
-        PhysicalOperator flattenCO =
+        Operator flattenCO =
             flatten_HKeyOrdered(
                 filter_Default(
                     branchLookup_Default(
@@ -145,13 +145,13 @@ public class Product_NestedLoopsIT extends PhysicalOperatorITBase
                 orderRowType,
                 INNER_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator flattenCA =
+        Operator flattenCA =
             flatten_HKeyOrdered(
                 branchLookup_Nested(coi, customerRowType, addressRowType, LookupOption.KEEP_INPUT, 0),
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
-        PhysicalOperator plan = product_NestedLoops(flattenCO, flattenCA, flattenCO.rowType(), flattenCA.rowType(), 0);
+        Operator plan = product_NestedLoops(flattenCO, flattenCA, flattenCO.rowType(), flattenCA.rowType(), 0);
         RowType coaRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -170,7 +170,7 @@ public class Product_NestedLoopsIT extends PhysicalOperatorITBase
     @Test
     public void testProductAfterIndexScanOfNonRoot()
     {
-        PhysicalOperator flattenCO =
+        Operator flattenCO =
             flatten_HKeyOrdered(
                 ancestorLookup_Default(
                     indexScan_Default(orderSalesmanIndexRowType, false, null),
@@ -181,13 +181,13 @@ public class Product_NestedLoopsIT extends PhysicalOperatorITBase
                 customerRowType,
                 orderRowType,
                 INNER_JOIN);
-        PhysicalOperator flattenCA =
+        Operator flattenCA =
             flatten_HKeyOrdered(
                 branchLookup_Nested(coi, customerRowType, addressRowType, LookupOption.KEEP_INPUT, 0),
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
-        PhysicalOperator plan = product_NestedLoops(flattenCO, flattenCA, flattenCO.rowType(), flattenCA.rowType(), 0);
+        Operator plan = product_NestedLoops(flattenCO, flattenCA, flattenCO.rowType(), flattenCA.rowType(), 0);
         RowType coaRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{

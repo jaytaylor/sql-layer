@@ -15,7 +15,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.qp.physicaloperator.API.JoinType;
+import com.akiban.qp.operator.API.JoinType;
 
 import java.util.*;
 

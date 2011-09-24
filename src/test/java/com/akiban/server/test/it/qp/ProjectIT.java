@@ -16,8 +16,8 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.expression.Expression;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -28,10 +28,10 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import static com.akiban.qp.expression.API.field;
-import static com.akiban.qp.physicaloperator.API.*;
-import static com.akiban.qp.physicaloperator.API.JoinType.*;
+import static com.akiban.qp.operator.API.*;
+import static com.akiban.qp.operator.API.JoinType.*;
 
-public class ProjectIT extends PhysicalOperatorITBase
+public class ProjectIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -85,7 +85,7 @@ public class ProjectIT extends PhysicalOperatorITBase
     @Test
     public void testCustomerCid()
     {
-        PhysicalOperator plan = project_Default(groupScan_Default(coi),
+        Operator plan = project_Default(groupScan_Default(coi),
                                                 customerRowType,
                                                 Arrays.asList(field(0)));
         Cursor cursor = cursor(plan, adapter);
@@ -116,7 +116,7 @@ public class ProjectIT extends PhysicalOperatorITBase
     @Test
     public void testReverseCustomerColumns()
     {
-        PhysicalOperator plan = project_Default(groupScan_Default(coi),
+        Operator plan = project_Default(groupScan_Default(coi),
                                                 customerRowType,
                                                 Arrays.asList(field(1), field(0)));
         Cursor cursor = cursor(plan, adapter);
@@ -148,17 +148,17 @@ public class ProjectIT extends PhysicalOperatorITBase
     public void testProjectOfFlatten()
     {
         // Tests projection of null too
-        PhysicalOperator flattenCO = flatten_HKeyOrdered(groupScan_Default(coi),
+        Operator flattenCO = flatten_HKeyOrdered(groupScan_Default(coi),
                                                          customerRowType,
                                                          orderRowType,
                                                          FULL_JOIN);
         RowType coType = flattenCO.rowType();
-        PhysicalOperator flattenCOI = flatten_HKeyOrdered(flattenCO,
+        Operator flattenCOI = flatten_HKeyOrdered(flattenCO,
                                                           coType,
                                                           itemRowType,
                                                           FULL_JOIN);
         RowType coiType = flattenCOI.rowType();
-        PhysicalOperator plan =
+        Operator plan =
             project_Default(flattenCOI,
                             coiType,
                             Arrays.asList(
