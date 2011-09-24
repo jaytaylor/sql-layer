@@ -38,9 +38,12 @@ null-or-false: unknown AND X is either unknown or false,
 
 null-semi-join: empty EXISTS is false.
 
-null-subaggregate: SELECT for value with aggregation from empty is precomputed.
-                   (Not moved further up, but could be.)
- 
+null-subaggregate: SELECT for value with aggregation from empty is
+                   precomputed and moved up into outer query.
+
+null-subaggregate-in: SELECT for value with aggregation from empty as part of ANY
+                      computed condition result.
+
 null-subquery: outer join to empty subselect adds NULLs.
 
 null-subselect: SELECT for value from empty is NULL.

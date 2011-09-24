@@ -511,26 +511,38 @@ public class ConstantFolder extends BaseRule
         }
 
         protected ExpressionNode subqueryValueExpression(SubqueryValueExpression expr) {
-            if (isNullSubquery(expr.getSubquery())) {
+            SubqueryEmptiness empty = isEmptySubquery(expr.getSubquery());
+            if (empty == SubqueryEmptiness.EMPTY) {
                 return new ConstantExpression(null,
                                               expr.getSQLtype(), expr.getSQLsource());
             }
             ExpressionNode inner = getSubqueryColumn(expr.getSubquery());
-            if ((inner != null) &&
-                (isConstant(inner) == Constantness.NULL)) {
-                // If it's empty, it's NULL. 
-                // If it selects something, that projects NULL.
-                // NULL either way.
-                return new ConstantExpression(null,
-                                              expr.getSQLtype(), expr.getSQLsource());
+            if (inner != null) {
+                Constantness ic = isConstant(inner);
+                if (ic == Constantness.NULL) {
+                    // If it's empty, it's NULL. 
+                    // If it selects something, that projects NULL.
+                    // NULL either way.
+                    return new ConstantExpression(null,
+                                                  expr.getSQLtype(), 
+                                                  expr.getSQLsource());
+                }
+                else if ((ic == Constantness.CONSTANT) &&
+                         (empty == SubqueryEmptiness.NON_EMPTY)) {
+                    // If the inner is a constant and it's driven by a
+                    // VALUES, know the value it must generate.  It
+                    // would be possible to run the whole subquery if
+                    // a variable expression only depended on fields
+                    // from the VALUES, but that's getting to be a lot
+                    // of setup.
+                    return inner;
+                }
             }
-            // TODO: If the inner is a constant and it's driven by a VALUES, know
-            // whether that constant or NULL based on whether source is empty.
             return expr;
         }
 
         protected ExpressionNode existsCondition(ExistsCondition cond) {
-            if (isNullSubquery(cond.getSubquery())) {
+            if (isEmptySubquery(cond.getSubquery()) == SubqueryEmptiness.EMPTY) {
                 // Empty EXISTS is false.
                 return new BooleanConstantExpression(Boolean.FALSE,
                                                      cond.getSQLtype(), cond.getSQLsource());
@@ -539,7 +551,8 @@ public class ConstantFolder extends BaseRule
         }
     
         protected ExpressionNode anyCondition(AnyCondition cond) {
-            if (isNullSubquery(cond.getSubquery())) {
+            SubqueryEmptiness empty = isEmptySubquery(cond.getSubquery());
+            if (empty == SubqueryEmptiness.EMPTY) {
                 // Empty ANY is false.
                 return new BooleanConstantExpression(Boolean.FALSE,
                                                      cond.getSQLtype(), cond.getSQLsource());
@@ -547,29 +560,48 @@ public class ConstantFolder extends BaseRule
             ExpressionNode inner = getSubqueryColumn(cond.getSubquery());
             if ((inner != null) &&
                 (isConstant(inner) == Constantness.CONSTANT) &&
-                (((ConstantExpression)inner).getValue() == Boolean.FALSE)) {
-                // If it's empty, it's false. 
-                // If it selects something, that projects false.
-                // False either way.
-                return new BooleanConstantExpression(Boolean.FALSE,
-                                                     cond.getSQLtype(), cond.getSQLsource());
+                ((empty == SubqueryEmptiness.NON_EMPTY) ||
+                 (((ConstantExpression)inner).getValue() == Boolean.FALSE))) {
+                // Constant false: if it's empty, it's false. If it
+                // selects something, that projects false. False
+                // either way.
+                // Constant true: if it's known non-empty, that's what
+                // is returned.
+                return inner;
             }
             return cond;
         }
     
         protected void subquerySource(SubquerySource source) {
-            if (isNullSubquery(source.getSubquery())) {
+            if (isEmptySubquery(source.getSubquery()) == SubqueryEmptiness.EMPTY) {
                 eliminateSource(source);
             }            
         }
 
-        protected boolean isNullSubquery(Subquery subquery) {
+        static enum SubqueryEmptiness {
+            UNKNOWN, EMPTY, NON_EMPTY
+        }
+
+        protected SubqueryEmptiness isEmptySubquery(Subquery subquery) {
             PlanNode node = subquery;
             while ((node instanceof Subquery) ||
                    (node instanceof ResultSet) ||
                    (node instanceof Project))
                 node = ((BasePlanWithInput)node).getInput();
-            return (node instanceof NullSource);
+            if ((node instanceof Filter) &&
+                ((Filter)node).getConditions().isEmpty())
+                node = ((BasePlanWithInput)node).getInput();
+            if (node instanceof NullSource)
+                return SubqueryEmptiness.EMPTY;
+            if (node instanceof ExpressionsSource) {
+                int nrows = ((ExpressionsSource)node).getExpressions().size();
+                if (nrows == 0)
+                    return SubqueryEmptiness.EMPTY;
+                else
+                    return SubqueryEmptiness.NON_EMPTY;
+            }
+            else
+                return SubqueryEmptiness.UNKNOWN;
         }
 
         // If the inside of this subquery returns a single column (in

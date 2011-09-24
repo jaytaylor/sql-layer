@@ -1,11 +1,5 @@
 SelectQuery@de16483
   ResultSet@488ddb93[name, v]
-    Project@594ab51b[user.customers.name, Subquery@37b82d69]
+    Project@61f533[user.customers.name, 0]
       Filter@1cad6513[]
         TableSource@7bbf68a9(user.customers)
-
-Subquery@37b82d69
-  ResultSet@37b82d69[_SQL_COL_1]
-    Project@3bc6d11a[0]
-      Filter@79ca209e[]
-        ExpressionsSource@7a74db2c[[]]
