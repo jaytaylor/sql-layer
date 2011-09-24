@@ -98,8 +98,12 @@ public class ConstantFolder extends BaseRule
                     return comparisonCondition((ComparisonCondition)expr);
                 else if (expr instanceof CastExpression)
                     return castExpression((CastExpression)expr);
-                else if (expr instanceof FunctionExpression)
-                    return functionExpression((FunctionExpression)expr);
+                else if (expr instanceof FunctionExpression) {
+                    if (expr instanceof LogicalFunctionCondition)
+                        return logicalFunctionCondition((LogicalFunctionCondition)expr);
+                    else
+                        return functionExpression((FunctionExpression)expr);
+                }
                 else if (expr instanceof IfElseExpression)
                     return ifElseExpression((IfElseExpression)expr);
                 else if (expr instanceof ColumnExpression)
@@ -163,6 +167,59 @@ public class ConstantFolder extends BaseRule
                                                      fun.getSQLtype(), 
                                                      fun.getSQLsource());
             return fun;
+        }
+
+        protected ConditionExpression logicalFunctionCondition(LogicalFunctionCondition lfun) {
+            String fname = lfun.getFunction();
+            if ("and".equals(fname)) {
+                ConditionExpression left = lfun.getLeft();
+                ConditionExpression right = lfun.getRight();
+                if (isConstant(left) == Constantness.CONSTANT) {
+                    Boolean lv = (Boolean)((ConstantExpression)left).getValue();
+                    if (lv.booleanValue())
+                        return right; // TRUE AND X -> X
+                    else
+                        return left; // FALSE AND X -> FALSE
+                }
+                if (isConstant(right) == Constantness.CONSTANT) {
+                    Boolean rv = (Boolean)((ConstantExpression)right).getValue();
+                    if (rv.booleanValue())
+                        return left; // X AND TRUE -> X
+                    else
+                        return right; // X AND FALSE -> FALSE
+                }
+            }
+            else if ("or".equals(fname)) {
+                ConditionExpression left = lfun.getLeft();
+                ConditionExpression right = lfun.getRight();
+                if (isConstant(left) == Constantness.CONSTANT) {
+                    Boolean lv = (Boolean)((ConstantExpression)left).getValue();
+                    if (lv.booleanValue())
+                        return left; // TRUE OR X -> TRUE
+                    else
+                        return right; // FALSE OR X -> X
+                }
+                if (isConstant(right) == Constantness.CONSTANT) {
+                    Boolean rv = (Boolean)((ConstantExpression)right).getValue();
+                    if (rv.booleanValue())
+                        return right; // X OR TRUE -> TRUE
+                    else
+                        return left; // X OR FALSE -> X
+                }
+            }
+            else if ("not".equals(fname)) {
+                ConditionExpression cond = lfun.getOperand();
+                Constantness c = isConstant(cond);
+                if (c == Constantness.NULL)
+                    return new BooleanConstantExpression(null, 
+                                                         lfun.getSQLtype(), 
+                                                         lfun.getSQLsource());
+                if (c == Constantness.CONSTANT)
+                    return new BooleanConstantExpression((((ConstantExpression)cond).getValue() != Boolean.TRUE),
+                                                         lfun.getSQLtype(), 
+                                                         lfun.getSQLsource());
+            }
+            return lfun;
         }
 
         protected boolean isVolatile(FunctionExpression fun) {
