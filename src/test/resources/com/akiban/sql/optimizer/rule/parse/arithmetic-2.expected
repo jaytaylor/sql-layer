@@ -1,4 +1,5 @@
 SelectQuery@76caf6c1
-  ResultSet@70e35d5[absolute(user.items.price), sqrt(times(user.items.price,user.items.price)), mod(user.items.quan,7)]
-    Filter@35f03691[]
-      TableSource@2d8e8541(user.items)
+  ResultSet@2af6a882[_SQL_COL_1, _SQL_COL_2, _SQL_COL_3]
+    Project@27b104d7[absolute(user.items.price), sqrt(times(user.items.price,user.items.price)), mod(user.items.quan,7)]
+      Filter@35f03691[]
+        TableSource@2d8e8541(user.items)

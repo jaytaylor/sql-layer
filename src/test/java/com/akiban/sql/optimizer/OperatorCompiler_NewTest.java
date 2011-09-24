@@ -24,6 +24,7 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
+import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
 
 import org.junit.Test;
@@ -95,17 +96,14 @@ public class OperatorCompiler_NewTest extends TestBase implements TestBase.Gener
         }
 
         @Override
-        public PhysicalResultColumn getResultColumn(String name, DataTypeDescriptor sqlType,
-                                                    boolean nameDefaulted, Column column) {
-            String type = String.valueOf(sqlType);
+        public PhysicalResultColumn getResultColumn(ResultField field) {
+            String type = String.valueOf(field.getSQLtype());
+            Column column = field.getAIScolumn();
             if (column != null) {
-                if (nameDefaulted)
-                    // Prefer the case stored in AIS to parser's standardized form.
-                    name = column.getName();
                 type = column.getTypeDescription() +
                     "[" + column.getType().encoding() + "]";
             }
-            return new TestResultColumn(name, type);
+            return new TestResultColumn(field.getName(), type);
         }
     }
 

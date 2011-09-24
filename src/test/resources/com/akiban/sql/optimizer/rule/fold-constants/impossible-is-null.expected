@@ -1,3 +1,4 @@
 SelectQuery@342f356f
-  ResultSet@75d252d[null, null]
-    NullSource@7433b121
+  ResultSet@74002515[name, order_date]
+    Project@3582c132[null, null]
+      NullSource@7433b121

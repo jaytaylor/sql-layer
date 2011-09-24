@@ -99,10 +99,10 @@ public class ConstantFolder extends BaseRule
                     return ifElseExpression((IfElseExpression)expr);
                 else if (expr instanceof ColumnExpression)
                     return columnExpression((ColumnExpression)expr);
-                else if (expr instanceof SubqueryExpression)
-                    return subqueryExpression((SubqueryExpression)expr);
-                else if (expr instanceof SubqueryCondition)
-                    return subqueryCondition((SubqueryCondition)expr);
+                else if (expr instanceof SubqueryValueExpression)
+                    return subqueryValueExpression((SubqueryValueExpression)expr);
+                else if (expr instanceof ExistsCondition)
+                    return existsCondition((ExistsCondition)expr);
             }
             else if (state == State.AGGREGATES) {
                 if (expr instanceof ColumnExpression)
@@ -379,17 +379,20 @@ public class ConstantFolder extends BaseRule
             return true;
         }
 
-        protected ExpressionNode subqueryExpression(SubqueryExpression expr) {
+        protected ExpressionNode subqueryValueExpression(SubqueryValueExpression expr) {
             if (isNullSubquery(expr.getSubquery())) {
                 return new ConstantExpression(null,
                                               expr.getSQLtype(), expr.getSQLsource());
             }
+            // TODO: Also, if the single select column is constant
+            // NULL, result is NULL (either because of that or because
+            // no rows matched.)
             return expr;
         }
 
-        protected ExpressionNode subqueryCondition(SubqueryCondition cond) {
+        protected ExpressionNode existsCondition(ExistsCondition cond) {
             if (isNullSubquery(cond.getSubquery())) {
-                return new BooleanConstantExpression((cond.getKind() == SubqueryCondition.Kind.NOT_EXISTS),
+                return new BooleanConstantExpression(Boolean.FALSE,
                                                      cond.getSQLtype(), cond.getSQLsource());
             }
             return cond;
@@ -404,7 +407,8 @@ public class ConstantFolder extends BaseRule
         protected boolean isNullSubquery(Subquery subquery) {
             PlanNode node = subquery;
             while ((node instanceof Subquery) ||
-                   (node instanceof ResultSet))
+                   (node instanceof ResultSet) ||
+                   (node instanceof Project))
                 node = ((BasePlanWithInput)node).getInput();
             return (node instanceof NullSource);
         }

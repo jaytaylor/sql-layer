@@ -15,61 +15,38 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.ais.model.Column;
-
 import java.util.List;
 
-/** Name the columns in a SELECT. */
-public class ResultSet extends BasePlanWithInput
+/** An list of expressions making up new rows. */
+public class Project extends BasePlanWithInput
 {
-    public static class ResultField extends BaseDuplicatable {
-        private String name;
-        private DataTypeDescriptor sqlType;
-        private Column aisColumn;
+    private List<ExpressionNode> fields;
 
-        public ResultField(String name, DataTypeDescriptor sqlType, Column aisColumn) {
-            this.name = name;
-            this.sqlType = sqlType;
-            this.aisColumn = aisColumn;
-        }
-
-        public ResultField(String name) {
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public DataTypeDescriptor getSQLtype() {
-            return sqlType;
-        }
-
-        public Column getAIScolumn() {
-            return aisColumn;
-        }
-
-        public String toString() {
-            return name;
-        }
-    }
-
-    private List<ResultField> fields;
-
-    public ResultSet(PlanNode input, List<ResultField> fields) {
+    public Project(PlanNode input, List<ExpressionNode> fields) {
         super(input);
         this.fields = fields;
     }
 
-    public List<ResultField> getFields() {
+    public List<ExpressionNode> getFields() {
         return fields;
     }
 
     @Override
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
-            getInput().accept(v);
+            if (getInput().accept(v)) {
+                if (v instanceof ExpressionRewriteVisitor) {
+                    for (int i = 0; i < fields.size(); i++) {
+                        fields.set(i, fields.get(i).accept((ExpressionRewriteVisitor)v));
+                    }
+                }
+                else if (v instanceof ExpressionVisitor) {
+                    for (ExpressionNode field : fields) {
+                        if (!field.accept((ExpressionVisitor)v))
+                            break;
+                    }
+                }
+            }
         }
         return v.visitLeave(this);
     }
