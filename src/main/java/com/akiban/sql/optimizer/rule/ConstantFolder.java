@@ -425,7 +425,10 @@ public class ConstantFolder extends BaseRule
         }
 
         /** Returns <code>false</code> if it's impossible for these
-         * conditions to be satisfied. */
+         * conditions to be satisfied.
+         * Only valid when conditions are being tested, not when used
+         * as a value.
+         */
         protected boolean checkConditions(List<ConditionExpression> conditions) {
             if (conditions == null) return true;
             int i = 0;
@@ -438,9 +441,65 @@ public class ConstantFolder extends BaseRule
                     else
                         return false;
                 }
+                else if (isFalseOrUnknown(condition))
+                    return false;
                 i++;
             }
             return true;
+        }
+
+        /** Returns <code>true</code> if the given expression will always evaluate
+         * to either <i>true</i> or <i>unknown</i>.
+         */
+        protected boolean isTrueOrUnknown(ConditionExpression expr) {
+            if (expr instanceof ConstantExpression) {
+                Object value = ((ConstantExpression)expr).getValue();
+                return ((value == null) ||
+                        (value == Boolean.TRUE));
+            }
+            else if (expr instanceof LogicalFunctionCondition) {
+                LogicalFunctionCondition lfun = (LogicalFunctionCondition)expr;
+                String fname = lfun.getFunction();
+                if ("and".equals(fname)) {
+                    return (isTrueOrUnknown(lfun.getLeft()) &&
+                            isTrueOrUnknown(lfun.getRight()));
+                }
+                else if ("or".equals(fname)) {
+                    return (isTrueOrUnknown(lfun.getLeft()) ||
+                            isTrueOrUnknown(lfun.getRight()));
+                }
+                else if ("not".equals(fname)) {
+                    return isFalseOrUnknown(lfun.getOperand());
+                }
+            }
+            return false;
+        }
+
+        /** Returns <code>true</code> if the given expression will always evaluate
+         * to either <i>false</i> or <i>unknown</i>.
+         */
+        protected boolean isFalseOrUnknown(ConditionExpression expr) {
+            if (expr instanceof ConstantExpression) {
+                Object value = ((ConstantExpression)expr).getValue();
+                return ((value == null) ||
+                        (value == Boolean.FALSE));
+            }
+            else if (expr instanceof LogicalFunctionCondition) {
+                LogicalFunctionCondition lfun = (LogicalFunctionCondition)expr;
+                String fname = lfun.getFunction();
+                if ("and".equals(fname)) {
+                    return (isFalseOrUnknown(lfun.getLeft()) ||
+                            isFalseOrUnknown(lfun.getRight()));
+                }
+                else if ("or".equals(fname)) {
+                    return (isFalseOrUnknown(lfun.getLeft()) &&
+                            isFalseOrUnknown(lfun.getRight()));
+                }
+                else if ("not".equals(fname)) {
+                    return isTrueOrUnknown(lfun.getOperand());
+                }
+            }
+            return false;
         }
 
         protected ExpressionNode subqueryValueExpression(SubqueryValueExpression expr) {

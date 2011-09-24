@@ -475,6 +475,11 @@ public class ASTStatementLoader extends BaseRule
                                                        condition.getType(), condition));
             }
             break;
+        case NodeTypes.JAVA_TO_SQL_VALUE_NODE:
+            conditions.add((ConditionExpression)
+                           toExpression(((JavaToSQLValueNode)condition).getJavaValueNode(), 
+                                        condition, true));
+            break;
         default:
             throw new UnsupportedSQLException("Unsupported WHERE predicate",
                                               condition);
@@ -924,7 +929,8 @@ public class ASTStatementLoader extends BaseRule
         }
         else if (valueNode instanceof JavaToSQLValueNode) {
             return toExpression(((JavaToSQLValueNode)valueNode).getJavaValueNode(),
-                                valueNode);
+                                valueNode,
+                                false);
         }
         else if (valueNode instanceof CurrentDatetimeOperatorNode) {
             String functionName = null;
@@ -958,19 +964,25 @@ public class ASTStatementLoader extends BaseRule
     // done this earlier and bound to a known function and elided the
     // Java stuff then.
     protected ExpressionNode toExpression(JavaValueNode javaToSQL,
-                                          ValueNode valueNode)
+                                          ValueNode valueNode,
+                                          boolean asCondition)
             throws StandardException {
         if (javaToSQL instanceof MethodCallNode) {
             MethodCallNode methodCall = (MethodCallNode)javaToSQL;
             List<ExpressionNode> operands = new ArrayList<ExpressionNode>();
             if (methodCall.getMethodParameters() != null) {
                 for (JavaValueNode javaValue : methodCall.getMethodParameters()) {
-                    operands.add(toExpression(javaValue, null));
+                    operands.add(toExpression(javaValue, null, false));
                 }
             }
-            return new FunctionExpression(methodCall.getMethodName(),
-                                          operands,
-                                          valueNode.getType(), valueNode);
+            if (asCondition)
+                return new FunctionCondition(methodCall.getMethodName(),
+                                             operands,
+                                             valueNode.getType(), valueNode);
+            else
+                return new FunctionExpression(methodCall.getMethodName(),
+                                              operands,
+                                              valueNode.getType(), valueNode);
         }
         else if (javaToSQL instanceof SQLToJavaValueNode) {
             return toExpression(((SQLToJavaValueNode)javaToSQL).getSQLValueNode());
