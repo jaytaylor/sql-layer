@@ -272,7 +272,7 @@ public class ConstantFolder extends BaseRule
         protected ExpressionNode ifElseExpression(IfElseExpression cond) {
             Constantness c = isConstant(cond.getTestCondition());
             if (c == Constantness.VARIABLE)
-                return cond;
+                return cond;    // TODO: isFalseOrUnknown?
             if (((ConstantExpression)cond.getTestCondition()).getValue() == Boolean.TRUE)
                 return cond.getThenExpression();
             else
@@ -524,6 +524,8 @@ public class ConstantFolder extends BaseRule
                 return new ConstantExpression(null,
                                               expr.getSQLtype(), expr.getSQLsource());
             }
+            // TODO: If the inner is a constant and it's driven by a VALUES, know
+            // whether that constant or NULL based on whether source is empty.
             return expr;
         }
 
