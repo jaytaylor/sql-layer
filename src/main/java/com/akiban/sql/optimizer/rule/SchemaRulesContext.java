@@ -45,4 +45,10 @@ public class SchemaRulesContext extends RulesContext
         return new PhysicalResultColumn(field.getName());
     }
 
+    // TODO: Something like this.
+    /*
+    public ExpressionFactory getExpressionFactory() {...}
+    public AggregatorFactory getAggregatorFactory() {...}
+    */
+      
 }

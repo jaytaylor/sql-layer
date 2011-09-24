@@ -30,6 +30,14 @@ import java.util.*;
 /** Turn {@link ExpressionNode} into {@link Expression}. */
 public class ExpressionAssembler
 {
+    public ExpressionAssembler(RulesContext rulesContext) {
+        // TODO: Something like this:
+        /*
+        this.expressionFactory = ((SchemaRulesContext)
+                                  rulesContext).getExpressionFactory();
+        */
+    }
+
     public static interface ColumnExpressionToIndex {
         /** Return the field position of the given column in the target row. */
         public int getIndex(ColumnExpression column);
@@ -84,10 +92,13 @@ public class ExpressionAssembler
             throw new UnsupportedSQLException("Unknown subquery", node.getSQLsource());
     }
 
+    
+
     public ConstantExpression evalNow(ExpressionNode node) {
         if (node instanceof ConstantExpression)
             return (ConstantExpression)node;
         Expression expr = assembleExpression(node, null);
+        // TODO: Call expr.isConstant() and throw an exception if not.
         Object value = expr.evaluate(null, null);
         if (node instanceof ConditionExpression)
             return new BooleanConstantExpression((Boolean)value, 

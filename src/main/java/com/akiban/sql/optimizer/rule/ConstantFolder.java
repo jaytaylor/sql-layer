@@ -32,7 +32,7 @@ public class ConstantFolder extends BaseRule
     @Override
     public void apply(PlanContext planContext) {
         PlanNode plan = planContext.getPlan();
-        Folder folder = new Folder();
+        Folder folder = new Folder(planContext.getRulesContext());
         while (folder.foldConstants(plan));
         folder.finishAggregates(plan);
     }
@@ -43,6 +43,11 @@ public class ConstantFolder extends BaseRule
         private enum State { FOLDING, AGGREGATES };
         private State state;
         private boolean changed;
+        private final ExpressionAssembler expressionAssembler;
+
+        public Folder(RulesContext rulesContext) {
+            this.expressionAssembler = new ExpressionAssembler(rulesContext);
+        }
 
         /** Return <code>true</code> if substantial enough changes were made that
          * need to be run again.
@@ -103,6 +108,8 @@ public class ConstantFolder extends BaseRule
                     return subqueryValueExpression((SubqueryValueExpression)expr);
                 else if (expr instanceof ExistsCondition)
                     return existsCondition((ExistsCondition)expr);
+                else if (expr instanceof AnyCondition)
+                    return anyCondition((AnyCondition)expr);
             }
             else if (state == State.AGGREGATES) {
                 if (expr instanceof ColumnExpression)
@@ -398,6 +405,10 @@ public class ConstantFolder extends BaseRule
             return cond;
         }
     
+        protected ExpressionNode anyCondition(AnyCondition cond) {
+            return cond;
+        }
+    
         protected void subquerySource(SubquerySource source) {
             if (isNullSubquery(source.getSubquery())) {
                 eliminateSource(source);
@@ -468,8 +479,6 @@ public class ConstantFolder extends BaseRule
             else 
                 return Constantness.VARIABLE;
         }
-
-        private final ExpressionAssembler expressionAssembler = new ExpressionAssembler();
 
         protected ExpressionNode evalNow(ExpressionNode node) {
             try {
