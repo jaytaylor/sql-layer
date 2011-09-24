@@ -54,9 +54,4 @@ public class AnyCondition extends SubqueryExpression implements ConditionExpress
         return "ANY(" + super.toString() + ")";
     }
 
-    @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        throw new UnsupportedSQLException("ANY as expression", null);
-    }
-
 }

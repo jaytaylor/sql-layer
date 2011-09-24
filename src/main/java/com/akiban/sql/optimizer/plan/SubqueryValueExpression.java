@@ -46,9 +46,4 @@ public class SubqueryValueExpression extends SubqueryExpression
         return getSubquery().hashCode();
     }
 
-    @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        throw new UnsupportedSQLException("NIY", null);
-    }
-
 }

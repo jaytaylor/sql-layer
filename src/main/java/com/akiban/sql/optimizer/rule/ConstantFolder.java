@@ -469,18 +469,11 @@ public class ConstantFolder extends BaseRule
                 return Constantness.VARIABLE;
         }
 
+        private final ExpressionAssembler expressionAssembler = new ExpressionAssembler();
+
         protected ExpressionNode evalNow(ExpressionNode node) {
             try {
-                Expression expr = node.generateExpression(null);
-                Object value = expr.evaluate(null, null);
-                if (node instanceof ConditionExpression)
-                    return new BooleanConstantExpression((Boolean)value, 
-                                                         node.getSQLtype(), 
-                                                         node.getSQLsource());
-                else
-                    return new ConstantExpression(value, 
-                                                  node.getSQLtype(), 
-                                                  node.getSQLsource());
+              return expressionAssembler.evalNow(node);
             }
             catch (Exception ex) {
             }

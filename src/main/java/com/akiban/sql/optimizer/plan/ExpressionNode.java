@@ -28,8 +28,6 @@ public interface ExpressionNode extends PlanElement
     public boolean isColumn();
     public boolean isConstant();
 
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets);
-
     public boolean accept(ExpressionVisitor v);
     public ExpressionNode accept(ExpressionRewriteVisitor v);
 }

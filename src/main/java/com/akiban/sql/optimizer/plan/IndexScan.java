@@ -23,7 +23,7 @@ import com.akiban.ais.model.Index;
 
 import java.util.*;
 
-public class IndexScan extends BasePlanNode implements ColumnExpressionToIndex
+public class IndexScan extends BasePlanNode
 {
     public static enum OrderEffectiveness {
         NONE, PARTIAL_GROUPED, GROUPED, SORTED
@@ -216,13 +216,6 @@ public class IndexScan extends BasePlanNode implements ColumnExpressionToIndex
     }
     public void setRequiredTables(Set<TableSource> requiredTables) {
         this.requiredTables = requiredTables;
-    }
-
-    @Override
-    // Access field of the index row itself.
-    public int getIndex(ColumnExpression column) {
-        assert covering : "Direct access to index field when not covering";
-        return columns.indexOf(column);
     }
 
     @Override

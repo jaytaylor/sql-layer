@@ -54,9 +54,4 @@ public class ExistsCondition extends SubqueryExpression implements ConditionExpr
         return "EXISTS(" + super.toString() + ")";
     }
 
-    @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        throw new UnsupportedSQLException("EXISTS as expression", null);
-    }
-
 }
