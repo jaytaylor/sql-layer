@@ -109,11 +109,6 @@ public class AggregateFunctionExpression extends BaseExpression
     }
 
     @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        throw new UnsupportedSQLException("Aggregate used as regular function", null);
-    }
-
-    @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
         operand = (ExpressionNode)operand.duplicate(map);

@@ -15,7 +15,11 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
+
 import com.akiban.qp.operator.Operator;
+import static com.akiban.qp.expression.API.*;
+
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.sql.optimizer.*;
@@ -34,8 +38,6 @@ import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.*;
-
-import static com.akiban.qp.expression.API.*;
 
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.ExpressionRow;
@@ -182,6 +184,11 @@ public class OperatorAssembler extends BaseRule
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
+        protected Operator assembleSubquery(Subquery subquery) {
+            RowStream stream = assembleQuery(subquery.getInput());
+            return stream.operator;
+        }
+
         // Assemble the top-level query. If there is a ResultSet at
         // the top, it is not handled here, since its meaning is
         // different for the different statement types.
@@ -229,7 +236,7 @@ public class OperatorAssembler extends BaseRule
                                                 assembleIndexKeyRange(indexScan, null),
                                                 tableRowType(indexScan.getLeafMostTable()));
             stream.rowType = indexRowType;
-            stream.fieldOffsets = indexScan;
+            stream.fieldOffsets = new IndexFieldOffsets(indexScan);
             return stream;
         }
 
@@ -511,10 +518,19 @@ public class OperatorAssembler extends BaseRule
             return result;
         }
 
+        private final ExpressionAssembler expressionAssembler = new ExpressionAssembler();
+
         // Assemble an expression against the given row offsets.
         protected Expression assembleExpression(ExpressionNode expr,
                                                 ColumnExpressionToIndex fieldOffsets) {
-            return expr.generateExpression(fieldOffsets);
+            if (expr instanceof SubqueryExpression) { 
+                SubqueryExpression sexpr = (SubqueryExpression)expr;
+                Operator subquery = assembleSubquery(sexpr.getSubquery());
+                return expressionAssembler.assembleSubqueryExpression(sexpr, 
+                                                                      fieldOffsets, 
+                                                                      subquery);
+            }
+            return expressionAssembler.assembleExpression(expr, fieldOffsets);
         }
 
         // Get a list of result columns based on ResultSet expression names.
@@ -679,6 +695,21 @@ public class OperatorAssembler extends BaseRule
                 return -1;
             else
                 return column.getPosition();
+        }
+    }
+
+    static class IndexFieldOffsets implements ColumnExpressionToIndex {
+        private IndexScan index;
+
+        public IndexFieldOffsets(IndexScan index) {
+            this.index = index;
+        }
+
+        @Override
+        // Access field of the index row itself.
+        public int getIndex(ColumnExpression column) {
+            assert index.isCovering() : "Direct access to index field when not covering";
+            return index.getColumns().indexOf(column);
         }
     }
 

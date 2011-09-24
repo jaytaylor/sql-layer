@@ -108,11 +108,6 @@ public class ColumnExpression extends BaseExpression
     }
 
     @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        return API.field(fieldOffsets.getIndex(this));
-    }
-
-    @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
         table = (ColumnSource)table.duplicate(map);

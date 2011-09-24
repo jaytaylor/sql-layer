@@ -104,11 +104,6 @@ public class IfElseExpression extends BaseExpression
     }
 
     @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        throw new UnsupportedSQLException("NIY", null);
-    }
-
-    @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
         testCondition = (ConditionExpression)testCondition.duplicate(map);

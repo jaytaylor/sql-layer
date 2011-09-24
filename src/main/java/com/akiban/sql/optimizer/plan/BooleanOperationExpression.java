@@ -106,11 +106,6 @@ public class BooleanOperationExpression extends BaseExpression
     }
 
     @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        throw new UnsupportedSQLException("NIY", null);
-    }
-
-    @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
         left = (ConditionExpression)left.duplicate(map);

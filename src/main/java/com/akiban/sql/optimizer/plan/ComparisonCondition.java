@@ -120,13 +120,6 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
         return left + " " + operation + " " + right;
     }
 
-    @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        return API.compare(left.generateExpression(fieldOffsets),
-                           operation,
-                           right.generateExpression(fieldOffsets));
-    }
-
     public void reverse() {
         ExpressionNode temp = left;
         left = right;

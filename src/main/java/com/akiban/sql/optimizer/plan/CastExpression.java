@@ -76,12 +76,6 @@ public class CastExpression extends BaseExpression
     }
 
     @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        // TODO: Need actual cast.
-        return inner.generateExpression(fieldOffsets);
-    }
-
-    @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
         inner = (ExpressionNode)inner.duplicate(map);
