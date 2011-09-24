@@ -499,6 +499,14 @@ public class ConstantFolder extends BaseRule
                     return isTrueOrUnknown(lfun.getOperand());
                 }
             }
+            else if (expr instanceof AnyCondition) {
+                ExpressionNode inner = getSubqueryColumn(((AnyCondition)expr).getSubquery());
+                if (inner instanceof ConditionExpression)
+                    // Will be false if empty and whatever this is otherwise.
+                    // E.g., NULL IN (SELECT ...)
+                    return isFalseOrUnknown((ConditionExpression)inner);
+            }
+            // TODO: More? Column = itself?
             return false;
         }
 
@@ -507,14 +515,21 @@ public class ConstantFolder extends BaseRule
                 return new ConstantExpression(null,
                                               expr.getSQLtype(), expr.getSQLsource());
             }
-            // TODO: Also, if the single select column is constant
-            // NULL, result is NULL (either because of that or because
-            // no rows matched.)
+            ExpressionNode inner = getSubqueryColumn(expr.getSubquery());
+            if ((inner != null) &&
+                (isConstant(inner) == Constantness.NULL)) {
+                // If it's empty, it's NULL. 
+                // If it selects something, that projects NULL.
+                // NULL either way.
+                return new ConstantExpression(null,
+                                              expr.getSQLtype(), expr.getSQLsource());
+            }
             return expr;
         }
 
         protected ExpressionNode existsCondition(ExistsCondition cond) {
             if (isNullSubquery(cond.getSubquery())) {
+                // Empty EXISTS is false.
                 return new BooleanConstantExpression(Boolean.FALSE,
                                                      cond.getSQLtype(), cond.getSQLsource());
             }
@@ -522,6 +537,21 @@ public class ConstantFolder extends BaseRule
         }
     
         protected ExpressionNode anyCondition(AnyCondition cond) {
+            if (isNullSubquery(cond.getSubquery())) {
+                // Empty ANY is false.
+                return new BooleanConstantExpression(Boolean.FALSE,
+                                                     cond.getSQLtype(), cond.getSQLsource());
+            }
+            ExpressionNode inner = getSubqueryColumn(cond.getSubquery());
+            if ((inner != null) &&
+                (isConstant(inner) == Constantness.CONSTANT) &&
+                (((ConstantExpression)inner).getValue() == Boolean.FALSE)) {
+                // If it's empty, it's false. 
+                // If it selects something, that projects false.
+                // False either way.
+                return new BooleanConstantExpression(Boolean.FALSE,
+                                                     cond.getSQLtype(), cond.getSQLsource());
+            }
             return cond;
         }
     
@@ -538,6 +568,21 @@ public class ConstantFolder extends BaseRule
                    (node instanceof Project))
                 node = ((BasePlanWithInput)node).getInput();
             return (node instanceof NullSource);
+        }
+
+        // If the inside of this subquery returns a single column (in
+        // an obvious to work out way), get it.
+        protected ExpressionNode getSubqueryColumn(Subquery subquery) {
+            PlanNode node = subquery;
+            while ((node instanceof Subquery) ||
+                   (node instanceof ResultSet))
+                node = ((BasePlanWithInput)node).getInput();
+            if (node instanceof Project) {
+                List<ExpressionNode> cols = ((Project)node).getFields();
+                if (cols.size() == 1)
+                    return cols.get(0);
+            }
+            return null;
         }
 
         public void finishAggregates(PlanNode plan) {
