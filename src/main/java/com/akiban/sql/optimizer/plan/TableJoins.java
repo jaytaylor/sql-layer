@@ -15,9 +15,31 @@
 
 package com.akiban.sql.optimizer.plan;
 
-public abstract class BaseJoinable extends BasePlanNode implements Joinable
+import com.akiban.ais.model.Group;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+/** A contiguous set of tables joined together: flattened / producted
+ * and acting as a single row set for higher level joins.
+ */
+public class TableJoins extends BasePlanWithInput implements Joinable
 {
-    protected BaseJoinable() {
+    private Group group;
+
+    public TableJoins(Joinable joins, Group group) {
+        super(joins);
+        this.group = group;
+    }
+
+    public Group getGroup() {
+        return group;
+    }
+
+    public Joinable getJoins() {
+        return (Joinable)getInput();
     }
 
     @Override
@@ -26,7 +48,7 @@ public abstract class BaseJoinable extends BasePlanNode implements Joinable
     }
     @Override
     public boolean isGroup() {
-        return false;
+        return true;
     }
     @Override
     public boolean isJoin() {
@@ -36,4 +58,10 @@ public abstract class BaseJoinable extends BasePlanNode implements Joinable
     public boolean isInnerJoin() {
         return false;
     }
+
+    @Override
+    public String summaryString() {
+        return super.summaryString() + "(" + group + ")";
+    }
+
 }
