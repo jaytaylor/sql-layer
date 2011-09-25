@@ -129,11 +129,6 @@ public final class WrappingByteSourceTest {
         assertEquals("hash codes", one.hashCode(), two.hashCode());
     }
 
-    @Test
-    public void compareTest() {
-        throw new UnsupportedOperationException("not yet implemented");
-    }
-
     private static void check(ByteSource byteSource, byte[] expectedBytes, int expectedOffset, int expectedLength) {
         byte[] actualBytes = byteSource.byteArray();
         if (actualBytes != expectedBytes) {

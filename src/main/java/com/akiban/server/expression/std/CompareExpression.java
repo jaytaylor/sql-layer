@@ -67,7 +67,7 @@ public final class CompareExpression extends AbstractTwoArgExpression {
         public int compare(ValueSource a, ValueSource b) {
             double aDouble = a.getDouble();
             double bDouble = b.getDouble();
-            return (int)(aDouble - bDouble);
+            return Double.compare(aDouble, bDouble);
         }
 
         @Override
