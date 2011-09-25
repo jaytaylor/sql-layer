@@ -23,7 +23,6 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueHolder;
-import com.akiban.util.ArgumentValidation;
 
 import java.util.EnumMap;
 import java.util.Iterator;
@@ -76,21 +75,32 @@ public final class CompareExpression extends AbstractTwoArgExpression {
         for (AkType type : AkType.values()) {
             switch (type.underlyingType()) {
                 case BOOLEAN_AKTYPE:
-                    // TODO
+                    map.put(type, createBoolCompareOp());
                     break;
                 case LONG_AKTYPE:
-                    map.put(type, new LongCompareOp(type));
+                    map.put(type, createLongCompareOp(type));
                     break;
                 case FLOAT_AKTYPE:
                 case DOUBLE_AKTYPE:
                     map.put(type, doubleCompareOp);
                     break;
                 case OBJECT_AKTYPE:
-                    map.put(type, new ObjectCompareOp(type));
+                    map.put(type, createObjectCompareOp(type));
                     break;
             }
         }
         return map;
+    }
+
+    private static CompareOp createBoolCompareOp() {
+        return new CompareOp() {
+            @Override
+            public int compare(ValueSource a, ValueSource b) {
+                boolean aBool = Extractors.getBooleanExtractor().getBoolean(a);
+                boolean bBool = Extractors.getBooleanExtractor().getBoolean(b);
+                return Boolean.valueOf(aBool).compareTo(bBool);
+            }
+        };
     }
 
     private static CompareOp createDoubleCompareOp() {
@@ -101,10 +111,37 @@ public final class CompareExpression extends AbstractTwoArgExpression {
                 double bDouble = Extractors.getDoubleExtractor().getDouble(b);
                 return Double.compare(aDouble, bDouble);
             }
+        };
+    }
+
+    private static CompareOp createLongCompareOp(final AkType type) {
+        return new CompareOp() {
+            @Override
+            public int compare(ValueSource a, ValueSource b) {
+                long aLong = Extractors.getLongExtractor(type).getLong(a);
+                long bLong = Extractors.getLongExtractor(type).getLong(b);
+                return (int)(aLong - bLong);
+            }
+        };
+    }
+
+    private static CompareOp createObjectCompareOp(final AkType type) {
+        return new CompareOp() {
 
             @Override
-            public AkType opType() {
-                return AkType.DOUBLE;
+            public int compare(ValueSource a, ValueSource b) {
+                switch (type) {
+                case DECIMAL:   return doCompare(a.getDecimal(), b.getDecimal());
+                case VARCHAR:   return doCompare(a.getString(), b.getString());
+                case TEXT:      return doCompare(a.getText(), b.getText());
+                case U_BIGINT:  return doCompare(a.getUBigInt(), b.getUBigInt());
+                case VARBINARY: return doCompare(a.getVarBinary(), b.getVarBinary());
+                default: throw new UnsupportedOperationException("can't get comparable for type " + type);
+                }
+            }
+
+            private <T extends Comparable<T>> int doCompare(T one, T two) {
+                return one.compareTo(two);
             }
         };
     }
@@ -119,68 +156,8 @@ public final class CompareExpression extends AbstractTwoArgExpression {
     private static final Map<AkType, CompareOp> readOnlyCompareOps = createCompareOpsMap();
 
     // nested classes
-    public static abstract class CompareOp {
+    private interface CompareOp {
         abstract int compare(ValueSource a, ValueSource b);
-        abstract AkType opType();
-
-        private CompareOp() {}
-    }
-
-    private static class LongCompareOp extends CompareOp {
-        @Override
-        int compare(ValueSource a, ValueSource b) {
-            long aLong = Extractors.getLongExtractor(type).getLong(a);
-            long bLong = Extractors.getLongExtractor(type).getLong(b);
-            return (int)(aLong - bLong);
-        }
-
-        @Override
-        AkType opType() {
-            return type;
-        }
-
-        private LongCompareOp(AkType type) {
-            this.type = type;
-            ArgumentValidation.isEQ(
-                    "require underlying type", AkType.UnderlyingType.LONG_AKTYPE,
-                    "given type", this.type.underlyingType()
-            );
-        }
-
-        private final AkType type;
-    }
-
-    private static class ObjectCompareOp extends CompareOp {
-        @Override
-        int compare(ValueSource a, ValueSource b) {
-            switch (type) {
-            case DECIMAL:   return doCompare(a.getDecimal(), b.getDecimal());
-            case VARCHAR:   return doCompare(a.getString(), b.getString());
-            case TEXT:      return doCompare(a.getText(), b.getText());
-            case U_BIGINT:  return doCompare(a.getUBigInt(), b.getUBigInt());
-            case VARBINARY: return doCompare(a.getVarBinary(), b.getVarBinary());
-            default: throw new UnsupportedOperationException("can't get comparable for type " + type);
-            }
-        }
-
-        private <T extends Comparable<T>> int doCompare(T one, T two) {
-            return one.compareTo(two);
-        }
-
-        @Override
-        AkType opType() {
-            return type;
-        }
-
-        private ObjectCompareOp(AkType type) {
-            this.type = type;
-            ArgumentValidation.isEQ(
-                    "require underlying type", AkType.UnderlyingType.OBJECT_AKTYPE,
-                    "given type", this.type.underlyingType()
-            );
-        }
-
-        private final AkType type;
     }
 
     private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation {
