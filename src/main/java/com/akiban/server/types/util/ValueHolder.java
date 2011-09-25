@@ -339,9 +339,9 @@ public final class ValueHolder implements ValueSource, ValueTarget {
             return AkType.NULL.toString();
         }
         StringBuilder sb = new StringBuilder();
-        sb.append(type).append('(');
+//        sb.append(type).append('(');
         appendAsString(AkibanAppender.of(sb), Quote.NONE);
-        sb.append(')');
+//        sb.append(')');
         return sb.toString();
     }
 

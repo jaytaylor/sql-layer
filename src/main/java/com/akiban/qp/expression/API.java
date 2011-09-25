@@ -17,6 +17,8 @@ package com.akiban.qp.expression;
 
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.expression.std.LiteralExpression;
+import com.akiban.server.types.FromObjectValueSource;
 
 public class API
 {
@@ -42,7 +44,7 @@ public class API
     
     public static Expression literal(Object value)
     {
-        return new Literal(value);
+        return new NewExpressionWrapper(new LiteralExpression(new FromObjectValueSource().setReflectively(value)));
     }
 
     public static Expression variable(int position)

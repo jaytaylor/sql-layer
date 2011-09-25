@@ -90,7 +90,6 @@ public final class WrappingByteSourceCompareToTest {
     private static void build(ParameterizationBuilder pb, byte[] one, byte[] two, CompareResult expected) {
         StringBuilder sb = new StringBuilder();
         sb.append(Arrays.toString(one)).append(' ').append(expected).append(' ').append(Arrays.toString(two));
-        String name = sb.toString();
         pb.add(sb.toString(), one, two, expected);
     }
 
