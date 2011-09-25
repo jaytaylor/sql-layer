@@ -25,6 +25,7 @@ public class TableJoins extends BasePlanWithInput implements Joinable
 {
     private TableGroup group;
     private Set<TableSource> tables;
+    private PlanNode scan;
 
     public TableJoins(Joinable joins, TableGroup group) {
         super(joins);
@@ -47,6 +48,13 @@ public class TableJoins extends BasePlanWithInput implements Joinable
     public void addTable(TableSource table) {
         assert (group == table.getGroup());
         tables.add(table);
+    }
+
+    public PlanNode getScan() {
+        return scan;
+    }
+    public void setScan(PlanNode scan) {
+        this.scan = scan;
     }
 
     @Override

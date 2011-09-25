@@ -18,7 +18,6 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
-import static com.akiban.sql.optimizer.rule.GroupJoinFinder.*;
 
 import com.akiban.qp.operator.API.JoinType;
 
@@ -29,43 +28,92 @@ import java.util.*;
 /** A goal for indexing: conditions on joined tables and ordering / grouping. */
 public class IndexPicker extends BaseRule
 {
+    static class TableJoinsFinder implements PlanVisitor, ExpressionVisitor {
+        List<TableJoins> result = new ArrayList<TableJoins>();
+
+        public List<TableJoins> find(PlanNode root) {
+            root.accept(this);
+            return result;
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visit(PlanNode n) {
+            if (n instanceof TableJoins) {
+                result.add((TableJoins)n);
+            }
+            return true;
+        }
+
+        @Override
+        public boolean visitEnter(ExpressionNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(ExpressionNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visit(ExpressionNode n) {
+            return true;
+        }
+    }
+
     @Override
       public void apply(PlanContext planContext) {
         PlanNode plan = planContext.getPlan();
-        List<Joinable> islands = new JoinIslandFinder().find(plan);
+        List<TableJoins> groups = new TableJoinsFinder().find(plan);
         // TODO: For now, very conservative about everything being simple.
-        if (islands.isEmpty()) return;
-        if (islands.size() > 1)
-            throw new UnsupportedSQLException("Joins are too complex: " + islands, null);
-        Joinable joins = islands.get(0);
-        if (joins instanceof ExpressionsSource)
-            return;             // Already set to scan.
-        pickIndexes(joins, plan);
+        if (groups.isEmpty()) return;
+        if (groups.size() > 1)
+            throw new UnsupportedSQLException("Joins are too complex: " + groups, null);
+        TableJoins tableJoins = groups.get(0);
+        pickIndexes(tableJoins, plan);
+        joinBranches(tableJoins);
     }
 
-    protected void pickIndexes(Joinable joins, PlanNode plan) {
+    protected void pickIndexes(TableJoins tableJoins, PlanNode plan) {
         // Goal is to get all the tables joined right here. Others in
-        // the group can come via XxxLookup in a nested loop. Can only
+        // the group may come via XxxLookup in a nested loop. Can only
         // consider indexes on the inner joined tables.
-        Collection<TableSource> tables = new ArrayList<TableSource>();
-        Collection<TableSource> required = new ArrayList<TableSource>();
-        TableGroup group = onlyTableGroup(null, true, joins, tables, required);
-        if (group == null) return;
+        IndexGoal goal = determineIndexGoal(tableJoins, plan, tableJoins.getTables());
         IndexScan index = null;
-        TableSource indexTable = null;
-        IndexGoal goal = determineIndexGoal(joins, plan, tables);
         if (goal != null) {
+            Collection<TableSource> required = new ArrayList<TableSource>();
+            getRequiredTables(tableJoins.getJoins(), required);
             index = goal.pickBestIndex(required);
-            if (index != null)
-                indexTable = index.getLeafMostTable();
         }
         if (index != null) {
-            goal.installUpstream(index, joins);
+            goal.installUpstream(index);
         }
         PlanNode scan = index;
+        if (scan == null)
+            scan = new GroupScan(tableJoins.getGroup());
+        tableJoins.setScan(scan);
+    }
+
+    // TODO: Put this into a separate rule.
+    protected void joinBranches(TableJoins tableJoins) {
+        PlanNode scan = tableJoins.getScan();
+        IndexScan index = null;
+        TableSource indexTable = null;
+        if (scan instanceof IndexScan) {
+            index = (IndexScan)scan;
+            indexTable = index.getLeafMostTable();
+        }
         if (index == null) {
-            scan = new GroupScan(group);
-            scan = new Flatten(scan, trimJoins(joins, null));
+            scan = new Flatten(scan, trimJoins(tableJoins.getJoins(), null));
         }
         else if (!index.isCovering()) {
             List<TableSource> ancestors = new ArrayList<TableSource>();
@@ -110,12 +158,15 @@ public class IndexPicker extends BaseRule
                                          ancestors.get(0)), 
                                         branch);
             }
-            Joinable requiredJoins = trimJoins(joins, index.getRequiredTables());
+            Joinable requiredJoins = trimJoins(tableJoins.getJoins(), 
+                                               index.getRequiredTables());
             if (requiredJoins != null)
                 scan = new Flatten(scan, requiredJoins);
         }
         // TODO: Can now prepone some of the conditions before the flatten.
-        joins.getOutput().replaceInput(joins, scan);
+        // TODO: Better to keep the tableJoins and just replace the
+        // inside? Do we need its state any more?
+        tableJoins.getOutput().replaceInput(tableJoins, scan);
     }
     
     protected Joinable trimJoins(Joinable joinable, Set<TableSource> requiredTables) {
@@ -179,40 +230,18 @@ public class IndexPicker extends BaseRule
         return false;
     }
 
-    protected TableGroup onlyTableGroup(TableGroup group,
-                                        boolean inRequired,
-                                        Joinable joins,
-                                        Collection<TableSource> tables,
-                                        Collection<TableSource> required) {
-        if (joins instanceof JoinNode) {
-            JoinNode join = (JoinNode)joins;
-            TableGroup gl = onlyTableGroup(group, 
-                                           (inRequired && 
-                                            (join.getJoinType() != JoinType.RIGHT_JOIN)),
-                                           join.getLeft(),
-                                           tables, required);
-            TableGroup gr = onlyTableGroup(group, 
-                                           (inRequired && 
-                                            (join.getJoinType() != JoinType.LEFT_JOIN)),
-                                           join.getRight(),
-                                           tables, required);
-            if (gl == gr) return gl;
+    protected void getRequiredTables(Joinable joinable,
+                                     Collection<TableSource> required) {
+        if (joinable instanceof JoinNode) {
+            JoinNode join = (JoinNode)joinable;
+            if (join.getJoinType() != JoinType.RIGHT_JOIN)
+                getRequiredTables(join.getLeft(), required);
+            if (join.getJoinType() != JoinType.LEFT_JOIN)
+                getRequiredTables(join.getRight(), required);
         }
-        else if (joins instanceof TableSource) {
-            TableSource t = (TableSource)joins;
-            TableGroup g = t.getGroup();
-            if (g == null)
-                throw new UnsupportedSQLException("Joins without group: " + joins, null);
-            if (group == null)
-                group = g;
-            if (group == g) {
-                tables.add(t);
-                if (inRequired)
-                    required.add(t);
-                return g;
-            }
+        else if (joinable instanceof TableSource) {
+            required.add((TableSource)joinable);
         }
-        throw new UnsupportedSQLException("Joins other than one group: " + joins, null);
     }
 
     protected IndexGoal determineIndexGoal(PlanNode input, 

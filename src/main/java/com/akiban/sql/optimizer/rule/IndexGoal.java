@@ -544,7 +544,7 @@ public class IndexGoal implements Comparator<IndexScan>
      * <code>node</code> as a consequence of <code>index</code> being
      * used.
      */
-    public void installUpstream(IndexScan index, PlanNode node) {
+    public void installUpstream(IndexScan index) {
         if (index.getConditions() != null) {
             for (ConditionExpression condition : index.getConditions()) {
                 // TODO: This depends on conditions being the original
