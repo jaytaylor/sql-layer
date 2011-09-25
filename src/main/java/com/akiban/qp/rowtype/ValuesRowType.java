@@ -15,6 +15,8 @@
 
 package com.akiban.qp.rowtype;
 
+import com.akiban.server.types.AkType;
+
 public class ValuesRowType extends DerivedRowType
 {
     // Object interface
@@ -22,7 +24,7 @@ public class ValuesRowType extends DerivedRowType
     @Override
     public String toString()
     {
-        return String.format("values(%d)", nfields);
+        return String.format("values(%d)", nFields());
     }
 
 
@@ -31,18 +33,23 @@ public class ValuesRowType extends DerivedRowType
     @Override
     public int nFields()
     {
-        return nfields;
+        return types.length;
+    }
+
+    @Override
+    public AkType typeAt(int index) {
+        return types[index];
     }
 
     // ValuesRowType interface
 
-    public ValuesRowType(Schema schema, int typeId, int nfields)
+    public ValuesRowType(Schema schema, int typeId, AkType[] types)
     {
         super(schema, typeId);
-        this.nfields = nfields;
+        this.types = types;
     }
 
     // Object state
 
-    private final int nfields;
+    private final AkType[] types;
 }

@@ -16,6 +16,7 @@
 package com.akiban.qp.rowtype;
 
 import com.akiban.server.expression.Expression;
+import com.akiban.server.types.AkType;
 
 import java.util.List;
 
@@ -36,6 +37,11 @@ public class ProjectedRowType extends DerivedRowType
     public int nFields()
     {
         return projections.size();
+    }
+
+    @Override
+    public AkType typeAt(int index) {
+        return projections.get(index).valueType();
     }
 
     // ProjectedRowType interface

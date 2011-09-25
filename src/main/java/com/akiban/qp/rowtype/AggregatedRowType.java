@@ -15,16 +15,23 @@
 
 package com.akiban.qp.rowtype;
 
+import com.akiban.server.types.AkType;
+
 public final class AggregatedRowType extends DerivedRowType {
     @Override
     public int nFields() {
-        return nFields;
+        return base.nFields();
+    }
+
+    @Override
+    public AkType typeAt(int index) {
+        return base.typeAt(index);
     }
 
     public AggregatedRowType(Schema schema, int typeId, RowType base) {
         super(schema, typeId);
-        nFields = base.nFields();
+        this.base = base;
     }
 
-    private final int nFields;
+    private final RowType base;
 }
