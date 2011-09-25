@@ -42,9 +42,10 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         stateType = StateType.UNDEF_VAL;
     }
 
-    public void copyFrom(ValueSource copySource) {
+    public ValueHolder copyFrom(ValueSource copySource) {
         expectType(copySource.getConversionType());
         Converters.convert(copySource, this);
+        return this;
     }
 
     public void expectType(AkType expectedType) {

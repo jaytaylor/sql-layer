@@ -94,6 +94,24 @@ public final class WrappingByteSource implements ByteSource {
         return length;
     }
 
+    // Comparable interface
+
+    @Override
+    public int compareTo(ByteSource o) {
+        int minlength = Math.min(byteArrayLength(), o.byteArrayLength());
+        byte[] obytes = o.byteArray();
+        for (int i=0; i < minlength; ++i) {
+            int myoffset = i + byteArrayOffset();
+            int oofset = i + o.byteArrayOffset();
+            int compare = bytes[myoffset] - obytes[oofset];
+            if (compare != 0)
+                return compare;
+        }
+        // all bytes were equal, return shorter array
+        return byteArrayLength() - o.byteArrayLength();
+    }
+
+
     // Object interface
 
     @Override

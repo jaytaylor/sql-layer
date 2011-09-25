@@ -22,15 +22,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
-import java.util.Formatter;
-import java.util.HashSet;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(NamedParameterizedRunner.class)
-public final class CompareResultTest {
+public final class ComparisonTest {
 
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() {
@@ -43,48 +39,43 @@ public final class CompareResultTest {
         param(pb, Comparison.GE, false, true, true);
         param(pb, Comparison.NE, true, false, true);
 
-        Set<String> requiredNames = new HashSet<String>();
-        for (Comparison comparison : Comparison.values()) {
-            for (CompareResult compareResult : CompareResult.values()) {
-                boolean added = requiredNames.add(paramName(comparison, compareResult));
-                assertTrue("duplicate found!", added);
-            }
-        }
-        Set<String> actualNames = new HashSet<String>();
-        for (Parameterization param : pb.asList()) {
-            boolean added = actualNames.add(param.getName());
-            assertTrue("duplicate found!", added);
-        }
-        assertEquals("required names", requiredNames, actualNames);
-
         return pb.asList();
     }
 
     private static void param(ParameterizationBuilder pb,
                               Comparison comparison, boolean againstLt, boolean againstEq, boolean againstGt)
     {
-        pb.add(paramName(comparison, CompareResult.EQ), comparison, CompareResult.EQ, againstEq);
-        pb.add(paramName(comparison, CompareResult.LT), comparison, CompareResult.LT, againstLt);
-        pb.add(paramName(comparison, CompareResult.GT), comparison, CompareResult.GT, againstGt);
-    }
-
-    private static String paramName(Comparison comparison, CompareResult compareResult) {
-        return comparison + " against " + compareResult;
+        pb.add(comparison.name(), comparison, againstLt, againstEq, againstGt);
     }
 
     @Test
-    public void test() {
-        boolean actual = compareResult.checkAgainstComparison(comparison);
-        assertEquals(expectedMatch, actual);
+    public void againstLt() {
+        test(-1, againstLt);
     }
 
-    public CompareResultTest(Comparison comparison, CompareResult compareResult, boolean expectedMatch) {
+    @Test
+    public void againstEq() {
+        test(0, againstEq);
+    }
+
+    @Test
+    public void againstGt() {
+        test(1, againstGt);
+    }
+
+    public ComparisonTest(Comparison comparison, boolean againstLt, boolean againstEq, boolean againstGt) {
         this.comparison = comparison;
-        this.compareResult = compareResult;
-        this.expectedMatch = expectedMatch;
+        this.againstLt = againstLt;
+        this.againstEq = againstEq;
+        this.againstGt = againstGt;
+    }
+
+    private void test(int compareToResult, boolean expectedResult) {
+        assertEquals(expectedResult, comparison.matchesCompareTo(compareToResult));
     }
 
     private final Comparison comparison;
-    private final CompareResult compareResult;
-    private final boolean expectedMatch;
+    private final boolean againstLt;
+    private final boolean againstEq;
+    private final boolean againstGt;
 }

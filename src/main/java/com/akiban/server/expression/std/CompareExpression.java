@@ -20,6 +20,7 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.BoolValueSource;
+import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.List;
@@ -59,15 +60,14 @@ public final class CompareExpression extends AbstractTwoArgExpression {
     // consts
 
     private final CompareOp LONG_COMPARE = new LongCompareOp(AkType.LONG);
+    private final CompareOp VARCHAR_COMPARE = new ObjectCompareOp(AkType.VARCHAR);
 
     private final CompareOp DOUBLE_COMPARE = new CompareOp() {
         @Override
-        public CompareResult compare(ValueSource a, ValueSource b) {
+        public int compare(ValueSource a, ValueSource b) {
             double aDouble = a.getDouble();
             double bDouble = b.getDouble();
-            if (aDouble < bDouble)
-                return CompareResult.LT;
-            return aDouble > bDouble ? CompareResult.GT : CompareResult.EQ;
+            return (int)(aDouble - bDouble);
         }
 
         @Override
@@ -78,7 +78,7 @@ public final class CompareExpression extends AbstractTwoArgExpression {
 
     // nested classes
     public static abstract class CompareOp {
-        abstract CompareResult compare(ValueSource a, ValueSource b);
+        abstract int compare(ValueSource a, ValueSource b);
         abstract AkType opType();
 
         private CompareOp() {}
@@ -86,12 +86,10 @@ public final class CompareExpression extends AbstractTwoArgExpression {
 
     private static class LongCompareOp extends CompareOp {
         @Override
-        CompareResult compare(ValueSource a, ValueSource b) {
+        int compare(ValueSource a, ValueSource b) {
             long aLong = getLong(a);
             long bLong = getLong(b);
-            if (aLong < bLong)
-                return CompareResult.LT;
-            return aLong > bLong ? CompareResult.GT : CompareResult.EQ;
+            return (int)(aLong - bLong);
         }
 
         @Override
@@ -115,7 +113,43 @@ public final class CompareExpression extends AbstractTwoArgExpression {
 
         private LongCompareOp(AkType type) {
             this.type = type;
-            ArgumentValidation.notNull("type", this.type);
+            ArgumentValidation.isEQ(
+                    "require underlying type", AkType.UnderlyingType.LONG_AKTYPE,
+                    "given type", this.type.underlyingType()
+            );
+        }
+
+        private final AkType type;
+    }
+
+    private static class ObjectCompareOp extends CompareOp {
+        @Override
+        int compare(ValueSource a, ValueSource b) {
+            switch (type) {
+            case DECIMAL:   return doCompare(a.getDecimal(), b.getDecimal());
+            case VARCHAR:   return doCompare(a.getString(), b.getString());
+            case TEXT:      return doCompare(a.getText(), b.getText());
+            case U_BIGINT:  return doCompare(a.getUBigInt(), b.getUBigInt());
+            case VARBINARY: return doCompare(a.getVarBinary(), b.getVarBinary());
+            default: throw new UnsupportedOperationException("can't get comparable for type " + type);
+            }
+        }
+
+        private <T extends Comparable<T>> int doCompare(T one, T two) {
+            return one.compareTo(two);
+        }
+
+        @Override
+        AkType opType() {
+            return type;
+        }
+
+        private ObjectCompareOp(AkType type) {
+            this.type = type;
+            ArgumentValidation.isEQ(
+                    "require underlying type", AkType.UnderlyingType.OBJECT_AKTYPE,
+                    "given type", this.type.underlyingType()
+            );
         }
 
         private final AkType type;
@@ -124,19 +158,23 @@ public final class CompareExpression extends AbstractTwoArgExpression {
     private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation {
         @Override
         public ValueSource eval() {
-            if (left().isNull() || right().isNull())
+            ValueSource left = scratch.copyFrom(left());
+            ValueSource right = right();
+            if (left.isNull() || right.isNull())
                 return BoolValueSource.OF_NULL;
-            CompareResult compareResult = op.compare(left(), right());
-            return BoolValueSource.of(compareResult.checkAgainstComparison(comparison));
+            int compareResult = op.compare(left, right);
+            return BoolValueSource.of(comparison.matchesCompareTo(compareResult));
         }
 
         private InnerEvaluation(List<? extends ExpressionEvaluation> children, Comparison comparison, CompareOp op) {
             super(children);
             this.op = op;
             this.comparison = comparison;
+            this.scratch = new ValueHolder();
         }
 
         private final Comparison comparison;
         private final CompareOp op;
+        private final ValueHolder scratch;
     }
 }
