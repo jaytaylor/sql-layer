@@ -362,8 +362,9 @@ public class GroupJoinFinder extends BaseRule
             Joinable island = islands.get(i);
             TableGroup group = isolateGroups(island);
             if (group != null) {
+                PlanWithInput output = island.getOutput();
                 Joinable nisland = getTableJoins(island, group);
-                island.getOutput().replaceInput(island, nisland);
+                output.replaceInput(island, nisland);
                 islands.set(i, nisland);
             }
         }
