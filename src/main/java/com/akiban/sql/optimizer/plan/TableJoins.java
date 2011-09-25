@@ -15,11 +15,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.ais.model.Group;
-
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /** A contiguous set of tables joined together: flattened / producted
@@ -27,19 +23,30 @@ import java.util.Set;
  */
 public class TableJoins extends BasePlanWithInput implements Joinable
 {
-    private Group group;
+    private TableGroup group;
+    private Set<TableSource> tables;
 
-    public TableJoins(Joinable joins, Group group) {
+    public TableJoins(Joinable joins, TableGroup group) {
         super(joins);
         this.group = group;
+        tables = new HashSet<TableSource>();
     }
 
-    public Group getGroup() {
+    public TableGroup getGroup() {
         return group;
     }
 
     public Joinable getJoins() {
         return (Joinable)getInput();
+    }
+
+    public Set<TableSource> getTables() {
+        return tables;
+    }
+
+    public void addTable(TableSource table) {
+        assert (group == table.getGroup());
+        tables.add(table);
     }
 
     @Override
@@ -62,6 +69,13 @@ public class TableJoins extends BasePlanWithInput implements Joinable
     @Override
     public String summaryString() {
         return super.summaryString() + "(" + group + ")";
+    }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        group = (TableGroup)group.duplicate(map);
+        tables = duplicateSet(tables, map);
     }
 
 }

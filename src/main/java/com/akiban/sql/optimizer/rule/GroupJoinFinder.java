@@ -80,6 +80,7 @@ public class GroupJoinFinder extends BaseRule
         moveAndNormalizeWhereConditions(islands);
         reorderJoins(islands);
         findGroupJoins(islands);
+        isolateGroups(islands);
     }
     
     // First pass: find all the WHERE conditions above inner joins
@@ -349,6 +350,64 @@ public class GroupJoinFinder extends BaseRule
             Joinable right = join.getRight();
             findSingleGroups(join.getLeft());
             findSingleGroups(join.getRight());
+        }
+    }
+
+    // Fourth pass: wrap contiguous group joins in separate joinable.
+    // We have done out best with the inner joins to make this possible,
+    // but some outer joins may require that a TableGroup be broken up into
+    // multiple TableJoins.
+    protected void isolateGroups(List<Joinable> islands) {
+        for (int i = 0; i < islands.size(); i++) {
+            Joinable island = islands.get(i);
+            TableGroup group = isolateGroups(island);
+            if (group != null) {
+                Joinable nisland = getTableJoins(island, group);
+                island.getOutput().replaceInput(island, nisland);
+                islands.set(i, nisland);
+            }
+        }
+    }
+
+    protected TableGroup isolateGroups(Joinable joinable) {
+        if (joinable.isTable()) {
+            TableSource table = (TableSource)joinable;
+            assert (table.getGroup() != null);
+            return table.getGroup();
+        }
+        if (!joinable.isJoin())
+            return null;
+        // Both sides must be matching groups.
+        JoinNode join = (JoinNode)joinable;
+        Joinable left = join.getLeft();
+        Joinable right = join.getRight();
+        TableGroup leftGroup = isolateGroups(left);
+        TableGroup rightGroup = isolateGroups(right);
+        if ((leftGroup == rightGroup) && (leftGroup != null))
+            return leftGroup;
+        if (leftGroup != null)
+            join.setLeft(getTableJoins(left, leftGroup));
+        if (rightGroup != null)
+            join.setRight(getTableJoins(right, rightGroup));
+        return null;
+    }
+
+    // Make a new TableGroup, recording what it contains.
+    protected TableJoins getTableJoins(Joinable joins, TableGroup group) {
+        TableJoins tableJoins = new TableJoins(joins, group);
+        getTableJoinsTables(joins, tableJoins);
+        return tableJoins;
+    }
+
+    protected void getTableJoinsTables(Joinable joinable, TableJoins tableJoins) {
+        if (joinable.isJoin()) {
+            JoinNode join = (JoinNode)joinable;
+            getTableJoinsTables(join.getLeft(), tableJoins);
+            getTableJoinsTables(join.getRight(), tableJoins);
+        }
+        else {
+            assert joinable.isTable();
+            tableJoins.addTable((TableSource)joinable);
         }
     }
 
