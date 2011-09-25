@@ -66,6 +66,10 @@ public final class LiteralExpression implements Expression {
         this(new InternalEvaluation(new ValueHolder(type, value)));
     }
 
+    public LiteralExpression(AkType type, boolean value) throws ValueHolder.IllegalRawPutException {
+        this(new InternalEvaluation(new ValueHolder(type, value)));
+    }
+
     public LiteralExpression(AkType type, Object value) throws ValueHolder.IllegalRawPutException {
         this(new InternalEvaluation(new ValueHolder(type, value)));
     }

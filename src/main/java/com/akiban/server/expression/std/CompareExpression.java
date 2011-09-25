@@ -43,9 +43,9 @@ public final class CompareExpression extends AbstractTwoArgExpression {
     }
 
     public CompareExpression(List<? extends Expression> children, Comparison comparison) {
-        super(childrenType(children), children);
+        super(AkType.BOOL, children);
         this.comparison = comparison;
-        AkType type = valueType();
+        AkType type = childrenType(children);
         assert type != null;
         this.op = readOnlyCompareOps.get(type);
         if (this.op == null)
@@ -61,7 +61,10 @@ public final class CompareExpression extends AbstractTwoArgExpression {
         AkType type = iter.next().valueType();
         while(iter.hasNext()) { // should only be once, but AbstractTwoArgExpression will check that
             AkType childType = iter.next().valueType();
-            if (!type.equals(childType)) {
+            if (type == AkType.NULL) {
+                type = childType;
+            }
+            else if (childType != AkType.NULL && !type.equals(childType)) {
                 throw new IllegalArgumentException("Comparison's children must all have same type. First child was "
                         + type + ", but then saw " + childType);
             }
@@ -73,6 +76,8 @@ public final class CompareExpression extends AbstractTwoArgExpression {
         Map<AkType,CompareOp> map = new EnumMap<AkType, CompareOp>(AkType.class);
         CompareOp doubleCompareOp = createDoubleCompareOp();
         for (AkType type : AkType.values()) {
+            if (type == AkType.NULL || type == AkType.UNSUPPORTED)
+                continue;
             switch (type.underlyingType()) {
                 case BOOLEAN_AKTYPE:
                     map.put(type, createBoolCompareOp());
@@ -89,6 +94,7 @@ public final class CompareExpression extends AbstractTwoArgExpression {
                     break;
             }
         }
+        map.put(AkType.NULL, createNullCompareOp());
         return map;
     }
 
@@ -127,7 +133,6 @@ public final class CompareExpression extends AbstractTwoArgExpression {
 
     private static CompareOp createObjectCompareOp(final AkType type) {
         return new CompareOp() {
-
             @Override
             public int compare(ValueSource a, ValueSource b) {
                 switch (type) {
@@ -142,6 +147,15 @@ public final class CompareExpression extends AbstractTwoArgExpression {
 
             private <T extends Comparable<T>> int doCompare(T one, T two) {
                 return one.compareTo(two);
+            }
+        };
+    }
+
+    private static CompareOp createNullCompareOp() {
+        return new CompareOp() {
+            @Override
+            public int compare(ValueSource a, ValueSource b) {
+                throw new AssertionError("nulls are not comparable");
             }
         };
     }

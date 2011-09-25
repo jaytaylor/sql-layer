@@ -99,6 +99,7 @@ public final class Converters {
         builder.alias(LONG, U_INT);
         
         builder.legalConversions(VARCHAR,
+                BOOL,
                 DOUBLE,
                 FLOAT,
                 LONG,
