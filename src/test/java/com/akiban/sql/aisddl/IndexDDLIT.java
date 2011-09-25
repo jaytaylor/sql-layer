@@ -124,6 +124,7 @@ public class IndexDDLIT extends PostgresServerITBase {
         connection.createStatement().execute(sql);
     }
     
+    
     @Test (expected=PSQLException.class)
     public void createIndexErrorCol() throws SQLException {
         String sql = "CREATE INDEX test11 on test.t1 (c1, colBad)";
@@ -137,6 +138,58 @@ public class IndexDDLIT extends PostgresServerITBase {
         String sql ="CREATE INDEX test12 on test.t1 (t1.c1, t2.c3, t3.c1)";
         createBranchedGroup();
         connection.createStatement().execute(sql);
+    }
+
+    @Test
+    public void dropIndexSimple() throws SQLException {
+        String sql = "CREATE INDEX test14 on test.t1 (test.t1.c1, t1.c2, c3)";
+        createTable();
+        
+        connection.createStatement().execute(sql);
+        String sql1 = "DROP INDEX test14";
+        
+        connection.createStatement().execute(sql1);
+        UserTable table = ddlServer().getAIS(session()).getUserTable("test", "t1");
+        assertNotNull (table);
+        assertNull (table.getIndex("test14"));
+    }
+    
+    @Test (expected=PSQLException.class)
+    public void dropIndexFailure() throws SQLException {
+        String sql = "CREATE INDEX test15 on test.t1 (test.t1.c1, t1.c2, c3)";
+        createTable();
+        
+        connection.createStatement().execute(sql);
+        String sql1 = "DROP INDEX bad_index";
+        
+        connection.createStatement().execute(sql1);
+    }
+    
+    @Test 
+    public void dropGroupIndex () throws SQLException { 
+        String sql = "CREATE INDEX test16 on test.t2 (t1.c1, t2.c1)";
+        createJoinedTables();
+        connection.createStatement().execute(sql);
+        
+        String sql1 = "DROP INDEX test16";
+        connection.createStatement().execute(sql1);
+        UserTable table1 = ddlServer().getAIS(session()).getUserTable("test", "t1");
+        assertNotNull (table1);
+        Group group = table1.getGroup();
+        assertNotNull (group);
+        assertNull (group.getIndex("test16"));
+    }
+    
+    @Test (expected=PSQLException.class)
+    public void dropDuplicateIndexes () throws SQLException {
+        createJoinedTables();
+        String sql1 = "CREATE INDEX test17 on test.t2 (t2.c1)";
+        String sql2 = "CREATE INDEX test17 on test.t1 (t1.c1)";
+        connection.createStatement().execute(sql1);
+        connection.createStatement().execute(sql2);
+        
+        String sql3 = "DROP INDEX test17";
+        connection.createStatement().execute(sql3);
     }
     
     private void createTable () throws SQLException {

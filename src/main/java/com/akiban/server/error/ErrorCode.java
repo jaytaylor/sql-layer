@@ -82,6 +82,7 @@ public enum ErrorCode {
     MISSING_DDL_PARAMETERS  (2, 26, Importance.DEBUG, MissingDDLParametersException.class),
     INDEX_COL_NOT_IN_GROUP  (2, 27, Importance.DEBUG, IndexColNotInGroupException.class),
     INDEX_TABLE_NOT_IN_GROUP(2, 28, Importance.DEBUG, IndexTableNotInGroupException.class),
+    INDISTINGUISHABLE_INDEX (2, 29, Importance.DEBUG, IndistinguishableIndexException.class),
     
     // DML errors
     NO_REFERENCED_ROW       (3, 0, Importance.DEBUG, null),
