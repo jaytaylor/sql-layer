@@ -56,12 +56,15 @@ public final class WrappingByteSource implements ByteSource {
             this.length = 0;
             return this;
         }
-        if (offset < 0 || offset >= bytes.length) {
-            if (length > 0 || offset > bytes.length) { // offset == bytes.length is okay if wrapped length is 0
-                throw new IllegalArgumentException("offset must be between 0 and bytes.length (" + bytes.length + ')');
-            }
-        }
         ArgumentValidation.isGTE("length", length, 0);
+        boolean offsetError = offset < 0;
+        if (length > 0)
+            offsetError |= offset >= bytes.length;
+        else
+            offsetError |= offset > bytes.length;
+        if (offsetError) {
+            throw new IllegalArgumentException("offset must be between 0 and bytes.length (" + bytes.length + ')');
+        }
         int lastIndex = offset + length;
         ArgumentValidation.isLTE("last index", lastIndex, bytes.length);
 
