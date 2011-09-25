@@ -56,7 +56,7 @@ public abstract class AbstractCompositeExpression implements Expression {
     }
 
     @Override
-    public AkType valueType() {
+    public final AkType valueType() {
         return type;
     }
 

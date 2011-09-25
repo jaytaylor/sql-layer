@@ -15,15 +15,20 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ArgumentValidation;
 
+import java.util.EnumMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public final class CompareExpression extends AbstractTwoArgExpression {
 
@@ -38,18 +43,70 @@ public final class CompareExpression extends AbstractTwoArgExpression {
         return new InnerEvaluation(childrenEvaluations(), comparison, op);
     }
 
-    public CompareExpression(List<? extends Expression> children, Comparison comparison, CompareOp op) {
-        super(op.opType(), children);
+    public CompareExpression(List<? extends Expression> children, Comparison comparison) {
+        super(childrenType(children), children);
         this.comparison = comparison;
-        this.op = op;
-        if (left().valueType() != op.opType() || right().valueType() != op.opType()) {
-            throw new IllegalArgumentException(
-                    String.format("incompatible types: (%s, %s) for comparison of type %s",
-                            left().valueType(),
-                            right().valueType(),
-                            op.opType()
-            ));
+        AkType type = valueType();
+        assert type != null;
+        this.op = readOnlyCompareOps.get(type);
+        if (this.op == null)
+            throw new AkibanInternalException("couldn't find internal comparator for " + type);
+    }
+
+    // for use in this class
+
+    private static AkType childrenType(List<? extends Expression> children) {
+        Iterator<? extends Expression> iter = children.iterator();
+        if (!iter.hasNext())
+            throw new IllegalArgumentException("Comparison must take exatly two children expressions; none provided");
+        AkType type = iter.next().valueType();
+        while(iter.hasNext()) { // should only be once, but AbstractTwoArgExpression will check that
+            AkType childType = iter.next().valueType();
+            if (!type.equals(childType)) {
+                throw new IllegalArgumentException("Comparison's children must all have same type. First child was "
+                        + type + ", but then saw " + childType);
+            }
         }
+        return type;
+    }
+
+    private static Map<AkType,CompareOp> createCompareOpsMap() {
+        Map<AkType,CompareOp> map = new EnumMap<AkType, CompareOp>(AkType.class);
+        CompareOp doubleCompareOp = createDoubleCompareOp();
+        for (AkType type : AkType.values()) {
+            switch (type.underlyingType()) {
+                case BOOLEAN_AKTYPE:
+                    // TODO
+                    break;
+                case LONG_AKTYPE:
+                    map.put(type, new LongCompareOp(type));
+                    break;
+                case FLOAT_AKTYPE:
+                case DOUBLE_AKTYPE:
+                    map.put(type, doubleCompareOp);
+                    break;
+                case OBJECT_AKTYPE:
+                    map.put(type, new ObjectCompareOp(type));
+                    break;
+            }
+        }
+        return map;
+    }
+
+    private static CompareOp createDoubleCompareOp() {
+        return new CompareOp() {
+            @Override
+            public int compare(ValueSource a, ValueSource b) {
+                double aDouble = Extractors.getDoubleExtractor().getDouble(a);
+                double bDouble = Extractors.getDoubleExtractor().getDouble(b);
+                return Double.compare(aDouble, bDouble);
+            }
+
+            @Override
+            public AkType opType() {
+                return AkType.DOUBLE;
+            }
+        };
     }
 
     // object state
@@ -59,22 +116,7 @@ public final class CompareExpression extends AbstractTwoArgExpression {
 
     // consts
 
-    private final CompareOp LONG_COMPARE = new LongCompareOp(AkType.LONG);
-    private final CompareOp VARCHAR_COMPARE = new ObjectCompareOp(AkType.VARCHAR);
-
-    private final CompareOp DOUBLE_COMPARE = new CompareOp() {
-        @Override
-        public int compare(ValueSource a, ValueSource b) {
-            double aDouble = a.getDouble();
-            double bDouble = b.getDouble();
-            return Double.compare(aDouble, bDouble);
-        }
-
-        @Override
-        public AkType opType() {
-            return AkType.DOUBLE;
-        }
-    };
+    private static final Map<AkType, CompareOp> readOnlyCompareOps = createCompareOpsMap();
 
     // nested classes
     public static abstract class CompareOp {
@@ -87,28 +129,14 @@ public final class CompareExpression extends AbstractTwoArgExpression {
     private static class LongCompareOp extends CompareOp {
         @Override
         int compare(ValueSource a, ValueSource b) {
-            long aLong = getLong(a);
-            long bLong = getLong(b);
+            long aLong = Extractors.getLongExtractor(type).getLong(a);
+            long bLong = Extractors.getLongExtractor(type).getLong(b);
             return (int)(aLong - bLong);
         }
 
         @Override
         AkType opType() {
             return type;
-        }
-
-        private long getLong(ValueSource source) {
-            switch (type) {
-            case DATE:      return source.getDate();
-            case DATETIME:  return source.getDateTime();
-            case INT:       return source.getInt();
-            case LONG:      return source.getLong();
-            case TIME:      return source.getTime();
-            case TIMESTAMP: return source.getTimestamp();
-            case U_INT:     return source.getUInt();
-            case YEAR:      return source.getYear();
-            default: throw new UnsupportedOperationException("can't get long for type " + type);
-            }
         }
 
         private LongCompareOp(AkType type) {
