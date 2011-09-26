@@ -44,7 +44,16 @@ public class BranchJoiner extends BaseRule
             index = (IndexScan)scan;
         }
         if (index == null) {
-            scan = flattenBranch(scan, tableJoins.getJoins(), tableJoins.getTables());
+            Collection<TableSource> tables = tableJoins.getTables();
+            if (scan instanceof GroupScan) {
+                // Initial assumption is that all tables will make it
+                // on, but this may be refined below by branching.
+                List<TableSource> ntables = new ArrayList<TableSource>(tables);
+                Collections.sort(ntables, tableSourceById);
+                ((GroupScan)scan).setTables(ntables);
+                tables = ntables;
+            }
+            scan = flattenBranch(scan, tableJoins.getJoins(), tables);
         }
         else if (!index.isCovering()) {
             TableSource indexTable = index.getLeafMostTable();
@@ -189,6 +198,7 @@ public class BranchJoiner extends BaseRule
             int size = leaf.getDepth() + 1;
             mainBranch = new TableNode[size];
             mainBranchSources = new TableSource[size];
+            leaf.getTree().colorBranches();
             mainBranchMask = leaf.getBranches();
             sideBranches = new HashMap<TableNode,Collection<TableSource>>();
         }
@@ -297,6 +307,9 @@ public class BranchJoiner extends BaseRule
                                                         JoinType.INNER_JOIN));
         List<ConditionExpression> joinConditions = new ArrayList<ConditionExpression>(0);
         copyJoins(joins, null, flattenSources, joinTypes, joinConditions);
+        // Any tables that need to be moved to a side branch didn't
+        // come from the initial tree after all.
+        tables.retainAll(flattenSources);
         if (!joinConditions.isEmpty())
             input = new Filter(input, joinConditions);
         return new Flatten_New(input, flattenNodes, flattenSources, joinTypes);
