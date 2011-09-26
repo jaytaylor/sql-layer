@@ -17,8 +17,10 @@ package com.akiban.qp.expression;
 
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.Row;
+import com.akiban.server.types.AkType;
 
 public interface Expression
 {
     Object evaluate(Row row, Bindings bindings);
+    AkType getAkType();
 }

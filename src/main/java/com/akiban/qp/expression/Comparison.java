@@ -29,6 +29,10 @@ public enum Comparison
         return symbol;
     }
 
+    public com.akiban.server.expression.std.Comparison newStyle() {
+        return com.akiban.server.expression.std.Comparison.valueOf(name());
+    }
+
     private Comparison(String symbol)
     {
         this.symbol = symbol;

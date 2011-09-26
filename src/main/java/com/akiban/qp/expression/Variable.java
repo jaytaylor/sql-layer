@@ -17,6 +17,7 @@ package com.akiban.qp.expression;
 
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.Row;
+import com.akiban.server.types.AkType;
 
 final class Variable implements Expression {
 
@@ -25,6 +26,11 @@ final class Variable implements Expression {
     @Override
     public Object evaluate(Row row, Bindings bindings) {
         return bindings.get(position);
+    }
+
+    @Override
+    public AkType getAkType() {
+        return AkType.NULL;
     }
 
     // Object interface

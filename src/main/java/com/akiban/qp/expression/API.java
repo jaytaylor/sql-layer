@@ -18,7 +18,11 @@ package com.akiban.qp.expression;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.expression.std.BoundFieldExpression;
+import com.akiban.server.expression.std.CompareExpression;
+import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
@@ -26,18 +30,26 @@ import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class API
 {
     public static Expression compare(Expression left, Comparison comparison, Expression right)
     {
-        return new Compare(left, comparison, right);
+        CompareExpression compExpr = new CompareExpression(wrapAll(left, right), comparison.newStyle());
+        return new NewExpressionWrapper(compExpr);
     }
 
+    @Deprecated
     public static Expression field(int position)
     {
-        return new Field(position);
+        throw new UnsupportedOperationException("need rowtype for position " + position);
+    }
+
+    public static Expression field(RowType rowType, int position)
+    {
+        return new NewExpressionWrapper(new FieldExpression(rowType, position));
     }
 
     public static IndexBound indexBound(RowBase row, ColumnSelector columnSelector)
@@ -60,9 +72,11 @@ public class API
         return new Variable(position);
     }
 
-    public static Expression boundField(int rowPosition, int fieldPosition)
+    public static Expression boundField(RowType rowType, int rowPosition, int fieldPosition)
     {
-        return new BoundField(rowPosition, fieldPosition);
+        return new NewExpressionWrapper(
+                new BoundFieldExpression(rowPosition, new FieldExpression(rowType, fieldPosition))
+        );
     }
 
     public static com.akiban.server.expression.Expression wrap(Expression qpExpression)
@@ -87,6 +101,10 @@ public class API
             result.add(wrap(qpExpression));
         }
         return result;
+    }
+    public static List<? extends com.akiban.server.expression.Expression> wrapAll(Expression... qpExpressions)
+    {
+        return wrapAll(Arrays.asList(qpExpressions));
     }
 
     public static Comparison EQ = Comparison.EQ;
@@ -129,7 +147,7 @@ public class API
         @Override
         public AkType valueType()
         {
-            throw new UnsupportedOperationException("static typing of old Expressions isn't possible");
+            return delegate.getAkType();
         }
 
         // Object interface

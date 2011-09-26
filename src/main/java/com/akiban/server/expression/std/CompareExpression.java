@@ -64,10 +64,11 @@ public final class CompareExpression extends AbstractTwoArgExpression {
             if (type == AkType.NULL) {
                 type = childType;
             }
-            else if (childType != AkType.NULL && !type.equals(childType)) {
-                throw new IllegalArgumentException("Comparison's children must all have same type. First child was "
-                        + type + ", but then saw " + childType);
-            }
+            // TODO put this back in when we get casting expressions. Until then, Extractors will do their job.
+//            else if (childType != AkType.NULL && !type.equals(childType)) {
+//                throw new IllegalArgumentException("Comparison's children must all have same type. First child was "
+//                        + type + ", but then saw " + childType);
+//            }
         }
         return type;
     }

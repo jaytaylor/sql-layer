@@ -23,6 +23,7 @@ import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types.AkType;
 
 /** Update a row by substituting expressions for some fields. */
 public class ExpressionRowUpdateFunction implements UpdateFunction

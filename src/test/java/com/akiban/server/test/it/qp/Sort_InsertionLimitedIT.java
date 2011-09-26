@@ -70,7 +70,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                     groupScan_Default(coi),
                     Collections.singleton(customerRowType)),
                 customerRowType,
-                ordering(field(1), true),
+                ordering(field(customerRowType, 1), true),
                 2);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -89,7 +89,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
                 orderRowType,
-                ordering(field(2), true, field(1), false),
+                ordering(field(orderRowType, 2), true, field(orderRowType, 1), false),
                 4);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -110,7 +110,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
                 orderRowType,
-                ordering(field(2), true),
+                ordering(field(orderRowType, 2), true),
                 4);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -132,7 +132,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
                 orderRowType,
-                ordering(field(2), true),
+                ordering(field(orderRowType, 2), true),
                 2);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -153,9 +153,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(1);
-        Expression oidField = field(0);
-        Expression iidField = field(3);
+        Expression cidField = field(oiType, 1);
+        Expression oidField = field(oiType, 0);
+        Expression iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -188,9 +188,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(1);
-        Expression oidField = field(0);
-        Expression iidField = field(3);
+        Expression cidField = field(oiType, 1);
+        Expression oidField = field(oiType, 0);
+        Expression iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -223,9 +223,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(1);
-        Expression oidField = field(0);
-        Expression iidField = field(3);
+        Expression cidField = field(oiType, 1);
+        Expression oidField = field(oiType, 0);
+        Expression iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -258,9 +258,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(1);
-        Expression oidField = field(0);
-        Expression iidField = field(3);
+        Expression cidField = field(oiType, 1);
+        Expression oidField = field(oiType, 0);
+        Expression iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -293,9 +293,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(1);
-        Expression oidField = field(0);
-        Expression iidField = field(3);
+        Expression cidField = field(oiType, 1);
+        Expression oidField = field(oiType, 0);
+        Expression iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -328,9 +328,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(1);
-        Expression oidField = field(0);
-        Expression iidField = field(3);
+        Expression cidField = field(oiType, 1);
+        Expression oidField = field(oiType, 0);
+        Expression iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -363,9 +363,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(1);
-        Expression oidField = field(0);
-        Expression iidField = field(3);
+        Expression cidField = field(oiType, 1);
+        Expression oidField = field(oiType, 0);
+        Expression iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -398,9 +398,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(1);
-        Expression oidField = field(0);
-        Expression iidField = field(3);
+        Expression cidField = field(oiType, 1);
+        Expression oidField = field(oiType, 0);
+        Expression iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
