@@ -19,13 +19,15 @@ import static com.akiban.sql.optimizer.rule.IndexPicker.TableJoinsFinder;
 
 import com.akiban.sql.optimizer.plan.*;
 
+import com.akiban.qp.operator.API.JoinType;
+
 import com.akiban.server.error.UnsupportedSQLException;
 
 import java.util.*;
 
 /** Having sources table groups from indexes, get rows with XxxLookup
  * and join them together with Flatten, etc. */
-public class BranchJoiner extends BaseRule
+public class BranchJoiner extends BaseRule 
 {
     @Override
     public void apply(PlanContext planContext) {
@@ -44,7 +46,7 @@ public class BranchJoiner extends BaseRule
             indexTable = index.getLeafMostTable();
         }
         if (index == null) {
-            scan = new Flatten(scan, trimJoins(tableJoins.getJoins(), null));
+            scan = flattenBranch(scan, tableJoins.getJoins(), tableJoins.getTables());
         }
         else if (!index.isCovering()) {
             List<TableSource> ancestors = new ArrayList<TableSource>();
@@ -73,13 +75,7 @@ public class BranchJoiner extends BaseRule
                 branch = null;
             }
             if (!ancestors.isEmpty()) {
-                // Access in stable order.
-                Collections.sort(ancestors,
-                                 new Comparator<TableSource>() {
-                                     public int compare(TableSource t1, TableSource t2) {
-                                         return t1.getTable().getTable().getTableId().compareTo(t2.getTable().getTable().getTableId());
-                                     }
-                                 });
+                Collections.sort(ancestors, tableSourceById);
                 scan = new AncestorLookup(scan, indexTable, ancestors);
             }
             if (branch != null) {
@@ -152,6 +148,106 @@ public class BranchJoiner extends BaseRule
         join.setGroupJoin(null);
     }
 
+    // Given the result of a BranchLookup / GroupScan, flatten completely.
+    // Even though all the rows are there, without a
+    // Product_HKeyOrdered kind of operator, it is may not be possible
+    // to do this without fetching some of the data over again.
+    protected PlanNode flattenBranch(PlanNode input, Joinable joins, 
+                                     Collection<TableSource> tables) {
+        TableSource leaf = null;
+        for (TableSource table : tables) {
+            if ((leaf == null) || (tableSourceById.compare(leaf, table) < 0))
+                leaf = table;
+        }
+        if (null == leaf) return input;
+        List<TableNode> branchNodes = new ArrayList<TableNode>(tables.size());
+        for (TableSource table : tables) {
+            if (ancestorOf(table, leaf)) {
+                branchNodes.add(table.getTable());
+            }
+            else {
+                throw new UnsupportedSQLException("Cross branch " + leaf + 
+                                                  " x " + table,
+                                                  null);
+            }
+        }
+        int ntables = branchNodes.size();
+        Collections.sort(branchNodes, tableNodeById);
+        List<TableSource> branchSources = 
+            new ArrayList<TableSource>(Collections.<TableSource>nCopies(ntables, null));
+        for (TableSource table : tables) {
+            int idx = branchNodes.indexOf(table.getTable());
+            branchSources.set(idx, table);
+        }
+        List<JoinType> joinTypes = 
+            new ArrayList<JoinType>(Collections.nCopies(ntables - 1,
+                                                        JoinType.INNER_JOIN));
+        List<ConditionExpression> joinConditions = new ArrayList<ConditionExpression>(0);
+        copyJoins(joins, null, branchSources, joinTypes, joinConditions);
+        if (!joinConditions.isEmpty())
+            input = new Filter(input, joinConditions);
+        return new Flatten_New(input, branchNodes, branchSources, joinTypes);
+    }
+
+    // Turn a tree of joins into a regular flatten list.
+    // This only works for the simple cases: LEFT joins down the
+    // branch and no join conditions or only ones depending on the
+    // optional table. Everything else needs to be done using a
+    // general nested loop join.
+    protected void copyJoins(Joinable joinable, JoinNode parent, 
+                             List<TableSource> branch, 
+                             List<JoinType> joinTypes,
+                             List<ConditionExpression> joinConditions) {
+        if (joinable.isTable()) {
+            TableSource table = (TableSource)joinable;
+            int idx = branch.indexOf(table);
+            assert ((parent == null) ? (idx >= 0) : (idx > 0));
+            if (parent != null) {
+                joinTypes.set(idx - 1, parent.getJoinType());
+                if (parent.getJoinConditions() != null) {
+                    for (ConditionExpression cond : parent.getJoinConditions()) {
+                        if (cond.getImplementation() !=
+                            ConditionExpression.Implementation.GROUP_JOIN) {
+                            if (!isSimpleJoinCondition(cond, table))
+                                throw new UnsupportedSQLException("Join condition too complex", cond.getSQLsource());
+                            joinConditions.add(cond);
+                        }
+                    }
+                }
+            }
+        }
+        else if (joinable.isJoin()) {
+            JoinNode join = (JoinNode)joinable;
+            switch (join.getJoinType()) {
+            case INNER_JOIN:
+            case LEFT_JOIN:
+                break;
+            default:
+                throw new UnsupportedSQLException("Join too complex: " + join, null);
+            }
+            copyJoins(join.getLeft(), null, branch, joinTypes, joinConditions);
+            copyJoins(join.getRight(), join, branch, joinTypes, joinConditions);
+        }
+    }
+
+    // Is this join condition simple enough to execute before the join?
+    protected boolean isSimpleJoinCondition(ConditionExpression cond,
+                                            TableSource table) {
+        if (!(cond instanceof ComparisonCondition))
+            return false;
+        ComparisonCondition comp = (ComparisonCondition)cond;
+        ExpressionNode left = comp.getLeft();
+        ExpressionNode right = comp.getRight();
+        if (!(left.isColumn() &&
+              (((ColumnExpression)left).getTable() == table)))
+            return false;
+        if (!((right instanceof ConstantExpression) || 
+              (right instanceof ParameterExpression)))
+            // TODO: Column from outer table okay, too. Need general predicate for that.
+            return false;
+        return true;
+    }
+
     /** Is <code>t1</code> an ancestor of <code>t2</code>? */
     protected boolean ancestorOf(TableSource t1, TableSource t2) {
         do {
@@ -160,5 +256,20 @@ public class BranchJoiner extends BaseRule
         } while (t2 != null);
         return false;
     }
+
+    static final Comparator<TableSource> tableSourceById = new Comparator<TableSource>() {
+        @Override
+        // Access things in stable order.
+        public int compare(TableSource t1, TableSource t2) {
+            return t1.getTable().getTable().getTableId().compareTo(t2.getTable().getTable().getTableId());
+        }
+    };
+
+    static final Comparator<TableNode> tableNodeById = new Comparator<TableNode>() {
+        @Override
+        public int compare(TableNode t1, TableNode t2) {
+            return t1.getTable().getTableId().compareTo(t2.getTable().getTableId());
+        }
+    };
 
 }

@@ -210,6 +210,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleFilter((Filter)node);
             else if (node instanceof Flatten)
                 return assembleFlatten((Flatten)node);
+            else if (node instanceof Flatten_New)
+                return assembleFlatten((Flatten_New)node);
             else if (node instanceof AncestorLookup)
                 return assembleAncestorLookup((AncestorLookup)node);
             else if (node instanceof BranchLookup)
@@ -330,10 +332,45 @@ public class OperatorAssembler extends BaseRule
             }
         }
 
+        protected RowStream assembleFlatten(Flatten_New flatten) {
+            RowStream stream = assembleStream(flatten.getInput());
+            List<TableNode> tableNodes = flatten.getTableNodes();
+            TableNode tableNode = tableNodes.get(0);
+            RowType tableRowType = tableRowType(tableNode);
+            stream.rowType = tableRowType;
+            int ntables = tableNodes.size();
+            if (ntables == 1) {
+                TableSource tableSource = flatten.getTableSources().get(0);
+                if (tableSource != null)
+                    stream.fieldOffsets = new ColumnSourceFieldOffsets(tableSource);
+            }
+            else {
+                Flattened flattened = new Flattened();
+                flattened.addTable(tableRowType, flatten.getTableSources().get(0));
+                for (int i = 0; i < ntables; i++) {
+                    tableNode = tableNodes.get(i);
+                    tableRowType = tableRowType(tableNode);
+                    flattened.addTable(tableRowType, flatten.getTableSources().get(i));
+                    stream.operator = flatten_HKeyOrdered(stream.operator, 
+                                                          stream.rowType,
+                                                          tableRowType,
+                                                          flatten.getJoinTypes().get(i-1));
+                    stream.rowType = stream.operator.rowType();
+                }
+            }
+            if (stream.unknownTypesPresent) {
+                stream.operator = filter_Default(stream.operator,
+                                                 Collections.singletonList(stream.rowType));
+                stream.unknownTypesPresent = false;
+            }
+            return stream;
+        }
+
         static class Flattened implements ColumnExpressionToIndex {
             RowType rowType;
             Map<TableSource,Integer> tableOffsets;
-
+            int nfields;
+            
             @Override
             public int getIndex(ColumnExpression column) {
                 Integer tableOffset = tableOffsets.get(column.getTable());
@@ -341,6 +378,13 @@ public class OperatorAssembler extends BaseRule
                     return -1;
                 return tableOffset + column.getPosition();
             }
+
+            public void addTable(RowType rowType, TableSource table) {
+                if (table != null)
+                    tableOffsets.put(table, nfields);
+                nfields += rowType.nFields();
+            }
+
         }
 
         protected RowStream assembleAncestorLookup(AncestorLookup ancestorLookup) {
