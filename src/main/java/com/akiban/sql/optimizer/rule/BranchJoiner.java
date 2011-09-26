@@ -40,33 +40,49 @@ public class BranchJoiner extends BaseRule
     protected void joinBranches(TableJoins tableJoins) {
         PlanNode scan = tableJoins.getScan();
         IndexScan index = null;
-        TableSource indexTable = null;
         if (scan instanceof IndexScan) {
             index = (IndexScan)scan;
-            indexTable = index.getLeafMostTable();
         }
         if (index == null) {
             scan = flattenBranch(scan, tableJoins.getJoins(), tableJoins.getTables());
         }
         else if (!index.isCovering()) {
+            TableSource indexTable = index.getLeafMostTable();
+            indexTable.getTable().getTree().colorBranches();
+            long indexMask = indexTable.getTable().getBranches();
             List<TableSource> ancestors = new ArrayList<TableSource>();
             TableSource branch = null;
             for (TableSource table : index.getRequiredTables()) {
-                if (ancestorOf(table, indexTable)) {
+                long tableMask = table.getTable().getBranches();
+                if ((indexMask & tableMask) == 0) {
+                    // No common branches.
+                    if ((branch == null) ||
+                         ancestorOf(table, branch)) {
+                        branch = table;
+                    }
+                    else if (!ancestorOf(branch, table)) {
+                        throw new UnsupportedSQLException("Sibling branches: " + table + 
+                                                          " and " + branch,
+                                                          null);
+                    }
+                }
+                else if ((table == indexTable) ||
+                         ((indexMask != tableMask) ?
+                          // Some different branches: one with more is higher up.
+                          ((indexMask & tableMask) == indexMask) :
+                          // Same branch: check depth.
+                          (table.getTable().getDepth() <= indexTable.getTable().getDepth()))) {
+                    // An ancestor.
                     ancestors.add(table);
                 }
-                else if (ancestorOf(indexTable, table)) {
+                else {
+                    // A descendant.
                     if (branch == null)
                         branch = indexTable;
-                }
-                else if ((branch == null) ||
-                         ancestorOf(table, branch)) {
-                    branch = table;
-                }
-                else if (!ancestorOf(branch, table)) {
-                    throw new UnsupportedSQLException("Sibling branches: " + table + 
-                                                      " and " + branch,
-                                                      null);
+                    else
+                        throw new UnsupportedSQLException("Sibling branches: " + table + 
+                                                          " and " + branch,
+                                                          null);
                 }
             }
             if (branch == indexTable) {
@@ -96,6 +112,7 @@ public class BranchJoiner extends BaseRule
         tableJoins.getOutput().replaceInput(tableJoins, scan);
     }
     
+    // Get rid of joins that are no longer needed because they were part of the index.
     protected Joinable trimJoins(Joinable joinable, Set<TableSource> requiredTables) {
         if (joinable instanceof TableSource) {
             if ((requiredTables == null) || requiredTables.contains(joinable))

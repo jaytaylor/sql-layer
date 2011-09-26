@@ -22,14 +22,18 @@ import com.akiban.ais.model.UserTable;
  */
 public class TableTree extends TableTreeBase<TableNode> 
 {
+    private int nbranches;
+
     protected TableNode createNode(UserTable table) {
         return new TableNode(table, this);
     }
 
-    /** Determine branch occurrence.
+    /** Determine branch sharing.
      * @return the number of branches. */
     public int colorBranches() {
-        return colorBranches(root, 0);
+        if (nbranches == 0)
+            nbranches = colorBranches(root, 0);
+        return nbranches;
     }
 
     private int colorBranches(TableNode node, int nbranches) {
