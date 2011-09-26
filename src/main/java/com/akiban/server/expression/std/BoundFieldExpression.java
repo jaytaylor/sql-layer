@@ -15,15 +15,12 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-
-import java.util.Collections;
-import java.util.List;
 
 public final class BoundFieldExpression implements Expression {
     @Override
@@ -76,6 +73,21 @@ public final class BoundFieldExpression implements Expression {
         @Override
         public ValueSource eval() {
             return fieldExpressionEvaluation.eval();
+        }
+
+        @Override
+        public void acquire() {
+            fieldExpressionEvaluation.acquire();
+        }
+
+        @Override
+        public boolean isShared() {
+            return fieldExpressionEvaluation.isShared();
+        }
+
+        @Override
+        public void release() {
+            fieldExpressionEvaluation.release();
         }
 
         private InnerEvaluation(int rowBindingPosition, ExpressionEvaluation fieldExpressionEvaluation) {
