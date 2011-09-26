@@ -165,45 +165,141 @@ public class BranchJoiner extends BaseRule
         join.setGroupJoin(null);
     }
 
+    // A branch analysis consists of a single branch that is the basis
+    // for a number of side branches.
+    protected static class Branching {
+        // The main branch: indexed by the depth of the table. Tables
+        // can be in here because they are needed for the query or
+        // because they are needed to branch off to a side branch.
+        private TableNode[] mainBranch;
+        // These are the query tables corresponding to that branch, in
+        // the same order.
+        private TableSource[] mainBranchSources;
+        // The branch colors for the main branch. If a table has _all
+        // these_, it is on that branch.
+        private long mainBranchMask;
+        // Each side branch and the tables that are reached that way.
+        // The key is the brachpoint, an ancestor of the required
+        // table whose ancestor is on the main branch.
+        private Map<TableNode,Collection<TableSource>> sideBranches;
+
+        // Initialize from the leaf of the main branch. Just sets up
+        // the arrays and mask; does not actually add any tables.
+        public Branching(TableNode leaf) {
+            int size = leaf.getDepth() + 1;
+            mainBranch = new TableNode[size];
+            mainBranchSources = new TableSource[size];
+            mainBranchMask = leaf.getBranches();
+            sideBranches = new HashMap<TableNode,Collection<TableSource>>();
+        }
+
+        // Initialize from a set of query tables, one of which is the leaf.
+        public Branching(Collection<TableSource> tables) {
+            this(leafTable(tables).getTable());
+        }
+
+        protected static TableSource leafTable(Collection<TableSource> tables) {
+            TableSource leaf = null;
+            for (TableSource table : tables) {
+                if ((leaf == null) || (tableSourceById.compare(leaf, table) < 0))
+                    leaf = table;
+            }
+            return leaf;
+        }
+        
+        // Add in a table, which may be on the main branch or not.
+        public boolean addTable(TableSource table) {
+            if ((table.getTable().getBranches() & mainBranchMask) == mainBranchMask) {
+                addMainBranchTable(table);
+                return true;
+            }
+            else {
+                addSideBranchTable(table);
+                return false;
+            }
+        }
+
+        public void addMainBranchTable(TableSource table) {
+            int index = table.getTable().getDepth();
+            mainBranchSources[index] = table;
+            mainBranch[index] = table.getTable();
+        }
+
+        public void addSideBranchTable(TableSource table) {
+            TableNode branchPoint = getBranchPoint(table.getTable());
+            assert (branchPoint != null);
+            Collection<TableSource> entry = sideBranches.get(branchPoint);
+            if (entry == null) {
+                entry = new HashSet<TableSource>();
+                sideBranches.put(branchPoint, entry);
+            }
+            entry.add(table);
+        }
+
+        // Get an ancestor of the given table that has an ancestor on the main branch.
+        protected TableNode getBranchPoint(TableNode table) {
+            TableNode prev;
+            do {
+                prev = table;
+                table = table.getParent();
+                if ((table.getBranches() & mainBranchMask) == mainBranchMask)
+                    return prev;
+            } while (table != null);
+            return null;
+        }
+
+        public int getNSideBranches() {
+            return sideBranches.size();
+        }
+
+        public Map<TableNode,Collection<TableSource>> getSideBranches() {
+            return sideBranches;
+        }
+
+        // Return list of tables in the main branch, root to leaf.
+        public List<TableNode> getMainBranchTableNodes() {
+            List<TableNode> result = new ArrayList<TableNode>();
+            for (int i = 0; i < mainBranch.length; i++) {
+                if (mainBranch[i] != null)
+                    result.add(mainBranch[i]);
+            }
+            return result;
+        }
+
+        // Return list of table sources in the same order.
+        public List<TableSource> getMainBranchTableSources() {
+            List<TableSource> result = new ArrayList<TableSource>();
+            for (int i = 0; i < mainBranch.length; i++) {
+                if (mainBranch[i] != null)
+                    result.add(mainBranchSources[i]);
+            }
+            return result;
+        }
+    }
+
     // Given the result of a BranchLookup / GroupScan, flatten completely.
     // Even though all the rows are there, without a
     // Product_HKeyOrdered kind of operator, it is may not be possible
     // to do this without fetching some of the data over again.
     protected PlanNode flattenBranch(PlanNode input, Joinable joins, 
                                      Collection<TableSource> tables) {
-        TableSource leaf = null;
+        if (tables.isEmpty()) return input;
+        Branching branching = new Branching(tables);
         for (TableSource table : tables) {
-            if ((leaf == null) || (tableSourceById.compare(leaf, table) < 0))
-                leaf = table;
+            branching.addTable(table);
         }
-        if (null == leaf) return input;
-        List<TableNode> branchNodes = new ArrayList<TableNode>(tables.size());
-        for (TableSource table : tables) {
-            if (ancestorOf(table, leaf)) {
-                branchNodes.add(table.getTable());
-            }
-            else {
-                throw new UnsupportedSQLException("Cross branch " + leaf + 
-                                                  " x " + table,
-                                                  null);
-            }
-        }
-        int ntables = branchNodes.size();
-        Collections.sort(branchNodes, tableNodeById);
-        List<TableSource> branchSources = 
-            new ArrayList<TableSource>(Collections.<TableSource>nCopies(ntables, null));
-        for (TableSource table : tables) {
-            int idx = branchNodes.indexOf(table.getTable());
-            branchSources.set(idx, table);
-        }
+        if (branching.getNSideBranches() > 0)
+            throw new UnsupportedSQLException("Too many branches", null);
+        List<TableNode> flattenNodes = branching.getMainBranchTableNodes();
+        List<TableSource> flattenSources = branching.getMainBranchTableSources();
         List<JoinType> joinTypes = 
-            new ArrayList<JoinType>(Collections.nCopies(ntables - 1,
+            new ArrayList<JoinType>(Collections.nCopies(flattenSources.size() - 1,
                                                         JoinType.INNER_JOIN));
         List<ConditionExpression> joinConditions = new ArrayList<ConditionExpression>(0);
-        copyJoins(joins, null, branchSources, joinTypes, joinConditions);
+        copyJoins(joins, null, flattenSources, joinTypes, joinConditions);
         if (!joinConditions.isEmpty())
             input = new Filter(input, joinConditions);
-        return new Flatten_New(input, branchNodes, branchSources, joinTypes);
+        return new Flatten_New(input, flattenNodes, flattenSources, joinTypes);
     }
 
     // Turn a tree of joins into a regular flatten list.
