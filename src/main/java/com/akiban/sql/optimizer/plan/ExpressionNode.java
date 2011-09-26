@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.server.types.AkType;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
@@ -23,6 +24,7 @@ import com.akiban.qp.expression.Expression;
 public interface ExpressionNode extends PlanElement
 {
     public DataTypeDescriptor getSQLtype();
+    public AkType getAkType();
     public ValueNode getSQLsource();
 
     public boolean isColumn();

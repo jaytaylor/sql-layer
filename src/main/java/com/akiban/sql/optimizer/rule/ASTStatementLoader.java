@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode;
 import static com.akiban.sql.optimizer.plan.PlanContext.*;
@@ -822,7 +823,7 @@ public class ASTStatementLoader extends BaseRule
     protected ExpressionNode toExpression(ValueNode valueNode)
             throws StandardException {
         if (valueNode == null) {
-            return new ConstantExpression(null);
+            return new ConstantExpression(null, AkType.NULL);
         }
         DataTypeDescriptor type = valueNode.getType();
         if (valueNode instanceof ColumnReference) {
