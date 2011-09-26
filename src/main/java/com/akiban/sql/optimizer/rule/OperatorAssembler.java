@@ -68,11 +68,13 @@ public class OperatorAssembler extends BaseRule
         private PlanContext planContext;
         private SchemaRulesContext rulesContext;
         private Schema schema;
+        private final ExpressionAssembler expressionAssembler;
 
         public Assembler(PlanContext planContext) {
             this.planContext = planContext;
             rulesContext = (SchemaRulesContext)planContext.getRulesContext();
             schema = rulesContext.getSchema();
+            expressionAssembler = new ExpressionAssembler(rulesContext);
         }
 
         public void apply() {
@@ -517,8 +519,6 @@ public class OperatorAssembler extends BaseRule
             }
             return result;
         }
-
-        private final ExpressionAssembler expressionAssembler = new ExpressionAssembler();
 
         // Assemble an expression against the given row offsets.
         protected Expression assembleExpression(ExpressionNode expr,
