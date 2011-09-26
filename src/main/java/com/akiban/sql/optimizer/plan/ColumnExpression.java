@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.server.types.AkType;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
@@ -32,11 +33,18 @@ public class ColumnExpression extends BaseExpression
 
     public ColumnExpression(TableSource table, Column column, 
                             DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+        super(sqlType, column.getType().akType(), sqlSource);
         this.table = table;
         assert (table.getTable().getTable() == column.getUserTable());
         this.column = column;
         this.position = column.getPosition();
+    }
+
+    public ColumnExpression(ColumnSource table, int position,
+                            DataTypeDescriptor sqlType, AkType type, ValueNode sqlSource) {
+        super(sqlType, type, sqlSource);
+        this.table = table;
+        this.position = position;
     }
 
     public ColumnExpression(ColumnSource table, int position, 

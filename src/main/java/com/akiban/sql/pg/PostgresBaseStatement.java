@@ -85,6 +85,10 @@ public abstract class PostgresBaseStatement implements PostgresStatement
         messenger.sendMessage();
     }
 
+    protected Bindings getBindings() {
+        return new ArrayBindings(0);
+    }
+
     protected Bindings getParameterBindings(String[] parameters) {
         ArrayBindings bindings = new ArrayBindings(parameters.length);
         for (int i = 0; i < parameters.length; i++) {

@@ -20,6 +20,7 @@ package com.akiban.qp.rowtype;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.types.AkType;
 
 public abstract class RowType
 {
@@ -66,6 +67,8 @@ public abstract class RowType
     }
 
     public abstract int nFields();
+
+    public abstract AkType typeAt(int index);
 
     public HKey hKey()
     {

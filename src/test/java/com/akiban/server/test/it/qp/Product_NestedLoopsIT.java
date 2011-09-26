@@ -28,9 +28,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 
+import static com.akiban.server.types.AkType.*;
 import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
 import static com.akiban.qp.operator.API.JoinType.INNER_JOIN;
 import static com.akiban.qp.operator.API.*;
+import static com.akiban.qp.rowtype.RowTypeChecks.checkRowTypeFields;
 import static org.junit.Assert.assertTrue;
 
 public class Product_NestedLoopsIT extends OperatorITBase
@@ -153,6 +155,7 @@ public class Product_NestedLoopsIT extends OperatorITBase
                 INNER_JOIN);
         Operator plan = product_NestedLoops(flattenCO, flattenCA, flattenCO.rowType(), flattenCA.rowType(), 0);
         RowType coaRowType = plan.rowType();
+        checkRowTypeFields(coaRowType, INT, VARCHAR, INT, INT, VARCHAR, INT, INT, VARCHAR);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
@@ -189,6 +192,7 @@ public class Product_NestedLoopsIT extends OperatorITBase
                 INNER_JOIN);
         Operator plan = product_NestedLoops(flattenCO, flattenCA, flattenCO.rowType(), flattenCA.rowType(), 0);
         RowType coaRowType = plan.rowType();
+        checkRowTypeFields(coaRowType, INT, VARCHAR, INT, INT, VARCHAR, INT, INT, VARCHAR);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),

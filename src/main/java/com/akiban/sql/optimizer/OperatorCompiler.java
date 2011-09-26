@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.qp.operator.Operator;
+import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.simplified.*;
 import com.akiban.sql.optimizer.simplified.SimplifiedQuery.*;
 
@@ -1056,8 +1057,8 @@ public class OperatorCompiler
         return schema.userTableRowType(table.getTable());
     }
 
-    protected ValuesRowType valuesRowType (int nfields) {
-        return schema.newValuesType(nfields);
+    protected ValuesRowType valuesRowType (AkType[] fields) {
+        return schema.newValuesType(fields);
     }
     
     /** Return an index bound for the given index and expressions.

@@ -18,6 +18,7 @@ package com.akiban.server.expression.std;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
@@ -43,27 +44,24 @@ public final class FieldExpression implements Expression {
 
     @Override
     public ExpressionEvaluation evaluation() {
-        return new InnerEvaluation(rowType, fieldIndex, akType);
+        return new InnerEvaluation(rowType, fieldIndex, valueType());
     }
 
     @Override
     public AkType valueType() {
-        return akType;
+        return rowType.typeAt(fieldIndex);
     }
 
-    public FieldExpression(RowType rowType, int fieldIndex, AkType expectedAkType) {
-        ArgumentValidation.notNull("AkType", expectedAkType);
+    public FieldExpression(RowType rowType, int fieldIndex) {
         this.rowType = rowType;
         this.fieldIndex = fieldIndex;
         if (this.fieldIndex < 0 || this.fieldIndex >= this.rowType.nFields()) {
             throw new IllegalArgumentException("fieldIndex out of range: " + this.fieldIndex + " for " + this.rowType);
         }
-        this.akType = expectedAkType;
     }
 
     private final RowType rowType;
     private final int fieldIndex;
-    private final AkType akType;
 
     // nested classes
 
@@ -80,7 +78,7 @@ public final class FieldExpression implements Expression {
             ValueSource incomingSource = row.eval(fieldIndex);
             AkType incomingAkType = incomingSource.getConversionType();
             if (incomingAkType != AkType.NULL && !akType.equals(incomingAkType)) {
-                throw new IllegalArgumentException(
+                throw new AkibanInternalException(
                         row + "[" + fieldIndex + "] had akType " + incomingAkType + "; expected " + akType
                 );
             }

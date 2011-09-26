@@ -18,6 +18,7 @@ package com.akiban.server.expression.std;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.ValuesRowType;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
@@ -30,8 +31,8 @@ import static org.junit.Assert.assertFalse;
 public final class FieldExpressionTest {
     @Test
     public void twoRows() {
-        ValuesRowType dummyType = new ValuesRowType(null, 1, 1);
-        Expression fieldExpression = new FieldExpression(dummyType, 0, AkType.LONG);
+        ValuesRowType dummyType = new ValuesRowType(null, 1, AkType.LONG);
+        Expression fieldExpression = new FieldExpression(dummyType, 0);
 
         assertFalse("shouldn't be constant", fieldExpression.isConstant());
         assertEquals("type", AkType.LONG, fieldExpression.valueType());
@@ -48,8 +49,8 @@ public final class FieldExpressionTest {
     public void noRows() {
         final ExpressionEvaluation evaluation;
         try {
-            ValuesRowType dummyType = new ValuesRowType(null, 1, 1);
-            Expression fieldExpression = new FieldExpression(dummyType, 0, AkType.LONG);
+            ValuesRowType dummyType = new ValuesRowType(null, 1, AkType.LONG);
+            Expression fieldExpression = new FieldExpression(dummyType, 0);
             assertEquals("type", AkType.LONG, fieldExpression.valueType());
             evaluation = fieldExpression.evaluation();
         } catch (Exception e) {
@@ -63,9 +64,9 @@ public final class FieldExpressionTest {
         final ExpressionEvaluation evaluation;
         final Row badRow;
         try {
-            ValuesRowType dummyType1 = new ValuesRowType(null, 1, 1);
-            evaluation = new FieldExpression(dummyType1, 0, AkType.LONG).evaluation();
-            ValuesRowType dummyType2 = new ValuesRowType(null, 2, 1); // similar, but not same!
+            ValuesRowType dummyType1 = new ValuesRowType(null, 1, AkType.LONG);
+            evaluation = new FieldExpression(dummyType1, 0).evaluation();
+            ValuesRowType dummyType2 = new ValuesRowType(null, 2, AkType.LONG); // similar, but not same!
             badRow = new ValuesRow(dummyType2, new Object[] { 31L });
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -75,23 +76,23 @@ public final class FieldExpressionTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void indexTooLow() {
-        ValuesRowType dummyType = new ValuesRowType(null, 1, 1);
-        new FieldExpression(dummyType, -1, AkType.LONG);
+        ValuesRowType dummyType = new ValuesRowType(null, 1, AkType.LONG);
+        new FieldExpression(dummyType, -1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void indexTooHigh() {
-        ValuesRowType dummyType = new ValuesRowType(null, 1, 1);
-        new FieldExpression(dummyType, 1, AkType.LONG);
+        ValuesRowType dummyType = new ValuesRowType(null, 1, AkType.LONG);
+        new FieldExpression(dummyType, 1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = AkibanInternalException.class)
     public void wrongFieldType() {
         final ExpressionEvaluation evaluation;
         final Row badRow;
         try {
-            ValuesRowType dummyType = new ValuesRowType(null, 1, 1);
-            evaluation = new FieldExpression(dummyType, 0, AkType.LONG).evaluation();
+            ValuesRowType dummyType = new ValuesRowType(null, 1, AkType.LONG);
+            evaluation = new FieldExpression(dummyType, 0).evaluation();
             badRow = new ValuesRow(dummyType, new Object[] { 31.4159 });
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -101,19 +102,13 @@ public final class FieldExpressionTest {
 
     @Test(expected = NullPointerException.class)
     public void nullRowType() {
-        new FieldExpression(null, 0, AkType.LONG);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void nullAkType() {
-        ValuesRowType dummyType = new ValuesRowType(null, 1, 1);
-        new FieldExpression(dummyType, 0, null);
+        new FieldExpression(null, 0);
     }
     
     @Test
     public void testSharing() {
-        ValuesRowType dummyType = new ValuesRowType(null, 1, 1);
-        ExpressionEvaluation evaluation = new FieldExpression(dummyType, 0, AkType.LONG).evaluation();
+        ValuesRowType dummyType = new ValuesRowType(null, 1, AkType.LONG);
+        ExpressionEvaluation evaluation = new FieldExpression(dummyType, 0).evaluation();
 
         ValuesRow row = new ValuesRow(dummyType, new Object[]{27L});
         evaluation.of(row);
