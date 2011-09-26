@@ -33,11 +33,14 @@ public class BranchJoiner extends BaseRule
     public void apply(PlanContext planContext) {
         List<TableJoins> groups = new TableJoinsFinder().find(planContext.getPlan());
         for (TableJoins tableJoins : groups) {
-            joinBranches(tableJoins);
+            PlanNode joins = joinBranches(tableJoins);
+            // TODO: Better to keep the tableJoins and just replace the
+            // inside? Do we need its state any more?
+            tableJoins.getOutput().replaceInput(tableJoins, joins);
         }
     }
 
-    protected void joinBranches(TableJoins tableJoins) {
+    protected PlanNode joinBranches(TableJoins tableJoins) {
         PlanNode scan = tableJoins.getScan();
         IndexScan index = null;
         if (scan instanceof IndexScan) {
@@ -53,125 +56,90 @@ public class BranchJoiner extends BaseRule
                 ((GroupScan)scan).setTables(ntables);
                 tables = ntables;
             }
-            scan = flattenBranch(scan, tableJoins.getJoins(), tables);
+            return flattenBranches(scan, tableJoins.getJoins(), tables);
         }
-        else if (!index.isCovering()) {
-            TableSource indexTable = index.getLeafMostTable();
-            indexTable.getTable().getTree().colorBranches();
-            long indexMask = indexTable.getTable().getBranches();
-            List<TableSource> ancestors = new ArrayList<TableSource>();
-            TableSource branch = null;
-            for (TableSource table : index.getRequiredTables()) {
-                long tableMask = table.getTable().getBranches();
-                if ((indexMask & tableMask) == 0) {
-                    // No common branches.
-                    if ((branch == null) ||
-                         ancestorOf(table, branch)) {
-                        branch = table;
-                    }
-                    else if (!ancestorOf(branch, table)) {
-                        throw new UnsupportedSQLException("Sibling branches: " + table + 
-                                                          " and " + branch,
-                                                          null);
-                    }
-                }
-                else if ((table == indexTable) ||
-                         ((indexMask != tableMask) ?
-                          // Some different branches: one with more is higher up.
-                          ((indexMask & tableMask) == indexMask) :
-                          // Same branch: check depth.
-                          (table.getTable().getDepth() <= indexTable.getTable().getDepth()))) {
-                    // An ancestor.
-                    ancestors.add(table);
-                }
-                else {
-                    // A descendant.
-                    if (branch == null)
-                        branch = indexTable;
-                    else
-                        throw new UnsupportedSQLException("Sibling branches: " + table + 
-                                                          " and " + branch,
-                                                          null);
-                }
-            }
-            if (branch == indexTable) {
-                ancestors.remove(indexTable);
-                scan = new BranchLookup(scan, indexTable, branch);
-                branch = null;
-            }
-            if (!ancestors.isEmpty()) {
-                Collections.sort(ancestors, tableSourceById);
-                scan = new AncestorLookup(scan, indexTable, ancestors);
-            }
-            if (branch != null) {
-                scan = new BranchLookup(scan, 
-                                        (ancestors.isEmpty() ? 
-                                         indexTable : 
-                                         ancestors.get(0)), 
-                                        branch);
-            }
-            Joinable requiredJoins = trimJoins(tableJoins.getJoins(), 
-                                               index.getRequiredTables());
-            if (requiredJoins != null)
-                scan = new Flatten(scan, requiredJoins);
+        if (index.isCovering()) {
+            return index;
         }
-        // TODO: Can now prepone some of the conditions before the flatten.
-        // TODO: Better to keep the tableJoins and just replace the
-        // inside? Do we need its state any more?
-        tableJoins.getOutput().replaceInput(tableJoins, scan);
-    }
-    
-    // Get rid of joins that are no longer needed because they were part of the index.
-    protected Joinable trimJoins(Joinable joinable, Set<TableSource> requiredTables) {
-        if (joinable instanceof TableSource) {
-            if ((requiredTables == null) || requiredTables.contains(joinable))
-                return joinable;
-            else
-                return null;
-        }
-        else if (joinable instanceof JoinNode) {
-            JoinNode join = (JoinNode)joinable;
-            removeGroupJoin(join);
-            Joinable oleft = join.getLeft();
-            Joinable oright = join.getRight();
-            Joinable nleft = trimJoins(oleft, requiredTables);
-            Joinable nright = trimJoins(oright, requiredTables);
-            if ((oleft == nleft) && (oright == nright))
-                return joinable;
-            else if (nleft == null)
-                return nright;
-            else if (nright == null)
-                return nleft;
+        // Partition tables by relationship with where the index points.
+        TableSource indexTable = index.getLeafMostTable();
+        TableNode indexTableNode = indexTable.getTable();
+        indexTableNode.getTree().colorBranches();
+        long indexMask = indexTableNode.getBranches();
+        List<TableSource> ancestors = new ArrayList<TableSource>();
+        List<TableSource> descendants = new ArrayList<TableSource>();
+        List<TableSource> branched = new ArrayList<TableSource>();
+        for (TableSource table : index.getRequiredTables()) {
+            long tableMask = table.getTable().getBranches();
+            if ((indexMask & tableMask) == 0) {
+                // No common branches.
+                branched.add(table);
+            }
+            else if ((table == indexTable) ||
+                     ((indexMask != tableMask) ?
+                      // Some different branches: one with more is higher up.
+                      ((indexMask & tableMask) == indexMask) :
+                      // Same branch: check depth.
+                      (table.getTable().getDepth() <= indexTableNode.getDepth()))) {
+                // An ancestor.
+                ancestors.add(table);
+            }
             else {
-                join.setLeft(nleft);
-                join.setRight(nright);
-                return join;
+                // A descendant.
+                descendants.add(table);
             }
         }
+        if (descendants.isEmpty() && branched.isEmpty()) {
+            if (ancestors.isEmpty()) 
+                return scan;
+            // Easy case 1: up a single branch from the index row. Look up and flatten.
+            Collections.sort(ancestors, tableSourceById);
+            AncestorLookup_New al = new AncestorLookup_New(scan, indexTable, ancestors);
+            return flattenJoins(al, tableJoins.getJoins(),
+                                al.getAncestors(), al.getTables());
+        }
+        Branching branching;
+        // Fill in the main branch.
+        if (descendants.isEmpty())
+            branching = new Branching(indexTable);
         else
-            return joinable;
-    }
-
-    // We only want joins for their flattening pattern.
-    // Make explain output more obvious by removing group join traces.
-    // TODO: Also rejecting non-group joins; those could be supported with Select.
-    protected void removeGroupJoin(JoinNode join) {
-        List<ConditionExpression> conditions = join.getJoinConditions();
-        int i = 0;
-        while (i < conditions.size()) {
-            ConditionExpression cond = conditions.get(i);
-            if (cond.getImplementation() == 
-                ConditionExpression.Implementation.GROUP_JOIN) {
-                conditions.remove(i);
-            }
-            else {
-                i++;
-            }
+            branching = new Branching(descendants);
+        for (TableSource ancestor : ancestors)
+            branching.addMainBranchTable(ancestor);
+        for (TableSource descendant : descendants)
+            branching.addTable(descendant);
+        // And the side branches.
+        for (TableSource table : branched)
+            branching.addTable(table);
+        
+        if (descendants.isEmpty() && ancestors.isEmpty() &&
+            (branching.getNSideBranches() == 1)) {
+            // Easy case 2: nothing on the original branch and just one side branch.
+            // Fetch it in the same stream.
+            Map.Entry<TableNode,List<TableSource>> entry =
+                branching.getSideBranches().entrySet().iterator().next();
+            scan = new BranchLookup_New(scan, indexTableNode, 
+                                        entry.getKey(), entry.getValue());
+            return flattenBranches(scan, tableJoins.getJoins(), entry.getValue());
         }
-        if (!conditions.isEmpty())
-            throw new UnsupportedSQLException("Non group join",
-                                              conditions.get(0).getSQLsource());
-        join.setGroupJoin(null);
+
+        // Load the main branch.
+        List<TableNode> mainBranchNodes = branching.getMainBranchTableNodes();
+        List<TableSource> mainBranchSources = branching.getMainBranchTableSources();
+        if (!descendants.isEmpty()) {
+            int idx = mainBranchNodes.indexOf(indexTableNode);
+            assert (idx >= 0);
+            int size = mainBranchNodes.size();
+            mainBranchNodes.subList(idx, size).clear();
+            mainBranchSources.subList(idx, size).clear();
+            scan = new BranchLookup_New(scan, indexTableNode, 
+                                        indexTableNode, descendants);
+        }
+        if (!mainBranchNodes.isEmpty()) {
+            scan = new AncestorLookup_New(scan, indexTableNode, 
+                                          mainBranchNodes, mainBranchSources);
+        }
+        return flattenBranches(scan, tableJoins.getJoins(), branching);
     }
 
     // A branch analysis consists of a single branch that is the basis
@@ -201,6 +169,10 @@ public class BranchJoiner extends BaseRule
             leaf.getTree().colorBranches();
             mainBranchMask = leaf.getBranches();
             sideBranches = new HashMap<TableNode,List<TableSource>>();
+        }
+
+        public Branching(TableSource leaf) {
+            this(leaf.getTable());
         }
 
         // Initialize from a set of query tables, one of which is the leaf.
@@ -291,35 +263,38 @@ public class BranchJoiner extends BaseRule
     // Even though all the rows are there, without a
     // Product_HKeyOrdered kind of operator, it is may not be possible
     // to do this without fetching some of the data over again.
-    protected PlanNode flattenBranch(PlanNode input, Joinable joins, 
-                                     Collection<TableSource> tables) {
-        if (tables.isEmpty()) return input;
+    protected PlanNode flattenBranches(PlanNode input, Joinable joins, 
+                                       Collection<TableSource> tables) {
+        if (tables.isEmpty()) 
+            return input;
+
         Branching branching = new Branching(tables);
         for (TableSource table : tables) {
             branching.addTable(table);
         }
-
-        List<TableNode> flattenNodes = branching.getMainBranchTableNodes();
-        List<TableSource> flattenSources = branching.getMainBranchTableSources();
-        List<JoinType> joinTypes = 
-            new ArrayList<JoinType>(Collections.nCopies(flattenSources.size() - 1,
-                                                        JoinType.INNER_JOIN));
-        List<ConditionExpression> joinConditions = new ArrayList<ConditionExpression>(0);
-        copyJoins(joins, null, flattenSources, joinTypes, joinConditions);
         // Any tables that need to be moved to a side branch didn't
         // come from the initial tree after all.
-        tables.retainAll(flattenSources);
-        if (!joinConditions.isEmpty())
-            input = new Filter(input, joinConditions);
-        input = new Flatten_New(input, flattenNodes, flattenSources, joinTypes);
+        tables.retainAll(branching.getMainBranchTableSources());
+        return flattenBranches(input, joins, branching);
+    }
+
+    protected PlanNode flattenBranches(PlanNode input, Joinable joins,
+                                       Branching branching) {
+        List<TableNode> flattenNodes = branching.getMainBranchTableNodes();
+        List<TableSource> flattenSources = branching.getMainBranchTableSources();
+
+        // Flatten the main branch.
+        input = flattenJoins(input, joins, flattenNodes, flattenSources);
         
         int nbranches = branching.getNSideBranches();
         if (nbranches > 0) {
+            // Need a product of several branches.
             List<PlanNode> subplans = new ArrayList<PlanNode>(nbranches + 1);
             subplans.add(input);
             input = new Product(subplans);
 
-            List<TableNode> branchpoints = new ArrayList<TableNode>(branching.getSideBranches().keySet());
+            List<TableNode> branchpoints = 
+                new ArrayList<TableNode>(branching.getSideBranches().keySet());
             Collections.sort(branchpoints, tableNodeById);
             for (TableNode branchpoint : branchpoints) {
                 List<TableSource> subbranch = 
@@ -330,11 +305,27 @@ public class BranchJoiner extends BaseRule
                                                         branchpoint,
                                                         subbranch);
                 // Try to flatten just this side branch, maybe giving nested product.
-                subplan = flattenBranch(subplan, joins, subbranch);
+                subplan = flattenBranches(subplan, joins, subbranch);
                 subplans.add(subplan);
             }
         }
+        // TODO: Can now prepone some of the conditions before the flatten.
         return input;
+    }
+
+    // Given tables that need to be flattened, account for join types
+    // and conditions and generate the actual Flatten node.
+    protected PlanNode flattenJoins(PlanNode input, Joinable joins,
+                                    List<TableNode> flattenNodes,
+                                    List<TableSource> flattenSources) {
+        List<JoinType> joinTypes = 
+            new ArrayList<JoinType>(Collections.nCopies(flattenSources.size() - 1,
+                                                        JoinType.INNER_JOIN));
+        List<ConditionExpression> joinConditions = new ArrayList<ConditionExpression>(0);
+        copyJoins(joins, null, flattenSources, joinTypes, joinConditions);
+        if (!joinConditions.isEmpty())
+            input = new Filter(input, joinConditions);
+        return new Flatten_New(input, flattenNodes, flattenSources, joinTypes);
     }
 
     // Turn a tree of joins into a regular flatten list.
@@ -394,15 +385,6 @@ public class BranchJoiner extends BaseRule
             // TODO: Column from outer table okay, too. Need general predicate for that.
             return false;
         return true;
-    }
-
-    /** Is <code>t1</code> an ancestor of <code>t2</code>? */
-    protected boolean ancestorOf(TableSource t1, TableSource t2) {
-        do {
-            if (t1 == t2) return true;
-            t2 = t2.getParentTable();
-        } while (t2 != null);
-        return false;
     }
 
     static final Comparator<TableSource> tableSourceById = new Comparator<TableSource>() {

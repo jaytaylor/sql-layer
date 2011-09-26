@@ -16,27 +16,40 @@
 package com.akiban.sql.optimizer.plan;
 
 import java.util.List;
+import java.util.ArrayList;
 
-public class BranchLookup_New extends BasePlanWithInput
+public class AncestorLookup_New extends BasePlanWithInput
 {
-    private TableNode source, branch;
+    private TableNode source;
+    private List<TableNode> ancestors;
     private List<TableSource> tables;
 
-    public BranchLookup_New(PlanNode input, 
-                            TableNode source, TableNode branch,
-                            List<TableSource> tables) {
+    public AncestorLookup_New(PlanNode input, TableNode source,
+                              List<TableNode> ancestors,
+                              List<TableSource> tables) {
         super(input);
         this.source = source;
-        this.branch = branch;
+        this.ancestors = ancestors;
         this.tables = tables;
+    }
+
+    public AncestorLookup_New(PlanNode input, TableSource source,
+                              List<TableSource> tables) {
+        super(input);
+        this.source = source.getTable();
+        this.tables = tables;
+        this.ancestors = new ArrayList<TableNode>(tables.size());
+        for (TableSource table : tables) {
+            ancestors.add(table.getTable());
+        }
     }
 
     public TableNode getSource() {
         return source;
     }
 
-    public TableNode getBranch() {
-        return branch;
+    public List<TableNode> getAncestors() {
+        return ancestors;
     }
 
     /** The tables that this branch lookup introduces into the stream. */
@@ -60,12 +73,13 @@ public class BranchLookup_New extends BasePlanWithInput
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
+        ancestors = new ArrayList<TableNode>(ancestors);
         tables = duplicateList(tables, map);
     }
 
     @Override
     public String summaryString() {
-        return super.summaryString() + "(" + source + " -> " + branch + ")";
+        return super.summaryString() + "(" + source + " -> " + ancestors + ")";
     }
 
 }
