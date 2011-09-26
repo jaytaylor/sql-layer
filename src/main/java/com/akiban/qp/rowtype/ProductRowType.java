@@ -16,6 +16,7 @@
 package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.types.AkType;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -39,6 +40,13 @@ public class ProductRowType extends DerivedRowType
     public int nFields()
     {
         return leftType.nFields() + rightType.nFields() - branchType.nFields();
+    }
+
+    @Override
+    public AkType typeAt(int index) {
+        if (index < leftType.nFields())
+            return leftType.typeAt(index);
+        return rightType.typeAt(index - leftType.nFields() + branchType.nFields());
     }
 
     // ProductRowType interface

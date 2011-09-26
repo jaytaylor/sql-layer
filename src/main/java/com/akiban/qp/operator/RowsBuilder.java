@@ -92,7 +92,7 @@ public final class RowsBuilder {
     }
 
     public RowsBuilder(AkType... types) {
-        rowType = new ValuesRowType(null, COUNT.incrementAndGet(), types.length);
+        rowType = new ValuesRowType(null, COUNT.incrementAndGet(), types);
         this.types = types;
     }
 

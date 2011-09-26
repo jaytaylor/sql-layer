@@ -19,39 +19,22 @@ import com.akiban.server.types.AkType;
 
 import java.util.Arrays;
 
-public class ValuesRowType extends DerivedRowType
-{
-    // Object interface
+import static org.junit.Assert.*;
 
-    @Override
-    public String toString()
-    {
-        return "values(" + Arrays.toString(types) + ')';
+public final class RowTypeChecks {
+    public static void checkRowTypeFields(String message, RowType rowType, AkType... expected) {
+        AkType[] actual = new AkType[rowType.nFields()];
+        for (int i=0; i < actual.length; ++i) {
+            actual[i] = rowType.typeAt(i);
+        }
+        if (!Arrays.equals(expected, actual)) {
+            // I like the toString representation more, so check that first
+            assertEquals(message, Arrays.toString(expected), Arrays.toString(actual));
+            assertArrayEquals(message, expected, actual);
+        }
     }
 
-
-    // RowType interface
-
-    @Override
-    public int nFields()
-    {
-        return types.length;
+    public static void checkRowTypeFields(RowType rowType, AkType... expected) {
+        checkRowTypeFields(null, rowType, expected);
     }
-
-    @Override
-    public AkType typeAt(int index) {
-        return types[index];
-    }
-
-    // ValuesRowType interface
-
-    public ValuesRowType(Schema schema, int typeId, AkType... types)
-    {
-        super(schema, typeId);
-        this.types = types;
-    }
-
-    // Object state
-
-    private final AkType[] types;
 }
