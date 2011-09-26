@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.server.types.AkType;
+
 import java.util.List;
 import java.util.ArrayList;
 
@@ -38,6 +40,16 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource
             return 0;
         else
             return expressions.get(0).size();
+    }
+
+    public AkType[] getFieldTypes() {
+        if (expressions.isEmpty())
+            return new AkType[0];
+        List<ExpressionNode> nodes = expressions.get(0);
+        AkType[] result = new AkType[nodes.size()];
+        for (int i=0; i < result.length; ++i) {
+            result[i] = nodes.get(0).
+        }
     }
 
     @Override

@@ -22,6 +22,7 @@ import static com.akiban.qp.expression.API.*;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
+import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
@@ -250,7 +251,7 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleExpressionsSource(ExpressionsSource expressionsSource) {
             RowStream stream = new RowStream();
-            stream.rowType = valuesRowType(expressionsSource.getNFields());
+            stream.rowType = valuesRowType(expressionsSource.getFieldTypes());
             List<Row> rows = new ArrayList<Row>(expressionsSource.getExpressions().size());
             for (List<ExpressionNode> exprs : expressionsSource.getExpressions()) {
                 // TODO: Maybe it would be simpler if ExpressionRow used Lists instead
@@ -615,8 +616,8 @@ public class OperatorAssembler extends BaseRule
             return schema.userTableRowType(table.getTable());
         }
 
-        protected ValuesRowType valuesRowType(int nfields) {
-            return schema.newValuesType(nfields);
+        protected ValuesRowType valuesRowType(AkType[] fields) {
+            return schema.newValuesType(fields);
         }
     
         /** Return an index bound for the given index and expressions.
