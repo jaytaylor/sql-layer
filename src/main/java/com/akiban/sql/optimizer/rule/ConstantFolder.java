@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.qp.expression.Expression;
@@ -303,7 +304,8 @@ public class ConstantFolder extends BaseRule
                             if (isAggregateZero(afun))
                                 value = Integer.valueOf(0);
                             return new ConstantExpression(value,
-                                                          col.getSQLtype(), 
+                                                          col.getSQLtype(),
+                                                          col.getAkType(),
                                                           col.getSQLsource());
                         }
                     }
@@ -333,7 +335,7 @@ public class ConstantFolder extends BaseRule
                     // NullSource that replaced it, but then that'd have
                     // to eval specially.
                     return new ConstantExpression(null,
-                                                  col.getSQLtype(), col.getSQLsource());
+                                                  col.getSQLtype(), AkType.NULL, col.getSQLsource());
             }
             return col;
         }
@@ -514,7 +516,7 @@ public class ConstantFolder extends BaseRule
             SubqueryEmptiness empty = isEmptySubquery(expr.getSubquery());
             if (empty == SubqueryEmptiness.EMPTY) {
                 return new ConstantExpression(null,
-                                              expr.getSQLtype(), expr.getSQLsource());
+                                              expr.getSQLtype(), AkType.NULL, expr.getSQLsource());
             }
             ExpressionNode inner = getSubqueryColumn(expr.getSubquery());
             if (inner != null) {

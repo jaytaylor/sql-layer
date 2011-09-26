@@ -18,6 +18,8 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.API;
 
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
@@ -27,15 +29,19 @@ public class ConstantExpression extends BaseExpression
     private Object value;
 
     public ConstantExpression(Object value, 
-                              DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+                              DataTypeDescriptor sqlType, AkType type, ValueNode sqlSource) {
+        super(sqlType, type, sqlSource);
         if (value instanceof Integer)
             value = new Long(((Integer)value).intValue());
         this.value = value;
     }
 
-    public ConstantExpression(Object value) {
-        this(value, null, null);
+    public ConstantExpression(Object value, DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        this(value, sqlType, FromObjectValueSource.reflectivelyGetAkType(value), sqlSource);
+    }
+
+    public ConstantExpression(Object value, AkType type) {
+        this(value, null, type, null);
     }
 
     @Override
