@@ -1,4 +1,5 @@
 SelectQuery@19762f
-  ResultSet@19e215b[null, 0]
-    Filter@1797795[]
-      ExpressionsSource@9ff0a8[[]]
+  ResultSet@5d469658[_SQL_COL_1, _SQL_COL_2]
+    Project@45389b3f[null, 0]
+      Filter@1797795[]
+        ExpressionsSource@9ff0a8[[]]

@@ -15,14 +15,14 @@
 
 package com.akiban.qp.exec;
 
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.Operator;
 
 import java.util.List;
 
 public interface Plannable {
-    List<PhysicalOperator> getInputOperators();
+    List<Operator> getInputOperators();
 
     String describePlan();
 
-    String describePlan(PhysicalOperator inputOperator);
+    String describePlan(Operator inputOperator);
 }

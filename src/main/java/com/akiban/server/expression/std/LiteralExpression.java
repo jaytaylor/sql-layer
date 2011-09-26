@@ -15,7 +15,7 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -111,6 +111,19 @@ public final class LiteralExpression implements Expression {
         @Override
         public ValueSource eval() {
             return valueSource;
+        }
+
+        @Override
+        public void acquire() {
+        }
+
+        @Override
+        public boolean isShared() {
+            return false;
+        }
+
+        @Override
+        public void release() {
         }
 
         private InternalEvaluation(ValueSource valueSource) {

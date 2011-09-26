@@ -16,7 +16,8 @@
 package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.*;
-import com.akiban.qp.expression.Expression;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.types.AkType;
 
 import java.util.*;
 
@@ -64,9 +65,9 @@ public class Schema
         return new ProductRowType(this, nextTypeId(), leftType, rightType);
     }
 
-    public synchronized ValuesRowType newValuesType(int nfields)
+    public synchronized ValuesRowType newValuesType(AkType... fields)
     {
-        return new ValuesRowType(this, nextTypeId(), nfields);
+        return new ValuesRowType(this, nextTypeId(), fields);
     }
 
     public synchronized Set<RowType> userTableTypes()

@@ -15,10 +15,10 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.qp.operator.Operator;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.Plannable;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -70,7 +70,7 @@ public abstract class BasePlannable extends BasePlanNode
             sb.append("  ");
         sb.append(operator);
         into.add(sb.toString());
-        for (PhysicalOperator inputOperator : operator.getInputOperators()) {
+        for (Operator inputOperator : operator.getInputOperators()) {
             explainPlan(inputOperator, into, depth+1);
         }
     }

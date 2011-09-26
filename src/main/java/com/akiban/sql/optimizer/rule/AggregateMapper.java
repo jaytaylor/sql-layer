@@ -99,25 +99,21 @@ public class AggregateMapper extends BaseRule
                 else if (n instanceof Sort) {
                     remapA(((Sort)n).getOrderBy());
                 }
-                else if (n instanceof ResultSet) {
-                    remapA(((ResultSet)n).getResults());
+                else if (n instanceof Project) {
+                    remap(((Project)n).getFields());
                 }
                 else
                     break;
             }
         }
 
-        protected void remap(Collection<? extends ExpressionNode> exprs) {
-            // TODO: If there were a boolean aggregate function, we'd
-            // need to be able to do HAVING F(X) and so would need to
-            // replace it in the list. As it is, we only replace nodes
-            // beneath.
-            for (ExpressionNode expr : exprs) {
-                expr.accept(this);
+        protected <T extends ExpressionNode> void remap(List<T> exprs) {
+            for (int i = 0; i < exprs.size(); i++) {
+                exprs.set(i, (T)exprs.get(i).accept(this));
             }
         }
 
-        protected void remapA(Collection<? extends AnnotatedExpression> exprs) {
+        protected void remapA(List<? extends AnnotatedExpression> exprs) {
             for (AnnotatedExpression expr : exprs) {
                 expr.setExpression(expr.getExpression().accept(this));
             }
@@ -150,8 +146,8 @@ public class AggregateMapper extends BaseRule
             if (nexpr != null)
                 return nexpr.accept(this);
             int position = source.addAggregate((AggregateFunctionExpression)expr);
-            nexpr = new ColumnExpression(source, position, 
-                                         expr.getSQLtype(), expr.getSQLsource());
+            nexpr = new ColumnExpression(source, position,
+                                         expr.getSQLtype(), expr.getAkType(), expr.getSQLsource());
             map.put(expr, nexpr);
             return nexpr;
         }

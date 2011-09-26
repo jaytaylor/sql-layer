@@ -17,6 +17,7 @@ package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.types.AkType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +60,13 @@ public class FlattenedRowType extends DerivedRowType
     public int nFields()
     {
         return nFields;
+    }
+
+    @Override
+    public AkType typeAt(int index) {
+        if (index < parent.nFields())
+            return parent.typeAt(index);
+        return child.typeAt(index - parent.nFields());
     }
 
     @Override

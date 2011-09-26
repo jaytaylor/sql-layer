@@ -84,9 +84,9 @@ public final class LongOpExpressionTest extends ComposedExpressionTestBase {
 
     @Test
     public void usingFieldExpressions() {
-        ValuesRowType dummyType = new ValuesRowType(null, 1, 2);
-        Expression left = new FieldExpression(dummyType, 0, AkType.LONG);
-        Expression right = new FieldExpression(dummyType, 1, AkType.DOUBLE);
+        ValuesRowType dummyType = new ValuesRowType(null, 1, AkType.LONG, AkType.DOUBLE);
+        Expression left = new FieldExpression(dummyType, 0);
+        Expression right = new FieldExpression(dummyType, 1);
         Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
 
         assertFalse("top shouldn't be constant", top.isConstant());

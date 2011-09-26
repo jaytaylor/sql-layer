@@ -15,33 +15,33 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
+
+import com.akiban.qp.operator.Operator;
+import static com.akiban.qp.expression.API.*;
+
 import com.akiban.server.error.UnsupportedSQLException;
 
+import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
-import com.akiban.sql.optimizer.plan.ResultSet.ResultExpression;
+import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
-import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.UndefBindings;
-import static com.akiban.qp.physicaloperator.API.*;
-// TODO: Why aren't these in API?
+import com.akiban.qp.operator.UndefBindings;
+import static com.akiban.qp.operator.API.*;
 import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.physicaloperator.UpdateFunction;
-import com.akiban.qp.physicaloperator.Insert_Default;
-import com.akiban.qp.physicaloperator.Update_Default;
-import com.akiban.qp.physicaloperator.Delete_Default;
+import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.*;
 
-import static com.akiban.qp.expression.API.*;
-import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;
+import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
@@ -52,7 +52,6 @@ import com.akiban.server.aggregation.AggregatorFactory;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.GroupTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
@@ -70,11 +69,13 @@ public class OperatorAssembler extends BaseRule
         private PlanContext planContext;
         private SchemaRulesContext rulesContext;
         private Schema schema;
+        private final ExpressionAssembler expressionAssembler;
 
         public Assembler(PlanContext planContext) {
             this.planContext = planContext;
             rulesContext = (SchemaRulesContext)planContext.getRulesContext();
             schema = rulesContext.getSchema();
+            expressionAssembler = new ExpressionAssembler(rulesContext);
         }
 
         public void apply() {
@@ -99,10 +100,7 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleQuery(planQuery);
             List<PhysicalResultColumn> resultColumns;
             if (planQuery instanceof ResultSet) {
-                List<ResultExpression> results = ((ResultSet)planQuery).getResults();
-                stream.operator = 
-                    project_Default(stream.operator, stream.rowType,
-                                    assembleExpressions(results, stream.fieldOffsets));
+                List<ResultField> results = ((ResultSet)planQuery).getFields();
                 resultColumns = getResultColumns(results);
             }
             else {
@@ -115,13 +113,20 @@ public class OperatorAssembler extends BaseRule
 
         protected PhysicalUpdate insertStatement(InsertStatement insertStatement) {
             PlanNode planQuery = insertStatement.getQuery();
+            List<ExpressionNode> projectFields = null;
+            if (planQuery instanceof Project) {
+                Project project = (Project)planQuery;
+                projectFields = project.getFields();
+                planQuery = project.getInput();
+            }
             RowStream stream = assembleQuery(planQuery);
             UserTableRowType targetRowType = 
                 tableRowType(insertStatement.getTargetTable());
             List<Expression> inserts = null;
-            if (planQuery instanceof ResultSet) {
-                inserts = assembleExpressions(((ResultSet)planQuery).getResults(),
-                                              stream.fieldOffsets);
+            if (projectFields != null) {
+                // In the common case, we can project into a wider row
+                // of the correct type directly.
+                inserts = assembleExpressions(projectFields, stream.fieldOffsets);
             }
             else {
                 // VALUES just needs each field, which will get rearranged below.
@@ -146,7 +151,7 @@ public class OperatorAssembler extends BaseRule
             inserts = Arrays.asList(row);
             stream.operator = project_Table(stream.operator, stream.rowType,
                                             targetRowType, inserts);
-            UpdatePlannable plan = new Insert_Default(stream.operator);
+            UpdatePlannable plan = insert_Default(stream.operator);
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
@@ -156,8 +161,8 @@ public class OperatorAssembler extends BaseRule
                 tableRowType(updateStatement.getTargetTable());
             assert (stream.rowType == targetRowType);
             List<UpdateColumn> updateColumns = updateStatement.getUpdateColumns();
-            List<Expression> updates = assembleExpressions(updateColumns,
-                                                           stream.fieldOffsets);
+            List<Expression> updates = assembleExpressionsA(updateColumns,
+                                                            stream.fieldOffsets);
             // Have a list of expressions in the order specified.
             // Want a list as wide as the target row with Java nulls
             // for the gaps.
@@ -171,15 +176,20 @@ public class OperatorAssembler extends BaseRule
             updates = Arrays.asList(row);
             UpdateFunction updateFunction = 
                 new ExpressionRowUpdateFunction(updates, targetRowType);
-            UpdatePlannable plan = new Update_Default(stream.operator, updateFunction);
+            UpdatePlannable plan = update_Default(stream.operator, updateFunction);
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
         protected PhysicalUpdate deleteStatement(DeleteStatement deleteStatement) {
             RowStream stream = assembleQuery(deleteStatement.getQuery());
             assert (stream.rowType == tableRowType(deleteStatement.getTargetTable()));
-            UpdatePlannable plan = new Delete_Default(stream.operator);
+            UpdatePlannable plan = delete_Default(stream.operator);
             return new PhysicalUpdate(plan, getParameterTypes());
+        }
+
+        protected Operator assembleSubquery(Subquery subquery) {
+            RowStream stream = assembleQuery(subquery.getInput());
+            return stream.operator;
         }
 
         // Assemble the top-level query. If there is a ResultSet at
@@ -213,8 +223,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleSort((Sort)node);
             else if (node instanceof Limit)
                 return assembleLimit((Limit)node);
-            else if (node instanceof ResultSet)
-                return assembleResultSet((ResultSet)node);
+            else if (node instanceof Project)
+                return assembleProject((Project)node);
             else if (node instanceof ExpressionsSource)
                 return assembleExpressionsSource((ExpressionsSource)node);
             else
@@ -229,7 +239,7 @@ public class OperatorAssembler extends BaseRule
                                                 assembleIndexKeyRange(indexScan, null),
                                                 tableRowType(indexScan.getLeafMostTable()));
             stream.rowType = indexRowType;
-            stream.fieldOffsets = indexScan;
+            stream.fieldOffsets = new IndexFieldOffsets(indexScan);
             return stream;
         }
 
@@ -243,7 +253,7 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleExpressionsSource(ExpressionsSource expressionsSource) {
             RowStream stream = new RowStream();
-            stream.rowType = valuesRowType(expressionsSource.getNFields());
+            stream.rowType = valuesRowType(expressionsSource.getFieldTypes());
             List<Row> rows = new ArrayList<Row>(expressionsSource.getExpressions().size());
             for (List<ExpressionNode> exprs : expressionsSource.getExpressions()) {
                 // TODO: Maybe it would be simpler if ExpressionRow used Lists instead
@@ -255,7 +265,7 @@ public class OperatorAssembler extends BaseRule
                                                         stream.fieldOffsets);
                 }
                 rows.add(new ExpressionRow(stream.rowType, UndefBindings.only(), 
-                                           expressions));
+                                           Arrays.asList(expressions)));
             }
             stream.operator = valuesScan_Default(rows, stream.rowType);
             return stream;
@@ -407,7 +417,7 @@ public class OperatorAssembler extends BaseRule
                 }
                 stream.operator = sort_Tree(stream.operator, stream.rowType, ordering);
             }
-            // TODO: Where do we really get the AggregatorFactory from?
+            // TODO: Need to get real AggregatorFactory from RulesContext.
             AggregatorFactory aggregatorFactory = new AggregatorFactory() {
                     @Override
                     public Aggregator get(String name) {
@@ -417,19 +427,18 @@ public class OperatorAssembler extends BaseRule
                     public void validateNames(List<String> names) {
                     }
                 };
-            stream.operator = aggregate(stream.operator, nkeys, 
-                                        aggregatorFactory, aggregatorNames);
+            stream.operator = aggregate_Partial(stream.operator, nkeys, 
+                                                aggregatorFactory, aggregatorNames);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource);
             return stream;
         }
 
         protected RowStream assembleDistinct(Distinct distinct) {
             RowStream stream = assembleStream(distinct.getInput());
-            // TODO: This should be called aggregate_Partial, like the operator.
-            stream.operator = aggregate(stream.operator,
-                                        stream.rowType.nFields(),
-                                        null,
-                                        Collections.<String>emptyList());
+            stream.operator = aggregate_Partial(stream.operator,
+                                                stream.rowType.nFields(),
+                                                null,
+                                                Collections.<String>emptyList());
             // TODO: Probably want separate Distinct operator so that
             // row type does not change.
             stream.rowType = stream.operator.rowType();
@@ -467,22 +476,23 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleLimit(Limit limit) {
             RowStream stream = assembleStream(limit.getInput());
-            if (limit.getOffset() > 0)
-                throw new UnsupportedSQLException("LIMIT OFFSET", null);
-            if (limit.isLimitParameter())
-                throw new UnsupportedSQLException("LIMIT using parameter", null);
-            stream.operator = limit_Default(stream.operator, limit.getLimit());
+            int nlimit = limit.getLimit();
+            if ((nlimit < 0) && !limit.isLimitParameter())
+                nlimit = Integer.MAX_VALUE; // Slight disagreement in saying unlimited.
+            stream.operator = limit_Default(stream.operator, 
+                                            limit.getOffset(), limit.isOffsetParameter(),
+                                            nlimit, limit.isLimitParameter());
             return stream;
         }
 
-        protected RowStream assembleResultSet(ResultSet resultSet) {
-            RowStream stream = assembleStream(resultSet.getInput());
+        protected RowStream assembleProject(Project project) {
+            RowStream stream = assembleStream(project.getInput());
             stream.operator = project_Default(stream.operator,
                                               stream.rowType,
-                                              assembleExpressions(resultSet.getResults(),
+                                              assembleExpressions(project.getFields(),
                                                                   stream.fieldOffsets));
             stream.rowType = stream.operator.rowType();
-            // TODO: If ResultSet were a ColumnSource, could use it to
+            // TODO: If Project were a ColumnSource, could use it to
             // calculate intermediate results and change downstream
             // references to use it instead of expressions. Then could
             // have a straight map of references into projected row.
@@ -491,9 +501,19 @@ public class OperatorAssembler extends BaseRule
         }
 
         // Assemble a list of expressions from the given nodes.
+        protected List<Expression> assembleExpressions(List<ExpressionNode> expressions,
+                                                       ColumnExpressionToIndex fieldOffsets) {
+            List<Expression> result = new ArrayList<Expression>(expressions.size());
+            for (ExpressionNode expr : expressions) {
+                result.add(assembleExpression(expr, fieldOffsets));
+            }
+            return result;
+        }
+
+        // Assemble a list of expressions from the given nodes.
         protected List<Expression> 
-            assembleExpressions(List<? extends AnnotatedExpression> expressions,
-                                ColumnExpressionToIndex fieldOffsets) {
+            assembleExpressionsA(List<? extends AnnotatedExpression> expressions,
+                                 ColumnExpressionToIndex fieldOffsets) {
             List<Expression> result = new ArrayList<Expression>(expressions.size());
             for (AnnotatedExpression aexpr : expressions) {
                 result.add(assembleExpression(aexpr.getExpression(), fieldOffsets));
@@ -504,27 +524,22 @@ public class OperatorAssembler extends BaseRule
         // Assemble an expression against the given row offsets.
         protected Expression assembleExpression(ExpressionNode expr,
                                                 ColumnExpressionToIndex fieldOffsets) {
-            return expr.generateExpression(fieldOffsets);
+            if (expr instanceof SubqueryExpression) { 
+                SubqueryExpression sexpr = (SubqueryExpression)expr;
+                Operator subquery = assembleSubquery(sexpr.getSubquery());
+                return expressionAssembler.assembleSubqueryExpression(sexpr, 
+                                                                      fieldOffsets, 
+                                                                      subquery);
+            }
+            return expressionAssembler.assembleExpression(expr, fieldOffsets);
         }
 
         // Get a list of result columns based on ResultSet expression names.
-        protected List<PhysicalResultColumn>
-            getResultColumns(List<ResultExpression> results) {
+        protected List<PhysicalResultColumn> getResultColumns(List<ResultField> fields) {
             List<PhysicalResultColumn> columns = 
-                new ArrayList<PhysicalResultColumn>(results.size());
-            for (ResultExpression result : results) {
-                String name = result.getName();
-                boolean nameDefaulted = result.isNameDefaulted();
-                DataTypeDescriptor type = null;
-                Column column = null;
-                if (result.getExpression() != null) {
-                    ExpressionNode expression = result.getExpression();
-                    type = expression.getSQLtype();
-                    if (expression.isColumn())
-                        column = ((ColumnExpression)expression).getColumn();
-                }
-                columns.add(rulesContext.getResultColumn(name, type, 
-                                                         nameDefaulted, column));
+                new ArrayList<PhysicalResultColumn>(fields.size());
+            for (ResultField field : fields) {
+                columns.add(rulesContext.getResultColumn(field));
             }
             return columns;
         }
@@ -536,8 +551,7 @@ public class OperatorAssembler extends BaseRule
             List<PhysicalResultColumn> columns = 
                 new ArrayList<PhysicalResultColumn>(ncols);
             for (int i = 0; i < ncols; i++) {
-                columns.add(rulesContext.getResultColumn("column" + (i+1), null,
-                                                         true, null));
+                columns.add(rulesContext.getResultColumn(new ResultField("column" + (i+1))));
             }
             return columns;
         }
@@ -602,8 +616,8 @@ public class OperatorAssembler extends BaseRule
             return schema.userTableRowType(table.getTable());
         }
 
-        protected ValuesRowType valuesRowType(int nfields) {
-            return schema.newValuesType(nfields);
+        protected ValuesRowType valuesRowType(AkType[] fields) {
+            return schema.newValuesType(fields);
         }
     
         /** Return an index bound for the given index and expressions.
@@ -636,7 +650,7 @@ public class OperatorAssembler extends BaseRule
         protected UnboundExpressions getIndexExpressionRow(Index index, 
                                                            Expression[] keys) {
             RowType rowType = schema.indexRowType(index);
-            return new RowBasedUnboundExpressions(rowType, keys);
+            return new RowBasedUnboundExpressions(rowType, Arrays.asList(keys));
         }
 
         // Get the required type for any parameters to the statement.
@@ -663,7 +677,7 @@ public class OperatorAssembler extends BaseRule
 
     // Struct for multiple value return from assembly.
     static class RowStream {
-        PhysicalOperator operator;
+        Operator operator;
         RowType rowType;
         boolean unknownTypesPresent;
         ColumnExpressionToIndex fieldOffsets;
@@ -682,6 +696,21 @@ public class OperatorAssembler extends BaseRule
                 return -1;
             else
                 return column.getPosition();
+        }
+    }
+
+    static class IndexFieldOffsets implements ColumnExpressionToIndex {
+        private IndexScan index;
+
+        public IndexFieldOffsets(IndexScan index) {
+            this.index = index;
+        }
+
+        @Override
+        // Access field of the index row itself.
+        public int getIndex(ColumnExpression column) {
+            assert index.isCovering() : "Direct access to index field when not covering";
+            return index.getColumns().indexOf(column);
         }
     }
 

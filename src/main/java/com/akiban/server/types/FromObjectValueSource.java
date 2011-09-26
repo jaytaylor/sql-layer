@@ -39,32 +39,12 @@ public final class FromObjectValueSource implements ValueSource {
             setNull();
             return this;
         }
-        
-        final AkType asType;
 
-        if (object instanceof Integer || object instanceof Long)
-            asType = AkType.LONG;
-        else if (object instanceof String)
-            asType = AkType.VARCHAR;
-        else if (object instanceof Double)
-            asType = AkType.DOUBLE;
-        else if (object instanceof Float)
-            asType = AkType.FLOAT;
-        else if (object instanceof BigDecimal)
-            asType = AkType.DECIMAL;
-        else if (object instanceof ByteSource || object instanceof byte[])
-            asType = AkType.VARBINARY;
-        else if (object instanceof BigInteger)
-             asType = AkType.U_BIGINT;
-        else if (object instanceof Boolean)
-             asType = AkType.BOOL;
-        else if (object instanceof Character) {
-            object = String.valueOf(object);
-            asType = AkType.VARCHAR;
+        if (object instanceof Character) {
+             object = String.valueOf(object);
         }
-        else throw new UnsupportedOperationException("can't reflectively set " + object.getClass() + ": " + object);
 
-        set(object, asType);
+        set(object, reflectivelyGetAkType(object));
         return this;
     }
 
@@ -191,6 +171,32 @@ public final class FromObjectValueSource implements ValueSource {
     @Override
     public String toString() {
         return String.format("ValueSource(%s %s)", akType, object);
+    }
+
+    // class interface
+
+    public static AkType reflectivelyGetAkType(Object object) {
+        if (object == null)
+            return AkType.NULL;
+        if (object instanceof Integer || object instanceof Long)
+            return AkType.LONG;
+        else if (object instanceof String)
+            return AkType.VARCHAR;
+        else if (object instanceof Double)
+            return AkType.DOUBLE;
+        else if (object instanceof Float)
+            return AkType.FLOAT;
+        else if (object instanceof BigDecimal)
+            return AkType.DECIMAL;
+        else if (object instanceof ByteSource || object instanceof byte[])
+            return AkType.VARBINARY;
+        else if (object instanceof BigInteger)
+             return AkType.U_BIGINT;
+        else if (object instanceof Boolean)
+             return AkType.BOOL;
+        else if (object instanceof Character)
+             return AkType.VARCHAR;
+        else throw new UnsupportedOperationException("can't reflectively set " + object.getClass() + ": " + object);
     }
 
     // private methods

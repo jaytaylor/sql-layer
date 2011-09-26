@@ -25,14 +25,8 @@ import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.physicaloperator.API;
-import com.akiban.qp.physicaloperator.ArrayBindings;
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.UndefBindings;
-import com.akiban.qp.physicaloperator.UpdateFunction;
-import com.akiban.qp.physicaloperator.Update_Default;
+import com.akiban.qp.operator.*;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -67,8 +61,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static com.akiban.qp.physicaloperator.API.ancestorLookup_Default;
-import static com.akiban.qp.physicaloperator.API.indexScan_Default;
+import static com.akiban.qp.operator.API.ancestorLookup_Default;
+import static com.akiban.qp.operator.API.indexScan_Default;
 
 public class OperatorStore extends DelegatingStore<PersistitStore> {
 
@@ -101,15 +95,15 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                                           ConstantColumnSelector.ALL_ON);
         IndexKeyRange range = new IndexKeyRange(bound, true, bound, true);
 
-        PhysicalOperator indexScan = indexScan_Default(indexType, false, range);
-        PhysicalOperator scanOp;
+        Operator indexScan = indexScan_Default(indexType, false, range);
+        Operator scanOp;
         scanOp = ancestorLookup_Default(indexScan, groupTable, indexType, Collections.singletonList(tableType), API.LookupOption.DISCARD_INPUT);
 
         // MVCC will render this useless, but for now, a limit of 1 ensures we won't see the row we just updated,
         // and therefore scan through two rows -- once to update old -> new, then to update new -> copy of new
-        scanOp = com.akiban.qp.physicaloperator.API.limit_Default(scanOp, 1);
+        scanOp = com.akiban.qp.operator.API.limit_Default(scanOp, 1);
 
-        Update_Default updateOp = new Update_Default(scanOp, updateFunction);
+        UpdatePlannable updateOp = com.akiban.qp.operator.API.update_Default(scanOp, updateFunction);
 
         Transaction transaction = treeService.getTransaction(session);
         for(int retryCount=0; ; ++retryCount) {
@@ -221,7 +215,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         AkibanInformationSchema ais = aisHolder.getAis();
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), treeService, session);
         for(GroupIndex groupIndex : groupIndexes) {
-            PhysicalOperator plan = OperatorStoreMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
+            Operator plan = OperatorStoreMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
             runMaintenancePlan(
                     adapter,
                     groupIndex,
@@ -314,7 +308,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     private void runMaintenancePlan(
             PersistitAdapter adapter,
             GroupIndex groupIndex,
-            PhysicalOperator rootOperator,
+            Operator rootOperator,
             Bindings bindings,
             OperatorStoreGIHandler handler,
             OperatorStoreGIHandler.Action action,

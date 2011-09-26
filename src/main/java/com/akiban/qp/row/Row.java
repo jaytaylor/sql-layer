@@ -27,9 +27,8 @@ package com.akiban.qp.row;
 // and the reference count could be zero. As long as we're in one thread, the cursor can't be writing new data into
 // the row while this is happening.
 
-public interface Row extends RowBase
+import com.akiban.util.Shareable;
+
+public interface Row extends RowBase, Shareable
 {
-    void share();
-    boolean isShared();
-    void release();
 }

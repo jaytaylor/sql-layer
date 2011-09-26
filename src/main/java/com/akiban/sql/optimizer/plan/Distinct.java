@@ -15,11 +15,54 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import java.util.List;
+
 /** Make results distinct. */
 public class Distinct extends BasePlanWithInput
 {
-    public Distinct(PlanNode input) {
+    private List<ExpressionNode> fields;
+
+    public Distinct(PlanNode input, List<ExpressionNode> fields) {
         super(input);
+        this.fields = fields;
+    }
+
+    public List<ExpressionNode> getFields() {
+        return fields;
+    }
+
+    @Override
+    public boolean accept(PlanVisitor v) {
+        if (v.visitEnter(this)) {
+            if (getInput().accept(v)) {
+                if (v instanceof ExpressionRewriteVisitor) {
+                    for (int i = 0; i < fields.size(); i++) {
+                        fields.set(i, fields.get(i).accept((ExpressionRewriteVisitor)v));
+                    }
+                }
+                else if (v instanceof ExpressionVisitor) {
+                    for (ExpressionNode field : fields) {
+                        if (!field.accept((ExpressionVisitor)v))
+                            break;
+                    }
+                }
+            }
+        }
+        return v.visitLeave(this);
+    }
+
+    @Override
+    public String summaryString() {
+        if (fields == null)
+            return super.summaryString();
+        else
+            return super.summaryString() + fields;
+    }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        fields = duplicateList(fields, map);
     }
 
 }

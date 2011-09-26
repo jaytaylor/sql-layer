@@ -15,13 +15,14 @@
 
 package com.akiban.qp.row;
 
-import com.akiban.qp.expression.Expression;
-import com.akiban.qp.expression.ExpressionConversionHelper;
-import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.ValueSource;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ProjectedRow extends AbstractRow
@@ -34,13 +35,13 @@ public class ProjectedRow extends AbstractRow
         StringBuilder buffer = new StringBuilder();
         buffer.append('(');
         boolean first = true;
-        for (Expression expression : projections) {
+        for (ExpressionEvaluation evaluation : evaluations) {
             if (first) {
                 first = false;
             } else {
                 buffer.append(", ");
             }
-            buffer.append(expression.evaluate(row.get(), bindings));
+            buffer.append(evaluation.eval());
         }
         buffer.append(')');
         return buffer.toString();
@@ -56,7 +57,7 @@ public class ProjectedRow extends AbstractRow
 
     @Override
     public ValueSource eval(int i) {
-        return ExpressionConversionHelper.asValueSource(projections.get(i), row.get(), bindings);
+        return evaluations.get(i).eval();
     }
 
     @Override
@@ -65,21 +66,49 @@ public class ProjectedRow extends AbstractRow
         return null;
     }
 
+    // AbstractRow interface
+
+
+    @Override
+    protected void beforeAcquire() {
+        row.acquire();
+    }
+
+    @Override
+    public void afterRelease()
+    {
+        row.release();
+    }
+
     // ProjectedRow interface
 
-    public ProjectedRow(ProjectedRowType rowType, Row row, Bindings bindings, List<Expression> projections)
+    public ProjectedRow(ProjectedRowType rowType, Row row, Bindings bindings, List<Expression> expressions)
     {
         this.rowType = rowType;
-        this.row.set(row);
-        this.projections = projections;
-        this.bindings = bindings;
+        this.row = row;
+        this.expressions = expressions;
+        this.evaluations = createEvaluations(row, bindings);
         super.runId(row.runId());
+    }
+
+    // For use by this class
+
+    private List<ExpressionEvaluation> createEvaluations(Row row, Bindings bindings)
+    {
+        List<ExpressionEvaluation> result = new ArrayList<ExpressionEvaluation>();
+        for (Expression expression : this.expressions) {
+            ExpressionEvaluation evaluation = expression.evaluation();
+            evaluation.of(bindings);
+            evaluation.of(row);
+            result.add(evaluation);
+        }
+        return result;
     }
 
     // Object state
 
     private final ProjectedRowType rowType;
-    private final RowHolder<Row> row = new RowHolder<Row>();
-    private final List<Expression> projections;
-    private final Bindings bindings;
+    private final Row row;
+    private final List<Expression> expressions;
+    private final List<ExpressionEvaluation> evaluations;
 }

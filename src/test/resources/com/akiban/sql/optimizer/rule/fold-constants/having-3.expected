@@ -1,3 +1,4 @@
 SelectQuery@1c8ef56
-  ResultSet@d90453[null]
-    NullSource@1ab11b0
+  ResultSet@61250ff2[_SQL_COL_1]
+    Project@483a0ab1[null]
+      NullSource@1ab11b0

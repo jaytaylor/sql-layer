@@ -15,15 +15,15 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.UndefBindings;
+import com.akiban.qp.expression.ExpressionRow;
+import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.sql.optimizer.ExpressionRow;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -105,21 +105,76 @@ public abstract class ComposedExpressionTestBase {
         expectEvalSuccess(evaluation);
     }
 
+    @Test
+    public void testSharing() {
+        EvaluationPair pair = evaluationPair();
+        ExpressionEvaluation evaluation = pair.evaluation;
+        List<String> messages = pair.messages;
+
+        assertEquals("isShared", false, evaluation.isShared());
+        assertEquals("messages.size", 0, messages.size());
+
+        // share once
+        evaluation.acquire();
+        checkMessages(messages, SHARE);
+        assertEquals("isShared", true, evaluation.isShared());
+
+        // share twice
+        evaluation.acquire();
+        checkMessages(messages, SHARE);
+        assertEquals("isShared", true, evaluation.isShared());
+
+        // release once
+        evaluation.release();
+        checkMessages(messages, RELEASE);
+        assertEquals("isShared", true, evaluation.isShared());
+
+        // release twice
+        evaluation.release();
+        checkMessages(messages, RELEASE);
+        assertEquals("isShared", false, evaluation.isShared());
+    }
+
+    @Test
+    public void releasingWhenUnshared() {
+        EvaluationPair pair = evaluationPair();
+        ExpressionEvaluation evaluation = pair.evaluation;
+        List<String> messages = pair.messages;
+        evaluation.release();
+        assertEquals("messages.size", 0, messages.size());
+    }
+
+    private void checkMessages(List<String> messages, String singleMessage) {
+        List<String> expected = new ArrayList<String>();
+        int children = childrenCount();
+        assert children > 0 : children;
+        for (int i=0; i < children; ++i) {
+            expected.add(singleMessage);
+        }
+        assertEquals(expected, messages);
+        messages.clear();
+    }
+
     private ExpressionEvaluation evaluation(ExpressionAttribute... attributes) {
+        return evaluationPair(attributes).evaluation;
+    }
+
+    private EvaluationPair evaluationPair(ExpressionAttribute... attributes) {
         int childrenCount = childrenCount();
         if (childrenCount < 1)
             throw new UnsupportedOperationException("childrenCount() must be > 0");
+        List<String> messages = new ArrayList<String>();
         List<Expression> children = new ArrayList<Expression>();
-        children.add(new DummyExpression(attributes));
+        children.add(new DummyExpression(messages, attributes));
         for (int i=1; i < childrenCount; ++i) {
-            children.add(CONST);
+            children.add(new DummyExpression(messages, IS_CONSTANT));
         }
         Expression expression = getExpression(children);
         Set<ExpressionAttribute> attributeSet = attributesSet(attributes);
         assertEquals("isConstant", attributeSet.contains(IS_CONSTANT), expression.isConstant());
         assertEquals("needsRow", attributeSet.contains(NEEDS_ROW), expression.needsRow());
         assertEquals("needsBindings", attributeSet.contains(NEEDS_BINDINGS), expression.needsBindings());
-        return expression.evaluation();
+        return new EvaluationPair(expression.evaluation(), messages);
     }
 
     private void expectEvalError(ExpressionEvaluation evaluation) {
@@ -149,7 +204,8 @@ public abstract class ComposedExpressionTestBase {
 
     // consts
 
-    private static final Expression CONST = new DummyExpression(IS_CONSTANT);
+    private static final String SHARE = "share";
+    private static final String RELEASE = "release";
 
     // nested classes
 
@@ -172,7 +228,7 @@ public abstract class ComposedExpressionTestBase {
 
         @Override
         public ExpressionEvaluation evaluation() {
-            return new DummyExpressionEvaluation(requirements);
+            return new DummyExpressionEvaluation(messages, requirements);
         }
 
         @Override
@@ -180,11 +236,13 @@ public abstract class ComposedExpressionTestBase {
             return AkType.NULL;
         }
 
-        private DummyExpression(ExpressionAttribute... attributes) {
+        private DummyExpression(List<String> messages, ExpressionAttribute... attributes) {
             requirements = attributesSet(attributes);
+            this.messages = messages;
         }
 
         private final Set<ExpressionAttribute> requirements;
+        private final List<String> messages;
     }
 
     private static class DummyExpressionEvaluation implements ExpressionEvaluation {
@@ -206,19 +264,51 @@ public abstract class ComposedExpressionTestBase {
             return NullValueSource.only();
         }
 
-        private DummyExpressionEvaluation(Set<ExpressionAttribute> requirements) {
+        @Override
+        public void acquire() {
+            messages.add(SHARE);
+            ++sharedBy;
+        }
+
+        @Override
+        public boolean isShared() {
+            return sharedBy > 0;
+        }
+
+        @Override
+        public void release() {
+            if (sharedBy > 0) {
+                messages.add(RELEASE);
+                --sharedBy;
+            }
+        }
+
+        private DummyExpressionEvaluation(List<String> messages, Set<ExpressionAttribute> requirements) {
             this.requirements = requirements;
             this.missingRequirements = EnumSet.copyOf(requirements);
             missingRequirements.remove(IS_CONSTANT);
+            this.messages = messages;
         }
 
         private final Set<ExpressionAttribute> requirements;
         private final Set<ExpressionAttribute> missingRequirements;
+        private final List<String> messages;
+        private int sharedBy = 0;
     }
 
     enum ExpressionAttribute {
         IS_CONSTANT,
         NEEDS_ROW,
         NEEDS_BINDINGS
+    }
+
+    private static class EvaluationPair {
+        private EvaluationPair(ExpressionEvaluation evaluation, List<String> messages) {
+            this.evaluation = evaluation;
+            this.messages = messages;
+        }
+
+        public final ExpressionEvaluation evaluation;
+        public final List<String> messages;
     }
 }

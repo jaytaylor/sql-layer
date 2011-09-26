@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
+import com.akiban.server.types.AkType;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
@@ -34,7 +35,7 @@ public class FunctionExpression extends BaseExpression
     public FunctionExpression(String function,
                               List<ExpressionNode> operands,
                               DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+        super(sqlType, AkType.NULL, sqlSource); // TODO
         this.function = function;
         this.operands = operands;
     }
@@ -96,11 +97,6 @@ public class FunctionExpression extends BaseExpression
         }
         str.append(")");
         return str.toString();
-    }
-
-    @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        throw new UnsupportedSQLException("NIY", null);
     }
 
     @Override

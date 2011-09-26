@@ -63,8 +63,4 @@ public class ParameterExpression extends BaseExpression
         return "$" + position;
     }
 
-    @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        return API.variable(position);
-    }
 }

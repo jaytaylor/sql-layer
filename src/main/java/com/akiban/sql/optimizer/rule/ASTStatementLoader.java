@@ -15,10 +15,11 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode;
 import static com.akiban.sql.optimizer.plan.PlanContext.*;
-import com.akiban.sql.optimizer.plan.ResultSet.ResultExpression;
+import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 
@@ -32,7 +33,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 
-import com.akiban.qp.physicaloperator.API.JoinType;
+import com.akiban.qp.operator.API.JoinType;
 
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ParseException;
@@ -124,6 +125,8 @@ public class ASTStatementLoader extends BaseRule
                                           insertNode.getOrderByList(),
                                           insertNode.getOffset(),
                                           insertNode.getFetchFirst());
+        if (query instanceof ResultSet)
+            query = ((ResultSet)query).getInput();
         TableNode targetTable = getTargetTable(insertNode);
         List<Column> targetColumns;
         ResultColumnList rcl = insertNode.getTargetColumnList();
@@ -170,33 +173,22 @@ public class ASTStatementLoader extends BaseRule
                                     offsetClause,
                                     fetchFirstClause);
         else if (resultSet instanceof RowResultSetNode) {
-            ResultColumnList resultColumns = resultSet.getResultColumns();
-            List<ExpressionNode> row = new ArrayList<ExpressionNode>(resultColumns.size());
-            for (ResultColumn resultColumn : resultColumns) {
-                row.add(toExpression(resultColumn.getExpression()));
-            }
+            List<ExpressionNode> row = toExpressionsRow(resultSet);
             List<List<ExpressionNode>> rows = new ArrayList<List<ExpressionNode>>();
             rows.add(row);
             return new ExpressionsSource(rows);
         }
         else if (resultSet instanceof UnionNode) {
             UnionNode union = (UnionNode)resultSet;
-            PlanNode left = toQueryForSelect(union.getLeftResultSet(), 
-                                             null, null, null);
-            PlanNode right = toQueryForSelect(union.getRightResultSet(), 
-                                              null, null, null);
             boolean all = union.isAll();
+            PlanNode left = toQueryForSelect(union.getLeftResultSet());
             if (all &&
                 (left instanceof ExpressionsSource) &&
-                (right instanceof ExpressionsSource)) {
-                ExpressionsSource result = (ExpressionsSource)left;
-                result.getExpressions().addAll(((ExpressionsSource)
-                                                right).getExpressions());
-                return result;
-            }
-            else {
-                return new Union(left, right, all);
-            }
+                ((union.getRightResultSet() instanceof RowResultSetNode) ||
+                 (union.getRightResultSet() instanceof UnionNode)))
+                return addMoreExpressions((ExpressionsSource)left, union);
+            PlanNode right = toQueryForSelect(union.getRightResultSet());
+            return new Union(left, right, all);
         }
         else
             throw new UnsupportedSQLException("Unsupported query", resultSet);
@@ -211,15 +203,23 @@ public class ASTStatementLoader extends BaseRule
         PlanNode query = toQuery(selectNode);
 
         ResultColumnList rcl = selectNode.getResultColumns();
-        List<ResultExpression> results = new ArrayList<ResultExpression>(rcl.size());
+        List<ExpressionNode> projects = new ArrayList<ExpressionNode>(rcl.size());
+        List<ResultField> results = new ArrayList<ResultField>(rcl.size());
         for (ResultColumn result : rcl) {
-            ExpressionNode expr = toExpression(result.getExpression());
             String name = result.getName();
+            DataTypeDescriptor type = result.getType();
             boolean nameDefaulted =
                 (result.getExpression() instanceof ColumnReference) &&
                 (name == ((ColumnReference)result.getExpression()).getColumnName());
-            ResultExpression rexpr = new ResultExpression(expr, name, nameDefaulted);
-            results.add(rexpr);
+            Column column = null;
+            ExpressionNode expr = toExpression(result.getExpression());
+            projects.add(expr);
+            if (expr instanceof ColumnExpression) {
+                column = ((ColumnExpression)expr).getColumn();
+                if ((column != null) && nameDefaulted)
+                    name = column.getName();
+            }
+            results.add(new ResultField(name, type, column));
         }
 
         List<OrderByExpression> sorts = new ArrayList<OrderByExpression>();
@@ -232,7 +232,7 @@ public class ASTStatementLoader extends BaseRule
                         int i = ((Long)value).intValue();
                         if ((i <= 0) || (i > results.size()))
                             throw new OrderByIntegerOutOfRange(i, results.size());
-                        expression = results.get(i-1).getExpression();
+                        expression = projects.get(i-1);
                     }
                     else
                         throw new OrderByNonIntegerConstant(expression.getSQLsource());
@@ -247,29 +247,72 @@ public class ASTStatementLoader extends BaseRule
         //  SELECT 1 FROM t HAVING MAX(c) > 0; 
         if ((selectNode.getGroupByList() != null) ||
             (selectNode.getHavingClause() != null) ||
-            hasAggregateFunctionA(results) ||
+            hasAggregateFunction(projects) ||
             hasAggregateFunctionA(sorts)) {
             query = toAggregateSource(query, selectNode.getGroupByList());
             query = new Filter(query, toConditions(selectNode.getHavingClause()));
         }
 
-        if (!sorts.isEmpty()) {
-            query = new Sort(query, sorts);
-        }
-
-        query = new ResultSet(query, results);
-
         if (selectNode.hasWindows())
             throw new UnsupportedSQLException("WINDOW", selectNode);
         
         if (selectNode.isDistinct())
-            query = new Distinct(query);
+            query = new Distinct(query, projects);
+
+        if (!sorts.isEmpty()) {
+            query = new Sort(query, sorts);
+        }
 
         if ((offsetClause != null) || 
             (fetchFirstClause != null))
             query = toLimit(query, offsetClause, fetchFirstClause);
 
+        query = new Project(query, projects);
+        query = new ResultSet(query, results);
+
         return query;
+    }
+
+    protected PlanNode toQueryForSelect(ResultSetNode resultSet)
+            throws StandardException {
+        return toQueryForSelect(resultSet, null, null, null);
+    }
+
+    protected List<ExpressionNode> toExpressionsRow(ResultSetNode resultSet)
+            throws StandardException {
+        ResultColumnList resultColumns = resultSet.getResultColumns();
+        List<ExpressionNode> row = new ArrayList<ExpressionNode>(resultColumns.size());
+        for (ResultColumn resultColumn : resultColumns) {
+            row.add(toExpression(resultColumn.getExpression()));
+        }
+        return row;
+    }
+
+    /** If start with VALUES, handle more of them right recursively
+     * without using the stack. */
+    protected PlanNode addMoreExpressions(ExpressionsSource into,
+                                          UnionNode union) throws StandardException {
+        while (true) {
+            // The left is already in and this is a UNION ALL.
+            if (union.getRightResultSet() instanceof RowResultSetNode) {
+                // Last row.
+                into.getExpressions().add(toExpressionsRow(union.getRightResultSet()));
+                return into;
+            }
+            if (!(union.getRightResultSet() instanceof UnionNode)) {
+                return new Union(into, 
+                                 toQueryForSelect(union.getRightResultSet()), 
+                                 true);
+            }
+            union = (UnionNode)union.getRightResultSet();
+            if (!union.isAll() ||
+                !((union.getLeftResultSet() instanceof RowResultSetNode))) {
+                return new Union(into,
+                                 toQueryForSelect(union),
+                                 true);
+            }
+            into.getExpressions().add(toExpressionsRow(union.getLeftResultSet()));
+        }
     }
 
     /** The common top-level filtered joins part of all statements. */
@@ -433,6 +476,11 @@ public class ASTStatementLoader extends BaseRule
                                                        condition.getType(), condition));
             }
             break;
+        case NodeTypes.JAVA_TO_SQL_VALUE_NODE:
+            conditions.add((ConditionExpression)
+                           toExpression(((JavaToSQLValueNode)condition).getJavaValueNode(), 
+                                        condition, true));
+            break;
         default:
             throw new UnsupportedSQLException("Unsupported WHERE predicate",
                                               condition);
@@ -473,18 +521,19 @@ public class ASTStatementLoader extends BaseRule
         }
         List<List<ExpressionNode>> rows = new ArrayList<List<ExpressionNode>>();
         for (ValueNode rightOperand : rightOperandList) {
-            rows.add(Collections.singletonList(toExpression(rightOperand)));
+            List<ExpressionNode> row = new ArrayList<ExpressionNode>(1);
+            row.add(toExpression(rightOperand));
+            rows.add(row);
         }
         ExpressionsSource source = new ExpressionsSource(rows);
-        List<ConditionExpression> innerConds = new ArrayList<ConditionExpression>(1);
-        innerConds.add(new ComparisonCondition(Comparison.EQ, left,
-                                               new ColumnExpression(source, 0,
-                                                                    left.getSQLtype(), null),
-                                               in.getType(), null));
-        PlanNode subquery = new Filter(source, innerConds);
-        conditions.add(new SubqueryCondition(SubqueryCondition.Kind.EXISTS, 
-                                             new Subquery(subquery),
-                                             in.getType(), in));
+        ConditionExpression cond = new ComparisonCondition(Comparison.EQ, left,
+                                                           new ColumnExpression(source, 0,
+                                                                                left.getSQLtype(), null),
+                                                           in.getType(), null);
+        List<ExpressionNode> fields = new ArrayList<ExpressionNode>(1);
+        fields.add(cond);
+        PlanNode subquery = new Project(source, fields);
+        conditions.add(new AnyCondition(new Subquery(subquery), in.getType(), in));
     }
     
     protected void addSubqueryCondition(List<ConditionExpression> conditions, 
@@ -494,7 +543,7 @@ public class ASTStatementLoader extends BaseRule
                                              subqueryNode.getOrderByList(),
                                              subqueryNode.getOffset(),
                                              subqueryNode.getFetchFirst());
-        SubqueryCondition.Kind kind = SubqueryCondition.Kind.EXISTS;
+        boolean negate = false;
         Comparison comp = Comparison.EQ;
         ExpressionNode operand = null;
         boolean needOperand = false;
@@ -503,14 +552,14 @@ public class ASTStatementLoader extends BaseRule
         case EXISTS:
             break;
         case NOT_EXISTS:
-            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            negate = true;
             break;
         case IN:
         case EQ_ANY: 
             needOperand = true;
             break;
         case EQ_ALL: 
-            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            negate = true;
             comp = Comparison.NE;
             needOperand = true;
             break;
@@ -520,7 +569,7 @@ public class ASTStatementLoader extends BaseRule
             needOperand = true;
             break;
         case NE_ALL: 
-            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            negate = true;
             comp = Comparison.EQ;
             needOperand = true;
             break;
@@ -529,7 +578,7 @@ public class ASTStatementLoader extends BaseRule
             needOperand = true;
             break;
         case GT_ALL: 
-            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            negate = true;
             comp = Comparison.LE;
             needOperand = true;
             break;
@@ -538,7 +587,7 @@ public class ASTStatementLoader extends BaseRule
             needOperand = true;
             break;
         case GE_ALL: 
-            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            negate = true;
             comp = Comparison.LT;
             needOperand = true;
             break;
@@ -547,7 +596,7 @@ public class ASTStatementLoader extends BaseRule
             needOperand = true;
             break;
         case LT_ALL: 
-            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            negate = true;
             comp = Comparison.GE;
             needOperand = true;
             break;
@@ -556,7 +605,7 @@ public class ASTStatementLoader extends BaseRule
             needOperand = true;
             break;
         case LE_ALL: 
-            kind = SubqueryCondition.Kind.NOT_EXISTS;
+            negate = true;
             comp = Comparison.GT;
             needOperand = true;
             break;
@@ -570,35 +619,56 @@ public class ASTStatementLoader extends BaseRule
                 if (!(plan instanceof BasePlanWithInput))
                     break;
                 PlanNode next = ((BasePlanWithInput)plan).getInput();
-                if (plan instanceof ResultSet) {
-                    ResultSet rs = (ResultSet)plan;
+                if (plan instanceof Project) {
+                    Project project = (Project)plan;
                     if (needOperand) {
-                        if (rs.getResults().size() != 1)
+                        if (project.getFields().size() != 1)
                             throw new UnsupportedSQLException("Subquery must have exactly one column", subqueryNode);
-                        operand = rs.getResults().get(0).getExpression();
+                        operand = project.getFields().get(0);
                     }
-                    // Don't need result set any more.
+                    // Don't need project any more.
                     if (prev != null)
                         prev.replaceInput(plan, next);
-                }
-                else if (plan instanceof Filter) {
-                    Filter f = (Filter)plan;
-                    innerConds = f.getConditions();
+                    else
+                        subquery = next;
                     break;
                 }
-                prev = (PlanWithInput)plan;
+                if (!(plan instanceof ResultSet)) { // Also remove ResultSet.
+                    prev = (PlanWithInput)plan;
+                }
                 plan = next;
             }
         }
+        ConditionExpression condition;
         if (needOperand) {
-            assert ((operand != null) && (innerConds != null));
+            assert (operand != null);
             ExpressionNode left = toExpression(subqueryNode.getLeftOperand());
-            innerConds.add(new ComparisonCondition(comp, left, operand,
-                                                   subqueryNode.getType(), 
-                                                   subqueryNode));
+            ConditionExpression inner = new ComparisonCondition(comp, left, operand,
+                                                                subqueryNode.getType(), 
+                                                                subqueryNode);
+            // We take this condition back off from the top of the
+            // physical plan and move it to the expression, but it's
+            // easier to think about the scoping as evaluated at the
+            // end of the inner query.
+            List<ExpressionNode> fields = new ArrayList<ExpressionNode>(1);
+            fields.add(inner);
+            subquery = new Project(subquery, fields);
+            condition = new AnyCondition(new Subquery(subquery), 
+                                         subqueryNode.getType(), subqueryNode);
         }
-        conditions.add(new SubqueryCondition(kind, new Subquery(subquery), 
-                                             subqueryNode.getType(), subqueryNode));
+        else {
+            condition = new ExistsCondition(new Subquery(subquery), 
+                                            subqueryNode.getType(), subqueryNode);
+        }
+        if (negate) {
+            List <ConditionExpression> operands = new ArrayList<ConditionExpression>(1);
+            operands.add(condition);
+            condition = new LogicalFunctionCondition("not", 
+                                                     operands,
+                                                     subqueryNode.getType(), 
+                                                     subqueryNode);
+        }
+        conditions.add(condition);
     }
 
     protected void addFunctionCondition(List<ConditionExpression> conditions,
@@ -764,7 +834,7 @@ public class ASTStatementLoader extends BaseRule
     protected ExpressionNode toExpression(ValueNode valueNode)
             throws StandardException {
         if (valueNode == null) {
-            return new ConstantExpression(null);
+            return new ConstantExpression(null, AkType.NULL);
         }
         DataTypeDescriptor type = valueNode.getType();
         if (valueNode instanceof ColumnReference) {
@@ -861,12 +931,13 @@ public class ASTStatementLoader extends BaseRule
                                                  subqueryNode.getOrderByList(),
                                                  subqueryNode.getOffset(),
                                                  subqueryNode.getFetchFirst());
-            return new SubqueryExpression(new Subquery(subquery),
-                                          subqueryNode.getType(), subqueryNode);
+            return new SubqueryValueExpression(new Subquery(subquery),
+                                               subqueryNode.getType(), subqueryNode);
         }
         else if (valueNode instanceof JavaToSQLValueNode) {
             return toExpression(((JavaToSQLValueNode)valueNode).getJavaValueNode(),
-                                valueNode);
+                                valueNode,
+                                false);
         }
         else if (valueNode instanceof CurrentDatetimeOperatorNode) {
             String functionName = null;
@@ -900,19 +971,25 @@ public class ASTStatementLoader extends BaseRule
     // done this earlier and bound to a known function and elided the
     // Java stuff then.
     protected ExpressionNode toExpression(JavaValueNode javaToSQL,
-                                          ValueNode valueNode)
+                                          ValueNode valueNode,
+                                          boolean asCondition)
             throws StandardException {
         if (javaToSQL instanceof MethodCallNode) {
             MethodCallNode methodCall = (MethodCallNode)javaToSQL;
             List<ExpressionNode> operands = new ArrayList<ExpressionNode>();
             if (methodCall.getMethodParameters() != null) {
                 for (JavaValueNode javaValue : methodCall.getMethodParameters()) {
-                    operands.add(toExpression(javaValue, null));
+                    operands.add(toExpression(javaValue, null, false));
                 }
             }
-            return new FunctionExpression(methodCall.getMethodName(),
-                                          operands,
-                                          valueNode.getType(), valueNode);
+            if (asCondition)
+                return new FunctionCondition(methodCall.getMethodName(),
+                                             operands,
+                                             valueNode.getType(), valueNode);
+            else
+                return new FunctionExpression(methodCall.getMethodName(),
+                                              operands,
+                                              valueNode.getType(), valueNode);
         }
         else if (javaToSQL instanceof SQLToJavaValueNode) {
             return toExpression(((SQLToJavaValueNode)javaToSQL).getSQLValueNode());

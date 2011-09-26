@@ -15,12 +15,9 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.qp.operator.*;
 import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.qp.physicaloperator.API;
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.UndefBindings;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 
@@ -33,11 +30,11 @@ import java.io.IOException;
  */
 public class PostgresOperatorStatement extends PostgresBaseStatement
 {
-    private PhysicalOperator resultOperator;
+    private Operator resultOperator;
     private int offset = 0;
     private int limit = -1;
         
-    public PostgresOperatorStatement(PhysicalOperator resultOperator,
+    public PostgresOperatorStatement(Operator resultOperator,
                                      List<String> columnNames,
                                      List<PostgresType> columnTypes,
                                      PostgresType[] parameterTypes,
@@ -117,7 +114,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         private boolean[] columnBinary; // Is this column binary format?
         private boolean defaultColumnBinary;
 
-        public BoundStatement(PhysicalOperator resultOperator,
+        public BoundStatement(Operator resultOperator,
                               List<String> columnNames,
                               List<PostgresType> columnTypes,
                               int offset, int limit,

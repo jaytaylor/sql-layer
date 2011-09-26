@@ -15,9 +15,9 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.IncompatibleRowException;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.IncompatibleRowException;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -27,12 +27,12 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.EnumSet;
 
-import static com.akiban.qp.physicaloperator.API.*;
-import static com.akiban.qp.physicaloperator.API.FlattenOption.*;
-import static com.akiban.qp.physicaloperator.API.JoinType.*;
+import static com.akiban.qp.operator.API.*;
+import static com.akiban.qp.operator.API.FlattenOption.*;
+import static com.akiban.qp.operator.API.JoinType.*;
 import static org.junit.Assert.assertTrue;
 
-public class FlattenIT extends PhysicalOperatorITBase
+public class FlattenIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -110,7 +110,7 @@ public class FlattenIT extends PhysicalOperatorITBase
     @Test
     public void testInnerJoinCO()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 filter_Default(
                     groupScan_Default(coi),
@@ -143,7 +143,7 @@ public class FlattenIT extends PhysicalOperatorITBase
     @Test
     public void testInnerJoinOI()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 filter_Default(
                     groupScan_Default(coi),
@@ -187,7 +187,7 @@ public class FlattenIT extends PhysicalOperatorITBase
     @Test
     public void testLeftJoinCO()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 filter_Default(
                     groupScan_Default(coi),
@@ -221,7 +221,7 @@ public class FlattenIT extends PhysicalOperatorITBase
     @Test
     public void testLeftJoinCO_WithLeftShortenedHKey()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 filter_Default(
                     groupScan_Default(coi),
@@ -255,7 +255,7 @@ public class FlattenIT extends PhysicalOperatorITBase
     @Test
     public void testLeftJoinCOI_WithLeftShortenedHKey()
     {
-        PhysicalOperator coPlan = flatten_HKeyOrdered(
+        Operator coPlan = flatten_HKeyOrdered(
             filter_Default(
                 groupScan_Default(coi),
                 Arrays.asList(customerRowType, orderRowType, itemRowType)),
@@ -264,7 +264,7 @@ public class FlattenIT extends PhysicalOperatorITBase
             LEFT_JOIN, LEFT_JOIN_SHORTENS_HKEY
         );
         RowType coRowType = coPlan.rowType();
-        PhysicalOperator plan = flatten_HKeyOrdered(coPlan,
+        Operator plan = flatten_HKeyOrdered(coPlan,
                                                     coRowType,
                                                     itemRowType,
                                                     LEFT_JOIN, LEFT_JOIN_SHORTENS_HKEY
@@ -293,7 +293,7 @@ public class FlattenIT extends PhysicalOperatorITBase
     @Test(expected = IncompatibleRowException.class)
     public void testLeftJoinCOI_WithPartiallyLeftShortenedHKey()
     {
-        PhysicalOperator coPlan = flatten_HKeyOrdered(
+        Operator coPlan = flatten_HKeyOrdered(
             filter_Default(
                 groupScan_Default(coi),
                 Arrays.asList(customerRowType, orderRowType, itemRowType)),
@@ -302,7 +302,7 @@ public class FlattenIT extends PhysicalOperatorITBase
             LEFT_JOIN, LEFT_JOIN_SHORTENS_HKEY
         );
         RowType coRowType = coPlan.rowType();
-        PhysicalOperator plan = flatten_HKeyOrdered(coPlan,
+        Operator plan = flatten_HKeyOrdered(coPlan,
                                                     coRowType,
                                                     itemRowType,
                                                     LEFT_JOIN
@@ -331,7 +331,7 @@ public class FlattenIT extends PhysicalOperatorITBase
     @Test(expected = IncompatibleRowException.class)
     public void testLeftJoinCOI_WithFullKey()
     {
-        PhysicalOperator coPlan = flatten_HKeyOrdered(
+        Operator coPlan = flatten_HKeyOrdered(
             filter_Default(
                 groupScan_Default(coi),
                 Arrays.asList(customerRowType, orderRowType, itemRowType)),
@@ -340,7 +340,7 @@ public class FlattenIT extends PhysicalOperatorITBase
             LEFT_JOIN, LEFT_JOIN_SHORTENS_HKEY
         );
         RowType coRowType = coPlan.rowType();
-        PhysicalOperator plan = flatten_HKeyOrdered(coPlan,
+        Operator plan = flatten_HKeyOrdered(coPlan,
                                                     coRowType,
                                                     itemRowType,
                                                     LEFT_JOIN
@@ -369,7 +369,7 @@ public class FlattenIT extends PhysicalOperatorITBase
     @Test
     public void testLeftJoinOI()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 filter_Default(
                     groupScan_Default(coi),
@@ -402,7 +402,7 @@ public class FlattenIT extends PhysicalOperatorITBase
     @Test
     public void testRightJoinCO()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 filter_Default(
                     groupScan_Default(coi),
@@ -436,7 +436,7 @@ public class FlattenIT extends PhysicalOperatorITBase
     @Test
     public void testRightJoinOI()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 filter_Default(
                     groupScan_Default(coi),
@@ -468,7 +468,7 @@ public class FlattenIT extends PhysicalOperatorITBase
     @Test
     public void testFullJoinCO()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 filter_Default(
                     groupScan_Default(coi),
@@ -503,7 +503,7 @@ public class FlattenIT extends PhysicalOperatorITBase
     @Test
     public void testFullJoinOI()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 filter_Default(
                     groupScan_Default(coi),
@@ -540,7 +540,7 @@ public class FlattenIT extends PhysicalOperatorITBase
     @Test
     public void testFullJoinCOKeepParentAndChild()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 filter_Default(
                     groupScan_Default(coi),
@@ -585,7 +585,7 @@ public class FlattenIT extends PhysicalOperatorITBase
     @Test
     public void testFullJoinOIKeepParentAndChild()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 filter_Default(
                     groupScan_Default(coi),
@@ -638,7 +638,7 @@ public class FlattenIT extends PhysicalOperatorITBase
         // appears after the (customer, address) row, which is wrong.
         assertTrue(ordinal(customerRowType) < ordinal(orderRowType));
         assertTrue(ordinal(orderRowType) < ordinal(addressRowType));
-        PhysicalOperator flattenCA =
+        Operator flattenCA =
             flatten_HKeyOrdered(
                 filter_Default(
                     groupScan_Default(coi),
@@ -647,7 +647,7 @@ public class FlattenIT extends PhysicalOperatorITBase
                 addressRowType,
                 INNER_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator flattenCO =
+        Operator flattenCO =
             flatten_HKeyOrdered(
                 flattenCA,
                 customerRowType,

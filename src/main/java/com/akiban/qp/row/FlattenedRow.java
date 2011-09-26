@@ -19,6 +19,7 @@ import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.NullValueSource;
+import com.akiban.util.ShareHolder;
 
 public class FlattenedRow extends AbstractRow
 {
@@ -27,7 +28,7 @@ public class FlattenedRow extends AbstractRow
     @Override
     public String toString()
     {
-        return String.format("%s, %s", parent, child);
+        return String.format("%s, %s", parenth, childh);
     }
 
     // Row interface
@@ -42,9 +43,9 @@ public class FlattenedRow extends AbstractRow
     public ValueSource eval(int i) {
         ValueSource source;
         if (i < nParentFields) {
-            source = parent.isNull() ? NullValueSource.only() : parent.get().eval(i);
+            source = parenth.isEmpty() ? NullValueSource.only() : parenth.get().eval(i);
         } else {
-            source = child.isNull() ? NullValueSource.only() : child.get().eval(i - nParentFields);
+            source = childh.isEmpty() ? NullValueSource.only() : childh.get().eval(i - nParentFields);
         }
         return source;
     }
@@ -60,14 +61,14 @@ public class FlattenedRow extends AbstractRow
     {
         Row subRow;
         if (subRowType == rowType.parentType()) {
-            subRow = parent.get();
+            subRow = parenth.get();
         } else if (subRowType == rowType.childType()) {
-            subRow = child.get();
+            subRow = childh.get();
         } else {
             // If the subRowType doesn't match leftType or rightType, then it might be buried deeper.
-            subRow = parent.get().subRow(subRowType);
+            subRow = parenth.get().subRow(subRowType);
             if (subRow == null) {
-                subRow = child.get().subRow(subRowType);
+                subRow = childh.get().subRow(subRowType);
             }
         }
         return subRow;
@@ -78,8 +79,8 @@ public class FlattenedRow extends AbstractRow
     public FlattenedRow(FlattenedRowType rowType, Row parent, Row child, HKey hKey)
     {
         this.rowType = rowType;
-        this.parent.set(parent);
-        this.child.set(child);
+        this.parenth.hold(parent);
+        this.childh.hold(child);
         this.nParentFields = rowType.parentType().nFields();
         this.hKey = hKey;
         if (parent != null && child != null) {
@@ -94,8 +95,8 @@ public class FlattenedRow extends AbstractRow
     // Object state
 
     private final FlattenedRowType rowType;
-    private final RowHolder<Row> parent = new RowHolder<Row>();
-    private final RowHolder<Row> child = new RowHolder<Row>();
+    private final ShareHolder<Row> parenth = new ShareHolder<Row>();
+    private final ShareHolder<Row> childh = new ShareHolder<Row>();
     private final int nParentFields;
     private final HKey hKey;
 }

@@ -15,8 +15,8 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -28,11 +28,11 @@ import java.util.Arrays;
 import java.util.Set;
 
 import static com.akiban.qp.expression.API.field;
-import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.operator.API.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class RunIdPropagationIT extends PhysicalOperatorITBase
+public class RunIdPropagationIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -60,7 +60,7 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
     @Test
     public void testIndexScan()
     {
-        PhysicalOperator plan = indexScan_Default(orderSalesmanIndexRowType, false, null);
+        Operator plan = indexScan_Default(orderSalesmanIndexRowType, false, null);
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);
         int expectedRunId = 0;
@@ -74,7 +74,7 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
     @Test
     public void testAncestorLookupAfterIndexScan()
     {
-        PhysicalOperator plan =
+        Operator plan =
             ancestorLookup_Default(
                 indexScan_Default(itemIidIndexRowType, false, null),
                 coi,
@@ -106,7 +106,7 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
     @Test
     public void testBranchLookupAfterIndexScan()
     {
-        PhysicalOperator plan =
+        Operator plan =
             branchLookup_Default(
                 indexScan_Default(itemIidIndexRowType, false, null),
                 coi,
@@ -142,7 +142,7 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
     @Test
     public void testCutAfterIndexScan()
     {
-        PhysicalOperator plan =
+        Operator plan =
             filter_Default(
                 branchLookup_Default(
                     indexScan_Default(customerNameIndexRowType, false, null),
@@ -165,7 +165,7 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
     @Test
     public void testExtractAfterIndexScan()
     {
-        PhysicalOperator plan =
+        Operator plan =
             filter_Default(
                 branchLookup_Default(
                     indexScan_Default(customerNameIndexRowType, false, null),
@@ -202,7 +202,7 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
     @Test
     public void testFlattenAfterIndexScan()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 filter_Default(
                     branchLookup_Default(
@@ -238,7 +238,7 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
     @Test
     public void testProjectAfterIndexScan()
     {
-        PhysicalOperator plan =
+        Operator plan =
             project_Default(
                 filter_Default(
                     branchLookup_Default(
@@ -273,7 +273,7 @@ public class RunIdPropagationIT extends PhysicalOperatorITBase
     @Test
     public void testGroupScan()
     {
-        PhysicalOperator plan = groupScan_Default(coi);
+        Operator plan = groupScan_Default(coi);
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);
         int count = 0;

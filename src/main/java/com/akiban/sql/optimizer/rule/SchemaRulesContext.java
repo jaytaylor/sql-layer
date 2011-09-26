@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
+import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
@@ -40,11 +41,14 @@ public class SchemaRulesContext extends RulesContext
         return schema;
     }
 
-    public PhysicalResultColumn getResultColumn(String name, DataTypeDescriptor type,
-                                                boolean nameDefaulted, Column column) {
-        if ((column != null) && nameDefaulted)
-            name = column.getName();
-        return new PhysicalResultColumn(name);
+    public PhysicalResultColumn getResultColumn(ResultField field) {
+        return new PhysicalResultColumn(field.getName());
     }
 
+    // TODO: Something like this.
+    /*
+    public ExpressionFactory getExpressionFactory() {...}
+    public AggregatorFactory getAggregatorFactory() {...}
+    */
+      
 }

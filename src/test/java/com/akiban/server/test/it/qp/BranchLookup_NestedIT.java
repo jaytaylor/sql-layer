@@ -18,8 +18,8 @@ package com.akiban.server.test.it.qp;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -32,9 +32,9 @@ import org.junit.Test;
 
 import java.util.Collections;
 
-import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.operator.API.*;
 
-public class BranchLookup_NestedIT extends PhysicalOperatorITBase
+public class BranchLookup_NestedIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -138,7 +138,7 @@ public class BranchLookup_NestedIT extends PhysicalOperatorITBase
     @Test
     public void testAIndexToR()
     {
-        PhysicalOperator plan =
+        Operator plan =
             map_NestedLoops(
                 indexScan_Default(aValueIndexRowType),
                 branchLookup_Nested(rabc, aValueIndexRowType, rRowType, LookupOption.DISCARD_INPUT, 0),
@@ -181,7 +181,7 @@ public class BranchLookup_NestedIT extends PhysicalOperatorITBase
     @Test
     public void testAToR()
     {
-        PhysicalOperator plan =
+        Operator plan =
             map_NestedLoops(
                 ancestorLookup_Default(
                     indexScan_Default(aValueIndexRowType),
@@ -229,7 +229,7 @@ public class BranchLookup_NestedIT extends PhysicalOperatorITBase
     @Test
     public void testAToB()
     {
-        PhysicalOperator plan =
+        Operator plan =
             map_NestedLoops(
                 filter_Default(
                     groupScan_Default(rabc),
@@ -253,7 +253,7 @@ public class BranchLookup_NestedIT extends PhysicalOperatorITBase
     @Test
     public void testAToBAndC()
     {
-        PhysicalOperator plan =
+        Operator plan =
             map_NestedLoops(
                 map_NestedLoops(
                     filter_Default(

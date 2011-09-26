@@ -15,9 +15,8 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.qp.operator.Operator;
 import com.akiban.sql.types.DataTypeDescriptor;
-
-import com.akiban.qp.physicaloperator.PhysicalOperator;
 
 import java.util.List;
 
@@ -44,15 +43,15 @@ public class PhysicalSelect extends BasePlannable
 
     private List<PhysicalResultColumn> resultColumns;
     
-    public PhysicalSelect(PhysicalOperator resultOperator,
+    public PhysicalSelect(Operator resultOperator,
                           List<PhysicalResultColumn> resultColumns,
                           DataTypeDescriptor[] parameterTypes) {
         super(resultOperator, parameterTypes);
         this.resultColumns = resultColumns;
     }
 
-    public PhysicalOperator getResultOperator() {
-        return (PhysicalOperator)getPlannable();
+    public Operator getResultOperator() {
+        return (Operator)getPlannable();
     }
 
     public List<PhysicalResultColumn> getResultColumns() {
