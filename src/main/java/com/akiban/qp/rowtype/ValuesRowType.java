@@ -17,6 +17,8 @@ package com.akiban.qp.rowtype;
 
 import com.akiban.server.types.AkType;
 
+import java.util.Arrays;
+
 public class ValuesRowType extends DerivedRowType
 {
     // Object interface
@@ -24,7 +26,7 @@ public class ValuesRowType extends DerivedRowType
     @Override
     public String toString()
     {
-        return String.format("values(%d)", nFields());
+        return "values(" + Arrays.toString(types) + ')';
     }
 
 
