@@ -30,6 +30,16 @@ CREATE TABLE items
   CONSTRAINT `__akiban_fk_1` FOREIGN KEY `__akiban_fk_1` (oid) REFERENCES orders(oid)
 ) engine=akibandb;
 
+CREATE TABLE shipments
+(
+  sid int NOT NULL auto_increment, 
+  PRIMARY KEY(sid),
+  oid int NOT NULL,
+  ship_date date NOT NULL,
+  KEY(ship_date),
+  CONSTRAINT `__akiban_fk_4` FOREIGN KEY `__akiban_fk_4` (oid) REFERENCES orders(oid)
+) engine=akibandb;
+
 CREATE TABLE addresses
 (
   aid int NOT NULL auto_increment, 
@@ -39,4 +49,14 @@ CREATE TABLE addresses
   KEY(state),
   city VARCHAR(100),
   CONSTRAINT `__akiban_fk_2` FOREIGN KEY `__akiban_fk_2` (cid) REFERENCES customers(cid)
+) engine=akibandb;
+
+CREATE TABLE referrals
+(
+  rid int NOT NULL auto_increment, 
+  PRIMARY KEY(rid),
+  cid int NOT NULL,
+  source VARCHAR(256),
+  referral VARCHAR(256),
+  CONSTRAINT `__akiban_fk_3` FOREIGN KEY `__akiban_fk_3` (cid) REFERENCES customers(cid)
 ) engine=akibandb;
