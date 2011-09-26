@@ -214,6 +214,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleAncestorLookup((AncestorLookup)node);
             else if (node instanceof BranchLookup)
                 return assembleBranchLookup((BranchLookup)node);
+            else if (node instanceof Product)
+                return assembleProduct((Product)node);
             else if (node instanceof AggregateSource)
                 return assembleAggregateSource((AggregateSource)node);
             else if (node instanceof Distinct)
@@ -317,26 +319,6 @@ public class OperatorAssembler extends BaseRule
             return stream;
         }
 
-        static class Flattened implements ColumnExpressionToIndex {
-            Map<TableSource,Integer> tableOffsets = new HashMap<TableSource,Integer>();
-            int nfields;
-            
-            @Override
-            public int getIndex(ColumnExpression column) {
-                Integer tableOffset = tableOffsets.get(column.getTable());
-                if (tableOffset == null)
-                    return -1;
-                return tableOffset + column.getPosition();
-            }
-
-            public void addTable(RowType rowType, TableSource table) {
-                if (table != null)
-                    tableOffsets.put(table, nfields);
-                nfields += rowType.nFields();
-            }
-
-        }
-
         protected RowStream assembleAncestorLookup(AncestorLookup ancestorLookup) {
             RowStream stream = assembleStream(ancestorLookup.getInput());
             GroupTable groupTable = ancestorLookup.getDescendant().getGroup().getGroupTable();
@@ -363,24 +345,67 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleBranchLookup(BranchLookup branchLookup) {
-            RowStream stream = assembleStream(branchLookup.getInput());
-            RowType inputRowType = stream.rowType; // The index row type.
-            LookupOption flag = LookupOption.DISCARD_INPUT;
-            if (!(inputRowType instanceof IndexRowType)) {
-                // Getting from ancestor lookup.
-                inputRowType = tableRowType(branchLookup.getSource());
-                flag = LookupOption.KEEP_INPUT;
-            }
+            RowStream stream;
             GroupTable groupTable = branchLookup.getSource().getGroup().getGroupTable();
-            stream.operator = branchLookup_Default(stream.operator, 
-                                                   groupTable, 
-                                                   inputRowType,
-                                                   tableRowType(branchLookup.getBranch()), 
-                                                   flag);
+            if (branchLookup.getInput() != null) {
+                stream = assembleStream(branchLookup.getInput());
+                RowType inputRowType = stream.rowType; // The index row type.
+                LookupOption flag = LookupOption.DISCARD_INPUT;
+                if (!(inputRowType instanceof IndexRowType)) {
+                    // Getting from ancestor lookup.
+                    inputRowType = tableRowType(branchLookup.getSource());
+                    flag = LookupOption.KEEP_INPUT;
+                }
+                stream.operator = branchLookup_Default(stream.operator, 
+                                                       groupTable, 
+                                                       inputRowType,
+                                                       tableRowType(branchLookup.getBranch()), 
+                                                       flag);
+            }
+            else {
+                stream = new RowStream();
+                LookupOption flag = LookupOption.KEEP_INPUT;
+                stream.operator = branchLookup_Nested(groupTable, 
+                                                      tableRowType(branchLookup.getSource()),
+                                                      tableRowType(branchLookup.getBranch()), 
+                                                      flag,
+                                                      0);
+                
+            }
             stream.rowType = null;
             stream.unknownTypesPresent = true;
             stream.fieldOffsets = null;
             return stream;
+        }
+
+        protected RowStream assembleProduct(Product product) {
+            RowStream pstream = new RowStream();
+            Flattened flattened = new Flattened();
+            for (PlanNode subplan : product.getSubplans()) {
+                RowStream stream = assembleStream(subplan);
+                if (pstream.operator == null) {
+                    pstream.operator = stream.operator;
+                    pstream.rowType = stream.rowType;
+                }
+                else {
+                    pstream.operator = product_NestedLoops(pstream.operator,
+                                                           stream.operator,
+                                                           pstream.rowType,
+                                                           stream.rowType,
+                                                           0);
+                    pstream.rowType = pstream.operator.rowType();
+                }
+                if (stream.fieldOffsets instanceof ColumnSourceFieldOffsets) {
+                    TableSource table = ((ColumnSourceFieldOffsets)
+                                         stream.fieldOffsets).getTable();
+                    flattened.addTable(tableRowType(table), table);
+                }
+                else {
+                    flattened.product((Flattened)stream.fieldOffsets);
+                }
+            }
+            pstream.fieldOffsets = flattened;
+            return pstream;
         }
 
         protected RowStream assembleAggregateSource(AggregateSource aggregateSource) {
@@ -683,6 +708,14 @@ public class OperatorAssembler extends BaseRule
             this.source = source;
         }
 
+        public ColumnSource getSource() {
+            return source;
+        }
+
+        public TableSource getTable() {
+            return (TableSource)source;
+        }
+
         @Override
         public int getIndex(ColumnExpression column) {
             if (column.getTable() != source) 
@@ -704,6 +737,44 @@ public class OperatorAssembler extends BaseRule
         public int getIndex(ColumnExpression column) {
             assert index.isCovering() : "Direct access to index field when not covering";
             return index.getColumns().indexOf(column);
+        }
+    }
+
+    static class Flattened implements ColumnExpressionToIndex {
+        Map<TableSource,Integer> tableOffsets = new HashMap<TableSource,Integer>();
+        int nfields;
+            
+        @Override
+        public int getIndex(ColumnExpression column) {
+            Integer tableOffset = tableOffsets.get(column.getTable());
+            if (tableOffset == null)
+                return -1;
+            return tableOffset + column.getPosition();
+        }
+
+        public void addTable(RowType rowType, TableSource table) {
+            if (table != null)
+                tableOffsets.put(table, nfields);
+            nfields += rowType.nFields();
+        }
+
+        // Tack on another flattened using product rules.
+        public void product(final Flattened other) {
+            List<TableSource> otherTables = 
+                new ArrayList<TableSource>(other.tableOffsets.keySet());
+            Collections.sort(otherTables,
+                             new Comparator<TableSource>() {
+                                 @Override
+                                 public int compare(TableSource x, TableSource y) {
+                                     return other.tableOffsets.get(x) - other.tableOffsets.get(y);
+                                 }
+                             });
+            for (TableSource otherTable : otherTables) {
+                if (!tableOffsets.containsKey(otherTable)) {
+                    tableOffsets.put(otherTable, nfields);
+                    nfields += other.tableOffsets.get(otherTable);
+                }
+            }
         }
     }
 

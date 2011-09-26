@@ -56,7 +56,7 @@ public class BranchJoiner extends BaseRule
                 ((GroupScan)scan).setTables(ntables);
                 tables = ntables;
             }
-            return flattenBranches(scan, tableJoins.getJoins(), tables);
+            return flattenBranches(scan, tableJoins.getJoins(), tables, null);
         }
         if (index.isCovering()) {
             return index;
@@ -134,7 +134,7 @@ public class BranchJoiner extends BaseRule
             // Fetch it in the same stream.
             scan = new BranchLookup(scan, leafAncestor, 
                                     entry.getKey(), entry.getValue());
-            return flattenBranches(scan, tableJoins.getJoins(), allTables);
+            return flattenBranches(scan, tableJoins.getJoins(), allTables, null);
         }
 
         // Load the main branch.
@@ -215,6 +215,11 @@ public class BranchJoiner extends BaseRule
             }
         }
 
+        public void addMainBranchTable(TableNode table) {
+            int index = table.getDepth();
+            mainBranch[index] = table;
+        }
+
         public void addMainBranchTable(TableSource table) {
             int index = table.getTable().getDepth();
             mainBranchSources[index] = table;
@@ -278,7 +283,8 @@ public class BranchJoiner extends BaseRule
     // Product_HKeyOrdered kind of operator, it is may not be possible
     // to do this without fetching some of the data over again.
     protected PlanNode flattenBranches(PlanNode input, Joinable joins, 
-                                       Collection<TableSource> tables) {
+                                       Collection<TableSource> tables,
+                                       TableNode commonAncestor) {
         if (tables.isEmpty()) 
             return input;
 
@@ -286,6 +292,8 @@ public class BranchJoiner extends BaseRule
         for (TableSource table : tables) {
             branching.addTable(table);
         }
+        if (commonAncestor != null)
+            branching.addMainBranchTable(commonAncestor);
         // Any tables that need to be moved to a side branch didn't
         // come from the initial tree after all.
         tables.retainAll(branching.getMainBranchTableSources());
@@ -319,7 +327,8 @@ public class BranchJoiner extends BaseRule
                                                     branchpoint,
                                                     subbranch);
                 // Try to flatten just this side branch, maybe giving nested product.
-                subplan = flattenBranches(subplan, joins, subbranch);
+                subplan = flattenBranches(subplan, joins, 
+                                          subbranch, branchpoint.getParent());
                 subplans.add(subplan);
             }
         }
