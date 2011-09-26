@@ -46,8 +46,7 @@ public class ProductRowType extends DerivedRowType
     public AkType typeAt(int index) {
         if (index < leftType.nFields())
             return leftType.typeAt(index);
-        int indexWithinRight = index - leftType.nFields() + branchType.nFields();
-        return rightType.typeAt(indexWithinRight);
+        return rightType.typeAt(index - leftType.nFields() + branchType.nFields());
     }
 
     // ProductRowType interface
