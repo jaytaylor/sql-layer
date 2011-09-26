@@ -44,7 +44,10 @@ public class ProductRowType extends DerivedRowType
 
     @Override
     public AkType typeAt(int index) {
-        throw new UnsupportedOperationException(); // TODO
+        if (index < leftType.nFields())
+            return leftType.typeAt(index);
+        int indexWithinRight = index - leftType.nFields() + branchType.nFields();
+        return rightType.typeAt(indexWithinRight);
     }
 
     // ProductRowType interface
