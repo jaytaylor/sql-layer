@@ -770,10 +770,15 @@ public class OperatorAssembler extends BaseRule
                                      return other.tableOffsets.get(x) - other.tableOffsets.get(y);
                                  }
                              });
-            for (TableSource otherTable : otherTables) {
+            for (int i = 0; i < otherTables.size(); i++) {
+                TableSource otherTable = otherTables.get(i);
                 if (!tableOffsets.containsKey(otherTable)) {
                     tableOffsets.put(otherTable, nfields);
-                    nfields += other.tableOffsets.get(otherTable);
+                    // Width in other.tableOffsets.
+                    nfields += (((i+1 >= otherTables.size()) ?
+                                 other.nfields :
+                                 other.tableOffsets.get(otherTables.get(i+1))) -
+                                other.tableOffsets.get(otherTable));
                 }
             }
         }
