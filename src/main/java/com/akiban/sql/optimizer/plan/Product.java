@@ -15,46 +15,43 @@
 
 package com.akiban.sql.optimizer.plan;
 
-public abstract class BasePlanWithInput extends BasePlanNode implements PlanWithInput
+import java.util.List;
+
+/** A product type join among several subplans. */
+public class Product extends BasePlanNode implements PlanWithInput
 {
-    private PlanNode input;
+    private List<PlanNode> subplans;
 
-    protected BasePlanWithInput(PlanNode input) {
-        this.input = input;
-        if (input != null)
-            input.setOutput(this);
+    public Product(List<PlanNode> subplans) {
+        this.subplans = subplans;
     }
 
-    public PlanNode getInput() {
-        return input;
-    }
-    public void setInput(PlanNode input) {
-        this.input = input;
-        input.setOutput(this);
+    public List<PlanNode> getSubplans() {
+        return subplans;
     }
 
     @Override
     public void replaceInput(PlanNode oldInput, PlanNode newInput) {
-        if (input == oldInput) {
-            input = newInput;
-            input.setOutput(this);
-        }
+        int index = subplans.indexOf(oldInput);
+        if (index >= 0)
+            subplans.set(index, newInput);
     }
 
     @Override
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
-            if (input != null)
-                input.accept(v);
+            for (PlanNode subplan : subplans) {
+                if (!subplan.accept(v))
+                    break;
+            }
         }
         return v.visitLeave(this);
     }
-    
+
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        if (input != null)
-            setInput((PlanNode)input.duplicate(map)); // Which takes care of setting input's output.
+        subplans = duplicateList(subplans, map);
     }
 
 }

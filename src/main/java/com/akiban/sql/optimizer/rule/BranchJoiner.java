@@ -26,7 +26,7 @@ import com.akiban.server.error.UnsupportedSQLException;
 import java.util.*;
 
 /** Having sources table groups from indexes, get rows with XxxLookup
- * and join them together with Flatten, etc. */
+ * and join them together with Flatten, Product, etc. */
 public class BranchJoiner extends BaseRule 
 {
     @Override
@@ -190,7 +190,7 @@ public class BranchJoiner extends BaseRule
         // Each side branch and the tables that are reached that way.
         // The key is the brachpoint, an ancestor of the required
         // table whose ancestor is on the main branch.
-        private Map<TableNode,Collection<TableSource>> sideBranches;
+        private Map<TableNode,List<TableSource>> sideBranches;
 
         // Initialize from the leaf of the main branch. Just sets up
         // the arrays and mask; does not actually add any tables.
@@ -200,7 +200,7 @@ public class BranchJoiner extends BaseRule
             mainBranchSources = new TableSource[size];
             leaf.getTree().colorBranches();
             mainBranchMask = leaf.getBranches();
-            sideBranches = new HashMap<TableNode,Collection<TableSource>>();
+            sideBranches = new HashMap<TableNode,List<TableSource>>();
         }
 
         // Initialize from a set of query tables, one of which is the leaf.
@@ -238,9 +238,9 @@ public class BranchJoiner extends BaseRule
         public void addSideBranchTable(TableSource table) {
             TableNode branchPoint = getBranchPoint(table.getTable());
             assert (branchPoint != null);
-            Collection<TableSource> entry = sideBranches.get(branchPoint);
+            List<TableSource> entry = sideBranches.get(branchPoint);
             if (entry == null) {
-                entry = new HashSet<TableSource>();
+                entry = new ArrayList<TableSource>();
                 sideBranches.put(branchPoint, entry);
             }
             entry.add(table);
@@ -262,7 +262,7 @@ public class BranchJoiner extends BaseRule
             return sideBranches.size();
         }
 
-        public Map<TableNode,Collection<TableSource>> getSideBranches() {
+        public Map<TableNode,List<TableSource>> getSideBranches() {
             return sideBranches;
         }
 
@@ -298,8 +298,7 @@ public class BranchJoiner extends BaseRule
         for (TableSource table : tables) {
             branching.addTable(table);
         }
-        if (branching.getNSideBranches() > 0)
-            throw new UnsupportedSQLException("Too many branches", null);
+
         List<TableNode> flattenNodes = branching.getMainBranchTableNodes();
         List<TableSource> flattenSources = branching.getMainBranchTableSources();
         List<JoinType> joinTypes = 
@@ -312,7 +311,30 @@ public class BranchJoiner extends BaseRule
         tables.retainAll(flattenSources);
         if (!joinConditions.isEmpty())
             input = new Filter(input, joinConditions);
-        return new Flatten_New(input, flattenNodes, flattenSources, joinTypes);
+        input = new Flatten_New(input, flattenNodes, flattenSources, joinTypes);
+        
+        int nbranches = branching.getNSideBranches();
+        if (nbranches > 0) {
+            List<PlanNode> subplans = new ArrayList<PlanNode>(nbranches + 1);
+            subplans.add(input);
+            input = new Product(subplans);
+
+            List<TableNode> branchpoints = new ArrayList<TableNode>(branching.getSideBranches().keySet());
+            Collections.sort(branchpoints, tableNodeById);
+            for (TableNode branchpoint : branchpoints) {
+                List<TableSource> subbranch = 
+                    branching.getSideBranches().get(branchpoint);
+                Collections.sort(subbranch, tableSourceById);
+                PlanNode subplan = new BranchLookup_New(null, // No input.
+                                                        branchpoint.getParent(),
+                                                        branchpoint,
+                                                        subbranch);
+                // Try to flatten just this side branch, maybe giving nested product.
+                subplan = flattenBranch(subplan, joins, subbranch);
+                subplans.add(subplan);
+            }
+        }
+        return input;
     }
 
     // Turn a tree of joins into a regular flatten list.
@@ -327,7 +349,7 @@ public class BranchJoiner extends BaseRule
         if (joinable.isTable()) {
             TableSource table = (TableSource)joinable;
             int idx = branch.indexOf(table);
-            assert ((parent == null) ? (idx >= 0) : (idx > 0));
+            if (idx <= 0) return;
             if (parent != null) {
                 joinTypes.set(idx - 1, parent.getJoinType());
                 if (parent.getJoinConditions() != null) {
