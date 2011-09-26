@@ -14,14 +14,8 @@
  */
 package com.akiban.qp.expression;
 
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
 
 class NewExpressionWrapper implements com.akiban.qp.expression.Expression {
 

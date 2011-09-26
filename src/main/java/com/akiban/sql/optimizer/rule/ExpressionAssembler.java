@@ -51,7 +51,7 @@ public class ExpressionAssembler
         else if (node instanceof ColumnExpression)
             return field(fieldOffsets.getIndex((ColumnExpression)node));
         else if (node instanceof ParameterExpression)
-            return variable(((ParameterExpression)node).getPosition());
+            return variable(node.getAkType(), ((ParameterExpression)node).getPosition());
         else if (node instanceof BooleanOperationExpression)
             throw new UnsupportedSQLException("NIY", null);
         else if (node instanceof CastExpression)

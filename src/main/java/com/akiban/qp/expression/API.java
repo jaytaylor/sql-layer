@@ -35,13 +35,8 @@ public class API
     @Deprecated
     public static Expression field(int position)
     {
-        throw new UnsupportedOperationException("need rowtype for position " + position);
-    }
-
-    @Deprecated
-    public static Expression variable(int position)
-    {
-        throw new UnsupportedOperationException("need rowtype for position " + position);
+        return field(null, position);
+//        throw new UnsupportedOperationException("need rowtype for position " + position);
     }
 
     public static Expression compare(Expression left, Comparison comparison, Expression right)
