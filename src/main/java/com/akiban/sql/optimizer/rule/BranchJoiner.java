@@ -112,15 +112,29 @@ public class BranchJoiner extends BaseRule
         for (TableSource table : branched)
             branching.addTable(table);
         
-        if (descendants.isEmpty() && ancestors.isEmpty() &&
-            (branching.getNSideBranches() == 1)) {
-            // Easy case 2: nothing on the original branch and just one side branch.
-            // Fetch it in the same stream.
+        easy_2:
+        if (descendants.isEmpty() && (branching.getNSideBranches() == 1)) {
             Map.Entry<TableNode,List<TableSource>> entry =
                 branching.getSideBranches().entrySet().iterator().next();
-            scan = new BranchLookup_New(scan, indexTableNode, 
+            TableNode leafAncestor = indexTableNode;
+            List<TableSource> allTables = entry.getValue();
+            if (!ancestors.isEmpty()) {
+                Collections.sort(ancestors, tableSourceById);
+                leafAncestor = ancestors.get(ancestors.size()-1).getTable();
+                long branchMask = entry.getKey().getBranches();
+                if ((branchMask & leafAncestor.getBranches()) != branchMask)
+                    break easy_2;
+                scan = new AncestorLookup_New(scan, indexTable, ancestors);
+                allTables = new ArrayList<TableSource>(allTables);
+                allTables.addAll(ancestors);
+            }
+            // Easy case 2: just one side branch and either nothing on
+            // the original branch or everything an ancestor of the
+            // side branch (far enough above the index table).
+            // Fetch it in the same stream.
+            scan = new BranchLookup_New(scan, leafAncestor, 
                                         entry.getKey(), entry.getValue());
-            return flattenBranches(scan, tableJoins.getJoins(), entry.getValue());
+            return flattenBranches(scan, tableJoins.getJoins(), allTables);
         }
 
         // Load the main branch.
