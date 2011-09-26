@@ -52,6 +52,14 @@ public final class FieldExpression implements Expression {
         return rowType.typeAt(fieldIndex);
     }
 
+    // Object interface
+
+
+    @Override
+    public String toString() {
+        return String.format("Field(%d)", fieldIndex);
+    }
+
     public FieldExpression(RowType rowType, int fieldIndex) {
         this.rowType = rowType;
         this.fieldIndex = fieldIndex;
