@@ -15,8 +15,6 @@
 
 package com.akiban.qp.expression;
 
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -24,10 +22,9 @@ import com.akiban.server.expression.std.BoundFieldExpression;
 import com.akiban.server.expression.std.CompareExpression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
-import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.std.VariableExpression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ValueSource;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,16 +32,22 @@ import java.util.List;
 
 public class API
 {
-    public static Expression compare(Expression left, Comparison comparison, Expression right)
-    {
-        CompareExpression compExpr = new CompareExpression(wrapAll(left, right), comparison.newStyle());
-        return new NewExpressionWrapper(compExpr);
-    }
-
     @Deprecated
     public static Expression field(int position)
     {
         throw new UnsupportedOperationException("need rowtype for position " + position);
+    }
+
+    @Deprecated
+    public static Expression variable(int position)
+    {
+        throw new UnsupportedOperationException("need rowtype for position " + position);
+    }
+
+    public static Expression compare(Expression left, Comparison comparison, Expression right)
+    {
+        CompareExpression compExpr = new CompareExpression(wrapAll(left, right), comparison.newStyle());
+        return new NewExpressionWrapper(compExpr);
     }
 
     public static Expression field(RowType rowType, int position)
@@ -67,9 +70,9 @@ public class API
         return new NewExpressionWrapper(new LiteralExpression(new FromObjectValueSource().setReflectively(value)));
     }
 
-    public static Expression variable(int position)
+    public static Expression variable(AkType type, int position)
     {
-        return new Variable(position);
+        return new NewExpressionWrapper(new VariableExpression(type, position));
     }
 
     public static Expression boundField(RowType rowType, int rowPosition, int fieldPosition)
@@ -81,23 +84,13 @@ public class API
 
     public static com.akiban.server.expression.Expression wrap(Expression qpExpression)
     {
-        if (qpExpression == null) {
-            throw new IllegalArgumentException();
-        }
-        return new InnerNewExpressionWrapper(qpExpression);
+        return qpExpression.get();
     }
 
-    public static List<? extends com.akiban.server.expression.Expression> wrapAll
-        (List<? extends Expression> qpExpressions)
+    public static List<? extends com.akiban.server.expression.Expression> wrapAll(List<? extends Expression> list)
     {
-        if (qpExpressions == null) {
-            throw new IllegalArgumentException();
-        }
         List<com.akiban.server.expression.Expression> result = new ArrayList<com.akiban.server.expression.Expression>();
-        for (Expression qpExpression : qpExpressions) {
-            if (qpExpression == null) {
-                throw new IllegalArgumentException();
-            }
+        for (Expression qpExpression : list) {
             result.add(wrap(qpExpression));
         }
         return result;
@@ -113,111 +106,4 @@ public class API
     public static Comparison LE = Comparison.LE;
     public static Comparison GT = Comparison.GT;
     public static Comparison GE = Comparison.GE;
-
-    // Inner classes
-
-    private static class InnerNewExpressionWrapper implements com.akiban.server.expression.Expression
-    {
-        // Expression interface
-
-        @Override
-        public boolean isConstant()
-        {
-            return false;
-        }
-
-        @Override
-        public boolean needsBindings()
-        {
-            return true;
-        }
-
-        @Override
-        public boolean needsRow()
-        {
-            return true;
-        }
-
-        @Override
-        public ExpressionEvaluation evaluation()
-        {
-            return new NewExpressionEvaluationWrapper(delegate);
-        }
-
-        @Override
-        public AkType valueType()
-        {
-            return delegate.getAkType();
-        }
-
-        // Object interface
-
-        @Override
-        public String toString()
-        {
-            return delegate.toString();
-        }
-
-        private InnerNewExpressionWrapper(Expression delegate)
-        {
-            this.delegate = delegate;
-        }
-
-        private final Expression delegate;
-    }
-
-    private static class NewExpressionEvaluationWrapper implements ExpressionEvaluation
-    {
-        @Override
-        public String toString()
-        {
-            return delegate.toString();
-        }
-
-        @Override
-        public void of(Row row)
-        {
-            this.row = row;
-        }
-
-        @Override
-        public void of(Bindings bindings)
-        {
-            this.bindings = bindings;
-        }
-
-        @Override
-        public ValueSource eval()
-        {
-            Object wrapped = delegate.evaluate(row, bindings);
-            source.setReflectively(wrapped);
-            return source;
-        }
-
-        @Override
-        public void acquire() {
-            row.acquire();
-        }
-
-        @Override
-        public boolean isShared() {
-            return row.isShared();
-        }
-
-        @Override
-        public void release() {
-            row.release();
-        }
-
-        private NewExpressionEvaluationWrapper(Expression delegate)
-        {
-            this.delegate = delegate;
-            this.source = new FromObjectValueSource();
-        }
-
-        private final Expression delegate;
-        private final FromObjectValueSource source;
-        private Row row;
-        private Bindings bindings;
-    }
 }

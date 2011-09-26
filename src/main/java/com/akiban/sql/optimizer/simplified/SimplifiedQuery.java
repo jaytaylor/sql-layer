@@ -811,11 +811,11 @@ public class SimplifiedQuery
             else if ((left instanceof LiteralExpression) && 
                      (right instanceof LiteralExpression)) {
                 // Know that literals don't need offsets, rows or bindings.
-                boolean answer = (Boolean)
+                boolean answer = Extractors.getBooleanExtractor().getBoolean(
                     compare(left.generateExpression(null), 
                             op,
-                            right.generateExpression(null))
-                    .evaluate(null, null);
+                            right.generateExpression(null)).get().evaluation().eval()
+                    );
                 if (answer) return; // Boolean true: nothing to add.
                 // Boolean false; no way to add such a condition; throw error.
             }

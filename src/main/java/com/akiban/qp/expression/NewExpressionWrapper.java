@@ -31,15 +31,8 @@ class NewExpressionWrapper implements com.akiban.qp.expression.Expression {
     }
 
     @Override
-    final public Object evaluate(Row row, Bindings bindings) {
-        ExpressionEvaluation evaluation = delegate.evaluation();
-        evaluation.of(row);
-        evaluation.of(bindings);
-        ToObjectValueTarget valueTarget = new ToObjectValueTarget();
-        ValueSource eval = evaluation.eval();
-        valueTarget.expectType(eval.getConversionType());
-        Converters.convert(eval, valueTarget);
-        return valueTarget.lastConvertedValue();
+    public Expression get() {
+        return delegate;
     }
 
     @Override
