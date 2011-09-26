@@ -210,8 +210,6 @@ public class OperatorAssembler extends BaseRule
                 return assembleFilter((Filter)node);
             else if (node instanceof Flatten)
                 return assembleFlatten((Flatten)node);
-            else if (node instanceof Flatten_New)
-                return assembleFlatten((Flatten_New)node);
             else if (node instanceof AncestorLookup)
                 return assembleAncestorLookup((AncestorLookup)node);
             else if (node instanceof BranchLookup)
@@ -286,54 +284,6 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleFlatten(Flatten flatten) {
             RowStream stream = assembleStream(flatten.getInput());
-            Joinable joins = flatten.getJoins();
-            if (joins instanceof TableSource) {
-                TableSource table = (TableSource)joins;
-                stream.rowType = tableRowType(table);
-                stream.fieldOffsets = new ColumnSourceFieldOffsets(table);
-            }
-            else {
-                Flattened flattened = flattened(joins, stream);
-                stream.rowType = flattened.rowType;
-                stream.fieldOffsets = flattened;
-            }
-            if (stream.unknownTypesPresent) {
-                stream.operator = filter_Default(stream.operator,
-                                                 Collections.singletonList(stream.rowType));
-                stream.unknownTypesPresent = false;
-            }
-            return stream;
-        }
-
-        protected Flattened flattened(Joinable joinable, RowStream stream) {
-            if (joinable instanceof TableSource) {
-                TableSource table = (TableSource)joinable;
-                Flattened f = new Flattened();
-                f.rowType = tableRowType(table);
-                f.tableOffsets = new HashMap<TableSource,Integer>();
-                f.tableOffsets.put(table, 0);
-                return f;
-            }
-            else {
-                JoinNode join = (JoinNode)joinable;
-                Flattened fleft = flattened(join.getLeft(), stream);
-                Flattened fright = flattened(join.getRight(), stream);
-                stream.operator = flatten_HKeyOrdered(stream.operator,
-                                                      fleft.rowType,
-                                                      fright.rowType,
-                                                      join.getJoinType());
-                int offset = fleft.rowType.nFields();
-                fleft.rowType = stream.operator.rowType();
-                for (Map.Entry<TableSource,Integer> entry : fright.tableOffsets.entrySet())
-                    if (!fleft.tableOffsets.containsKey(entry.getKey()))
-                        fleft.tableOffsets.put(entry.getKey(), 
-                                               entry.getValue() + offset);
-                return fleft;
-            }
-        }
-
-        protected RowStream assembleFlatten(Flatten_New flatten) {
-            RowStream stream = assembleStream(flatten.getInput());
             List<TableNode> tableNodes = flatten.getTableNodes();
             TableNode tableNode = tableNodes.get(0);
             RowType tableRowType = tableRowType(tableNode);
@@ -347,7 +297,7 @@ public class OperatorAssembler extends BaseRule
             else {
                 Flattened flattened = new Flattened();
                 flattened.addTable(tableRowType, flatten.getTableSources().get(0));
-                for (int i = 0; i < ntables; i++) {
+                for (int i = 1; i < ntables; i++) {
                     tableNode = tableNodes.get(i);
                     tableRowType = tableRowType(tableNode);
                     flattened.addTable(tableRowType, flatten.getTableSources().get(i));
@@ -357,6 +307,7 @@ public class OperatorAssembler extends BaseRule
                                                           flatten.getJoinTypes().get(i-1));
                     stream.rowType = stream.operator.rowType();
                 }
+                stream.fieldOffsets = flattened;
             }
             if (stream.unknownTypesPresent) {
                 stream.operator = filter_Default(stream.operator,
@@ -367,8 +318,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         static class Flattened implements ColumnExpressionToIndex {
-            RowType rowType;
-            Map<TableSource,Integer> tableOffsets;
+            Map<TableSource,Integer> tableOffsets = new HashMap<TableSource,Integer>();
             int nfields;
             
             @Override
@@ -389,7 +339,7 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleAncestorLookup(AncestorLookup ancestorLookup) {
             RowStream stream = assembleStream(ancestorLookup.getInput());
-            GroupTable groupTable = ancestorLookup.getDescendant().getTable().getGroup().getGroupTable();
+            GroupTable groupTable = ancestorLookup.getDescendant().getGroup().getGroupTable();
             RowType inputRowType = stream.rowType; // The index row type.
             LookupOption flag = LookupOption.DISCARD_INPUT;
             if (!(inputRowType instanceof IndexRowType)) {
@@ -399,7 +349,7 @@ public class OperatorAssembler extends BaseRule
             }
             List<RowType> ancestorTypes = 
                 new ArrayList<RowType>(ancestorLookup.getAncestors().size());
-            for (TableSource table : ancestorLookup.getAncestors()) {
+            for (TableNode table : ancestorLookup.getAncestors()) {
                 ancestorTypes.add(tableRowType(table));
             }
             stream.operator = ancestorLookup_Default(stream.operator,
@@ -421,7 +371,7 @@ public class OperatorAssembler extends BaseRule
                 inputRowType = tableRowType(branchLookup.getSource());
                 flag = LookupOption.KEEP_INPUT;
             }
-            GroupTable groupTable = branchLookup.getSource().getTable().getGroup().getGroupTable();
+            GroupTable groupTable = branchLookup.getSource().getGroup().getGroupTable();
             stream.operator = branchLookup_Default(stream.operator, 
                                                    groupTable, 
                                                    inputRowType,

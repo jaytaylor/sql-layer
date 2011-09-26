@@ -16,46 +16,70 @@
 package com.akiban.sql.optimizer.plan;
 
 import java.util.List;
+import java.util.ArrayList;
 
 public class AncestorLookup extends BasePlanWithInput
 {
-    private TableSource descendant;
-    private List<TableSource> ancestors;
+    private TableNode descendant;
+    private List<TableNode> ancestors;
+    private List<TableSource> tables;
 
-    public AncestorLookup(PlanNode input, 
-                          TableSource descendant, List<TableSource> ancestors) {
+    public AncestorLookup(PlanNode input, TableNode descendant,
+                          List<TableNode> ancestors,
+                          List<TableSource> tables) {
         super(input);
         this.descendant = descendant;
         this.ancestors = ancestors;
+        this.tables = tables;
     }
 
-    public TableSource getDescendant() {
+    public AncestorLookup(PlanNode input, TableSource descendant,
+                          List<TableSource> tables) {
+        super(input);
+        this.descendant = descendant.getTable();
+        this.tables = tables;
+        this.ancestors = new ArrayList<TableNode>(tables.size());
+        for (TableSource table : tables) {
+            ancestors.add(table.getTable());
+        }
+    }
+
+    public TableNode getDescendant() {
         return descendant;
     }
 
-    public List<TableSource> getAncestors() {
+    public List<TableNode> getAncestors() {
         return ancestors;
+    }
+
+    /** The tables that this branch lookup introduces into the stream. */
+    public List<TableSource> getTables() {
+        return tables;
+    }
+
+    @Override
+    public boolean accept(PlanVisitor v) {
+        if (v.visitEnter(this)) {
+            if ((getInput() == null) || getInput().accept(v)) {
+                for (TableSource table : tables) {
+                    if (!table.accept(v))
+                        break;
+                }
+            }
+        }
+        return v.visitLeave(this);
     }
 
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        descendant = (TableSource)descendant.duplicate();
-        ancestors = duplicateList(ancestors, map);
+        ancestors = new ArrayList<TableNode>(ancestors);
+        tables = duplicateList(tables, map);
     }
 
     @Override
     public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
-        str.append("(");
-        str.append(descendant.getTable());
-        str.append(" -> ");
-        for (int i = 0; i < ancestors.size(); i++) {
-            if (i > 0) str.append(", ");
-            str.append(ancestors.get(i).getTable());
-        }
-        str.append(")");
-        return str.toString();
+        return super.summaryString() + "(" + descendant + " -> " + ancestors + ")";
     }
 
 }

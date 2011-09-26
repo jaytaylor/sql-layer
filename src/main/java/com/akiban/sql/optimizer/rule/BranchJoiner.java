@@ -94,7 +94,7 @@ public class BranchJoiner extends BaseRule
                 return scan;
             // Easy case 1: up a single branch from the index row. Look up and flatten.
             Collections.sort(ancestors, tableSourceById);
-            AncestorLookup_New al = new AncestorLookup_New(scan, indexTable, ancestors);
+            AncestorLookup al = new AncestorLookup(scan, indexTable, ancestors);
             return flattenJoins(al, tableJoins.getJoins(),
                                 al.getAncestors(), al.getTables());
         }
@@ -124,7 +124,7 @@ public class BranchJoiner extends BaseRule
                 long branchMask = entry.getKey().getBranches();
                 if ((branchMask & leafAncestor.getBranches()) != branchMask)
                     break easy_2;
-                scan = new AncestorLookup_New(scan, indexTable, ancestors);
+                scan = new AncestorLookup(scan, indexTable, ancestors);
                 allTables = new ArrayList<TableSource>(allTables);
                 allTables.addAll(ancestors);
             }
@@ -132,8 +132,8 @@ public class BranchJoiner extends BaseRule
             // the original branch or everything an ancestor of the
             // side branch (far enough above the index table).
             // Fetch it in the same stream.
-            scan = new BranchLookup_New(scan, leafAncestor, 
-                                        entry.getKey(), entry.getValue());
+            scan = new BranchLookup(scan, leafAncestor, 
+                                    entry.getKey(), entry.getValue());
             return flattenBranches(scan, tableJoins.getJoins(), allTables);
         }
 
@@ -146,12 +146,12 @@ public class BranchJoiner extends BaseRule
             int size = mainBranchNodes.size();
             mainBranchNodes.subList(idx, size).clear();
             mainBranchSources.subList(idx, size).clear();
-            scan = new BranchLookup_New(scan, indexTableNode, 
-                                        indexTableNode, descendants);
+            scan = new BranchLookup(scan, indexTableNode, 
+                                    indexTableNode, descendants);
         }
         if (!mainBranchNodes.isEmpty()) {
-            scan = new AncestorLookup_New(scan, indexTableNode, 
-                                          mainBranchNodes, mainBranchSources);
+            scan = new AncestorLookup(scan, indexTableNode, 
+                                      mainBranchNodes, mainBranchSources);
         }
         return flattenBranches(scan, tableJoins.getJoins(), branching);
     }
@@ -314,10 +314,10 @@ public class BranchJoiner extends BaseRule
                 List<TableSource> subbranch = 
                     branching.getSideBranches().get(branchpoint);
                 Collections.sort(subbranch, tableSourceById);
-                PlanNode subplan = new BranchLookup_New(null, // No input.
-                                                        branchpoint.getParent(),
-                                                        branchpoint,
-                                                        subbranch);
+                PlanNode subplan = new BranchLookup(null, // No input.
+                                                    branchpoint.getParent(),
+                                                    branchpoint,
+                                                    subbranch);
                 // Try to flatten just this side branch, maybe giving nested product.
                 subplan = flattenBranches(subplan, joins, subbranch);
                 subplans.add(subplan);
@@ -339,7 +339,7 @@ public class BranchJoiner extends BaseRule
         copyJoins(joins, null, flattenSources, joinTypes, joinConditions);
         if (!joinConditions.isEmpty())
             input = new Filter(input, joinConditions);
-        return new Flatten_New(input, flattenNodes, flattenSources, joinTypes);
+        return new Flatten(input, flattenNodes, flattenSources, joinTypes);
     }
 
     // Turn a tree of joins into a regular flatten list.
