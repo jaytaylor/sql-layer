@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode;
 import static com.akiban.sql.optimizer.plan.PlanContext.*;
@@ -475,6 +476,11 @@ public class ASTStatementLoader extends BaseRule
                                                        condition.getType(), condition));
             }
             break;
+        case NodeTypes.JAVA_TO_SQL_VALUE_NODE:
+            conditions.add((ConditionExpression)
+                           toExpression(((JavaToSQLValueNode)condition).getJavaValueNode(), 
+                                        condition, true));
+            break;
         default:
             throw new UnsupportedSQLException("Unsupported WHERE predicate",
                                               condition);
@@ -515,15 +521,18 @@ public class ASTStatementLoader extends BaseRule
         }
         List<List<ExpressionNode>> rows = new ArrayList<List<ExpressionNode>>();
         for (ValueNode rightOperand : rightOperandList) {
-            rows.add(Collections.singletonList(toExpression(rightOperand)));
+            List<ExpressionNode> row = new ArrayList<ExpressionNode>(1);
+            row.add(toExpression(rightOperand));
+            rows.add(row);
         }
         ExpressionsSource source = new ExpressionsSource(rows);
         ConditionExpression cond = new ComparisonCondition(Comparison.EQ, left,
                                                            new ColumnExpression(source, 0,
                                                                                 left.getSQLtype(), null),
                                                            in.getType(), null);
-        PlanNode subquery = new Project(source, 
-                                        Collections.<ExpressionNode>singletonList(cond));
+        List<ExpressionNode> fields = new ArrayList<ExpressionNode>(1);
+        fields.add(cond);
+        PlanNode subquery = new Project(source, fields);
         conditions.add(new AnyCondition(new Subquery(subquery), in.getType(), in));
     }
     
@@ -641,8 +650,9 @@ public class ASTStatementLoader extends BaseRule
             // physical plan and move it to the expression, but it's
             // easier to think about the scoping as evaluated at the
             // end of the inner query.
-            subquery = new Project(subquery,
-                                   Collections.<ExpressionNode>singletonList(inner));
+            List<ExpressionNode> fields = new ArrayList<ExpressionNode>(1);
+            fields.add(inner);
+            subquery = new Project(subquery, fields);
             condition = new AnyCondition(new Subquery(subquery), 
                                          subqueryNode.getType(), subqueryNode);
         }
@@ -651,8 +661,10 @@ public class ASTStatementLoader extends BaseRule
                                             subqueryNode.getType(), subqueryNode);
         }
         if (negate) {
+            List <ConditionExpression> operands = new ArrayList<ConditionExpression>(1);
+            operands.add(condition);
             condition = new LogicalFunctionCondition("not", 
-                                                     Collections.singletonList(condition),
+                                                     operands,
                                                      subqueryNode.getType(), 
                                                      subqueryNode);
         }
@@ -822,7 +834,7 @@ public class ASTStatementLoader extends BaseRule
     protected ExpressionNode toExpression(ValueNode valueNode)
             throws StandardException {
         if (valueNode == null) {
-            return new ConstantExpression(null);
+            return new ConstantExpression(null, AkType.NULL);
         }
         DataTypeDescriptor type = valueNode.getType();
         if (valueNode instanceof ColumnReference) {
@@ -924,7 +936,8 @@ public class ASTStatementLoader extends BaseRule
         }
         else if (valueNode instanceof JavaToSQLValueNode) {
             return toExpression(((JavaToSQLValueNode)valueNode).getJavaValueNode(),
-                                valueNode);
+                                valueNode,
+                                false);
         }
         else if (valueNode instanceof CurrentDatetimeOperatorNode) {
             String functionName = null;
@@ -958,19 +971,25 @@ public class ASTStatementLoader extends BaseRule
     // done this earlier and bound to a known function and elided the
     // Java stuff then.
     protected ExpressionNode toExpression(JavaValueNode javaToSQL,
-                                          ValueNode valueNode)
+                                          ValueNode valueNode,
+                                          boolean asCondition)
             throws StandardException {
         if (javaToSQL instanceof MethodCallNode) {
             MethodCallNode methodCall = (MethodCallNode)javaToSQL;
             List<ExpressionNode> operands = new ArrayList<ExpressionNode>();
             if (methodCall.getMethodParameters() != null) {
                 for (JavaValueNode javaValue : methodCall.getMethodParameters()) {
-                    operands.add(toExpression(javaValue, null));
+                    operands.add(toExpression(javaValue, null, false));
                 }
             }
-            return new FunctionExpression(methodCall.getMethodName(),
-                                          operands,
-                                          valueNode.getType(), valueNode);
+            if (asCondition)
+                return new FunctionCondition(methodCall.getMethodName(),
+                                             operands,
+                                             valueNode.getType(), valueNode);
+            else
+                return new FunctionExpression(methodCall.getMethodName(),
+                                              operands,
+                                              valueNode.getType(), valueNode);
         }
         else if (javaToSQL instanceof SQLToJavaValueNode) {
             return toExpression(((SQLToJavaValueNode)javaToSQL).getSQLValueNode());

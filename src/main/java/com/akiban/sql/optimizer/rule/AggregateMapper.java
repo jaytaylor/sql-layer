@@ -146,8 +146,8 @@ public class AggregateMapper extends BaseRule
             if (nexpr != null)
                 return nexpr.accept(this);
             int position = source.addAggregate((AggregateFunctionExpression)expr);
-            nexpr = new ColumnExpression(source, position, 
-                                         expr.getSQLtype(), expr.getSQLsource());
+            nexpr = new ColumnExpression(source, position,
+                                         expr.getSQLtype(), expr.getAkType(), expr.getSQLsource());
             map.put(expr, nexpr);
             return nexpr;
         }

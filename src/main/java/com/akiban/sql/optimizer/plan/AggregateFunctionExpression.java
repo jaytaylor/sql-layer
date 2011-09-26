@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
+import com.akiban.server.types.AkType;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
@@ -33,7 +34,7 @@ public class AggregateFunctionExpression extends BaseExpression
     public AggregateFunctionExpression(String function, ExpressionNode operand,
                                        boolean distinct, 
                                        DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+        super(sqlType, AkType.NULL, sqlSource); // TODO
         this.function = function;
         this.operand = operand;
         this.distinct = distinct;
