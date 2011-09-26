@@ -103,10 +103,6 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         return nrows;
     }
 
-    protected Bindings getBindings() {
-        return UndefBindings.only();
-    }
-
     /** Only needed in the case where a statement has parameters or the client
      * specifies that some results should be in binary. */
     static class BoundStatement extends PostgresOperatorStatement {
