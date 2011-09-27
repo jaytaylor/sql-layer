@@ -2,9 +2,9 @@ SelectQuery@6855a338
   ResultSet@7d95d4fe[order_date, _SQL_COL_1]
     Project@4e4ee70b[GROUP[0], GROUP[1]]
       Sort@1e22ab57[GROUP[0] DESC]
-        Filter@761eec35[]
+        Select@761eec35[]
           AggregateSource@6825c828([user.orders.order_date],[SUM(times(user.items.price,user.items.quan))])
-            Filter@877ef83[]
+            Select@877ef83[]
               JoinNode@7a0d85cc(INNER_JOIN[user.orders.oid == user.items.oid])
                 TableSource@2eb1074a(user.items)
                 TableSource@276a38b5(user.orders)

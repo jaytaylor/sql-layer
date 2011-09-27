@@ -1,9 +1,9 @@
 SelectQuery@734b84c7
   ResultSet@3003e926[name, sku, _SQL_COL_1]
     Project@50bfd66a[user.customers.name, user.items.sku, SUM(user.items.quan)]
-      Filter@599855ed[]
+      Select@599855ed[]
         AggregateSource@2031688f(PRESORTED,[user.customers.name, user.items.sku],[])
-          Filter@bc794cc[]
+          Select@bc794cc[]
             Flatten@1d716fa0
               AncestorLookup@5bf9e31e(user.items -> user.customers, user.items)
                 IndexScan@72adf5be(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), SORTED)

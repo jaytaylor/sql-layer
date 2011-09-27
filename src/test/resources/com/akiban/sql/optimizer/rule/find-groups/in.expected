@@ -1,7 +1,7 @@
 SelectQuery@7f81497d
   ResultSet@659adc2c[cid, name]
     Project@19ed00d1[user.customers.cid, user.customers.name]
-      Filter@22a010ba[ANY(Subquery@3aaa3518)]
+      Select@22a010ba[ANY(Subquery@3aaa3518)]
         TableSource@7c83d8be(user.customers - TableGroup@7f81497d(customers))
 
 Subquery@3aaa3518
