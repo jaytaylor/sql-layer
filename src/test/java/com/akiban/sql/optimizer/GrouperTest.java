@@ -15,16 +15,17 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 
+import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.NamedParameterizedRunner.TestParameters;
+import com.akiban.junit.Parameterization;
 import org.junit.Before;
 import org.junit.Test;
-import static junit.framework.Assert.*;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
 import static junit.framework.Assert.*;
 
@@ -32,15 +33,16 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
-@RunWith(Parameterized.class)
-public class GrouperTest extends OptimizerTestBase implements TestBase.GenerateAndCheckResult
+@RunWith(NamedParameterizedRunner.class)
+public class GrouperTest extends OptimizerTestBase 
+                         implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "group");
 
-    @Parameters
-    public static Collection<Object[]> statements() throws Exception {
-        return sqlAndExpected(RESOURCE_DIR);
+    @TestParameters
+    public static Collection<Parameterization> statements() throws Exception {
+        return NamedParamsTestBase.namedCases(sqlAndExpected(RESOURCE_DIR));
     }
 
     public GrouperTest(String caseName, String sql, String expected, String error) {
