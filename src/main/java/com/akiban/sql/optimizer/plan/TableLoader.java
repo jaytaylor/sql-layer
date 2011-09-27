@@ -17,29 +17,8 @@ package com.akiban.sql.optimizer.plan;
 
 import java.util.List;
 
-public class BranchLookup extends BaseLookup
+/** Something that actually introduces data from tables into the stream. */
+public interface TableLoader extends PlanElement
 {
-    private TableNode source, branch;
-
-    public BranchLookup(PlanNode input, 
-                        TableNode source, TableNode branch,
-                        List<TableSource> tables) {
-        super(input, tables);
-        this.source = source;
-        this.branch = branch;
-    }
-
-    public TableNode getSource() {
-        return source;
-    }
-
-    public TableNode getBranch() {
-        return branch;
-    }
-
-    @Override
-    public String summaryString() {
-        return super.summaryString() + "(" + source + " -> " + branch + ")";
-    }
-
+    public List<TableSource> getTables();
 }
