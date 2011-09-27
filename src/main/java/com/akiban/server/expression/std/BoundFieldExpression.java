@@ -62,7 +62,6 @@ public final class BoundFieldExpression implements Expression {
     private static class InnerEvaluation implements ExpressionEvaluation {
         @Override
         public void of(Row row) {
-            assert false : "are you sure you want to do that, Dave?";
         }
 
         @Override
