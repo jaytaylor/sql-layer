@@ -347,7 +347,7 @@ public class BranchJoiner extends BaseRule
         List<ConditionExpression> joinConditions = new ArrayList<ConditionExpression>(0);
         copyJoins(joins, null, flattenSources, joinTypes, joinConditions);
         if (!joinConditions.isEmpty())
-            input = new Filter(input, joinConditions);
+            input = new Select(input, joinConditions);
         return new Flatten(input, flattenNodes, flattenSources, joinTypes);
     }
 

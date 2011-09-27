@@ -2,7 +2,7 @@ SelectQuery@12c9b196
   ResultSet@746e96ff[name, order_date]
     Project@87b7b11[user.customers.name, user.orders.order_date]
       Sort@37f8d244[user.orders.order_date, user.customers.name]
-        Filter@30b48b11[]
+        Select@30b48b11[]
           JoinNode@1d162212(LEFT_JOIN[user.customers.cid == user.orders.cid])
             TableSource@1816daa9(user.customers)
             TableSource@46d999a(user.orders)

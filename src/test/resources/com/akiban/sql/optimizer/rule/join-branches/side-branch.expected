@@ -1,7 +1,7 @@
 SelectQuery@1422384
   ResultSet@67e779a1[name, order_date]
     Project@de26e52[user.customers.name, user.orders.order_date]
-      Filter@114a947[]
+      Select@114a947[]
         Flatten@17599cc(user.customers LEFT_JOIN user.orders)
           BranchLookup@1c45731(user.customers -> user.orders)
             AncestorLookup@1388e5e(user.addresses -> [user.customers])

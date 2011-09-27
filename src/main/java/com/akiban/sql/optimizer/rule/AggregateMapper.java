@@ -93,8 +93,8 @@ public class AggregateMapper extends BaseRule
             while (true) {
                 // Keep going as long as we're feeding something we understand.
                 n = n.getOutput();
-                if (n instanceof Filter) {
-                    remap(((Filter)n).getConditions());
+                if (n instanceof Select) {
+                    remap(((Select)n).getConditions());
                 }
                 else if (n instanceof Sort) {
                     remapA(((Sort)n).getOrderBy());

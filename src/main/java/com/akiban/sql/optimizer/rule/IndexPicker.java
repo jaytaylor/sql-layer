@@ -123,8 +123,8 @@ public class IndexPicker extends BaseRule
         Sort ordering = null;
         AggregateSource grouping = null;
         input = input.getOutput();
-        if (input instanceof Filter)
-            conditions = ((Filter)input).getConditions();
+        if (input instanceof Select)
+            conditions = ((Select)input).getConditions();
         else
             return null;
         input = input.getOutput();
@@ -134,7 +134,7 @@ public class IndexPicker extends BaseRule
         else if (input instanceof AggregateSource) {
             grouping = (AggregateSource)input;
             input = input.getOutput();
-            if (input instanceof Filter)
+            if (input instanceof Select)
                 input = input.getOutput();
             if (input instanceof Sort) {
                 // Needs to be possible to satisfy both.

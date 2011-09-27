@@ -1,7 +1,7 @@
 SelectQuery@19fac852
   ResultSet@1f758cd1[name, order_date, state]
     Project@5e6ffd79[user.customers.name, user.orders.order_date, user.addresses.state]
-      Filter@a6a435f[]
+      Select@a6a435f[]
         Product@466d1750
           Flatten@2415a94f(user.customers INNER_JOIN user.addresses)
             AncestorLookup@a1e940b(user.addresses -> [user.customers, user.addresses])

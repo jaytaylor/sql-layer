@@ -548,7 +548,7 @@ public class IndexGoal implements Comparator<IndexScan>
         if (index.getConditions() != null) {
             for (ConditionExpression condition : index.getConditions()) {
                 // TODO: This depends on conditions being the original
-                // from the Filter, and not some copy merged with join
+                // from the Select, and not some copy merged with join
                 // conditions, etc. When it is, more work will be
                 // needed to track down where to remove, though
                 // setting the implementation may be enough.
