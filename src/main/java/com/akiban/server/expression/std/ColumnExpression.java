@@ -18,8 +18,6 @@ package com.akiban.server.expression.std;
 import com.akiban.ais.model.Column;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
@@ -48,7 +46,7 @@ public final class ColumnExpression implements Expression {
 
     @Override
     public ExpressionEvaluation evaluation() {
-        return new InnerEvaluation(column, position);
+        return new InnerEvaluation(position);
     }
 
     @Override
@@ -80,14 +78,6 @@ public final class ColumnExpression implements Expression {
 
         @Override
         public void of(Row row) {
-            RowType incomingType = row.rowType();
-            if (! (incomingType instanceof UserTableRowType)) {
-                throw new IllegalArgumentException("wrong row type: " + incomingType + " != " + incomingType);
-            }
-            UserTableRowType utRowType = (UserTableRowType) incomingType;
-            if (!utRowType.userTable().equals(column.getUserTable())) {
-                throw new IllegalArgumentException("wrong row type: " + incomingType + " != " + incomingType);
-            }
             this.row = row;
         }
 
@@ -121,12 +111,10 @@ public final class ColumnExpression implements Expression {
 
         // private methods
 
-        private InnerEvaluation(Column column, int position) {
-            this.column = column;
+        private InnerEvaluation(int position) {
             this.position = position;
         }
 
-        private final Column column;
         private final int position;
         private Row row;
     }
