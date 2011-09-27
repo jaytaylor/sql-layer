@@ -817,7 +817,8 @@ public class SimplifiedQuery
                 boolean answer = Extractors.getBooleanExtractor().getBoolean(
                     compare(left.generateExpression(null),
                             op,
-                            right.generateExpression(null)).get().evaluation().eval()
+                            right.generateExpression(null)).get().evaluation().eval(),
+                    false
                     );
                 if (answer) return; // Boolean true: nothing to add.
                 // Boolean false; no way to add such a condition; throw error.

@@ -23,13 +23,9 @@ public final class BooleanExtractor extends AbstractExtractor {
 
     // BooleanExtractor interface
 
-    public boolean getBoolean(ValueSource source, boolean ifNull) {
-        return source.isNull() ? ifNull : getBoolean(source);
-    }
-
-    public boolean getBoolean(ValueSource source) {
+    public Boolean getBoolean(ValueSource source, Boolean ifNull) {
         if (source.isNull())
-            throw new ValueSourceIsNullException();
+            return ifNull;
         AkType type = source.getConversionType();
         switch (type) {
         case BOOL:      return source.getBool();

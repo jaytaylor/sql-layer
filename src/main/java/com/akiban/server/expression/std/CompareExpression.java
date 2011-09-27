@@ -111,8 +111,8 @@ public final class CompareExpression extends AbstractTwoArgExpression {
         return new CompareOp() {
             @Override
             public int compare(ValueSource a, ValueSource b) {
-                boolean aBool = Extractors.getBooleanExtractor().getBoolean(a);
-                boolean bBool = Extractors.getBooleanExtractor().getBoolean(b);
+                boolean aBool = Extractors.getBooleanExtractor().getBoolean(a, null);
+                boolean bBool = Extractors.getBooleanExtractor().getBoolean(b, null);
                 return Boolean.valueOf(aBool).compareTo(bBool);
             }
         };
