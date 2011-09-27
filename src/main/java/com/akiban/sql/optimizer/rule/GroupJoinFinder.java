@@ -87,9 +87,9 @@ public class GroupJoinFinder extends BaseRule
     // While there, normalize comparisons.
     protected void moveAndNormalizeWhereConditions(List<Joinable> islands) {
         for (Joinable island : islands) {
-            if (island.getOutput() instanceof Filter) {
+            if (island.getOutput() instanceof Select) {
                 List<ConditionExpression> conditions = 
-                    ((Filter)island.getOutput()).getConditions();
+                    ((Select)island.getOutput()).getConditions();
                 moveInnerJoinConditions(island, conditions);
                 normalizeColumnComparisons(conditions);
             }
@@ -241,8 +241,8 @@ public class GroupJoinFinder extends BaseRule
     protected void findGroupJoins(List<Joinable> islands) {
         for (Joinable island : islands) {
             List<ConditionExpression> whereConditions = null;
-            if (island.getOutput() instanceof Filter)
-                whereConditions = ((Filter)island.getOutput()).getConditions();
+            if (island.getOutput() instanceof Select)
+                whereConditions = ((Select)island.getOutput()).getConditions();
             findGroupJoins(island, null, whereConditions);
         }
         for (Joinable island : islands) {

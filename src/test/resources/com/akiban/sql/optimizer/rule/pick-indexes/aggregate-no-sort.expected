@@ -1,9 +1,9 @@
 SelectQuery@56f449b8
   ResultSet@531df164[_SQL_COL_1, _SQL_COL_2]
     Project@52d306dd[MIN(user.items.sku), MAX(user.items.sku)]
-      Filter@5fed27e4[]
+      Select@5fed27e4[]
         AggregateSource@4ad61aef(SORT,[user.items.quan],[])
-          Filter@2e82674b[]
+          Select@2e82674b[]
             Flatten@4013fba1
               AncestorLookup@734b84c7(user.items -> user.items)
                 IndexScan@62fa5ff3(Index(user.items.__akiban_fk_1[IndexColumn(oid)]), NONE, =$0)

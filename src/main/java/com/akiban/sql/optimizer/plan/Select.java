@@ -18,13 +18,12 @@ package com.akiban.sql.optimizer.plan;
 import java.util.List;
 
 /** Apply a conjunction of Boolean expressions to the input.
- * (What relational algebra and the operator system call Select).
  */
-public class Filter extends BasePlanWithInput
+public class Select extends BasePlanWithInput
 {
     private List<ConditionExpression> conditions;
 
-    public Filter(PlanNode input, List<ConditionExpression> conditions) {
+    public Select(PlanNode input, List<ConditionExpression> conditions) {
         super(input);
         this.conditions = conditions;
     }
