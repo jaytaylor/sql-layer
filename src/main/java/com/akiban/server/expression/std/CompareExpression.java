@@ -21,6 +21,7 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.extract.ObjectExtractor;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueHolder;
 
@@ -145,13 +146,17 @@ public final class CompareExpression extends AbstractTwoArgExpression {
             @Override
             public int compare(ValueSource a, ValueSource b) {
                 switch (type) {
-                case DECIMAL:   return doCompare(a.getDecimal(), b.getDecimal());
-                case VARCHAR:   return doCompare(a.getString(), b.getString());
-                case TEXT:      return doCompare(a.getText(), b.getText());
-                case U_BIGINT:  return doCompare(a.getUBigInt(), b.getUBigInt());
+                case DECIMAL:   return doCompare(Extractors.getDecimalExtractor(), a, b);
+                case VARCHAR:   return doCompare(Extractors.getStringExtractor(), a, b);
+                case TEXT:      return doCompare(Extractors.getStringExtractor(), a, b);
+                case U_BIGINT:  return doCompare(Extractors.getUBigIntExtractor(), a, b);
                 case VARBINARY: return doCompare(a.getVarBinary(), b.getVarBinary());
                 default: throw new UnsupportedOperationException("can't get comparable for type " + type);
                 }
+            }
+
+            private <T extends Comparable<T>> int doCompare(ObjectExtractor<T> extractor, ValueSource one, ValueSource two) {
+                return doCompare(extractor.getObject(one), extractor.getObject(two));
             }
 
             private <T extends Comparable<T>> int doCompare(T one, T two) {

@@ -42,7 +42,8 @@ public final class TypesConversion {
         case Types.TINYINT: return AkType.LONG;
         case Types.VARBINARY: return AkType.VARBINARY;
         case Types.VARCHAR: return AkType.VARCHAR;
-
+        case Types.JAVA_OBJECT:
+            return AkType.valueOf(descriptor.getFullSQLTypeName().toUpperCase());
         default:
             throw new UnsupportedOperationException(
                     "unsupported type id: " + descriptor.getJDBCTypeId()
