@@ -1,7 +1,7 @@
 SelectQuery@7ce1eae7
   ResultSet@3ef3c5c4[cid, name, oid, cid, order_date, id, name, state, id, pid, name]
     Project@763ce725[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date, user.parent.id, user.parent.name, user.parent.state, user.child.id, user.child.pid, user.child.name]
-      Filter@1d6dba0a[user.parent.name == user.customers.name]
+      Select@1d6dba0a[user.parent.name == user.customers.name]
         JoinNode@ed0f59e(INNER_JOIN)
           JoinNode@38ad5fab(INNER_JOIN[user.orders.cid == user.customers.cid] - TableGroupJoin@7e63f09e(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
             TableSource@534a55e5(user.customers - TableGroup@354d581b(customers))

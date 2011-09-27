@@ -207,8 +207,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleIndexScan((IndexScan)node);
             else if (node instanceof GroupScan)
                 return assembleGroupScan((GroupScan)node);
-            else if (node instanceof Filter)
-                return assembleFilter((Filter)node);
+            else if (node instanceof Select)
+                return assembleSelect((Select)node);
             else if (node instanceof Flatten)
                 return assembleFlatten((Flatten)node);
             else if (node instanceof AncestorLookup)
@@ -271,9 +271,9 @@ public class OperatorAssembler extends BaseRule
             return stream;
         }
 
-        protected RowStream assembleFilter(Filter filter) {
-            RowStream stream = assembleStream(filter.getInput());
-            for (ConditionExpression condition : filter.getConditions())
+        protected RowStream assembleSelect(Select select) {
+            RowStream stream = assembleStream(select.getInput());
+            for (ConditionExpression condition : select.getConditions())
                 // TODO: Only works for fully flattened; for earlier
                 // conditions, need more complex mapping between row
                 // types and field offsets.

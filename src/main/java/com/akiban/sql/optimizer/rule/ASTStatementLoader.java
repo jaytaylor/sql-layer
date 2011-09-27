@@ -250,7 +250,7 @@ public class ASTStatementLoader extends BaseRule
             hasAggregateFunction(projects) ||
             hasAggregateFunctionA(sorts)) {
             query = toAggregateSource(query, selectNode.getGroupByList());
-            query = new Filter(query, toConditions(selectNode.getHavingClause()));
+            query = new Select(query, toConditions(selectNode.getHavingClause()));
         }
 
         if (selectNode.hasWindows())
@@ -315,7 +315,7 @@ public class ASTStatementLoader extends BaseRule
         }
     }
 
-    /** The common top-level filtered joins part of all statements. */
+    /** The common top-level join and select part of all statements. */
     protected PlanNode toQuery(SelectNode selectNode)
             throws StandardException {
         Joinable joins = null;
@@ -329,7 +329,7 @@ public class ASTStatementLoader extends BaseRule
         if (hasAggregateFunction(conditions))
             throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
                                               selectNode.getWhereClause());
-        return new Filter(joins, conditions);
+        return new Select(joins, conditions);
     }
 
     protected Map<FromTable,Joinable> joinNodes =
