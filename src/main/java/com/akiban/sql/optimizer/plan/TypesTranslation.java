@@ -19,7 +19,7 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import java.sql.Types;
 
-public final class TypesConversion {
+public final class TypesTranslation {
     public static AkType sqlTypeToAkType(DataTypeDescriptor descriptor) {
         switch (descriptor.getJDBCTypeId()) {
         case Types.BIGINT:  return AkType.U_BIGINT;
@@ -68,5 +68,5 @@ public final class TypesConversion {
         }
     }
 
-    private TypesConversion() {}
+    private TypesTranslation() {}
 }

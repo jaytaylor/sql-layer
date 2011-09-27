@@ -30,7 +30,7 @@ import java.util.Set;
 
 import com.akiban.server.error.ColumnNotBoundException;
 import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.sql.optimizer.plan.TypesConversion;
+import com.akiban.sql.optimizer.plan.TypesTranslation;
 import com.akiban.sql.parser.*;
 
 import com.akiban.server.types.AkType;
@@ -948,7 +948,7 @@ public class SimplifiedQuery
         else if (operand instanceof ConstantNode)
             return new LiteralExpression(((ConstantNode)operand).getValue());
         else if (operand instanceof ParameterNode) {
-            AkType akType = TypesConversion.sqlTypeToAkType(operand.getType());
+            AkType akType = TypesTranslation.sqlTypeToAkType(operand.getType());
             return new ParameterExpression(akType, ((ParameterNode)operand).getParameterNumber());
         }
         else if (operand instanceof CastNode) {
