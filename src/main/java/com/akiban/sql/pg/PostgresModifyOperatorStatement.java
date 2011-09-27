@@ -19,7 +19,6 @@ import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 
 import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.operator.UndefBindings;
 
 import java.io.IOException;
 
@@ -62,10 +61,6 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         }
         messenger.sendMessage();
         return 0;
-    }
-
-    protected Bindings getBindings() {
-        return UndefBindings.only();
     }
 
     /** Only needed in the case where a statement has parameters. */
