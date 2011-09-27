@@ -757,9 +757,9 @@ public class OperatorAssembler extends BaseRule
         }
 
         @Override
-        // Access field of the index row itself.
+        // Access field of the index row itself. 
+        // (Covering index or condition before lookup.)
         public int getIndex(ColumnExpression column) {
-            assert index.isCovering() : "Direct access to index field when not covering";
             return index.getColumns().indexOf(column);
         }
     }
