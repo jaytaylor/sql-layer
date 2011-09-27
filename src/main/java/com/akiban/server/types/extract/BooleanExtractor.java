@@ -23,6 +23,10 @@ public final class BooleanExtractor extends AbstractExtractor {
 
     // BooleanExtractor interface
 
+    public boolean getBoolean(ValueSource source, boolean ifNull) {
+        return source.isNull() ? ifNull : getBoolean(source);
+    }
+
     public boolean getBoolean(ValueSource source) {
         if (source.isNull())
             throw new ValueSourceIsNullException();

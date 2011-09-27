@@ -43,7 +43,12 @@ public class ConstantExpression extends BaseExpression
     }
 
     public ConstantExpression(ValueSource valueSource, DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        this(new ToObjectValueTarget().convertFromSource(valueSource), sqlType, valueSource.getConversionType(), sqlSource);
+        this(
+                valueSource.isNull() ? null : new ToObjectValueTarget().convertFromSource(valueSource),
+                sqlType,
+                valueSource.getConversionType(),
+                sqlSource
+        );
     }
 
     public ConstantExpression(Object value, AkType type) {

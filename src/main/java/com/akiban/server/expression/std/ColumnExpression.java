@@ -88,9 +88,7 @@ public final class ColumnExpression implements Expression {
             if (!utRowType.userTable().equals(column.getUserTable())) {
                 throw new IllegalArgumentException("wrong row type: " + incomingType + " != " + incomingType);
             }
-            ValueSource incomingSource = row.eval(position);
             this.row = row;
-            this.rowSource = incomingSource;
         }
 
         @Override
@@ -99,9 +97,9 @@ public final class ColumnExpression implements Expression {
 
         @Override
         public ValueSource eval() {
-            if (rowSource == null)
+            if (row == null)
                 throw new IllegalStateException("haven't seen a row to target");
-            return rowSource;
+            return row.eval(position);
         }
 
         // Shareable interface
@@ -131,6 +129,5 @@ public final class ColumnExpression implements Expression {
         private final Column column;
         private final int position;
         private Row row;
-        private ValueSource rowSource;
     }
 }

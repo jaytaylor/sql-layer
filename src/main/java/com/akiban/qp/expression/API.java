@@ -79,6 +79,8 @@ public class API
 
     public static com.akiban.server.expression.Expression wrap(Expression qpExpression)
     {
+        if (qpExpression == null)
+            throw new IllegalArgumentException();
         return qpExpression.get();
     }
 
