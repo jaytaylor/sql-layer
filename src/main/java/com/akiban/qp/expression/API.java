@@ -86,6 +86,8 @@ public class API
 
     public static List<? extends com.akiban.server.expression.Expression> wrapAll(List<? extends Expression> list)
     {
+        if (list == null)
+            throw new IllegalArgumentException();
         List<com.akiban.server.expression.Expression> result = new ArrayList<com.akiban.server.expression.Expression>();
         for (Expression qpExpression : list) {
             result.add(wrap(qpExpression));

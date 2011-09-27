@@ -91,7 +91,6 @@ public final class FieldExpression implements Expression {
                 );
             }
             this.row = row;
-            this.rowSource = incomingSource;
         }
 
         @Override
@@ -100,9 +99,9 @@ public final class FieldExpression implements Expression {
 
         @Override
         public ValueSource eval() {
-            if (rowSource == null)
+            if (row == null)
                 throw new IllegalStateException("haven't seen a row to target");
-            return rowSource;
+            return row.eval(fieldIndex);
         }
 
         // Shareable interface
@@ -136,6 +135,5 @@ public final class FieldExpression implements Expression {
         private final int fieldIndex;
         private final AkType akType;
         private Row row;
-        private ValueSource rowSource;
     }
 }
