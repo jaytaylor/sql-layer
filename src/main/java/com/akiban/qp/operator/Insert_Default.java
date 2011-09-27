@@ -41,6 +41,7 @@ class Insert_Default implements UpdatePlannable {
         try {
             Row row;
             while ((row = inputCursor.next()) != null) {
+                adapter.checkQueryCancelation();
                 ++seen;
                 adapter.writeRow(row, bindings);
                 ++modified;

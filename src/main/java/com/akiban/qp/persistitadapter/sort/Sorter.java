@@ -83,6 +83,7 @@ public class Sorter
         try {
             Row row;
             while ((row = input.next()) != null) {
+                adapter.checkQueryCancelation();
                 createKey(row);
                 createValue(row);
                 exchange.store();

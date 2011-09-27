@@ -85,6 +85,14 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
+    public void checkQueryCancelation()
+    {
+        if (session.isCurrentQueryCanceled()) {
+            throw new QueryCanceledException();
+        }
+    }
+
+    @Override
     public HKey newHKey(RowType rowType)
     {
         return new PersistitHKey(this, rowType.hKey());

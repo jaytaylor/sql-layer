@@ -99,6 +99,7 @@ class Select_HKeyOrdered extends Operator
         @Override
         public Row next()
         {
+            adapter.checkQueryCancelation();
             Row row = null;
             Row inputRow = input.next();
             while (row == null && inputRow != null) {
@@ -137,12 +138,14 @@ class Select_HKeyOrdered extends Operator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
+            this.adapter = adapter;
             this.input = input;
             this.evaluation = predicate.evaluation();
         }
 
         // Object state
 
+        private final StoreAdapter adapter;
         private final Cursor input;
         private final ShareHolder<Row> selectedRow = new ShareHolder<Row>(); // The last input row with type = predicateRowType.
         private final ExpressionEvaluation evaluation;

@@ -101,6 +101,7 @@ class Sort_Tree extends Operator
         @Override
         public Row next()
         {
+            adapter.checkQueryCancelation();
             if (output == null) {
                 output = adapter.sort(input, sortType, ordering, bindings);
             }

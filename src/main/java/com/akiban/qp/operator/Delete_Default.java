@@ -47,6 +47,7 @@ class Delete_Default implements UpdatePlannable {
         try {
             Row oldRow;
             while ((oldRow = inputCursor.next()) != null) {
+                adapter.checkQueryCancelation();
                 ++seen;
                 adapter.deleteRow(oldRow, bindings);
                 ++modified;
