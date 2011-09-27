@@ -15,10 +15,12 @@
 
 package com.akiban.qp.expression;
 
+import com.akiban.ais.model.Column;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.expression.std.BoundFieldExpression;
+import com.akiban.server.expression.std.ColumnExpression;
 import com.akiban.server.expression.std.CompareExpression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
@@ -32,11 +34,9 @@ import java.util.List;
 
 public class API
 {
-    @Deprecated
-    public static Expression field(int position)
+    public static Expression field(Column column, int position)
     {
-        return field(null, position);
-//        throw new UnsupportedOperationException("need rowtype for position " + position);
+        return new NewExpressionWrapper(new ColumnExpression(column, position));
     }
 
     public static Expression compare(Expression left, Comparison comparison, Expression right)

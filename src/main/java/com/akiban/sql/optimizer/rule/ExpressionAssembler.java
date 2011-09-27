@@ -49,7 +49,7 @@ public class ExpressionAssembler
         if (node instanceof ConstantExpression)
             return literal(((ConstantExpression)node).getValue());
         else if (node instanceof ColumnExpression)
-            return field(fieldOffsets.getIndex((ColumnExpression)node));
+            return field(((ColumnExpression)node).getColumn(), fieldOffsets.getIndex((ColumnExpression)node));
         else if (node instanceof ParameterExpression)
             return variable(node.getAkType(), ((ParameterExpression)node).getPosition());
         else if (node instanceof BooleanOperationExpression)

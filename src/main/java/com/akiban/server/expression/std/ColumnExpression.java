@@ -15,17 +15,21 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.ais.model.Column;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 
-public final class VariableExpression implements Expression {
-
-    // Expression interface
+/**
+ * This is similar to a FieldExpression, except that fields are specified by an AIS Column, rather than
+ * by RowType + int.
+ */
+public final class ColumnExpression implements Expression {
 
     @Override
     public boolean isConstant() {
@@ -34,81 +38,99 @@ public final class VariableExpression implements Expression {
 
     @Override
     public boolean needsBindings() {
-        return true;
-    }
-
-    @Override
-    public boolean needsRow() {
         return false;
     }
 
     @Override
+    public boolean needsRow() {
+        return true;
+    }
+
+    @Override
     public ExpressionEvaluation evaluation() {
-        return new InnerEvaluation(type, position);
+        return new InnerEvaluation(column, position);
     }
 
     @Override
     public AkType valueType() {
-        return type;
-    }
-
-    public VariableExpression(AkType type, int position) {
-        this.type = type;
-        this.position = position;
+        return column.getType().akType();
     }
 
     // Object interface
 
+
     @Override
     public String toString() {
-        return String.format("Variable(pos=%d)", position);
+        return String.format("Field(%d)", position);
     }
 
-    // object state
+    public ColumnExpression(Column column, int position) {
+        this.column = column;
+        this.position = position;
+    }
 
-    private final AkType type;
+    private final Column column;
     private final int position;
 
+    // nested classes
+
     private static class InnerEvaluation implements ExpressionEvaluation {
+
+        // ExpressionEvaluation interface
+
         @Override
         public void of(Row row) {
+            RowType incomingType = row.rowType();
+            if (! (incomingType instanceof UserTableRowType)) {
+                throw new IllegalArgumentException("wrong row type: " + incomingType + " != " + incomingType);
+            }
+            UserTableRowType utRowType = (UserTableRowType) incomingType;
+            if (!utRowType.userTable().equals(column.getUserTable())) {
+                throw new IllegalArgumentException("wrong row type: " + incomingType + " != " + incomingType);
+            }
+            ValueSource incomingSource = row.eval(position);
+            this.row = row;
+            this.rowSource = incomingSource;
         }
 
         @Override
         public void of(Bindings bindings) {
-            this.bindings = bindings;
         }
 
         @Override
         public ValueSource eval() {
-            return source.setExplicitly(bindings.get(position), type);
+            if (rowSource == null)
+                throw new IllegalStateException("haven't seen a row to target");
+            return rowSource;
         }
+
+        // Shareable interface
 
         @Override
         public void acquire() {
-            ++ownedBy;
+            row.acquire();
         }
 
         @Override
         public boolean isShared() {
-            return ownedBy > 1;
+            return row.isShared();
         }
 
         @Override
         public void release() {
-            assert ownedBy > 0 : ownedBy;
-            --ownedBy;
+            row.release();
         }
 
-        private InnerEvaluation(AkType type, int position) {
-            this.type = type;
+        // private methods
+
+        private InnerEvaluation(Column column, int position) {
+            this.column = column;
             this.position = position;
         }
 
-        private final AkType type;
+        private final Column column;
         private final int position;
-        private final FromObjectValueSource source = new FromObjectValueSource();
-        private Bindings bindings;
-        private int ownedBy = 0;
+        private Row row;
+        private ValueSource rowSource;
     }
 }

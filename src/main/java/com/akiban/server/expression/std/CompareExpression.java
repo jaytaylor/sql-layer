@@ -52,6 +52,14 @@ public final class CompareExpression extends AbstractTwoArgExpression {
             throw new AkibanInternalException("couldn't find internal comparator for " + type);
     }
 
+    // overriding protected methods
+
+    @Override
+    protected void buildToString(StringBuilder sb) {//Field(2) < Literal(8888)
+        sb.append(left()).append(' ').append(comparison).append(' ').append(right());
+    }
+
+
     // for use in this class
 
     private static AkType childrenType(List<? extends Expression> children) {

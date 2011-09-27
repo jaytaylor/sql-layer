@@ -99,7 +99,7 @@ public abstract class AbstractCompositeExpression implements Expression {
      * <tt>ClassName(description -&gt; arg0, arg1, ...)</tt>.
      * @param sb the output
      */
-    private void buildToString(StringBuilder sb) {
+    protected void buildToString(StringBuilder sb) {
         String className = getClass().getSimpleName();
         sb.append(className);
         // chop off "-Expression" if it's there

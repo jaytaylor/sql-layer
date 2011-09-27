@@ -450,7 +450,7 @@ public class SimplifiedQuery
         }
 
         public Expression generateExpression(ColumnExpressionToIndex fieldOffsets)  {
-            return field(fieldOffsets.getIndex(this));
+            return field(column, fieldOffsets.getIndex(this));
         }
     }
 
