@@ -370,7 +370,7 @@ public class OperatorAssembler extends BaseRule
                                                       tableRowType(branchLookup.getSource()),
                                                       tableRowType(branchLookup.getBranch()), 
                                                       flag,
-                                                      0);
+                                                      bindingPosition());
                 
             }
             stream.rowType = null;
@@ -393,7 +393,7 @@ public class OperatorAssembler extends BaseRule
                                                            stream.operator,
                                                            pstream.rowType,
                                                            stream.rowType,
-                                                           0);
+                                                           bindingPosition());
                     pstream.rowType = pstream.operator.rowType();
                 }
                 if (stream.fieldOffsets instanceof ColumnSourceFieldOffsets) {
@@ -407,6 +407,20 @@ public class OperatorAssembler extends BaseRule
             }
             pstream.fieldOffsets = flattened;
             return pstream;
+        }
+
+        // This is good enough for branchLookup_Nested and
+        // product_NestedLoops, where each loop starts out right away
+        // with the lookup and never needs it after starting a nested
+        // loop. It will not be enough in general.
+        protected int bindingPosition() {
+            AST ast = ASTStatementLoader.getAST(planContext);
+            if (ast == null)
+                return 0;
+            List<ParameterNode> params = ast.getParameters();
+            if (params == null)
+                return 0;
+            return ast.getParameters().size();
         }
 
         protected RowStream assembleAggregateSource(AggregateSource aggregateSource) {
