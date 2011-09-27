@@ -1,5 +1,5 @@
-PhysicalSelect@296f25a7[name:varchar(32)[VARCHAR], order_date:date[DATE]]
-  project([Field(1), Field(4)])
+PhysicalSelect@49e808ca[cid:int[INT], order_date:date[DATE]]
+  project([Field(0), Field(4)])
     Filter_Default([flatten(user.customers, user.orders)])
       Flatten_HKeyOrdered(user.customers INNER user.orders)
         BranchLookup_Default(_akiban_customers user.customers -> user.orders limit NO LIMIT)

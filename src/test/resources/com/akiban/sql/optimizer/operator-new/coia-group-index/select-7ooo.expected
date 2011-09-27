@@ -1,0 +1,5 @@
+PhysicalSelect@3e4a9a7d[order_date:date[DATE]]
+  project([Field(4)])
+    Flatten_HKeyOrdered(user.customers LEFT user.orders)
+      AncestorLookup_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) -> [user.customers, user.orders])
+        IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) (,))

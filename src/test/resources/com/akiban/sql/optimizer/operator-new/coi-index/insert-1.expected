@@ -1,0 +1,4 @@
+PhysicalUpdate@2330633a
+  Insert_Default(project to table user.customers ([Field(0), Field(1)]))
+    project to table user.customers ([Field(0), Field(1)])
+      ValuesScan_Default[ExpressionRow[Literal(4), Literal(Brown)]]
