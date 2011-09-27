@@ -101,7 +101,6 @@ public class ExpressionAssembler
         Expression expr = assembleExpression(node, null);
         if (!expr.get().isConstant())
             throw new AkibanInternalException("required constant expression: " + expr);
-        // TODO: Call expr.isConstant() and throw an exception if not. TODO: remove this TODO :)
         if (node instanceof ConditionExpression) {
             boolean value = Extractors.getBooleanExtractor().getBoolean(expr.get().evaluation().eval(), false);
             return new BooleanConstantExpression(value,
