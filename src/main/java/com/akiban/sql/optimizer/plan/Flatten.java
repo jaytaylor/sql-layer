@@ -61,7 +61,7 @@ public class Flatten extends BasePlanWithInput
         Set<TableSource> result = new HashSet<TableSource>();
         for (int i = 0; i < tableSources.size(); i++) {
             if (i > 0) {
-                if (joinTypes.get(i) != JoinType.INNER_JOIN)
+                if (joinTypes.get(i-1) != JoinType.INNER_JOIN)
                     break;
             }
             TableSource table = tableSources.get(i);

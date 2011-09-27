@@ -107,7 +107,7 @@ public class SelectPreponer extends BaseRule
         TableOriginFinder finder = new TableOriginFinder();
         finder.find(plan.getPlan());
         for (PlanNode origin : finder.getOrigins()) {
-            new Preponer(finder.getNestings()).apply(origin);
+            new Preponer(finder.getNestings()).pullToward(origin);
         }
     }
     
@@ -120,29 +120,14 @@ public class SelectPreponer extends BaseRule
             this.nestings = nestings;
         }
 
-        public void apply(PlanNode origin) {
-            loaders = new HashMap<TableSource,PlanNode>();
-            if (origin instanceof IndexScan)
-                pullTowardIndex((IndexScan)origin);
-            else
-                pullToward(origin);
-        }
-
-        // Like PlanNode.getOutput(), except that it jumps up to Products, etc.
-        protected PlanNode getOutput(PlanNode input) {
-            PlanNode output = input.getOutput();
-            if ((output == null) && (nestings != null))
-                output = nestings.get(input);
-            return output;
-        }
-
-        protected void pullTowardIndex(IndexScan index) {
-            indexColumns = new HashMap<ExpressionNode,PlanNode>();
-            for (ExpressionNode column : index.getColumns())
-                indexColumns.put(column, index);
-        }
-
         protected void pullToward(PlanNode node) {
+            loaders = new HashMap<TableSource,PlanNode>();
+            if (node instanceof IndexScan) {
+                indexColumns = new HashMap<ExpressionNode,PlanNode>();
+                for (ExpressionNode column : ((IndexScan)node).getColumns())
+                    indexColumns.put(column, node);
+                node = node.getOutput();
+            }
             while (node instanceof TableLoader) {
                 for (TableSource table : ((TableLoader)node).getTables()) {
                     loaders.put(table, node);
@@ -177,11 +162,12 @@ public class SelectPreponer extends BaseRule
             }
             if (!sawJoin ||
                 (loaders.isEmpty() &&
-                 ((indexColumns == null) || indexColumns.isEmpty())))
+                 ((indexColumns == null) || indexColumns.isEmpty()))) {
                 // We didn't see any joins (conditions will follow
                 // loading directly -- nothing to move over) or ran
                 // out of things to move.
                 return;
+            }
             if (node instanceof Select) {
                 moveConditions(((Select)node).getConditions());
             }
@@ -201,18 +187,20 @@ public class SelectPreponer extends BaseRule
             }
         }
 
+        // Return where this condition can move.
+        // TODO: Can move to after subset of joins once enough tables are joined.
         protected PlanNode canMove(ConditionExpression condition) {
             TableSource table = getSingleTableConditionTable(condition);
             if (table == null)
                 return null;
-            PlanNode loader = loaders.get(table);
-            if (loader == null) {
-                if (indexColumns != null) {
-                    // Can check the index column before it's used for lookup.
-                    loader = indexColumns.get(((ComparisonCondition)condition).getLeft());
-                }
+            if (indexColumns != null) {
+                // Can check the index column before it's used for lookup.
+                PlanNode loader = indexColumns.get(((ComparisonCondition)
+                                                    condition).getLeft());
+                if (loader != null)
+                    return loader;
             }
-            return loader;
+            return loaders.get(table);
         }
 
         protected void moveCondition(ConditionExpression condition, 
@@ -228,9 +216,18 @@ public class SelectPreponer extends BaseRule
             select.getConditions().add(condition);
         }
 
+        // Like PlanNode.getOutput(), except that it jumps up to Products, etc.
+        protected PlanNode getOutput(PlanNode input) {
+            PlanNode output = input.getOutput();
+            if ((output == null) && (nestings != null))
+                output = nestings.get(input);
+            return output;
+        }
+
     }
 
     /** If this condition involves only a single table, return it. */
+    // TODO: Lots of room for improvement here, even with that simple contract.
     public static TableSource getSingleTableConditionTable(ConditionExpression condition) {
         if (!(condition instanceof ComparisonCondition))
             return null;
@@ -243,11 +240,19 @@ public class SelectPreponer extends BaseRule
         table = ((ColumnExpression)left).getTable();
         if (!(table instanceof TableSource))
             return null;
-        if (!((right instanceof ConstantExpression) || 
-              (right instanceof ParameterExpression)))
-            // TODO: Column from outer table okay, too. Need general predicate for that.
+        if (!isConstant(right))
             return null;
         return (TableSource)table;
+    }
+
+    // TODO: Column from outer table okay, too. Need general predicate for that.
+    protected static boolean isConstant(ExpressionNode node) {
+        if ((node instanceof ConstantExpression) || 
+            (node instanceof ParameterExpression))
+            return true;
+        if (node instanceof CastExpression)
+            return isConstant(((CastExpression)node).getOperand());
+        return false;
     }
 
 }
