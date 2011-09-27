@@ -275,13 +275,22 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleSelect(Select select) {
             RowStream stream = assembleStream(select.getInput());
-            for (ConditionExpression condition : select.getConditions())
-                // TODO: Only works for fully flattened; for earlier
-                // conditions, need more complex mapping between row
-                // types and field offsets.
+            for (ConditionExpression condition : select.getConditions()) {
+                RowType rowType = stream.rowType;
+                ColumnExpressionToIndex fieldOffsets = stream.fieldOffsets;
+                if (rowType == null) {
+                    // Pre-flattening case.
+                    // TODO: Would it be better if earlier rule saved this?
+                    TableSource table = 
+                        SelectPreponer.getSingleTableConditionTable(condition);
+                    rowType = tableRowType(table);
+                    fieldOffsets = new ColumnSourceFieldOffsets(table);
+                }
                 stream.operator = select_HKeyOrdered(stream.operator,
-                                                     stream.rowType,
-                                                     assembleExpression(condition, stream.fieldOffsets));
+                                                     rowType,
+                                                     assembleExpression(condition, 
+                                                                        fieldOffsets));
+            }
             return stream;
         }
 
