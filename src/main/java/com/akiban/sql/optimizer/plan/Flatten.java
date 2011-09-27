@@ -23,8 +23,13 @@ import java.util.List;
 /** Take nested rows and join into single rowset. */
 public class Flatten extends BasePlanWithInput
 {
+    // Must sometimes flatten in tables that aren't known to the
+    // query, but are used as branchpoints for products.
+    // This is the complete list.
     private List<TableNode> tableNodes;
+    // This parallel list has nulls for those unknown tables.
     private List<TableSource> tableSources;
+    // This list is one shorter and joins between each pair.
     private List<JoinType> joinTypes;
 
     public Flatten(PlanNode input, 
