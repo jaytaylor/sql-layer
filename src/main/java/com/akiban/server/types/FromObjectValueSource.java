@@ -227,10 +227,11 @@ public final class FromObjectValueSource implements ValueSource {
         case YEAR:
             return Extractors.getLongExtractor(type).getLong(this);
         case U_DOUBLE:
-        case U_FLOAT:
         case DOUBLE:
-        case FLOAT:
             return Extractors.getDoubleExtractor().getDouble(this);
+        case U_FLOAT:
+        case FLOAT:
+            return (float) Extractors.getDoubleExtractor().getDouble(this);
         case BOOL:
             return Extractors.getBooleanExtractor().getBoolean(this, null);
         case VARCHAR:
