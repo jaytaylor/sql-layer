@@ -18,28 +18,25 @@ package com.akiban.sql.optimizer.plan;
 import java.util.List;
 import java.util.ArrayList;
 
-public class AncestorLookup extends BasePlanWithInput
+public class AncestorLookup extends BaseLookup
 {
     private TableNode descendant;
     private List<TableNode> ancestors;
-    private List<TableSource> tables;
 
     public AncestorLookup(PlanNode input, TableNode descendant,
                           List<TableNode> ancestors,
                           List<TableSource> tables) {
-        super(input);
+        super(input, tables);
         this.descendant = descendant;
         this.ancestors = ancestors;
-        this.tables = tables;
     }
 
     public AncestorLookup(PlanNode input, TableSource descendant,
                           List<TableSource> tables) {
-        super(input);
+        super(input, tables);
         this.descendant = descendant.getTable();
-        this.tables = tables;
         this.ancestors = new ArrayList<TableNode>(tables.size());
-        for (TableSource table : tables) {
+        for (TableSource table : getTables()) {
             ancestors.add(table.getTable());
         }
     }
@@ -50,31 +47,6 @@ public class AncestorLookup extends BasePlanWithInput
 
     public List<TableNode> getAncestors() {
         return ancestors;
-    }
-
-    /** The tables that this branch lookup introduces into the stream. */
-    public List<TableSource> getTables() {
-        return tables;
-    }
-
-    @Override
-    public boolean accept(PlanVisitor v) {
-        if (v.visitEnter(this)) {
-            if ((getInput() == null) || getInput().accept(v)) {
-                for (TableSource table : tables) {
-                    if (!table.accept(v))
-                        break;
-                }
-            }
-        }
-        return v.visitLeave(this);
-    }
-
-    @Override
-    protected void deepCopy(DuplicateMap map) {
-        super.deepCopy(map);
-        ancestors = new ArrayList<TableNode>(ancestors);
-        tables = duplicateList(tables, map);
     }
 
     @Override
