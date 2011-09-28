@@ -142,16 +142,44 @@ public class IndexDDLIT extends PostgresServerITBase {
 
     @Test
     public void dropIndexSimple() throws SQLException {
-        String sql = "CREATE INDEX test14 on test.t1 (test.t1.c1, t1.c2, c3)";
+        String sql = "CREATE INDEX test114 on test.t1 (test.t1.c1, t1.c2, c3)";
         createTable();
         
         connection.createStatement().execute(sql);
-        String sql1 = "DROP INDEX test14";
+        String sql1 = "DROP INDEX test114";
         
         connection.createStatement().execute(sql1);
         UserTable table = ddlServer().getAIS(session()).getUserTable("test", "t1");
         assertNotNull (table);
-        assertNull (table.getIndex("test14"));
+        assertNull (table.getIndex("test114"));
+    }
+    
+    // @Test - disabled because the SET SCHEMA doesn't work? 
+    public void dropIndexTable() throws SQLException {
+        String sql = "CREATE INDEX test115 on test.t1 (test.t1.c1, t1.c2, c3)";
+        createTable();
+        
+        connection.createStatement().execute(sql);
+        
+        connection.createStatement().execute("SET SCHEMA test; DROP INDEX t1.test115");
+        connection.createStatement().execute("DROP INDEX t1.test115");
+        UserTable table = ddlServer().getAIS(session()).getUserTable("test", "t1");
+        assertNotNull (table);
+        assertNull (table.getIndex("test115"));
+    }
+
+    @Test
+    public void dropIndexSchema() throws SQLException {
+        String sql = "CREATE INDEX test116 on test.t1 (test.t1.c1, t1.c2, c3)";
+        createTable();
+        
+        connection.createStatement().execute(sql);
+        String sql1 = "DROP INDEX test.t1.test116";
+        
+        connection.createStatement().execute(sql1);
+        UserTable table = ddlServer().getAIS(session()).getUserTable("test", "t1");
+        assertNotNull (table);
+        assertNull (table.getIndex("test116"));
     }
     
     @Test (expected=PSQLException.class)
@@ -190,6 +218,29 @@ public class IndexDDLIT extends PostgresServerITBase {
         
         String sql3 = "DROP INDEX test17";
         connection.createStatement().execute(sql3);
+    }
+
+    @Test 
+    public void dropCorrectDuplicateIndexes () throws SQLException {
+        createJoinedTables();
+        String sql1 = "CREATE INDEX test18 on test.t2 (t2.c1)";
+        String sql2 = "CREATE INDEX test18 on test.t1 (t1.c1)";
+        connection.createStatement().execute(sql1);
+        connection.createStatement().execute(sql2);
+        
+        String sql3 = "DROP INDEX test.t1.test18";
+        connection.createStatement().execute(sql3);
+        UserTable table1 = ddlServer().getAIS(session()).getUserTable("test", "t2");
+        assertNotNull (table1);
+        assertNotNull (table1.getIndex("test18"));
+    }
+
+    @Test (expected=PSQLException.class)
+    public void dropPrimaryKeyFails() throws SQLException {
+        createTable(); 
+        
+        String sql = "DROP INDEX test.t1.\"PRIMARY\"";
+        connection.createStatement().execute(sql);
     }
     
     private void createTable () throws SQLException {

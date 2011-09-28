@@ -60,35 +60,63 @@ public class IndexDDL
                                     DropIndexNode dropIndex) {
         String groupName = null;
         TableName tableName = null;
-        
-        final String schemaName = dropIndex.getObjectName().getSchemaName() != null ? dropIndex.getObjectName().getSchemaName() : defaultSchemaName;
-        String indexName = dropIndex.getObjectName().getTableName();
+
+        final String indexSchemaName = dropIndex.getObjectName() != null && dropIndex.getObjectName().getSchemaName() != null ?
+                dropIndex.getObjectName().getSchemaName() :
+                    null;
+        final String indexTableName = dropIndex.getObjectName() != null && dropIndex.getObjectName().getTableName() != null ?
+                dropIndex.getObjectName().getTableName() :
+                    null;
+        final String indexName = dropIndex.getIndexName();
         ArrayList<String> indexesToDrop = new ArrayList<String>(1);
         indexesToDrop.add(indexName);
         
-        for (Group table : ddlFunctions.getAIS(session).getGroups().values()) {
-            for (Index index : table.getIndexes()) {
-                if (index.getIndexName().getName().equalsIgnoreCase(indexName)) {
-                    if (groupName == null) {
-                        groupName = table.getName();
+        // if the user supplies the table for the index, look only there
+        if (indexTableName != null) {
+            tableName = TableName.create(indexSchemaName == null ? defaultSchemaName : indexSchemaName, indexTableName);
+            UserTable table = ddlFunctions.getAIS(session).getUserTable(tableName);
+            if (table == null) {
+                throw new NoSuchTableException(tableName);
+            }
+            // if we can't find the index, set tableName to null
+            // to flag not a user table index. 
+            if (table.getIndex(indexName) == null) {
+                tableName = null;
+            }
+            // Check the group associated to the table for the 
+            // same index name. 
+            Group group = table.getGroup();
+            if (group.getIndex(indexName) != null) {
+                // Table and it's group share an index name, we're confused. 
+                if (tableName != null) {
+                    throw new IndistinguishableIndexException(indexName);
+                }
+                // else flag group index for dropping
+                groupName = group.getName();
+            }
+        } 
+        // the user has not supplied a table name for the index to drop, 
+        // scan all groups/tables for the index name
+        else {
+            for (UserTable table : ddlFunctions.getAIS(session).getUserTables().values()) {
+                if (indexSchemaName != null && !table.getName().getSchemaName().equalsIgnoreCase(indexSchemaName)) {
+                    continue;
+                }
+                if (table.getIndex(indexName) != null) {
+                    if (tableName == null) {
+                        tableName = table.getName();
                     } else {
                         throw new IndistinguishableIndexException(indexName);
                     }
                 }
             }
-        }
-        if (groupName == null) {
-            for (UserTable table : ddlFunctions.getAIS(session).getUserTables().values()) {
-                if (table.getName().getSchemaName().equalsIgnoreCase(schemaName)) {
-                    continue;
-                }
-                for (Index index : table.getIndexes()) {
-                    if (index.getIndexName().getName().equalsIgnoreCase(indexName)) {
-                        if (tableName == null) {
-                            tableName = table.getName();
-                        } else {
-                            throw new IndistinguishableIndexException(indexName);
-                        }
+            
+            for (Group table : ddlFunctions.getAIS(session).getGroups().values()) {
+                if (table.getIndex(indexName) != null) {
+                    if (tableName == null && groupName == null) {
+                        groupName = table.getName();
+                    } else {
+                        throw new IndistinguishableIndexException(indexName);
                     }
                 }
             }
