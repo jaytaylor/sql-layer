@@ -22,6 +22,9 @@ import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.FromObjectValueSource;
 
@@ -29,19 +32,21 @@ public class ExpressionRow extends AbstractRow
 {
     private RowType rowType;
     private List<Expression> expressions;
+    private List<ExpressionEvaluation> evaluations;
 
     public ExpressionRow(RowType rowType, Bindings bindings, List<Expression> expressions) {
         this.rowType = rowType;
         this.expressions = expressions;
+        this.evaluations = new ArrayList<ExpressionEvaluation>(expressions.size());
+        for (Expression expression : expressions) {
+            if (expression.needsRow()) {
+                throw new AkibanInternalException("expression needed a row: " + expression + " in " + expressions);
+            }
+            ExpressionEvaluation evaluation = expression.evaluation();
+            evaluation.of(bindings);
+            this.evaluations.add(evaluation);
+        }
         this.bindings = bindings;
-    }
-
-    public Expression getExpression(int i) {
-        return expressions.get(i);
-    }
-    
-    public List<Expression> getExpressions() {
-        return expressions;
     }
 
     /* AbstractRow */
@@ -53,10 +58,7 @@ public class ExpressionRow extends AbstractRow
 
     @Override
     public ValueSource eval(int i) {
-        Expression expression = getExpression(i);
-        Object value = (expression == null) ? null : expression.evaluate(null, bindings());
-        source.setReflectively(value);
-        return source;
+        return evaluations.get(i).eval();
     }
 
     @Override
@@ -74,7 +76,7 @@ public class ExpressionRow extends AbstractRow
         int nf = rowType().nFields();
         for (int i = 0; i < nf; i++) {
             if (i > 0) str.append(", ");
-            Expression expression = getExpression(i);
+            Expression expression = expressions.get(i);
             if (expression != null)
                 str.append(expression);
         }

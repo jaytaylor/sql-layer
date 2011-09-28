@@ -56,10 +56,15 @@ public final class WrappingByteSource implements ByteSource {
             this.length = 0;
             return this;
         }
-        if (offset < 0 || offset >= bytes.length) {
+        ArgumentValidation.isGTE("length", length, 0);
+        boolean offsetError = offset < 0;
+        if (length > 0)
+            offsetError |= offset >= bytes.length;
+        else
+            offsetError |= offset > bytes.length;
+        if (offsetError) {
             throw new IllegalArgumentException("offset must be between 0 and bytes.length (" + bytes.length + ')');
         }
-        ArgumentValidation.isGTE("length", length, 0);
         int lastIndex = offset + length;
         ArgumentValidation.isLTE("last index", lastIndex, bytes.length);
 
@@ -93,6 +98,24 @@ public final class WrappingByteSource implements ByteSource {
     public int byteArrayLength() {
         return length;
     }
+
+    // Comparable interface
+
+    @Override
+    public int compareTo(ByteSource o) {
+        int minlength = Math.min(byteArrayLength(), o.byteArrayLength());
+        byte[] obytes = o.byteArray();
+        for (int i=0; i < minlength; ++i) {
+            int myoffset = i + byteArrayOffset();
+            int oofset = i + o.byteArrayOffset();
+            int compare = bytes[myoffset] - obytes[oofset];
+            if (compare != 0)
+                return compare;
+        }
+        // all bytes were equal, return shorter array
+        return byteArrayLength() - o.byteArrayLength();
+    }
+
 
     // Object interface
 

@@ -15,19 +15,19 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.expression.Expression;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 
-import static com.akiban.qp.expression.API.field;
+import static com.akiban.server.expression.std.Expressions.field;
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.qp.operator.API.JoinType.*;
 
@@ -65,7 +65,7 @@ public class ProjectIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testNullRowType()
     {
-        project_Default(groupScan_Default(coi), null, Arrays.asList(field(0)));
+        project_Default(groupScan_Default(coi), null, Arrays.asList(field(customerRowType, 0)));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -87,7 +87,7 @@ public class ProjectIT extends OperatorITBase
     {
         Operator plan = project_Default(groupScan_Default(coi),
                                                 customerRowType,
-                                                Arrays.asList(field(0)));
+                                                Arrays.asList(field(customerRowType, 0)));
         Cursor cursor = cursor(plan, adapter);
         RowType projectedRowType = plan.rowType();
         RowBase[] expected = new RowBase[]{
@@ -118,7 +118,7 @@ public class ProjectIT extends OperatorITBase
     {
         Operator plan = project_Default(groupScan_Default(coi),
                                                 customerRowType,
-                                                Arrays.asList(field(1), field(0)));
+                                                Arrays.asList(field(customerRowType, 1), field(customerRowType, 0)));
         Cursor cursor = cursor(plan, adapter);
         RowType projectedRowType = plan.rowType();
         RowBase[] expected = new RowBase[]{
@@ -162,9 +162,9 @@ public class ProjectIT extends OperatorITBase
             project_Default(flattenCOI,
                             coiType,
                             Arrays.asList(
-                                field(1), // customer name
-                                field(4), // salesman
-                                field(5))); // iid
+                                field(coiType, 1), // customer name
+                                field(coiType, 4), // salesman
+                                field(coiType, 5))); // iid
         Cursor cursor = cursor(plan, adapter);
         RowType projectedRowType = plan.rowType();
         RowBase[] expected = new RowBase[]{

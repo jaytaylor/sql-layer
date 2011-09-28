@@ -12,38 +12,33 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+package com.akiban.server.test.it.qp;
 
-package com.akiban.qp.expression;
+import com.akiban.qp.row.AbstractRow;
+import com.akiban.qp.row.HKey;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types.NullValueSource;
+import com.akiban.server.types.ValueSource;
 
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.row.Row;
-
-class Literal implements Expression
-{
-    // Expression interface
-
+public final class NullsRow extends AbstractRow {
     @Override
-    public Object evaluate(Row row, Bindings ignored)
-    {
-        return value;
+    public RowType rowType() {
+        return rowType;
     }
 
     @Override
-    public String toString()
-    {
-        return getClass().getSimpleName() + "(" +
-            ((value == null) ? "NULL" : value.toString()) +
-            ")";
+    public HKey hKey() {
+        throw new UnsupportedOperationException();
     }
 
-    // Literal interface
-
-    Literal(Object value)
-    {
-        this.value = value;
+    @Override
+    public ValueSource eval(int index) {
+        return NullValueSource.only();
     }
 
-    // Object state
+    public NullsRow(RowType rowType) {
+        this.rowType = rowType;
+    }
 
-    private final Object value;
+    private final RowType rowType;
 }

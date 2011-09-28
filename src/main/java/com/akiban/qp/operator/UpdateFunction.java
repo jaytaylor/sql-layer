@@ -15,10 +15,9 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.row.Row;
 
-public interface UpdateFunction extends Expression, SelectionFunction {
+public interface UpdateFunction extends SelectionFunction {
     /**
      * Updates the given row by returning another row with the required modifications.
      * @param original the original row, which will remain untouched
@@ -27,6 +26,5 @@ public interface UpdateFunction extends Expression, SelectionFunction {
      * @throws IllegalArgumentException if the row could not be updated
      * (ie, if {@linkplain #rowIsSelected(Row)} returned {@code false})
      */
-    @Override
     Row evaluate(Row original, Bindings bindings);
 }

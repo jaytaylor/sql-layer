@@ -15,18 +15,18 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.expression.Comparison;
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.Comparison;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.akiban.qp.expression.API.compare;
-import static com.akiban.qp.expression.API.field;
-import static com.akiban.qp.expression.API.literal;
+import static com.akiban.server.expression.std.Expressions.compare;
+import static com.akiban.server.expression.std.Expressions.field;
+import static com.akiban.server.expression.std.Expressions.literal;
 import static com.akiban.qp.operator.API.*;
 
 public class SelectIT extends OperatorITBase
@@ -161,16 +161,16 @@ public class SelectIT extends OperatorITBase
 
     private Expression customerNameEQ(String name)
     {
-        return compare(field(1), Comparison.EQ, literal(name));
+        return compare(field(customerRowType, 1), Comparison.EQ, literal(name));
     }
 
     private Expression orderSalesmanEQ(String name)
     {
-        return compare(field(2), Comparison.EQ, literal(name));
+        return compare(field(orderRowType, 2), Comparison.EQ, literal(name));
     }
 
     private Expression itemOidEQ(long oid)
     {
-        return compare(field(1), Comparison.EQ, literal(oid));
+        return compare(field(itemRowType, 1), Comparison.EQ, literal(oid));
     }
 }

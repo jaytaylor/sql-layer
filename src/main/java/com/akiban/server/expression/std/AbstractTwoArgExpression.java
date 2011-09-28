@@ -23,11 +23,11 @@ import java.util.List;
 
 public abstract class AbstractTwoArgExpression extends AbstractCompositeExpression {
 
-    protected Expression left() {
+    protected final Expression left() {
         return children().get(0);
     }
 
-    protected Expression right() {
+    protected final Expression right() {
         return children().get(1);
     }
 
