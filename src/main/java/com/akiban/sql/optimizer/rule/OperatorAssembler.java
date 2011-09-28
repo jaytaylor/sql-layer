@@ -435,20 +435,31 @@ public class OperatorAssembler extends BaseRule
             for (AggregateFunctionExpression aggr : aggregateSource.getAggregates()) {
                 // Should have been split up by now.
                 assert !aggr.isDistinct();
-                expressions.add(assembleExpression(aggr.getOperand(),
-                                                   stream.fieldOffsets));
+                Expression operand;
+                if (aggr.getOperand() != null)
+                  operand = assembleExpression(aggr.getOperand(), stream.fieldOffsets);
+                else
+                  operand = literal(1L); // Anything non-null will do.
+                expressions.add(operand);
                 aggregatorNames.add(aggr.getFunction());
             }
             stream.operator = project_Default(stream.operator, stream.rowType, 
                                               expressions);
             stream.rowType = stream.operator.rowType();
-            if (aggregateSource.getImplementation() != AggregateSource.Implementation.PRESORTED) {
-                // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
-                Ordering ordering = ordering();
-                for (int i = 0; i < nkeys; i++) {
-                    ordering.append(field(i), true);
+            switch (aggregateSource.getImplementation()) {
+            case PRESORTED:
+            case UNGROUPED:
+                break;
+            default:
+                {
+                    // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
+                    Ordering ordering = ordering();
+                    for (int i = 0; i < nkeys; i++) {
+                        ordering.append(field(i), true);
+                    }
+                    stream.operator = sort_Tree(stream.operator, stream.rowType, 
+                                                ordering);
                 }
-                stream.operator = sort_Tree(stream.operator, stream.rowType, ordering);
             }
             // TODO: Need to get real AggregatorFactory from RulesContext.
             AggregatorFactory aggregatorFactory = new AggregatorFactory() {
