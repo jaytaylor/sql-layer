@@ -104,7 +104,6 @@ public class BranchJoiner extends BaseRule
             branching = new Branching(indexTable);
         else
             branching = new Branching(descendants);
-        branching.addMainBranchTable(indexTable);
         for (TableSource ancestor : ancestors)
             branching.addMainBranchTable(ancestor);
         for (TableSource descendant : descendants)
@@ -139,16 +138,18 @@ public class BranchJoiner extends BaseRule
         }
 
         // Load the main branch.
-        List<TableNode> mainBranchNodes = branching.getMainBranchTableNodes();
-        List<TableSource> mainBranchSources = branching.getMainBranchTableSources();
-        if (!descendants.isEmpty()) {
-            int idx = mainBranchNodes.indexOf(indexTableNode);
-            assert (idx >= 0) : "Index not on main branch";
-            int size = mainBranchNodes.size();
-            mainBranchNodes.subList(idx, size).clear();
-            mainBranchSources.subList(idx, size).clear();
+        List<TableNode> mainBranchNodes;
+        List<TableSource> mainBranchSources;
+        if (descendants.isEmpty()) {
+            mainBranchNodes = branching.getMainBranchTableNodes();
+            mainBranchSources = branching.getMainBranchTableSources();
+        }
+        else {
             scan = new BranchLookup(scan, indexTableNode, 
                                     indexTableNode, descendants);
+            // Only need the rest.
+            mainBranchNodes = branching.getMainBranchTableNodesAbove(indexTableNode);
+            mainBranchSources = branching.getMainBranchTableSourcesAbove(indexTableNode);
         }
         if (!mainBranchNodes.isEmpty()) {
             scan = new AncestorLookup(scan, indexTableNode, 
@@ -260,8 +261,16 @@ public class BranchJoiner extends BaseRule
 
         // Return list of tables in the main branch, root to leaf.
         public List<TableNode> getMainBranchTableNodes() {
+            return getMainBranchTableNodes(mainBranch.length);
+        }
+            
+        public List<TableNode> getMainBranchTableNodesAbove(TableNode limit) {
+            return getMainBranchTableNodes(limit.getDepth());
+        }
+
+        public List<TableNode> getMainBranchTableNodes(int length) {
             List<TableNode> result = new ArrayList<TableNode>();
-            for (int i = 0; i < mainBranch.length; i++) {
+            for (int i = 0; i < length; i++) {
                 if (mainBranch[i] != null)
                     result.add(mainBranch[i]);
             }
@@ -270,8 +279,16 @@ public class BranchJoiner extends BaseRule
 
         // Return list of table sources in the same order.
         public List<TableSource> getMainBranchTableSources() {
+            return getMainBranchTableSources(mainBranch.length);
+        }
+
+        public List<TableSource> getMainBranchTableSourcesAbove(TableNode limit) {
+            return getMainBranchTableSources(limit.getDepth());
+        }
+
+        public List<TableSource> getMainBranchTableSources(int length) {
             List<TableSource> result = new ArrayList<TableSource>();
-            for (int i = 0; i < mainBranch.length; i++) {
+            for (int i = 0; i < length; i++) {
                 if (mainBranch[i] != null)
                     result.add(mainBranchSources[i]);
             }
