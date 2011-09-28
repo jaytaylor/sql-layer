@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer;
 
 import com.akiban.qp.operator.Operator;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.simplified.*;
@@ -48,7 +49,6 @@ import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.EventTypes;
 import com.akiban.server.service.instrumentation.SessionTracer;
 
-import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 

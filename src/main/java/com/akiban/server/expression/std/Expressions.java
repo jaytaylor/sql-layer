@@ -33,9 +33,9 @@ public class Expressions
         return new ColumnExpression(column, position);
     }
 
-    public static Expression compare(Expression left, com.akiban.qp.expression.Comparison comparison, Expression right)
+    public static Expression compare(Expression left, Comparison comparison, Expression right)
     {
-        return new CompareExpression(Arrays.asList(left, right), comparison.newStyle());
+        return new CompareExpression(Arrays.asList(left, right), comparison);
     }
 
     public static Expression field(RowType rowType, int position)
@@ -67,11 +67,4 @@ public class Expressions
     {
         return new BoundFieldExpression(rowPosition, new FieldExpression(rowType, fieldPosition));
     }
-
-    public static com.akiban.qp.expression.Comparison EQ = com.akiban.qp.expression.Comparison.EQ;
-    public static com.akiban.qp.expression.Comparison NE = com.akiban.qp.expression.Comparison.NE;
-    public static com.akiban.qp.expression.Comparison LT = com.akiban.qp.expression.Comparison.LT;
-    public static com.akiban.qp.expression.Comparison LE = com.akiban.qp.expression.Comparison.LE;
-    public static com.akiban.qp.expression.Comparison GT = com.akiban.qp.expression.Comparison.GT;
-    public static com.akiban.qp.expression.Comparison GE = com.akiban.qp.expression.Comparison.GE;
 }

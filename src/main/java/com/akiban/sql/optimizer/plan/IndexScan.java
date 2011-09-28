@@ -15,9 +15,8 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
-
-import com.akiban.qp.expression.Comparison;
 
 import com.akiban.ais.model.Index;
 

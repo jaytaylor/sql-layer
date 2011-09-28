@@ -29,6 +29,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.ToObjectValueTarget;
@@ -125,7 +126,7 @@ public class OperatorIT extends OperatorITBase
     public void testSelect()
     {
         Operator groupScan = groupScan_Default(coi);
-        Expression cidEq2 = compare(field(customerRowType, 0), EQ, literal(2L));
+        Expression cidEq2 = compare(field(customerRowType, 0), Comparison.EQ, literal(2L));
         Operator select = select_HKeyOrdered(groupScan, customerRowType, cidEq2);
         RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc"),
                                            row(orderRowType, 21L, 2L, "tom"),
