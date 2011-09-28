@@ -42,7 +42,7 @@ import com.akiban.sql.types.TypeId;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
 
-import static com.akiban.qp.expression.API.*;
+import static com.akiban.server.expression.std.Expressions.*;
 import static com.akiban.qp.operator.API.JoinType;
 import com.akiban.qp.expression.Comparison;
 import com.akiban.qp.expression.Expression;

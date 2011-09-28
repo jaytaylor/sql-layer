@@ -13,18 +13,13 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.expression;
+package com.akiban.server.expression.std;
 
 import com.akiban.ais.model.Column;
+import com.akiban.qp.expression.*;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.expression.std.BoundFieldExpression;
-import com.akiban.server.expression.std.ColumnExpression;
-import com.akiban.server.expression.std.CompareExpression;
-import com.akiban.server.expression.std.FieldExpression;
-import com.akiban.server.expression.std.LiteralExpression;
-import com.akiban.server.expression.std.VariableExpression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 
@@ -32,14 +27,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class API
+public class Expressions
 {
     public static Expression field(Column column, int position)
     {
         return new NewExpressionWrapper(new ColumnExpression(column, position));
     }
 
-    public static Expression compare(Expression left, Comparison comparison, Expression right)
+    public static Expression compare(Expression left, com.akiban.qp.expression.Comparison comparison, Expression right)
     {
         CompareExpression compExpr = new CompareExpression(wrapAll(left, right), comparison.newStyle());
         return new NewExpressionWrapper(compExpr);
@@ -99,10 +94,10 @@ public class API
         return wrapAll(Arrays.asList(qpExpressions));
     }
 
-    public static Comparison EQ = Comparison.EQ;
-    public static Comparison NE = Comparison.NE;
-    public static Comparison LT = Comparison.LT;
-    public static Comparison LE = Comparison.LE;
-    public static Comparison GT = Comparison.GT;
-    public static Comparison GE = Comparison.GE;
+    public static com.akiban.qp.expression.Comparison EQ = com.akiban.qp.expression.Comparison.EQ;
+    public static com.akiban.qp.expression.Comparison NE = com.akiban.qp.expression.Comparison.NE;
+    public static com.akiban.qp.expression.Comparison LT = com.akiban.qp.expression.Comparison.LT;
+    public static com.akiban.qp.expression.Comparison LE = com.akiban.qp.expression.Comparison.LE;
+    public static com.akiban.qp.expression.Comparison GT = com.akiban.qp.expression.Comparison.GT;
+    public static com.akiban.qp.expression.Comparison GE = com.akiban.qp.expression.Comparison.GE;
 }

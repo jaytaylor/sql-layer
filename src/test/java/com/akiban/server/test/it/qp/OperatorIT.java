@@ -37,7 +37,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static com.akiban.qp.expression.API.*;
+import static com.akiban.server.expression.std.Expressions.*;
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.qp.operator.API.JoinType.*;
 import static org.junit.Assert.assertEquals;

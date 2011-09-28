@@ -28,7 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.qp.expression.API.*;
+import static com.akiban.server.expression.std.Expressions.*;
 
 public class Map_NestedLoopsIT extends OperatorITBase
 {

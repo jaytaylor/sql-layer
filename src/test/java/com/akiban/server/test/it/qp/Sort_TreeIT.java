@@ -27,7 +27,7 @@ import org.junit.Test;
 
 import java.util.Collections;
 
-import static com.akiban.qp.expression.API.field;
+import static com.akiban.server.expression.std.Expressions.field;
 import static com.akiban.qp.operator.API.*;
 
 public class Sort_TreeIT extends OperatorITBase

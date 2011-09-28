@@ -31,8 +31,8 @@ import com.akiban.server.types.AkType;
 
 import java.util.*;
 
-import static com.akiban.qp.expression.API.wrap;
-import static com.akiban.qp.expression.API.wrapAll;
+import static com.akiban.server.expression.std.Expressions.wrap;
+import static com.akiban.server.expression.std.Expressions.wrapAll;
 
 public class API
 {

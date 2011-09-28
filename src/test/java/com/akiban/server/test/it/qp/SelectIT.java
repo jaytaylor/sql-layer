@@ -24,9 +24,9 @@ import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.akiban.qp.expression.API.compare;
-import static com.akiban.qp.expression.API.field;
-import static com.akiban.qp.expression.API.literal;
+import static com.akiban.server.expression.std.Expressions.compare;
+import static com.akiban.server.expression.std.Expressions.field;
+import static com.akiban.server.expression.std.Expressions.literal;
 import static com.akiban.qp.operator.API.*;
 
 public class SelectIT extends OperatorITBase

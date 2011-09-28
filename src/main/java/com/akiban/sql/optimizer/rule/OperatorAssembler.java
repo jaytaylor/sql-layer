@@ -18,7 +18,7 @@ package com.akiban.sql.optimizer.rule;
 import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
 import com.akiban.qp.operator.Operator;
-import static com.akiban.qp.expression.API.*;
+import static com.akiban.server.expression.std.Expressions.*;
 
 import com.akiban.server.error.UnsupportedSQLException;
 

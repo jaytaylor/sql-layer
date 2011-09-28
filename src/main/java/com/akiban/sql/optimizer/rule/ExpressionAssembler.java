@@ -18,15 +18,13 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.optimizer.plan.*;
 
-import static com.akiban.qp.expression.API.*;
+import static com.akiban.server.expression.std.Expressions.*;
 import com.akiban.qp.operator.Operator;
 
 import com.akiban.qp.expression.Expression;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
-
-import java.util.*;
 
 /** Turn {@link ExpressionNode} into {@link Expression}. */
 public class ExpressionAssembler

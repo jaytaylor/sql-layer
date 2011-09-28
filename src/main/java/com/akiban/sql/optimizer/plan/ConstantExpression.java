@@ -15,9 +15,6 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.qp.expression.Expression;
-import com.akiban.qp.expression.API;
-
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;

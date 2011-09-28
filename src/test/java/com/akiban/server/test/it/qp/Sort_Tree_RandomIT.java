@@ -33,7 +33,7 @@ import org.junit.Test;
 
 import java.util.*;
 
-import static com.akiban.qp.expression.API.field;
+import static com.akiban.server.expression.std.Expressions.field;
 import static com.akiban.qp.operator.API.*;
 
 // More Sort_Tree testing, with randomly generated data

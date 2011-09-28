@@ -46,7 +46,7 @@ import org.junit.Test;
 import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
 import static com.akiban.qp.operator.API.JoinType.LEFT_JOIN;
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.qp.expression.API.*;
+import static com.akiban.server.expression.std.Expressions.*;
 
 import static com.akiban.qp.rowtype.RowTypeChecks.checkRowTypeFields;
 import static com.akiban.server.types.AkType.*;
