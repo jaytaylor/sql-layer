@@ -133,7 +133,7 @@ public class OperatorAssembler extends BaseRule
                 int nfields = stream.rowType.nFields();
                 inserts = new ArrayList<Expression>(nfields);
                 for (int i = 0; i < nfields; i++) {
-                    inserts.add(field(i));
+                    inserts.add(field(stream.rowType, i));
                 }
             }
             // Have a list of expressions in the order specified.
@@ -413,7 +413,7 @@ public class OperatorAssembler extends BaseRule
                 // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
                 Ordering ordering = ordering();
                 for (int i = 0; i < nkeys; i++) {
-                    ordering.append(field(i), true);
+                    ordering.append(field(stream.rowType, i), true);
                 }
                 stream.operator = sort_Tree(stream.operator, stream.rowType, ordering);
             }

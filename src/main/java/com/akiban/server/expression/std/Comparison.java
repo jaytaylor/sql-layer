@@ -13,30 +13,41 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.expression;
+package com.akiban.server.expression.std;
 
 public enum Comparison
 {
-    EQ("=="),
-    NE("!="),
-    LT("<"),
-    LE("<="),
-    GT(">"),
-    GE(">=");
+    EQ("==", false, true, false),
+    LT("<", true, false, false),
+    LE("<=", true, true, false),
+    GT(">", false, false, true),
+    GE(">=", false, true, true),
+    NE("!=", true, false, true)
+    ;
+
+    public boolean matchesCompareTo(int compareTo) {
+        if (compareTo < 0)
+            return includesLT;
+        else if (compareTo > 0)
+            return includesGT;
+        return includesEQ;
+    }
 
     public String toString()
     {
         return symbol;
     }
 
-    public com.akiban.server.expression.std.Comparison newStyle() {
-        return com.akiban.server.expression.std.Comparison.valueOf(name());
-    }
-
-    private Comparison(String symbol)
+    private Comparison(String symbol, boolean lt, boolean eq, boolean gt)
     {
         this.symbol = symbol;
+        this.includesLT = lt;
+        this.includesEQ = eq;
+        this.includesGT = gt;
     }
 
     private final String symbol;
+    private final boolean includesLT;
+    private final boolean includesEQ;
+    private final boolean includesGT;
 }

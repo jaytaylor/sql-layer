@@ -33,6 +33,10 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
     }
 
     public RowBasedUnboundExpressions(RowType rowType, List<Expression> expressions) {
+        for (Expression expression : expressions) {
+            if (expression == null)
+                throw new IllegalArgumentException();
+        }
         this.expressions = expressions;
         this.rowType = rowType;
     }

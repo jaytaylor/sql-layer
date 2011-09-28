@@ -12,39 +12,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-
 package com.akiban.qp.expression;
 
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.row.Row;
-import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.server.types.ValueSource;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.types.AkType;
 
-class Field implements Expression
-{
-    // Expression interface
+class NewExpressionWrapper implements com.akiban.qp.expression.Expression {
 
     @Override
-    public Object evaluate(Row row, Bindings bindings)
-    {
-        ValueSource source = row.eval(position);
-        return new ToObjectValueTarget().convertFromSource(source);
+    public String toString() {
+        return delegate.toString();
     }
 
     @Override
-    public String toString()
-    {
-        return getClass().getSimpleName() + "(" + position + ")";
+    public Expression get() {
+        return delegate;
     }
 
-    // Field interface
-
-    Field(int position)
-    {
-        this.position = position;
+    @Override
+    public AkType getAkType() {
+        return delegate.valueType();
     }
 
-    // Object state
+    NewExpressionWrapper(Expression delegate) {
+        this.delegate = delegate;
+    }
 
-    private final int position;
+    private final com.akiban.server.expression.Expression delegate;
 }

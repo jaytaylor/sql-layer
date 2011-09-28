@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.optimizer.plan.*;
 
 import static com.akiban.qp.expression.API.*;
@@ -48,9 +49,9 @@ public class ExpressionAssembler
         if (node instanceof ConstantExpression)
             return literal(((ConstantExpression)node).getValue());
         else if (node instanceof ColumnExpression)
-            return field(fieldOffsets.getIndex((ColumnExpression)node));
+            return field(((ColumnExpression)node).getColumn(), fieldOffsets.getIndex((ColumnExpression)node));
         else if (node instanceof ParameterExpression)
-            return variable(((ParameterExpression)node).getPosition());
+            return variable(node.getAkType(), ((ParameterExpression)node).getPosition());
         else if (node instanceof BooleanOperationExpression)
             throw new UnsupportedSQLException("NIY", null);
         else if (node instanceof CastExpression)
@@ -98,16 +99,19 @@ public class ExpressionAssembler
         if (node instanceof ConstantExpression)
             return (ConstantExpression)node;
         Expression expr = assembleExpression(node, null);
-        // TODO: Call expr.isConstant() and throw an exception if not.
-        Object value = expr.evaluate(null, null);
-        if (node instanceof ConditionExpression)
-            return new BooleanConstantExpression((Boolean)value, 
+        if (!expr.get().isConstant())
+            throw new AkibanInternalException("required constant expression: " + expr);
+        if (node instanceof ConditionExpression) {
+            boolean value = Extractors.getBooleanExtractor().getBoolean(expr.get().evaluation().eval(), false);
+            return new BooleanConstantExpression(value,
                                                  node.getSQLtype(), 
                                                  node.getSQLsource());
-        else
-            return new ConstantExpression(value, 
+        }
+        else {
+            return new ConstantExpression(expr.get().evaluation().eval(),
                                           node.getSQLtype(), 
                                           node.getSQLsource());
+        }
     }
 
 }

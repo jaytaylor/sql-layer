@@ -161,16 +161,16 @@ public class SelectIT extends OperatorITBase
 
     private Expression customerNameEQ(String name)
     {
-        return compare(field(1), Comparison.EQ, literal(name));
+        return compare(field(customerRowType, 1), Comparison.EQ, literal(name));
     }
 
     private Expression orderSalesmanEQ(String name)
     {
-        return compare(field(2), Comparison.EQ, literal(name));
+        return compare(field(orderRowType, 2), Comparison.EQ, literal(name));
     }
 
     private Expression itemOidEQ(long oid)
     {
-        return compare(field(1), Comparison.EQ, literal(oid));
+        return compare(field(itemRowType, 1), Comparison.EQ, literal(oid));
     }
 }

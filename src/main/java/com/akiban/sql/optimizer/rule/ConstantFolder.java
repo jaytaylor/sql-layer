@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.NullValueSource;
 import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.qp.expression.Expression;
@@ -525,7 +526,7 @@ public class ConstantFolder extends BaseRule
                     // If it's empty, it's NULL. 
                     // If it selects something, that projects NULL.
                     // NULL either way.
-                    return new ConstantExpression(null,
+                    return new ConstantExpression(NullValueSource.only(),
                                                   expr.getSQLtype(), 
                                                   expr.getSQLsource());
                 }

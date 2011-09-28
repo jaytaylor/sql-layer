@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.simplified.*;
@@ -755,6 +756,10 @@ public class OperatorCompiler
                 for (ColumnCondition cond : equalityConditions) {
                     keys[kidx++] = cond.getRight().generateExpression(null);
                 }
+            }
+            for (int i = kidx; i < keys.length; ++i) {
+                assert keys[i] == null : keys[i];
+                keys[i] = com.akiban.qp.expression.API.literal(null);
             }
 
             if ((lowCondition == null) && (highCondition == null)) {

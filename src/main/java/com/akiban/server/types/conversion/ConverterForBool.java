@@ -28,7 +28,7 @@ public final class ConverterForBool extends AbstractConverter {
 
     @Override
     protected void doConvert(ValueSource source, ValueTarget target) {
-        target.putBool(extractor.getBoolean(source));
+        target.putBool(extractor.getBoolean(source, null));
     }
 
     @Override

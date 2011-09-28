@@ -30,6 +30,7 @@ import java.util.Set;
 
 import com.akiban.server.error.ColumnNotBoundException;
 import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.sql.optimizer.plan.TypesTranslation;
 import com.akiban.sql.parser.*;
 
 import com.akiban.server.types.AkType;
@@ -449,7 +450,7 @@ public class SimplifiedQuery
         }
 
         public Expression generateExpression(ColumnExpressionToIndex fieldOffsets)  {
-            return field(fieldOffsets.getIndex(this));
+            return field(column, fieldOffsets.getIndex(this));
         }
     }
 
@@ -479,9 +480,11 @@ public class SimplifiedQuery
     // An operand with a parameter value.
     public static class ParameterExpression extends SimpleExpression {
         private int position;
+        private AkType akType;
 
-        public ParameterExpression(int position) {
+        public ParameterExpression(AkType akType, int position) {
             this.position = position;
+            this.akType = akType;
         }
 
         public int getPosition() {
@@ -493,7 +496,7 @@ public class SimplifiedQuery
         }
 
         public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-            return variable(position);
+            return variable(akType, position);
         }
     }
 
@@ -811,11 +814,12 @@ public class SimplifiedQuery
             else if ((left instanceof LiteralExpression) && 
                      (right instanceof LiteralExpression)) {
                 // Know that literals don't need offsets, rows or bindings.
-                boolean answer = (Boolean)
-                    compare(left.generateExpression(null), 
+                boolean answer = Extractors.getBooleanExtractor().getBoolean(
+                    compare(left.generateExpression(null),
                             op,
-                            right.generateExpression(null))
-                    .evaluate(null, null);
+                            right.generateExpression(null)).get().evaluation().eval(),
+                    false
+                    );
                 if (answer) return; // Boolean true: nothing to add.
                 // Boolean false; no way to add such a condition; throw error.
             }
@@ -943,8 +947,10 @@ public class SimplifiedQuery
                                                                 "Unsupported operand"));
         else if (operand instanceof ConstantNode)
             return new LiteralExpression(((ConstantNode)operand).getValue());
-        else if (operand instanceof ParameterNode)
-            return new ParameterExpression(((ParameterNode)operand).getParameterNumber());
+        else if (operand instanceof ParameterNode) {
+            AkType akType = TypesTranslation.sqlTypeToAkType(operand.getType());
+            return new ParameterExpression(akType, ((ParameterNode)operand).getParameterNumber());
+        }
         else if (operand instanceof CastNode) {
             CastNode castNode = (CastNode)operand;
             operand = castNode.getCastOperand();

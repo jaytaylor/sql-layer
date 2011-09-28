@@ -96,7 +96,7 @@ public class Sort_Tree_RandomIT extends OperatorITBase
                 sort_Tree(
                     groupScan_Default(group),
                     tRowType,
-                    ordering(field(0), aAsc, field(1), bAsc, field(2), cAsc, field(3), dAsc));
+                    ordering(field(tRowType, 0), aAsc, field(tRowType, 1), bAsc, field(tRowType, 2), cAsc, field(tRowType, 3), dAsc));
             Cursor cursor = cursor(plan, adapter);
             compareRows(expected(aAsc, bAsc, cAsc, dAsc), cursor);
         }

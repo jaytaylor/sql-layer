@@ -249,7 +249,7 @@ public class RunIdPropagationIT extends OperatorITBase
                         LookupOption.DISCARD_INPUT),
                     removeDescendentTypes(customerRowType)),
                 customerRowType,
-                Arrays.asList(field(1)));
+                Arrays.asList(field(customerRowType, 1)));
         RowType customerNameRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);

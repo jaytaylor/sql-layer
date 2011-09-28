@@ -99,7 +99,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testBadOuterJoin1()
     {
-        map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), null, Arrays.asList(field(0)), 0);
+        map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), null, Arrays.asList(field(customerRowType, 0)), 0);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -154,9 +154,12 @@ public class Map_NestedLoopsIT extends OperatorITBase
                         groupScan_Default(coi),
                         Collections.singleton(orderRowType)),
                     orderRowType,
-                    compare(field(1) /* order.cid */, Comparison.EQ, boundField(0, 0) /* customer.cid */)),
+                    compare(
+                            field(orderRowType, 1) /* order.cid */,
+                            Comparison.EQ,
+                            boundField(customerRowType, 0, 0) /* customer.cid */)),
                 orderRowType,
-                Arrays.asList(boundField(0, 0) /* customer.cid */, field(0) /* order.oid */));
+                Arrays.asList(boundField(customerRowType, 0, 0) /* customer.cid */, field(orderRowType, 0) /* order.oid */));
         Operator plan =
             map_NestedLoops(
                 filter_Default(
@@ -187,9 +190,12 @@ public class Map_NestedLoopsIT extends OperatorITBase
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
                 orderRowType,
-                compare(field(1) /* order.cid */, Comparison.EQ, boundField(0, 0) /* customer.cid */)),
+                compare(
+                        field(orderRowType, 1) /* order.cid */,
+                        Comparison.EQ,
+                        boundField(customerRowType, 0, 0) /* customer.cid */)),
             orderRowType,
-            Arrays.asList(boundField(0, 0) /* customer.cid */, field(0) /* order.oid */));
+            Arrays.asList(boundField(customerRowType, 0, 0) /* customer.cid */, field(orderRowType, 0) /* order.oid */));
         RowType projectRowType = project.rowType();
         Operator plan =
             map_NestedLoops(
@@ -198,7 +204,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                     Collections.singleton(customerRowType)),
                 project,
                 projectRowType,
-                Arrays.asList(boundField(0, 0), literal(null)),
+                Arrays.asList(boundField(customerRowType, 0, 0), literal(null)),
                 0);
         RowBase[] expected = new RowBase[]{
             row(projectRowType, 1L, 100L),

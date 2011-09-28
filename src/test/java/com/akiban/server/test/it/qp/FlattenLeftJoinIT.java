@@ -542,7 +542,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
 
     private Expression selectAncestor(long aid)
     {
-        return compare(field(0), Comparison.EQ, literal(aid));
+        return compare(field(ancestorRowType, 0), Comparison.EQ, literal(aid));
     }
 
     // Object state
