@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.server.expression.ExpressionFactory;
+import com.akiban.server.expression.std.StandardExpressionFactory;
 import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
 
@@ -63,7 +65,7 @@ public class OperatorCompiler_NewTest extends NamedParamsTestBase
         AkibanInformationSchema ais = OptimizerTestBase.parseSchema(schemaFile);
         if (indexFile != null)
             OptimizerTestBase.loadGroupIndexes(ais, indexFile);
-        compiler = TestOperatorCompiler.create(parser, ais, "user");
+        compiler = TestOperatorCompiler.create(parser, ais, "user", new StandardExpressionFactory());
     }
 
     static class TestResultColumn extends PhysicalResultColumn {
@@ -87,15 +89,18 @@ public class OperatorCompiler_NewTest extends NamedParamsTestBase
     public static class TestOperatorCompiler extends OperatorCompiler_New {
         public static OperatorCompiler_New create(SQLParser parser, 
                                               AkibanInformationSchema ais, 
-                                              String defaultSchemaName) {
+                                              String defaultSchemaName,
+                                              ExpressionFactory expressionFactory
+                                              ) {
             RulesTestHelper.ensureRowDefs(ais);
-            return new TestOperatorCompiler(parser, ais, "user");
+            return new TestOperatorCompiler(parser, ais, "user", expressionFactory);
         }
 
         private TestOperatorCompiler(SQLParser parser, 
                                      AkibanInformationSchema ais, 
-                                     String defaultSchemaName) {
-            super(parser, ais, defaultSchemaName);
+                                     String defaultSchemaName,
+                                     ExpressionFactory expressionFactory) {
+            super(parser, ais, defaultSchemaName, expressionFactory);
         }
 
         @Override

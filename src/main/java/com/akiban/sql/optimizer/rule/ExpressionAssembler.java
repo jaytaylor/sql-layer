@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionFactory;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.optimizer.plan.*;
 
@@ -25,15 +26,17 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /** Turn {@link ExpressionNode} into {@link Expression}. */
 public class ExpressionAssembler
 {
+    private ExpressionFactory expressionFactory;
+
     public ExpressionAssembler(RulesContext rulesContext) {
-        // TODO: Something like this:
-        /*
         this.expressionFactory = ((SchemaRulesContext)
                                   rulesContext).getExpressionFactory();
-        */
     }
 
     public static interface ColumnExpressionToIndex {
@@ -61,8 +64,14 @@ public class ExpressionAssembler
                            cond.getOperation(),
                            assembleExpression(cond.getRight(), fieldOffsets));
         }
-        else if (node instanceof FunctionExpression)
-            throw new UnsupportedSQLException("NIY", node.getSQLsource());
+        else if (node instanceof FunctionExpression) {
+            FunctionExpression funcNode = (FunctionExpression) node;
+            List<Expression> children = new ArrayList<Expression>();
+            for (ExpressionNode operand : funcNode.getOperands()) {
+                children.add(assembleExpression(operand, fieldOffsets));
+            }
+            return expressionFactory.compose(funcNode.getFunction(), children);
+        }
         else if (node instanceof IfElseExpression)
             throw new UnsupportedSQLException("NIY", node.getSQLsource());
         else if (node instanceof AggregateFunctionExpression)
