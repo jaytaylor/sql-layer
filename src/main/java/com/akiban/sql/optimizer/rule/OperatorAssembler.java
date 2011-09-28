@@ -436,6 +436,18 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleStream(aggregateSource.getInput());
             int nkeys = aggregateSource.getGroupBy().size();
             int naggs = aggregateSource.getAggregates().size();
+            // TODO: Temporary until aggregate_Partial fully functional.
+            if ((nkeys == 0) && (naggs == 1)) {
+                AggregateFunctionExpression aggr1 = 
+                    aggregateSource.getAggregates().get(0);
+                if ((aggr1.getOperand() == null) &&
+                    (aggr1.getFunction().equals("COUNT"))) {
+                    stream.operator = count_Default(stream.operator, stream.rowType);
+                    stream.rowType = stream.operator.rowType();
+                    stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource);
+                    return stream;
+                }
+            }
             List<Expression> expressions = new ArrayList<Expression>(nkeys + naggs);
             List<String> aggregatorNames = new ArrayList<String>(naggs);
             for (ExpressionNode groupBy : aggregateSource.getGroupBy()) {
@@ -444,20 +456,31 @@ public class OperatorAssembler extends BaseRule
             for (AggregateFunctionExpression aggr : aggregateSource.getAggregates()) {
                 // Should have been split up by now.
                 assert !aggr.isDistinct();
-                expressions.add(assembleExpression(aggr.getOperand(),
-                                                   stream.fieldOffsets));
+                Expression operand;
+                if (aggr.getOperand() != null)
+                  operand = assembleExpression(aggr.getOperand(), stream.fieldOffsets);
+                else
+                  operand = literal(1L); // Anything non-null will do.
+                expressions.add(operand);
                 aggregatorNames.add(aggr.getFunction());
             }
             stream.operator = project_Default(stream.operator, stream.rowType, 
                                               expressions);
             stream.rowType = stream.operator.rowType();
-            if (aggregateSource.getImplementation() != AggregateSource.Implementation.PRESORTED) {
-                // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
-                Ordering ordering = ordering();
-                for (int i = 0; i < nkeys; i++) {
-                    ordering.append(field(i), true);
+            switch (aggregateSource.getImplementation()) {
+            case PRESORTED:
+            case UNGROUPED:
+                break;
+            default:
+                {
+                    // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
+                    Ordering ordering = ordering();
+                    for (int i = 0; i < nkeys; i++) {
+                        ordering.append(field(i), true);
+                    }
+                    stream.operator = sort_Tree(stream.operator, stream.rowType, 
+                                                ordering);
                 }
-                stream.operator = sort_Tree(stream.operator, stream.rowType, ordering);
             }
             // TODO: Need to get real AggregatorFactory from RulesContext.
             AggregatorFactory aggregatorFactory = new AggregatorFactory() {

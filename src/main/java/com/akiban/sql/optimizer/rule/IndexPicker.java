@@ -133,18 +133,22 @@ public class IndexPicker extends BaseRule
         }
         else if (input instanceof AggregateSource) {
             grouping = (AggregateSource)input;
+            if (!grouping.hasGroupBy())
+              grouping = null;
             input = input.getOutput();
             if (input instanceof Select)
                 input = input.getOutput();
             if (input instanceof Sort) {
                 // Needs to be possible to satisfy both.
                 ordering = (Sort)input;
-                List<ExpressionNode> groupBy = grouping.getGroupBy();
-                for (OrderByExpression orderBy : ordering.getOrderBy()) {
+                if (grouping != null) {
+                  List<ExpressionNode> groupBy = grouping.getGroupBy();
+                  for (OrderByExpression orderBy : ordering.getOrderBy()) {
                     if (!groupBy.contains(orderBy.getExpression())) {
-                        ordering = null;
-                        break;
+                      ordering = null;
+                      break;
                     }
+                  }
                 }
             }
         }
