@@ -17,32 +17,25 @@ package com.akiban.sql.optimizer.plan;
 
 import java.util.List;
 
-public class GroupScan extends BasePlanNode implements TableLoader
+public abstract class BaseLookup extends BasePlanWithInput implements TableLoader
 {
-    private TableGroup group;
     private List<TableSource> tables;
 
-    public GroupScan(TableGroup group) {
-        this.group = group;
+    public BaseLookup(PlanNode input, List<TableSource> tables) {
+        super(input);
+        this.tables = tables;
     }
 
-    public TableGroup getGroup() {
-        return group;
-    }
-
-    /** The tables that this branch lookup introduces into the stream. */
+    /** The tables that this lookup introduces into the stream. */
+    @Override
     public List<TableSource> getTables() {
         return tables;
-    }
-
-    public void setTables(List<TableSource> tables) {
-        this.tables = tables;
     }
 
     @Override
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
-            if (tables != null) {
+            if ((getInput() == null) || getInput().accept(v)) {
                 for (TableSource table : tables) {
                     if (!table.accept(v))
                         break;
@@ -55,13 +48,7 @@ public class GroupScan extends BasePlanNode implements TableLoader
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        group = (TableGroup)group.duplicate();
         tables = duplicateList(tables, map);
-    }
-
-    @Override
-    public String summaryString() {
-        return super.summaryString() + "(" + group.getGroup() + ")";
     }
 
 }

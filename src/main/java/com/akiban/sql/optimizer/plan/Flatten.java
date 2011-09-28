@@ -18,7 +18,9 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.qp.operator.API.JoinType;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /** Take nested rows and join into single rowset. */
 public class Flatten extends BasePlanWithInput
@@ -52,6 +54,21 @@ public class Flatten extends BasePlanWithInput
 
     public List<JoinType> getJoinTypes() {
         return joinTypes;
+    }
+
+    /** Get the tables involved in an initial sequence of inner joins. */
+    public Set<TableSource> getInnerJoinedTables() {
+        Set<TableSource> result = new HashSet<TableSource>();
+        for (int i = 0; i < tableSources.size(); i++) {
+            if (i > 0) {
+                if (joinTypes.get(i-1) != JoinType.INNER_JOIN)
+                    break;
+            }
+            TableSource table = tableSources.get(i);
+            if (table != null)
+                result.add(table);
+        }
+        return result;
     }
 
     @Override

@@ -332,7 +332,6 @@ public class BranchJoiner extends BaseRule
                 subplans.add(subplan);
             }
         }
-        // TODO: Can now prepone some of the conditions before the flatten.
         return input;
     }
 
@@ -395,19 +394,7 @@ public class BranchJoiner extends BaseRule
     // Is this join condition simple enough to execute before the join?
     protected boolean isSimpleJoinCondition(ConditionExpression cond,
                                             TableSource table) {
-        if (!(cond instanceof ComparisonCondition))
-            return false;
-        ComparisonCondition comp = (ComparisonCondition)cond;
-        ExpressionNode left = comp.getLeft();
-        ExpressionNode right = comp.getRight();
-        if (!(left.isColumn() &&
-              (((ColumnExpression)left).getTable() == table)))
-            return false;
-        if (!((right instanceof ConstantExpression) || 
-              (right instanceof ParameterExpression)))
-            // TODO: Column from outer table okay, too. Need general predicate for that.
-            return false;
-        return true;
+        return (table == SelectPreponer.getSingleTableConditionTable(cond));
     }
 
     static final Comparator<TableSource> tableSourceById = new Comparator<TableSource>() {
