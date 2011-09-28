@@ -27,7 +27,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Set;
 
-import static com.akiban.qp.expression.API.field;
+import static com.akiban.server.expression.std.Expressions.field;
 import static com.akiban.qp.operator.API.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

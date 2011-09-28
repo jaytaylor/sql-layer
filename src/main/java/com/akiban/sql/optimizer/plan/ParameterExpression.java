@@ -18,9 +18,6 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
-import com.akiban.qp.expression.Expression;
-import com.akiban.qp.expression.API;
-
 /** An operand with a parameter value. */
 public class ParameterExpression extends BaseExpression 
 {

@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode;
@@ -40,8 +41,6 @@ import com.akiban.server.error.ParseException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.error.OrderByNonIntegerConstant;
 import com.akiban.server.error.OrderByIntegerOutOfRange;
-
-import com.akiban.qp.expression.Comparison;
 
 import java.util.*;
 

@@ -28,8 +28,6 @@ package com.akiban.server.test.it.qp;
  */
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.qp.expression.Comparison;
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.operator.Operator;
@@ -38,6 +36,8 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import org.junit.Before;
@@ -46,7 +46,7 @@ import org.junit.Test;
 import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
 import static com.akiban.qp.operator.API.JoinType.LEFT_JOIN;
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.qp.expression.API.*;
+import static com.akiban.server.expression.std.Expressions.*;
 
 import static com.akiban.qp.rowtype.RowTypeChecks.checkRowTypeFields;
 import static com.akiban.server.types.AkType.*;

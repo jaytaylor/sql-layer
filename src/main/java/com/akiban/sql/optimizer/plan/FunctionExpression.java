@@ -15,13 +15,9 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.error.UnsupportedSQLException;
-
 import com.akiban.server.types.AkType;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
-
-import com.akiban.qp.expression.Expression;
 
 import java.util.List;
 

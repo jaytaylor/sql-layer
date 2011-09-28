@@ -19,8 +19,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.sql.optimizer.plan.*;
 
-import com.akiban.qp.expression.Expression;
-
 import java.util.*;
 
 /** Evaluate as much as possible at generate time. 

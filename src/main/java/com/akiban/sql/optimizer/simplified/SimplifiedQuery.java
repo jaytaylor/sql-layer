@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer.simplified;
 
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.TableTreeBase;
 
@@ -42,10 +44,8 @@ import com.akiban.sql.types.TypeId;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
 
-import static com.akiban.qp.expression.API.*;
+import static com.akiban.server.expression.std.Expressions.*;
 import static com.akiban.qp.operator.API.JoinType;
-import com.akiban.qp.expression.Comparison;
-import com.akiban.qp.expression.Expression;
 
 /**
  * An SQL DML statement turned into a simpler form for the interim
@@ -815,11 +815,11 @@ public class SimplifiedQuery
                      (right instanceof LiteralExpression)) {
                 // Know that literals don't need offsets, rows or bindings.
                 boolean answer = Extractors.getBooleanExtractor().getBoolean(
-                    compare(left.generateExpression(null),
-                            op,
-                            right.generateExpression(null)).get().evaluation().eval(),
-                    false
-                    );
+                        compare(left.generateExpression(null),
+                                op,
+                                right.generateExpression(null)).evaluation().eval(),
+                        false
+                );
                 if (answer) return; // Boolean true: nothing to add.
                 // Boolean false; no way to add such a condition; throw error.
             }

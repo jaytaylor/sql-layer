@@ -23,6 +23,7 @@ import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.FromObjectValueSource;
@@ -38,10 +39,10 @@ public class ExpressionRow extends AbstractRow
         this.expressions = expressions;
         this.evaluations = new ArrayList<ExpressionEvaluation>(expressions.size());
         for (Expression expression : expressions) {
-            if (expression.get().needsRow()) {
+            if (expression.needsRow()) {
                 throw new AkibanInternalException("expression needed a row: " + expression + " in " + expressions);
             }
-            ExpressionEvaluation evaluation = expression.get().evaluation();
+            ExpressionEvaluation evaluation = expression.evaluation();
             evaluation.of(bindings);
             this.evaluations.add(evaluation);
         }
