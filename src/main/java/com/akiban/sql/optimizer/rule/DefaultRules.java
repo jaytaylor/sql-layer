@@ -30,6 +30,7 @@ public class DefaultRules
         new GroupJoinFinder(),
         new IndexPicker(),
         new BranchJoiner(),
+        new SelectPreponer(),
         new OperatorAssembler()
      );
 
