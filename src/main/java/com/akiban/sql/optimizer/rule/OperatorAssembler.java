@@ -22,6 +22,7 @@ import static com.akiban.server.expression.std.Expressions.*;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
+import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
@@ -40,7 +41,6 @@ import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.*;
 
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;

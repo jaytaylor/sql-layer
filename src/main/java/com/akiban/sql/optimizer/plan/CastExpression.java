@@ -18,8 +18,6 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
-import com.akiban.qp.expression.Expression;
-
 /** Cast the result of expression evaluation to a given type.
  */
 public class CastExpression extends BaseExpression 

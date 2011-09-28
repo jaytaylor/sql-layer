@@ -15,13 +15,12 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.expression.Expression;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.optimizer.plan.*;
 
 import static com.akiban.server.expression.std.Expressions.*;
 import com.akiban.qp.operator.Operator;
-
-import com.akiban.qp.expression.Expression;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
@@ -97,16 +96,16 @@ public class ExpressionAssembler
         if (node instanceof ConstantExpression)
             return (ConstantExpression)node;
         Expression expr = assembleExpression(node, null);
-        if (!expr.get().isConstant())
+        if (!expr.isConstant())
             throw new AkibanInternalException("required constant expression: " + expr);
         if (node instanceof ConditionExpression) {
-            boolean value = Extractors.getBooleanExtractor().getBoolean(expr.get().evaluation().eval(), false);
+            boolean value = Extractors.getBooleanExtractor().getBoolean(expr.evaluation().eval(), false);
             return new BooleanConstantExpression(value,
                                                  node.getSQLtype(), 
                                                  node.getSQLsource());
         }
         else {
-            return new ConstantExpression(expr.get().evaluation().eval(),
+            return new ConstantExpression(expr.evaluation().eval(),
                                           node.getSQLtype(), 
                                           node.getSQLsource());
         }

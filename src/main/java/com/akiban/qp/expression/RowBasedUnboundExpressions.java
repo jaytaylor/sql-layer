@@ -17,6 +17,7 @@ package com.akiban.qp.expression;
 
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.expression.Expression;
 import com.akiban.server.types.ValueSource;
 
 import java.util.List;

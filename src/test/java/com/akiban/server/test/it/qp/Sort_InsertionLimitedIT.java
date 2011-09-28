@@ -15,13 +15,13 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.expression.Expression;
 import org.junit.Before;
 import org.junit.Test;
 

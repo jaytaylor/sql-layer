@@ -15,7 +15,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.row.Row;
 
 public interface UpdateFunction extends SelectionFunction {

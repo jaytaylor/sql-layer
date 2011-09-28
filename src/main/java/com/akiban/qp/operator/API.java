@@ -17,7 +17,6 @@ package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -26,13 +25,11 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 
 import com.akiban.server.aggregation.AggregatorFactory;
+import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 
 import java.util.*;
-
-import static com.akiban.server.expression.std.Expressions.wrap;
-import static com.akiban.server.expression.std.Expressions.wrapAll;
 
 public class API
 {
@@ -52,7 +49,7 @@ public class API
                                                    RowType rowType,
                                                    List<Expression> projections)
     {
-        return new Project_Default(inputOperator, rowType, wrapAll(projections));
+        return new Project_Default(inputOperator, rowType, projections);
     }
     
     public static Operator project_Table(Operator inputOperator,
@@ -60,7 +57,7 @@ public class API
                                                  RowType outputRowType,
                                                  List<Expression> projections)
     {
-        return new Project_Default (inputOperator, inputRowType, outputRowType, wrapAll(projections));
+        return new Project_Default (inputOperator, inputRowType, outputRowType, projections);
     }
     // Flatten
 
@@ -218,7 +215,7 @@ public class API
                                                       RowType predicateRowType,
                                                       Expression predicate)
     {
-        return new Select_HKeyOrdered(inputOperator, predicateRowType, wrap(predicate));
+        return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate);
     }
 
     // Filter
@@ -295,7 +292,7 @@ public class API
         return new Map_NestedLoops(outerInput,
                                    innerInput,
                                    outerJoinRowType,
-                                   wrapAll(outerJoinRowExpressions),
+                                   outerJoinRowExpressions,
                                    inputBindingPosition);
     }
 
@@ -392,9 +389,8 @@ public class API
             return directions.get(i);
         }
 
-        public void append(Expression qpExpression, boolean ascending)
+        public void append(Expression expression, boolean ascending)
         {
-            com.akiban.server.expression.Expression expression = wrap(qpExpression);
             expressions.add(expression);
             evaluations.add(expression.evaluation());
             directions.add(ascending);

@@ -20,29 +20,27 @@ import com.akiban.qp.expression.*;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 public class Expressions
 {
     public static Expression field(Column column, int position)
     {
-        return new NewExpressionWrapper(new ColumnExpression(column, position));
+        return new ColumnExpression(column, position);
     }
 
     public static Expression compare(Expression left, com.akiban.qp.expression.Comparison comparison, Expression right)
     {
-        CompareExpression compExpr = new CompareExpression(wrapAll(left, right), comparison.newStyle());
-        return new NewExpressionWrapper(compExpr);
+        return new CompareExpression(Arrays.asList(left, right), comparison.newStyle());
     }
 
     public static Expression field(RowType rowType, int position)
     {
-        return new NewExpressionWrapper(new FieldExpression(rowType, position));
+        return new FieldExpression(rowType, position);
     }
 
     public static IndexBound indexBound(RowBase row, ColumnSelector columnSelector)
@@ -57,41 +55,17 @@ public class Expressions
 
     public static Expression literal(Object value)
     {
-        return new NewExpressionWrapper(new LiteralExpression(new FromObjectValueSource().setReflectively(value)));
+        return new LiteralExpression(new FromObjectValueSource().setReflectively(value));
     }
 
     public static Expression variable(AkType type, int position)
     {
-        return new NewExpressionWrapper(new VariableExpression(type, position));
+        return new VariableExpression(type, position);
     }
 
     public static Expression boundField(RowType rowType, int rowPosition, int fieldPosition)
     {
-        return new NewExpressionWrapper(
-                new BoundFieldExpression(rowPosition, new FieldExpression(rowType, fieldPosition))
-        );
-    }
-
-    public static com.akiban.server.expression.Expression wrap(Expression qpExpression)
-    {
-        if (qpExpression == null)
-            throw new IllegalArgumentException();
-        return qpExpression.get();
-    }
-
-    public static List<? extends com.akiban.server.expression.Expression> wrapAll(List<? extends Expression> list)
-    {
-        if (list == null)
-            throw new IllegalArgumentException();
-        List<com.akiban.server.expression.Expression> result = new ArrayList<com.akiban.server.expression.Expression>();
-        for (Expression qpExpression : list) {
-            result.add(wrap(qpExpression));
-        }
-        return result;
-    }
-    public static List<? extends com.akiban.server.expression.Expression> wrapAll(Expression... qpExpressions)
-    {
-        return wrapAll(Arrays.asList(qpExpressions));
+        return new BoundFieldExpression(rowPosition, new FieldExpression(rowType, fieldPosition));
     }
 
     public static com.akiban.qp.expression.Comparison EQ = com.akiban.qp.expression.Comparison.EQ;
