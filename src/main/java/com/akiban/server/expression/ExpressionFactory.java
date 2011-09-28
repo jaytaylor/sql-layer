@@ -15,8 +15,17 @@
 
 package com.akiban.server.expression;
 
+import com.akiban.server.error.NoSuchFunctionException;
+
 import java.util.List;
 
 public interface ExpressionFactory {
     Expression compose(String name, List<? extends Expression> arguments);
+
+    public static final ExpressionFactory EMPTY = new ExpressionFactory() {
+        @Override
+        public Expression compose(String name, List<? extends Expression> arguments) {
+            throw new NoSuchFunctionException(name);
+        }
+    };
 }
