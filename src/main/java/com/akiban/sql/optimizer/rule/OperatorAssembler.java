@@ -19,6 +19,7 @@ import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
 import com.akiban.qp.operator.Operator;
 import static com.akiban.server.expression.std.Expressions.*;
+import com.akiban.server.expression.std.LiteralExpression;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
@@ -142,7 +143,7 @@ public class OperatorAssembler extends BaseRule
             // TODO: That doesn't seem right. How are explicit NULLs
             // to be distinguished from the column's default value?
             Expression[] row = new Expression[targetRowType.nFields()];
-            Arrays.fill(row, literal(null));
+            Arrays.fill(row, LiteralExpression.forNull());
             int ncols = inserts.size();
             for (int i = 0; i < ncols; i++) {
                 Column column = insertStatement.getTargetColumns().get(i);
@@ -258,16 +259,12 @@ public class OperatorAssembler extends BaseRule
             stream.rowType = valuesRowType(expressionsSource.getFieldTypes());
             List<Row> rows = new ArrayList<Row>(expressionsSource.getExpressions().size());
             for (List<ExpressionNode> exprs : expressionsSource.getExpressions()) {
-                // TODO: Maybe it would be simpler if ExpressionRow used Lists instead
-                // of arrays.
-                int nexpr = exprs.size();
-                Expression[] expressions = new Expression[nexpr];
-                for (int i = 0; i < nexpr; i++) {
-                    expressions[i] = assembleExpression(exprs.get(i), 
-                                                        stream.fieldOffsets);
+                List<Expression> expressions = new ArrayList<Expression>(exprs.size());
+                for (ExpressionNode expr : exprs) {
+                    expressions.add(assembleExpression(expr, stream.fieldOffsets));
                 }
-                rows.add(new ExpressionRow(stream.rowType, UndefBindings.only(), 
-                                           Arrays.asList(expressions)));
+                rows.add(new ExpressionRow(stream.rowType, UndefBindings.only(),
+                                           expressions));
             }
             stream.operator = valuesScan_Default(rows, stream.rowType);
             return stream;
@@ -633,6 +630,7 @@ public class OperatorAssembler extends BaseRule
 
             int nkeys = index.getIndex().getColumns().size();
             Expression[] keys = new Expression[nkeys];
+            Arrays.fill(keys, LiteralExpression.forNull());
 
             int kidx = 0;
             if (equalityComparands != null) {
