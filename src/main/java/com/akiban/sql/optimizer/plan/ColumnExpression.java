@@ -21,9 +21,6 @@ import com.akiban.sql.parser.ValueNode;
 
 import com.akiban.ais.model.Column;
 
-import com.akiban.qp.expression.Expression;
-import com.akiban.qp.expression.API;
-
 /** An expression evaluating a column in an actual table. */
 public class ColumnExpression extends BaseExpression 
 {

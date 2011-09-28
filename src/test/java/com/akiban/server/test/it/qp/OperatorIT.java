@@ -18,7 +18,6 @@ package com.akiban.server.test.it.qp;
 import com.akiban.ais.model.*;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Bindings;
@@ -29,6 +28,8 @@ import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.ToObjectValueTarget;
@@ -37,7 +38,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static com.akiban.qp.expression.API.*;
+import static com.akiban.server.expression.std.Expressions.*;
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.qp.operator.API.JoinType.*;
 import static org.junit.Assert.assertEquals;
@@ -125,7 +126,7 @@ public class OperatorIT extends OperatorITBase
     public void testSelect()
     {
         Operator groupScan = groupScan_Default(coi);
-        Expression cidEq2 = compare(field(0), EQ, literal(2L));
+        Expression cidEq2 = compare(field(customerRowType, 0), Comparison.EQ, literal(2L));
         Operator select = select_HKeyOrdered(groupScan, customerRowType, cidEq2);
         RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc"),
                                            row(orderRowType, 21L, 2L, "tom"),

@@ -15,12 +15,8 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.error.AkibanInternalException;
-
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
-
-import com.akiban.qp.expression.Expression;
 
 /** An expression evaluated by a subquery.
  */

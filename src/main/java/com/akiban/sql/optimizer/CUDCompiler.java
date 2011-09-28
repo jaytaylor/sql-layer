@@ -29,7 +29,6 @@ import java.util.Map;
 
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.UndefBindings;
@@ -37,6 +36,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.expression.Expression;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.OperatorCompiler.Result;

@@ -16,17 +16,26 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.types.ValueSource;
 
 import java.util.List;
 
 public abstract class AbstractTwoArgExpressionEvaluation extends AbstractCompositeExpressionEvaluation {
 
-    protected ExpressionEvaluation left() {
+    protected ExpressionEvaluation leftEvaluation() {
         return children().get(0);
     }
 
-    protected ExpressionEvaluation right() {
+    protected final ValueSource left() {
+        return leftEvaluation().eval();
+    }
+
+    protected ExpressionEvaluation rightEvaluation() {
         return children().get(1);
+    }
+
+    protected final ValueSource right() {
+        return rightEvaluation().eval();
     }
 
     protected AbstractTwoArgExpressionEvaluation(List<? extends ExpressionEvaluation> children) {

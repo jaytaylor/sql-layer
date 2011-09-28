@@ -18,22 +18,32 @@ package com.akiban.qp.row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.Undef;
 
 public final class OverlayingRow extends AbstractRow {
     private final Row underlying;
-    private final Object[] overlays;
+    private final ValueHolder[] overlays;
 
     public OverlayingRow(Row underlying) {
         this.underlying = underlying;
-        this.overlays = new Object[underlying.rowType().nFields()];
-        for (int i=0; i < overlays.length; ++i) {
-            overlays[i] = Undef.only();
-        }
+        this.overlays = new ValueHolder[underlying.rowType().nFields()];
     }
-    public OverlayingRow overlay(int index, Object object) {
-        overlays[index] = object;
+
+    public OverlayingRow overlay(int index, ValueSource object) {
+        if (object == null) {
+            overlays[index] = null;
+        }
+        else {
+            if (overlays[index] == null)
+                overlays[index] = new ValueHolder();
+            overlays[index].copyFrom(object);
+        }
         return this;
+    }
+
+    public OverlayingRow overlay(int index, Object object) {
+        return overlay(index, valueSource.setExplicitly(object, underlying.rowType().typeAt(index)));
     }
 
     @Override
@@ -43,12 +53,7 @@ public final class OverlayingRow extends AbstractRow {
 
     @Override
     public ValueSource eval(int i) {
-        if (Undef.isUndefined(overlays[i])) {
-            return underlying.eval(i);
-        } else {
-            valueSource.setReflectively(overlays[i]);
-            return valueSource;
-        }
+        return overlays[i] == null ? underlying.eval(i) : overlays[i];
     }
 
     @Override

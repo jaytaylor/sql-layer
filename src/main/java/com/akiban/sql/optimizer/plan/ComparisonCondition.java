@@ -15,13 +15,10 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
-
-import com.akiban.qp.expression.API;
-import com.akiban.qp.expression.Expression;
-import com.akiban.qp.expression.Comparison;
 
 /** A binary comparison (equality / inequality) between two expressions.
  */

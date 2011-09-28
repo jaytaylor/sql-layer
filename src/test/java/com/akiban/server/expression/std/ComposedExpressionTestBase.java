@@ -21,6 +21,7 @@ import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.test.it.qp.NullsRow;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
@@ -193,7 +194,7 @@ public abstract class ComposedExpressionTestBase {
     }
 
     private Row dummyRow() {
-        return new ExpressionRow(null, null, null);
+        return new NullsRow(null);
     }
     
     private static Set<ExpressionAttribute> attributesSet(ExpressionAttribute[] attributes) {

@@ -15,17 +15,19 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.ais.model.Column;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.util.ArgumentValidation;
 
-public final class FieldExpression implements Expression {
+/**
+ * This is similar to a FieldExpression, except that fields are specified by an AIS Column, rather than
+ * by RowType + int.
+ */
+public final class ColumnExpression implements Expression {
 
     @Override
     public boolean isConstant() {
@@ -44,12 +46,12 @@ public final class FieldExpression implements Expression {
 
     @Override
     public ExpressionEvaluation evaluation() {
-        return new InnerEvaluation(rowType, fieldIndex, valueType());
+        return new InnerEvaluation(position);
     }
 
     @Override
     public AkType valueType() {
-        return rowType.typeAt(fieldIndex);
+        return column.getType().akType();
     }
 
     // Object interface
@@ -57,19 +59,16 @@ public final class FieldExpression implements Expression {
 
     @Override
     public String toString() {
-        return String.format("Field(%d)", fieldIndex);
+        return String.format("Field(%d)", position);
     }
 
-    public FieldExpression(RowType rowType, int fieldIndex) {
-        this.rowType = rowType;
-        this.fieldIndex = fieldIndex;
-        if (this.fieldIndex < 0 || this.fieldIndex >= this.rowType.nFields()) {
-            throw new IllegalArgumentException("fieldIndex out of range: " + this.fieldIndex + " for " + this.rowType);
-        }
+    public ColumnExpression(Column column, int position) {
+        this.column = column;
+        this.position = position;
     }
 
-    private final RowType rowType;
-    private final int fieldIndex;
+    private final Column column;
+    private final int position;
 
     // nested classes
 
@@ -79,17 +78,6 @@ public final class FieldExpression implements Expression {
 
         @Override
         public void of(Row row) {
-            RowType incomingType = row.rowType();
-            if (!rowType.equals(incomingType)) {
-                throw new IllegalArgumentException("wrong row type: " + incomingType + " != " + rowType);
-            }
-            ValueSource incomingSource = row.eval(fieldIndex);
-            AkType incomingAkType = incomingSource.getConversionType();
-            if (incomingAkType != AkType.NULL && !akType.equals(incomingAkType)) {
-                throw new AkibanInternalException(
-                        row + "[" + fieldIndex + "] had akType " + incomingAkType + "; expected " + akType
-                );
-            }
             this.row = row;
         }
 
@@ -101,7 +89,7 @@ public final class FieldExpression implements Expression {
         public ValueSource eval() {
             if (row == null)
                 throw new IllegalStateException("haven't seen a row to target");
-            return row.eval(fieldIndex);
+            return row.eval(position);
         }
 
         // Shareable interface
@@ -123,17 +111,11 @@ public final class FieldExpression implements Expression {
 
         // private methods
 
-        private InnerEvaluation(RowType rowType, int fieldIndex, AkType akType) {
-            assert rowType != null;
-            assert akType != null;
-            this.rowType = rowType;
-            this.fieldIndex = fieldIndex;
-            this.akType = akType;
+        private InnerEvaluation(int position) {
+            this.position = position;
         }
 
-        private final RowType rowType;
-        private final int fieldIndex;
-        private final AkType akType;
+        private final int position;
         private Row row;
     }
 }

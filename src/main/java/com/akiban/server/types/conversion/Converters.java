@@ -99,6 +99,7 @@ public final class Converters {
         builder.alias(LONG, U_INT);
         
         builder.legalConversions(VARCHAR,
+                BOOL,
                 DOUBLE,
                 FLOAT,
                 LONG,
@@ -112,7 +113,8 @@ public final class Converters {
                 VARBINARY
         );
         builder.legalConversions(U_BIGINT,
-                VARCHAR
+                VARCHAR,
+                LONG
         );
         builder.legalConversions(DECIMAL,
                 VARCHAR,
