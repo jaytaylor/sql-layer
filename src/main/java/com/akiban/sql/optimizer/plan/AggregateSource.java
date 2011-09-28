@@ -21,7 +21,7 @@ import java.util.ArrayList;
 public class AggregateSource extends BasePlanWithInput implements ColumnSource
 {
     public static enum Implementation {
-        PRESORTED, PREAGGREGATE_RESORT, SORT, HASH
+        PRESORTED, PREAGGREGATE_RESORT, SORT, HASH, UNGROUPED
     }
 
     private List<ExpressionNode> groupBy;
@@ -33,7 +33,13 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
                            List<ExpressionNode> groupBy) {
         super(input);
         this.groupBy = groupBy;
+        if (!hasGroupBy())
+            implementation = Implementation.UNGROUPED;
         this.aggregates = new ArrayList<AggregateFunctionExpression>();
+    }
+
+    public boolean hasGroupBy() {
+        return !groupBy.isEmpty();
     }
 
     public List<ExpressionNode> getGroupBy() {
@@ -99,8 +105,10 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
             str.append(implementation);
             str.append(",");
         }
-        str.append(groupBy);
-        str.append(",");
+        if (hasGroupBy()) {
+            str.append(groupBy);
+            str.append(",");
+        }
         str.append(aggregates);
         str.append(")");
         return str.toString();
