@@ -89,9 +89,10 @@ public class IndexPicker extends BaseRule
         IndexGoal goal = determineIndexGoal(tableJoins, plan, tableJoins.getTables());
         IndexScan index = null;
         if (goal != null) {
-            Collection<TableSource> required = new ArrayList<TableSource>();
-            getRequiredTables(tableJoins.getJoins(), required);
-            index = goal.pickBestIndex(required);
+            Collection<TableSource> tables = new ArrayList<TableSource>();
+            Set<TableSource> required = new HashSet<TableSource>();
+            getRequiredTables(tableJoins.getJoins(), tables, required, true);
+            index = goal.pickBestIndex(tables, required);
         }
         if (index != null) {
             goal.installUpstream(index);
@@ -103,16 +104,20 @@ public class IndexPicker extends BaseRule
     }
 
     protected void getRequiredTables(Joinable joinable,
-                                     Collection<TableSource> required) {
+                                     Collection<TableSource> tables,
+                                     Set<TableSource> required,
+                                     boolean allInner) {
         if (joinable instanceof JoinNode) {
             JoinNode join = (JoinNode)joinable;
-            if (join.getJoinType() != JoinType.RIGHT_JOIN)
-                getRequiredTables(join.getLeft(), required);
-            if (join.getJoinType() != JoinType.LEFT_JOIN)
-                getRequiredTables(join.getRight(), required);
+            getRequiredTables(join.getLeft(), tables, required,
+                              allInner && (join.getJoinType() != JoinType.RIGHT_JOIN));
+            getRequiredTables(join.getRight(), tables, required,
+                              allInner && (join.getJoinType() != JoinType.LEFT_JOIN));
         }
         else if (joinable instanceof TableSource) {
-            required.add((TableSource)joinable);
+            TableSource table = (TableSource)joinable;
+            tables.add(table);
+            if (allInner) required.add(table);
         }
     }
 
