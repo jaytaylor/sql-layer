@@ -1,4 +1,4 @@
-PhysicalSelect@1f47e668[name:varchar(32)[VARCHAR], order_date:date[DATE]]
+PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE]]
   project([Field(1), Field(4)])
     Sort_InsertionLimited(flatten(flatten(user.customers, user.orders), user.items), 10)
       Filter_Default([flatten(flatten(user.customers, user.orders), user.items)])

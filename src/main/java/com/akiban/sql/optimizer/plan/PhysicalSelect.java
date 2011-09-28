@@ -64,16 +64,11 @@ public class PhysicalSelect extends BasePlannable
     }
     
     @Override
-    public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
+    protected String withIndentedExplain(StringBuilder str) {
         if (getParameterTypes() != null)
             str.append(getParameterTypes());
         str.append(resultColumns);
-        for (String operator : explainPlan()) {
-            str.append("\n  ");
-            str.append(operator);
-        }
-        return str.toString();
+        return super.withIndentedExplain(str);
     }
 
 }

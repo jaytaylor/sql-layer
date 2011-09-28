@@ -1,4 +1,4 @@
-PhysicalSelect@296f25a7[name:varchar(32)[VARCHAR], order_date:date[DATE]]
+PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE]]
   project([Field(1), Field(4)])
     Filter_Default([flatten(user.customers, user.orders)])
       Flatten_HKeyOrdered(user.customers INNER user.orders)

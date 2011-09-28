@@ -1,3 +1,3 @@
-PhysicalSelect@716de067[name:varchar(32)[VARCHAR]]
+PhysicalSelect[name:varchar(32)[VARCHAR]]
   project([Field(0)])
     IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (,))

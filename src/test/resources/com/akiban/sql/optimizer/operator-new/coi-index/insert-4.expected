@@ -1,4 +1,4 @@
-PhysicalUpdate@4d98defc
+PhysicalUpdate
   Insert_Default(project to table user.orders ([Field(0), Field(1), Literal(NULL)]))
     project to table user.orders ([Field(0), Field(1), Literal(NULL)])
       project([Literal(205), Field(0)])

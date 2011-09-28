@@ -1,4 +1,4 @@
-PhysicalUpdate@444b0bbb
+PhysicalUpdate
   Update_Default(Filter_Default([user.customers]) -> ExpressionRowUpdateFunction([null, Literal(Smyth)]))
     Filter_Default([user.customers])
       Select_HKeyOrdered(user.customers, Field(1) == Literal(Smith))

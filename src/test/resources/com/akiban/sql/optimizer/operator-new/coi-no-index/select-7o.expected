@@ -1,4 +1,4 @@
-PhysicalSelect@396cbd97[order_date:date[DATE]]
+PhysicalSelect[order_date:date[DATE]]
   project([Field(4)])
     Filter_Default([flatten(user.customers, user.orders)])
       Flatten_HKeyOrdered(user.customers INNER user.orders)

@@ -1,4 +1,4 @@
-PhysicalSelect@62114b17[cid:int[INT]]
+PhysicalSelect[cid:int[INT]]
   project([Field(0)])
     Filter_Default([user.customers])
       Select_HKeyOrdered(user.customers, Field(1) == Literal(Smith))

@@ -1,4 +1,4 @@
-PhysicalSelect@63b0bdc8[name:varchar(32)[VARCHAR], order_date:date[DATE], state:char(2)[VARCHAR]]
+PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE], state:char(2)[VARCHAR]]
   project([Field(1), Field(8), Field(4)])
     Product_ByRun(flatten(user.customers, user.addresses) x flatten(user.customers, user.orders))
       Filter_Default([flatten(user.customers, user.addresses), flatten(user.customers, user.orders)])
