@@ -28,19 +28,19 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import com.akiban.server.error.ConfigurationPropertiesLoadException;
-import com.akiban.server.error.InvalidVolumeException;
-import com.akiban.server.error.PersistItErrorException;
-import com.akiban.server.service.session.SessionService;
-import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.TableStatusCache;
+import com.akiban.server.error.ConfigurationPropertiesLoadException;
+import com.akiban.server.error.InvalidVolumeException;
+import com.akiban.server.error.PersistItErrorException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
+import com.google.inject.Inject;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Persistit;
@@ -50,6 +50,7 @@ import com.persistit.Volume;
 import com.persistit.VolumeSpecification;
 import com.persistit.exception.InvalidVolumeSpecificationException;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.PersistitInterruptedException;
 import com.persistit.logging.Slf4jAdapter;
 
 public class TreeServiceImpl implements TreeService, Service<TreeService>,
@@ -334,7 +335,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     @Override
-    public void checkpoint() {
+    public void checkpoint()  throws PersistitInterruptedException {
         getDb().checkpoint();
     }
 
