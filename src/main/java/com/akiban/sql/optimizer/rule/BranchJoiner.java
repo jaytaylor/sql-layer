@@ -104,7 +104,6 @@ public class BranchJoiner extends BaseRule
             branching = new Branching(indexTable);
         else
             branching = new Branching(descendants);
-        branching.addMainBranchTable(indexTable);
         for (TableSource ancestor : ancestors)
             branching.addMainBranchTable(ancestor);
         for (TableSource descendant : descendants)
