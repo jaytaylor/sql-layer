@@ -19,6 +19,8 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.UpdatePlannable;
 
+import java.util.Arrays;
+
 /** Physical INSERT/UPDATE/DELETE statement */
 public class PhysicalUpdate extends BasePlannable
 {
@@ -34,6 +36,13 @@ public class PhysicalUpdate extends BasePlannable
     @Override
     public boolean isUpdate() {
         return true;
+    }
+
+    @Override
+    protected String withIndentedExplain(StringBuilder str) {
+        if (getParameterTypes() != null)
+            str.append(Arrays.toString(getParameterTypes()));
+        return super.withIndentedExplain(str);
     }
 
 }

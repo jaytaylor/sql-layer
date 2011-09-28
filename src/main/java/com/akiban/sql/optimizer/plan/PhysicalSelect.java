@@ -19,6 +19,7 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import java.util.List;
+import java.util.Arrays;
 
 /** Physical SELECT query */
 public class PhysicalSelect extends BasePlannable
@@ -66,7 +67,7 @@ public class PhysicalSelect extends BasePlannable
     @Override
     protected String withIndentedExplain(StringBuilder str) {
         if (getParameterTypes() != null)
-            str.append(getParameterTypes());
+            str.append(Arrays.toString(getParameterTypes()));
         str.append(resultColumns);
         return super.withIndentedExplain(str);
     }
