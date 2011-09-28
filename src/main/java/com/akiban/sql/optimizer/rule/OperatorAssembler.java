@@ -19,6 +19,7 @@ import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
 import com.akiban.qp.operator.Operator;
 import static com.akiban.server.expression.std.Expressions.*;
+import com.akiban.server.expression.std.LiteralExpression;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
@@ -142,7 +143,7 @@ public class OperatorAssembler extends BaseRule
             // TODO: That doesn't seem right. How are explicit NULLs
             // to be distinguished from the column's default value?
             Expression[] row = new Expression[targetRowType.nFields()];
-            Arrays.fill(row, literal(null));
+            Arrays.fill(row, LiteralExpression.forNull());
             int ncols = inserts.size();
             for (int i = 0; i < ncols; i++) {
                 Column column = insertStatement.getTargetColumns().get(i);
@@ -258,16 +259,12 @@ public class OperatorAssembler extends BaseRule
             stream.rowType = valuesRowType(expressionsSource.getFieldTypes());
             List<Row> rows = new ArrayList<Row>(expressionsSource.getExpressions().size());
             for (List<ExpressionNode> exprs : expressionsSource.getExpressions()) {
-                // TODO: Maybe it would be simpler if ExpressionRow used Lists instead
-                // of arrays.
-                int nexpr = exprs.size();
-                Expression[] expressions = new Expression[nexpr];
-                for (int i = 0; i < nexpr; i++) {
-                    expressions[i] = assembleExpression(exprs.get(i), 
-                                                        stream.fieldOffsets);
+                List<Expression> expressions = new ArrayList<Expression>(exprs.size());
+                for (ExpressionNode expr : exprs) {
+                    expressions.add(assembleExpression(expr, stream.fieldOffsets));
                 }
-                rows.add(new ExpressionRow(stream.rowType, UndefBindings.only(), 
-                                           Arrays.asList(expressions)));
+                rows.add(new ExpressionRow(stream.rowType, UndefBindings.only(),
+                                           expressions));
             }
             stream.operator = valuesScan_Default(rows, stream.rowType);
             return stream;
@@ -275,13 +272,22 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleSelect(Select select) {
             RowStream stream = assembleStream(select.getInput());
-            for (ConditionExpression condition : select.getConditions())
-                // TODO: Only works for fully flattened; for earlier
-                // conditions, need more complex mapping between row
-                // types and field offsets.
+            for (ConditionExpression condition : select.getConditions()) {
+                RowType rowType = stream.rowType;
+                ColumnExpressionToIndex fieldOffsets = stream.fieldOffsets;
+                if (rowType == null) {
+                    // Pre-flattening case.
+                    // TODO: Would it be better if earlier rule saved this?
+                    TableSource table = 
+                        SelectPreponer.getSingleTableConditionTable(condition);
+                    rowType = tableRowType(table);
+                    fieldOffsets = new ColumnSourceFieldOffsets(table);
+                }
                 stream.operator = select_HKeyOrdered(stream.operator,
-                                                     stream.rowType,
-                                                     assembleExpression(condition, stream.fieldOffsets));
+                                                     rowType,
+                                                     assembleExpression(condition, 
+                                                                        fieldOffsets));
+            }
             return stream;
         }
 
@@ -427,6 +433,18 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleStream(aggregateSource.getInput());
             int nkeys = aggregateSource.getGroupBy().size();
             int naggs = aggregateSource.getAggregates().size();
+            // TODO: Temporary until aggregate_Partial fully functional.
+            if ((nkeys == 0) && (naggs == 1)) {
+                AggregateFunctionExpression aggr1 = 
+                    aggregateSource.getAggregates().get(0);
+                if ((aggr1.getOperand() == null) &&
+                    (aggr1.getFunction().equals("COUNT"))) {
+                    stream.operator = count_Default(stream.operator, stream.rowType);
+                    stream.rowType = stream.operator.rowType();
+                    stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource);
+                    return stream;
+                }
+            }
             List<Expression> expressions = new ArrayList<Expression>(nkeys + naggs);
             List<String> aggregatorNames = new ArrayList<String>(naggs);
             for (ExpressionNode groupBy : aggregateSource.getGroupBy()) {
@@ -435,20 +453,31 @@ public class OperatorAssembler extends BaseRule
             for (AggregateFunctionExpression aggr : aggregateSource.getAggregates()) {
                 // Should have been split up by now.
                 assert !aggr.isDistinct();
-                expressions.add(assembleExpression(aggr.getOperand(),
-                                                   stream.fieldOffsets));
+                Expression operand;
+                if (aggr.getOperand() != null)
+                  operand = assembleExpression(aggr.getOperand(), stream.fieldOffsets);
+                else
+                  operand = literal(1L); // Anything non-null will do.
+                expressions.add(operand);
                 aggregatorNames.add(aggr.getFunction());
             }
             stream.operator = project_Default(stream.operator, stream.rowType, 
                                               expressions);
             stream.rowType = stream.operator.rowType();
-            if (aggregateSource.getImplementation() != AggregateSource.Implementation.PRESORTED) {
-                // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
-                Ordering ordering = ordering();
-                for (int i = 0; i < nkeys; i++) {
-                    ordering.append(field(stream.rowType, i), true);
+            switch (aggregateSource.getImplementation()) {
+            case PRESORTED:
+            case UNGROUPED:
+                break;
+            default:
+                {
+                    // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
+                    Ordering ordering = ordering();
+                    for (int i = 0; i < nkeys; i++) {
+                        ordering.append(field(stream.rowType, i), true);
+                    }
+                    stream.operator = sort_Tree(stream.operator, stream.rowType, 
+                                                ordering);
                 }
-                stream.operator = sort_Tree(stream.operator, stream.rowType, ordering);
             }
             // TODO: Need to get real AggregatorFactory from RulesContext.
             AggregatorFactory aggregatorFactory = new AggregatorFactory() {
@@ -601,6 +630,7 @@ public class OperatorAssembler extends BaseRule
 
             int nkeys = index.getIndex().getColumns().size();
             Expression[] keys = new Expression[nkeys];
+            Arrays.fill(keys, LiteralExpression.forNull());
 
             int kidx = 0;
             if (equalityComparands != null) {
@@ -748,9 +778,9 @@ public class OperatorAssembler extends BaseRule
         }
 
         @Override
-        // Access field of the index row itself.
+        // Access field of the index row itself. 
+        // (Covering index or condition before lookup.)
         public int getIndex(ColumnExpression column) {
-            assert index.isCovering() : "Direct access to index field when not covering";
             return index.getColumns().indexOf(column);
         }
     }
