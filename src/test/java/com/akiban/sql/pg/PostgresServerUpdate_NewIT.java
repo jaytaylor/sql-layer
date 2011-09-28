@@ -15,10 +15,12 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
 
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.NamedParameterizedRunner.TestParameters;
+import com.akiban.junit.Parameterization;
 import org.junit.runner.RunWith;
 
 import java.sql.Connection;
@@ -27,7 +29,7 @@ import java.sql.DriverManager;
 import java.io.File;
 import java.util.Collection;
 
-@RunWith(Parameterized.class)
+@RunWith(NamedParameterizedRunner.class)
 public class PostgresServerUpdate_NewIT extends PostgresServerUpdateIT
 {
     public static final File RESOURCE_DIR = 
@@ -49,9 +51,9 @@ public class PostgresServerUpdate_NewIT extends PostgresServerUpdateIT
         loadDatabase(RESOURCE_DIR);
     }
 
-    @Parameters
-    public static Collection<Object[]> queries() throws Exception {
-        return TestBase.sqlAndExpectedAndParams(RESOURCE_DIR);
+    @TestParameters
+    public static Collection<Parameterization> queries() throws Exception {
+        return NamedParamsTestBase.namedCases(TestBase.sqlAndExpectedAndParams(RESOURCE_DIR));
     }
 
     public PostgresServerUpdate_NewIT(String caseName, String sql, 

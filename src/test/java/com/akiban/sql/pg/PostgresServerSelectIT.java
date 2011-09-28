@@ -15,14 +15,16 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
 
+import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.NamedParameterizedRunner.TestParameters;
+import com.akiban.junit.Parameterization;
 import org.junit.Before;
 import org.junit.Test;
-import static junit.framework.Assert.*;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
+import static junit.framework.Assert.*;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -31,8 +33,9 @@ import java.sql.ResultSetMetaData;
 import java.io.File;
 import java.util.Collection;
 
-@RunWith(Parameterized.class)
-public class PostgresServerSelectIT extends PostgresServerITBase implements TestBase.GenerateAndCheckResult
+@RunWith(NamedParameterizedRunner.class)
+public class PostgresServerSelectIT extends PostgresServerITBase 
+                                    implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(PostgresServerITBase.RESOURCE_DIR, "select");
@@ -44,9 +47,9 @@ public class PostgresServerSelectIT extends PostgresServerITBase implements Test
         loadDatabase(RESOURCE_DIR);
     }
 
-    @Parameters
-    public static Collection<Object[]> queries() throws Exception {
-        return TestBase.sqlAndExpectedAndParams(RESOURCE_DIR);
+    @TestParameters
+    public static Collection<Parameterization> queries() throws Exception {
+        return NamedParamsTestBase.namedCases(TestBase.sqlAndExpectedAndParams(RESOURCE_DIR));
     }
 
     public PostgresServerSelectIT(String caseName, String sql, 

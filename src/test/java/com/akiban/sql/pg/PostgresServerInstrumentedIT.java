@@ -15,12 +15,12 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.junit.NamedParameterizedRunner;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
-@RunWith(Parameterized.class)
+@RunWith(NamedParameterizedRunner.class)
 public class PostgresServerInstrumentedIT extends PostgresServerSelectIT {
 
     @Before

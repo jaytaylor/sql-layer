@@ -15,15 +15,13 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
-import com.akiban.qp.expression.Comparison;
-
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;

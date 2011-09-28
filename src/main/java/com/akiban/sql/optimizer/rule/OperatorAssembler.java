@@ -18,10 +18,11 @@ package com.akiban.sql.optimizer.rule;
 import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
 import com.akiban.qp.operator.Operator;
-import static com.akiban.qp.expression.API.*;
+import static com.akiban.server.expression.std.Expressions.*;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
+import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
@@ -40,7 +41,6 @@ import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.*;
 
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -133,7 +133,7 @@ public class OperatorAssembler extends BaseRule
                 int nfields = stream.rowType.nFields();
                 inserts = new ArrayList<Expression>(nfields);
                 for (int i = 0; i < nfields; i++) {
-                    inserts.add(field(i));
+                    inserts.add(field(stream.rowType, i));
                 }
             }
             // Have a list of expressions in the order specified.
@@ -446,7 +446,7 @@ public class OperatorAssembler extends BaseRule
                 // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
                 Ordering ordering = ordering();
                 for (int i = 0; i < nkeys; i++) {
-                    ordering.append(field(i), true);
+                    ordering.append(field(stream.rowType, i), true);
                 }
                 stream.operator = sort_Tree(stream.operator, stream.rowType, ordering);
             }

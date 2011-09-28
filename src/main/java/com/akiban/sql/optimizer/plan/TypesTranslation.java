@@ -19,7 +19,7 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import java.sql.Types;
 
-final class TypesConversion {
+public final class TypesTranslation {
     public static AkType sqlTypeToAkType(DataTypeDescriptor descriptor) {
         switch (descriptor.getJDBCTypeId()) {
         case Types.BIGINT:  return AkType.U_BIGINT;
@@ -42,7 +42,8 @@ final class TypesConversion {
         case Types.TINYINT: return AkType.LONG;
         case Types.VARBINARY: return AkType.VARBINARY;
         case Types.VARCHAR: return AkType.VARCHAR;
-
+        case Types.JAVA_OBJECT:
+            return AkType.valueOf(descriptor.getFullSQLTypeName().toUpperCase());
         default:
             throw new UnsupportedOperationException(
                     "unsupported type id: " + descriptor.getJDBCTypeId()
@@ -66,4 +67,6 @@ final class TypesConversion {
 //        case Types.STRUCT: return
         }
     }
+
+    private TypesTranslation() {}
 }

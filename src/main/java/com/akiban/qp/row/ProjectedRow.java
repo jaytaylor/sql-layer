@@ -18,9 +18,12 @@ package com.akiban.qp.row;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.Quote;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.util.ValueHolder;
+import com.akiban.util.AkibanAppender;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +36,7 @@ public class ProjectedRow extends AbstractRow
     public String toString()
     {
         StringBuilder buffer = new StringBuilder();
+        AkibanAppender appender = AkibanAppender.of(buffer);
         buffer.append('(');
         boolean first = true;
         for (ExpressionEvaluation evaluation : evaluations) {
@@ -41,7 +45,7 @@ public class ProjectedRow extends AbstractRow
             } else {
                 buffer.append(", ");
             }
-            buffer.append(evaluation.eval());
+            evaluation.eval().appendAsString(appender, Quote.NONE);
         }
         buffer.append(')');
         return buffer.toString();
@@ -57,7 +61,7 @@ public class ProjectedRow extends AbstractRow
 
     @Override
     public ValueSource eval(int i) {
-        return evaluations.get(i).eval();
+        return holderFor(i).copyFrom(evaluations.get(i).eval());
     }
 
     @Override
@@ -86,17 +90,23 @@ public class ProjectedRow extends AbstractRow
     {
         this.rowType = rowType;
         this.row = row;
-        this.expressions = expressions;
-        this.evaluations = createEvaluations(row, bindings);
+        this.evaluations = createEvaluations(expressions, row, bindings);
+        this.holders = new ValueHolder[expressions.size()];
         super.runId(row.runId());
     }
 
     // For use by this class
 
-    private List<ExpressionEvaluation> createEvaluations(Row row, Bindings bindings)
+    private ValueHolder holderFor(int i) {
+        if (holders[i] == null)
+            holders[i] = new ValueHolder();
+        return holders[i];
+    }
+
+    private List<ExpressionEvaluation> createEvaluations(List<Expression> expressions, Row row, Bindings bindings)
     {
         List<ExpressionEvaluation> result = new ArrayList<ExpressionEvaluation>();
-        for (Expression expression : this.expressions) {
+        for (Expression expression : expressions) {
             ExpressionEvaluation evaluation = expression.evaluation();
             evaluation.of(bindings);
             evaluation.of(row);
@@ -109,6 +119,6 @@ public class ProjectedRow extends AbstractRow
 
     private final ProjectedRowType rowType;
     private final Row row;
-    private final List<Expression> expressions;
     private final List<ExpressionEvaluation> evaluations;
+    private final ValueHolder[] holders;
 }
