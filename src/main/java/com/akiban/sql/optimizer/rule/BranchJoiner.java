@@ -104,6 +104,7 @@ public class BranchJoiner extends BaseRule
             branching = new Branching(indexTable);
         else
             branching = new Branching(descendants);
+        branching.addMainBranchTable(indexTable);
         for (TableSource ancestor : ancestors)
             branching.addMainBranchTable(ancestor);
         for (TableSource descendant : descendants)
@@ -142,7 +143,7 @@ public class BranchJoiner extends BaseRule
         List<TableSource> mainBranchSources = branching.getMainBranchTableSources();
         if (!descendants.isEmpty()) {
             int idx = mainBranchNodes.indexOf(indexTableNode);
-            assert (idx >= 0);
+            assert (idx >= 0) : "Index not on main branch";
             int size = mainBranchNodes.size();
             mainBranchNodes.subList(idx, size).clear();
             mainBranchSources.subList(idx, size).clear();
