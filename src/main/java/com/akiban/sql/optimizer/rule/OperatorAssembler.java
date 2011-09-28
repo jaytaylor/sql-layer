@@ -427,6 +427,18 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleStream(aggregateSource.getInput());
             int nkeys = aggregateSource.getGroupBy().size();
             int naggs = aggregateSource.getAggregates().size();
+            // TODO: Temporary until aggregate_Partial fully functional.
+            if ((nkeys == 0) && (naggs == 1)) {
+                AggregateFunctionExpression aggr1 = 
+                    aggregateSource.getAggregates().get(0);
+                if ((aggr1.getOperand() == null) &&
+                    (aggr1.getFunction().equals("COUNT"))) {
+                    stream.operator = count_Default(stream.operator, stream.rowType);
+                    stream.rowType = stream.operator.rowType();
+                    stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource);
+                    return stream;
+                }
+            }
             List<Expression> expressions = new ArrayList<Expression>(nkeys + naggs);
             List<String> aggregatorNames = new ArrayList<String>(naggs);
             for (ExpressionNode groupBy : aggregateSource.getGroupBy()) {
