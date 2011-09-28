@@ -544,14 +544,22 @@ public class IndexGoal implements Comparator<IndexScan>
         {
             Collection<TableSource> joined = index.getTables();
             Set<TableSource> required = new HashSet<TableSource>();
+            boolean moreTables = false;
             for (TableSource table : requiredAfter.getTables()) {
-                if (!joined.contains(table) || 
-                    requiredAfter.hasColumns(table) ||
-                    (table.getTable() == updateTarget)) {
+                if (!joined.contains(table)) {
+                    moreTables = true;
+                    required.add(table);
+                }
+                else if (requiredAfter.hasColumns(table) ||
+                         (table.getTable() == updateTarget)) {
                     required.add(table);
                 }
             }
             index.setRequiredTables(required);
+            if (moreTables)
+                // Need to join up last the index; index might point
+                // to an orphan.
+                return false;
         }
 
         if (updateTarget != null) {
