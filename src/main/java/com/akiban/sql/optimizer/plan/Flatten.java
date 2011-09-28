@@ -15,36 +15,67 @@
 
 package com.akiban.sql.optimizer.plan;
 
-/** Take heterogeneous rows and join into single rowset. */
-// TODO: Decide whether this does product or only a single branch.
-// Also whether non-group join conditions are moved out beforehand.
+import com.akiban.qp.operator.API.JoinType;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/** Take nested rows and join into single rowset. */
 public class Flatten extends BasePlanWithInput
 {
-    private Joinable joins;
+    // Must sometimes flatten in tables that aren't known to the
+    // query, but are used as branchpoints for products.
+    // This is the complete list.
+    private List<TableNode> tableNodes;
+    // This parallel list has nulls for those unknown tables.
+    private List<TableSource> tableSources;
+    // This list is one shorter and joins between each pair.
+    private List<JoinType> joinTypes;
 
-    public Flatten(PlanNode input, Joinable joins) {
+    public Flatten(PlanNode input, 
+                   List<TableNode> tableNodes, 
+                   List<TableSource> tableSources, 
+                   List<JoinType> joinTypes) {
         super(input);
-        this.joins = joins;
+        this.tableNodes = tableNodes;
+        this.tableSources = tableSources;
+        this.joinTypes = joinTypes;
     }
 
-    public Joinable getJoins() {
-        return joins;
+    public List<TableNode> getTableNodes() {
+        return tableNodes;
+    }
+
+    public List<TableSource> getTableSources() {
+        return tableSources;
+    }
+
+    public List<JoinType> getJoinTypes() {
+        return joinTypes;
     }
 
     @Override
-    public boolean accept(PlanVisitor v) {
-        if (v.visitEnter(this)) {
-            if (getInput().accept(v)) {
-                joins.accept(v);
+    public String summaryString() {
+        StringBuilder str = new StringBuilder(super.summaryString());
+        str.append("(");
+        for (int i = 0; i < tableNodes.size(); i++) {
+            if (i > 0) {
+                str.append(" ");
+                str.append(joinTypes.get(i-1));
+                str.append(" ");
             }
+            str.append(tableNodes.get(i).getTable());
         }
-        return v.visitLeave(this);
+        str.append(")");
+        return str.toString();
     }
 
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        joins = (Joinable)joins.duplicate(map);
+        tableNodes = new ArrayList<TableNode>(tableNodes);
+        tableSources = duplicateList(tableSources, map);
+        joinTypes = new ArrayList<JoinType>(joinTypes);
     }
 
 }

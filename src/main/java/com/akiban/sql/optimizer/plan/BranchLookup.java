@@ -15,35 +15,57 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import java.util.List;
+
 public class BranchLookup extends BasePlanWithInput
 {
-    private TableSource source, branch;
+    private TableNode source, branch;
+    private List<TableSource> tables;
 
-    public BranchLookup(PlanNode input, TableSource source, TableSource branch) {
+    public BranchLookup(PlanNode input, 
+                        TableNode source, TableNode branch,
+                        List<TableSource> tables) {
         super(input);
         this.source = source;
         this.branch = branch;
+        this.tables = tables;
     }
 
-    public TableSource getSource() {
+    public TableNode getSource() {
         return source;
     }
 
-    public TableSource getBranch() {
+    public TableNode getBranch() {
         return branch;
+    }
+
+    /** The tables that this branch lookup introduces into the stream. */
+    public List<TableSource> getTables() {
+        return tables;
+    }
+
+    @Override
+    public boolean accept(PlanVisitor v) {
+        if (v.visitEnter(this)) {
+            if ((getInput() == null) || getInput().accept(v)) {
+                for (TableSource table : tables) {
+                    if (!table.accept(v))
+                        break;
+                }
+            }
+        }
+        return v.visitLeave(this);
     }
 
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        source = (TableSource)source.duplicate();
-        branch = (TableSource)branch.duplicate();
+        tables = duplicateList(tables, map);
     }
 
     @Override
     public String summaryString() {
-        return super.summaryString() +
-            "(" + source.getTable() + " -> " + branch.getTable() + ")";
+        return super.summaryString() + "(" + source + " -> " + branch + ")";
     }
 
 }

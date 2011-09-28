@@ -331,12 +331,18 @@ public class IndexGoal implements Comparator<IndexScan>
         return null;
     }
 
-    /** Find the best index on the given table. */
-    public IndexScan pickBestIndex(TableSource table) {
+    /** Find the best index on the given table. 
+     * @param groupOnly If true, this table is the optional part of a
+     * LEFT join. Can still consider group indexes to it, but not
+     * single table indexes on it.
+     */
+    public IndexScan pickBestIndex(TableSource table, boolean groupOnly) {
         IndexScan bestIndex = null;
-        for (TableIndex index : table.getTable().getTable().getIndexes()) {
-            IndexScan candidate = new IndexScan(index, table, table);
-            bestIndex = betterIndex(bestIndex, candidate);
+        if (!groupOnly) {
+            for (TableIndex index : table.getTable().getTable().getIndexes()) {
+                IndexScan candidate = new IndexScan(index, table, table);
+                bestIndex = betterIndex(bestIndex, candidate);
+            }
         }
         if (table.getGroup() != null) {
             for (GroupIndex index : table.getGroup().getGroup().getIndexes()) {
@@ -371,10 +377,11 @@ public class IndexGoal implements Comparator<IndexScan>
     }
 
     /** Find the best index among the given tables. */
-    public IndexScan pickBestIndex(Collection<TableSource> tables) {
+    public IndexScan pickBestIndex(Collection<TableSource> tables,
+                                   Set<TableSource> required) {
         IndexScan bestIndex = null;
         for (TableSource table : tables) {
-            IndexScan tableIndex = pickBestIndex(table);
+            IndexScan tableIndex = pickBestIndex(table, !required.contains(table));
             if ((tableIndex != null) &&
                 ((bestIndex == null) || (compare(tableIndex, bestIndex) > 0)))
                 bestIndex = tableIndex;
@@ -542,7 +549,7 @@ public class IndexGoal implements Comparator<IndexScan>
      * <code>node</code> as a consequence of <code>index</code> being
      * used.
      */
-    public void installUpstream(IndexScan index, PlanNode node) {
+    public void installUpstream(IndexScan index) {
         if (index.getConditions() != null) {
             for (ConditionExpression condition : index.getConditions()) {
                 // TODO: This depends on conditions being the original

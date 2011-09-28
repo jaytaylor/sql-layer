@@ -4,4 +4,5 @@
 #- com.akiban.sql.optimizer.rule.OuterJoinPromoter
 - com.akiban.sql.optimizer.rule.GroupJoinFinder
 - com.akiban.sql.optimizer.rule.IndexPicker
+- com.akiban.sql.optimizer.rule.BranchJoiner
 - com.akiban.sql.optimizer.rule.OperatorAssembler

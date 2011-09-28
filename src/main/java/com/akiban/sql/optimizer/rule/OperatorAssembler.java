@@ -215,6 +215,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleAncestorLookup((AncestorLookup)node);
             else if (node instanceof BranchLookup)
                 return assembleBranchLookup((BranchLookup)node);
+            else if (node instanceof Product)
+                return assembleProduct((Product)node);
             else if (node instanceof AggregateSource)
                 return assembleAggregateSource((AggregateSource)node);
             else if (node instanceof Distinct)
@@ -285,15 +287,29 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleFlatten(Flatten flatten) {
             RowStream stream = assembleStream(flatten.getInput());
-            Joinable joins = flatten.getJoins();
-            if (joins instanceof TableSource) {
-                TableSource table = (TableSource)joins;
-                stream.rowType = tableRowType(table);
-                stream.fieldOffsets = new ColumnSourceFieldOffsets(table);
+            List<TableNode> tableNodes = flatten.getTableNodes();
+            TableNode tableNode = tableNodes.get(0);
+            RowType tableRowType = tableRowType(tableNode);
+            stream.rowType = tableRowType;
+            int ntables = tableNodes.size();
+            if (ntables == 1) {
+                TableSource tableSource = flatten.getTableSources().get(0);
+                if (tableSource != null)
+                    stream.fieldOffsets = new ColumnSourceFieldOffsets(tableSource);
             }
             else {
-                Flattened flattened = flattened(joins, stream);
-                stream.rowType = flattened.rowType;
+                Flattened flattened = new Flattened();
+                flattened.addTable(tableRowType, flatten.getTableSources().get(0));
+                for (int i = 1; i < ntables; i++) {
+                    tableNode = tableNodes.get(i);
+                    tableRowType = tableRowType(tableNode);
+                    flattened.addTable(tableRowType, flatten.getTableSources().get(i));
+                    stream.operator = flatten_HKeyOrdered(stream.operator, 
+                                                          stream.rowType,
+                                                          tableRowType,
+                                                          flatten.getJoinTypes().get(i-1));
+                    stream.rowType = stream.operator.rowType();
+                }
                 stream.fieldOffsets = flattened;
             }
             if (stream.unknownTypesPresent) {
@@ -304,49 +320,9 @@ public class OperatorAssembler extends BaseRule
             return stream;
         }
 
-        protected Flattened flattened(Joinable joinable, RowStream stream) {
-            if (joinable instanceof TableSource) {
-                TableSource table = (TableSource)joinable;
-                Flattened f = new Flattened();
-                f.rowType = tableRowType(table);
-                f.tableOffsets = new HashMap<TableSource,Integer>();
-                f.tableOffsets.put(table, 0);
-                return f;
-            }
-            else {
-                JoinNode join = (JoinNode)joinable;
-                Flattened fleft = flattened(join.getLeft(), stream);
-                Flattened fright = flattened(join.getRight(), stream);
-                stream.operator = flatten_HKeyOrdered(stream.operator,
-                                                      fleft.rowType,
-                                                      fright.rowType,
-                                                      join.getJoinType());
-                int offset = fleft.rowType.nFields();
-                fleft.rowType = stream.operator.rowType();
-                for (Map.Entry<TableSource,Integer> entry : fright.tableOffsets.entrySet())
-                    if (!fleft.tableOffsets.containsKey(entry.getKey()))
-                        fleft.tableOffsets.put(entry.getKey(), 
-                                               entry.getValue() + offset);
-                return fleft;
-            }
-        }
-
-        static class Flattened implements ColumnExpressionToIndex {
-            RowType rowType;
-            Map<TableSource,Integer> tableOffsets;
-
-            @Override
-            public int getIndex(ColumnExpression column) {
-                Integer tableOffset = tableOffsets.get(column.getTable());
-                if (tableOffset == null)
-                    return -1;
-                return tableOffset + column.getPosition();
-            }
-        }
-
         protected RowStream assembleAncestorLookup(AncestorLookup ancestorLookup) {
             RowStream stream = assembleStream(ancestorLookup.getInput());
-            GroupTable groupTable = ancestorLookup.getDescendant().getTable().getGroup().getGroupTable();
+            GroupTable groupTable = ancestorLookup.getDescendant().getGroup().getGroupTable();
             RowType inputRowType = stream.rowType; // The index row type.
             LookupOption flag = LookupOption.DISCARD_INPUT;
             if (!(inputRowType instanceof IndexRowType)) {
@@ -356,7 +332,7 @@ public class OperatorAssembler extends BaseRule
             }
             List<RowType> ancestorTypes = 
                 new ArrayList<RowType>(ancestorLookup.getAncestors().size());
-            for (TableSource table : ancestorLookup.getAncestors()) {
+            for (TableNode table : ancestorLookup.getAncestors()) {
                 ancestorTypes.add(tableRowType(table));
             }
             stream.operator = ancestorLookup_Default(stream.operator,
@@ -370,24 +346,81 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleBranchLookup(BranchLookup branchLookup) {
-            RowStream stream = assembleStream(branchLookup.getInput());
-            RowType inputRowType = stream.rowType; // The index row type.
-            LookupOption flag = LookupOption.DISCARD_INPUT;
-            if (!(inputRowType instanceof IndexRowType)) {
-                // Getting from ancestor lookup.
-                inputRowType = tableRowType(branchLookup.getSource());
-                flag = LookupOption.KEEP_INPUT;
+            RowStream stream;
+            GroupTable groupTable = branchLookup.getSource().getGroup().getGroupTable();
+            if (branchLookup.getInput() != null) {
+                stream = assembleStream(branchLookup.getInput());
+                RowType inputRowType = stream.rowType; // The index row type.
+                LookupOption flag = LookupOption.DISCARD_INPUT;
+                if (!(inputRowType instanceof IndexRowType)) {
+                    // Getting from ancestor lookup.
+                    inputRowType = tableRowType(branchLookup.getSource());
+                    flag = LookupOption.KEEP_INPUT;
+                }
+                stream.operator = branchLookup_Default(stream.operator, 
+                                                       groupTable, 
+                                                       inputRowType,
+                                                       tableRowType(branchLookup.getBranch()), 
+                                                       flag);
             }
-            GroupTable groupTable = branchLookup.getSource().getTable().getGroup().getGroupTable();
-            stream.operator = branchLookup_Default(stream.operator, 
-                                                   groupTable, 
-                                                   inputRowType,
-                                                   tableRowType(branchLookup.getBranch()), 
-                                                   flag);
+            else {
+                stream = new RowStream();
+                LookupOption flag = LookupOption.KEEP_INPUT;
+                stream.operator = branchLookup_Nested(groupTable, 
+                                                      tableRowType(branchLookup.getSource()),
+                                                      tableRowType(branchLookup.getBranch()), 
+                                                      flag,
+                                                      bindingPosition());
+                
+            }
             stream.rowType = null;
             stream.unknownTypesPresent = true;
             stream.fieldOffsets = null;
             return stream;
+        }
+
+        protected RowStream assembleProduct(Product product) {
+            RowStream pstream = new RowStream();
+            Flattened flattened = new Flattened();
+            for (PlanNode subplan : product.getSubplans()) {
+                RowStream stream = assembleStream(subplan);
+                if (pstream.operator == null) {
+                    pstream.operator = stream.operator;
+                    pstream.rowType = stream.rowType;
+                }
+                else {
+                    pstream.operator = product_NestedLoops(pstream.operator,
+                                                           stream.operator,
+                                                           pstream.rowType,
+                                                           stream.rowType,
+                                                           bindingPosition());
+                    pstream.rowType = pstream.operator.rowType();
+                }
+                if (stream.fieldOffsets instanceof ColumnSourceFieldOffsets) {
+                    TableSource table = ((ColumnSourceFieldOffsets)
+                                         stream.fieldOffsets).getTable();
+                    flattened.addTable(tableRowType(table), table);
+                }
+                else {
+                    flattened.product((Flattened)stream.fieldOffsets);
+                }
+            }
+            pstream.fieldOffsets = flattened;
+            return pstream;
+        }
+
+        // This is good enough for branchLookup_Nested and
+        // product_NestedLoops, where each loop starts out right away
+        // with the lookup and never needs it after starting a nested
+        // loop. It will not be enough in general.
+        protected int bindingPosition() {
+            AST ast = ASTStatementLoader.getAST(planContext);
+            if (ast == null)
+                return 0;
+            List<ParameterNode> params = ast.getParameters();
+            if (params == null)
+                return 0;
+            return ast.getParameters().size();
         }
 
         protected RowStream assembleAggregateSource(AggregateSource aggregateSource) {
@@ -690,6 +723,14 @@ public class OperatorAssembler extends BaseRule
             this.source = source;
         }
 
+        public ColumnSource getSource() {
+            return source;
+        }
+
+        public TableSource getTable() {
+            return (TableSource)source;
+        }
+
         @Override
         public int getIndex(ColumnExpression column) {
             if (column.getTable() != source) 
@@ -711,6 +752,49 @@ public class OperatorAssembler extends BaseRule
         public int getIndex(ColumnExpression column) {
             assert index.isCovering() : "Direct access to index field when not covering";
             return index.getColumns().indexOf(column);
+        }
+    }
+
+    static class Flattened implements ColumnExpressionToIndex {
+        Map<TableSource,Integer> tableOffsets = new HashMap<TableSource,Integer>();
+        int nfields;
+            
+        @Override
+        public int getIndex(ColumnExpression column) {
+            Integer tableOffset = tableOffsets.get(column.getTable());
+            if (tableOffset == null)
+                return -1;
+            return tableOffset + column.getPosition();
+        }
+
+        public void addTable(RowType rowType, TableSource table) {
+            if (table != null)
+                tableOffsets.put(table, nfields);
+            nfields += rowType.nFields();
+        }
+
+        // Tack on another flattened using product rules.
+        public void product(final Flattened other) {
+            List<TableSource> otherTables = 
+                new ArrayList<TableSource>(other.tableOffsets.keySet());
+            Collections.sort(otherTables,
+                             new Comparator<TableSource>() {
+                                 @Override
+                                 public int compare(TableSource x, TableSource y) {
+                                     return other.tableOffsets.get(x) - other.tableOffsets.get(y);
+                                 }
+                             });
+            for (int i = 0; i < otherTables.size(); i++) {
+                TableSource otherTable = otherTables.get(i);
+                if (!tableOffsets.containsKey(otherTable)) {
+                    tableOffsets.put(otherTable, nfields);
+                    // Width in other.tableOffsets.
+                    nfields += (((i+1 >= otherTables.size()) ?
+                                 other.nfields :
+                                 other.tableOffsets.get(otherTables.get(i+1))) -
+                                other.tableOffsets.get(otherTable));
+                }
+            }
         }
     }
 

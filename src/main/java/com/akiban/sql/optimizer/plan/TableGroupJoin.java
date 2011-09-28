@@ -17,6 +17,8 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Join;
 
+/** A join within a group corresponding to the GROUPING FK constraint. 
+ */
 public class TableGroupJoin extends BasePlanElement
 {
     private TableGroup group;
