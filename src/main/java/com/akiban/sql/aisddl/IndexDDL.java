@@ -15,9 +15,10 @@
 
 package com.akiban.sql.aisddl;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,8 +69,7 @@ public class IndexDDL
                 dropIndex.getObjectName().getTableName() :
                     null;
         final String indexName = dropIndex.getIndexName();
-        ArrayList<String> indexesToDrop = new ArrayList<String>(1);
-        indexesToDrop.add(indexName);
+        List<String> indexesToDrop = Collections.singletonList(indexName); 
         
         // if the user supplies the table for the index, look only there
         if (indexTableName != null) {

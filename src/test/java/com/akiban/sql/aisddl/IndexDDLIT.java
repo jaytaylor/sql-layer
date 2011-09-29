@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.sql.SQLException;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.postgresql.util.PSQLException;
 
@@ -154,7 +155,7 @@ public class IndexDDLIT extends PostgresServerITBase {
         assertNull (table.getIndex("test114"));
     }
     
-    // @Test - disabled because the SET SCHEMA doesn't work? 
+    @Test @Ignore // - disabled because the SET SCHEMA doesn't work? 
     public void dropIndexTable() throws SQLException {
         String sql = "CREATE INDEX test115 on test.t1 (test.t1.c1, t1.c2, c3)";
         createTable();
