@@ -139,12 +139,24 @@ public class ApiTestBase {
 
     @Before
     public final void startTestServices() throws Exception {
-        ConverterTestUtils.setGlobalTimezone("UTC");
-        testServicesStarted = false;
-        sm = createServiceManager( startupConfigProperties() );
-        sm.startServices();
-        session = sm.getSessionService().createSession();
-        testServicesStarted = true;
+        try {
+            ConverterTestUtils.setGlobalTimezone("UTC");
+            testServicesStarted = false;
+            sm = createServiceManager( startupConfigProperties() );
+            sm.startServices();
+            session = sm.getSessionService().createSession();
+            testServicesStarted = true;
+        } catch (Exception e) {
+            handleStartupFailure(e);
+        }
+    }
+
+    void handleStartupFailure(Exception e) throws Exception {
+        throw e;
+    }
+
+    boolean abortShutdown() {
+        return false;
     }
 
     protected ServiceManager createServiceManager(Collection<Property> startupConfigProperties) {
@@ -158,7 +170,7 @@ public class ApiTestBase {
 
     @After
     public final void stopTestServices() throws Exception {
-        if (!testServicesStarted) {
+        if (abortShutdown() || !testServicesStarted) {
             return;
         }
         String openCursorsMessage = null;
