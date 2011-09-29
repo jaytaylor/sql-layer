@@ -19,6 +19,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.ValuesRowType;
+import com.akiban.server.types.AkType;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.Collections;
@@ -75,7 +76,7 @@ class Count_Default extends Operator
         ArgumentValidation.notNull("countType", countType);
         this.inputOperator = inputOperator;
         this.countType = countType;
-        this.resultType = countType.schema().newValuesType(1);
+        this.resultType = countType.schema().newValuesType(AkType.LONG);
     }
 
     // Object state

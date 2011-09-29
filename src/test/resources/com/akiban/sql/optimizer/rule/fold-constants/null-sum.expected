@@ -1,7 +1,7 @@
 SelectQuery@17918f0
   ResultSet@619646fd[_SQL_COL_1, _SQL_COL_2]
     Project@510ebe18[null, GROUP[0]]
-      Filter@1f08ed8[]
-        AggregateSource@cbf9bd([],[COUNT(*)])
-          Filter@322bce[user.items.sku == 321]
+      Select@1f08ed8[]
+        AggregateSource@cbf9bd(UNGROUPED,[COUNT(*)])
+          Select@322bce[user.items.sku == 321]
             TableSource@92b1a1(user.items)

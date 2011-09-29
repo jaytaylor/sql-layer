@@ -104,7 +104,7 @@ class Select_HKeyOrdered extends Operator
             while (row == null && inputRow != null) {
                 if (inputRow.rowType() == predicateRowType) {
                     evaluation.of(inputRow);
-                    if (Extractors.getBooleanExtractor().getBoolean(evaluation.eval())) {
+                    if (Extractors.getBooleanExtractor().getBoolean(evaluation.eval(), false)) {
                         // New row of predicateRowType
                         selectedRow.hold(inputRow);
                         row = inputRow;

@@ -29,7 +29,6 @@ import java.util.Map;
 
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.UndefBindings;
@@ -37,7 +36,9 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.expression.Expression;
 import com.akiban.server.service.instrumentation.SessionTracer;
+import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.OperatorCompiler.Result;
 import com.akiban.sql.optimizer.simplified.SimplifiedDeleteStatement;
 import com.akiban.sql.optimizer.simplified.SimplifiedInsertStatement;
@@ -149,8 +150,13 @@ public class CUDCompiler {
         
         // Using valuesRowType, not UserTableRowType here because values may not be in 
         // same number or order as user table columns. Re-order and fill will be done 
-        // during execution. 
-        ValuesRowType rowType = compiler.valuesRowType(values.get(0).size());
+        // during execution.
+
+        // TODO fix this once the new Expressions are plugged in; they'll give the correct type per row
+        AkType[] types = new AkType[values.get(0).size()];
+        Arrays.fill(types, AkType.NULL);
+        ValuesRowType rowType = compiler.valuesRowType(types);
+
         for (List<SimpleExpression> row : values) {
             Expression[] expressions = new Expression[row.size()];
             int i = 0;

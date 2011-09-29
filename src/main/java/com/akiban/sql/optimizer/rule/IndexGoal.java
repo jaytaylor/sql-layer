@@ -15,15 +15,13 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
-import com.akiban.qp.expression.Comparison;
-
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
@@ -333,12 +331,18 @@ public class IndexGoal implements Comparator<IndexScan>
         return null;
     }
 
-    /** Find the best index on the given table. */
-    public IndexScan pickBestIndex(TableSource table) {
+    /** Find the best index on the given table. 
+     * @param groupOnly If true, this table is the optional part of a
+     * LEFT join. Can still consider group indexes to it, but not
+     * single table indexes on it.
+     */
+    public IndexScan pickBestIndex(TableSource table, boolean groupOnly) {
         IndexScan bestIndex = null;
-        for (TableIndex index : table.getTable().getTable().getIndexes()) {
-            IndexScan candidate = new IndexScan(index, table, table);
-            bestIndex = betterIndex(bestIndex, candidate);
+        if (!groupOnly) {
+            for (TableIndex index : table.getTable().getTable().getIndexes()) {
+                IndexScan candidate = new IndexScan(index, table, table);
+                bestIndex = betterIndex(bestIndex, candidate);
+            }
         }
         if (table.getGroup() != null) {
             for (GroupIndex index : table.getGroup().getGroup().getIndexes()) {
@@ -373,10 +377,11 @@ public class IndexGoal implements Comparator<IndexScan>
     }
 
     /** Find the best index among the given tables. */
-    public IndexScan pickBestIndex(Collection<TableSource> tables) {
+    public IndexScan pickBestIndex(Collection<TableSource> tables,
+                                   Set<TableSource> required) {
         IndexScan bestIndex = null;
         for (TableSource table : tables) {
-            IndexScan tableIndex = pickBestIndex(table);
+            IndexScan tableIndex = pickBestIndex(table, !required.contains(table));
             if ((tableIndex != null) &&
                 ((bestIndex == null) || (compare(tableIndex, bestIndex) > 0)))
                 bestIndex = tableIndex;
@@ -544,11 +549,11 @@ public class IndexGoal implements Comparator<IndexScan>
      * <code>node</code> as a consequence of <code>index</code> being
      * used.
      */
-    public void installUpstream(IndexScan index, PlanNode node) {
+    public void installUpstream(IndexScan index) {
         if (index.getConditions() != null) {
             for (ConditionExpression condition : index.getConditions()) {
                 // TODO: This depends on conditions being the original
-                // from the Filter, and not some copy merged with join
+                // from the Select, and not some copy merged with join
                 // conditions, etc. When it is, more work will be
                 // needed to track down where to remove, though
                 // setting the implementation may be enough.

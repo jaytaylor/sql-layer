@@ -406,6 +406,7 @@
                     <exclude>doc/examples/social/rails/script/**</exclude>
                     <exclude>redhat/*</exclude>
                     <exclude>src/main/resources/version/akserver_version</exclude> 
+                    <exclude>src/test/resources/com/akiban/**/README.txt</exclude> 
                     <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/*</exclude>
                 </excludes>
                 <mapping>

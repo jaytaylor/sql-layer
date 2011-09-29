@@ -18,6 +18,7 @@ package com.akiban.qp.rowtype;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.types.AkType;
 import com.akiban.util.FilteringIterator;
 
 import java.util.ArrayList;
@@ -39,6 +40,11 @@ public class UserTableRowType extends RowType
     public int nFields()
     {
         return table.getColumns().size();
+    }
+
+    @Override
+    public AkType typeAt(int index) {
+        return table.getColumn(index).getType().akType();
     }
 
     @Override

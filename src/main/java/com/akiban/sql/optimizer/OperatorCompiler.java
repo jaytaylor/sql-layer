@@ -16,6 +16,10 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.qp.operator.Operator;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.Comparison;
+import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.simplified.*;
 import com.akiban.sql.optimizer.simplified.SimplifiedQuery.*;
 
@@ -45,8 +49,6 @@ import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.EventTypes;
 import com.akiban.server.service.instrumentation.SessionTracer;
 
-import com.akiban.qp.expression.Comparison;
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 
@@ -755,6 +757,10 @@ public class OperatorCompiler
                     keys[kidx++] = cond.getRight().generateExpression(null);
                 }
             }
+            for (int i = kidx; i < keys.length; ++i) {
+                assert keys[i] == null : keys[i];
+                keys[i] = Expressions.literal(null);
+            }
 
             if ((lowCondition == null) && (highCondition == null)) {
                 IndexBound eq = getIndexBound(index, keys, kidx);
@@ -1056,8 +1062,8 @@ public class OperatorCompiler
         return schema.userTableRowType(table.getTable());
     }
 
-    protected ValuesRowType valuesRowType (int nfields) {
-        return schema.newValuesType(nfields);
+    protected ValuesRowType valuesRowType (AkType[] fields) {
+        return schema.newValuesType(fields);
     }
     
     /** Return an index bound for the given index and expressions.

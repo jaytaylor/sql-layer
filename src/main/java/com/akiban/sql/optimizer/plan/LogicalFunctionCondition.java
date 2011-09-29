@@ -32,4 +32,20 @@ public class LogicalFunctionCondition extends FunctionCondition
                                     DataTypeDescriptor sqlType, ValueNode sqlSource) {
         super(function, new ArrayList<ExpressionNode>(operands), sqlType, sqlSource);
     }
+
+    public ConditionExpression getOperand() {
+        assert (getOperands().size() == 1);
+        return (ConditionExpression)getOperands().get(0);
+    }
+
+    public ConditionExpression getLeft() {
+        assert (getOperands().size() == 2);
+        return (ConditionExpression)getOperands().get(0);
+    }
+
+    public ConditionExpression getRight() {
+        assert (getOperands().size() == 2);
+        return (ConditionExpression)getOperands().get(1);
+    }
+
 }

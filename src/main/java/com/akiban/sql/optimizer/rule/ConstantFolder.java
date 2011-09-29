@@ -15,9 +15,9 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.NullValueSource;
 import com.akiban.sql.optimizer.plan.*;
-
-import com.akiban.qp.expression.Expression;
 
 import java.util.*;
 
@@ -32,7 +32,7 @@ public class ConstantFolder extends BaseRule
     @Override
     public void apply(PlanContext planContext) {
         PlanNode plan = planContext.getPlan();
-        Folder folder = new Folder();
+        Folder folder = new Folder(planContext.getRulesContext());
         while (folder.foldConstants(plan));
         folder.finishAggregates(plan);
     }
@@ -43,6 +43,11 @@ public class ConstantFolder extends BaseRule
         private enum State { FOLDING, AGGREGATES };
         private State state;
         private boolean changed;
+        private final ExpressionAssembler expressionAssembler;
+
+        public Folder(RulesContext rulesContext) {
+            this.expressionAssembler = new ExpressionAssembler(rulesContext);
+        }
 
         /** Return <code>true</code> if substantial enough changes were made that
          * need to be run again.
@@ -62,8 +67,8 @@ public class ConstantFolder extends BaseRule
         @Override
         public boolean visitLeave(PlanNode n) {
             if (state == State.FOLDING) {
-                if (n instanceof Filter)
-                    filterNode((Filter)n);
+                if (n instanceof Select)
+                    selectNode((Select)n);
                 else if (n instanceof SubquerySource)
                     subquerySource((SubquerySource)n);
                 else if (n instanceof AggregateSource)
@@ -93,8 +98,12 @@ public class ConstantFolder extends BaseRule
                     return comparisonCondition((ComparisonCondition)expr);
                 else if (expr instanceof CastExpression)
                     return castExpression((CastExpression)expr);
-                else if (expr instanceof FunctionExpression)
-                    return functionExpression((FunctionExpression)expr);
+                else if (expr instanceof FunctionExpression) {
+                    if (expr instanceof LogicalFunctionCondition)
+                        return logicalFunctionCondition((LogicalFunctionCondition)expr);
+                    else
+                        return functionExpression((FunctionExpression)expr);
+                }
                 else if (expr instanceof IfElseExpression)
                     return ifElseExpression((IfElseExpression)expr);
                 else if (expr instanceof ColumnExpression)
@@ -103,6 +112,8 @@ public class ConstantFolder extends BaseRule
                     return subqueryValueExpression((SubqueryValueExpression)expr);
                 else if (expr instanceof ExistsCondition)
                     return existsCondition((ExistsCondition)expr);
+                else if (expr instanceof AnyCondition)
+                    return anyCondition((AnyCondition)expr);
             }
             else if (state == State.AGGREGATES) {
                 if (expr instanceof ColumnExpression)
@@ -158,6 +169,59 @@ public class ConstantFolder extends BaseRule
             return fun;
         }
 
+        protected ConditionExpression logicalFunctionCondition(LogicalFunctionCondition lfun) {
+            String fname = lfun.getFunction();
+            if ("and".equals(fname)) {
+                ConditionExpression left = lfun.getLeft();
+                ConditionExpression right = lfun.getRight();
+                if (isConstant(left) == Constantness.CONSTANT) {
+                    Boolean lv = (Boolean)((ConstantExpression)left).getValue();
+                    if (lv.booleanValue())
+                        return right; // TRUE AND X -> X
+                    else
+                        return left; // FALSE AND X -> FALSE
+                }
+                if (isConstant(right) == Constantness.CONSTANT) {
+                    Boolean rv = (Boolean)((ConstantExpression)right).getValue();
+                    if (rv.booleanValue())
+                        return left; // X AND TRUE -> X
+                    else
+                        return right; // X AND FALSE -> FALSE
+                }
+            }
+            else if ("or".equals(fname)) {
+                ConditionExpression left = lfun.getLeft();
+                ConditionExpression right = lfun.getRight();
+                if (isConstant(left) == Constantness.CONSTANT) {
+                    Boolean lv = (Boolean)((ConstantExpression)left).getValue();
+                    if (lv.booleanValue())
+                        return left; // TRUE OR X -> TRUE
+                    else
+                        return right; // FALSE OR X -> X
+                }
+                if (isConstant(right) == Constantness.CONSTANT) {
+                    Boolean rv = (Boolean)((ConstantExpression)right).getValue();
+                    if (rv.booleanValue())
+                        return right; // X OR TRUE -> TRUE
+                    else
+                        return left; // X OR FALSE -> X
+                }
+            }
+            else if ("not".equals(fname)) {
+                ConditionExpression cond = lfun.getOperand();
+                Constantness c = isConstant(cond);
+                if (c == Constantness.NULL)
+                    return new BooleanConstantExpression(null, 
+                                                         lfun.getSQLtype(), 
+                                                         lfun.getSQLsource());
+                if (c == Constantness.CONSTANT)
+                    return new BooleanConstantExpression((((ConstantExpression)cond).getValue() != Boolean.TRUE),
+                                                         lfun.getSQLtype(), 
+                                                         lfun.getSQLsource());
+            }
+            return lfun;
+        }
+
         protected boolean isVolatile(FunctionExpression fun) {
             // TODO: Nice to get this from some functions repository
             // associated with their implementations.
@@ -208,7 +272,7 @@ public class ConstantFolder extends BaseRule
         protected ExpressionNode ifElseExpression(IfElseExpression cond) {
             Constantness c = isConstant(cond.getTestCondition());
             if (c == Constantness.VARIABLE)
-                return cond;
+                return cond;    // TODO: isFalseOrUnknown?
             if (((ConstantExpression)cond.getTestCondition()).getValue() == Boolean.TRUE)
                 return cond.getThenExpression();
             else
@@ -239,7 +303,8 @@ public class ConstantFolder extends BaseRule
                             if (isAggregateZero(afun))
                                 value = Integer.valueOf(0);
                             return new ConstantExpression(value,
-                                                          col.getSQLtype(), 
+                                                          col.getSQLtype(),
+                                                          col.getAkType(),
                                                           col.getSQLsource());
                         }
                     }
@@ -269,24 +334,24 @@ public class ConstantFolder extends BaseRule
                     // NullSource that replaced it, but then that'd have
                     // to eval specially.
                     return new ConstantExpression(null,
-                                                  col.getSQLtype(), col.getSQLsource());
+                                                  col.getSQLtype(), AkType.NULL, col.getSQLsource());
             }
             return col;
         }
 
-        protected void filterNode(Filter filter) {
-            boolean keep = checkConditions(filter.getConditions());
-            if (keep && (filter.getInput() instanceof Joinable)) {
-                Joinable input = (Joinable)filter.getInput();
+        protected void selectNode(Select select) {
+            boolean keep = checkConditions(select.getConditions());
+            if (keep && (select.getInput() instanceof Joinable)) {
+                Joinable input = (Joinable)select.getInput();
                 input = checkOuterJoins(input);
                 if (input == null)
                     keep = false;
                 else
-                    filter.setInput(input);
+                    select.setInput(input);
             }
             if (!keep) {
-                eliminateSources(filter.getInput());
-                PlanNode toReplace = filter;
+                eliminateSources(select.getInput());
+                PlanNode toReplace = select;
                 PlanWithInput inOutput = toReplace.getOutput();
                 if (inOutput instanceof Sort) {
                     toReplace = inOutput;
@@ -361,7 +426,10 @@ public class ConstantFolder extends BaseRule
         }
 
         /** Returns <code>false</code> if it's impossible for these
-         * conditions to be satisfied. */
+         * conditions to be satisfied.
+         * Only valid when conditions are being tested, not when used
+         * as a value.
+         */
         protected boolean checkConditions(List<ConditionExpression> conditions) {
             if (conditions == null) return true;
             int i = 0;
@@ -374,43 +442,182 @@ public class ConstantFolder extends BaseRule
                     else
                         return false;
                 }
+                else if (isFalseOrUnknown(condition))
+                    return false;
                 i++;
             }
             return true;
         }
 
-        protected ExpressionNode subqueryValueExpression(SubqueryValueExpression expr) {
-            if (isNullSubquery(expr.getSubquery())) {
-                return new ConstantExpression(null,
-                                              expr.getSQLtype(), expr.getSQLsource());
+        /** Returns <code>true</code> if the given expression will always evaluate
+         * to either <i>true</i> or <i>unknown</i>.
+         */
+        protected boolean isTrueOrUnknown(ConditionExpression expr) {
+            if (expr instanceof ConstantExpression) {
+                Object value = ((ConstantExpression)expr).getValue();
+                return ((value == null) ||
+                        (value == Boolean.TRUE));
             }
-            // TODO: Also, if the single select column is constant
-            // NULL, result is NULL (either because of that or because
-            // no rows matched.)
+            else if (expr instanceof LogicalFunctionCondition) {
+                LogicalFunctionCondition lfun = (LogicalFunctionCondition)expr;
+                String fname = lfun.getFunction();
+                if ("and".equals(fname)) {
+                    return (isTrueOrUnknown(lfun.getLeft()) &&
+                            isTrueOrUnknown(lfun.getRight()));
+                }
+                else if ("or".equals(fname)) {
+                    return (isTrueOrUnknown(lfun.getLeft()) ||
+                            isTrueOrUnknown(lfun.getRight()));
+                }
+                else if ("not".equals(fname)) {
+                    return isFalseOrUnknown(lfun.getOperand());
+                }
+            }
+            return false;
+        }
+
+        /** Returns <code>true</code> if the given expression will always evaluate
+         * to either <i>false</i> or <i>unknown</i>.
+         */
+        protected boolean isFalseOrUnknown(ConditionExpression expr) {
+            if (expr instanceof ConstantExpression) {
+                Object value = ((ConstantExpression)expr).getValue();
+                return ((value == null) ||
+                        (value == Boolean.FALSE));
+            }
+            else if (expr instanceof LogicalFunctionCondition) {
+                LogicalFunctionCondition lfun = (LogicalFunctionCondition)expr;
+                String fname = lfun.getFunction();
+                if ("and".equals(fname)) {
+                    return (isFalseOrUnknown(lfun.getLeft()) ||
+                            isFalseOrUnknown(lfun.getRight()));
+                }
+                else if ("or".equals(fname)) {
+                    return (isFalseOrUnknown(lfun.getLeft()) &&
+                            isFalseOrUnknown(lfun.getRight()));
+                }
+                else if ("not".equals(fname)) {
+                    return isTrueOrUnknown(lfun.getOperand());
+                }
+            }
+            else if (expr instanceof AnyCondition) {
+                ExpressionNode inner = getSubqueryColumn(((AnyCondition)expr).getSubquery());
+                if (inner instanceof ConditionExpression)
+                    // Will be false if empty and whatever this is otherwise.
+                    // E.g., NULL IN (SELECT ...)
+                    return isFalseOrUnknown((ConditionExpression)inner);
+            }
+            // TODO: More? Column = itself?
+            return false;
+        }
+
+        protected ExpressionNode subqueryValueExpression(SubqueryValueExpression expr) {
+            SubqueryEmptiness empty = isEmptySubquery(expr.getSubquery());
+            if (empty == SubqueryEmptiness.EMPTY) {
+                return new ConstantExpression(null,
+                                              expr.getSQLtype(), AkType.NULL, expr.getSQLsource());
+            }
+            ExpressionNode inner = getSubqueryColumn(expr.getSubquery());
+            if (inner != null) {
+                Constantness ic = isConstant(inner);
+                if (ic == Constantness.NULL) {
+                    // If it's empty, it's NULL. 
+                    // If it selects something, that projects NULL.
+                    // NULL either way.
+                    return new ConstantExpression(NullValueSource.only(),
+                                                  expr.getSQLtype(), 
+                                                  expr.getSQLsource());
+                }
+                else if ((ic == Constantness.CONSTANT) &&
+                         (empty == SubqueryEmptiness.NON_EMPTY)) {
+                    // If the inner is a constant and it's driven by a
+                    // VALUES, know the value it must generate.  It
+                    // would be possible to run the whole subquery if
+                    // a variable expression only depended on fields
+                    // from the VALUES, but that's getting to be a lot
+                    // of setup.
+                    return inner;
+                }
+            }
             return expr;
         }
 
         protected ExpressionNode existsCondition(ExistsCondition cond) {
-            if (isNullSubquery(cond.getSubquery())) {
+            if (isEmptySubquery(cond.getSubquery()) == SubqueryEmptiness.EMPTY) {
+                // Empty EXISTS is false.
                 return new BooleanConstantExpression(Boolean.FALSE,
                                                      cond.getSQLtype(), cond.getSQLsource());
             }
             return cond;
         }
     
+        protected ExpressionNode anyCondition(AnyCondition cond) {
+            SubqueryEmptiness empty = isEmptySubquery(cond.getSubquery());
+            if (empty == SubqueryEmptiness.EMPTY) {
+                // Empty ANY is false.
+                return new BooleanConstantExpression(Boolean.FALSE,
+                                                     cond.getSQLtype(), cond.getSQLsource());
+            }
+            ExpressionNode inner = getSubqueryColumn(cond.getSubquery());
+            if ((inner != null) &&
+                (isConstant(inner) == Constantness.CONSTANT) &&
+                ((empty == SubqueryEmptiness.NON_EMPTY) ||
+                 (((ConstantExpression)inner).getValue() == Boolean.FALSE))) {
+                // Constant false: if it's empty, it's false. If it
+                // selects something, that projects false. False
+                // either way.
+                // Constant true: if it's known non-empty, that's what
+                // is returned.
+                return inner;
+            }
+            return cond;
+        }
+    
         protected void subquerySource(SubquerySource source) {
-            if (isNullSubquery(source.getSubquery())) {
+            if (isEmptySubquery(source.getSubquery()) == SubqueryEmptiness.EMPTY) {
                 eliminateSource(source);
             }            
         }
 
-        protected boolean isNullSubquery(Subquery subquery) {
+        static enum SubqueryEmptiness {
+            UNKNOWN, EMPTY, NON_EMPTY
+        }
+
+        protected SubqueryEmptiness isEmptySubquery(Subquery subquery) {
             PlanNode node = subquery;
             while ((node instanceof Subquery) ||
                    (node instanceof ResultSet) ||
                    (node instanceof Project))
                 node = ((BasePlanWithInput)node).getInput();
-            return (node instanceof NullSource);
+            if ((node instanceof Select) &&
+                ((Select)node).getConditions().isEmpty())
+                node = ((BasePlanWithInput)node).getInput();
+            if (node instanceof NullSource)
+                return SubqueryEmptiness.EMPTY;
+            if (node instanceof ExpressionsSource) {
+                int nrows = ((ExpressionsSource)node).getExpressions().size();
+                if (nrows == 0)
+                    return SubqueryEmptiness.EMPTY;
+                else
+                    return SubqueryEmptiness.NON_EMPTY;
+            }
+            else
+                return SubqueryEmptiness.UNKNOWN;
+        }
+
+        // If the inside of this subquery returns a single column (in
+        // an obvious to work out way), get it.
+        protected ExpressionNode getSubqueryColumn(Subquery subquery) {
+            PlanNode node = subquery;
+            while ((node instanceof Subquery) ||
+                   (node instanceof ResultSet))
+                node = ((BasePlanWithInput)node).getInput();
+            if (node instanceof Project) {
+                List<ExpressionNode> cols = ((Project)node).getFields();
+                if (cols.size() == 1)
+                    return cols.get(0);
+            }
+            return null;
         }
 
         public void finishAggregates(PlanNode plan) {
@@ -468,8 +675,6 @@ public class ConstantFolder extends BaseRule
             else 
                 return Constantness.VARIABLE;
         }
-
-        private final ExpressionAssembler expressionAssembler = new ExpressionAssembler();
 
         protected ExpressionNode evalNow(ExpressionNode node) {
             try {

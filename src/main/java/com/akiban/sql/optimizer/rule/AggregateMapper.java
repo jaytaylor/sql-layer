@@ -93,8 +93,8 @@ public class AggregateMapper extends BaseRule
             while (true) {
                 // Keep going as long as we're feeding something we understand.
                 n = n.getOutput();
-                if (n instanceof Filter) {
-                    remap(((Filter)n).getConditions());
+                if (n instanceof Select) {
+                    remap(((Select)n).getConditions());
                 }
                 else if (n instanceof Sort) {
                     remapA(((Sort)n).getOrderBy());
@@ -146,8 +146,8 @@ public class AggregateMapper extends BaseRule
             if (nexpr != null)
                 return nexpr.accept(this);
             int position = source.addAggregate((AggregateFunctionExpression)expr);
-            nexpr = new ColumnExpression(source, position, 
-                                         expr.getSQLtype(), expr.getSQLsource());
+            nexpr = new ColumnExpression(source, position,
+                                         expr.getSQLtype(), expr.getAkType(), expr.getSQLsource());
             map.put(expr, nexpr);
             return nexpr;
         }

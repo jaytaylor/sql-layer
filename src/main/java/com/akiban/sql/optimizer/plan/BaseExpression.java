@@ -15,12 +15,9 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.qp.expression.Expression;
-
+import com.akiban.server.types.AkType;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
-
-import java.util.Map;
 
 /** An evaluated value. 
  * Usually part of a larger expression tree.
@@ -28,17 +25,27 @@ import java.util.Map;
 public abstract class BaseExpression extends BasePlanElement implements ExpressionNode
 {
     private DataTypeDescriptor sqlType;
-    // TODO: Maybe AkType here once that's stable.
+    private AkType akType;
     private ValueNode sqlSource;
 
-    protected BaseExpression(DataTypeDescriptor sqlType, ValueNode sqlSource) {
+    protected BaseExpression(DataTypeDescriptor sqlType, AkType akType, ValueNode sqlSource) {
         this.sqlType = sqlType;
+        this.akType = akType;
         this.sqlSource = sqlSource;
+    }
+
+    protected BaseExpression(DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        this(sqlType, TypesTranslation.sqlTypeToAkType(sqlType), sqlSource);
     }
 
     @Override
     public DataTypeDescriptor getSQLtype() {
         return sqlType;
+    }
+
+    @Override
+    public AkType getAkType() {
+        return akType;
     }
 
     @Override

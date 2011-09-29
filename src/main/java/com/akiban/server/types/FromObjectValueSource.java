@@ -16,6 +16,7 @@
 package com.akiban.server.types;
 
 import com.akiban.server.Quote;
+import com.akiban.server.types.extract.Extractors;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
 
@@ -28,7 +29,9 @@ public final class FromObjectValueSource implements ValueSource {
 
     public FromObjectValueSource setExplicitly(Object object, AkType type) {
         setReflectively(object);
-        if (akType != AkType.NULL) {
+        
+        if (akType != AkType.NULL && akType != type) {
+            this.object = extractAs(type);
             akType = type;
         }
         return this;
@@ -39,32 +42,12 @@ public final class FromObjectValueSource implements ValueSource {
             setNull();
             return this;
         }
-        
-        final AkType asType;
 
-        if (object instanceof Integer || object instanceof Long)
-            asType = AkType.LONG;
-        else if (object instanceof String)
-            asType = AkType.VARCHAR;
-        else if (object instanceof Double)
-            asType = AkType.DOUBLE;
-        else if (object instanceof Float)
-            asType = AkType.FLOAT;
-        else if (object instanceof BigDecimal)
-            asType = AkType.DECIMAL;
-        else if (object instanceof ByteSource || object instanceof byte[])
-            asType = AkType.VARBINARY;
-        else if (object instanceof BigInteger)
-             asType = AkType.U_BIGINT;
-        else if (object instanceof Boolean)
-             asType = AkType.BOOL;
-        else if (object instanceof Character) {
+        if (object instanceof Character) {
              object = String.valueOf(object);
-             asType = AkType.VARCHAR;
         }
-        else throw new UnsupportedOperationException("can't reflectively set " + object.getClass() + ": " + object);
 
-        set(object, asType);
+        set(object, reflectivelyGetAkType(object));
         return this;
     }
 
@@ -193,6 +176,32 @@ public final class FromObjectValueSource implements ValueSource {
         return String.format("ValueSource(%s %s)", akType, object);
     }
 
+    // class interface
+
+    public static AkType reflectivelyGetAkType(Object object) {
+        if (object == null)
+            return AkType.NULL;
+        if (object instanceof Integer || object instanceof Long)
+            return AkType.LONG;
+        else if (object instanceof String)
+            return AkType.VARCHAR;
+        else if (object instanceof Double)
+            return AkType.DOUBLE;
+        else if (object instanceof Float)
+            return AkType.FLOAT;
+        else if (object instanceof BigDecimal)
+            return AkType.DECIMAL;
+        else if (object instanceof ByteSource || object instanceof byte[])
+            return AkType.VARBINARY;
+        else if (object instanceof BigInteger)
+             return AkType.U_BIGINT;
+        else if (object instanceof Boolean)
+             return AkType.BOOL;
+        else if (object instanceof Character)
+             return AkType.VARCHAR;
+        else throw new UnsupportedOperationException("can't reflectively set " + object.getClass() + ": " + object);
+    }
+
     // private methods
 
     private <T> T as(Class<T> castClass, AkType type) {
@@ -202,6 +211,40 @@ public final class FromObjectValueSource implements ValueSource {
         } catch (ClassCastException e) {
             String className = object == null ? "null" : object.getClass().getName();
             throw new ClassCastException("casting " + className + " to " + castClass);
+        }
+    }
+
+    private Object extractAs(AkType type) {
+        // TODO make a generic Extractor<T> so we can just use Extractors.get(type).getObject(this)
+        switch (type) {
+        case DATE:
+        case DATETIME:
+        case TIMESTAMP:
+        case INT:
+        case LONG:
+        case TIME:
+        case U_INT:
+        case YEAR:
+            return Extractors.getLongExtractor(type).getLong(this);
+        case U_DOUBLE:
+        case DOUBLE:
+            return Extractors.getDoubleExtractor().getDouble(this);
+        case U_FLOAT:
+        case FLOAT:
+            return (float) Extractors.getDoubleExtractor().getDouble(this);
+        case BOOL:
+            return Extractors.getBooleanExtractor().getBoolean(this, null);
+        case VARCHAR:
+        case TEXT:
+            return Extractors.getStringExtractor().getObject(this);
+        case DECIMAL:
+            return Extractors.getDecimalExtractor().getObject(this);
+        case U_BIGINT:
+            return Extractors.getUBigIntExtractor().getObject(this);
+        case NULL:  return null;
+        default:
+            throw new UnsupportedOperationException("can't convert to type " + type);
+//        case VARBINARY:
         }
     }
 
