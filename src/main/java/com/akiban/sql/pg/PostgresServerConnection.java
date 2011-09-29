@@ -770,11 +770,17 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         if (transaction != null)
             throw new TransactionInProgressException ();
         transaction = reqs.treeService().getTransaction(session);
+        boolean transactionBegun = false;
         try {
             transaction.begin();
+            transactionBegun = true;
         }
         catch (PersistitException ex) {
             throw new PersistItErrorException (ex);
+        } finally {
+            if (!transactionBegun) {
+                transaction = null;
+            }
         }
     }
 
@@ -789,8 +795,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
         finally {
             transaction.end();
+            transaction = null;
         }
-        transaction = null;
     }
 
     public void rollbackTransaction() {
@@ -806,8 +812,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
         finally {
             transaction.end();
+            transaction = null;
         }
-        transaction = null;
     }
 
     @Override
