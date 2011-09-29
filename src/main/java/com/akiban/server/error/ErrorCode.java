@@ -15,6 +15,8 @@
 
 package com.akiban.server.error;
 
+import com.akiban.qp.operator.QueryCanceledException;
+
 import java.util.ResourceBundle;
 
 /**
@@ -127,6 +129,7 @@ public enum ErrorCode {
     
     // Messaging errors
     MALFORMED_REQUEST       (21, 0, Importance.ERROR, null), 
+    QUERY_CANCELED          (21, 1, Importance.ERROR, null),
     BAD_STATISTICS_TYPE     (21, 4, Importance.ERROR, BadStatisticsTypeException.class),
 
     // AIS Validation errors, Attempts to modify and build an AIS failed

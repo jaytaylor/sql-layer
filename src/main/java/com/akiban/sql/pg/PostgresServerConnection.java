@@ -211,61 +211,16 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                     session.cancelCurrentQuery(false);
                     logger.warn("Error in query: {}",ex.getMessage());
                     logger.debug("StackTrace: {}", ex);
-                    if (type.errorMode() == PostgresMessages.ErrorMode.NONE ) throw ex;
-                    else {
-                        messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
-                        messenger.write('S');
-                        messenger.writeString("ERROR");
-                        messenger.write('C');
-                        messenger.writeString(ErrorCode.UNEXPECTED_EXCEPTION.getFormattedValue());
-                        messenger.write('M');
-                        messenger.writeString("Query canceled by user");
-                        messenger.write(0);
-                        messenger.sendMessage(true);
-                    }
-                    if (type.errorMode() == PostgresMessages.ErrorMode.EXTENDED)
-                        ignoreUntilSync = true;
-                    else
-                        readyForQuery();
+                    sendErrorResponse(type, ex, ErrorCode.QUERY_CANCELED, "Query canceled by user");
                 } catch (InvalidOperationException ex) {
                     logger.warn("Error in query: {}",ex.getMessage());
                     logger.debug("StackTrace: {}", ex);
-                    if (type.errorMode() == PostgresMessages.ErrorMode.NONE ) throw ex;
-                    else {
-                        messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
-                        messenger.write('S');
-                        messenger.writeString("ERROR");
-                        messenger.write('C');
-                        messenger.writeString(ex.getCode().getFormattedValue());
-                        messenger.write('M');
-                        messenger.writeString(ex.getShortMessage());
-                        messenger.write(0);
-                        messenger.sendMessage(true);
-                    }
-                    if (type.errorMode() == PostgresMessages.ErrorMode.EXTENDED)
-                        ignoreUntilSync = true;
-                    else
-                        readyForQuery();
-                } catch (Exception e) {
-                    final String message = (e.getMessage() == null ? e.getClass().toString() : e.getMessage());
-                    logger.warn("Unexpected error in query", e);
-                    logger.debug("Stack Trace: {}", e);
-                    if (type.errorMode() == PostgresMessages.ErrorMode.NONE) throw e;
-                    else {
-                        messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
-                        messenger.write('S');
-                        messenger.writeString("ERROR");
-                        messenger.write('C');
-                        messenger.writeString(ErrorCode.UNEXPECTED_EXCEPTION.getFormattedValue());
-                        messenger.write('M');
-                        messenger.writeString(message);
-                        messenger.write(0);
-                        messenger.sendMessage(true);
-                    }
-                    if (type.errorMode() == PostgresMessages.ErrorMode.EXTENDED)
-                        ignoreUntilSync = true;
-                    else
-                        readyForQuery();
+                    sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
+                } catch (Exception ex) {
+                    final String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
+                    logger.warn("Unexpected error in query", ex);
+                    logger.debug("Stack Trace: {}", ex);
+                    sendErrorResponse(type, ex, ErrorCode.UNEXPECTED_EXCEPTION, message);
                 }
                 finally {
                     sessionTracer.endEvent();
@@ -279,6 +234,27 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             }
             server.removeConnection(pid);
         }
+    }
+
+    private void sendErrorResponse(PostgresMessages type, Exception exception, ErrorCode errorCode, String message)
+        throws Exception
+    {
+        if (type.errorMode() == PostgresMessages.ErrorMode.NONE) throw exception;
+        else {
+            messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
+            messenger.write('S');
+            messenger.writeString("ERROR");
+            messenger.write('C');
+            messenger.writeString(errorCode.getFormattedValue());
+            messenger.write('M');
+            messenger.writeString(message);
+            messenger.write(0);
+            messenger.sendMessage(true);
+        }
+        if (type.errorMode() == PostgresMessages.ErrorMode.EXTENDED)
+            ignoreUntilSync = true;
+        else
+            readyForQuery();
     }
 
     protected void readyForQuery() throws IOException {

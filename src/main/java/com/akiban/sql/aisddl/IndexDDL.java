@@ -18,6 +18,7 @@ package com.akiban.sql.aisddl;
 import java.util.Collection;
 import java.util.LinkedList;
 
+import com.akiban.ais.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,12 +36,6 @@ import com.akiban.sql.parser.RenameNode;
 
 import com.akiban.ais.io.AISTarget;
 import com.akiban.ais.io.TableSubsetWriter;
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
 
 /** DDL operations on Indices */
 public class IndexDDL
@@ -207,11 +202,13 @@ public class IndexDDL
         }.save(ais);
     }
     
-    private static void addTable (AISBuilder builder, AkibanInformationSchema ais, final TableName tableName) {
+    private static void addTable (AISBuilder builder, AkibanInformationSchema ais, TableName tableName) {
+        final UserTable userTable = ais.getUserTable(tableName);
+        final GroupTable groupTable = userTable.getGroup().getGroupTable();
         new TableSubsetWriter(new AISTarget(builder.akibanInformationSchema())) {
             @Override
             public boolean shouldSaveTable(Table table) {
-                return table.getName().equals(tableName);
+                return table == userTable || table == groupTable;
             }
         }.save(ais);
     }

@@ -15,7 +15,7 @@
 package com.akiban.server.error;
 
 public class MetaModelVersionMismatchException extends InvalidOperationException {
-    public MetaModelVersionMismatchException (final int expectedVersion, final int actualVersion) {
-        super (ErrorCode.METAMODEL_MISMATCH, expectedVersion, actualVersion);
+    public MetaModelVersionMismatchException () {
+        super (ErrorCode.METAMODEL_MISMATCH);
     }
 }

@@ -15,8 +15,14 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.UserTable;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.AggregatedRowType;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.aggregation.Aggregator;
 import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.error.InconvertibleTypesException;
@@ -365,7 +371,7 @@ public final class AggregateOperatorTest {
 
     private static List<Row> execute(Operator plan) {
         List<Row> rows = new ArrayList<Row>();
-        Cursor cursor = plan.cursor(null);
+        Cursor cursor = plan.cursor(ADAPTER);
         cursor.open(UndefBindings.only());
         try {
             for(Row row = cursor.next(); row != null; row = cursor.next()) {
@@ -394,6 +400,7 @@ public final class AggregateOperatorTest {
     // consts
 
     private static AggregatorFactory FACTORY = new TestFactory();
+    private static TestAdapter ADAPTER = new TestAdapter();
 
     // nested classes
 
@@ -445,5 +452,60 @@ public final class AggregateOperatorTest {
         }
 
         private StringBuilder result = new StringBuilder();
+    }
+
+    private static class TestAdapter extends StoreAdapter
+    {
+        @Override
+        public GroupCursor newGroupCursor(GroupTable groupTable)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange, UserTable innerJoinUntil)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public HKey newHKey(RowType rowType)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void updateRow(Row oldRow, Row newRow, Bindings bindings)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void writeRow(Row newRow, Bindings bindings)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void deleteRow(Row oldRow, Bindings bindings)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Cursor sort(Cursor input, RowType rowType, API.Ordering ordering, Bindings bindings)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void checkQueryCancelation()
+        {
+        }
+
+        public TestAdapter()
+        {
+            super(null);
+        }
     }
 }
