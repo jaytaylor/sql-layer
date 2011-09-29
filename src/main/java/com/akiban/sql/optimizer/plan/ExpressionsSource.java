@@ -41,7 +41,7 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource
         List<ExpressionNode> nodes = expressions.get(0);
         AkType[] result = new AkType[nodes.size()];
         for (int i=0; i < result.length; ++i) {
-            result[i] = nodes.get(0).getAkType();
+            result[i] = nodes.get(i).getAkType();
         }
         return result;
     }
