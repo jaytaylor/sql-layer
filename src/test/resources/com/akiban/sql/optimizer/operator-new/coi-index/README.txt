@@ -52,6 +52,8 @@ select-7o: must join to check against orphans
 
 select-8: columns and literals
 
+select-9: test for bug 838907
+
 update-1: change column to literal
 
 update-2: change column to expression (column itself)
