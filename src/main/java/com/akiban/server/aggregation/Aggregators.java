@@ -14,15 +14,28 @@
  */
 package com.akiban.server.aggregation;
 
+import com.akiban.qp.rowtype.RowType;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public final class Aggregators {
-    public static List<AggregatorFactory> factories(AggregatorRegistry registry, List<String> names) {
-        List<AggregatorFactory> result = new ArrayList<AggregatorFactory>();
+
+    public static List<AggregatorId> aggregatorIds(List<String> names, RowType rowType, int rowTypeOffset) {
+        // TODO input validations
+        List<AggregatorId> result = new ArrayList<AggregatorId>();
         for (String name : names) {
-            result.add(registry.get(name));
+            result.add(new AggregatorId(name, rowType.typeAt(rowTypeOffset++)));
         }
         return result;
     }
+
+    public static List<AggregatorFactory> factories(AggregatorRegistry registry, List<AggregatorId> aggregatorIds) {
+        List<AggregatorFactory> result = new ArrayList<AggregatorFactory>();
+        for (AggregatorId ids : aggregatorIds) {
+            result.add(registry.get(ids));
+        }
+        return result;
+    }
+
 }

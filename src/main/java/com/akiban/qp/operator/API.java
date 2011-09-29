@@ -41,7 +41,14 @@ public class API
                                                      AggregatorRegistry registry,
                                                      List<String> aggregatorNames)
     {
-        return new Aggregate_Partial(inputOperator, inputsIndex, Aggregators.factories(registry, aggregatorNames));
+        return new Aggregate_Partial(
+                inputOperator,
+                inputsIndex,
+                Aggregators.factories(
+                        registry,
+                        Aggregators.aggregatorIds(aggregatorNames, inputOperator.rowType(), inputsIndex)
+                )
+        );
     }
 
     // Project

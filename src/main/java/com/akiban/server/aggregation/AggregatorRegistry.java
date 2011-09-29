@@ -16,16 +16,17 @@
 package com.akiban.server.aggregation;
 
 import com.akiban.server.error.NoSuchFunctionException;
+import com.akiban.server.types.AkType;
 
 import java.util.List;
 
 public interface AggregatorRegistry {
-    AggregatorFactory get(String name);
+    AggregatorFactory get(AggregatorId aggregatorId);
 
     public static final AggregatorRegistry EMPTY = new AggregatorRegistry() {
         @Override
-        public AggregatorFactory get(String name) {
-            throw new NoSuchFunctionException(name);
+        public AggregatorFactory get(AggregatorId aggregatorId) {
+            throw new NoSuchFunctionException(aggregatorId.name());
         }
     };
 }

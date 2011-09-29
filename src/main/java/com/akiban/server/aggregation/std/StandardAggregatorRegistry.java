@@ -15,12 +15,18 @@
 package com.akiban.server.aggregation.std;
 
 import com.akiban.server.aggregation.AggregatorFactory;
+import com.akiban.server.aggregation.AggregatorId;
 import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.error.NoSuchFunctionException;
+import com.akiban.server.types.AkType;
 
 public final class StandardAggregatorRegistry implements AggregatorRegistry {
     @Override
-    public AggregatorFactory get(String name) {
-        throw new NoSuchFunctionException(name);
+    public AggregatorFactory get(AggregatorId aggregatorId) {
+        if ("MIN".equals(aggregatorId.name()))
+            return LongAggregators.min(aggregatorId.type());
+        else if ("MAX".equals(aggregatorId.name()))
+            return LongAggregators.max(aggregatorId.type());
+        throw new NoSuchFunctionException(aggregatorId.name());
     }
 }
