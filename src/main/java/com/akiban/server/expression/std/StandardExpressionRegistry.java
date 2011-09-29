@@ -16,21 +16,19 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.error.NoSuchFunctionException;
-import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionRegistry;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public final class StandardExpressionRegistry implements ExpressionRegistry {
     @Override
-    public Expression compose(String name, List<? extends Expression> arguments) {
+    public ExpressionComposer composer(String name) {
         ExpressionComposer composer = readOnlyComposers.get(name);
         if (composer == null)
             throw new NoSuchFunctionException(name);
-        return composer.compose(arguments);
+        return composer;
     }
 
     public StandardExpressionRegistry() {

@@ -70,7 +70,7 @@ public class ExpressionAssembler
             for (ExpressionNode operand : funcNode.getOperands()) {
                 children.add(assembleExpression(operand, fieldOffsets));
             }
-            return expressionRegistry.compose(funcNode.getFunction(), children);
+            return expressionRegistry.composer(funcNode.getFunction()).compose(children);
         }
         else if (node instanceof IfElseExpression)
             throw new UnsupportedSQLException("NIY", node.getSQLsource());

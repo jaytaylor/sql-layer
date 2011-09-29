@@ -20,11 +20,11 @@ import com.akiban.server.error.NoSuchFunctionException;
 import java.util.List;
 
 public interface ExpressionRegistry {
-    Expression compose(String name, List<? extends Expression> arguments);
+    ExpressionComposer composer(String name);
 
     public static final ExpressionRegistry EMPTY = new ExpressionRegistry() {
         @Override
-        public Expression compose(String name, List<? extends Expression> arguments) {
+        public ExpressionComposer composer(String name) {
             throw new NoSuchFunctionException(name);
         }
     };
