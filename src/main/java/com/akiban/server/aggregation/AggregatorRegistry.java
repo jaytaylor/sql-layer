@@ -15,6 +15,8 @@
 
 package com.akiban.server.aggregation;
 
+import com.akiban.server.types.AkType;
+
 public interface AggregatorRegistry {
-    AggregatorFactory get(AggregatorId aggregatorId);
+    AggregatorFactory get(String name, AkType type);
 }

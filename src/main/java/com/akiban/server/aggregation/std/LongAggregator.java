@@ -62,6 +62,5 @@ final class LongAggregator implements Aggregator {
     // subclasses
     public interface LongProcessor {
         long process(long oldState, long input);
-        String name();
     }
 }

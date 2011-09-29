@@ -32,8 +32,8 @@ public final class Aggregators {
 
     public static List<AggregatorFactory> factories(AggregatorRegistry registry, List<AggregatorId> aggregatorIds) {
         List<AggregatorFactory> result = new ArrayList<AggregatorFactory>();
-        for (AggregatorId ids : aggregatorIds) {
-            result.add(registry.get(ids));
+        for (AggregatorId id : aggregatorIds) {
+            result.add(registry.get(id.name(), id.type()));
         }
         return result;
     }
