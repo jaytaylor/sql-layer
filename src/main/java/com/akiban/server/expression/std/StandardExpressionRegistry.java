@@ -18,13 +18,13 @@ package com.akiban.server.expression.std;
 import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionFactory;
+import com.akiban.server.expression.ExpressionRegistry;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class StandardExpressionFactory implements ExpressionFactory {
+public final class StandardExpressionRegistry implements ExpressionRegistry {
     @Override
     public Expression compose(String name, List<? extends Expression> arguments) {
         ExpressionComposer composer = readOnlyComposers.get(name);
@@ -33,7 +33,7 @@ public final class StandardExpressionFactory implements ExpressionFactory {
         return composer.compose(arguments);
     }
 
-    public StandardExpressionFactory() {
+    public StandardExpressionRegistry() {
         this.readOnlyComposers = createComposers();
     }
 
