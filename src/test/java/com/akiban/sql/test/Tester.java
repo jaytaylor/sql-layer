@@ -235,7 +235,7 @@ public class Tester
         if (actions.contains(Action.OPERATORS))
             operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, "user");
         if (actions.contains(Action.OPERATORS_NEW))
-            operatorCompiler_New = OperatorCompiler_NewTest.TestOperatorCompiler.create(parser, ais, "user");
+            operatorCompiler_New = OperatorCompiler_NewTest.TestOperatorCompiler.create(parser, ais, "user", com.akiban.server.expression.ExpressionFactory.EMPTY);
         if (actions.contains(Action.PLAN))
             rulesContext = new RulesTestContext(ais, planRules);
     }
