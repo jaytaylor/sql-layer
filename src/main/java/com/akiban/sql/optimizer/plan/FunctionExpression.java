@@ -15,10 +15,13 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionFactory;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /** A call to a function.
