@@ -21,8 +21,10 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.PersistitKeyValueTarget;
+import com.akiban.server.PersistitValueValueSource;
 import com.akiban.server.PersistitValueValueTarget;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -30,6 +32,7 @@ import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types.util.ValueHolder;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Value;
@@ -108,8 +111,13 @@ public class Sorter
                 allAscending = false;
             }
         }
-        SortCursor cursor = allAscending ? new SortCursorAscending(this) :
-                            allDescending ? new SortCursorDescending(this) : new SortCursorMixedOrder(this);
+        RowGenerator rowGenerator = new SorterRowGenerator();
+        SortCursor cursor =
+            allAscending ?
+            new SortCursorAscending(rowGenerator) :
+            allDescending ?
+            new SortCursorDescending(rowGenerator) :
+            new SortCursorMixedOrder(rowGenerator, ordering);
         cursor.open(bindings);
         return cursor;
     }
@@ -165,4 +173,42 @@ public class Sorter
     // TODO: Horrible hack. When we switch from qp.Expression to server.Expression, use Expression.valueType()
     final AkType fieldTypes[];
     long rowCount = 0;
+
+    // Inner classes
+
+    private class SorterRowGenerator implements RowGenerator
+    {
+        @Override
+        public Row row()
+        {
+            ValuesHolderRow row = new ValuesHolderRow(rowType);
+            value.setStreamMode(true);
+            for (int i = 0; i < rowFields; i++) {
+                ValueHolder valueHolder = row.holderAt(i);
+                valueSource.expectedType(fieldTypes[i]);
+                valueHolder.copyFrom(valueSource);
+            }
+            return row;
+        }
+
+        @Override
+        public void close()
+        {
+            Sorter.this.close();
+        }
+
+        @Override
+        public Exchange exchange()
+        {
+            return exchange;
+        }
+
+        SorterRowGenerator()
+        {
+            valueSource = new PersistitValueValueSource();
+            valueSource.attach(value);
+        }
+
+        private final PersistitValueValueSource valueSource;
+    }
 }

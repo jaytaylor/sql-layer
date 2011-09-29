@@ -15,6 +15,7 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.qp.operator.API;
 import com.akiban.qp.persistitadapter.PersistitAdapterException;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.Row;
@@ -57,15 +58,15 @@ class SortCursorMixedOrder extends SortCursor
 
     // SortCursorAscending interface
 
-    public SortCursorMixedOrder(Sorter sorter)
+    public SortCursorMixedOrder(RowGenerator rowGenerator, API.Ordering ordering)
     {
-        super(sorter);
-        int sortFields = sorter.ordering.sortFields();
+        super(rowGenerator);
+        int sortFields = ordering.sortFields();
         lastField = sortFields - 1;
         scanStates = new ScanState[sortFields];
         try {
             for (int f = 0; f < sortFields; f++) {
-                scanStates[f] = new ScanState(sorter.ordering.ascending(f), f);
+                scanStates[f] = new ScanState(ordering.ascending(f), f);
             }
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);

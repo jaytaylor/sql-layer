@@ -55,8 +55,8 @@ class SortCursorAscending extends SortCursor
 
     // SortCursorAscending interface
 
-    public SortCursorAscending(Sorter sorter)
+    public SortCursorAscending(RowGenerator rowGenerator)
     {
-        super(sorter);
+        super(rowGenerator);
     }
 }

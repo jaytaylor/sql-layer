@@ -29,34 +29,24 @@ abstract class SortCursor implements Cursor
     @Override
     public final void close()
     {
-        sorter.close();
+        rowGenerator.close();
     }
 
     // For use by subclasses
 
-    protected SortCursor(Sorter sorter)
+    protected SortCursor(RowGenerator rowGenerator)
     {
-        this.sorter = sorter;
-        this.exchange = sorter.exchange;
-        this.valueSource = new PersistitValueValueSource();
-        this.valueSource.attach(sorter.value);
+        this.rowGenerator = rowGenerator;
+        this.exchange = rowGenerator.exchange();
     }
 
     protected Row row()
     {
-        ValuesHolderRow row = new ValuesHolderRow(sorter.rowType);
-        sorter.value.setStreamMode(true);
-        for (int i = 0; i < sorter.rowFields; i++) {
-            ValueHolder valueHolder = row.holderAt(i);
-            valueSource.expectedType(sorter.fieldTypes[i]);
-            valueHolder.copyFrom(valueSource);
-        }
-        return row;
+        return rowGenerator.row();
     }
 
     // Object state
 
-    protected final Sorter sorter;
     protected final Exchange exchange;
-    private final PersistitValueValueSource valueSource;
+    private final RowGenerator rowGenerator;
 }
