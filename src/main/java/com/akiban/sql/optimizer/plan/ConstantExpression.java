@@ -15,9 +15,10 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.qp.expression.Expression;
-import com.akiban.qp.expression.API;
-
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.types.ValueSource;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
@@ -27,11 +28,28 @@ public class ConstantExpression extends BaseExpression
     private Object value;
 
     public ConstantExpression(Object value, 
-                              DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+                              DataTypeDescriptor sqlType, AkType type, ValueNode sqlSource) {
+        super(sqlType, type, sqlSource);
         if (value instanceof Integer)
             value = new Long(((Integer)value).intValue());
         this.value = value;
+    }
+
+    public ConstantExpression(Object value, DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        this(value, sqlType, FromObjectValueSource.reflectivelyGetAkType(value), sqlSource);
+    }
+
+    public ConstantExpression(ValueSource valueSource, DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        this(
+                valueSource.isNull() ? null : new ToObjectValueTarget().convertFromSource(valueSource),
+                sqlType,
+                valueSource.getConversionType(),
+                sqlSource
+        );
+    }
+
+    public ConstantExpression(Object value, AkType type) {
+        this(value, null, type, null);
     }
 
     @Override
@@ -54,7 +72,7 @@ public class ConstantExpression extends BaseExpression
 
     @Override
     public int hashCode() {
-        return value.hashCode();
+        return (value == null) ? 0 : value.hashCode();
     }
 
     @Override
@@ -70,11 +88,6 @@ public class ConstantExpression extends BaseExpression
     @Override
     public String toString() {
         return String.valueOf(value);
-    }
-
-    @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        return API.literal(value);
     }
 
     @Override

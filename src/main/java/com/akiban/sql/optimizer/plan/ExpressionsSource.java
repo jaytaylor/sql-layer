@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.server.types.AkType;
+
 import java.util.List;
 import java.util.ArrayList;
 
@@ -33,6 +35,17 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource
         return expressions;
     }
 
+    public AkType[] getFieldTypes() {
+        if (expressions.isEmpty())
+            return new AkType[0];
+        List<ExpressionNode> nodes = expressions.get(0);
+        AkType[] result = new AkType[nodes.size()];
+        for (int i=0; i < result.length; ++i) {
+            result[i] = nodes.get(i).getAkType();
+        }
+        return result;
+    }
+
     @Override
     public String getName() {
         return "VALUES";
@@ -41,7 +54,14 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource
     @Override
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
-            if (v instanceof ExpressionVisitor) {
+            if (v instanceof ExpressionRewriteVisitor) {
+                for (List<ExpressionNode> row : expressions) {
+                    for (int i = 0; i < row.size(); i++) {
+                        row.set(i, row.get(i).accept((ExpressionRewriteVisitor)v));
+                    }
+                }                
+            }
+            else if (v instanceof ExpressionVisitor) {
                 expressions:
                 for (List<ExpressionNode> row : expressions) {
                     for (ExpressionNode expr : row) {

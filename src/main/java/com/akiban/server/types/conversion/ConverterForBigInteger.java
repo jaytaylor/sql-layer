@@ -18,23 +18,13 @@ package com.akiban.server.types.conversion;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
+import com.akiban.server.types.extract.Extractors;
 
 import java.math.BigInteger;
 
 final class ConverterForBigInteger extends ObjectConverter<BigInteger> {
 
     static final ObjectConverter<BigInteger> INSTANCE = new ConverterForBigInteger();
-
-    @Override
-    public BigInteger getObject(ValueSource source) {
-        AkType type = source.getConversionType();
-        switch (type) {
-        case U_BIGINT:  return source.getUBigInt();
-        case TEXT:      return new BigInteger(source.getText());
-        case VARCHAR:   return new BigInteger(source.getString());
-        default: throw unsupportedConversion(type);
-        }
-    }
 
     @Override
     protected void putObject(ValueTarget target, BigInteger value) {
@@ -48,5 +38,7 @@ final class ConverterForBigInteger extends ObjectConverter<BigInteger> {
         return AkType.U_BIGINT;
     }
 
-    private ConverterForBigInteger() {}
+    private ConverterForBigInteger() {
+        super(Extractors.getUBigIntExtractor());
+    }
 }

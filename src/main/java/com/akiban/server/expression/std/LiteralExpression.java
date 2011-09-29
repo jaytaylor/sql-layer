@@ -15,7 +15,7 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -50,6 +50,10 @@ public final class LiteralExpression implements Expression {
         return evaluation.eval().getConversionType();
     }
 
+    public LiteralExpression(ValueSource source) {
+        this(new InternalEvaluation(new ValueHolder(source)));
+    }
+
     public LiteralExpression(AkType type, long value) throws ValueHolder.IllegalRawPutException {
         this(new InternalEvaluation(new ValueHolder(type, value)));
     }
@@ -59,6 +63,10 @@ public final class LiteralExpression implements Expression {
     }
 
     public LiteralExpression(AkType type, float value) throws ValueHolder.IllegalRawPutException {
+        this(new InternalEvaluation(new ValueHolder(type, value)));
+    }
+
+    public LiteralExpression(AkType type, boolean value) throws ValueHolder.IllegalRawPutException {
         this(new InternalEvaluation(new ValueHolder(type, value)));
     }
 
@@ -78,7 +86,7 @@ public final class LiteralExpression implements Expression {
 
     @Override
     public String toString() {
-        return evaluation.eval().toString();
+        return "Literal(" + evaluation.eval().toString() + ')';
     }
 
     // object state
@@ -103,6 +111,19 @@ public final class LiteralExpression implements Expression {
         @Override
         public ValueSource eval() {
             return valueSource;
+        }
+
+        @Override
+        public void acquire() {
+        }
+
+        @Override
+        public boolean isShared() {
+            return false;
+        }
+
+        @Override
+        public void release() {
         }
 
         private InternalEvaluation(ValueSource valueSource) {

@@ -16,12 +16,12 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.GroupCursor;
+import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowHolder;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.util.ShareHolder;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
@@ -108,16 +108,16 @@ class PersistitGroupCursor implements GroupCursor
     {
         this.adapter = adapter;
         this.groupTable = groupTable;
-        this.row = new RowHolder<PersistitGroupRow>(adapter.newGroupRow());
+        this.row = new ShareHolder<PersistitGroupRow>(adapter.newGroupRow());
         this.controllingHKey = new Key(adapter.persistit.getDb());
     }
 
     // For use by this class
 
-    private RowHolder<PersistitGroupRow> unsharedRow()
+    private ShareHolder<PersistitGroupRow> unsharedRow()
     {
-        if (row.isNull() || row.get().isShared()) {
-            row.set(adapter.newGroupRow());
+        if (row.isEmpty() || row.get().isShared()) {
+            row.hold(adapter.newGroupRow());
         }
         return row;
     }
@@ -125,7 +125,6 @@ class PersistitGroupCursor implements GroupCursor
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(PersistitGroupCursor.class);
-    private static final int VALUE_BYTES = Integer.MAX_VALUE;
 
     // Object state
 
@@ -142,19 +141,9 @@ class PersistitGroupCursor implements GroupCursor
      *  - exchange == null iff this cursor is closed
      */
 
-    Exchange exchange()
-    {
-        return exchange;
-    }
-
-    RowHolder<PersistitGroupRow> currentHeldRow()
-    {
-        return row;
-    }
-
     private final PersistitAdapter adapter;
     private final GroupTable groupTable;
-    private final RowHolder<PersistitGroupRow> row;
+    private final ShareHolder<PersistitGroupRow> row;
     private Exchange exchange;
     private Key controllingHKey;
     private PersistitHKey hKey;

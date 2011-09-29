@@ -17,12 +17,12 @@ package com.akiban.server.types.conversion;
 
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
+import com.akiban.server.types.extract.DoubleExtractor;
+import com.akiban.server.types.extract.Extractors;
 
 abstract class DoubleConverter extends AbstractConverter {
 
     // AbstractDoubleConverter interface
-    
-    public abstract double getDouble(ValueSource source);
     
     // defined in subclasses
     
@@ -32,8 +32,10 @@ abstract class DoubleConverter extends AbstractConverter {
 
     @Override
     protected final void doConvert(ValueSource source, ValueTarget target) {
-        putDouble(target, getDouble(source));
+        putDouble(target, extractor.getDouble(source));
     }
 
     DoubleConverter() {}
+
+    private final DoubleExtractor extractor = Extractors.getDoubleExtractor();
 }

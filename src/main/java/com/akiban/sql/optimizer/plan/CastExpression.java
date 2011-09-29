@@ -18,8 +18,6 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
-import com.akiban.qp.expression.Expression;
-
 /** Cast the result of expression evaluation to a given type.
  */
 public class CastExpression extends BaseExpression 
@@ -30,6 +28,10 @@ public class CastExpression extends BaseExpression
                           DataTypeDescriptor sqlType, ValueNode sqlSource) {
         super(sqlType, sqlSource);
         this.inner = inner;
+    }
+
+    public ExpressionNode getOperand() {
+        return inner;
     }
 
     @Override
@@ -57,21 +59,18 @@ public class CastExpression extends BaseExpression
 
     @Override
     public ExpressionNode accept(ExpressionRewriteVisitor v) {
-        ExpressionNode result = v.visit(this);
-        if (result != this) return result;
+        boolean childrenFirst = v.visitChildrenFirst(this);
+        if (!childrenFirst) {
+            ExpressionNode result = v.visit(this);
+            if (result != this) return result;
+        }
         inner = inner.accept(v);
-        return this;
+        return (childrenFirst) ? v.visit(this) : this;
     }
 
     @Override
     public String toString() {
         return "Cast(" + inner + " AS " + getSQLtype() + ")";
-    }
-
-    @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        // TODO: Need actual cast.
-        return inner.generateExpression(fieldOffsets);
     }
 
     @Override

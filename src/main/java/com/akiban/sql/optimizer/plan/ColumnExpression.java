@@ -15,13 +15,11 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.server.types.AkType;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
 import com.akiban.ais.model.Column;
-
-import com.akiban.qp.expression.Expression;
-import com.akiban.qp.expression.API;
 
 /** An expression evaluating a column in an actual table. */
 public class ColumnExpression extends BaseExpression 
@@ -32,11 +30,18 @@ public class ColumnExpression extends BaseExpression
 
     public ColumnExpression(TableSource table, Column column, 
                             DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+        super(sqlType, column.getType().akType(), sqlSource);
         this.table = table;
         assert (table.getTable().getTable() == column.getUserTable());
         this.column = column;
         this.position = column.getPosition();
+    }
+
+    public ColumnExpression(ColumnSource table, int position,
+                            DataTypeDescriptor sqlType, AkType type, ValueNode sqlSource) {
+        super(sqlType, type, sqlSource);
+        this.table = table;
+        this.position = position;
     }
 
     public ColumnExpression(ColumnSource table, int position, 
@@ -44,6 +49,11 @@ public class ColumnExpression extends BaseExpression
         super(sqlType, sqlSource);
         this.table = table;
         this.position = position;
+    }
+
+    // Generated column references without an original SQL source.
+    public ColumnExpression(TableSource table, Column column) {
+        this(table, column, null, null);
     }
 
     public ColumnSource getTable() {
@@ -56,6 +66,10 @@ public class ColumnExpression extends BaseExpression
 
     public int getPosition() {
         return position;
+    }
+
+    public void setPosition(int position) {
+        this.position = position;
     }
 
     @Override
@@ -96,11 +110,6 @@ public class ColumnExpression extends BaseExpression
     @Override
     public boolean isColumn() {
         return true;
-    }
-
-    @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        return API.field(fieldOffsets.getIndex(this));
     }
 
     @Override

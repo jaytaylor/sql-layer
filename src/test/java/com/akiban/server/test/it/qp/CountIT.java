@@ -15,23 +15,17 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.expression.Expression;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
+import static com.akiban.qp.operator.API.*;
 
-import static com.akiban.qp.expression.API.field;
-import static com.akiban.qp.physicaloperator.API.*;
-import static com.akiban.qp.physicaloperator.API.JoinType.*;
-
-public class CountIT extends PhysicalOperatorITBase
+public class CountIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -51,7 +45,7 @@ public class CountIT extends PhysicalOperatorITBase
     @Test
     public void testCustomerCid()
     {
-        PhysicalOperator plan = count_Default(groupScan_Default(coi),
+        Operator plan = count_Default(groupScan_Default(coi),
                                               customerRowType);
         Cursor cursor = cursor(plan, adapter);
         RowType resultRowType = plan.rowType();

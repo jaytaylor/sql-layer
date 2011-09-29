@@ -17,12 +17,8 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.physicaloperator.ArrayBindings;
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.row.HKey;
-import com.akiban.qp.row.Row;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -31,9 +27,9 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.qp.operator.API.*;
 
-public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
+public class BranchLookup_DefaultIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -146,7 +142,7 @@ public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
     @Test
     public void testCustomerIndexToMissingCustomer()
     {
-        PhysicalOperator plan = customerNameToCustomerPlan("matrix");
+        Operator plan = customerNameToCustomerPlan("matrix");
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{};
         compareRows(expected, cursor);
@@ -155,7 +151,7 @@ public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
     @Test
     public void testCustomerIndexToCustomer()
     {
-        PhysicalOperator plan = customerNameToCustomerPlan("northbridge");
+        Operator plan = customerNameToCustomerPlan("northbridge");
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
@@ -174,7 +170,7 @@ public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
     @Test
     public void testCustomerIndexToCustomerWithNoOrders()
     {
-        PhysicalOperator plan = customerNameToCustomerPlan("highland");
+        Operator plan = customerNameToCustomerPlan("highland");
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 4L, "highland"),
@@ -189,7 +185,7 @@ public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
     @Test
     public void testAddressIndexToMissingCustomer()
     {
-        PhysicalOperator plan = addressAddressToCustomerPlan("555 1111 st");
+        Operator plan = addressAddressToCustomerPlan("555 1111 st");
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(addressRowType, 5001L, 5L, "555 1111 st"),
@@ -200,7 +196,7 @@ public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
     @Test
     public void testAddressIndexToCustomer()
     {
-        PhysicalOperator plan = addressAddressToCustomerPlan("222 2222 st");
+        Operator plan = addressAddressToCustomerPlan("222 2222 st");
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 2L, "foundation"),
@@ -221,7 +217,7 @@ public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
     @Test
     public void testAddressToMissingCustomer()
     {
-        PhysicalOperator plan = addressToCustomerPlan("555 1111 st");
+        Operator plan = addressToCustomerPlan("555 1111 st");
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(addressRowType, 5001L, 5L, "555 1111 st"),
@@ -232,7 +228,7 @@ public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
     @Test
     public void testAddressToCustomer()
     {
-        PhysicalOperator plan = addressToCustomerPlan("222 2222 st");
+        Operator plan = addressToCustomerPlan("222 2222 st");
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 2L, "foundation"),
@@ -253,7 +249,7 @@ public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
     @Test
     public void testAddressToOrder()
     {
-        PhysicalOperator plan = addressToOrderPlan("222 2222 st", false);
+        Operator plan = addressToOrderPlan("222 2222 st", false);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 21L, 2L, "tom"),
@@ -269,7 +265,7 @@ public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
     @Test
     public void testAddressToMissingOrder()
     {
-        PhysicalOperator plan = addressToOrderPlan("444 2222 st", false);
+        Operator plan = addressToOrderPlan("444 2222 st", false);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
         };
@@ -281,7 +277,7 @@ public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
     @Test
     public void testAddressToOrderAndAddress()
     {
-        PhysicalOperator plan = addressToOrderPlan("222 2222 st", true);
+        Operator plan = addressToOrderPlan("222 2222 st", true);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 21L, 2L, "tom"),
@@ -298,7 +294,7 @@ public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
     @Test
     public void testOrderToOrderAndAddress()
     {
-        PhysicalOperator plan = orderToAddressPlan("tom", true);
+        Operator plan = orderToAddressPlan("tom", true);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 21L, 2L, "tom"),
@@ -311,7 +307,7 @@ public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
     @Test
     public void testItemToItemAndAddress()
     {
-        PhysicalOperator plan = itemToAddressPlan(111L, true);
+        Operator plan = itemToAddressPlan(111L, true);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(itemRowType, 111L, 11L),
@@ -323,7 +319,7 @@ public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
 
     // For use by this class
 
-    private PhysicalOperator customerNameToCustomerPlan(String customerName)
+    private Operator customerNameToCustomerPlan(String customerName)
     {
         return
             branchLookup_Default(
@@ -334,7 +330,7 @@ public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
                 LookupOption.DISCARD_INPUT);
     }
 
-    private PhysicalOperator addressAddressToCustomerPlan(String address)
+    private Operator addressAddressToCustomerPlan(String address)
     {
         return
             branchLookup_Default(
@@ -345,7 +341,7 @@ public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
                 LookupOption.DISCARD_INPUT);
     }
 
-    private PhysicalOperator addressToCustomerPlan(String address)
+    private Operator addressToCustomerPlan(String address)
     {
         return
             branchLookup_Default(
@@ -361,7 +357,7 @@ public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
                     LookupOption.DISCARD_INPUT);
     }
 
-    private PhysicalOperator addressToOrderPlan(String address, boolean keepInput)
+    private Operator addressToOrderPlan(String address, boolean keepInput)
     {
         return
             branchLookup_Default(
@@ -377,7 +373,7 @@ public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
                 keepInput ? LookupOption.KEEP_INPUT : LookupOption.DISCARD_INPUT);
     }
 
-    private PhysicalOperator orderToAddressPlan(String salesman, boolean keepInput)
+    private Operator orderToAddressPlan(String salesman, boolean keepInput)
     {
         return
             branchLookup_Default(
@@ -393,7 +389,7 @@ public class BranchLookup_DefaultIT extends PhysicalOperatorITBase
                 keepInput ? LookupOption.KEEP_INPUT : LookupOption.DISCARD_INPUT);
     }
 
-    private PhysicalOperator itemToAddressPlan(long iid, boolean keepInput)
+    private Operator itemToAddressPlan(long iid, boolean keepInput)
     {
         return
             branchLookup_Default(

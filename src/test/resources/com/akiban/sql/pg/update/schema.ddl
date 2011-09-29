@@ -27,3 +27,11 @@ CREATE TABLE items
   quan int NOT NULL,
   CONSTRAINT `__akiban_fk_1` FOREIGN KEY `__akiban_fk_1` (oid) REFERENCES orders(oid)
 ) engine=akibandb;
+
+CREATE TABLE log
+(
+  cid int not null,
+  event_date int not null,
+  what varchar(20) not null,
+  CONSTRAINT `__akiban_fk_2` FOREIGN KEY `__akiban_fk_2` (cid) REFERENCES customers(cid)
+) engine=akibandb;

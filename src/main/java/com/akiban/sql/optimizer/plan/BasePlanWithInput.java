@@ -21,7 +21,8 @@ public abstract class BasePlanWithInput extends BasePlanNode implements PlanWith
 
     protected BasePlanWithInput(PlanNode input) {
         this.input = input;
-        input.setOutput(this);
+        if (input != null)
+            input.setOutput(this);
     }
 
     public PlanNode getInput() {
@@ -43,7 +44,8 @@ public abstract class BasePlanWithInput extends BasePlanNode implements PlanWith
     @Override
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
-            input.accept(v);
+            if (input != null)
+                input.accept(v);
         }
         return v.visitLeave(this);
     }
@@ -51,7 +53,8 @@ public abstract class BasePlanWithInput extends BasePlanNode implements PlanWith
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        setInput((PlanNode)input.duplicate(map)); // Which takes care of setting input's output.
+        if (input != null)
+            setInput((PlanNode)input.duplicate(map)); // Which takes care of setting input's output.
     }
 
 }

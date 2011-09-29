@@ -15,7 +15,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.qp.physicaloperator.API.JoinType;
+import com.akiban.qp.operator.API.JoinType;
 
 import java.util.*;
 
@@ -121,8 +121,22 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
     @Override
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
-            if (left.accept(v))
-                right.accept(v);
+            if (left.accept(v) && 
+                right.accept(v) &&
+                (joinConditions != null)) {
+                if (v instanceof ExpressionRewriteVisitor) {
+                    for (int i = 0; i < joinConditions.size(); i++) {
+                        joinConditions.set(i, (ConditionExpression)joinConditions.get(i).accept((ExpressionRewriteVisitor)v));
+                    }
+                }
+                else if (v instanceof ExpressionVisitor) {
+                    for (ConditionExpression condition : joinConditions) {
+                        if (!condition.accept((ExpressionVisitor)v)) {
+                            break;
+                        }
+                    }
+                }
+            }
         }
         return v.visitLeave(this);
     }

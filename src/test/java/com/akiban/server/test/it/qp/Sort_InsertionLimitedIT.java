@@ -15,26 +15,22 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.expression.Expression;
-import com.akiban.qp.physicaloperator.API;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.expression.Expression;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
-import static com.akiban.qp.expression.API.field;
-import static com.akiban.qp.physicaloperator.API.*;
+import static com.akiban.server.expression.std.Expressions.field;
+import static com.akiban.qp.operator.API.*;
 
-public class Sort_InsertionLimitedIT extends PhysicalOperatorITBase
+public class Sort_InsertionLimitedIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -68,13 +64,13 @@ public class Sort_InsertionLimitedIT extends PhysicalOperatorITBase
     @Test
     public void testCustomerName()
     {
-        PhysicalOperator plan =
+        Operator plan =
             sort_InsertionLimited(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(customerRowType)),
                 customerRowType,
-                ordering(field(1), true),
+                ordering(field(customerRowType, 1), true),
                 2);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -87,13 +83,13 @@ public class Sort_InsertionLimitedIT extends PhysicalOperatorITBase
     @Test
     public void testOrderSalesmanCid()
     {
-        PhysicalOperator plan =
+        Operator plan =
             sort_InsertionLimited(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
                 orderRowType,
-                ordering(field(2), true, field(1), false),
+                ordering(field(orderRowType, 2), true, field(orderRowType, 1), false),
                 4);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -108,13 +104,13 @@ public class Sort_InsertionLimitedIT extends PhysicalOperatorITBase
     @Test
     public void testOrderSalesman()
     {
-        PhysicalOperator plan =
+        Operator plan =
             sort_InsertionLimited(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
                 orderRowType,
-                ordering(field(2), true),
+                ordering(field(orderRowType, 2), true),
                 4);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -130,13 +126,13 @@ public class Sort_InsertionLimitedIT extends PhysicalOperatorITBase
     @Test
     public void testOrderSalesman2()
     {
-        PhysicalOperator plan =
+        Operator plan =
             sort_InsertionLimited(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
                 orderRowType,
-                ordering(field(2), true),
+                ordering(field(orderRowType, 2), true),
                 2);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -150,17 +146,17 @@ public class Sort_InsertionLimitedIT extends PhysicalOperatorITBase
     @Test
     public void testAAA()
     {
-        PhysicalOperator flattenOI = flatten_HKeyOrdered(
+        Operator flattenOI = flatten_HKeyOrdered(
             groupScan_Default(coi),
             orderRowType,
             itemRowType,
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(1);
-        Expression oidField = field(0);
-        Expression iidField = field(3);
-        PhysicalOperator plan =
+        Expression cidField = field(oiType, 1);
+        Expression oidField = field(oiType, 0);
+        Expression iidField = field(oiType, 3);
+        Operator plan =
             sort_InsertionLimited(
                 filter_Default(
                     flattenOI,
@@ -185,17 +181,17 @@ public class Sort_InsertionLimitedIT extends PhysicalOperatorITBase
     @Test
     public void testAAD()
     {
-        PhysicalOperator flattenOI = flatten_HKeyOrdered(
+        Operator flattenOI = flatten_HKeyOrdered(
             groupScan_Default(coi),
             orderRowType,
             itemRowType,
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(1);
-        Expression oidField = field(0);
-        Expression iidField = field(3);
-        PhysicalOperator plan =
+        Expression cidField = field(oiType, 1);
+        Expression oidField = field(oiType, 0);
+        Expression iidField = field(oiType, 3);
+        Operator plan =
             sort_InsertionLimited(
                 filter_Default(
                     flattenOI,
@@ -220,17 +216,17 @@ public class Sort_InsertionLimitedIT extends PhysicalOperatorITBase
     @Test
     public void testADA()
     {
-        PhysicalOperator flattenOI = flatten_HKeyOrdered(
+        Operator flattenOI = flatten_HKeyOrdered(
             groupScan_Default(coi),
             orderRowType,
             itemRowType,
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(1);
-        Expression oidField = field(0);
-        Expression iidField = field(3);
-        PhysicalOperator plan =
+        Expression cidField = field(oiType, 1);
+        Expression oidField = field(oiType, 0);
+        Expression iidField = field(oiType, 3);
+        Operator plan =
             sort_InsertionLimited(
                 filter_Default(
                     flattenOI,
@@ -255,17 +251,17 @@ public class Sort_InsertionLimitedIT extends PhysicalOperatorITBase
     @Test
     public void testADD()
     {
-        PhysicalOperator flattenOI = flatten_HKeyOrdered(
+        Operator flattenOI = flatten_HKeyOrdered(
             groupScan_Default(coi),
             orderRowType,
             itemRowType,
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(1);
-        Expression oidField = field(0);
-        Expression iidField = field(3);
-        PhysicalOperator plan =
+        Expression cidField = field(oiType, 1);
+        Expression oidField = field(oiType, 0);
+        Expression iidField = field(oiType, 3);
+        Operator plan =
             sort_InsertionLimited(
                 filter_Default(
                     flattenOI,
@@ -290,17 +286,17 @@ public class Sort_InsertionLimitedIT extends PhysicalOperatorITBase
     @Test
     public void testDAA()
     {
-        PhysicalOperator flattenOI = flatten_HKeyOrdered(
+        Operator flattenOI = flatten_HKeyOrdered(
             groupScan_Default(coi),
             orderRowType,
             itemRowType,
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(1);
-        Expression oidField = field(0);
-        Expression iidField = field(3);
-        PhysicalOperator plan =
+        Expression cidField = field(oiType, 1);
+        Expression oidField = field(oiType, 0);
+        Expression iidField = field(oiType, 3);
+        Operator plan =
             sort_InsertionLimited(
                 filter_Default(
                     flattenOI,
@@ -325,17 +321,17 @@ public class Sort_InsertionLimitedIT extends PhysicalOperatorITBase
     @Test
     public void testDAD()
     {
-        PhysicalOperator flattenOI = flatten_HKeyOrdered(
+        Operator flattenOI = flatten_HKeyOrdered(
             groupScan_Default(coi),
             orderRowType,
             itemRowType,
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(1);
-        Expression oidField = field(0);
-        Expression iidField = field(3);
-        PhysicalOperator plan =
+        Expression cidField = field(oiType, 1);
+        Expression oidField = field(oiType, 0);
+        Expression iidField = field(oiType, 3);
+        Operator plan =
             sort_InsertionLimited(
                 filter_Default(
                     flattenOI,
@@ -360,17 +356,17 @@ public class Sort_InsertionLimitedIT extends PhysicalOperatorITBase
     @Test
     public void testDDA()
     {
-        PhysicalOperator flattenOI = flatten_HKeyOrdered(
+        Operator flattenOI = flatten_HKeyOrdered(
             groupScan_Default(coi),
             orderRowType,
             itemRowType,
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(1);
-        Expression oidField = field(0);
-        Expression iidField = field(3);
-        PhysicalOperator plan =
+        Expression cidField = field(oiType, 1);
+        Expression oidField = field(oiType, 0);
+        Expression iidField = field(oiType, 3);
+        Operator plan =
             sort_InsertionLimited(
                 filter_Default(
                     flattenOI,
@@ -395,17 +391,17 @@ public class Sort_InsertionLimitedIT extends PhysicalOperatorITBase
     @Test
     public void testDDD()
     {
-        PhysicalOperator flattenOI = flatten_HKeyOrdered(
+        Operator flattenOI = flatten_HKeyOrdered(
             groupScan_Default(coi),
             orderRowType,
             itemRowType,
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(1);
-        Expression oidField = field(0);
-        Expression iidField = field(3);
-        PhysicalOperator plan =
+        Expression cidField = field(oiType, 1);
+        Expression oidField = field(oiType, 0);
+        Expression iidField = field(oiType, 3);
+        Operator plan =
             sort_InsertionLimited(
                 filter_Default(
                     flattenOI,

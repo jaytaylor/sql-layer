@@ -15,17 +15,22 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.server.error.InvalidOperationException;
+
+import java.util.Set;
+
 /** A join to an actual table. */
 public class TableSource extends BaseJoinable implements ColumnSource
 {
     private TableNode table;
     private TableGroup group;
     private TableGroupJoin parentJoin;
-    // TODO: Add conditions, correlation name?, ...
+    private boolean required;
 
-    public TableSource(TableNode table) {
+    public TableSource(TableNode table, boolean required) {
         this.table = table;
         table.addUse(this);
+        this.required = required;
     }
 
     public TableNode getTable() {
@@ -35,16 +40,34 @@ public class TableSource extends BaseJoinable implements ColumnSource
     public TableGroup getGroup() {
         return group;
     }
-    protected void setGroup(TableGroup group) {
+    public void setGroup(TableGroup group) {
         this.group = group;
+        group.getTables().add(this);
     }
 
     public TableGroupJoin getParentJoin() {
         return parentJoin;
     }
-    protected void setParentJoin(TableGroupJoin parentJoin) {
+    public void setParentJoin(TableGroupJoin parentJoin) {
         this.parentJoin = parentJoin;
         this.group = parentJoin.getGroup();
+    }
+
+    public TableSource getParentTable() {
+        if (parentJoin == null)
+            return null;
+        else
+            return parentJoin.getParent();
+    }
+
+    public boolean isRequired() {
+        return required;
+    }
+    public boolean isOptional() {
+        return !required;
+    }
+    public void setRequired(boolean required) {
+        this.required = required;
     }
 
     @Override

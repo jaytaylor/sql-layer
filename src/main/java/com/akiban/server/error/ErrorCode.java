@@ -82,6 +82,7 @@ public enum ErrorCode {
     MISSING_DDL_PARAMETERS  (2, 26, Importance.DEBUG, MissingDDLParametersException.class),
     INDEX_COL_NOT_IN_GROUP  (2, 27, Importance.DEBUG, IndexColNotInGroupException.class),
     INDEX_TABLE_NOT_IN_GROUP(2, 28, Importance.DEBUG, IndexTableNotInGroupException.class),
+    INDISTINGUISHABLE_INDEX (2, 29, Importance.DEBUG, IndistinguishableIndexException.class),
     
     // DML errors
     NO_REFERENCED_ROW       (3, 0, Importance.DEBUG, null),
@@ -117,6 +118,7 @@ public enum ErrorCode {
     NO_SUCH_FUNCTION        (3, 31, Importance.DEBUG, NoSuchFunctionException.class),
     ORDER_BY_NON_INTEGER_CONSTANT(3, 32, Importance.DEBUG, OrderByNonIntegerConstant.class),
     ORDER_BY_INTEGER_OUT_OF_RANGE(3, 34, Importance.DEBUG, OrderByIntegerOutOfRange.class),
+    NEGATIVE_LIMIT          (3, 35, Importance.DEBUG, NegativeLimitException.class),
     
     ROW_OUTPUT              (4, 11, Importance.DEBUG, RowOutputException.class), 
     AIS_MYSQL_SQL_EXCEPTION (4, 12, Importance.DEBUG, AisSQLErrorException.class),
@@ -188,6 +190,7 @@ public enum ErrorCode {
     SET_FILTER_FAIL      (29, 12, Importance.ERROR, DisplayFilterSetException.class),
     SCHEMA_LOAD_IO_ERROR (29, 13, Importance.ERROR, SchemaLoadIOException.class),
     QUERY_LOG_CLOSE_FAIL (29, 14, Importance.ERROR, QueryLogCloseException.class),
+    INVALID_PORT         (29, 15, Importance.ERROR, InvalidPortException.class), 
     
     // AkSserver errors
     MULTIGENERATIONAL_TABLE(30, 900, Importance.ERROR, null),

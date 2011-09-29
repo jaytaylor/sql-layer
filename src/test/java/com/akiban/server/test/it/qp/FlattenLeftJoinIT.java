@@ -28,28 +28,30 @@ package com.akiban.server.test.it.qp;
  */
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.qp.expression.Comparison;
-import com.akiban.qp.expression.Expression;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.akiban.qp.physicaloperator.API.FlattenOption.KEEP_PARENT;
-import static com.akiban.qp.physicaloperator.API.JoinType.INNER_JOIN;
-import static com.akiban.qp.physicaloperator.API.JoinType.LEFT_JOIN;
-import static com.akiban.qp.physicaloperator.API.*;
-import static com.akiban.qp.expression.API.*;
+import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
+import static com.akiban.qp.operator.API.JoinType.LEFT_JOIN;
+import static com.akiban.qp.operator.API.*;
+import static com.akiban.server.expression.std.Expressions.*;
 
-public class FlattenLeftJoinIT extends PhysicalOperatorITBase
+import static com.akiban.qp.rowtype.RowTypeChecks.checkRowTypeFields;
+import static com.akiban.server.types.AkType.*;
+
+public class FlattenLeftJoinIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -125,7 +127,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase1()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -136,6 +138,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType pcRowType = plan.rowType();
+        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 1L, "a1"),
             row(parentRowType, 11L, 1L, "p1"),
@@ -149,7 +152,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase2()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -160,6 +163,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType pcRowType = plan.rowType();
+        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 2L, "a2"),
             row(parentRowType, 22L, 2L, "p2"),
@@ -172,7 +176,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase3()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -183,6 +187,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType pcRowType = plan.rowType();
+        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 3L, "a3"),
             row(parentRowType, 33L, 3L, "p3"),
@@ -195,7 +200,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase4()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -206,6 +211,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType pcRowType = plan.rowType();
+        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 4L, "a4"),
             row(parentRowType, 41L, 4L, "p41"),
@@ -219,7 +225,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase1FlattenPB()
     {
-        PhysicalOperator flattenPB =
+        Operator flattenPB =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -229,7 +235,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 beforeChildRowType,
                 LEFT_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 flattenPB,
                 parentRowType,
@@ -237,7 +243,9 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType pbRowType = flattenPB.rowType();
+        checkRowTypeFields(pbRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowType pcRowType = plan.rowType();
+        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 1L, "a1"),
             row(parentRowType, 11L, 1L, "p1"),
@@ -251,7 +259,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase2FlattenPB()
     {
-        PhysicalOperator flattenPB =
+        Operator flattenPB =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -261,7 +269,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 beforeChildRowType,
                 LEFT_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 flattenPB,
                 parentRowType,
@@ -269,7 +277,9 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType pbRowType = flattenPB.rowType();
+        checkRowTypeFields(pbRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowType pcRowType = plan.rowType();
+        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 2L, "a2"),
             row(parentRowType, 22L, 2L, "p2"),
@@ -283,7 +293,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase3FlattenPB()
     {
-        PhysicalOperator flattenPB =
+        Operator flattenPB =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -293,7 +303,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 beforeChildRowType,
                 LEFT_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 flattenPB,
                 parentRowType,
@@ -301,7 +311,9 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType pbRowType = flattenPB.rowType();
+        checkRowTypeFields(pbRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowType pcRowType = plan.rowType();
+        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 3L, "a3"),
             row(parentRowType, 33L, 3L, "p3"),
@@ -314,7 +326,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase4FlattenPB()
     {
-        PhysicalOperator flattenPB =
+        Operator flattenPB =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -324,7 +336,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 beforeChildRowType,
                 LEFT_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 flattenPB,
                 parentRowType,
@@ -332,7 +344,9 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType pbRowType = flattenPB.rowType();
+        checkRowTypeFields(pbRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowType pcRowType = plan.rowType();
+        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 4L, "a4"),
             row(parentRowType, 41L, 4L, "p41"),
@@ -348,7 +362,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase1FlattenPA()
     {
-        PhysicalOperator flattenPA =
+        Operator flattenPA =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -358,7 +372,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 afterChildRowType,
                 LEFT_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 flattenPA,
                 parentRowType,
@@ -366,7 +380,9 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType paRowType = flattenPA.rowType();
+        checkRowTypeFields(paRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowType pcRowType = plan.rowType();
+        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 1L, "a1"),
             row(parentRowType, 11L, 1L, "p1"),
@@ -380,7 +396,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase2FlattenPA()
     {
-        PhysicalOperator flattenPA =
+        Operator flattenPA =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -390,7 +406,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 afterChildRowType,
                 LEFT_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 flattenPA,
                 parentRowType,
@@ -398,7 +414,9 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType paRowType = flattenPA.rowType();
+        checkRowTypeFields(paRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowType pcRowType = plan.rowType();
+        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 2L, "a2"),
             row(parentRowType, 22L, 2L, "p2"),
@@ -411,7 +429,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase3FlattenPA()
     {
-        PhysicalOperator flattenPA =
+        Operator flattenPA =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -421,7 +439,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 afterChildRowType,
                 LEFT_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 flattenPA,
                 parentRowType,
@@ -429,7 +447,9 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType paRowType = flattenPA.rowType();
+        checkRowTypeFields(paRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowType pcRowType = plan.rowType();
+        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 3L, "a3"),
             row(parentRowType, 33L, 3L, "p3"),
@@ -443,7 +463,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testCase4FlattenPA()
     {
-        PhysicalOperator flattenPA =
+        Operator flattenPA =
             flatten_HKeyOrdered(
                 select_HKeyOrdered(
                     groupScan_Default(group),
@@ -453,7 +473,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 afterChildRowType,
                 LEFT_JOIN,
                 KEEP_PARENT);
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 flattenPA,
                 parentRowType,
@@ -461,7 +481,9 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType paRowType = flattenPA.rowType();
+        checkRowTypeFields(paRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowType pcRowType = plan.rowType();
+        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 4L, "a4"),
             row(parentRowType, 41L, 4L, "p41"),
@@ -480,7 +502,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
     @Test
     public void testNotCompletelyHKeyOrdered()
     {
-        PhysicalOperator plan =
+        Operator plan =
             flatten_HKeyOrdered(
                 branchLookup_Default(
                     indexScan_Default(
@@ -496,6 +518,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType pcRowType = plan.rowType();
+        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
         RowBase[] expected = new RowBase[]{
             row(parentRowType, 42L, 4L, "p42"),
             row(pcRowType, 42L, 4L, "p42", null, null, null),
@@ -519,7 +542,7 @@ public class FlattenLeftJoinIT extends PhysicalOperatorITBase
 
     private Expression selectAncestor(long aid)
     {
-        return compare(field(0), Comparison.EQ, literal(aid));
+        return compare(field(ancestorRowType, 0), Comparison.EQ, literal(aid));
     }
 
     // Object state

@@ -18,11 +18,11 @@ package com.akiban.sql.pg;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.UndefBindings;
+import com.akiban.qp.operator.Bindings;
 
 import java.io.IOException;
 
+import com.akiban.qp.operator.UndefBindings;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
 import com.akiban.util.Tap;
@@ -68,7 +68,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
 
         LOG.debug("Statement: {}, result: {}", statementType, updateResult);
         
-        messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+        messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
         //TODO: Find a way to extract InsertNode#statementToString() or equivalent
         if (statementType.equals("INSERT")) {
             messenger.writeString(statementType + " 0 " + updateResult.rowsModified());
@@ -89,10 +89,6 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
     protected Tap.InOutTap acquireLockTap()
     {
         return ACQUIRE_LOCK_TAP;
-    }
-
-    protected Bindings getBindings() {
-        return UndefBindings.only();
     }
 
     /** Only needed in the case where a statement has parameters. */

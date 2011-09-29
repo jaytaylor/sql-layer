@@ -1,8 +1,9 @@
 SelectQuery@6f649b44
-  ResultSet@360dc67e[GROUP[0], GROUP[2]]
-    Filter@426295eb[GROUP[1] < a]
-      AggregateSource@56609959[user.orders.order_date][MIN(user.items.sku), SUM(times(user.items.price,user.items.quan))]
-        Filter@5ff3ce5c[]
-          JoinNode@7f712b3a(INNER_JOIN[user.orders.oid == user.items.oid])
-            TableSource@10d09ad3(user.items)
-            TableSource@3747c1db(user.orders)
+  ResultSet@16e1eea8[order_date, _SQL_COL_1]
+    Project@4afb6354[GROUP[0], GROUP[2]]
+      Select@426295eb[GROUP[1] < a]
+        AggregateSource@56609959([user.orders.order_date],[MIN(user.items.sku), SUM(times(user.items.price,user.items.quan))])
+          Select@5ff3ce5c[]
+            JoinNode@7f712b3a(INNER_JOIN[user.orders.oid == user.items.oid])
+              TableSource@10d09ad3(user.items)
+              TableSource@3747c1db(user.orders)

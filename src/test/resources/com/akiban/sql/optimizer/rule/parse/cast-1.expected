@@ -1,4 +1,5 @@
 SelectQuery@1cee1ede
-  ResultSet@552c8fa8[Cast(user.orders.order_date AS INTEGER)]
-    Filter@608b8a47[]
-      TableSource@69236cd5(user.orders)
+  ResultSet@279977bd[_SQL_COL_1]
+    Project@4c842d9a[Cast(user.orders.order_date AS INTEGER)]
+      Select@608b8a47[]
+        TableSource@69236cd5(user.orders)

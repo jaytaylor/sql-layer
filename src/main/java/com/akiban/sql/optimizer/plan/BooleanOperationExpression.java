@@ -15,12 +15,8 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.error.UnsupportedSQLException;
-
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
-
-import com.akiban.qp.expression.Expression;
 
 /** An operation on Boolean expressions.
  */
@@ -87,11 +83,14 @@ public class BooleanOperationExpression extends BaseExpression
 
     @Override
     public ExpressionNode accept(ExpressionRewriteVisitor v) {
-        ExpressionNode result = v.visit(this);
-        if (result != this) return result;
+        boolean childrenFirst = v.visitChildrenFirst(this);
+        if (!childrenFirst) {
+            ExpressionNode result = v.visit(this);
+            if (result != this) return result;
+        }
         left = (ConditionExpression)left.accept(v);
         right = (ConditionExpression)right.accept(v);
-        return this;
+        return (childrenFirst) ? v.visit(this) : this;
     }
 
     @Override
@@ -100,11 +99,6 @@ public class BooleanOperationExpression extends BaseExpression
             return operation + " " + left;
         else
             return left + " " + operation + " " + right;
-    }
-
-    @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        throw new UnsupportedSQLException("NIY", null);
     }
 
     @Override

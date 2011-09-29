@@ -17,12 +17,12 @@ package com.akiban.server.types.conversion;
 
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
+import com.akiban.server.types.extract.DoubleExtractor;
+import com.akiban.server.types.extract.Extractors;
 
 abstract class FloatConverter extends AbstractConverter {
 
     // AbstractFloatConverter interface
-    
-    public abstract float getFloat(ValueSource source);
     
     // defined in subclasses
     
@@ -32,8 +32,10 @@ abstract class FloatConverter extends AbstractConverter {
 
     @Override
     protected final void doConvert(ValueSource source, ValueTarget target) {
-        putFloat(target, getFloat(source));
+        putFloat(target, (float)extractor.getDouble(source));
     }
 
     FloatConverter() {}
+
+    private final DoubleExtractor extractor = Extractors.getDoubleExtractor();
 }

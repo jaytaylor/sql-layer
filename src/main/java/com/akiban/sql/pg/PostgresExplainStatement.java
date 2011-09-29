@@ -48,7 +48,7 @@ public class PostgresExplainStatement implements PostgresStatement
     public void sendDescription(PostgresServerSession server, boolean always) 
             throws IOException {
         PostgresMessenger messenger = server.getMessenger();
-        messenger.beginMessage(PostgresMessenger.ROW_DESCRIPTION_TYPE);
+        messenger.beginMessage(PostgresMessages.ROW_DESCRIPTION_TYPE.code());
         messenger.writeShort(1);
         messenger.writeString(colName); // attname
         messenger.writeInt(0);    // attrelid
@@ -66,7 +66,7 @@ public class PostgresExplainStatement implements PostgresStatement
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
         for (String row : explanation) {
-            messenger.beginMessage(PostgresMessenger.DATA_ROW_TYPE);
+            messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(1);
             byte[] value = colType.encodeValue(row, messenger.getEncoding(), false);
             messenger.writeInt(value.length);
@@ -77,7 +77,7 @@ public class PostgresExplainStatement implements PostgresStatement
                 break;
         }
         {        
-            messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
             messenger.writeString("EXPLAIN " + nrows);
             messenger.sendMessage();
         }

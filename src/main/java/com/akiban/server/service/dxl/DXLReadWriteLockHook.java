@@ -34,6 +34,12 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
     private final ReentrantReadWriteLock dataLock = new ReentrantReadWriteLock(true);
 
     private final static DXLReadWriteLockHook INSTANCE = new DXLReadWriteLockHook();
+    private final static boolean DML_LOCK;
+    static
+    {
+        String dmlLockProperty = System.getProperty("dml.lock");
+        DML_LOCK = dmlLockProperty == null || dmlLockProperty.equals("true");
+    }
 
     public static DXLReadWriteLockHook only() {
         return INSTANCE;
@@ -79,20 +85,22 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
 
     private void lockDataIfNecessary(Session session, DXLFunction function)
     {
-        Lock lock = null;
-        switch (function.getType()) {
-            case DML_FUNCTIONS_WRITE:
-                lock = dataLock.writeLock();
-                break;
-            case DML_FUNCTIONS_READ:
-                lock = dataLock.readLock();
-                break;
-            default:
-                break;
-        }
-        if (lock != null) {
-            session.push(DATA_LOCK_KEY, lock);
-            lock.lock();
+        if (DML_LOCK) {
+            Lock lock = null;
+            switch (function.getType()) {
+                case DML_FUNCTIONS_WRITE:
+                    lock = dataLock.writeLock();
+                    break;
+                case DML_FUNCTIONS_READ:
+                    lock = dataLock.readLock();
+                    break;
+                default:
+                    break;
+            }
+            if (lock != null) {
+                session.push(DATA_LOCK_KEY, lock);
+                lock.lock();
+            }
         }
     }
 
@@ -111,18 +119,20 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
 
     private void unlockDataIfNecessary(Session session, DXLFunction function, Throwable t)
     {
-        Lock lock;
-        switch (function.getType()) {
-            case DML_FUNCTIONS_WRITE:
-            case DML_FUNCTIONS_READ:
-                lock = session.pop(DATA_LOCK_KEY);
-                if (lock == null) {
-                    throw new LockNotSetException(t);
-                }
-                lock.unlock();
-                break;
-            default:
-                break;
+        if (DML_LOCK) {
+            Lock lock;
+            switch (function.getType()) {
+                case DML_FUNCTIONS_WRITE:
+                case DML_FUNCTIONS_READ:
+                    lock = session.pop(DATA_LOCK_KEY);
+                    if (lock == null) {
+                        throw new LockNotSetException(t);
+                    }
+                    lock.unlock();
+                    break;
+                default:
+                    break;
+            }
         }
     }
 

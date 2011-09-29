@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.sql.TestBase;
+import com.akiban.sql.NamedParamsTestBase;
 
 import com.akiban.sql.optimizer.simplified.SimplifiedQuery;
 
@@ -26,9 +27,10 @@ import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.pg.PostgresSessionTracer;
 
+import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.NamedParameterizedRunner.TestParameters;
+import com.akiban.junit.Parameterization;
 import org.junit.Test;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
 import static junit.framework.Assert.*;
 
@@ -36,25 +38,21 @@ import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.TableStatus;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.util.GroupIndexCreator;
 
 import org.junit.Before;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
 
-@RunWith(Parameterized.class)
-public class OperatorCompilerTest extends TestBase implements TestBase.GenerateAndCheckResult
+@RunWith(NamedParameterizedRunner.class)
+public class OperatorCompilerTest extends NamedParamsTestBase
+                                  implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "operator");
@@ -66,45 +64,10 @@ public class OperatorCompilerTest extends TestBase implements TestBase.GenerateA
     @Before
     public void makeCompiler() throws Exception {
         parser = new SQLParser();
-        AkibanInformationSchema ais = loadSchema(schemaFile);
+        AkibanInformationSchema ais = OptimizerTestBase.parseSchema(schemaFile);
         if (indexFile != null)
-            loadGroupIndexes(ais, indexFile);
+            OptimizerTestBase.loadGroupIndexes(ais, indexFile);
         compiler = TestOperatorCompiler.create(parser, ais, "user");
-    }
-
-    protected static AkibanInformationSchema loadSchema(File schema) throws Exception {
-        String sql = fileContents(schema);
-        SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
-        SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
-        return toAis.getAis();
-    }
-
-    protected void loadGroupIndexes(AkibanInformationSchema ais, File file) 
-            throws Exception {
-        Reader rdr = null;
-        try {
-            rdr = new FileReader(file);
-            BufferedReader brdr = new BufferedReader(rdr);
-            while (true) {
-                String line = brdr.readLine();
-                if (line == null) break;
-                String defn[] = line.split("\t");
-                GroupIndex index = GroupIndexCreator.createIndex(ais,
-                                                                 defn[0], 
-                                                                 defn[1],
-                                                                 defn[2]);
-                index.getGroup().addIndex(index);
-            }
-        }
-        finally {
-            if (rdr != null) {
-                try {
-                    rdr.close();
-                }
-                catch (IOException ex) {
-                }
-            }
-        }
     }
 
     static class TestResultColumn extends OperatorCompiler.ResultColumnBase {
@@ -163,8 +126,8 @@ public class OperatorCompilerTest extends TestBase implements TestBase.GenerateA
         }
     }
 
-    @Parameters
-    public static Collection<Object[]> statements() throws Exception {
+    @TestParameters
+    public static Collection<Parameterization> statements() throws Exception {
         Collection<Object[]> result = new ArrayList<Object[]>();
         for (File subdir : RESOURCE_DIR.listFiles(new FileFilter() {
                 public boolean accept(File file) {
@@ -186,7 +149,7 @@ public class OperatorCompilerTest extends TestBase implements TestBase.GenerateA
                 }
             }
         }
-        return result;
+        return namedCases(result);
     }
 
     public OperatorCompilerTest(String caseName, File schemaFile, File indexFile,

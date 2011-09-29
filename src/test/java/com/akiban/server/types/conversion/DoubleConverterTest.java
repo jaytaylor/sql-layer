@@ -16,6 +16,7 @@
 package com.akiban.server.types.conversion;
 
 import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types.extract.Extractors;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -57,8 +58,8 @@ public final class DoubleConverterTest {
     public void encodeToBits() {
         FromObjectValueSource source = new FromObjectValueSource();
         for(TestElement t : TEST_CASES) {
-            final double fromDouble = ConverterForDouble.SIGNED.getDouble(source.setReflectively(t.dbl));
-            final double fromString = ConverterForDouble.SIGNED.getDouble(source.setReflectively(t.str));
+            final double fromDouble = Extractors.getDoubleExtractor().getDouble(source.setReflectively(t.dbl));
+            final double fromString = Extractors.getDoubleExtractor().getDouble(source.setReflectively(t.str));
             assertEquals("float->bits: " + t, t.longBits, Double.doubleToLongBits(fromDouble));
             assertEquals("string->bits: " + t, t.longBits, Double.doubleToLongBits(fromString));
         }
@@ -66,6 +67,6 @@ public final class DoubleConverterTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void invalidNumber() {
-        ConverterForDouble.SIGNED.getDouble(new FromObjectValueSource().setReflectively("zebra"));
+        Extractors.getDoubleExtractor().getDouble(new FromObjectValueSource().setReflectively("zebra"));
     }
 }

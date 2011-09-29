@@ -15,14 +15,8 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.error.UnsupportedSQLException;
-
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
-
-import com.akiban.qp.expression.Expression;
-
-import java.util.List;
 
 /** IF ... THEN ... ELSE ...
  * Normally loaded from CASE
@@ -80,12 +74,15 @@ public class IfElseExpression extends BaseExpression
 
     @Override
     public ExpressionNode accept(ExpressionRewriteVisitor v) {
-        ExpressionNode result = v.visit(this);
-        if (result != this) return result;
+        boolean childrenFirst = v.visitChildrenFirst(this);
+        if (!childrenFirst) {
+            ExpressionNode result = v.visit(this);
+            if (result != this) return result;
+        }
         testCondition = (ConditionExpression)testCondition.accept(v);
         thenExpression = thenExpression.accept(v);
         elseExpression = elseExpression.accept(v);
-        return this;
+        return (childrenFirst) ? v.visit(this) : this;
     }
 
     @Override
@@ -98,11 +95,6 @@ public class IfElseExpression extends BaseExpression
         str.append(elseExpression);
         str.append(")");
         return str.toString();
-    }
-
-    @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        throw new UnsupportedSQLException("NIY", null);
     }
 
     @Override

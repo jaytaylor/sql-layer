@@ -18,6 +18,7 @@ package com.akiban.qp.rowtype;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
+import com.akiban.server.types.AkType;
 
 public class IndexRowType extends RowType
 {
@@ -35,6 +36,11 @@ public class IndexRowType extends RowType
     public int nFields()
     {
         return index.getColumns().size();
+    }
+
+    @Override
+    public AkType typeAt(int index) {
+        return this.index.getColumns().get(index).getColumn().getType().akType();
     }
 
     @Override

@@ -18,9 +18,9 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.physicaloperator.API;
-import com.akiban.qp.physicaloperator.NoLimit;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.NoLimit;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.FlattenedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.FlattenedRowType;
@@ -32,7 +32,7 @@ import java.util.*;
 
 final class OperatorStoreMaintenancePlan {
 
-    public PhysicalOperator rootOperator() {
+    public Operator rootOperator() {
         return rootOperator;
     }
 
@@ -40,7 +40,7 @@ final class OperatorStoreMaintenancePlan {
         return flattenedAncestorRowType;
     }
 
-    public PhysicalOperator siblingsLookup() {
+    public Operator siblingsLookup() {
         return siblingsFinder;
     }
 
@@ -76,7 +76,7 @@ final class OperatorStoreMaintenancePlan {
         this.siblingsFinder = createSiblingsFinder(groupIndex, branchTables, rowType);
     }
 
-    private PhysicalOperator createSiblingsFinder(GroupIndex groupIndex, BranchTables branchTables, UserTableRowType rowType) {
+    private Operator createSiblingsFinder(GroupIndex groupIndex, BranchTables branchTables, UserTableRowType rowType) {
         UserTable parentUserTable = rowType.userTable().parentTable();
         if (parentUserTable == null) {
             return null;
@@ -85,7 +85,7 @@ final class OperatorStoreMaintenancePlan {
         final RowType parentRowType = branchTables.parentRowType(rowType);
         assert parentRowType != null;
 
-        PhysicalOperator plan = API.groupScan_Default(
+        Operator plan = API.groupScan_Default(
                 groupTable,
                 NoLimit.instance(),
                 HKEY_BINDING_POSITION,
@@ -131,10 +131,10 @@ final class OperatorStoreMaintenancePlan {
         return result;
     }
 
-    private final PhysicalOperator rootOperator;
+    private final Operator rootOperator;
     private final RowType flattenedAncestorRowType;
     private final List<FlattenedRowType> flatteningTypes;
-    private final PhysicalOperator siblingsFinder;
+    private final Operator siblingsFinder;
 
     // for use by unit tests
     static PlanCreationStruct createGroupIndexMaintenancePlan(
@@ -166,7 +166,7 @@ final class OperatorStoreMaintenancePlan {
         PlanCreationStruct result = new PlanCreationStruct();
 
         boolean deep = !branchTables.leafMost().equals(rowType);
-        PhysicalOperator plan = API.groupScan_Default(
+        Operator plan = API.groupScan_Default(
                 groupIndex.getGroup().getGroupTable(),
                 NoLimit.instance(),
                 HKEY_BINDING_POSITION,
@@ -300,7 +300,7 @@ final class OperatorStoreMaintenancePlan {
     }
 
     static class PlanCreationStruct {
-        public PhysicalOperator rootOperator;
+        public Operator rootOperator;
         public RowType flattenedParentRowType;
     }
 }

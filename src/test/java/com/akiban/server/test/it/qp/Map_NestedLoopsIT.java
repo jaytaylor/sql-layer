@@ -15,22 +15,23 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.expression.Comparison;
-import com.akiban.qp.expression.Expression;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
+
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.Comparison;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 
-import static com.akiban.qp.physicaloperator.API.*;
-import static com.akiban.qp.expression.API.*;
+import static com.akiban.qp.operator.API.*;
+import static com.akiban.server.expression.std.Expressions.*;
 
-public class Map_NestedLoopsIT extends PhysicalOperatorITBase
+public class Map_NestedLoopsIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -99,7 +100,7 @@ public class Map_NestedLoopsIT extends PhysicalOperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testBadOuterJoin1()
     {
-        map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), null, Arrays.asList(field(0)), 0);
+        map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), null, Arrays.asList(field(customerRowType, 0)), 0);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -119,7 +120,7 @@ public class Map_NestedLoopsIT extends PhysicalOperatorITBase
     @Test
     public void testIndexLookup()
     {
-        PhysicalOperator plan =
+        Operator plan =
             map_NestedLoops(
                 indexScan_Default(itemOidIndexRowType, false, null),
                 ancestorLookup_Nested(coi, itemOidIndexRowType, Collections.singleton(itemRowType), 0),
@@ -147,16 +148,20 @@ public class Map_NestedLoopsIT extends PhysicalOperatorITBase
     public void testInnerJoin()
     {
         // customer order inner join, done as a general join
-        PhysicalOperator project = project_Default(
-            select_HKeyOrdered(
-                filter_Default(
-                    groupScan_Default(coi),
-                    Collections.singleton(orderRowType)),
+        Operator project =
+            project_Default(
+                select_HKeyOrdered(
+                    filter_Default(
+                        groupScan_Default(coi),
+                        Collections.singleton(orderRowType)),
+                    orderRowType,
+                    compare(
+                            field(orderRowType, 1) /* order.cid */,
+                            Comparison.EQ,
+                            boundField(customerRowType, 0, 0) /* customer.cid */)),
                 orderRowType,
-                compare(field(1) /* order.cid */, Comparison.EQ, boundField(0, 0) /* customer.cid */)),
-            orderRowType,
-            Arrays.asList(boundField(0, 0) /* customer.cid */, field(0) /* order.oid */));
-        PhysicalOperator plan =
+                Arrays.asList(boundField(customerRowType, 0, 0) /* customer.cid */, field(orderRowType, 0) /* order.oid */));
+        Operator plan =
             map_NestedLoops(
                 filter_Default(
                     groupScan_Default(coi),
@@ -180,24 +185,27 @@ public class Map_NestedLoopsIT extends PhysicalOperatorITBase
     public void testOuterJoin()
     {
         // customer order outer join, done as a general join
-        PhysicalOperator project = project_Default(
+        Operator project = project_Default(
             select_HKeyOrdered(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
                 orderRowType,
-                compare(field(1) /* order.cid */, Comparison.EQ, boundField(0, 0) /* customer.cid */)),
+                compare(
+                        field(orderRowType, 1) /* order.cid */,
+                        Comparison.EQ,
+                        boundField(customerRowType, 0, 0) /* customer.cid */)),
             orderRowType,
-            Arrays.asList(boundField(0, 0) /* customer.cid */, field(0) /* order.oid */));
+            Arrays.asList(boundField(customerRowType, 0, 0) /* customer.cid */, field(orderRowType, 0) /* order.oid */));
         RowType projectRowType = project.rowType();
-        PhysicalOperator plan =
+        Operator plan =
             map_NestedLoops(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(customerRowType)),
                 project,
                 projectRowType,
-                Arrays.asList(boundField(0, 0), literal(null)),
+                Arrays.asList(boundField(customerRowType, 0, 0), literal(null)),
                 0);
         RowBase[] expected = new RowBase[]{
             row(projectRowType, 1L, 100L),

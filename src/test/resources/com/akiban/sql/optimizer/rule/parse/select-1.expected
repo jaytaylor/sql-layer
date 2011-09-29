@@ -1,4 +1,5 @@
 SelectQuery@31b5998f
-  ResultSet@97494c8[user.parent.id, user.parent.name, user.parent.state]
-    Filter@44d3db51[]
-      TableSource@30e3c624(user.parent)
+  ResultSet@54be8c3e[id, name, state]
+    Project@29e965e9[user.parent.id, user.parent.name, user.parent.state]
+      Select@44d3db51[]
+        TableSource@30e3c624(user.parent)

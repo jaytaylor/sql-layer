@@ -29,7 +29,7 @@ import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// public for access by PhysicalOperatorIT
+// public for access by OperatorIT
 public class PersistitGroupRow extends AbstractRow
 {
     // Object interface
@@ -68,7 +68,7 @@ public class PersistitGroupRow extends AbstractRow
         return new PersistitGroupRow(adapter);
     }
 
-    // For use by PhysicalOperatorIT
+    // For use by OperatorIT
     public static PersistitGroupRow newPersistitGroupRow(PersistitAdapter adapter, RowData rowData)
     {
         return new PersistitGroupRow(adapter, rowData);

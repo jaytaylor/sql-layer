@@ -53,26 +53,29 @@ public abstract class AbstractRow implements Row
         return rowType() == subRowType ? this : null;
     }
 
-    // ManagedRow interface
+    // Row interface
 
     @Override
-    public final void share()
+    public final void acquire()
     {
         assert references >= 0 : this;
+        beforeAcquire();
         references++;
     }
 
     @Override
     public final boolean isShared()
     {
-        assert references >= 1 : this;
+        assert references >= 0 : this;
         return references > 1;
     }
 
     @Override
     public final void release()
     {
-        references--;
+        assert references > 0 : this;
+        --references;
+        afterRelease();
     }
 
     @Override
@@ -90,6 +93,10 @@ public abstract class AbstractRow implements Row
         builder.append(']');
         return builder.toString();
     }
+
+    // for use by subclasses
+    protected void afterRelease() {}
+    protected void beforeAcquire() {}
 
     // Object state
 

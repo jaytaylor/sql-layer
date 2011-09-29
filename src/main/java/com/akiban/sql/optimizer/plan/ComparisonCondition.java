@@ -15,12 +15,10 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.server.expression.std.Comparison;
+import com.akiban.server.types.AkType;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
-
-import com.akiban.qp.expression.API;
-import com.akiban.qp.expression.Expression;
-import com.akiban.qp.expression.Comparison;
 
 /** A binary comparison (equality / inequality) between two expressions.
  */
@@ -33,7 +31,7 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
     public ComparisonCondition(Comparison operation,
                                ExpressionNode left, ExpressionNode right,
                                DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+        super(sqlType, AkType.BOOL, sqlSource);
         this.operation = operation;
         this.left = left;
         this.right = right;
@@ -105,23 +103,19 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
 
     @Override
     public ExpressionNode accept(ExpressionRewriteVisitor v) {
-        ExpressionNode result = v.visit(this);
-        if (result != this) return result;
+        boolean childrenFirst = v.visitChildrenFirst(this);
+        if (!childrenFirst) {
+            ExpressionNode result = v.visit(this);
+            if (result != this) return result;
+        }
         left = left.accept(v);
         right = right.accept(v);
-        return this;
+        return (childrenFirst) ? v.visit(this) : this;
     }
 
     @Override
     public String toString() {
         return left + " " + operation + " " + right;
-    }
-
-    @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        return API.compare(left.generateExpression(fieldOffsets),
-                           operation,
-                           right.generateExpression(fieldOffsets));
     }
 
     public void reverse() {

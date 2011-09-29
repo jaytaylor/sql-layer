@@ -15,65 +15,74 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.ais.model.Column;
+
 import java.util.List;
 
-/** An expression in a Project list (the list right after SELECT). */
+/** Name the columns in a SELECT. */
 public class ResultSet extends BasePlanWithInput
 {
-    public static class ResultExpression extends AnnotatedExpression {
+    public static class ResultField extends BaseDuplicatable {
         private String name;
-        private boolean nameDefaulted;
+        private DataTypeDescriptor sqlType;
+        private Column aisColumn;
 
-        public ResultExpression(ExpressionNode expression,
-                                String name, boolean nameDefaulted) {
-            super(expression);
+        public ResultField(String name, DataTypeDescriptor sqlType, Column aisColumn) {
             this.name = name;
-            this.nameDefaulted = nameDefaulted;
+            this.sqlType = sqlType;
+            this.aisColumn = aisColumn;
+        }
+
+        public ResultField(String name) {
+            this.name = name;
         }
 
         public String getName() {
             return name;
         }
-        public boolean isNameDefaulted() {
-            return nameDefaulted;
+
+        public DataTypeDescriptor getSQLtype() {
+            return sqlType;
+        }
+
+        public Column getAIScolumn() {
+            return aisColumn;
+        }
+
+        public String toString() {
+            return name;
         }
     }
 
-    private List<ResultExpression> results;
+    private List<ResultField> fields;
 
-    public ResultSet(PlanNode input, List<ResultExpression> results) {
+    public ResultSet(PlanNode input, List<ResultField> fields) {
         super(input);
-        this.results = results;
+        this.fields = fields;
     }
 
-    public List<ResultExpression> getResults() {
-        return results;
+    public List<ResultField> getFields() {
+        return fields;
     }
 
     @Override
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
-            if (getInput().accept(v)) {
-                if (v instanceof ExpressionVisitor) {
-                    for (ResultExpression result : results) {
-                        if (!result.getExpression().accept((ExpressionVisitor)v))
-                            break;
-                    }
-                }
-            }
+            getInput().accept(v);
         }
         return v.visitLeave(this);
     }
 
     @Override
     public String summaryString() {
-        return super.summaryString() + results;
+        return super.summaryString() + fields;
     }
 
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        results = duplicateList(results, map);
+        fields = duplicateList(fields, map);
     }
 
 }

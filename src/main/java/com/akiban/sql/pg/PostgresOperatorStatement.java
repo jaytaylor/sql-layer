@@ -17,12 +17,9 @@ package com.akiban.sql.pg;
 
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
+import com.akiban.qp.operator.*;
 import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.qp.physicaloperator.API;
-import com.akiban.qp.physicaloperator.Bindings;
-import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.UndefBindings;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.Tap;
@@ -38,14 +35,14 @@ import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
  */
 public class PostgresOperatorStatement extends PostgresBaseStatement
 {
-    private PhysicalOperator resultOperator;
+    private Operator resultOperator;
     private int offset = 0;
     private int limit = -1;
 
     private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresBaseStatement: execute shared");
     private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire shared lock");
 
-    public PostgresOperatorStatement(PhysicalOperator resultOperator,
+    public PostgresOperatorStatement(Operator resultOperator,
                                      List<String> columnNames,
                                      List<PostgresType> columnTypes,
                                      PostgresType[] parameterTypes,
@@ -84,7 +81,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                     nskip--;
                     continue;
                 }
-                messenger.beginMessage(PostgresMessenger.DATA_ROW_TYPE);
+                messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
                 messenger.writeShort(ncols);
                 for (int i = 0; i < ncols; i++) {
                     Object field = target.convertFromSource(row.eval(i));
@@ -113,7 +110,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             unlock(session, UNSPECIFIED_DML_READ);
         }
         {        
-            messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
             messenger.writeString("SELECT " + nrows);
             messenger.sendMessage();
         }
@@ -132,10 +129,6 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         return ACQUIRE_LOCK_TAP;
     }
 
-    protected Bindings getBindings() {
-        return UndefBindings.only();
-    }
-
     /** Only needed in the case where a statement has parameters or the client
      * specifies that some results should be in binary. */
     static class BoundStatement extends PostgresOperatorStatement {
@@ -143,7 +136,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         private boolean[] columnBinary; // Is this column binary format?
         private boolean defaultColumnBinary;
 
-        public BoundStatement(PhysicalOperator resultOperator,
+        public BoundStatement(Operator resultOperator,
                               List<String> columnNames,
                               List<PostgresType> columnTypes,
                               int offset, int limit,

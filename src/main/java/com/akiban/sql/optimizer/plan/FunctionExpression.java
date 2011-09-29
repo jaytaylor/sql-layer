@@ -15,13 +15,13 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.error.UnsupportedSQLException;
-
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionFactory;
+import com.akiban.server.types.AkType;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
-import com.akiban.qp.expression.Expression;
-
+import java.util.ArrayList;
 import java.util.List;
 
 /** A call to a function.
@@ -34,11 +34,11 @@ public class FunctionExpression extends BaseExpression
     public FunctionExpression(String function,
                               List<ExpressionNode> operands,
                               DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+        super(sqlType, AkType.NULL, sqlSource); // TODO
         this.function = function;
         this.operands = operands;
     }
-
+                              
     public String getFunction() {
         return function;
     }
@@ -74,12 +74,15 @@ public class FunctionExpression extends BaseExpression
 
     @Override
     public ExpressionNode accept(ExpressionRewriteVisitor v) {
-        ExpressionNode result = v.visit(this);
-        if (result != this) return result;
+        boolean childrenFirst = v.visitChildrenFirst(this);
+        if (!childrenFirst) {
+            ExpressionNode result = v.visit(this);
+            if (result != this) return result;
+        }
         for (int i = 0; i < operands.size(); i++) {
             operands.set(i, operands.get(i).accept(v));
         }
-        return this;
+        return (childrenFirst) ? v.visit(this) : this;
     }
 
     @Override
@@ -93,11 +96,6 @@ public class FunctionExpression extends BaseExpression
         }
         str.append(")");
         return str.toString();
-    }
-
-    @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        throw new UnsupportedSQLException("NIY", null);
     }
 
     @Override

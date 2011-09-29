@@ -15,12 +15,12 @@
 
 package com.akiban.qp.expression;
 
-import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.expression.Expression;
 import com.akiban.server.types.ValueSource;
-import com.akiban.sql.optimizer.ExpressionRow;
 
-import java.util.Arrays;
+import java.util.List;
 
 public final class RowBasedUnboundExpressions implements UnboundExpressions {
     @Override
@@ -30,15 +30,19 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
 
     @Override
     public String toString() {
-        return "UnboundExpressions" + Arrays.toString(expressions);
+        return "UnboundExpressions" + expressions;
     }
 
-    public RowBasedUnboundExpressions(RowType rowType, Expression[] expressions) {
+    public RowBasedUnboundExpressions(RowType rowType, List<Expression> expressions) {
+        for (Expression expression : expressions) {
+            if (expression == null)
+                throw new IllegalArgumentException();
+        }
         this.expressions = expressions;
         this.rowType = rowType;
     }
 
-    private final Expression[] expressions;
+    private final List<Expression> expressions;
     private final RowType rowType;
 
     private static class ExpressionsAndBindings implements BoundExpressions {
@@ -48,7 +52,7 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
             return expressionRow.eval(index);
         }
 
-        ExpressionsAndBindings(RowType rowType, Expression[] expressions, Bindings bindings) {
+        ExpressionsAndBindings(RowType rowType, List<Expression> expressions, Bindings bindings) {
             expressionRow = new ExpressionRow(rowType, bindings, expressions);
         }
 

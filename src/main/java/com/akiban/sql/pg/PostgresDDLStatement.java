@@ -70,7 +70,7 @@ public class PostgresDDLStatement implements PostgresStatement
             throws IOException {
         if (always) {
             PostgresMessenger messenger = server.getMessenger();
-            messenger.beginMessage(PostgresMessenger.NO_DATA_TYPE);
+            messenger.beginMessage(PostgresMessages.NO_DATA_TYPE.code());
             messenger.sendMessage();
         }
     }
@@ -112,6 +112,7 @@ public class PostgresDDLStatement implements PostgresStatement
                 break;
             case NodeTypes.DROP_INDEX_NODE:
                 IndexDDL.dropIndex(ddlFunctions, session, schema, (DropIndexNode)ddl);
+                break;
             case NodeTypes.ALTER_TABLE_NODE:
                 AlterTableDDL.alterTable(ddlFunctions, session, schema, (AlterTableNode)ddl);
                 break;
@@ -128,10 +129,9 @@ public class PostgresDDLStatement implements PostgresStatement
         } finally {
             unlock(session);
         }
-
         {        
             PostgresMessenger messenger = server.getMessenger();
-            messenger.beginMessage(PostgresMessenger.COMMAND_COMPLETE_TYPE);
+            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
             messenger.writeString(ddl.statementToString());
             messenger.sendMessage();
         }

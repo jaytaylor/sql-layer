@@ -1,0 +1,1 @@
+insert into customers values (1, 'Smith'), (2, 'Jones'), (3, 'Brown')

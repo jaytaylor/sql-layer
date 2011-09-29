@@ -15,9 +15,17 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.sql.optimizer.plan.PlanNode;
+import com.akiban.server.service.EventTypes;
+
+import com.akiban.sql.optimizer.plan.PlanContext;
 
 public abstract class BaseRule
 {
-    public abstract PlanNode apply(PlanNode plan);
+    private final String traceName;
+
+    public BaseRule() {
+        traceName = EventTypes.OPTIMIZE + ": " + getClass().getSimpleName();
+    }
+
+    public abstract void apply(PlanContext plan);
 }

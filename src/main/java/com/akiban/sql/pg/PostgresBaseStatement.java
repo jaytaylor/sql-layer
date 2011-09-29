@@ -15,8 +15,8 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.physicaloperator.ArrayBindings;
-import com.akiban.qp.physicaloperator.Bindings;
+import com.akiban.qp.operator.ArrayBindings;
+import com.akiban.qp.operator.Bindings;
 import com.akiban.server.service.dxl.DXLFunctionsHook;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
@@ -68,10 +68,10 @@ public abstract class PostgresBaseStatement implements PostgresStatement
         List<PostgresType> columnTypes = getColumnTypes();
         if (columnTypes == null) {
             if (!always) return;
-            messenger.beginMessage(PostgresMessenger.NO_DATA_TYPE);
+            messenger.beginMessage(PostgresMessages.NO_DATA_TYPE.code());
         }
         else {
-            messenger.beginMessage(PostgresMessenger.ROW_DESCRIPTION_TYPE);
+            messenger.beginMessage(PostgresMessages.ROW_DESCRIPTION_TYPE.code());
             List<String> columnNames = getColumnNames();
             int ncols = columnTypes.size();
             messenger.writeShort(ncols);
@@ -87,6 +87,10 @@ public abstract class PostgresBaseStatement implements PostgresStatement
             }
         }
         messenger.sendMessage();
+    }
+
+    protected Bindings getBindings() {
+        return new ArrayBindings(0);
     }
 
     protected Bindings getParameterBindings(String[] parameters) {

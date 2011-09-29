@@ -15,41 +15,23 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.error.UnsupportedSQLException;
-
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
-import com.akiban.qp.expression.Expression;
-
 /** An expression evaluated by a subquery.
- * TODO: Think about nested result sets.
  */
-public class SubqueryExpression extends BaseExpression 
+public abstract class SubqueryExpression extends BaseExpression 
 {
-    private PlanNode subquery;
+    private Subquery subquery;
 
-    public SubqueryExpression(PlanNode subquery, 
+    public SubqueryExpression(Subquery subquery, 
                               DataTypeDescriptor sqlType, ValueNode sqlSource) {
         super(sqlType, sqlSource);
         this.subquery = subquery;
     }
 
-    public PlanNode getSubquery() {
+    public Subquery getSubquery() {
         return subquery;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof SubqueryExpression)) return false;
-        SubqueryExpression other = (SubqueryExpression)obj;
-        // Currently this is ==; don't match whole subquery.
-        return subquery.equals(other.subquery);
-    }
-
-    @Override
-    public int hashCode() {
-        return subquery.hashCode();
     }
 
     @Override
@@ -63,7 +45,14 @@ public class SubqueryExpression extends BaseExpression
 
     @Override
     public ExpressionNode accept(ExpressionRewriteVisitor v) {
-        return v.visit(this);
+        boolean childrenFirst = v.visitChildrenFirst(this);
+        if (!childrenFirst) {
+            ExpressionNode result = v.visit(this);
+            if (result != this) return result;
+        }
+        if (v instanceof PlanVisitor)
+          subquery.accept((PlanVisitor)v);
+        return (childrenFirst) ? v.visit(this) : this;
     }
 
     @Override
@@ -72,14 +61,9 @@ public class SubqueryExpression extends BaseExpression
     }
 
     @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        throw new UnsupportedSQLException("NIY", null);
-    }
-
-    @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        subquery = (PlanNode)subquery.duplicate(map);
+        subquery = (Subquery)subquery.duplicate(map);
     }
 
 }

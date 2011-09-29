@@ -1,6 +1,7 @@
 SelectQuery@5f7779e3
-  ResultSet@1ce3570c[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date]
-    Filter@1167e3a5[user.customers.name == Smith]
-      JoinNode@3b926e90(LEFT_JOIN[user.customers.cid == user.orders.cid])
-        TableSource@a98ce7e(user.customers)
-        TableSource@361cb7a1(user.orders)
+  ResultSet@25e222e[cid, name, oid, cid, order_date]
+    Project@7215fb38[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date]
+      Select@1167e3a5[user.customers.name == Smith]
+        JoinNode@3b926e90(LEFT_JOIN[user.customers.cid == user.orders.cid])
+          TableSource@a98ce7e(user.customers)
+          TableSource@361cb7a1(user.orders)

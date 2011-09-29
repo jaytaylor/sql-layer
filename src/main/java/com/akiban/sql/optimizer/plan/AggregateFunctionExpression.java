@@ -15,12 +15,9 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.error.UnsupportedSQLException;
-
+import com.akiban.server.types.AkType;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
-
-import com.akiban.qp.expression.Expression;
 
 /** An expression representing the result (total) of an aggregate function.
  */
@@ -33,7 +30,7 @@ public class AggregateFunctionExpression extends BaseExpression
     public AggregateFunctionExpression(String function, ExpressionNode operand,
                                        boolean distinct, 
                                        DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+        super(sqlType, AkType.NULL, sqlSource); // TODO
         this.function = function;
         this.operand = operand;
         this.distinct = distinct;
@@ -47,6 +44,10 @@ public class AggregateFunctionExpression extends BaseExpression
     }
     public boolean isDistinct() {
         return distinct;
+    }
+
+    public void setOperand(ExpressionNode operand) {
+        this.operand = operand;
     }
 
     @Override
@@ -63,7 +64,8 @@ public class AggregateFunctionExpression extends BaseExpression
     @Override
     public int hashCode() {
         int hash = function.hashCode();
-        hash += operand.hashCode();
+        if (operand != null)
+            hash += operand.hashCode();
         if (distinct) hash ^= 1;
         return hash;
     }
@@ -79,11 +81,14 @@ public class AggregateFunctionExpression extends BaseExpression
 
     @Override
     public ExpressionNode accept(ExpressionRewriteVisitor v) {
-        ExpressionNode result = v.visit(this);
-        if (result != this) return result;
+        boolean childrenFirst = v.visitChildrenFirst(this);
+        if (!childrenFirst) {
+            ExpressionNode result = v.visit(this);
+            if (result != this) return result;
+        }
         if (operand != null)
             operand = operand.accept(v);
-        return this;
+        return (childrenFirst) ? v.visit(this) : this;
     }
 
     @Override
@@ -98,11 +103,6 @@ public class AggregateFunctionExpression extends BaseExpression
             str.append(operand);
         str.append(")");
         return str.toString();
-    }
-
-    @Override
-    public Expression generateExpression(ColumnExpressionToIndex fieldOffsets) {
-        throw new UnsupportedSQLException("Aggregate used as regular function", null);
     }
 
     @Override

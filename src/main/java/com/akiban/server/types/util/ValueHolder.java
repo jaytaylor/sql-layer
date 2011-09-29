@@ -42,9 +42,10 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         stateType = StateType.UNDEF_VAL;
     }
 
-    public void copyFrom(ValueSource copySource) {
+    public ValueHolder copyFrom(ValueSource copySource) {
         expectType(copySource.getConversionType());
         Converters.convert(copySource, this);
+        return this;
     }
 
     public void expectType(AkType expectedType) {
@@ -338,9 +339,9 @@ public final class ValueHolder implements ValueSource, ValueTarget {
             return AkType.NULL.toString();
         }
         StringBuilder sb = new StringBuilder();
-        sb.append(type).append('(');
+//        sb.append(type).append('(');
         appendAsString(AkibanAppender.of(sb), Quote.NONE);
-        sb.append(')');
+//        sb.append(')');
         return sb.toString();
     }
 
@@ -435,6 +436,11 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         putRaw(type, value);
     }
 
+    public ValueHolder(AkType type, boolean value) {
+        StateType.BOOL_VAL.checkAkType(type);
+        putBool(value);
+    }
+
     public ValueHolder(AkType type, Object value) {
         if (value == null) {
             putRawNull();
@@ -472,6 +478,7 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         DOUBLE_VAL(AkType.DOUBLE, AkType.U_DOUBLE),
         FLOAT_VAL(AkType.FLOAT, AkType.U_FLOAT),
         OBJECT_VAL(AkType.DECIMAL, AkType.VARCHAR, AkType.TEXT, AkType.U_BIGINT, AkType.VARBINARY),
+        BOOL_VAL(AkType.BOOL),
         NULL_VAL(AkType.NULL),
         UNDEF_VAL()
         ;

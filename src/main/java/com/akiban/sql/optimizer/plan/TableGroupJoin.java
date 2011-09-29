@@ -17,6 +17,8 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Join;
 
+/** A join within a group corresponding to the GROUPING FK constraint. 
+ */
 public class TableGroupJoin extends BasePlanElement
 {
     private TableGroup group;
@@ -36,6 +38,7 @@ public class TableGroupJoin extends BasePlanElement
          condition).setImplementation(ConditionExpression.Implementation.GROUP_JOIN);
         child.setParentJoin(this);
         this.join = join;
+        group.addJoin(this);
     }
 
     public TableGroup getGroup() {
