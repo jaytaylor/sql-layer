@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.expression.ExpressionFactory;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
@@ -33,11 +34,15 @@ public class SchemaRulesContext extends RulesContext
 {
     private Schema schema;
     private ExpressionFactory expressionFactory;
+    private AggregatorRegistry aggregatorRegistry;
 
-    public SchemaRulesContext(AkibanInformationSchema ais, ExpressionFactory expressionFactory, List<BaseRule> rules) {
+    public SchemaRulesContext(AkibanInformationSchema ais,
+                              ExpressionFactory expressionFactory, AggregatorRegistry aggregatorRegistry,
+                              List<BaseRule> rules) {
         super(rules);
         schema = new Schema(ais);
         this.expressionFactory = expressionFactory;
+        this.aggregatorRegistry = aggregatorRegistry;
     }
 
     public Schema getSchema() {
@@ -52,9 +57,8 @@ public class SchemaRulesContext extends RulesContext
         return expressionFactory;
     }
 
-    // TODO: Something like this.
-    /*
-    public AggregatorFactory getAggregatorFactory() {...}
-    */
+    public AggregatorRegistry getAggregatorRegistry() {
+        return aggregatorRegistry;
+    }
       
 }

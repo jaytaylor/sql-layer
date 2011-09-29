@@ -15,6 +15,7 @@
     com.akiban.sql.pg.PostgresService : com.akiban.sql.pg.PostgresServerManager
     com.akiban.server.service.instrumentation.InstrumentationService : com.akiban.server.service.instrumentation.InstrumentationServiceImpl
     com.akiban.server.expression.ExpressionFactory : com.akiban.server.expression.std.StandardExpressionFactory
+    com.akiban.server.aggregation.AggregatorRegistry : com.akiban.server.aggregation.std.StandardAggregatorRegistry
 
 # This binding is really just a crutch while we move away from the static SMI.get() pattern
 - bind:

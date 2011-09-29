@@ -15,6 +15,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.expression.ExpressionFactory;
 import com.akiban.server.service.dxl.DXLService;
 
@@ -91,4 +92,6 @@ public interface PostgresServerSession
     public void rollbackTransaction();
 
     public ExpressionFactory expressionFactory();
+
+    public AggregatorRegistry aggregatorRegistry();
 }

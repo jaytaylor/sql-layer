@@ -16,8 +16,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.error.NoSuchFunctionException;
-import com.akiban.server.expression.Expression;
+import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.expression.ExpressionFactory;
 
 import java.util.List;
@@ -25,7 +24,7 @@ import java.util.List;
 public class RulesTestContext extends SchemaRulesContext
 {
     public RulesTestContext(AkibanInformationSchema ais, List<BaseRule> rules) {
-        super(ais, ExpressionFactory.EMPTY, rules);
+        super(ais, ExpressionFactory.EMPTY, AggregatorRegistry.EMPTY, rules);
         RulesTestHelper.ensureRowDefs(ais);
     }
 }

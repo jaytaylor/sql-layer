@@ -417,18 +417,8 @@ public class OperatorAssembler extends BaseRule
                 }
                 stream.operator = sort_Tree(stream.operator, stream.rowType, ordering);
             }
-            // TODO: Need to get real AggregatorFactory from RulesContext.
-            AggregatorRegistry aggregatorRegistry = new AggregatorRegistry() {
-                    @Override
-                    public Aggregator get(String name) {
-                        throw new UnsupportedSQLException(name, null);
-                    }
-                    @Override
-                    public void validateNames(List<String> names) {
-                    }
-                };
             stream.operator = aggregate_Partial(stream.operator, nkeys,
-                    aggregatorRegistry, aggregatorNames);
+                    rulesContext.getAggregatorRegistry(), aggregatorNames);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource);
             return stream;
         }

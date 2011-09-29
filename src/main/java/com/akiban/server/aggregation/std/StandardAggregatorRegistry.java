@@ -12,20 +12,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+package com.akiban.server.aggregation.std;
 
-package com.akiban.server.aggregation;
-
+import com.akiban.server.aggregation.AggregatorFactory;
+import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.error.NoSuchFunctionException;
 
-import java.util.List;
-
-public interface AggregatorRegistry {
-    AggregatorFactory get(String name);
-
-    public static final AggregatorRegistry EMPTY = new AggregatorRegistry() {
-        @Override
-        public AggregatorFactory get(String name) {
-            throw new NoSuchFunctionException(name);
-        }
-    };
+public final class StandardAggregatorRegistry implements AggregatorRegistry {
+    @Override
+    public AggregatorFactory get(String name) {
+        throw new NoSuchFunctionException(name);
+    }
 }

@@ -25,6 +25,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 
 import com.akiban.server.aggregation.AggregatorRegistry;
+import com.akiban.server.aggregation.Aggregators;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
@@ -40,7 +41,7 @@ public class API
                                                      AggregatorRegistry registry,
                                                      List<String> aggregatorNames)
     {
-        return new Aggregate_Partial(inputOperator, inputsIndex, registry, aggregatorNames);
+        return new Aggregate_Partial(inputOperator, inputsIndex, Aggregators.factories(registry, aggregatorNames));
     }
 
     // Project
