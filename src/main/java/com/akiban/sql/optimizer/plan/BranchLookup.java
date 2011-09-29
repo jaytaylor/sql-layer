@@ -15,35 +15,31 @@
 
 package com.akiban.sql.optimizer.plan;
 
-public class BranchLookup extends BasePlanWithInput
-{
-    private TableSource source, branch;
+import java.util.List;
 
-    public BranchLookup(PlanNode input, TableSource source, TableSource branch) {
-        super(input);
+public class BranchLookup extends BaseLookup
+{
+    private TableNode source, branch;
+
+    public BranchLookup(PlanNode input, 
+                        TableNode source, TableNode branch,
+                        List<TableSource> tables) {
+        super(input, tables);
         this.source = source;
         this.branch = branch;
     }
 
-    public TableSource getSource() {
+    public TableNode getSource() {
         return source;
     }
 
-    public TableSource getBranch() {
+    public TableNode getBranch() {
         return branch;
     }
 
     @Override
-    protected void deepCopy(DuplicateMap map) {
-        super.deepCopy(map);
-        source = (TableSource)source.duplicate();
-        branch = (TableSource)branch.duplicate();
-    }
-
-    @Override
     public String summaryString() {
-        return super.summaryString() +
-            "(" + source.getTable() + " -> " + branch.getTable() + ")";
+        return super.summaryString() + "(" + source + " -> " + branch + ")";
     }
 
 }

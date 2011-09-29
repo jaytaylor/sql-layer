@@ -1,12 +1,10 @@
-SelectQuery@2a114025
-  ResultSet@4af429d7[name, _SQL_COL_1]
-    Project@63e708b2[user.customers.name, MIN(user.orders.order_date)]
-      Select@773c550f[]
-        AggregateSource@19f488f1(PRESORTED,[user.customers.name],[])
-          Select@54a9387[]
-            Flatten@2825491d
-              BranchLookup@631b86c7(user.customers -> user.customers)
-                IndexScan@242da5a6(Index(user.customers.name[IndexColumn(name)]), GROUPED)
-              JoinNode@56cb07ef(INNER_JOIN[])
-                TableSource@4bd27069(user.customers - TableGroup@52234265(customers))
-                TableSource@64d22462(user.orders - TableGroupJoin@2b76086d(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+SelectQuery@3979c7cf
+  ResultSet@6a2d0483[name, _SQL_COL_1]
+    Project@31836aea[user.customers.name, MIN(user.orders.order_date)]
+      Select@2ae0420b[]
+        AggregateSource@690ff62a(PRESORTED,[user.customers.name],[])
+          Select@16ea7549[]
+            TableJoins@7aba175f(TableGroup@4f549ceb(customers) - IndexScan@3c0a30fd(Index(user.customers.name[IndexColumn(name)]), GROUPED))
+              JoinNode@411650d6(INNER_JOIN[user.orders.cid == user.customers.cid] - TableGroupJoin@201532fc(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+                TableSource@464d28c7(user.customers - TableGroup@4f549ceb(customers))
+                TableSource@73b044df(user.orders - TableGroupJoin@201532fc(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))

@@ -26,6 +26,7 @@ public class TableNode extends TableTreeBase.TableNodeBase<TableNode>
 {
     private TableTree tree;
     private List<TableSource> uses;
+    private long branches;
 
     public TableNode(UserTable table, TableTree tree) {
         super(table);
@@ -39,6 +40,13 @@ public class TableNode extends TableTreeBase.TableNodeBase<TableNode>
 
     public void addUse(TableSource use) {
         uses.add(use);
+    }
+
+    public long getBranches() {
+        return branches;
+    }
+    public void setBranches(long branches) {
+        this.branches = branches;
     }
 
 }

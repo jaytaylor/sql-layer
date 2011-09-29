@@ -1,5 +1,6 @@
-SelectQuery@df8b14
-  ResultSet@7db06a21[name]
-    Project@4907dcfe[user.customers.name]
-      Select@1e8fa70[]
-        IndexScan@15c929a(Index(user.customers.name[IndexColumn(name)]), covering/SORTED)
+SelectQuery@4f09dcbb
+  ResultSet@107aa187[name]
+    Project@6302ae84[user.customers.name]
+      Select@450f8ee4[]
+        TableJoins@6e3e28(TableGroup@45b2b450(customers) - IndexScan@575c13ef(Index(user.customers.name[IndexColumn(name)]), covering/SORTED))
+          TableSource@209daa17(user.customers - TableGroup@45b2b450(customers))

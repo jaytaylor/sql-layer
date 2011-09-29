@@ -16,46 +16,42 @@
 package com.akiban.sql.optimizer.plan;
 
 import java.util.List;
+import java.util.ArrayList;
 
-public class AncestorLookup extends BasePlanWithInput
+public class AncestorLookup extends BaseLookup
 {
-    private TableSource descendant;
-    private List<TableSource> ancestors;
+    private TableNode descendant;
+    private List<TableNode> ancestors;
 
-    public AncestorLookup(PlanNode input, 
-                          TableSource descendant, List<TableSource> ancestors) {
-        super(input);
+    public AncestorLookup(PlanNode input, TableNode descendant,
+                          List<TableNode> ancestors,
+                          List<TableSource> tables) {
+        super(input, tables);
         this.descendant = descendant;
         this.ancestors = ancestors;
     }
 
-    public TableSource getDescendant() {
+    public AncestorLookup(PlanNode input, TableSource descendant,
+                          List<TableSource> tables) {
+        super(input, tables);
+        this.descendant = descendant.getTable();
+        this.ancestors = new ArrayList<TableNode>(tables.size());
+        for (TableSource table : getTables()) {
+            ancestors.add(table.getTable());
+        }
+    }
+
+    public TableNode getDescendant() {
         return descendant;
     }
 
-    public List<TableSource> getAncestors() {
+    public List<TableNode> getAncestors() {
         return ancestors;
     }
 
     @Override
-    protected void deepCopy(DuplicateMap map) {
-        super.deepCopy(map);
-        descendant = (TableSource)descendant.duplicate();
-        ancestors = duplicateList(ancestors, map);
-    }
-
-    @Override
     public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
-        str.append("(");
-        str.append(descendant.getTable());
-        str.append(" -> ");
-        for (int i = 0; i < ancestors.size(); i++) {
-            if (i > 0) str.append(", ");
-            str.append(ancestors.get(i).getTable());
-        }
-        str.append(")");
-        return str.toString();
+        return super.summaryString() + "(" + descendant + " -> " + ancestors + ")";
     }
 
 }
