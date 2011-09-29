@@ -107,6 +107,7 @@ public class PostgresDDLStatement implements PostgresStatement
             break;
         case NodeTypes.DROP_INDEX_NODE:
             IndexDDL.dropIndex(ddlFunctions, session, schema, (DropIndexNode)ddl);
+            break;
         case NodeTypes.ALTER_TABLE_NODE:
             AlterTableDDL.alterTable(ddlFunctions, session, schema, (AlterTableNode)ddl);
             break;
