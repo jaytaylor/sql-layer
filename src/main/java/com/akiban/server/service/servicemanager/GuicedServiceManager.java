@@ -71,10 +71,10 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
                 guicer.get(directlyRequiredClass, STANDARD_SERVICE_ACTIONS);
             }
         } catch (RuntimeException e) {
-//            ServiceManagerImpl.setServiceManager(null);
+            ServiceManagerImpl.setServiceManager(null);
             throw e;
         } catch (Error e) {
-//            ServiceManagerImpl.setServiceManager(null);
+            ServiceManagerImpl.setServiceManager(null);
             throw e;
         }
     }
