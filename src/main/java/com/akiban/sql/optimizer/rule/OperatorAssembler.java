@@ -20,6 +20,7 @@ import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 import com.akiban.qp.operator.Operator;
 import static com.akiban.server.expression.std.Expressions.*;
 
+import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.server.expression.Expression;
@@ -48,7 +49,6 @@ import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.expression.UnboundExpressions;
 
 import com.akiban.server.aggregation.Aggregator;
-import com.akiban.server.aggregation.AggregatorFactory;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
@@ -418,7 +418,7 @@ public class OperatorAssembler extends BaseRule
                 stream.operator = sort_Tree(stream.operator, stream.rowType, ordering);
             }
             // TODO: Need to get real AggregatorFactory from RulesContext.
-            AggregatorFactory aggregatorFactory = new AggregatorFactory() {
+            AggregatorRegistry aggregatorRegistry = new AggregatorRegistry() {
                     @Override
                     public Aggregator get(String name) {
                         throw new UnsupportedSQLException(name, null);
@@ -427,8 +427,8 @@ public class OperatorAssembler extends BaseRule
                     public void validateNames(List<String> names) {
                     }
                 };
-            stream.operator = aggregate_Partial(stream.operator, nkeys, 
-                                                aggregatorFactory, aggregatorNames);
+            stream.operator = aggregate_Partial(stream.operator, nkeys,
+                    aggregatorRegistry, aggregatorNames);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource);
             return stream;
         }

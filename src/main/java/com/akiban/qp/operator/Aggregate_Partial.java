@@ -20,7 +20,7 @@ import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.AggregatedRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.aggregation.Aggregator;
-import com.akiban.server.aggregation.AggregatorFactory;
+import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ArgumentValidation;
@@ -40,7 +40,7 @@ final class Aggregate_Partial extends Operator
     protected Cursor cursor(StoreAdapter adapter) {
         List<Aggregator> aggregators = new ArrayList<Aggregator>();
         for (String name : aggregatorNames) {
-            aggregators.add(factory.get(name));
+            aggregators.add(registry.get(name));
         }
         return new AggregateCursor(
                 inputOperator.cursor(adapter),
@@ -69,12 +69,12 @@ final class Aggregate_Partial extends Operator
 
     // AggregationOperator interface
 
-    public Aggregate_Partial(Operator inputOperator, int inputsIndex, AggregatorFactory factory,
+    public Aggregate_Partial(Operator inputOperator, int inputsIndex, AggregatorRegistry registry,
                              List<String> aggregatorNames) {
         this(
                 inputOperator,
                 inputsIndex,
-                factory,
+                registry,
                 aggregatorNames,
                 inputOperator.rowType().schema().newAggregateType(inputOperator.rowType())
         );
@@ -96,11 +96,11 @@ final class Aggregate_Partial extends Operator
 
     // package-private (for testing)
 
-    Aggregate_Partial(Operator inputOperator, int inputsIndex, AggregatorFactory factory,
+    Aggregate_Partial(Operator inputOperator, int inputsIndex, AggregatorRegistry registry,
                       List<String> aggregatorNames, AggregatedRowType outputType) {
         this.inputOperator = inputOperator;
         this.inputsIndex = inputsIndex;
-        this.factory = factory;
+        this.registry = registry;
         this.aggregatorNames = new ArrayList<String>(aggregatorNames);
         this.outputType = outputType;
         validate();
@@ -116,7 +116,7 @@ final class Aggregate_Partial extends Operator
                             inputsIndex, aggregatorNames.size(), inputOperator.rowType().nFields()
             ));
         }
-        factory.validateNames(aggregatorNames);
+        registry.validateNames(aggregatorNames);
         if (outputType == null)
             throw new NullPointerException();
     }
@@ -126,7 +126,7 @@ final class Aggregate_Partial extends Operator
     private final Operator inputOperator;
     private final AggregatedRowType outputType;
     private final int inputsIndex;
-    private final AggregatorFactory factory;
+    private final AggregatorRegistry registry;
     private final List<String> aggregatorNames;
 
     // nested classes

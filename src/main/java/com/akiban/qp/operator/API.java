@@ -24,7 +24,7 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 
-import com.akiban.server.aggregation.AggregatorFactory;
+import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
@@ -37,10 +37,10 @@ public class API
 
     public static Operator aggregate_Partial(Operator inputOperator,
                                                      int inputsIndex,
-                                                     AggregatorFactory factory,
+                                                     AggregatorRegistry registry,
                                                      List<String> aggregatorNames)
     {
-        return new Aggregate_Partial(inputOperator, inputsIndex, factory, aggregatorNames);
+        return new Aggregate_Partial(inputOperator, inputsIndex, registry, aggregatorNames);
     }
 
     // Project

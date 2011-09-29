@@ -17,7 +17,7 @@ package com.akiban.server.aggregation;
 
 import java.util.List;
 
-public interface AggregatorFactory {
+public interface AggregatorRegistry {
     Aggregator get(String name);
     void validateNames(List<String> names);
 }
