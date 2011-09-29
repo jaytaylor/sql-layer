@@ -17,7 +17,6 @@ package com.akiban.sql.optimizer;
 
 import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.aggregation.DummyAggregatorRegistry;
-import com.akiban.server.aggregation.std.StandardAggregatorRegistry;
 import com.akiban.server.expression.ExpressionFactory;
 import com.akiban.server.expression.std.StandardExpressionFactory;
 import com.akiban.sql.NamedParamsTestBase;
@@ -26,7 +25,6 @@ import com.akiban.sql.TestBase;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
@@ -38,7 +36,6 @@ import com.akiban.junit.NamedParameterizedRunner.TestParameters;
 import com.akiban.junit.Parameterization;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static junit.framework.Assert.*;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;

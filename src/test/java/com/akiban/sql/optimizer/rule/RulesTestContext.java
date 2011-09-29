@@ -16,9 +16,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.aggregation.DummyAggregatorRegistry;
-import com.akiban.server.aggregation.std.StandardAggregatorRegistry;
 import com.akiban.server.expression.ExpressionFactory;
 
 import java.util.List;
