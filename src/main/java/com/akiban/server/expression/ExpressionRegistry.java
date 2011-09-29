@@ -19,12 +19,12 @@ import com.akiban.server.error.NoSuchFunctionException;
 
 import java.util.List;
 
-public interface ExpressionFactory {
-    Expression compose(String name, List<? extends Expression> arguments);
+public interface ExpressionRegistry {
+    ExpressionComposer composer(String name);
 
-    public static final ExpressionFactory EMPTY = new ExpressionFactory() {
+    public static final ExpressionRegistry EMPTY = new ExpressionRegistry() {
         @Override
-        public Expression compose(String name, List<? extends Expression> arguments) {
+        public ExpressionComposer composer(String name) {
             throw new NoSuchFunctionException(name);
         }
     };
