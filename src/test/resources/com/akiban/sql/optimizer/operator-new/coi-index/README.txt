@@ -42,7 +42,7 @@ select-4: explicit joins rather than FROM list
 
 select-5: order by descendant
 
-select-5o: *FAIL* order by descendant with LEFT join
+select-5o: order by descendant with LEFT join (former fail)
 
 select-6: index for ordering and other conditions
 

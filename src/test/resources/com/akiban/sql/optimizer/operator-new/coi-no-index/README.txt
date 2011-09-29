@@ -12,7 +12,7 @@ select-3: two conditions on same table
 
 select-4: explicit joins
 
-select-5: *FAIL* sorting
+select-5: sorting (former fail)
 
 select-6: sorting without limit
 

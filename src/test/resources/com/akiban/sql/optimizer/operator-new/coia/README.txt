@@ -15,4 +15,4 @@ select-6: ordering index and column from a second branch
 
 select-7: ordering index and two levels from a second branch
 
-select-8: group scan with multiple branches
+select-8: group scan with multiple branches (former fail)
