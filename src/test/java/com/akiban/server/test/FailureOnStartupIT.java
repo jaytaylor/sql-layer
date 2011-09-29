@@ -53,15 +53,11 @@ public final class FailureOnStartupIT extends ApiTestBase {
     @Override
     void handleStartupFailure(Exception e) throws Exception {
         // eat only the first failure
-        if (stage != Stage.FIRST_FAILURE)
-            throw e;
-    }
-
-    @Override
-    boolean abortShutdown() {
-        boolean result = stage == Stage.FIRST_FAILURE;
-        stage = Stage.SUBSEQUENT;
-        return result;
+        if (stage == Stage.FIRST_FAILURE) {
+            stage = Stage.SUBSEQUENT;
+            return;
+        }
+        throw e;
     }
 
     private static Stage stage = Stage.FIRST_START;

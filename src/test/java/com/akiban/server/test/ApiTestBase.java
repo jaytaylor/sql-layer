@@ -151,12 +151,14 @@ public class ApiTestBase {
         }
     }
 
+    /**
+     * Handle a failure during services startup. The default implementation is to just throw the exception, and
+     * most tests should <em>not</em> override this. It's designed solely as a testing hook for FailureOnStartupIT.
+     * @param e the startup exception
+     * @throws Exception the startup exception
+     */
     void handleStartupFailure(Exception e) throws Exception {
         throw e;
-    }
-
-    boolean abortShutdown() {
-        return false;
     }
 
     protected ServiceManager createServiceManager(Collection<Property> startupConfigProperties) {
@@ -170,7 +172,7 @@ public class ApiTestBase {
 
     @After
     public final void stopTestServices() throws Exception {
-        if (abortShutdown() || !testServicesStarted) {
+        if (!testServicesStarted) {
             return;
         }
         String openCursorsMessage = null;
