@@ -12,18 +12,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+package com.akiban.server.error;
 
-package com.akiban.sql.optimizer.rule;
-
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.expression.ExpressionRegistry;
-
-import java.util.List;
-
-public class RulesTestContext extends SchemaRulesContext
-{
-    public RulesTestContext(AkibanInformationSchema ais, List<BaseRule> rules) {
-        super(ais, ExpressionRegistry.EMPTY, rules);
-        RulesTestHelper.ensureRowDefs(ais);
+public class IndistinguishableIndexException extends InvalidOperationException {
+    public IndistinguishableIndexException (String indexName) {
+        super (ErrorCode.INDISTINGUISHABLE_INDEX, indexName);
     }
 }
