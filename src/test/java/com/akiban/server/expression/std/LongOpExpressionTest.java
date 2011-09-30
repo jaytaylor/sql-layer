@@ -17,11 +17,13 @@ package com.akiban.server.expression.std;
 
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.ValuesRowType;
+import com.akiban.server.error.DivisionByZeroException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
 import org.junit.Test;
 
@@ -96,6 +98,26 @@ public final class LongOpExpressionTest extends ComposedExpressionTestBase {
         ValueSource actual = new ValueHolder(evaluation.eval());
         ValueSource expected = new ValueHolder(LongOps.LONG_SUBTRACT.opType(), 3L);
         assertEquals("ValueSource", expected, actual);
+    }
+
+    @Test
+    public void longDivideLong() {
+        Expression left = new LiteralExpression(AkType.LONG, 11L);
+        Expression right = new LiteralExpression(AkType.LONG, 3L);
+        Expression top = new LongOpExpression(LongOps.LONG_DIVIDE, Arrays.asList(left, right));
+
+        assertTrue("top should be constant", top.isConstant());
+        ValueSource actual = new ValueHolder(top.evaluation().eval());
+        ValueSource expected = new ValueHolder(LongOps.LONG_DIVIDE.opType(), 3L);
+        assertEquals("ValueSource", expected, actual);
+    }
+    
+    @Test(expected = DivisionByZeroException.class)
+    public void divideByZero() {
+        Expression left = new LiteralExpression(AkType.LONG, 5L);
+        Expression right = new LiteralExpression(AkType.LONG, 0L);
+        Expression top = new LongOpExpression(LongOps.LONG_DIVIDE, Arrays.asList(left, right));
+        Extractors.getLongExtractor(AkType.LONG).getLong(top.evaluation().eval());
     }
 
     @Test(expected = WrongExpressionArityException.class)

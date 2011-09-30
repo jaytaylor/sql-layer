@@ -1,0 +1,30 @@
+delete-1: Column of target table.
+
+insert-1: Columns from target and source tables.
+
+select-1: Single table columns.
+
+select-2: Disambiguation and correlation name qualification.
+
+select-3: Columns in expression in select columns.
+
+select-4: Columns in function arguments.
+
+select-5: Correlated subquery columns.
+
+select-6: Column wildcard
+
+select-6a: Column wildcard two tables
+
+select-6b: Qualified column wildcard
+
+select-6c: Column wildcard with ANSI joins
+
+select-6e: Column wildcard with EXISTS
+
+select-6q: Column wildcard from correlated subquery
+
+select-6v: Column wildcard from VALUES
+
+update-1: Columns of target table.
+

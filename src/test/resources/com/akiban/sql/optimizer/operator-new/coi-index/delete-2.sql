@@ -1,0 +1,1 @@
+DELETE FROM items where quan=0

@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.DivisionByZeroException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
@@ -41,6 +42,15 @@ public class LongOps {
         @Override
         public long evaluate(long one, long two) {
             return one + two;
+        }
+    };
+
+    public static LongOpForLong LONG_DIVIDE = new LongOpForLong('/') {
+        @Override
+        public long evaluate(long one, long two) {
+            if (two == 0)
+                throw new DivisionByZeroException();
+            return one / two;
         }
     };
 
