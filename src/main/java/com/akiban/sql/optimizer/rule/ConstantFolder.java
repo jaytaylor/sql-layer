@@ -584,11 +584,11 @@ public class ConstantFolder extends BaseRule
         }
 
         protected SubqueryEmptiness isEmptySubquery(Subquery subquery) {
-            PlanNode node = subquery;
-            while ((node instanceof Subquery) ||
-                   (node instanceof ResultSet) ||
-                   (node instanceof Project))
-                node = ((BasePlanWithInput)node).getInput();
+            PlanNode node = subquery.getQuery();
+            if (node instanceof ResultSet)
+                node = ((ResultSet)node).getInput();
+            if (node instanceof Project)
+                node = ((Project)node).getInput();
             if ((node instanceof Select) &&
                 ((Select)node).getConditions().isEmpty())
                 node = ((BasePlanWithInput)node).getInput();
@@ -608,10 +608,9 @@ public class ConstantFolder extends BaseRule
         // If the inside of this subquery returns a single column (in
         // an obvious to work out way), get it.
         protected ExpressionNode getSubqueryColumn(Subquery subquery) {
-            PlanNode node = subquery;
-            while ((node instanceof Subquery) ||
-                   (node instanceof ResultSet))
-                node = ((BasePlanWithInput)node).getInput();
+            PlanNode node = subquery.getQuery();
+            if (node instanceof ResultSet)
+                node = ((ResultSet)node).getInput();
             if (node instanceof Project) {
                 List<ExpressionNode> cols = ((Project)node).getFields();
                 if (cols.size() == 1)

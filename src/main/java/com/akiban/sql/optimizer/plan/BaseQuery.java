@@ -15,12 +15,16 @@
 
 package com.akiban.sql.optimizer.plan;
 
-/** A marker node around some subquery.
+/** A statement / subquery.
  */
-public class Subquery extends BaseQuery
+public class BaseQuery extends BasePlanWithInput
 {
-    public Subquery(PlanNode inside) {
-        super(inside);
+    protected BaseQuery(PlanNode query) {
+        super(query);
+    }
+
+    public PlanNode getQuery() {
+        return getInput();
     }
 
 }

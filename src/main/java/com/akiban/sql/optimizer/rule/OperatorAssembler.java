@@ -189,7 +189,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected Operator assembleSubquery(Subquery subquery) {
-            RowStream stream = assembleQuery(subquery.getInput());
+            RowStream stream = assembleQuery(subquery.getQuery());
             return stream.operator;
         }
 
