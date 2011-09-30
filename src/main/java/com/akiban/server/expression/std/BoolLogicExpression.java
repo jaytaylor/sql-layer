@@ -107,6 +107,8 @@ public final class BoolLogicExpression extends AbstractTwoArgExpression {
         @Override
         public ValueSource eval() {
             Boolean left = extractor.getBoolean(left(), null);
+            if (left == logic.nullTrumper())
+                return BoolValueSource.of(left);
             Boolean right = extractor.getBoolean(right(), null);
             final Boolean result;
             if (left == null || right == null) {
