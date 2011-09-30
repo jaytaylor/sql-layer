@@ -69,41 +69,41 @@ public class TableStatus {
 
     private final int tableId;
 
-    private volatile RowDef currentRowDef;
+    private RowDef currentRowDef;
 
-    private volatile int ordinal;
+    private int ordinal;
 
     // Used for pk-less tables
     // This is a counter used to create new values.
-    private volatile long uniqueIdCounter;
+    private long uniqueIdCounter;
 
     private boolean isAutoIncrement;
 
     // The largest autoIncrementValue found in a committed
     // writeRow operation
-    private volatile long autoIncrementValue;
+    private long autoIncrementValue;
 
     // This is the maximum of all values actually committed
     // This value, rather than uniqueIdCounter, is what
     // gets serialized.
     //
-    private volatile long uniqueIdValue;
+    private long uniqueIdValue;
 
-    private volatile long rowCount;
+    private long rowCount;
 
-    private volatile long creationTime;
+    private long creationTime;
 
-    private volatile long lastWriteTime;
+    private long lastWriteTime;
 
-    private volatile long lastReadTime;
+    private long lastReadTime;
 
-    private volatile long lastUpdateTime;
+    private long lastUpdateTime;
 
-    private volatile long lastDeleteTime;
+    private long lastDeleteTime;
 
-    private volatile long timestamp;
+    private long timestamp;
     
-    private volatile boolean dirty;
+    private boolean dirty;
 
     private static long now() {
         return System.currentTimeMillis();
@@ -287,7 +287,7 @@ public class TableStatus {
      * @param value
      * @throws ConversionException
      */
-    public synchronized void put(Value value)
+    public void put(Value value)
             throws ConversionException {
         if (creationTime == 0) {
             creationTime = now();
