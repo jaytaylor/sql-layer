@@ -25,7 +25,7 @@ import java.util.Collection;
 import java.util.List;
 
 @RunWith(NamedParameterizedRunner.class)
-public final class BoolLogicCompositionTest extends ComposedExpressionTestBase {
+public final class BoolLogicExpressionCompositionTest extends ComposedExpressionTestBase {
 
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() {
@@ -45,7 +45,7 @@ public final class BoolLogicCompositionTest extends ComposedExpressionTestBase {
         return composer.compose(children);
     }
 
-    public BoolLogicCompositionTest(ExpressionComposer composer) {
+    public BoolLogicExpressionCompositionTest(ExpressionComposer composer) {
         this.composer = composer;
     }
 
