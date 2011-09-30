@@ -42,6 +42,10 @@ public enum AkType {
     UNSUPPORTED(null),
     ;
 
+    public UnderlyingType underlyingTypeOrNull() {
+        return underlyingType;
+    }
+    
     public UnderlyingType underlyingType() {
         if (underlyingType == null) {
             throw new AkibanInternalException("no underlying type for " + name());

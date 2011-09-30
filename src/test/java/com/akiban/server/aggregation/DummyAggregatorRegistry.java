@@ -13,18 +13,23 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.akiban.server.aggregation;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.aggregation.DummyAggregatorRegistry;
-import com.akiban.server.expression.ExpressionRegistry;
+import com.akiban.server.types.AkType;
 
-import java.util.List;
+public final class DummyAggregatorRegistry implements AggregatorRegistry {
+    @Override
+    public AggregatorFactory get(final String name, AkType type) {
+        return new AggregatorFactory() {
+            @Override
+            public Aggregator get() {
+                throw new UnsupportedOperationException();
+            }
 
-public class RulesTestContext extends SchemaRulesContext
-{
-    public RulesTestContext(AkibanInformationSchema ais, List<BaseRule> rules) {
-        super(ais, ExpressionRegistry.EMPTY, new DummyAggregatorRegistry(), rules);
-        RulesTestHelper.ensureRowDefs(ais);
+            @Override
+            public String toString() {
+                return name;
+            }
+        };
     }
 }
