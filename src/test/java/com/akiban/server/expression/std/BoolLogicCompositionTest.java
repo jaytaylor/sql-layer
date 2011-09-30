@@ -14,11 +14,27 @@
  */
 package com.akiban.server.expression.std;
 
+import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.Parameterization;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
+import org.junit.runner.RunWith;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
-public final class AndExpressionCompositionTest extends ComposedExpressionTestBase {
+@RunWith(NamedParameterizedRunner.class)
+public final class BoolLogicCompositionTest extends ComposedExpressionTestBase {
+
+    @NamedParameterizedRunner.TestParameters
+    public static Collection<Parameterization> params() {
+        return Arrays.asList(
+                Parameterization.create("AND", BoolLogicExpression.AND_COMPOSER),
+                Parameterization.create("OR", BoolLogicExpression.OR_COMPOSER)
+        );
+    }
+    
     @Override
     protected int childrenCount() {
         return 2;
@@ -26,6 +42,12 @@ public final class AndExpressionCompositionTest extends ComposedExpressionTestBa
 
     @Override
     protected Expression getExpression(List<? extends Expression> children) {
-        return new AndExpression(children);
+        return composer.compose(children);
     }
+
+    public BoolLogicCompositionTest(ExpressionComposer composer) {
+        this.composer = composer;
+    }
+
+    private final ExpressionComposer composer;
 }

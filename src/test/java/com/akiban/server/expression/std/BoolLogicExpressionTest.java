@@ -18,6 +18,7 @@ import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.extract.Extractors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,28 +30,42 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(NamedParameterizedRunner.class)
-public final class OrExpressionTest {
+public final class BoolLogicExpressionTest {
 
     @NamedParameterizedRunner.TestParameters
     public static List<Parameterization> params() {
         ParameterizationBuilder pb = new ParameterizationBuilder();
-        pb.add("", true, true, true);
-        pb.add("", true, false, true);
-        pb.add("", true, null, true);
+        // OR logic
+        pb.add("||", BoolLogicExpression.OR_COMPOSER, true, true, true);
+        pb.add("||", BoolLogicExpression.OR_COMPOSER, true, false, true);
+        pb.add("||", BoolLogicExpression.OR_COMPOSER, true, null, true);
 
-        pb.add("", false, true, true);
-        pb.add("", false, false, false);
-        pb.add("", false, null, null);
+        pb.add("||", BoolLogicExpression.OR_COMPOSER, false, true, true);
+        pb.add("||", BoolLogicExpression.OR_COMPOSER, false, false, false);
+        pb.add("||", BoolLogicExpression.OR_COMPOSER, false, null, null);
 
-        pb.add("", null, true, true);
-        pb.add("", null, false, null);
-        pb.add("", null, null, null);
+        pb.add("||", BoolLogicExpression.OR_COMPOSER, null, true, true);
+        pb.add("||", BoolLogicExpression.OR_COMPOSER, null, false, null);
+        pb.add("||", BoolLogicExpression.OR_COMPOSER, null, null, null);
+
+        // AND logic
+        pb.add("&&", BoolLogicExpression.AND_COMPOSER, true, true, true);
+        pb.add("&&", BoolLogicExpression.AND_COMPOSER, true, false, false);
+        pb.add("&&", BoolLogicExpression.AND_COMPOSER, true, null, null);
+
+        pb.add("&&", BoolLogicExpression.AND_COMPOSER, false, true, false);
+        pb.add("&&", BoolLogicExpression.AND_COMPOSER, false, false, false);
+        pb.add("&&", BoolLogicExpression.AND_COMPOSER, false, null, false);
+
+        pb.add("&&", BoolLogicExpression.AND_COMPOSER, null, true, null);
+        pb.add("&&", BoolLogicExpression.AND_COMPOSER, null, false, false);
+        pb.add("&&", BoolLogicExpression.AND_COMPOSER, null, null, null);
 
         for (Parameterization param : pb.asList()) {
-            Boolean a = (Boolean)param.getArgsAsList().get(0);
-            Boolean b = (Boolean)param.getArgsAsList().get(1);
-            Boolean r = (Boolean)param.getArgsAsList().get(2);
-            param.setName(String.format("%s%s -> %s", name(a), name(b), name(r)));
+            Boolean a = (Boolean)param.getArgsAsList().get(1);
+            Boolean b = (Boolean)param.getArgsAsList().get(2);
+            Boolean r = (Boolean)param.getArgsAsList().get(3);
+            param.setName(String.format("%s %s %s -> %s", name(a), param.getName(), name(b), name(r)));
         }
         return pb.asList();
     }
@@ -65,18 +80,20 @@ public final class OrExpressionTest {
     public void test() {
         Expression left = LiteralExpression.forBool(one);
         Expression right = LiteralExpression.forBool(two);
-        Expression test = new OrExpression(Arrays.asList(left, right));
+        Expression test = composer.compose(Arrays.asList(left, right));
         assertTrue("test should be const", test.isConstant());
         Boolean actual = Extractors.getBooleanExtractor().getBoolean(test.evaluation().eval(), null);
         assertEquals(expected, actual);
     }
 
-    public OrExpressionTest(Boolean one, Boolean two, Boolean expected) {
+    public BoolLogicExpressionTest(ExpressionComposer composer, Boolean one, Boolean two, Boolean expected) {
+        this.composer = composer;
         this.one = one;
         this.two = two;
         this.expected = expected;
     }
 
+    private final ExpressionComposer composer;
     private final Boolean one;
     private final Boolean two;
     private final Boolean expected;
