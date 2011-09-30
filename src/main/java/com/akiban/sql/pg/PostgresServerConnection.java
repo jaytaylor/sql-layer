@@ -315,7 +315,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             // query is stuck in a blocking operation, then thread interruption should unstick it. Either way,
             // the query should eventually throw QueryCanceledException which will be caught by topLevel().
             connection.session.cancelCurrentQuery(true);
-            // TODO: Don't interrupt until Persistit handles InterruptedException properly: connection.thread.interrupt();
+            connection.thread.interrupt();
             connection.messenger.setCancel(true);
         }
         stop();                                         // That's all for this connection.

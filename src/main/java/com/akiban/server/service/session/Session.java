@@ -110,9 +110,9 @@ public final class Session
         map.clear();
     }
 
-    public void cancelCurrentQuery(boolean x)
+    public void cancelCurrentQuery(boolean cancel)
     {
-        cancelCurrentQuery = x;
+        cancelCurrentQuery = cancel;
     }
 
     public boolean isCurrentQueryCanceled()

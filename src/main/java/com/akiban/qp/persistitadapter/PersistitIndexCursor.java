@@ -19,6 +19,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.QueryCanceledException;
 import com.akiban.qp.operator.StoreAdapterRuntimeException;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
@@ -28,6 +29,7 @@ import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.PersistitInterruptedException;
 
 class PersistitIndexCursor implements Cursor
 {
@@ -68,6 +70,8 @@ class PersistitIndexCursor implements Cursor
                     needAnother = false;
                 }
             } while (needAnother);
+        } catch (PersistitInterruptedException e) {
+            throw new QueryCanceledException();
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }
