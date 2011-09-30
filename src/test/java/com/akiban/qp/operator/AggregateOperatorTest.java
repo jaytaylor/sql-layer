@@ -58,7 +58,7 @@ public final class AggregateOperatorTest {
                 .row(3L)
         );
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
-        Operator plan = new Aggregate_Partial(input, 0, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        Operator plan = new Aggregate_Partial(input, 0, Collections.singletonList(TEST_AGGREGATOR), rowType);
         Deque<Row> expected = new RowsBuilder(AkType.VARCHAR)
                 .row("1, 2, 3")
                 .rows();
@@ -74,7 +74,7 @@ public final class AggregateOperatorTest {
                 .row(3L, 13L)
         );
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
-        Operator plan = new Aggregate_Partial(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        Operator plan = new Aggregate_Partial(input, 1, Collections.singletonList(TEST_AGGREGATOR), rowType);
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR)
                 .row(1L, "10, 11")
                 .row(2L, "12")
@@ -97,7 +97,7 @@ public final class AggregateOperatorTest {
                 .row(1L, 16L)
         );
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
-        Operator plan = new Aggregate_Partial(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        Operator plan = new Aggregate_Partial(input, 1, Collections.singletonList(TEST_AGGREGATOR), rowType);
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR)
                 .row(null, "8, 9")
                 .row(1L, "10")
@@ -119,7 +119,7 @@ public final class AggregateOperatorTest {
                 .row(2L, "charlie", 5)
         );
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
-        Operator plan = new Aggregate_Partial(input, 2, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        Operator plan = new Aggregate_Partial(input, 2, Collections.singletonList(TEST_AGGREGATOR), rowType);
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR, AkType.VARCHAR)
                 .row(1L, "alpha", "1, 2")
                 .row(1L, "bravo", "3")
@@ -133,7 +133,7 @@ public final class AggregateOperatorTest {
     public void noInputRowsWithGroupBy() {
         TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG));
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
-        Operator plan = new Aggregate_Partial(input, 0, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        Operator plan = new Aggregate_Partial(input, 0, Collections.singletonList(TEST_AGGREGATOR), rowType);
         Deque<Row> expected = new RowsBuilder(AkType.VARCHAR)
                 .row(ValueHolder.holdingNull())
                 .rows();
@@ -144,7 +144,7 @@ public final class AggregateOperatorTest {
     public void noInputRowsNoGroupBy() {
         TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.LONG));
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
-        Operator plan = new Aggregate_Partial(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        Operator plan = new Aggregate_Partial(input, 1, Collections.singletonList(TEST_AGGREGATOR), rowType);
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR).rows();
         check(plan, expected);
     }
@@ -177,7 +177,7 @@ public final class AggregateOperatorTest {
 
         TestOperator input = new TestOperator(shuffled, interestingRows.rowType());
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
-        Operator plan = new Aggregate_Partial(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        Operator plan = new Aggregate_Partial(input, 1, Collections.singletonList(TEST_AGGREGATOR), rowType);
 
         // Create the expected output, including rows that have passed through
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR)
@@ -201,7 +201,7 @@ public final class AggregateOperatorTest {
                     .row(wrapLong(1L), wrapBytes(0x01, 0x02))
             );
             AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
-            plan = new Aggregate_Partial(input, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+            plan = new Aggregate_Partial(input, 1, Collections.singletonList(TEST_AGGREGATOR), rowType);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -219,11 +219,11 @@ public final class AggregateOperatorTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        new Aggregate_Partial(null, 1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        new Aggregate_Partial(null, 1, Collections.singletonList(TEST_AGGREGATOR), rowType);
     }
 
     @Test(expected = NullPointerException.class)
-    public void factoryIsNull() {
+    public void factoriesListIsNull() {
         TestOperator input;
         AggregatedRowType rowType;
         try {
@@ -234,22 +234,7 @@ public final class AggregateOperatorTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        new Aggregate_Partial(input, 1, null, TestFactory.FUNC_NAMES, rowType);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void listsNameIsNull() {
-        TestOperator input;
-        AggregatedRowType rowType;
-        try {
-            input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.VARBINARY)
-                    .row(wrapLong(1L), wrapBytes(0x01, 0x02))
-            );
-            rowType = new AggregatedRowType(null, 1, input.rowType());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        new Aggregate_Partial(input, 1, FACTORY, null, rowType);
+        new Aggregate_Partial(input, 1, null, rowType);
     }
 
     @Test(expected = NullPointerException.class)
@@ -262,22 +247,7 @@ public final class AggregateOperatorTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        new Aggregate_Partial(input, 1, FACTORY, TestFactory.FUNC_NAMES, null);
-    }
-
-    @Test(expected = NoSuchFunctionException.class)
-    public void noSuchFunction() {
-        TestOperator input;
-        AggregatedRowType rowType;
-        try {
-            input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.VARBINARY)
-                    .row(wrapLong(1L), wrapBytes(0x01, 0x02))
-            );
-            rowType = new AggregatedRowType(null, 1, input.rowType());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        new Aggregate_Partial(input, 1, FACTORY, Arrays.asList("this_method_does_not_exist"), rowType);
+        new Aggregate_Partial(input, 1, Collections.singletonList(TEST_AGGREGATOR), null);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -292,7 +262,7 @@ public final class AggregateOperatorTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        new Aggregate_Partial(input, -1, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        new Aggregate_Partial(input, -1, Collections.singletonList(TEST_AGGREGATOR), rowType);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -307,7 +277,7 @@ public final class AggregateOperatorTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        new Aggregate_Partial(input, 2, FACTORY, TestFactory.FUNC_NAMES, rowType);
+        new Aggregate_Partial(input, 2, Collections.singletonList(TEST_AGGREGATOR), rowType);
     }
 
     private static void check(Operator plan, Collection<Row> expecteds) {
@@ -397,32 +367,17 @@ public final class AggregateOperatorTest {
         return new ValueHolder(AkType.LONG, value);
     }
 
-    // consts
+    // const
 
-    private static AggregatorFactory FACTORY = new TestFactory();
-    private static TestAdapter ADAPTER = new TestAdapter();
-
-    // nested classes
-
-    private static class TestFactory implements AggregatorFactory {
+    private static final TestAdapter ADAPTER = new TestAdapter();
+    private static final AggregatorFactory TEST_AGGREGATOR = new AggregatorFactory() {
         @Override
-        public Aggregator get(String name) {
-            assert name.equals(FUNC_NAME);
+        public Aggregator get() {
             return new TestAggregator();
         }
+    };
 
-        @Override
-        public void validateNames(List<String> names) {
-            for (String requiredName : names) {
-                if (!FUNC_NAMES.contains(requiredName))
-                    throw new NoSuchFunctionException(requiredName);
-            }
-        }
-
-
-        private static final String FUNC_NAME = "MAIN";
-        private static final List<String> FUNC_NAMES = Collections.singletonList(FUNC_NAME);
-    }
+    // nested classes
 
     private static class TestAggregator implements Aggregator {
 

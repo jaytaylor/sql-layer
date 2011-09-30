@@ -1,4 +1,4 @@
-PhysicalSelect@62facf0b[name:varchar(32)[VARCHAR], order_date:date[DATE], city:varchar(100)[VARCHAR]]
+PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE], city:varchar(100)[VARCHAR]]
   project([Field(1), Field(8), Field(5)])
     Product_NestedLoops(flatten(user.customers, user.addresses) x flatten(user.customers, user.orders))
       Flatten_HKeyOrdered(user.customers INNER user.addresses)

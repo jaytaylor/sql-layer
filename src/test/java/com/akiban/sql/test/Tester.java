@@ -15,6 +15,8 @@
 
 package com.akiban.sql.test;
 
+import com.akiban.server.aggregation.DummyAggregatorRegistry;
+import com.akiban.server.expression.std.StandardExpressionRegistry;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.compiler.BooleanNormalizer;
 import com.akiban.sql.optimizer.AISBinder;
@@ -24,6 +26,8 @@ import com.akiban.sql.optimizer.BoundNodeToString;
 import com.akiban.sql.optimizer.Grouper;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.OperatorCompilerTest;
+import com.akiban.sql.optimizer.OperatorCompiler_New;
+import com.akiban.sql.optimizer.OperatorCompiler_NewTest;
 import com.akiban.sql.optimizer.SubqueryFlattener;
 import com.akiban.sql.optimizer.simplified.SimplifiedQuery;
 import com.akiban.sql.optimizer.simplified.SimplifiedDeleteStatement;
@@ -66,7 +70,7 @@ public class Tester
         BIND, COMPUTE_TYPES,
         BOOLEAN_NORMALIZE, FLATTEN_SUBQUERIES,
         GROUP, GROUP_REWRITE, 
-        SIMPLIFY, SIMPLIFY_REORDER, PLAN, OPERATORS
+        SIMPLIFY, SIMPLIFY_REORDER, PLAN, OPERATORS, OPERATORS_NEW
     }
 
     List<Action> actions;
@@ -78,6 +82,7 @@ public class Tester
     SubqueryFlattener subqueryFlattener;
     Grouper grouper;
     OperatorCompiler operatorCompiler;
+    OperatorCompiler_New operatorCompiler_New;
     List<BaseRule> planRules;
     RulesContext rulesContext;
     int repeat;
@@ -193,6 +198,14 @@ public class Tester
                         System.out.println(compiled);
                 }
                 break;
+            case OPERATORS_NEW:
+                {
+                    Object compiled = operatorCompiler_New.compile((DMLStatementNode)stmt,
+                                                                   parser.getParameterList());
+                    if (!silent)
+                        System.out.println(compiled);
+                }
+                break;
             }
         }
     }
@@ -223,6 +236,8 @@ public class Tester
             binder = new AISBinder(ais, "user");
         if (actions.contains(Action.OPERATORS))
             operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, "user");
+        if (actions.contains(Action.OPERATORS_NEW))
+            operatorCompiler_New = OperatorCompiler_NewTest.TestOperatorCompiler.create(parser, ais, "user", new StandardExpressionRegistry(), new DummyAggregatorRegistry());
         if (actions.contains(Action.PLAN))
             rulesContext = new RulesTestContext(ais, planRules);
     }
@@ -329,6 +344,8 @@ public class Tester
                 }
                 else if ("-operators".equals(arg))
                     tester.addAction(Action.OPERATORS);
+                else if ("-operators-new".equals(arg))
+                    tester.addAction(Action.OPERATORS_NEW);
                 else if ("-repeat".equals(arg))
                     tester.setRepeat(Integer.parseInt(args[i++]));
                 else

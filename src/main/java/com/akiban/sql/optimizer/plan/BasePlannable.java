@@ -75,4 +75,22 @@ public abstract class BasePlannable extends BasePlanNode
         }
     }
     
+    @Override
+    public String summaryString() {
+        return withIndentedExplain(new StringBuilder(super.summaryString()));
+    }
+
+    @Override
+    public String toString() {
+        return withIndentedExplain(new StringBuilder(getClass().getSimpleName()));
+    }
+
+    protected String withIndentedExplain(StringBuilder str) {
+        for (String operator : explainPlan()) {
+            str.append("\n  ");
+            str.append(operator);
+        }
+        return str.toString();
+    }
+
 }

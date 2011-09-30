@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.server.aggregation.AggregatorRegistry;
+import com.akiban.server.aggregation.DummyAggregatorRegistry;
 import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.expression.std.StandardExpressionRegistry;
 import com.akiban.sql.NamedParamsTestBase;
@@ -63,7 +65,8 @@ public class OperatorCompiler_NewTest extends NamedParamsTestBase
         AkibanInformationSchema ais = OptimizerTestBase.parseSchema(schemaFile);
         if (indexFile != null)
             OptimizerTestBase.loadGroupIndexes(ais, indexFile);
-        compiler = TestOperatorCompiler.create(parser, ais, "user", new StandardExpressionRegistry());
+        compiler = TestOperatorCompiler.create(parser, ais, "user",
+                new StandardExpressionRegistry(), new DummyAggregatorRegistry());
     }
 
     static class TestResultColumn extends PhysicalResultColumn {
@@ -88,17 +91,19 @@ public class OperatorCompiler_NewTest extends NamedParamsTestBase
         public static OperatorCompiler_New create(SQLParser parser, 
                                               AkibanInformationSchema ais, 
                                               String defaultSchemaName,
-                                              ExpressionRegistry expressionRegistry
+                                              ExpressionRegistry expressionRegistry,
+                                              AggregatorRegistry aggregatorRegistry
                                               ) {
             RulesTestHelper.ensureRowDefs(ais);
-            return new TestOperatorCompiler(parser, ais, "user", expressionRegistry);
+            return new TestOperatorCompiler(parser, ais, "user", expressionRegistry, aggregatorRegistry);
         }
 
         private TestOperatorCompiler(SQLParser parser, 
                                      AkibanInformationSchema ais, 
                                      String defaultSchemaName,
-                                     ExpressionRegistry expressionRegistry) {
-            super(parser, ais, defaultSchemaName, expressionRegistry);
+                                     ExpressionRegistry expressionRegistry,
+                                     AggregatorRegistry aggregatorRegistry) {
+            super(parser, ais, defaultSchemaName, expressionRegistry, aggregatorRegistry);
         }
 
         @Override
