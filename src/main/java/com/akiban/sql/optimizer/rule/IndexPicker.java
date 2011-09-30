@@ -156,8 +156,8 @@ public class IndexPicker extends BaseRule
                 }
             }
         }
-        return new IndexGoal(query, Collections.<TableSource>emptySet(),
-                             conditions, grouping, ordering, tables);
+        Set<TableSource> boundTables = query.getOuterTables();
+        return new IndexGoal(query, boundTables, conditions, grouping, ordering, tables);
     }
 
 }

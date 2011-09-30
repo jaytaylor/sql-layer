@@ -15,6 +15,9 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import java.util.Collections;
+import java.util.Set;
+
 /** A statement / subquery.
  */
 public class BaseQuery extends BasePlanWithInput
@@ -25,6 +28,10 @@ public class BaseQuery extends BasePlanWithInput
 
     public PlanNode getQuery() {
         return getInput();
+    }
+
+    public Set<TableSource> getOuterTables() {
+        return Collections.<TableSource>emptySet();
     }
 
 }

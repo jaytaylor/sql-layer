@@ -15,12 +15,28 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import java.util.Set;
+
 /** A marker node around some subquery.
  */
 public class Subquery extends BaseQuery
 {
+    private Set<TableSource> outerTables;
+
     public Subquery(PlanNode inside) {
         super(inside);
+    }
+
+    @Override
+    public Set<TableSource> getOuterTables() {
+        if (outerTables != null)
+            return outerTables;
+        else
+            return super.getOuterTables();
+    }
+
+    public void setOuterTables(Set<TableSource> outerTables) {
+        this.outerTables = outerTables;
     }
 
 }
