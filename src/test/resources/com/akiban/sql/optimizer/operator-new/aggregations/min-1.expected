@@ -1,4 +1,4 @@
-PhysicalSelect@4911b910[_SQL_COL_1:INTEGER]
+PhysicalSelect[_SQL_COL_1:INTEGER]
   project([Field(1)])
     Aggregation(GROUP BY 1 field, then: [MIN])
       project([Field(0), Field(0)])
