@@ -15,6 +15,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.service.dxl.DXLService;
 
 import com.akiban.sql.parser.SQLParser;
@@ -88,4 +89,5 @@ public interface PostgresServerSession
     /** Rollback the current transaction. */
     public void rollbackTransaction();
 
+    public ExpressionRegistry expressionFactory();
 }

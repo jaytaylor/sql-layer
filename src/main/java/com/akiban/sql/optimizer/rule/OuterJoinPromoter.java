@@ -30,9 +30,9 @@ import java.util.*;
 public class OuterJoinPromoter extends BaseRule
 {
     static class WhereFinder implements PlanVisitor, ExpressionVisitor {
-        List<Filter> result = new ArrayList<Filter>();
+        List<Select> result = new ArrayList<Select>();
 
-        public List<Filter> find(PlanNode root) {
+        public List<Select> find(PlanNode root) {
             root.accept(this);
             return result;
         }
@@ -49,8 +49,8 @@ public class OuterJoinPromoter extends BaseRule
 
         @Override
         public boolean visit(PlanNode n) {
-            if (n instanceof Filter) {
-                Filter f = (Filter)n;
+            if (n instanceof Select) {
+                Select f = (Select)n;
                 if (f.getInput() instanceof Joinable) {
                     result.add(f);
                 }
@@ -76,9 +76,9 @@ public class OuterJoinPromoter extends BaseRule
 
     @Override
     public void apply(PlanContext plan) {
-        List<Filter> wheres = new WhereFinder().find(plan.getPlan());
-        for (Filter filter : wheres) {
-            doJoins(filter);
+        List<Select> wheres = new WhereFinder().find(plan.getPlan());
+        for (Select select : wheres) {
+            doJoins(select);
         }
     }
 
@@ -165,14 +165,14 @@ public class OuterJoinPromoter extends BaseRule
         }
     }
 
-    protected void doJoins(Filter filter) {
+    protected void doJoins(Select select) {
         RequiredSources required = new RequiredSources();
-        for (ConditionExpression condition : filter.getConditions()) {
+        for (ConditionExpression condition : select.getConditions()) {
             required.gatherRequired(condition);
         }
         Set<ColumnSource> sources = required.getRequired();
         if (sources.isEmpty()) return;
-        promoteOuterJoins((Joinable)filter.getInput(), sources);
+        promoteOuterJoins((Joinable)select.getInput(), sources);
     }
 
     protected boolean promoteOuterJoins(Joinable joinable,

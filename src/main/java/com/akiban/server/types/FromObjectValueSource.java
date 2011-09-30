@@ -16,6 +16,7 @@
 package com.akiban.server.types;
 
 import com.akiban.server.Quote;
+import com.akiban.server.types.extract.Extractors;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
 
@@ -28,7 +29,9 @@ public final class FromObjectValueSource implements ValueSource {
 
     public FromObjectValueSource setExplicitly(Object object, AkType type) {
         setReflectively(object);
-        if (akType != AkType.NULL) {
+        
+        if (akType != AkType.NULL && akType != type) {
+            this.object = extractAs(type);
             akType = type;
         }
         return this;
@@ -208,6 +211,40 @@ public final class FromObjectValueSource implements ValueSource {
         } catch (ClassCastException e) {
             String className = object == null ? "null" : object.getClass().getName();
             throw new ClassCastException("casting " + className + " to " + castClass);
+        }
+    }
+
+    private Object extractAs(AkType type) {
+        // TODO make a generic Extractor<T> so we can just use Extractors.get(type).getObject(this)
+        switch (type) {
+        case DATE:
+        case DATETIME:
+        case TIMESTAMP:
+        case INT:
+        case LONG:
+        case TIME:
+        case U_INT:
+        case YEAR:
+            return Extractors.getLongExtractor(type).getLong(this);
+        case U_DOUBLE:
+        case DOUBLE:
+            return Extractors.getDoubleExtractor().getDouble(this);
+        case U_FLOAT:
+        case FLOAT:
+            return (float) Extractors.getDoubleExtractor().getDouble(this);
+        case BOOL:
+            return Extractors.getBooleanExtractor().getBoolean(this, null);
+        case VARCHAR:
+        case TEXT:
+            return Extractors.getStringExtractor().getObject(this);
+        case DECIMAL:
+            return Extractors.getDecimalExtractor().getObject(this);
+        case U_BIGINT:
+            return Extractors.getUBigIntExtractor().getObject(this);
+        case NULL:  return null;
+        default:
+            throw new UnsupportedOperationException("can't convert to type " + type);
+//        case VARBINARY:
         }
     }
 

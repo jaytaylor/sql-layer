@@ -17,6 +17,10 @@ package com.akiban.sql.pg;
 
 import com.akiban.qp.operator.ArrayBindings;
 import com.akiban.qp.operator.Bindings;
+import com.akiban.server.service.dxl.DXLFunctionsHook;
+import com.akiban.server.service.dxl.DXLReadWriteLockHook;
+import com.akiban.server.service.session.Session;
+import com.akiban.util.Tap;
 
 import java.io.IOException;
 import java.util.List;
@@ -85,6 +89,10 @@ public abstract class PostgresBaseStatement implements PostgresStatement
         messenger.sendMessage();
     }
 
+    protected Bindings getBindings() {
+        return new ArrayBindings(0);
+    }
+
     protected Bindings getParameterBindings(String[] parameters) {
         ArrayBindings bindings = new ArrayBindings(parameters.length);
         for (int i = 0; i < parameters.length; i++) {
@@ -93,5 +101,22 @@ public abstract class PostgresBaseStatement implements PostgresStatement
                                              : pgType.decodeParameter(parameters[i]));
         }
         return bindings;
+    }
+
+    protected abstract Tap.InOutTap executeTap();
+    protected abstract Tap.InOutTap acquireLockTap();
+
+    protected void lock(Session session, DXLFunctionsHook.DXLFunction operationType)
+    {
+        acquireLockTap().in();
+        executeTap().in();
+        DXLReadWriteLockHook.only().hookFunctionIn(session, operationType);
+        acquireLockTap().out();
+    }
+
+    protected void unlock(Session session, DXLFunctionsHook.DXLFunction operationType)
+    {
+        DXLReadWriteLockHook.only().hookFunctionFinally(session, operationType, null);
+        executeTap().out();
     }
 }

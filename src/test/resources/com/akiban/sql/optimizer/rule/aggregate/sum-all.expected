@@ -1,7 +1,7 @@
 SelectQuery@42787d6a
   ResultSet@7bd6747b[_SQL_COL_1]
     Project@3c7976c1[GROUP[0]]
-      Filter@5f326484[]
-        AggregateSource@656546ef([],[SUM(times(user.items.price,user.items.quan))])
-          Filter@5c1428ea[user.items.oid == $0]
+      Select@5f326484[]
+        AggregateSource@656546ef(UNGROUPED,[SUM(times(user.items.price,user.items.quan))])
+          Select@5c1428ea[user.items.oid == $0]
             TableSource@2e297ffb(user.items)

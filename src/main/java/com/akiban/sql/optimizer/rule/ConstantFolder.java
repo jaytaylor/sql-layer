@@ -16,9 +16,8 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.NullValueSource;
 import com.akiban.sql.optimizer.plan.*;
-
-import com.akiban.qp.expression.Expression;
 
 import java.util.*;
 
@@ -68,8 +67,8 @@ public class ConstantFolder extends BaseRule
         @Override
         public boolean visitLeave(PlanNode n) {
             if (state == State.FOLDING) {
-                if (n instanceof Filter)
-                    filterNode((Filter)n);
+                if (n instanceof Select)
+                    selectNode((Select)n);
                 else if (n instanceof SubquerySource)
                     subquerySource((SubquerySource)n);
                 else if (n instanceof AggregateSource)
@@ -340,19 +339,19 @@ public class ConstantFolder extends BaseRule
             return col;
         }
 
-        protected void filterNode(Filter filter) {
-            boolean keep = checkConditions(filter.getConditions());
-            if (keep && (filter.getInput() instanceof Joinable)) {
-                Joinable input = (Joinable)filter.getInput();
+        protected void selectNode(Select select) {
+            boolean keep = checkConditions(select.getConditions());
+            if (keep && (select.getInput() instanceof Joinable)) {
+                Joinable input = (Joinable)select.getInput();
                 input = checkOuterJoins(input);
                 if (input == null)
                     keep = false;
                 else
-                    filter.setInput(input);
+                    select.setInput(input);
             }
             if (!keep) {
-                eliminateSources(filter.getInput());
-                PlanNode toReplace = filter;
+                eliminateSources(select.getInput());
+                PlanNode toReplace = select;
                 PlanWithInput inOutput = toReplace.getOutput();
                 if (inOutput instanceof Sort) {
                     toReplace = inOutput;
@@ -525,7 +524,7 @@ public class ConstantFolder extends BaseRule
                     // If it's empty, it's NULL. 
                     // If it selects something, that projects NULL.
                     // NULL either way.
-                    return new ConstantExpression(null,
+                    return new ConstantExpression(NullValueSource.only(),
                                                   expr.getSQLtype(), 
                                                   expr.getSQLsource());
                 }
@@ -590,8 +589,8 @@ public class ConstantFolder extends BaseRule
                    (node instanceof ResultSet) ||
                    (node instanceof Project))
                 node = ((BasePlanWithInput)node).getInput();
-            if ((node instanceof Filter) &&
-                ((Filter)node).getConditions().isEmpty())
+            if ((node instanceof Select) &&
+                ((Select)node).getConditions().isEmpty())
                 node = ((BasePlanWithInput)node).getInput();
             if (node instanceof NullSource)
                 return SubqueryEmptiness.EMPTY;

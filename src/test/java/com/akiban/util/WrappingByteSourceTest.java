@@ -53,11 +53,12 @@ public final class WrappingByteSourceTest {
     public void offsetAtEdge() {
         byte[] bytes = new byte[10];
         check(wrap(bytes, 9, 0), bytes, 9, 0);
+        check(wrap(bytes, 10, 0), bytes, 10, 0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void offsetPastEdge() {
-        wrap(new byte[10], 10, 0);
+        wrap(new byte[10], 11, 0);
     }
 
     @Test

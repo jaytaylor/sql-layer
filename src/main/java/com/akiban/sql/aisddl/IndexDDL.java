@@ -16,15 +16,19 @@
 package com.akiban.sql.aisddl;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 
 import com.akiban.ais.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.error.IndistinguishableIndexException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchGroupException;
+import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.error.UnsupportedUniqueGroupIndexException;
@@ -36,6 +40,14 @@ import com.akiban.sql.parser.RenameNode;
 
 import com.akiban.ais.io.AISTarget;
 import com.akiban.ais.io.TableSubsetWriter;
+import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 
 /** DDL operations on Indices */
 public class IndexDDL
@@ -48,9 +60,75 @@ public class IndexDDL
                                     Session session,
                                     String defaultSchemaName,
                                     DropIndexNode dropIndex) {
+        String groupName = null;
+        TableName tableName = null;
+
+        final String indexSchemaName = dropIndex.getObjectName() != null && dropIndex.getObjectName().getSchemaName() != null ?
+                dropIndex.getObjectName().getSchemaName() :
+                    null;
+        final String indexTableName = dropIndex.getObjectName() != null && dropIndex.getObjectName().getTableName() != null ?
+                dropIndex.getObjectName().getTableName() :
+                    null;
+        final String indexName = dropIndex.getIndexName();
+        List<String> indexesToDrop = Collections.singletonList(indexName); 
         
-        throw new UnsupportedSQLException (dropIndex.statementToString(), dropIndex);
-        //ddlFunctions.dropTableIndexes(session, tableName, indexesToDrop)
+        // if the user supplies the table for the index, look only there
+        if (indexTableName != null) {
+            tableName = TableName.create(indexSchemaName == null ? defaultSchemaName : indexSchemaName, indexTableName);
+            UserTable table = ddlFunctions.getAIS(session).getUserTable(tableName);
+            if (table == null) {
+                throw new NoSuchTableException(tableName);
+            }
+            // if we can't find the index, set tableName to null
+            // to flag not a user table index. 
+            if (table.getIndex(indexName) == null) {
+                tableName = null;
+            }
+            // Check the group associated to the table for the 
+            // same index name. 
+            Group group = table.getGroup();
+            if (group.getIndex(indexName) != null) {
+                // Table and it's group share an index name, we're confused. 
+                if (tableName != null) {
+                    throw new IndistinguishableIndexException(indexName);
+                }
+                // else flag group index for dropping
+                groupName = group.getName();
+            }
+        } 
+        // the user has not supplied a table name for the index to drop, 
+        // scan all groups/tables for the index name
+        else {
+            for (UserTable table : ddlFunctions.getAIS(session).getUserTables().values()) {
+                if (indexSchemaName != null && !table.getName().getSchemaName().equalsIgnoreCase(indexSchemaName)) {
+                    continue;
+                }
+                if (table.getIndex(indexName) != null) {
+                    if (tableName == null) {
+                        tableName = table.getName();
+                    } else {
+                        throw new IndistinguishableIndexException(indexName);
+                    }
+                }
+            }
+            
+            for (Group table : ddlFunctions.getAIS(session).getGroups().values()) {
+                if (table.getIndex(indexName) != null) {
+                    if (tableName == null && groupName == null) {
+                        groupName = table.getName();
+                    } else {
+                        throw new IndistinguishableIndexException(indexName);
+                    }
+                }
+            }
+        }
+        if (groupName != null) {
+            ddlFunctions.dropGroupIndexes(session, groupName, indexesToDrop);
+        } else if (tableName != null) {
+            ddlFunctions.dropTableIndexes(session, tableName, indexesToDrop);
+        } else {
+            throw new NoSuchIndexException (indexName);
+        }
     }
     
     public static void renameIndex (DDLFunctions ddlFunctions,

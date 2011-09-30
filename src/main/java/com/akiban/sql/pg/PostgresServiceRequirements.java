@@ -15,6 +15,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.instrumentation.InstrumentationService;
 import com.akiban.server.service.session.SessionService;
@@ -27,12 +28,15 @@ public final class PostgresServiceRequirements {
                                        InstrumentationService instrumentation,
                                        SessionService sessionService,
                                        Store store,
-                                       TreeService treeService) {
+                                       TreeService treeService,
+                                       ExpressionRegistry expressionRegistry
+                                       ) {
         this.instrumentation = instrumentation;
         this.dxlService = dxlService;
         this.sessionService = sessionService;
         this.store = store;
         this.treeService = treeService;
+        this.expressionRegistry = expressionRegistry;
     }
 
     public InstrumentationService instrumentation() {
@@ -55,9 +59,14 @@ public final class PostgresServiceRequirements {
         return treeService;
     }
 
+    public ExpressionRegistry expressionFactory() {
+        return expressionRegistry;
+    }
+
     private final InstrumentationService instrumentation;
     private final DXLService dxlService;
     private final SessionService sessionService;
     private final Store store;
     private final TreeService treeService;
+    private final ExpressionRegistry expressionRegistry;
 }

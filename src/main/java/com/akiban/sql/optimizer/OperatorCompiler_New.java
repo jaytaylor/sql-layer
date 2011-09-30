@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.sql.optimizer.plan.AST;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PlanContext;
@@ -50,8 +51,9 @@ public class OperatorCompiler_New extends SchemaRulesContext
     protected SubqueryFlattener subqueryFlattener;
 
     public OperatorCompiler_New(SQLParser parser, 
-                            AkibanInformationSchema ais, String defaultSchemaName) {
-        super(ais, DEFAULT_RULES);
+                            AkibanInformationSchema ais, String defaultSchemaName,
+                            ExpressionRegistry expressionRegistry) {
+        super(ais, expressionRegistry, DEFAULT_RULES);
         parserContext = parser;
         nodeFactory = parserContext.getNodeFactory();
         binder = new AISBinder(ais, defaultSchemaName);

@@ -15,23 +15,25 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.server.expression.ExpressionRegistry;
+import com.akiban.server.expression.std.StandardExpressionRegistry;
+import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
 
+import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.NamedParameterizedRunner.TestParameters;
+import com.akiban.junit.Parameterization;
 import org.junit.Test;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
-import static junit.framework.Assert.*;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
@@ -44,8 +46,9 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 
-@RunWith(Parameterized.class)
-public class OperatorCompiler_NewTest extends TestBase implements TestBase.GenerateAndCheckResult
+@RunWith(NamedParameterizedRunner.class)
+public class OperatorCompiler_NewTest extends NamedParamsTestBase 
+                                      implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "operator-new");
@@ -60,7 +63,7 @@ public class OperatorCompiler_NewTest extends TestBase implements TestBase.Gener
         AkibanInformationSchema ais = OptimizerTestBase.parseSchema(schemaFile);
         if (indexFile != null)
             OptimizerTestBase.loadGroupIndexes(ais, indexFile);
-        compiler = TestOperatorCompiler.create(parser, ais, "user");
+        compiler = TestOperatorCompiler.create(parser, ais, "user", new StandardExpressionRegistry());
     }
 
     static class TestResultColumn extends PhysicalResultColumn {
@@ -84,15 +87,18 @@ public class OperatorCompiler_NewTest extends TestBase implements TestBase.Gener
     public static class TestOperatorCompiler extends OperatorCompiler_New {
         public static OperatorCompiler_New create(SQLParser parser, 
                                               AkibanInformationSchema ais, 
-                                              String defaultSchemaName) {
+                                              String defaultSchemaName,
+                                              ExpressionRegistry expressionRegistry
+                                              ) {
             RulesTestHelper.ensureRowDefs(ais);
-            return new TestOperatorCompiler(parser, ais, "user");
+            return new TestOperatorCompiler(parser, ais, "user", expressionRegistry);
         }
 
         private TestOperatorCompiler(SQLParser parser, 
                                      AkibanInformationSchema ais, 
-                                     String defaultSchemaName) {
-            super(parser, ais, defaultSchemaName);
+                                     String defaultSchemaName,
+                                     ExpressionRegistry expressionRegistry) {
+            super(parser, ais, defaultSchemaName, expressionRegistry);
         }
 
         @Override
@@ -107,8 +113,8 @@ public class OperatorCompiler_NewTest extends TestBase implements TestBase.Gener
         }
     }
 
-    @Parameters
-    public static Collection<Object[]> statements() throws Exception {
+    @TestParameters
+    public static Collection<Parameterization> statements() throws Exception {
         Collection<Object[]> result = new ArrayList<Object[]>();
         for (File subdir : RESOURCE_DIR.listFiles(new FileFilter() {
                 public boolean accept(File file) {
@@ -130,7 +136,7 @@ public class OperatorCompiler_NewTest extends TestBase implements TestBase.Gener
                 }
             }
         }
-        return result;
+        return namedCases(result);
     }
 
     public OperatorCompiler_NewTest(String caseName, File schemaFile, File indexFile,

@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
 
 import com.akiban.sql.optimizer.OptimizerTestBase;
@@ -27,12 +28,13 @@ import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 
+import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.NamedParameterizedRunner.TestParameters;
+import com.akiban.junit.Parameterization;
 import org.junit.Before;
 import org.junit.Test;
-import static junit.framework.Assert.*;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 import org.junit.runner.RunWith;
+import static junit.framework.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,16 +46,17 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 
-@RunWith(Parameterized.class)
-public class RulesTest extends OptimizerTestBase implements TestBase.GenerateAndCheckResult
+@RunWith(NamedParameterizedRunner.class)
+public class RulesTest extends OptimizerTestBase 
+                       implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "rule");
 
     protected File rulesFile, schemaFile, indexFile;
 
-    @Parameters
-    public static Collection<Object[]> statements() throws Exception {
+    @TestParameters
+    public static Collection<Parameterization> statements() throws Exception {
         Collection<Object[]> result = new ArrayList<Object[]>();
         for (File subdir : RESOURCE_DIR.listFiles(new FileFilter() {
                 public boolean accept(File file) {
@@ -77,7 +80,7 @@ public class RulesTest extends OptimizerTestBase implements TestBase.GenerateAnd
                 }
             }
         }
-        return result;
+        return NamedParamsTestBase.namedCases(result);
     }
 
     public RulesTest(String caseName, File rulesFile, File schemaFile, File indexFile,

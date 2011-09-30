@@ -18,8 +18,14 @@ package com.akiban.server.service.tree;
 import com.akiban.server.TableStatusCache;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
-import com.persistit.*;
+import com.persistit.Exchange;
+import com.persistit.Key;
+import com.persistit.Persistit;
+import com.persistit.Transaction;
+import com.persistit.Tree;
+import com.persistit.Volume;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.PersistitInterruptedException;
 
 /**
  * An abstraction for a layer that stores and retrieves data
@@ -35,15 +41,15 @@ public interface TreeService extends Service<TreeService> {
 
     final static String STATUS_TREE_NAME = "_status_";
 
-    final static String TREESPACE="treespace";
-    
+    final static String TREESPACE = "treespace";
+
     final static String SCHEMA = "schema";
-    
+
     final static String TREE = "tree";
 
     Persistit getDb();
 
-    Exchange getExchange(Session session, TreeLink context) ;
+    Exchange getExchange(Session session, TreeLink context);
 
     Exchange getExchange(Session session, Tree tree);
 
@@ -64,13 +70,13 @@ public interface TreeService extends Service<TreeService> {
     int storeToAis(final TreeLink link, final int storedTableId);
 
     int storeToAis(final Volume volume, final int storedTableId);
-    
-    void checkpoint();
+
+    void checkpoint() throws PersistitInterruptedException;
 
     TableStatusCache getTableStatusCache();
 
     TreeLink treeLink(final String schemaName, final String treeName);
-    
+
     String getDataPath();
 
     String volumeForTree(final String schemaName, final String treeName);

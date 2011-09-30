@@ -24,7 +24,9 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.PersistitValueValueTarget;
+import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
@@ -34,8 +36,6 @@ import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.akiban.qp.expression.API.*;
 
 public class Sorter
 {
@@ -148,7 +148,7 @@ public class Sorter
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(Sorter.class);
-    private static final com.akiban.qp.expression.Expression DUMMY_EXPRESSION = literal(null);
+    private static final Expression DUMMY_EXPRESSION = LiteralExpression.forNull();
 
     // Object state
 

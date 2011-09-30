@@ -15,14 +15,19 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.service.dxl.DXLReadWriteLockHook;
+import com.akiban.server.service.session.Session;
 import com.akiban.qp.operator.*;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.util.Tap;
 
 import java.util.*;
 import java.io.IOException;
+
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
 
 /**
  * An SQL SELECT transformed into an operator tree
@@ -33,7 +38,10 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     private Operator resultOperator;
     private int offset = 0;
     private int limit = -1;
-        
+
+    private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresBaseStatement: execute shared");
+    private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire shared lock");
+
     public PostgresOperatorStatement(Operator resultOperator,
                                      List<String> columnNames,
                                      List<PostgresType> columnTypes,
@@ -50,15 +58,18 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         throws IOException {
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
+        Session session = server.getSession();
         RowType resultRowType = resultOperator.rowType();
-        Cursor cursor = API.cursor(resultOperator, server.getStore());
         int nskip = offset;
         if (limit > 0) {
             if ((maxrows <= 0) || (maxrows > limit))
                 maxrows = limit;
         }
         int nrows = 0;
+        Cursor cursor = null;
         try {
+            lock(session, UNSPECIFIED_DML_READ);
+            cursor = API.cursor(resultOperator, server.getStore());
             cursor.open(bindings);
             List<PostgresType> columnTypes = getColumnTypes();
             int ncols = columnTypes.size();
@@ -93,7 +104,10 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             }
         }
         finally {
-            cursor.close();
+            if (cursor != null) {
+                cursor.close();
+            }
+            unlock(session, UNSPECIFIED_DML_READ);
         }
         {        
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
@@ -103,8 +117,16 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         return nrows;
     }
 
-    protected Bindings getBindings() {
-        return UndefBindings.only();
+    @Override
+    protected Tap.InOutTap executeTap()
+    {
+        return EXECUTE_TAP;
+    }
+
+    @Override
+    protected Tap.InOutTap acquireLockTap()
+    {
+        return ACQUIRE_LOCK_TAP;
     }
 
     /** Only needed in the case where a statement has parameters or the client
@@ -159,5 +181,4 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                                   offset, limit, bindings, 
                                   columnBinary, defaultColumnBinary);
     }
-
 }

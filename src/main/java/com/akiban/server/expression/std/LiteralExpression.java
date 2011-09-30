@@ -50,6 +50,10 @@ public final class LiteralExpression implements Expression {
         return evaluation.eval().getConversionType();
     }
 
+    public LiteralExpression(ValueSource source) {
+        this(new InternalEvaluation(new ValueHolder(source)));
+    }
+
     public LiteralExpression(AkType type, long value) throws ValueHolder.IllegalRawPutException {
         this(new InternalEvaluation(new ValueHolder(type, value)));
     }
@@ -59,6 +63,10 @@ public final class LiteralExpression implements Expression {
     }
 
     public LiteralExpression(AkType type, float value) throws ValueHolder.IllegalRawPutException {
+        this(new InternalEvaluation(new ValueHolder(type, value)));
+    }
+
+    public LiteralExpression(AkType type, boolean value) throws ValueHolder.IllegalRawPutException {
         this(new InternalEvaluation(new ValueHolder(type, value)));
     }
 
@@ -78,7 +86,7 @@ public final class LiteralExpression implements Expression {
 
     @Override
     public String toString() {
-        return evaluation.eval().toString();
+        return "Literal(" + evaluation.eval().toString() + ')';
     }
 
     // object state

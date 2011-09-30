@@ -15,25 +15,29 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
+
+import java.util.List;
 
 public class LongOps {
 
-    public static LongOp LONG_MULTIPLY = new LongOpForLong('*') {
+    public static LongOpForLong LONG_MULTIPLY = new LongOpForLong('*') {
         @Override
         public long evaluate(long one, long two) {
             return one * two;
         }
     };
 
-    public static LongOp LONG_SUBTRACT = new LongOpForLong('-') {
+    public static LongOpForLong LONG_SUBTRACT = new LongOpForLong('-') {
         @Override
         public long evaluate(long one, long two) {
             return one - two;
         }
     };
 
-    public static LongOp LONG_ADD = new LongOpForLong('+') {
+    public static LongOpForLong LONG_ADD = new LongOpForLong('+') {
         @Override
         public long evaluate(long one, long two) {
             return one + two;
@@ -42,7 +46,13 @@ public class LongOps {
 
     private LongOps() {}
 
-    private static abstract class LongOpForLong implements LongOp {
+    static abstract class LongOpForLong implements LongOp, ExpressionComposer {
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments) {
+            return new LongOpExpression(this, arguments);
+        }
+
         @Override
         public AkType opType() {
             return AkType.LONG;

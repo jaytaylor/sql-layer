@@ -19,6 +19,7 @@ package com.akiban.sql.optimizer.plan;
 public interface Joinable extends PlanNode
 {
     public boolean isTable();
+    public boolean isGroup();
     public boolean isJoin();
     public boolean isInnerJoin();
 }

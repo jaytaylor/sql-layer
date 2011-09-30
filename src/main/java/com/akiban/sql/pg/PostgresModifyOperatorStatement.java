@@ -19,12 +19,17 @@ import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 
 import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.operator.UndefBindings;
 
 import java.io.IOException;
 
+import com.akiban.qp.operator.UndefBindings;
+import com.akiban.server.service.dxl.DXLReadWriteLockHook;
+import com.akiban.server.service.session.Session;
+import com.akiban.util.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
 
 /**
  * An SQL modifying DML statement transformed into an operator tree
@@ -34,6 +39,9 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
 {
     private String statementType;
     private UpdatePlannable resultOperator;
+
+    private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresBaseStatement: execute exclusive");
+    private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire exclusive lock");
     private static final Logger LOG = LoggerFactory.getLogger(PostgresModifyOperatorStatement.class);
         
     public PostgresModifyOperatorStatement(String statementType,
@@ -49,8 +57,15 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
 
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
-        final UpdateResult updateResult = resultOperator.run(bindings, server.getStore());
-        
+        Session session = server.getSession();
+        final UpdateResult updateResult;
+        try {
+            lock(session, UNSPECIFIED_DML_WRITE);
+            updateResult = resultOperator.run(bindings, server.getStore());
+        } finally {
+            unlock(session, UNSPECIFIED_DML_WRITE);
+        }
+
         LOG.debug("Statement: {}, result: {}", statementType, updateResult);
         
         messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
@@ -64,8 +79,16 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         return 0;
     }
 
-    protected Bindings getBindings() {
-        return UndefBindings.only();
+    @Override
+    protected Tap.InOutTap executeTap()
+    {
+        return EXECUTE_TAP;
+    }
+
+    @Override
+    protected Tap.InOutTap acquireLockTap()
+    {
+        return ACQUIRE_LOCK_TAP;
     }
 
     /** Only needed in the case where a statement has parameters. */
@@ -96,5 +119,4 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         return new BoundStatement(statementType, resultOperator, 
                                   getParameterBindings(parameters));
     }
-
 }
