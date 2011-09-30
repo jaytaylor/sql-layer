@@ -17,8 +17,13 @@ package com.akiban.server.expression.std;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
+import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,34 +41,30 @@ public final class BoolLogicExpressionTest {
     public static List<Parameterization> params() {
         ParameterizationBuilder pb = new ParameterizationBuilder();
         // OR logic
-        pb.add("||", BoolLogicExpression.orComposer, true, true, true);
-        pb.add("||", BoolLogicExpression.orComposer, true, false, true);
-        pb.add("||", BoolLogicExpression.orComposer, true, null, true);
+        pb.add("||", BoolLogicExpression.orComposer, true, ERR, true);
 
-        pb.add("||", BoolLogicExpression.orComposer, false, true, true);
-        pb.add("||", BoolLogicExpression.orComposer, false, false, false);
-        pb.add("||", BoolLogicExpression.orComposer, false, null, null);
+        pb.add("||", BoolLogicExpression.orComposer, false, TRUE, true);
+        pb.add("||", BoolLogicExpression.orComposer, false, FALSE, false);
+        pb.add("||", BoolLogicExpression.orComposer, false, NULL, null);
 
-        pb.add("||", BoolLogicExpression.orComposer, null, true, true);
-        pb.add("||", BoolLogicExpression.orComposer, null, false, null);
-        pb.add("||", BoolLogicExpression.orComposer, null, null, null);
+        pb.add("||", BoolLogicExpression.orComposer, null, TRUE, true);
+        pb.add("||", BoolLogicExpression.orComposer, null, FALSE, null);
+        pb.add("||", BoolLogicExpression.orComposer, null, NULL, null);
 
         // AND logic
-        pb.add("&&", BoolLogicExpression.andComposer, true, true, true);
-        pb.add("&&", BoolLogicExpression.andComposer, true, false, false);
-        pb.add("&&", BoolLogicExpression.andComposer, true, null, null);
+        pb.add("&&", BoolLogicExpression.andComposer, true, TRUE, true);
+        pb.add("&&", BoolLogicExpression.andComposer, true, FALSE, false);
+        pb.add("&&", BoolLogicExpression.andComposer, true, NULL, null);
 
-        pb.add("&&", BoolLogicExpression.andComposer, false, true, false);
-        pb.add("&&", BoolLogicExpression.andComposer, false, false, false);
-        pb.add("&&", BoolLogicExpression.andComposer, false, null, false);
+        pb.add("&&", BoolLogicExpression.andComposer, false, ERR, false);
 
-        pb.add("&&", BoolLogicExpression.andComposer, null, true, null);
-        pb.add("&&", BoolLogicExpression.andComposer, null, false, false);
-        pb.add("&&", BoolLogicExpression.andComposer, null, null, null);
+        pb.add("&&", BoolLogicExpression.andComposer, null, TRUE, null);
+        pb.add("&&", BoolLogicExpression.andComposer, null, FALSE, false);
+        pb.add("&&", BoolLogicExpression.andComposer, null, NULL, null);
 
         for (Parameterization param : pb.asList()) {
             Boolean a = (Boolean)param.getArgsAsList().get(1);
-            Boolean b = (Boolean)param.getArgsAsList().get(2);
+            Expression b = (Expression)param.getArgsAsList().get(2);
             Boolean r = (Boolean)param.getArgsAsList().get(3);
             param.setName(String.format("%s %s %s -> %s", name(a), param.getName(), name(b), name(r)));
         }
@@ -76,25 +77,92 @@ public final class BoolLogicExpressionTest {
         return b ? "T" : "F";
     }
 
+    private static String name(Expression b) {
+        if (b == TRUE)
+            return "T";
+        if (b == FALSE)
+            return "F";
+        if (b == NULL)
+            return "?";
+        if (b == ERR)
+            return "x";
+        throw new RuntimeException("unknown expression: " + b);
+    }
+
     @Test
     public void test() {
-        Expression left = LiteralExpression.forBool(one);
-        Expression right = LiteralExpression.forBool(two);
-        Expression test = composer.compose(Arrays.asList(left, right));
-        assertTrue("test should be const", test.isConstant());
+        Expression test = composer.compose(Arrays.asList(lhs, rhs));
         Boolean actual = Extractors.getBooleanExtractor().getBoolean(test.evaluation().eval(), null);
         assertEquals(expected, actual);
     }
 
-    public BoolLogicExpressionTest(ExpressionComposer composer, Boolean one, Boolean two, Boolean expected) {
+    public BoolLogicExpressionTest(ExpressionComposer composer, Boolean lhs, Expression rhs, Boolean expected) {
         this.composer = composer;
-        this.one = one;
-        this.two = two;
+        this.lhs = LiteralExpression.forBool(lhs);
+        this.rhs = rhs;
         this.expected = expected;
     }
 
     private final ExpressionComposer composer;
-    private final Boolean one;
-    private final Boolean two;
+    private final Expression lhs;
+    private final Expression rhs;
     private final Boolean expected;
+
+    private static final Expression TRUE = LiteralExpression.forBool(true);
+    private static final Expression FALSE = LiteralExpression.forBool(false);
+    private static final Expression NULL = LiteralExpression.forBool(null);
+    private static final Expression ERR = new Expression() {
+        @Override
+        public boolean isConstant() {
+            return false;
+        }
+
+        @Override
+        public boolean needsBindings() {
+            return false;
+        }
+
+        @Override
+        public boolean needsRow() {
+            return false;
+        }
+
+        @Override
+        public ExpressionEvaluation evaluation() {
+            return KILLER;
+        }
+
+        @Override
+        public AkType valueType() {
+            return AkType.BOOL;
+        }
+    };
+
+    private static final ExpressionEvaluation KILLER = new ExpressionEvaluation() {
+        @Override
+        public void of(Row row) {
+        }
+
+        @Override
+        public void of(Bindings bindings) {
+        }
+
+        @Override
+        public ValueSource eval() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void acquire() {
+        }
+
+        @Override
+        public boolean isShared() {
+            return false;
+        }
+
+        @Override
+        public void release() {
+        }
+    };
 }
