@@ -72,19 +72,19 @@ public final class BoolLogicExpression extends AbstractTwoArgExpression {
 
     private static abstract class BooleanLogic {
         abstract boolean exec(boolean a, boolean b);
-        Boolean nullTrumper() {
-            return nullTrumper;
+        Boolean trump() {
+            return trump;
         }
         String name() {
             return name;
         }
 
-        protected BooleanLogic(String name, boolean nullTrumper) {
-            this.nullTrumper = nullTrumper;
+        protected BooleanLogic(String name, boolean trump) {
+            this.trump = trump;
             this.name = name;
         }
 
-        private final Boolean nullTrumper;
+        private final Boolean trump;
         private final String name;
     }
 
@@ -106,14 +106,15 @@ public final class BoolLogicExpression extends AbstractTwoArgExpression {
 
         @Override
         public ValueSource eval() {
+            Boolean trump = logic.trump();
             Boolean left = extractor.getBoolean(left(), null);
-            if (left == logic.nullTrumper())
+            if (left == trump)
                 return BoolValueSource.of(left);
+
             Boolean right = extractor.getBoolean(right(), null);
             final Boolean result;
             if (left == null || right == null) {
-                Boolean nullTrumper = logic.nullTrumper();
-                result = (left == nullTrumper || right == nullTrumper) ? nullTrumper : null;
+                result = (right == trump) ? trump : null; // lhs can't be trump; we'd have short-circuited already
             }
             else {
                 result = logic.exec(left, right);
