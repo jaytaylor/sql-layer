@@ -26,6 +26,9 @@ final class ExtractorForBigInteger extends ObjectExtractor<BigInteger> {
         AkType type = source.getConversionType();
         switch (type) {
         case U_BIGINT:  return source.getUBigInt();
+        case LONG:      return BigInteger.valueOf(source.getLong());
+        case INT:       return BigInteger.valueOf(source.getInt());
+        case U_INT:     return BigInteger.valueOf(source.getUInt());
         case TEXT:      return new BigInteger(source.getText());
         case VARCHAR:   return new BigInteger(source.getString());
         default: throw unsupportedConversion(type);

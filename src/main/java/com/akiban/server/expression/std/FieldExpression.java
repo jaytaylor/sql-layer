@@ -52,6 +52,14 @@ public final class FieldExpression implements Expression {
         return rowType.typeAt(fieldIndex);
     }
 
+    // Object interface
+
+
+    @Override
+    public String toString() {
+        return String.format("Field(%d)", fieldIndex);
+    }
+
     public FieldExpression(RowType rowType, int fieldIndex) {
         this.rowType = rowType;
         this.fieldIndex = fieldIndex;
@@ -83,7 +91,6 @@ public final class FieldExpression implements Expression {
                 );
             }
             this.row = row;
-            this.rowSource = incomingSource;
         }
 
         @Override
@@ -92,9 +99,9 @@ public final class FieldExpression implements Expression {
 
         @Override
         public ValueSource eval() {
-            if (rowSource == null)
+            if (row == null)
                 throw new IllegalStateException("haven't seen a row to target");
-            return rowSource;
+            return row.eval(fieldIndex);
         }
 
         // Shareable interface
@@ -128,6 +135,5 @@ public final class FieldExpression implements Expression {
         private final int fieldIndex;
         private final AkType akType;
         private Row row;
-        private ValueSource rowSource;
     }
 }

@@ -52,7 +52,7 @@ public class PostgresOperatorCompiler_New extends OperatorCompiler_New
     private SessionTracer tracer;
 
     public PostgresOperatorCompiler_New(PostgresServerSession server) {
-        super(server.getParser(), server.getAIS(), server.getDefaultSchemaName());
+        super(server.getParser(), server.getAIS(), server.getDefaultSchemaName(), server.expressionFactory());
 
         server.setAttribute("aisBinder", binder);
         server.setAttribute("compiler", this);

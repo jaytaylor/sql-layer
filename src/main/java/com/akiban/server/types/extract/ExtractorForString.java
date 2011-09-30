@@ -23,6 +23,7 @@ final class ExtractorForString extends ObjectExtractor<String> {
     public String getObject(ValueSource source) {
         AkType type = source.getConversionType();
         switch (type) {
+        case BOOL:      return Boolean.toString(source.getBool());
         case TEXT:      return source.getText();
         case NULL:      return "null";
         case VARCHAR:   return source.getString();

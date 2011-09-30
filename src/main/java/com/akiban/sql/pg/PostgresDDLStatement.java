@@ -19,6 +19,8 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.ParseException;
 import com.akiban.server.error.UnsupportedParametersException;
 import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.service.dxl.DXLFunctionsHook;
+import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.aisddl.*;
 
@@ -43,11 +45,13 @@ import com.akiban.ais.model.AkibanInformationSchema;
 
 import java.io.IOException;
 
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
+
 /** SQL DDL statements. */
 public class PostgresDDLStatement implements PostgresStatement
 {
     private DDLStatementNode ddl;
-    
+
     public PostgresDDLStatement(DDLStatementNode ddl) {
         this.ddl = ddl;
     }
@@ -77,50 +81,54 @@ public class PostgresDDLStatement implements PostgresStatement
         String schema = server.getDefaultSchemaName();
         DDLFunctions ddlFunctions = server.getDXL().ddlFunctions();
         Session session = server.getSession();
-
-        switch (ddl.getNodeType()) {
-        case NodeTypes.CREATE_SCHEMA_NODE:
-            SchemaDDL.createSchema(ais, schema, (CreateSchemaNode)ddl);
-            break;
-        case NodeTypes.DROP_SCHEMA_NODE:
-            SchemaDDL.dropSchema(ddlFunctions, session, (DropSchemaNode)ddl);
-            break;
-        case NodeTypes.CREATE_TABLE_NODE:
-            TableDDL.createTable(ddlFunctions, session, schema, (CreateTableNode)ddl);
-            break;
-        case NodeTypes.DROP_TABLE_NODE:
-            TableDDL.dropTable(ddlFunctions, session, schema, (DropTableNode)ddl);
-            break;
-        case NodeTypes.CREATE_VIEW_NODE:
-            // TODO: Need to store persistently in AIS (or its extension).
-            try {
-                ((AISBinder)server.getAttribute("aisBinder")).addView(new ViewDefinition(ddl, server.getParser()));
-            } catch (StandardException ex) {
-                throw new ParseException ("", ex.getMessage(), ddl.toString());
+        lock(session);
+        try {
+            switch (ddl.getNodeType()) {
+            case NodeTypes.CREATE_SCHEMA_NODE:
+                SchemaDDL.createSchema(ais, schema, (CreateSchemaNode)ddl);
+                break;
+            case NodeTypes.DROP_SCHEMA_NODE:
+                SchemaDDL.dropSchema(ddlFunctions, session, (DropSchemaNode)ddl);
+                break;
+            case NodeTypes.CREATE_TABLE_NODE:
+                TableDDL.createTable(ddlFunctions, session, schema, (CreateTableNode)ddl);
+                break;
+            case NodeTypes.DROP_TABLE_NODE:
+                TableDDL.dropTable(ddlFunctions, session, schema, (DropTableNode)ddl);
+                break;
+            case NodeTypes.CREATE_VIEW_NODE:
+                // TODO: Need to store persistently in AIS (or its extension).
+                try {
+                    ((AISBinder)server.getAttribute("aisBinder")).addView(new ViewDefinition(ddl, server.getParser()));
+                } catch (StandardException ex) {
+                    throw new ParseException ("", ex.getMessage(), ddl.toString());
+                }
+                break;
+            case NodeTypes.DROP_VIEW_NODE:
+                ((AISBinder)server.getAttribute("aisBinder")).removeView(((DropViewNode)ddl).getObjectName());
+                break;
+            case NodeTypes.CREATE_INDEX_NODE:
+                IndexDDL.createIndex(ddlFunctions, session, schema, (CreateIndexNode)ddl);
+                break;
+            case NodeTypes.DROP_INDEX_NODE:
+                IndexDDL.dropIndex(ddlFunctions, session, schema, (DropIndexNode)ddl);
+                break;
+            case NodeTypes.ALTER_TABLE_NODE:
+                AlterTableDDL.alterTable(ddlFunctions, session, schema, (AlterTableNode)ddl);
+                break;
+            case NodeTypes.RENAME_NODE:
+                if (((RenameNode)ddl).getRenameType() == RenameNode.RenameType.INDEX) {
+                    IndexDDL.renameIndex(ddlFunctions, session, schema, (RenameNode)ddl);
+                } else if (((RenameNode)ddl).getRenameType() == RenameNode.RenameType.TABLE) {
+                    TableDDL.renameTable(ddlFunctions, session, schema, (RenameNode)ddl);
+                }
+            case NodeTypes.REVOKE_NODE:
+            default:
+                throw new UnsupportedSQLException (ddl.statementToString(), ddl);
             }
-            break;
-        case NodeTypes.DROP_VIEW_NODE:
-            ((AISBinder)server.getAttribute("aisBinder")).removeView(((DropViewNode)ddl).getObjectName());
-            break;
-        case NodeTypes.CREATE_INDEX_NODE:
-            IndexDDL.createIndex(ddlFunctions, session, schema, (CreateIndexNode)ddl);
-            break;
-        case NodeTypes.DROP_INDEX_NODE:
-            IndexDDL.dropIndex(ddlFunctions, session, schema, (DropIndexNode)ddl);
-        case NodeTypes.ALTER_TABLE_NODE:
-            AlterTableDDL.alterTable(ddlFunctions, session, schema, (AlterTableNode)ddl);
-            break;
-        case NodeTypes.RENAME_NODE:
-            if (((RenameNode)ddl).getRenameType() == RenameNode.RenameType.INDEX) {
-                IndexDDL.renameIndex(ddlFunctions, session, schema, (RenameNode)ddl);
-            } else if (((RenameNode)ddl).getRenameType() == RenameNode.RenameType.TABLE) {
-                TableDDL.renameTable(ddlFunctions, session, schema, (RenameNode)ddl);
-            }
-        case NodeTypes.REVOKE_NODE:
-        default:
-            throw new UnsupportedSQLException (ddl.statementToString(), ddl);
+        } finally {
+            unlock(session);
         }
-
         {        
             PostgresMessenger messenger = server.getMessenger();
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
@@ -128,5 +136,15 @@ public class PostgresDDLStatement implements PostgresStatement
             messenger.sendMessage();
         }
         return 0;
+    }
+
+    private void lock(Session session)
+    {
+        DXLReadWriteLockHook.only().hookFunctionIn(session, UNSPECIFIED_DDL_WRITE);
+    }
+
+    private void unlock(Session session)
+    {
+        DXLReadWriteLockHook.only().hookFunctionFinally(session, UNSPECIFIED_DDL_WRITE, null);
     }
 }

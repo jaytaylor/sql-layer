@@ -1,9 +1,8 @@
-SelectQuery@694b081b
-  ResultSet@1effc3eb[cid, name, oid, cid, order_date]
-    Project@29978933[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date]
-      Select@23e45a5c[]
-        Flatten@178ed77a
-          GroupScan@64e8606c(Group(customers -> user._akiban_customers))
-          JoinNode@4d5fc672(INNER_JOIN[])
-            TableSource@7badb7b8(user.customers - TableGroup@17991de1(customers))
-            TableSource@49f8d077(user.orders - TableGroupJoin@4add8e0d(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+SelectQuery@6c6c2a78
+  ResultSet@315863e4[cid, name, oid, cid, order_date]
+    Project@2206270b[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date]
+      Select@41ed54a0[]
+        TableJoins@444ef630(TableGroup@1c04ec59(customers) - GroupScan@738d56e(Group(customers -> user._akiban_customers)))
+          JoinNode@24442c76(INNER_JOIN[user.orders.cid == user.customers.cid] - TableGroupJoin@77c30993(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+            TableSource@ba3bc8c(user.customers - TableGroup@1c04ec59(customers))
+            TableSource@2aaf914c(user.orders - TableGroupJoin@77c30993(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))

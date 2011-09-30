@@ -16,6 +16,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
@@ -26,7 +27,7 @@ import com.akiban.util.ArgumentValidation;
 
 import java.util.List;
 
-public final class LongOpExpression extends AbstractTwoArgExpression {
+final class LongOpExpression extends AbstractTwoArgExpression {
     @Override
     protected void describe(StringBuilder sb) {
         sb.append(longOp);
@@ -50,7 +51,7 @@ public final class LongOpExpression extends AbstractTwoArgExpression {
 
         @Override
         public ValueSource eval() {
-            valueSource.operands(left().eval(), right().eval());
+            valueSource.operands(left(), right());
             return valueSource;
         }
 

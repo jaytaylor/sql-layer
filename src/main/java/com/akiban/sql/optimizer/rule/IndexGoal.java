@@ -15,15 +15,13 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
-import com.akiban.qp.expression.Comparison;
-
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
@@ -121,7 +119,10 @@ public class IndexGoal implements Comparator<IndexScan>
           updateTarget = ((BaseUpdateStatement)plan).getTargetTable();
 
         requiredColumns = new RequiredColumns(tables);
-        plan.accept(new RequiredColumnsFiller(requiredColumns, conditions));
+        Collection<PlanNode> orderings = (ordering == null) ? 
+            Collections.<PlanNode>emptyList() : 
+            Collections.<PlanNode>singletonList(ordering);
+        plan.accept(new RequiredColumnsFiller(requiredColumns, orderings, conditions));
     }
 
     /** Populate given index usage according to goal.
@@ -333,12 +334,18 @@ public class IndexGoal implements Comparator<IndexScan>
         return null;
     }
 
-    /** Find the best index on the given table. */
-    public IndexScan pickBestIndex(TableSource table) {
+    /** Find the best index on the given table. 
+     * @param groupOnly If true, this table is the optional part of a
+     * LEFT join. Can still consider group indexes to it, but not
+     * single table indexes on it.
+     */
+    public IndexScan pickBestIndex(TableSource table, boolean groupOnly) {
         IndexScan bestIndex = null;
-        for (TableIndex index : table.getTable().getTable().getIndexes()) {
-            IndexScan candidate = new IndexScan(index, table, table);
-            bestIndex = betterIndex(bestIndex, candidate);
+        if (!groupOnly) {
+            for (TableIndex index : table.getTable().getTable().getIndexes()) {
+                IndexScan candidate = new IndexScan(index, table, table);
+                bestIndex = betterIndex(bestIndex, candidate);
+            }
         }
         if (table.getGroup() != null) {
             for (GroupIndex index : table.getGroup().getGroup().getIndexes()) {
@@ -373,10 +380,11 @@ public class IndexGoal implements Comparator<IndexScan>
     }
 
     /** Find the best index among the given tables. */
-    public IndexScan pickBestIndex(Collection<TableSource> tables) {
+    public IndexScan pickBestIndex(Collection<TableSource> tables,
+                                   Set<TableSource> required) {
         IndexScan bestIndex = null;
         for (TableSource table : tables) {
-            IndexScan tableIndex = pickBestIndex(table);
+            IndexScan tableIndex = pickBestIndex(table, !required.contains(table));
             if ((tableIndex != null) &&
                 ((bestIndex == null) || (compare(tableIndex, bestIndex) > 0)))
                 bestIndex = tableIndex;
@@ -431,27 +439,36 @@ public class IndexGoal implements Comparator<IndexScan>
 
     static class RequiredColumnsFiller implements PlanVisitor, ExpressionVisitor {
         private RequiredColumns requiredColumns;
-        // TODO: Maybe make this use pointer equality instead of equals().
-        private Set<ExpressionNode> excluded;
+        private Map<PlanNode,Boolean> excludedPlanNodes;
+        private Map<ExpressionNode,Boolean> excludedExpressions;
         private int excludeDepth = 0;
 
         public RequiredColumnsFiller(RequiredColumns requiredColumns) {
             this.requiredColumns = requiredColumns;
-            excluded = new HashSet<ExpressionNode>();
         }
 
         public RequiredColumnsFiller(RequiredColumns requiredColumns,
-                                     Collection<ConditionExpression> conditions) {
-            this(requiredColumns);
-            excluded.addAll(conditions);
+                                     Collection<PlanNode> excludedPlanNodes,
+                                     Collection<ConditionExpression> excludedExpressions) {
+            this.requiredColumns = requiredColumns;
+            this.excludedPlanNodes = new IdentityHashMap<PlanNode,Boolean>();
+            for (PlanNode planNode : excludedPlanNodes)
+                this.excludedPlanNodes.put(planNode, Boolean.TRUE);
+            this.excludedExpressions = new IdentityHashMap<ExpressionNode,Boolean>();
+            for (ConditionExpression condition : excludedExpressions)
+                this.excludedExpressions.put(condition, Boolean.TRUE);
         }
 
         @Override
         public boolean visitEnter(PlanNode n) {
+            if (exclude(n))
+                excludeDepth++;
             return visit(n);
         }
         @Override
         public boolean visitLeave(PlanNode n) {
+            if (exclude(n))
+                excludeDepth--;
             return true;
         }
         @Override
@@ -480,9 +497,16 @@ public class IndexGoal implements Comparator<IndexScan>
             return true;
         }
 
+        // Should this plan node be excluded from the requirement?
+        protected boolean exclude(PlanNode node) {
+            return ((excludedPlanNodes != null) &&
+                    (excludedPlanNodes.get(node) != null));
+        }
+        
         // Should this expression be excluded from requirement?
         protected boolean exclude(ExpressionNode expr) {
-            return (excluded.contains(expr) ||
+            return (((excludedExpressions != null) &&
+                     (excludedExpressions.get(expr) != null)) ||
                     // Group join conditions are handled specially.
                     ((expr instanceof ConditionExpression) &&
                      (((ConditionExpression)expr).getImplementation() ==
@@ -508,7 +532,11 @@ public class IndexGoal implements Comparator<IndexScan>
             if (!found)
                 condition.accept(filler);
         }
-
+        // Add sort if not handled by the index.
+        if ((ordering != null) &&
+            (index.getOrderEffectiveness() != IndexScan.OrderEffectiveness.SORTED))
+            ordering.accept(filler);
+            
         // Record what tables are required: within the index if any
         // columns still needed, others if joined at all. Do this
         // before taking account of columns from a covering index,
@@ -516,14 +544,22 @@ public class IndexGoal implements Comparator<IndexScan>
         {
             Collection<TableSource> joined = index.getTables();
             Set<TableSource> required = new HashSet<TableSource>();
+            boolean moreTables = false;
             for (TableSource table : requiredAfter.getTables()) {
-                if (!joined.contains(table) || 
-                    requiredAfter.hasColumns(table) ||
-                    (table.getTable() == updateTarget)) {
+                if (!joined.contains(table)) {
+                    moreTables = true;
+                    required.add(table);
+                }
+                else if (requiredAfter.hasColumns(table) ||
+                         (table.getTable() == updateTarget)) {
                     required.add(table);
                 }
             }
             index.setRequiredTables(required);
+            if (moreTables)
+                // Need to join up last the index; index might point
+                // to an orphan.
+                return false;
         }
 
         if (updateTarget != null) {
@@ -544,7 +580,7 @@ public class IndexGoal implements Comparator<IndexScan>
      * <code>node</code> as a consequence of <code>index</code> being
      * used.
      */
-    public void installUpstream(IndexScan index, PlanNode node) {
+    public void installUpstream(IndexScan index) {
         if (index.getConditions() != null) {
             for (ConditionExpression condition : index.getConditions()) {
                 // TODO: This depends on conditions being the original

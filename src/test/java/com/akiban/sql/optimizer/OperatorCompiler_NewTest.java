@@ -15,13 +15,14 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.server.expression.ExpressionRegistry;
+import com.akiban.server.expression.std.StandardExpressionRegistry;
 import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
@@ -33,7 +34,6 @@ import com.akiban.junit.NamedParameterizedRunner.TestParameters;
 import com.akiban.junit.Parameterization;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static junit.framework.Assert.*;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
@@ -63,7 +63,7 @@ public class OperatorCompiler_NewTest extends NamedParamsTestBase
         AkibanInformationSchema ais = OptimizerTestBase.parseSchema(schemaFile);
         if (indexFile != null)
             OptimizerTestBase.loadGroupIndexes(ais, indexFile);
-        compiler = TestOperatorCompiler.create(parser, ais, "user");
+        compiler = TestOperatorCompiler.create(parser, ais, "user", new StandardExpressionRegistry());
     }
 
     static class TestResultColumn extends PhysicalResultColumn {
@@ -87,15 +87,18 @@ public class OperatorCompiler_NewTest extends NamedParamsTestBase
     public static class TestOperatorCompiler extends OperatorCompiler_New {
         public static OperatorCompiler_New create(SQLParser parser, 
                                               AkibanInformationSchema ais, 
-                                              String defaultSchemaName) {
+                                              String defaultSchemaName,
+                                              ExpressionRegistry expressionRegistry
+                                              ) {
             RulesTestHelper.ensureRowDefs(ais);
-            return new TestOperatorCompiler(parser, ais, "user");
+            return new TestOperatorCompiler(parser, ais, "user", expressionRegistry);
         }
 
         private TestOperatorCompiler(SQLParser parser, 
                                      AkibanInformationSchema ais, 
-                                     String defaultSchemaName) {
-            super(parser, ais, defaultSchemaName);
+                                     String defaultSchemaName,
+                                     ExpressionRegistry expressionRegistry) {
+            super(parser, ais, defaultSchemaName, expressionRegistry);
         }
 
         @Override
