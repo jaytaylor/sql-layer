@@ -19,6 +19,7 @@ import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode;
+import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 import static com.akiban.sql.optimizer.plan.PlanContext.*;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
@@ -33,8 +34,6 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
-
-import com.akiban.qp.operator.API.JoinType;
 
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ParseException;
@@ -323,7 +322,7 @@ public class ASTStatementLoader extends BaseRule
                 if (joins == null)
                     joins = toJoinNode(fromTable, true);
                 else
-                    joins = joinNodes(joins, toJoinNode(fromTable, true), JoinType.INNER_JOIN);
+                    joins = joinNodes(joins, toJoinNode(fromTable, true), JoinType.INNER);
             }
             List<ConditionExpression> conditions = toConditions(selectNode.getWhereClause());
             if (hasAggregateFunction(conditions))
@@ -352,21 +351,21 @@ public class ASTStatementLoader extends BaseRule
                 JoinType joinType;
                 switch (joinNode.getNodeType()) {
                 case NodeTypes.JOIN_NODE:
-                    joinType = JoinType.INNER_JOIN;
+                    joinType = JoinType.INNER;
                     break;
                 case NodeTypes.HALF_OUTER_JOIN_NODE:
                     if (((HalfOuterJoinNode)joinNode).isRightOuterJoin())
-                        joinType = JoinType.RIGHT_JOIN;
+                        joinType = JoinType.RIGHT;
                     else
-                        joinType = JoinType.LEFT_JOIN;
+                        joinType = JoinType.LEFT;
                     break;
                 default:
                     throw new UnsupportedSQLException("Unsupported join type", joinNode);
                 }
                 JoinNode join = joinNodes(toJoinNode((FromTable)joinNode.getLeftResultSet(),
-                                                     required && (joinType != JoinType.RIGHT_JOIN)),
+                                                     required && (joinType != JoinType.RIGHT)),
                                           toJoinNode((FromTable)joinNode.getRightResultSet(),
-                                                     required && (joinType != JoinType.LEFT_JOIN)),
+                                                     required && (joinType != JoinType.LEFT)),
                                           joinType);
                 join.setJoinConditions(toConditions(joinNode.getJoinClause()));
                 result = join;

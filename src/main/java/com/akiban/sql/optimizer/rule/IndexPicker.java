@@ -18,8 +18,7 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
-
-import com.akiban.qp.operator.API.JoinType;
+import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
@@ -110,9 +109,9 @@ public class IndexPicker extends BaseRule
         if (joinable instanceof JoinNode) {
             JoinNode join = (JoinNode)joinable;
             getRequiredTables(join.getLeft(), tables, required,
-                              allInner && (join.getJoinType() != JoinType.RIGHT_JOIN));
+                              allInner && (join.getJoinType() != JoinType.RIGHT));
             getRequiredTables(join.getRight(), tables, required,
-                              allInner && (join.getJoinType() != JoinType.LEFT_JOIN));
+                              allInner && (join.getJoinType() != JoinType.LEFT));
         }
         else if (joinable instanceof TableSource) {
             TableSource table = (TableSource)joinable;

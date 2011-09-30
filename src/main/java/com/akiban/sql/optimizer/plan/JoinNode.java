@@ -15,15 +15,30 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.qp.operator.API.JoinType;
+import com.akiban.server.error.AkibanInternalException;
 
 import java.util.*;
 
 /** A join between two tables / subjoins. */
 public class JoinNode extends BaseJoinable implements PlanWithInput
 {
+    public static enum JoinType {
+        INNER,
+        LEFT,
+        RIGHT,
+        FULL_OUTER,
+        // These are beyond what flatten supports, used to represent EXISTS (sometimes).
+        SEMI,
+        ANTI
+    }
+    public static enum Implementation {
+        GROUPING,
+        NESTED_LOOPS,
+        MERGE                   // TODO: Not implemented. Probably needs thought.
+    }
     private Joinable left, right;
     private JoinType joinType;
+    private Implementation implementation;
     private List<ConditionExpression> joinConditions;
     private TableGroupJoin groupJoin;
 
@@ -65,7 +80,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
 
     @Override
     public boolean isInnerJoin() {
-        return (joinType == JoinType.INNER_JOIN);
+        return (joinType == JoinType.INNER);
     }
 
     public List<ConditionExpression> getJoinConditions() {
@@ -91,19 +106,31 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         return null;
     }
 
+    public Implementation getImplementation() {
+        return implementation;
+    }
+    public void setImplementation(Implementation implementation) {
+        this.implementation = implementation;
+    }
+
     /** Reverse operands and outer join direction if necessary. */
     public void reverse() {
+        switch (joinType) {
+        case INNER:
+        case FULL_OUTER:
+            break;
+        case LEFT:
+            joinType = JoinType.RIGHT;
+            break;
+        case RIGHT:
+            joinType = JoinType.LEFT;
+            break;
+        default:
+            throw new AkibanInternalException("Cannot reverse " + joinType + " join");
+        }
         Joinable temp = left;
         left = right;
         right = temp;
-        switch (joinType) {
-        case LEFT_JOIN:
-            joinType = JoinType.RIGHT_JOIN;
-            break;
-        case RIGHT_JOIN:
-            joinType = JoinType.LEFT_JOIN;
-            break;
-        }
     }
 
     @Override

@@ -385,12 +385,12 @@ public class ConstantFolder extends BaseRule
                 if (!checkConditions(join.getJoinConditions())) {
                     // Join cannot be satified.
                     switch (join.getJoinType()) {
-                    case INNER_JOIN:
+                    case INNER:
                         return null;
-                    case LEFT_JOIN:
+                    case LEFT:
                         eliminateSources(right);
                         return left;
-                    case RIGHT_JOIN:
+                    case RIGHT:
                         eliminateSources(left);
                         return right;
                     }

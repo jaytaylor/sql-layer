@@ -18,11 +18,11 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.API.JoinType;
 
 import java.util.*;
 
@@ -233,7 +233,7 @@ public class GroupJoinFinder extends BaseRule
     protected Joinable constructInnerJoins(List<? extends Joinable> joinables) {
         Joinable result = joinables.get(0);
         for (int i = 1; i < joinables.size(); i++) {
-            result = new JoinNode(result, joinables.get(i), JoinType.INNER_JOIN);
+            result = new JoinNode(result, joinables.get(i), JoinType.INNER);
         }
         return result;
     }
