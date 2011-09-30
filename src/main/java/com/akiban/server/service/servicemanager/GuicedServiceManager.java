@@ -63,7 +63,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     // ServiceManager interface
 
     @Override
-    public void startServices() throws ServiceStartupException {
+    public void startServices() {
         ServiceManagerImpl.setServiceManager(this);
         getJmxRegistryService().register(this);
         boolean success = false;
