@@ -70,7 +70,7 @@ public class IndexPicker extends BaseRule
     }
 
     @Override
-      public void apply(PlanContext planContext) {
+    public void apply(PlanContext planContext) {
         PlanNode plan = planContext.getPlan();
         List<TableJoins> groups = new TableJoinsFinder().find(plan);
         // TODO: For now, very conservative about everything being simple.
@@ -78,14 +78,14 @@ public class IndexPicker extends BaseRule
         if (groups.size() > 1)
             throw new UnsupportedSQLException("Joins are too complex: " + groups, null);
         TableJoins tableJoins = groups.get(0);
-        pickIndexes(tableJoins, plan);
+        pickIndexes(tableJoins, (BaseQuery)plan);
     }
 
-    protected void pickIndexes(TableJoins tableJoins, PlanNode plan) {
+    protected void pickIndexes(TableJoins tableJoins, BaseQuery query) {
         // Goal is to get all the tables joined right here. Others in
         // the group may come via XxxLookup in a nested loop. Can only
         // consider indexes on the inner joined tables.
-        IndexGoal goal = determineIndexGoal(tableJoins, plan, tableJoins.getTables());
+        IndexGoal goal = determineIndexGoal(tableJoins, query, tableJoins.getTables());
         IndexScan index = null;
         if (goal != null) {
             Collection<TableSource> tables = new ArrayList<TableSource>();
@@ -121,7 +121,7 @@ public class IndexPicker extends BaseRule
     }
 
     protected IndexGoal determineIndexGoal(PlanNode input, 
-                                           PlanNode plan,
+                                           BaseQuery query,
                                            Collection<TableSource> tables) {
         List<ConditionExpression> conditions;
         Sort ordering = null;
@@ -156,7 +156,7 @@ public class IndexPicker extends BaseRule
                 }
             }
         }
-        return new IndexGoal(plan, Collections.<TableSource>emptySet(),
+        return new IndexGoal(query, Collections.<TableSource>emptySet(),
                              conditions, grouping, ordering, tables);
     }
 
