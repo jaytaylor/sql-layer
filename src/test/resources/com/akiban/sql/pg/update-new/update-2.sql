@@ -1,0 +1,1 @@
+UPDATE ITEMS SET quan = quan, sku = 42
