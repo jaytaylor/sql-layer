@@ -36,30 +36,30 @@ public final class BoolLogicExpressionTest {
     public static List<Parameterization> params() {
         ParameterizationBuilder pb = new ParameterizationBuilder();
         // OR logic
-        pb.add("||", BoolLogicExpression.OR_COMPOSER, true, true, true);
-        pb.add("||", BoolLogicExpression.OR_COMPOSER, true, false, true);
-        pb.add("||", BoolLogicExpression.OR_COMPOSER, true, null, true);
+        pb.add("||", BoolLogicExpression.orComposer, true, true, true);
+        pb.add("||", BoolLogicExpression.orComposer, true, false, true);
+        pb.add("||", BoolLogicExpression.orComposer, true, null, true);
 
-        pb.add("||", BoolLogicExpression.OR_COMPOSER, false, true, true);
-        pb.add("||", BoolLogicExpression.OR_COMPOSER, false, false, false);
-        pb.add("||", BoolLogicExpression.OR_COMPOSER, false, null, null);
+        pb.add("||", BoolLogicExpression.orComposer, false, true, true);
+        pb.add("||", BoolLogicExpression.orComposer, false, false, false);
+        pb.add("||", BoolLogicExpression.orComposer, false, null, null);
 
-        pb.add("||", BoolLogicExpression.OR_COMPOSER, null, true, true);
-        pb.add("||", BoolLogicExpression.OR_COMPOSER, null, false, null);
-        pb.add("||", BoolLogicExpression.OR_COMPOSER, null, null, null);
+        pb.add("||", BoolLogicExpression.orComposer, null, true, true);
+        pb.add("||", BoolLogicExpression.orComposer, null, false, null);
+        pb.add("||", BoolLogicExpression.orComposer, null, null, null);
 
         // AND logic
-        pb.add("&&", BoolLogicExpression.AND_COMPOSER, true, true, true);
-        pb.add("&&", BoolLogicExpression.AND_COMPOSER, true, false, false);
-        pb.add("&&", BoolLogicExpression.AND_COMPOSER, true, null, null);
+        pb.add("&&", BoolLogicExpression.andComposer, true, true, true);
+        pb.add("&&", BoolLogicExpression.andComposer, true, false, false);
+        pb.add("&&", BoolLogicExpression.andComposer, true, null, null);
 
-        pb.add("&&", BoolLogicExpression.AND_COMPOSER, false, true, false);
-        pb.add("&&", BoolLogicExpression.AND_COMPOSER, false, false, false);
-        pb.add("&&", BoolLogicExpression.AND_COMPOSER, false, null, false);
+        pb.add("&&", BoolLogicExpression.andComposer, false, true, false);
+        pb.add("&&", BoolLogicExpression.andComposer, false, false, false);
+        pb.add("&&", BoolLogicExpression.andComposer, false, null, false);
 
-        pb.add("&&", BoolLogicExpression.AND_COMPOSER, null, true, null);
-        pb.add("&&", BoolLogicExpression.AND_COMPOSER, null, false, false);
-        pb.add("&&", BoolLogicExpression.AND_COMPOSER, null, null, null);
+        pb.add("&&", BoolLogicExpression.andComposer, null, true, null);
+        pb.add("&&", BoolLogicExpression.andComposer, null, false, false);
+        pb.add("&&", BoolLogicExpression.andComposer, null, null, null);
 
         for (Parameterization param : pb.asList()) {
             Boolean a = (Boolean)param.getArgsAsList().get(1);

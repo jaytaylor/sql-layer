@@ -27,6 +27,8 @@ import java.util.List;
 
 public final class BoolLogicExpression extends AbstractTwoArgExpression {
 
+    // AbstractTwoArgExpression interface
+
     @Override
     protected void describe(StringBuilder sb) {
         sb.append(logic.name());
@@ -37,28 +39,36 @@ public final class BoolLogicExpression extends AbstractTwoArgExpression {
         return new InternalEvaluation(logic, childrenEvaluations());
     }
 
+    // private ctor -- the composers will be exposed as package-private
+
     private BoolLogicExpression(BooleanLogic logic, List<? extends Expression> children) {
         super(AkType.BOOL, children);
         this.logic = logic;
     }
 
+    // object state
+
     private final BooleanLogic logic;
 
+    // class state / consts
+
     private static final BooleanExtractor extractor = Extractors.getBooleanExtractor();
-    private static final BooleanLogic AND_LOGIC = new BooleanLogic("AND", false) {
+    private static final BooleanLogic andLogic = new BooleanLogic("AND", false) {
         @Override
         public boolean exec(boolean a, boolean b) {
             return a && b;
         }
     };
-    private static final BooleanLogic OR_LOGIC = new BooleanLogic("OR", true) {
+    private static final BooleanLogic orLogic = new BooleanLogic("OR", true) {
         @Override
         public boolean exec(boolean a, boolean b) {
             return a || b;
         }
     };
-    static final ExpressionComposer AND_COMPOSER = new InternalComposer(AND_LOGIC);
-    static final ExpressionComposer OR_COMPOSER = new InternalComposer(OR_LOGIC);
+    static final ExpressionComposer andComposer = new InternalComposer(andLogic);
+    static final ExpressionComposer orComposer = new InternalComposer(orLogic);
+
+    // nested classes
 
     private static abstract class BooleanLogic {
         abstract boolean exec(boolean a, boolean b);

@@ -30,8 +30,8 @@ public final class BoolLogicExpressionCompositionTest extends ComposedExpression
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() {
         return Arrays.asList(
-                Parameterization.create("AND", BoolLogicExpression.AND_COMPOSER),
-                Parameterization.create("OR", BoolLogicExpression.OR_COMPOSER)
+                Parameterization.create("AND", BoolLogicExpression.andComposer),
+                Parameterization.create("OR", BoolLogicExpression.orComposer)
         );
     }
     
