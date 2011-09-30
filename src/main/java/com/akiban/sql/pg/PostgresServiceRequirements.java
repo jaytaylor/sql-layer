@@ -16,7 +16,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.aggregation.AggregatorRegistry;
-import com.akiban.server.expression.ExpressionFactory;
+import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.instrumentation.InstrumentationService;
 import com.akiban.server.service.session.SessionService;
@@ -30,7 +30,7 @@ public final class PostgresServiceRequirements {
                                        SessionService sessionService,
                                        Store store,
                                        TreeService treeService,
-                                       ExpressionFactory expressionFactory,
+                                       ExpressionRegistry expressionRegistry,
                                        AggregatorRegistry aggregatorRegistry
                                        ) {
         this.instrumentation = instrumentation;
@@ -38,7 +38,7 @@ public final class PostgresServiceRequirements {
         this.sessionService = sessionService;
         this.store = store;
         this.treeService = treeService;
-        this.expressionFactory = expressionFactory;
+        this.expressionRegistry = expressionRegistry;
         this.aggregatorRegistry = aggregatorRegistry;
     }
 
@@ -62,8 +62,8 @@ public final class PostgresServiceRequirements {
         return treeService;
     }
 
-    public ExpressionFactory expressionFactory() {
-        return expressionFactory;
+    public ExpressionRegistry expressionFactory() {
+        return expressionRegistry;
     }
 
     public AggregatorRegistry aggregatorRegistry() {
@@ -75,6 +75,6 @@ public final class PostgresServiceRequirements {
     private final SessionService sessionService;
     private final Store store;
     private final TreeService treeService;
-    private final ExpressionFactory expressionFactory;
+    private final ExpressionRegistry expressionRegistry;
     private final AggregatorRegistry aggregatorRegistry;
 }

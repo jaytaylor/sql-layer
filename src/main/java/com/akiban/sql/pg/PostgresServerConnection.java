@@ -16,7 +16,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.aggregation.AggregatorRegistry;
-import com.akiban.server.expression.ExpressionFactory;
+import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.store.Store;
 import com.akiban.sql.StandardException;
@@ -818,7 +818,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     @Override
-    public ExpressionFactory expressionFactory() {
+    public ExpressionRegistry expressionFactory() {
         return reqs.expressionFactory();
     }
 

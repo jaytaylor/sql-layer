@@ -17,14 +17,14 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.aggregation.DummyAggregatorRegistry;
-import com.akiban.server.expression.ExpressionFactory;
+import com.akiban.server.expression.ExpressionRegistry;
 
 import java.util.List;
 
 public class RulesTestContext extends SchemaRulesContext
 {
     public RulesTestContext(AkibanInformationSchema ais, List<BaseRule> rules) {
-        super(ais, ExpressionFactory.EMPTY, new DummyAggregatorRegistry(), rules);
+        super(ais, ExpressionRegistry.EMPTY, new DummyAggregatorRegistry(), rules);
         RulesTestHelper.ensureRowDefs(ais);
     }
 }

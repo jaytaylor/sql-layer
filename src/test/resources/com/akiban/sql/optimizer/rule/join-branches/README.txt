@@ -1,3 +1,5 @@
+descendant: Only get columns from a descendant of index.
+
 group-covering: A covering group index. No lookups.
 
 group-equals: Group index and ancestor lookup from there.
