@@ -4,6 +4,6 @@ SelectQuery@7e3bc473
       Select@5982bcde[GROUP[1] > 1000.00]
         AggregateSource@30384065([user.orders.order_date],[SUM(times(user.items.price,user.items.quan))])
           Select@3d0bbf9e[]
-            JoinNode@4e513d61(INNER_JOIN[user.orders.oid == user.items.oid])
+            JoinNode@4e513d61(INNER[user.orders.oid == user.items.oid])
               TableSource@1089cc5e(user.items)
               TableSource@76b33d0a(user.orders)

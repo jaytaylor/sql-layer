@@ -4,6 +4,6 @@ SelectQuery@14a7a12
       Select@32060c[]
         AggregateSource@15ed659([user.customers.name],[COUNT(*), COUNT(*), COUNT(DISTINCT user.orders.order_date), COUNT(user.orders.special)])
           Select@2b323e[]
-            JoinNode@1fa6d18(INNER_JOIN[user.customers.cid == user.orders.cid])
+            JoinNode@1fa6d18(INNER[user.customers.cid == user.orders.cid])
               TableSource@983d95(user.customers)
               TableSource@f30494(user.orders)

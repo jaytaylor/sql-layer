@@ -4,6 +4,6 @@ SelectQuery@2f8a49e0
       Select@5d6d2633[]
         AggregateSource@28e70e30([user.orders.order_date],[SUM(user.items.quan), COUNT(user.items.quan)])
           Select@5954864a[user.items.sku == $0]
-            JoinNode@3c3c9217(INNER_JOIN[user.orders.oid == user.items.oid])
+            JoinNode@3c3c9217(INNER[user.orders.oid == user.items.oid])
               TableSource@7471dc3d(user.items)
               TableSource@df4cbee(user.orders)
