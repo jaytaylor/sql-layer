@@ -16,7 +16,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionFactory;
+import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.optimizer.plan.*;
 
@@ -32,11 +32,11 @@ import java.util.List;
 /** Turn {@link ExpressionNode} into {@link Expression}. */
 public class ExpressionAssembler
 {
-    private ExpressionFactory expressionFactory;
+    private ExpressionRegistry expressionRegistry;
 
     public ExpressionAssembler(RulesContext rulesContext) {
-        this.expressionFactory = ((SchemaRulesContext)
-                                  rulesContext).getExpressionFactory();
+        this.expressionRegistry = ((SchemaRulesContext)
+                                  rulesContext).getExpressionRegistry();
     }
 
     public static interface ColumnExpressionToIndex {
@@ -70,7 +70,7 @@ public class ExpressionAssembler
             for (ExpressionNode operand : funcNode.getOperands()) {
                 children.add(assembleExpression(operand, fieldOffsets));
             }
-            return expressionFactory.compose(funcNode.getFunction(), children);
+            return expressionRegistry.composer(funcNode.getFunction()).compose(children);
         }
         else if (node instanceof IfElseExpression)
             throw new UnsupportedSQLException("NIY", node.getSQLsource());
