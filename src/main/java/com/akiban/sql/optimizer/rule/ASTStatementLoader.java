@@ -324,7 +324,7 @@ public class ASTStatementLoader extends BaseRule
                 else
                     joins = joinNodes(joins, toJoinNode(fromTable, true), JoinType.INNER);
             }
-            List<ConditionExpression> conditions = toConditions(selectNode.getWhereClause());
+            ConditionList conditions = toConditions(selectNode.getWhereClause());
             if (hasAggregateFunction(conditions))
                 throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
                                                   selectNode.getWhereClause());
@@ -391,9 +391,9 @@ public class ASTStatementLoader extends BaseRule
         }
 
         /** Add a set of conditions to input. */
-        protected List<ConditionExpression> toConditions(ValueNode cnfClause)
+        protected ConditionList toConditions(ValueNode cnfClause)
                 throws StandardException {
-            List<ConditionExpression> conditions = new ArrayList<ConditionExpression>();
+            ConditionList conditions = new ConditionList();
             while (cnfClause != null) {
                 if (cnfClause.isBooleanTrue()) break;
                 if (!(cnfClause instanceof AndNode))
@@ -546,7 +546,7 @@ public class ASTStatementLoader extends BaseRule
             Comparison comp = Comparison.EQ;
             ExpressionNode operand = null;
             boolean needOperand = false;
-            List<ConditionExpression> innerConds = null;
+            ConditionList innerConds = null;
             switch (subqueryNode.getSubqueryType()) {
             case EXISTS:
                 break;
@@ -660,7 +660,7 @@ public class ASTStatementLoader extends BaseRule
                                                 subqueryNode.getType(), subqueryNode);
             }
             if (negate) {
-                List <ConditionExpression> operands = new ArrayList<ConditionExpression>(1);
+                List<ConditionExpression> operands = new ArrayList<ConditionExpression>(1);
                 operands.add(condition);
                 condition = new LogicalFunctionCondition("not", 
                                                          operands,

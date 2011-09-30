@@ -89,8 +89,7 @@ public class GroupJoinFinder extends BaseRule
     protected void moveAndNormalizeWhereConditions(List<Joinable> islands) {
         for (Joinable island : islands) {
             if (island.getOutput() instanceof Select) {
-                List<ConditionExpression> conditions = 
-                    ((Select)island.getOutput()).getConditions();
+                ConditionList conditions = ((Select)island.getOutput()).getConditions();
                 moveInnerJoinConditions(island, conditions);
                 normalizeColumnComparisons(conditions);
             }
@@ -101,10 +100,10 @@ public class GroupJoinFinder extends BaseRule
     // So long as there are INNER joins, move their conditions up to
     // the top-level join.
     protected void moveInnerJoinConditions(Joinable joinable,
-                                           List<ConditionExpression> whereConditions) {
+                                           ConditionList whereConditions) {
         if (joinable.isInnerJoin()) {
             JoinNode join = (JoinNode)joinable;
-            List<ConditionExpression> joinConditions = join.getJoinConditions();
+            ConditionList joinConditions = join.getJoinConditions();
             if (joinConditions != null) {
                 whereConditions.addAll(joinConditions);
                 joinConditions.clear();
@@ -118,7 +117,7 @@ public class GroupJoinFinder extends BaseRule
     // the form <col> <op> <expr>, with the child on the left in the
     // case of two columns, which is what we may then recognize as a
     // group join.
-    protected void normalizeColumnComparisons(List<ConditionExpression> conditions) {
+    protected void normalizeColumnComparisons(ConditionList conditions) {
         if (conditions == null) return;
         for (ConditionExpression cond : conditions) {
             if (cond instanceof ComparisonCondition) {
@@ -269,7 +268,7 @@ public class GroupJoinFinder extends BaseRule
                     ConditionExpression condition = tableJoin.getCondition();
                     // Move down from WHERE conditions to join condition.
                     if (output.getJoinConditions() == null)
-                        output.setJoinConditions(new ArrayList<ConditionExpression>());
+                        output.setJoinConditions(new ConditionList());
                     output.getJoinConditions().add(condition);
                     conditions.remove(condition);
                 }

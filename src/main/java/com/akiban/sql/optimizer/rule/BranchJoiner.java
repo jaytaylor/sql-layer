@@ -360,7 +360,7 @@ public class BranchJoiner extends BaseRule
         List<JoinType> joinTypes = 
             new ArrayList<JoinType>(Collections.nCopies(flattenSources.size() - 1,
                                                         JoinType.INNER));
-        List<ConditionExpression> joinConditions = new ArrayList<ConditionExpression>(0);
+        ConditionList joinConditions = new ConditionList(0);
         copyJoins(joins, null, flattenSources, joinTypes, joinConditions);
         if (!joinConditions.isEmpty())
             input = new Select(input, joinConditions);
@@ -375,7 +375,7 @@ public class BranchJoiner extends BaseRule
     protected void copyJoins(Joinable joinable, JoinNode parent, 
                              List<TableSource> branch, 
                              List<JoinType> joinTypes,
-                             List<ConditionExpression> joinConditions) {
+                             ConditionList joinConditions) {
         if (joinable.isTable()) {
             TableSource table = (TableSource)joinable;
             int idx = branch.indexOf(table);

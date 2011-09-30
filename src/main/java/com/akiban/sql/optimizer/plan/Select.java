@@ -21,14 +21,14 @@ import java.util.List;
  */
 public class Select extends BasePlanWithInput
 {
-    private List<ConditionExpression> conditions;
+    private ConditionList conditions;
 
-    public Select(PlanNode input, List<ConditionExpression> conditions) {
+    public Select(PlanNode input, ConditionList conditions) {
         super(input);
         this.conditions = conditions;
     }
 
-    public List<ConditionExpression> getConditions() {
+    public ConditionList getConditions() {
         return conditions;
     }
 
@@ -61,7 +61,7 @@ public class Select extends BasePlanWithInput
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        conditions = duplicateList(conditions, map);
+        conditions = conditions.duplicate(map);
     }
 
 }

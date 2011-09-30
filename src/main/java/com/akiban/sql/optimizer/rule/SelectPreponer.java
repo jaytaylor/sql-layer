@@ -175,7 +175,7 @@ public class SelectPreponer extends BaseRule
 
         // Have a straight path to these conditions and know where
         // tables came from.  See what can be moved back there.
-        protected void moveConditions(List<ConditionExpression> conditions) {
+        protected void moveConditions(ConditionList conditions) {
             Iterator<ConditionExpression> iter = conditions.iterator();
             while (iter.hasNext()) {
                 ConditionExpression condition = iter.next();
@@ -210,7 +210,7 @@ public class SelectPreponer extends BaseRule
             if (after instanceof Select)
                 select = (Select)after;
             else {
-                select = new Select(before, new ArrayList<ConditionExpression>(1));
+                select = new Select(before, new ConditionList(1));
                 after.replaceInput(before, select);
             }
             select.getConditions().add(condition);

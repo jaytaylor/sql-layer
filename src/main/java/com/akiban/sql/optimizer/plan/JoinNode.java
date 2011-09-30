@@ -39,7 +39,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
     private Joinable left, right;
     private JoinType joinType;
     private Implementation implementation;
-    private List<ConditionExpression> joinConditions;
+    private ConditionList joinConditions;
     private TableGroupJoin groupJoin;
 
     public JoinNode(Joinable left, Joinable right, JoinType joinType) {
@@ -83,10 +83,10 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         return (joinType == JoinType.INNER);
     }
 
-    public List<ConditionExpression> getJoinConditions() {
+    public ConditionList getJoinConditions() {
         return joinConditions;
     }
-    public void setJoinConditions(List<ConditionExpression> joinConditions) {
+    public void setJoinConditions(ConditionList joinConditions) {
         this.joinConditions = joinConditions;
     }
 
@@ -188,7 +188,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         super.deepCopy(map);
         left = (Joinable)left.duplicate(map);
         right = (Joinable)right.duplicate(map);
-        joinConditions = duplicateList(joinConditions, map);
+        joinConditions = joinConditions.duplicate(map);
     }
 
 }

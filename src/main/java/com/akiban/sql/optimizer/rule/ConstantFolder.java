@@ -430,7 +430,7 @@ public class ConstantFolder extends BaseRule
          * Only valid when conditions are being tested, not when used
          * as a value.
          */
-        protected boolean checkConditions(List<ConditionExpression> conditions) {
+        protected boolean checkConditions(ConditionList conditions) {
             if (conditions == null) return true;
             int i = 0;
             while (i < conditions.size()) {
