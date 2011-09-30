@@ -2,8 +2,8 @@ SelectQuery@737371
   ResultSet@3f705316[id, name, state, id, name, state, id, pid, name, id, pid, name]
     Project@675ee9e3[user.parent.id, user.parent.name, user.parent.state, user.parent.id, user.parent.name, user.parent.state, user.child.id, user.child.pid, user.child.name, user.child.id, user.child.pid, user.child.name]
       Select@1e328e0[]
-        JoinNode@90c06f(INNER[user.child.pid == user.parent.id] - TableGroupJoin@149d886(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
-          JoinNode@1267649(INNER[user.child.pid == user.parent.id] - TableGroupJoin@1fe88d(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
+        JoinNode@90c06f(INNER/GROUP[user.child.pid == user.parent.id] - TableGroupJoin@149d886(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
+          JoinNode@1267649(INNER/GROUP[user.child.pid == user.parent.id] - TableGroupJoin@1fe88d(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
             JoinNode@dcb03b(INNER)
               TableJoins@41298826(TableGroup@1b1fbf4(parent))
                 TableSource@b60b93(user.parent - TableGroup@1b1fbf4(parent))

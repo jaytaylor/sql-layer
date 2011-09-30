@@ -32,7 +32,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         ANTI
     }
     public static enum Implementation {
-        GROUPING,
+        GROUP,
         NESTED_LOOPS,
         MERGE                   // TODO: Not implemented. Probably needs thought.
     }
@@ -95,6 +95,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
     }
     public void setGroupJoin(TableGroupJoin groupJoin) {
         this.groupJoin = groupJoin;
+        this.implementation = Implementation.GROUP;
     }
 
     /** Get the condition that implements groupJoin. */
