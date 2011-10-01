@@ -49,20 +49,26 @@ public class IndexPicker extends BaseRule
             // set up each nested loop join.
             boundTables = new HashSet<ColumnSource>(query.getOuterTables());
 
+            pickIndexes(joinable);
+        }
+
+        protected void pickIndexes(Joinable joinable) {
+            if (joinable instanceof TableJoins)
+                pickIndex((TableJoins)joinable);
+            else if (joinable instanceof JoinNode)
+                pickIndexes((JoinNode)joinable);
+            assert !(joinable instanceof TableSource);
+            // Other kinds like VALUES and subquery are set.
+        }
+
+        protected void pickIndex(TableJoins tableJoins) {
             // Goal is to get all the tables joined right here. Others
             // in the group may come via XxxLookup in a nested
             // loop. Can only consider table indexes on the inner
             // joined tables and group indexes corresponding to outer
             // joins.
-            TableJoins tableJoins = (TableJoins)joinable;
             IndexGoal goal = determineIndexGoal(tableJoins, tableJoins.getTables());
-            IndexScan index = null;
-            if (goal != null) {
-                Collection<TableSource> tables = new ArrayList<TableSource>();
-                Set<TableSource> required = new HashSet<TableSource>();
-                getRequiredTables(tableJoins.getJoins(), tables, required, true);
-                index = goal.pickBestIndex(tables, required);
-            }
+            IndexScan index = pickBestIndex(tableJoins, goal);
             if (index != null) {
                 goal.installUpstream(index);
             }
@@ -70,24 +76,6 @@ public class IndexPicker extends BaseRule
             if (scan == null)
                 scan = new GroupScan(tableJoins.getGroup());
             tableJoins.setScan(scan);
-        }
-
-        protected void getRequiredTables(Joinable joinable,
-                                         Collection<TableSource> tables,
-                                         Set<TableSource> required,
-                                         boolean allInner) {
-            if (joinable instanceof JoinNode) {
-                JoinNode join = (JoinNode)joinable;
-                getRequiredTables(join.getLeft(), tables, required,
-                                  allInner && (join.getJoinType() != JoinType.RIGHT));
-                getRequiredTables(join.getRight(), tables, required,
-                                  allInner && (join.getJoinType() != JoinType.LEFT));
-            }
-            else if (joinable instanceof TableSource) {
-                TableSource table = (TableSource)joinable;
-                tables.add(table);
-                if (allInner) required.add(table);
-            }
         }
 
         protected IndexGoal determineIndexGoal(PlanNode input, 
@@ -125,7 +113,39 @@ public class IndexPicker extends BaseRule
                     }
                 }
             }
-            return new IndexGoal(query, boundTables, conditions, grouping, ordering, tables);
+            return new IndexGoal(query, boundTables, 
+                                 conditions, grouping, ordering, tables);
+        }
+
+        protected IndexScan pickBestIndex(TableJoins tableJoins, IndexGoal goal) {
+            if (goal == null)
+                return null;
+            Collection<TableSource> tables = new ArrayList<TableSource>();
+            Set<TableSource> required = new HashSet<TableSource>();
+            getRequiredTables(tableJoins.getJoins(), tables, required, true);
+            return goal.pickBestIndex(tables, required);
+        }
+
+        protected void getRequiredTables(Joinable joinable,
+                                         Collection<TableSource> tables,
+                                         Set<TableSource> required,
+                                         boolean allInner) {
+            if (joinable instanceof JoinNode) {
+                JoinNode join = (JoinNode)joinable;
+                getRequiredTables(join.getLeft(), tables, required,
+                                  allInner && (join.getJoinType() != JoinType.RIGHT));
+                getRequiredTables(join.getRight(), tables, required,
+                                  allInner && (join.getJoinType() != JoinType.LEFT));
+            }
+            else if (joinable instanceof TableSource) {
+                TableSource table = (TableSource)joinable;
+                tables.add(table);
+                if (allInner) required.add(table);
+            }
+        }
+
+        protected void pickIndexes(JoinNode join) {
+            assert false;
         }
     }
 
