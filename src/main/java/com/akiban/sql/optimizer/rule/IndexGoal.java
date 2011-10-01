@@ -81,7 +81,7 @@ public class IndexGoal implements Comparator<IndexScan>
     }
 
     // Tables already bound outside.
-    private Set<TableSource> boundTables;
+    private Set<ColumnSource> boundTables;
 
     // All the conditions that might be indexable.
     private List<ConditionExpression> conditions;
@@ -104,7 +104,7 @@ public class IndexGoal implements Comparator<IndexScan>
     private RequiredColumns requiredColumns;
 
     public IndexGoal(BaseQuery query,
-                     Set<TableSource> boundTables, 
+                     Set<ColumnSource> boundTables, 
                      List<ConditionExpression> conditions,
                      AggregateSource grouping,
                      Sort ordering,

@@ -28,6 +28,7 @@ public class AISTypeComputer extends TypeComputer
     public AISTypeComputer() {
     }
     
+    @Override
     protected DataTypeDescriptor computeType(ValueNode node) throws StandardException {
         switch (node.getNodeType()) {
         case NodeTypes.COLUMN_REFERENCE:

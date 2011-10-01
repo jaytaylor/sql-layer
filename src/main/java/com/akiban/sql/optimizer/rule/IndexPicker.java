@@ -156,7 +156,7 @@ public class IndexPicker extends BaseRule
                 }
             }
         }
-        Set<TableSource> boundTables = query.getOuterTables();
+        Set<ColumnSource> boundTables = query.getOuterTables();
         return new IndexGoal(query, boundTables, conditions, grouping, ordering, tables);
     }
 
