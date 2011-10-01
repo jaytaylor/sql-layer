@@ -22,6 +22,7 @@ import com.akiban.sql.optimizer.plan.*;
 
 import static com.akiban.server.expression.std.Expressions.*;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.rowtype.RowType;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
@@ -39,9 +40,20 @@ public class ExpressionAssembler
                                   rulesContext).getExpressionRegistry();
     }
 
-    public static interface ColumnExpressionToIndex {
+    public interface ColumnExpressionToIndex {
         /** Return the field position of the given column in the target row. */
         public int getIndex(ColumnExpression column);
+
+        /** Return the row type that the index goes with. */
+        public RowType getRowType();
+
+        /** Get list (deepest first) of rows from nested loops. */
+        public List<ColumnExpressionToIndex> getBoundRows();
+
+        /** Get the index offset to be used for the deepest nested loop.
+         * Normally this is the number of parameters to the query.
+         */
+        public int getBindingsOffset();
     }
     
     public Expression assembleExpression(ExpressionNode node,
@@ -49,7 +61,7 @@ public class ExpressionAssembler
         if (node instanceof ConstantExpression)
             return literal(((ConstantExpression)node).getValue());
         else if (node instanceof ColumnExpression)
-            return field(((ColumnExpression)node).getColumn(), fieldOffsets.getIndex((ColumnExpression)node));
+            return assembleColumnExpression((ColumnExpression)node, fieldOffsets);
         else if (node instanceof ParameterExpression)
             return variable(node.getAkType(), ((ParameterExpression)node).getPosition());
         else if (node instanceof BooleanOperationExpression)
@@ -81,6 +93,25 @@ public class ExpressionAssembler
             throw new AkibanInternalException("Should have called assembleSubqueryExpression");
         else
             throw new UnsupportedSQLException("Unknown expression", node.getSQLsource());
+    }
+
+    public Expression assembleColumnExpression(ColumnExpression column,
+                                               ColumnExpressionToIndex fieldOffsets) {
+        int fieldIndex = fieldOffsets.getIndex(column);
+        if (fieldIndex >= 0)
+            return field(fieldOffsets.getRowType(), fieldIndex);
+        
+        List<ColumnExpressionToIndex> boundRows = fieldOffsets.getBoundRows();
+        for (int rowIndex = boundRows.size() - 1; rowIndex >= 0; rowIndex--) {
+            ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
+            if (boundRow == null) continue;
+            fieldIndex = boundRow.getIndex(column);
+            if (fieldIndex >= 0) {
+                rowIndex += fieldOffsets.getBindingsOffset();
+                return boundField(boundRow.getRowType(), rowIndex, fieldIndex);
+            }
+        }
+        throw new AkibanInternalException("Column not found " + column);
     }
 
     public Expression assembleSubqueryExpression(SubqueryExpression node,

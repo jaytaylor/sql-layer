@@ -242,7 +242,7 @@ public class OperatorAssembler extends BaseRule
                                                     assembleIndexKeyRange(indexScan, null),
                                                     tableRowType(indexScan.getLeafMostTable()));
             stream.rowType = indexRowType;
-            stream.fieldOffsets = new IndexFieldOffsets(indexScan);
+            stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
             return stream;
         }
 
@@ -281,7 +281,7 @@ public class OperatorAssembler extends BaseRule
                     TableSource table = 
                         SelectPreponer.getSingleTableConditionTable(condition);
                     rowType = tableRowType(table);
-                    fieldOffsets = new ColumnSourceFieldOffsets(table);
+                    fieldOffsets = new ColumnSourceFieldOffsets(table, rowType);
                 }
                 stream.operator = API.select_HKeyOrdered(stream.operator,
                                                          rowType,
@@ -301,7 +301,8 @@ public class OperatorAssembler extends BaseRule
             if (ntables == 1) {
                 TableSource tableSource = flatten.getTableSources().get(0);
                 if (tableSource != null)
-                    stream.fieldOffsets = new ColumnSourceFieldOffsets(tableSource);
+                    stream.fieldOffsets = new ColumnSourceFieldOffsets(tableSource, 
+                                                                       tableRowType);
             }
             else {
                 Flattened flattened = new Flattened();
@@ -331,6 +332,7 @@ public class OperatorAssembler extends BaseRule
                                                               flattenType);
                     stream.rowType = stream.operator.rowType();
                 }
+                flattened.setRowType(stream.rowType);
                 stream.fieldOffsets = flattened;
             }
             if (stream.unknownTypesPresent) {
@@ -391,7 +393,7 @@ public class OperatorAssembler extends BaseRule
                                                           tableRowType(branchLookup.getSource()),
                                                           tableRowType(branchLookup.getBranch()), 
                                                           flag,
-                                                          bindingPosition());
+                                                          currentBindingPosition());
                 
             }
             stream.rowType = null;
@@ -404,6 +406,11 @@ public class OperatorAssembler extends BaseRule
             RowStream pstream = new RowStream();
             Flattened flattened = new Flattened();
             for (PlanNode subplan : product.getSubplans()) {
+                if (pstream.operator != null) {
+                    // The actual bound row is the branch row, which
+                    // we don't access directly.
+                    pushBoundRow(null);
+                }
                 RowStream stream = assembleStream(subplan);
                 if (pstream.operator == null) {
                     pstream.operator = stream.operator;
@@ -414,7 +421,7 @@ public class OperatorAssembler extends BaseRule
                                                                stream.operator,
                                                                pstream.rowType,
                                                                stream.rowType,
-                                                               bindingPosition());
+                                                               currentBindingPosition());
                     pstream.rowType = pstream.operator.rowType();
                 }
                 if (stream.fieldOffsets instanceof ColumnSourceFieldOffsets) {
@@ -426,22 +433,9 @@ public class OperatorAssembler extends BaseRule
                     flattened.product((Flattened)stream.fieldOffsets);
                 }
             }
+            flattened.setRowType(pstream.rowType);
             pstream.fieldOffsets = flattened;
             return pstream;
-        }
-
-        // This is good enough for branchLookup_Nested and
-        // product_NestedLoops, where each loop starts out right away
-        // with the lookup and never needs it after starting a nested
-        // loop. It will not be enough in general.
-        protected int bindingPosition() {
-            AST ast = ASTStatementLoader.getAST(planContext);
-            if (ast == null)
-                return 0;
-            List<ParameterNode> params = ast.getParameters();
-            if (params == null)
-                return 0;
-            return ast.getParameters().size();
         }
 
         protected RowStream assembleAggregateSource(AggregateSource aggregateSource) {
@@ -456,7 +450,8 @@ public class OperatorAssembler extends BaseRule
                     (aggr1.getFunction().equals("COUNT"))) {
                     stream.operator = API.count_Default(stream.operator, stream.rowType);
                     stream.rowType = stream.operator.rowType();
-                    stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource);
+                    stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource, 
+                                                                       stream.rowType);
                     return stream;
                 }
             }
@@ -497,7 +492,9 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.aggregate_Partial(stream.operator, nkeys,
                                                     rulesContext.getAggregatorRegistry(),
                                                     aggregatorNames);
-            stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource);
+            stream.rowType = stream.operator.rowType();
+            stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource,
+                                                               stream.rowType);
             return stream;
         }
 
@@ -742,96 +739,168 @@ public class OperatorAssembler extends BaseRule
             return result;
         }
         
-    }
-
-    // Struct for multiple value return from assembly.
-    static class RowStream {
-        Operator operator;
-        RowType rowType;
-        boolean unknownTypesPresent;
-        ColumnExpressionToIndex fieldOffsets;
-    }
-
-    static class ColumnSourceFieldOffsets implements ColumnExpressionToIndex {
-        private ColumnSource source;
-
-        public ColumnSourceFieldOffsets(ColumnSource source) {
-            this.source = source;
+        // Struct for multiple value return from assembly.
+        static class RowStream {
+            Operator operator;
+            RowType rowType;
+            boolean unknownTypesPresent;
+            ColumnExpressionToIndex fieldOffsets;
         }
 
-        public ColumnSource getSource() {
-            return source;
-        }
+        /* Bindings-related state */
 
-        public TableSource getTable() {
-            return (TableSource)source;
-        }
+        protected int bindingsOffset = -1;
+        protected Stack<ColumnExpressionToIndex> boundRows = null;
 
-        @Override
-        public int getIndex(ColumnExpression column) {
-            if (column.getTable() != source) 
-                return -1;
-            else
-                return column.getPosition();
-        }
-    }
-
-    static class IndexFieldOffsets implements ColumnExpressionToIndex {
-        private IndexScan index;
-
-        public IndexFieldOffsets(IndexScan index) {
-            this.index = index;
-        }
-
-        @Override
-        // Access field of the index row itself. 
-        // (Covering index or condition before lookup.)
-        public int getIndex(ColumnExpression column) {
-            return index.getColumns().indexOf(column);
-        }
-    }
-
-    static class Flattened implements ColumnExpressionToIndex {
-        Map<TableSource,Integer> tableOffsets = new HashMap<TableSource,Integer>();
-        int nfields;
-            
-        @Override
-        public int getIndex(ColumnExpression column) {
-            Integer tableOffset = tableOffsets.get(column.getTable());
-            if (tableOffset == null)
-                return -1;
-            return tableOffset + column.getPosition();
-        }
-
-        public void addTable(RowType rowType, TableSource table) {
-            if (table != null)
-                tableOffsets.put(table, nfields);
-            nfields += rowType.nFields();
-        }
-
-        // Tack on another flattened using product rules.
-        public void product(final Flattened other) {
-            List<TableSource> otherTables = 
-                new ArrayList<TableSource>(other.tableOffsets.keySet());
-            Collections.sort(otherTables,
-                             new Comparator<TableSource>() {
-                                 @Override
-                                 public int compare(TableSource x, TableSource y) {
-                                     return other.tableOffsets.get(x) - other.tableOffsets.get(y);
-                                 }
-                             });
-            for (int i = 0; i < otherTables.size(); i++) {
-                TableSource otherTable = otherTables.get(i);
-                if (!tableOffsets.containsKey(otherTable)) {
-                    tableOffsets.put(otherTable, nfields);
-                    // Width in other.tableOffsets.
-                    nfields += (((i+1 >= otherTables.size()) ?
-                                 other.nfields :
-                                 other.tableOffsets.get(otherTables.get(i+1))) -
-                                other.tableOffsets.get(otherTable));
+        protected void ensureBoundRows() {
+            if (boundRows == null) {
+                boundRows = new Stack<ColumnExpressionToIndex>();
+                
+                // Binding positions are shared with parameter positions.
+                AST ast = ASTStatementLoader.getAST(planContext);
+                if (ast == null)
+                    bindingsOffset = 0;
+                else {
+                    List<ParameterNode> params = ast.getParameters();
+                    if (params == null)
+                        bindingsOffset = 0;
+                    else
+                        bindingsOffset = ast.getParameters().size();
                 }
             }
         }
-    }
 
+        protected void pushBoundRow(ColumnExpressionToIndex boundRow) {
+            ensureBoundRows();
+            boundRows.push(boundRow);
+        }
+
+        protected void popBoundRow() {
+            boundRows.pop();
+        }
+
+        protected int currentBindingPosition() {
+            ensureBoundRows();
+            return bindingsOffset + boundRows.size() - 1;
+        }
+
+        abstract class BaseColumnExpressionToIndex implements ColumnExpressionToIndex {
+            protected RowType rowType;
+
+            BaseColumnExpressionToIndex(RowType rowType) {
+                this.rowType = rowType;
+            }
+
+            @Override
+            public RowType getRowType() {
+                return rowType;
+            }
+
+            @Override
+            public List<ColumnExpressionToIndex> getBoundRows() {
+                return boundRows;
+            }
+
+            @Override
+            public int getBindingsOffset() {
+                return bindingsOffset;
+            }
+        }
+
+        // Single table-like source.
+        class ColumnSourceFieldOffsets extends BaseColumnExpressionToIndex {
+            private ColumnSource source;
+
+            public ColumnSourceFieldOffsets(ColumnSource source, RowType rowType) {
+                super(rowType);
+                this.source = source;
+            }
+
+            public ColumnSource getSource() {
+                return source;
+            }
+
+            public TableSource getTable() {
+                return (TableSource)source;
+            }
+
+            @Override
+            public int getIndex(ColumnExpression column) {
+                if (column.getTable() != source) 
+                    return -1;
+                else
+                    return column.getPosition();
+            }
+        }
+
+        // Index used as field source (e.g., covering).
+        class IndexFieldOffsets extends BaseColumnExpressionToIndex {
+            private IndexScan index;
+
+            public IndexFieldOffsets(IndexScan index, RowType rowType) {
+                super(rowType);
+                this.index = index;
+            }
+
+            @Override
+            // Access field of the index row itself. 
+            // (Covering index or condition before lookup.)
+                public int getIndex(ColumnExpression column) {
+                return index.getColumns().indexOf(column);
+            }
+        }
+
+        // Flattened row.
+        class Flattened extends BaseColumnExpressionToIndex {
+            Map<TableSource,Integer> tableOffsets = new HashMap<TableSource,Integer>();
+            int nfields;
+            
+            Flattened() {
+                super(null);        // Worked out later.
+            }
+
+            public void setRowType(RowType rowType) {
+                this.rowType = rowType;
+            }
+
+            @Override
+            public int getIndex(ColumnExpression column) {
+                Integer tableOffset = tableOffsets.get(column.getTable());
+                if (tableOffset == null)
+                    return -1;
+                return tableOffset + column.getPosition();
+            }
+
+            public void addTable(RowType rowType, TableSource table) {
+                if (table != null)
+                    tableOffsets.put(table, nfields);
+                nfields += rowType.nFields();
+            }
+
+            // Tack on another flattened using product rules.
+            public void product(final Flattened other) {
+                List<TableSource> otherTables = 
+                    new ArrayList<TableSource>(other.tableOffsets.keySet());
+                Collections.sort(otherTables,
+                                 new Comparator<TableSource>() {
+                                     @Override
+                                     public int compare(TableSource x, TableSource y) {
+                                         return other.tableOffsets.get(x) - other.tableOffsets.get(y);
+                                     }
+                                 });
+                for (int i = 0; i < otherTables.size(); i++) {
+                    TableSource otherTable = otherTables.get(i);
+                    if (!tableOffsets.containsKey(otherTable)) {
+                        tableOffsets.put(otherTable, nfields);
+                        // Width in other.tableOffsets.
+                        nfields += (((i+1 >= otherTables.size()) ?
+                                     other.nfields :
+                                     other.tableOffsets.get(otherTables.get(i+1))) -
+                                    other.tableOffsets.get(otherTable));
+                    }
+                }
+            }
+        }
+
+    }
 }
