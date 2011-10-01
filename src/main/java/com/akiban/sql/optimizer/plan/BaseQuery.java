@@ -30,8 +30,8 @@ public class BaseQuery extends BasePlanWithInput
         return getInput();
     }
 
-    public Set<TableSource> getOuterTables() {
-        return Collections.<TableSource>emptySet();
+    public Set<ColumnSource> getOuterTables() {
+        return Collections.<ColumnSource>emptySet();
     }
 
 }

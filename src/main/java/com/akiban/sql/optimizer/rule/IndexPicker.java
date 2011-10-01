@@ -38,7 +38,7 @@ public class IndexPicker extends BaseRule
     static class Picker {
         Joinable joinable;
         BaseQuery query;
-        Set<TableSource> boundTables;
+        Set<ColumnSource> boundTables;
 
         public Picker(Joinable joinable) {
             this.joinable = joinable;
@@ -47,7 +47,7 @@ public class IndexPicker extends BaseRule
         public void pickIndexes() {
             // Start with tables outside this subquery. Then add as we
             // set up each nested loop join.
-            boundTables = new HashSet<TableSource>(query.getOuterTables());
+            boundTables = new HashSet<ColumnSource>(query.getOuterTables());
 
             // Goal is to get all the tables joined right here. Others
             // in the group may come via XxxLookup in a nested
@@ -169,7 +169,7 @@ public class IndexPicker extends BaseRule
                 Joinable j = (Joinable)n;
                 while (j.getOutput() instanceof Joinable)
                     j = (Joinable)j.getOutput();
-                for (JoinsEntry entry : result) {
+                for (Picker entry : result) {
                     if (entry.joinable == j)
                         // Already have another set of joins to same root join.
                         return true;

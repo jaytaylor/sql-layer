@@ -21,21 +21,21 @@ import java.util.Set;
  */
 public class Subquery extends BaseQuery
 {
-    private Set<TableSource> outerTables;
+    private Set<ColumnSource> outerTables;
 
     public Subquery(PlanNode inside) {
         super(inside);
     }
 
     @Override
-    public Set<TableSource> getOuterTables() {
+    public Set<ColumnSource> getOuterTables() {
         if (outerTables != null)
             return outerTables;
         else
             return super.getOuterTables();
     }
 
-    public void setOuterTables(Set<TableSource> outerTables) {
+    public void setOuterTables(Set<ColumnSource> outerTables) {
         this.outerTables = outerTables;
     }
 

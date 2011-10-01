@@ -34,19 +34,25 @@ public class SQLClient
         for (int i = 5; i < args.length; i++) {
             stmt.setString(i - 4, args[i]);
         }
-        ResultSet rs = stmt.executeQuery();
-        ResultSetMetaData md = rs.getMetaData();
-        for (int i = 1; i <= md.getColumnCount(); i++) {
-            if (i > 1) System.out.print("\t");
-            System.out.print(md.getColumnName(i));
-        }
-        System.out.println();
-        while (rs.next()) {
+        if (stmt.execute()) {
+            ResultSet rs = stmt.getResultSet();
+            ResultSetMetaData md = rs.getMetaData();
             for (int i = 1; i <= md.getColumnCount(); i++) {
                 if (i > 1) System.out.print("\t");
-                System.out.print(rs.getString(i));
+                System.out.print(md.getColumnName(i));
             }
             System.out.println();
+            while (rs.next()) {
+                for (int i = 1; i <= md.getColumnCount(); i++) {
+                    if (i > 1) System.out.print("\t");
+                    System.out.print(rs.getString(i));
+                }
+                System.out.println();
+            }
+        }
+        else {
+            int count = stmt.getUpdateCount();
+            System.out.println(count + " rows updated.");
         }
         stmt.close();
         conn.close();
