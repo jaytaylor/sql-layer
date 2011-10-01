@@ -53,12 +53,20 @@ public class IndexPicker extends BaseRule
         }
 
         protected void pickIndexes(Joinable joinable) {
-            if (joinable instanceof TableJoins)
+            if (joinable instanceof TableJoins) {
                 pickIndex((TableJoins)joinable);
-            else if (joinable instanceof JoinNode)
+                return;
+            }
+            if (joinable instanceof JoinNode) {
                 pickIndexes((JoinNode)joinable);
+                return;
+            }
+
             assert !(joinable instanceof TableSource);
-            // Other kinds like VALUES and subquery are set.
+            if (joinable instanceof ColumnSource) {
+                // Subqueries, VALUES, etc. now available.
+                boundTables.add((ColumnSource)joinable);
+            }
         }
 
         protected void pickIndex(TableJoins tableJoins) {
@@ -67,8 +75,17 @@ public class IndexPicker extends BaseRule
             // loop. Can only consider table indexes on the inner
             // joined tables and group indexes corresponding to outer
             // joins.
-            IndexGoal goal = determineIndexGoal(tableJoins, tableJoins.getTables());
+            IndexGoal goal = determineIndexGoal(tableJoins);
             IndexScan index = pickBestIndex(tableJoins, goal);
+            pickedIndex(tableJoins, goal, index);
+        }
+
+        protected IndexGoal determineIndexGoal(TableJoins tableJoins) {
+            return determineIndexGoal(tableJoins, tableJoins.getTables());
+        }
+
+        protected void pickedIndex(TableJoins tableJoins, 
+                                   IndexGoal goal, IndexScan index) {
             if (index != null) {
                 goal.installUpstream(index);
             }
@@ -145,7 +162,50 @@ public class IndexPicker extends BaseRule
         }
 
         protected void pickIndexes(JoinNode join) {
-            assert false;
+            join.setImplementation(JoinNode.Implementation.NESTED_LOOPS);
+
+            boolean twoTablesInner = false;
+            switch (join.getJoinType()) {
+            case INNER:
+                twoTablesInner = ((join.getLeft() instanceof TableJoins) && 
+                                  (join.getRight() instanceof TableJoins));
+                break;
+            case RIGHT:
+                join.reverse();
+            }
+
+            if (!twoTablesInner) {
+                pickIndexes(join.getLeft());
+                pickIndexes(join.getRight());
+                return;
+            }
+
+            // TODO: Better to find all the INNER joins beneath this
+            // and do them all at once, not a pair at a time.
+            
+            TableJoins left = (TableJoins)join.getLeft();
+            TableJoins right = (TableJoins)join.getRight();
+            IndexGoal lgoal = determineIndexGoal(left);
+            IndexScan lindex = pickBestIndex(left, lgoal);
+            IndexGoal rgoal = determineIndexGoal(right);
+            IndexScan rindex = pickBestIndex(right, rgoal);
+            boolean rightFirst = false;
+            if (lindex == null)
+                rightFirst = (rindex != null);
+            else if (rindex != null)
+                rightFirst = (lgoal.compare(lindex, rindex) < 0);
+            if (rightFirst) {
+                TableJoins temp = left;
+                left = right;
+                right = temp;
+
+                join.reverse();
+                lgoal = rgoal;
+                lindex = rindex;
+            }
+            // Commit to the left choice and redo the right with it bound.
+            pickedIndex(left, lgoal, lindex);
+            pickIndexes(right);
         }
     }
 
