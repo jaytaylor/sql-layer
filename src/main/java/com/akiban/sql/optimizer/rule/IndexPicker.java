@@ -165,7 +165,6 @@ public class IndexPicker extends BaseRule
         @Override
         public boolean visit(PlanNode n) {
             if (n instanceof Joinable) {
-                assert !(n instanceof TableSource); // These should be wrapped already.
                 Joinable j = (Joinable)n;
                 while (j.getOutput() instanceof Joinable)
                     j = (Joinable)j.getOutput();
