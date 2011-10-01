@@ -44,6 +44,8 @@ public final class StandardExpressionRegistry implements ExpressionRegistry {
         result.put("minus", LongOps.LONG_SUBTRACT);
         result.put("times", LongOps.LONG_MULTIPLY);
         result.put("divide", LongOps.LONG_DIVIDE);
+        result.put("and", BoolLogicExpression.andComposer);
+        result.put("or", BoolLogicExpression.orComposer);
 
         return result;
     }
