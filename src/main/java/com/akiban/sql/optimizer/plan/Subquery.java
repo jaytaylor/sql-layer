@@ -39,4 +39,11 @@ public class Subquery extends BaseQuery
         this.outerTables = outerTables;
     }
 
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        if (outerTables != null)
+            outerTables = duplicateSet(outerTables, map);
+    }
+
 }
