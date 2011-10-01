@@ -93,6 +93,7 @@ public class IndexPicker extends BaseRule
             if (scan == null)
                 scan = new GroupScan(tableJoins.getGroup());
             tableJoins.setScan(scan);
+            boundTables.addAll(tableJoins.getTables());
         }
 
         protected IndexGoal determineIndexGoal(PlanNode input, 
@@ -100,7 +101,9 @@ public class IndexPicker extends BaseRule
             List<ConditionExpression> conditions;
             Sort ordering = null;
             AggregateSource grouping = null;
-            input = input.getOutput();
+            do {
+                input = input.getOutput();
+            } while (input instanceof Joinable);
             if (input instanceof Select)
                 conditions = ((Select)input).getConditions();
             else
