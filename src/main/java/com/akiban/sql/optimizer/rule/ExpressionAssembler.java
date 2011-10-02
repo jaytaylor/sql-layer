@@ -46,6 +46,11 @@ public class ExpressionAssembler
 
         /** Return the row type that the index goes with. */
         public RowType getRowType();
+    }
+    
+    public interface ColumnExpressionContext {
+        /** Get the current input row if any. */
+        public ColumnExpressionToIndex getCurrentRow();
 
         /** Get list (deepest first) of rows from nested loops. */
         public List<ColumnExpressionToIndex> getBoundRows();
@@ -55,13 +60,13 @@ public class ExpressionAssembler
          */
         public int getBindingsOffset();
     }
-    
+
     public Expression assembleExpression(ExpressionNode node,
-                                         ColumnExpressionToIndex fieldOffsets) {
+                                         ColumnExpressionContext columnContext) {
         if (node instanceof ConstantExpression)
             return literal(((ConstantExpression)node).getValue());
         else if (node instanceof ColumnExpression)
-            return assembleColumnExpression((ColumnExpression)node, fieldOffsets);
+            return assembleColumnExpression((ColumnExpression)node, columnContext);
         else if (node instanceof ParameterExpression)
             return variable(node.getAkType(), ((ParameterExpression)node).getPosition());
         else if (node instanceof BooleanOperationExpression)
@@ -69,18 +74,18 @@ public class ExpressionAssembler
         else if (node instanceof CastExpression)
             // TODO: Need actual cast.
             return assembleExpression(((CastExpression)node).getOperand(),
-                                      fieldOffsets);
+                                      columnContext);
         else if (node instanceof ComparisonCondition) {
             ComparisonCondition cond = (ComparisonCondition)node;
-            return compare(assembleExpression(cond.getLeft(), fieldOffsets),
+            return compare(assembleExpression(cond.getLeft(), columnContext),
                            cond.getOperation(),
-                           assembleExpression(cond.getRight(), fieldOffsets));
+                           assembleExpression(cond.getRight(), columnContext));
         }
         else if (node instanceof FunctionExpression) {
             FunctionExpression funcNode = (FunctionExpression) node;
             List<Expression> children = new ArrayList<Expression>();
             for (ExpressionNode operand : funcNode.getOperands()) {
-                children.add(assembleExpression(operand, fieldOffsets));
+                children.add(assembleExpression(operand, columnContext));
             }
             return expressionRegistry.composer(funcNode.getFunction()).compose(children);
         }
@@ -96,18 +101,21 @@ public class ExpressionAssembler
     }
 
     public Expression assembleColumnExpression(ColumnExpression column,
-                                               ColumnExpressionToIndex fieldOffsets) {
-        int fieldIndex = fieldOffsets.getIndex(column);
-        if (fieldIndex >= 0)
-            return field(fieldOffsets.getRowType(), fieldIndex);
+                                               ColumnExpressionContext columnContext) {
+        ColumnExpressionToIndex currentRow = columnContext.getCurrentRow();
+        if (currentRow != null) {
+            int fieldIndex = currentRow.getIndex(column);
+            if (fieldIndex >= 0)
+                return field(currentRow.getRowType(), fieldIndex);
+        }
         
-        List<ColumnExpressionToIndex> boundRows = fieldOffsets.getBoundRows();
+        List<ColumnExpressionToIndex> boundRows = columnContext.getBoundRows();
         for (int rowIndex = boundRows.size() - 1; rowIndex >= 0; rowIndex--) {
             ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
             if (boundRow == null) continue;
-            fieldIndex = boundRow.getIndex(column);
+            int fieldIndex = boundRow.getIndex(column);
             if (fieldIndex >= 0) {
-                rowIndex += fieldOffsets.getBindingsOffset();
+                rowIndex += columnContext.getBindingsOffset();
                 return boundField(boundRow.getRowType(), rowIndex, fieldIndex);
             }
         }
@@ -115,7 +123,7 @@ public class ExpressionAssembler
     }
 
     public Expression assembleSubqueryExpression(SubqueryExpression node,
-                                                 ColumnExpressionToIndex fieldOffsets,
+                                                 ColumnExpressionContext columnContext,
                                                  Operator subquery) {
         if (node instanceof SubqueryValueExpression)
             throw new UnsupportedSQLException("subquery as expression", 
