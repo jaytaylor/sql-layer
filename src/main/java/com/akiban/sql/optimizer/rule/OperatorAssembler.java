@@ -108,8 +108,8 @@ public class OperatorAssembler extends BaseRule
                 // VALUES results in column1, column2, ...
                 resultColumns = getResultColumns(stream.rowType.nFields());
             }
-            return new PhysicalSelect(stream.operator, resultColumns,
-                                      getParameterTypes());
+            return new PhysicalSelect(stream.operator, stream.rowType,
+                                      resultColumns, getParameterTypes());
         }
 
         protected PhysicalUpdate insertStatement(InsertStatement insertStatement) {
