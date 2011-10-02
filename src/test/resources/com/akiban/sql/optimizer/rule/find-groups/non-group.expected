@@ -1,0 +1,9 @@
+SelectQuery@1f78ef1
+  ResultSet@1c9a690[id, name, state, id, pid, name]
+    Project@1d6776d[user.parent.id, user.parent.name, user.parent.state, user.child.id, user.child.pid, user.child.name]
+      Select@13ad085[user.child.name == user.parent.name]
+        JoinNode@4fce71(INNER_JOIN)
+          TableJoins@17a8a02(TableGroup@1faba46(parent))
+            TableSource@10e790c(user.parent - TableGroup@1faba46(parent))
+          TableJoins@1db7df8(TableGroup@12b3d53(parent))
+            TableSource@12d263f(user.child - TableGroup@12b3d53(parent))
