@@ -95,6 +95,8 @@ public class MapFolder extends BaseRule
           parent.replaceInput(child, map);
           map.setInner(child);
         }
+
+        map.setJoinType(null);  // No longer special.
     }
 
 }
