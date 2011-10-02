@@ -47,8 +47,15 @@ public final class BoundFieldExpression implements Expression {
     public AkType valueType() {
         return fieldExpression.valueType();
     }
-    // BoundFieldExpression interface
 
+    // Object interface
+
+    @Override
+    public String toString() {
+        return String.format("Bound(%d,%s)", rowBindingPosition, fieldExpression.toString());
+    }
+
+    // BoundFieldExpression interface
 
     public BoundFieldExpression(int rowBindingPosition, FieldExpression fieldExpression) {
         this.rowBindingPosition = rowBindingPosition;
