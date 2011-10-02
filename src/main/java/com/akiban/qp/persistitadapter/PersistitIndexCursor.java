@@ -112,7 +112,7 @@ class PersistitIndexCursor implements Cursor
 
     private ShareHolder<PersistitIndexRow> unsharedRow() throws PersistitException
     {
-        if (row.get().isShared()) {
+        if (row.isEmpty() || row.isShared()) {
             row.hold(adapter.newIndexRow(indexRowType));
         }
         return row;
