@@ -29,8 +29,10 @@ public class DefaultRules
         new OuterJoinPromoter(),
         new GroupJoinFinder(),
         new IndexPicker(),
+        new NestedLoopMapper(),
         new BranchJoiner(),
         new SelectPreponer(),
+        new MapFolder(),
         new OperatorAssembler()
      );
 
