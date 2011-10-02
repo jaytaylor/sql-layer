@@ -1,15 +1,14 @@
-SelectQuery@250d593e
-  ResultSet@f5e0873[_SQL_COL_1]
-    Project@667cbde6[COUNT(*)]
-      Select@7977b9b[]
-        AggregateSource@6a340101(UNGROUPED,[])
-          Select@7c2e1f1f[]
-            Product@10aadc97
-              Flatten@4178460d(user.customers INNER user.orders)
-                BranchLookup@3f3f210f(user.customers -> user.customers)
-                  IndexScan@49938039(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith)
-                  TableSource@6f649b44(user.orders - TableGroupJoin@72c743eb(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-                  TableSource@48082d37(user.addresses - TableGroupJoin@783c342b(Join(user/customers/cid/user/user.addresses/cid: user.addresses -> user.customers, group(customers))))
-              Flatten@388530b8(user.customers INNER user.addresses)
-                BranchLookup@30419d05(user.customers -> user.addresses)
-                  TableSource@48082d37(user.addresses - TableGroupJoin@783c342b(Join(user/customers/cid/user/user.addresses/cid: user.addresses -> user.customers, group(customers))))
+SelectQuery@cbf30e
+  ResultSet@1c247a0[_SQL_COL_1]
+    Project@1ec6696[COUNT(*)]
+      Select@1431340[]
+        AggregateSource@a4e2e3(UNGROUPED,[])
+          Select@12bb7e0[]
+            Product@4b035d
+              Flatten@ca0115(user.customers INNER user.orders)
+                BranchLookup@d1fa5(user.customers -> user.customers)
+                  IndexScan@198a455(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith)
+                  TableSource@15a0305(user.orders - TableGroupJoin@4cee32(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+              Flatten@aa37a6(user.customers INNER user.addresses)
+                BranchLookup@12b7eea(user.customers -> user.addresses)
+                  TableSource@1b3f829(user.addresses - TableGroupJoin@99353f(Join(user/customers/cid/user/user.addresses/cid: user.addresses -> user.customers, group(customers))))

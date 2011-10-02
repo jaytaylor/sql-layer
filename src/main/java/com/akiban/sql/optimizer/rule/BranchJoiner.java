@@ -139,11 +139,13 @@ public class BranchJoiner extends BaseRule
         // Load the main branch.
         List<TableNode> mainBranchNodes;
         List<TableSource> mainBranchSources;
+        descendants.retainAll(branching.getMainBranchTableSources());
         if (descendants.isEmpty()) {
             mainBranchNodes = branching.getMainBranchTableNodes();
             mainBranchSources = branching.getMainBranchTableSources();
         }
         else {
+            Collections.sort(descendants, tableSourceById);
             scan = new BranchLookup(scan, indexTableNode, 
                                     indexTableNode, descendants);
             // Only need the rest.
