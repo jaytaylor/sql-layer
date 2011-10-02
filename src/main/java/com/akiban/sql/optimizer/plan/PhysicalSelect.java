@@ -50,6 +50,7 @@ public class PhysicalSelect extends BasePlannable
                           List<PhysicalResultColumn> resultColumns,
                           DataTypeDescriptor[] parameterTypes) {
         super(resultOperator, parameterTypes);
+        this.rowType = rowType;
         this.resultColumns = resultColumns;
     }
 
