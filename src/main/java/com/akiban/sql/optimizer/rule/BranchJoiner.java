@@ -371,7 +371,6 @@ public class BranchJoiner extends BaseRule
             // Need a product of several branches.
             List<PlanNode> subplans = new ArrayList<PlanNode>(nbranches + 1);
             subplans.add(input);
-            input = new Product(subplans);
 
             List<TableNode> branchpoints = 
                 new ArrayList<TableNode>(branching.getSideBranches().keySet());
@@ -389,6 +388,8 @@ public class BranchJoiner extends BaseRule
                                           subbranch, branchpoint.getParent());
                 subplans.add(subplan);
             }
+
+            input = new Product(subplans);
         }
         return input;
     }
