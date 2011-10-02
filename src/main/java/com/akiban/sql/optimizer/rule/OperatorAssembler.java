@@ -829,7 +829,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         @Override
-            public RowType getRowType() {
+        public RowType getRowType() {
             return rowType;
         }
     }
@@ -852,7 +852,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         @Override
-            public int getIndex(ColumnExpression column) {
+        public int getIndex(ColumnExpression column) {
             if (column.getTable() != source) 
                 return -1;
             else
@@ -872,7 +872,7 @@ public class OperatorAssembler extends BaseRule
         @Override
         // Access field of the index row itself. 
         // (Covering index or condition before lookup.)
-            public int getIndex(ColumnExpression column) {
+        public int getIndex(ColumnExpression column) {
             return index.getColumns().indexOf(column);
         }
     }
@@ -891,7 +891,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         @Override
-            public int getIndex(ColumnExpression column) {
+        public int getIndex(ColumnExpression column) {
             Integer tableOffset = tableOffsets.get(column.getTable());
             if (tableOffset == null)
                 return -1;
@@ -911,7 +911,7 @@ public class OperatorAssembler extends BaseRule
             Collections.sort(otherTables,
                              new Comparator<TableSource>() {
                                  @Override
-                                     public int compare(TableSource x, TableSource y) {
+                                 public int compare(TableSource x, TableSource y) {
                                      return other.tableOffsets.get(x) - other.tableOffsets.get(y);
                                  }
                              });
