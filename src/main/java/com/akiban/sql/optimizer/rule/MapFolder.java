@@ -23,13 +23,15 @@ import com.akiban.server.error.UnsupportedSQLException;
 
 import java.util.*;
 
-/** Convert nested loop join into map. */
-public class NestedLoopFolder extends BaseRule
+/** Take a map join node and push enough into the inner loop that the
+ * bindings can be evaluated properly.
+ */
+public class MapFolder extends BaseRule
 {
-    static class NestedLoopsJoinsFinder implements PlanVisitor, ExpressionVisitor {
-        List<JoinNode> result = new ArrayList<JoinNode>();
+    static class MapJoinsFinder implements PlanVisitor, ExpressionVisitor {
+        List<MapJoin> result = new ArrayList<MapJoin>();
 
-        public List<JoinNode> find(PlanNode root) {
+        public List<MapJoin> find(PlanNode root) {
             root.accept(this);
             return result;
         }
@@ -46,10 +48,8 @@ public class NestedLoopFolder extends BaseRule
 
         @Override
         public boolean visit(PlanNode n) {
-            if (n instanceof JoinNode) {
-                JoinNode j = (JoinNode)n;
-                if (j.getImplementation() == JoinNode.Implementation.NESTED_LOOPS)
-                    result.add(j);
+            if (n instanceof MapJoin) {
+              result.add((MapJoin)n);
             }
             return true;
         }
@@ -73,34 +73,28 @@ public class NestedLoopFolder extends BaseRule
     @Override
     public void apply(PlanContext planContext) {
         BaseQuery query = (BaseQuery)planContext.getPlan();
-        List<JoinNode> joins = new NestedLoopsJoinsFinder().find(query);
-        for (JoinNode join : joins)
-            fold(join);
+        List<MapJoin> maps = new MapJoinsFinder().find(query);
+        for (MapJoin map : maps)
+            fold(map);
     }
 
-    protected void fold(JoinNode join) {
-        if (join.getJoinType() != JoinNode.JoinType.INNER)
+    protected void fold(MapJoin map) {
+        if (map.getJoinType() != JoinType.INNER)
             throw new UnsupportedSQLException("non-INNER complex join", null);
 
-        PlanNode outer = join.getLeft();
-        PlanNode inner = join.getRight();
-        {
-            PlanWithInput parent = join;
-            PlanNode child;
-            do {
-                child = parent;
-                parent = child.getOutput();
-            } while (!((parent instanceof ResultSet) ||
-                       (child instanceof Project) ||
-                       (child instanceof AggregateSource)));
-            if (child != join) {
-                join.getOutput().replaceInput(join, inner);
-                inner = child;
-                parent.replaceInput(child, join);
-            }
+        PlanWithInput parent = map;
+        PlanNode child;
+        do {
+          child = parent;
+          parent = child.getOutput();
+        } while (!((parent instanceof ResultSet) ||
+                   (child instanceof Project) ||
+                   (child instanceof AggregateSource)));
+        if (child != map) {
+          map.getOutput().replaceInput(map, map.getInner());
+          parent.replaceInput(child, map);
+          map.setInner(child);
         }
-        MapJoin map = new MapJoin(outer, inner);
-        join.getOutput().replaceInput(join, map);
     }
 
 }
