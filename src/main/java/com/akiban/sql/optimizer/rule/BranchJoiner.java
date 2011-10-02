@@ -270,6 +270,7 @@ public class BranchJoiner extends BaseRule
         public void addSideBranchTable(TableSource table) {
             TableNode branchPoint = getBranchPoint(table.getTable());
             assert (branchPoint != null);
+            addMainBranchTable(branchPoint.getParent());
             List<TableSource> entry = sideBranches.get(branchPoint);
             if (entry == null) {
                 entry = new ArrayList<TableSource>();
