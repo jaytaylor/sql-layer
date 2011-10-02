@@ -88,8 +88,8 @@ public class MapFolder extends BaseRule
           child = parent;
           parent = child.getOutput();
         } while (!((parent instanceof ResultSet) ||
-                   (child instanceof Project) ||
-                   (child instanceof AggregateSource)));
+                   (parent instanceof AggregateSource) ||
+                   (child instanceof Project)));
         if (child != map) {
           map.getOutput().replaceInput(map, map.getInner());
           parent.replaceInput(child, map);
