@@ -1,0 +1,15 @@
+SelectQuery@250d593e
+  ResultSet@f5e0873[_SQL_COL_1]
+    Project@667cbde6[COUNT(*)]
+      Select@7977b9b[]
+        AggregateSource@6a340101(UNGROUPED,[])
+          Select@7c2e1f1f[]
+            Product@10aadc97
+              Flatten@4178460d(user.customers INNER user.orders)
+                BranchLookup@3f3f210f(user.customers -> user.customers)
+                  IndexScan@49938039(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith)
+                  TableSource@6f649b44(user.orders - TableGroupJoin@72c743eb(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+                  TableSource@48082d37(user.addresses - TableGroupJoin@783c342b(Join(user/customers/cid/user/user.addresses/cid: user.addresses -> user.customers, group(customers))))
+              Flatten@388530b8(user.customers INNER user.addresses)
+                BranchLookup@30419d05(user.customers -> user.addresses)
+                  TableSource@48082d37(user.addresses - TableGroupJoin@783c342b(Join(user/customers/cid/user/user.addresses/cid: user.addresses -> user.customers, group(customers))))
