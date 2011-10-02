@@ -164,6 +164,7 @@ public class PostgresOperatorCompiler_New extends OperatorCompiler_New
                 columnTypes.add(resultColumn.getType());
             }
             return new PostgresOperatorStatement(select.getResultOperator(),
+                                                 select.getResultRowType(),
                                                  columnNames, columnTypes,
                                                  parameterTypes,
                                                  // TODO: Assumes Limit operator used.
