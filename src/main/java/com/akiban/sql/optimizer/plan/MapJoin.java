@@ -23,6 +23,7 @@ import java.util.*;
 public class MapJoin extends BasePlanNode implements PlanWithInput
 {
     private PlanNode outer, inner;
+    private Set<ColumnSource> outerTables;
 
     public MapJoin(PlanNode outer, PlanNode inner) {
         this.outer = outer;
@@ -44,6 +45,13 @@ public class MapJoin extends BasePlanNode implements PlanWithInput
     public void setInner(PlanNode inner) {
         this.inner = inner;
         inner.setOutput(this);
+    }
+
+    public Set<ColumnSource> getOuterTables() {
+        return outerTables;
+    }
+    public void setOuterTables(Set<ColumnSource> outerTables) {
+        this.outerTables = outerTables;
     }
 
     @Override
@@ -72,6 +80,8 @@ public class MapJoin extends BasePlanNode implements PlanWithInput
         super.deepCopy(map);
         outer = (PlanNode)outer.duplicate(map);
         inner = (PlanNode)inner.duplicate(map);
+        if (outerTables != null)
+            outerTables = duplicateSet(outerTables, map);
     }
 
 }

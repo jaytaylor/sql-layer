@@ -84,6 +84,21 @@ public class NestedLoopFolder extends BaseRule
 
         PlanNode outer = join.getLeft();
         PlanNode inner = join.getRight();
+        {
+            PlanWithInput parent = join;
+            PlanNode child;
+            do {
+                child = parent;
+                parent = child.getOutput();
+            } while (!((parent instanceof ResultSet) ||
+                       (child instanceof Project) ||
+                       (child instanceof AggregateSource)));
+            if (child != join) {
+                join.getOutput().replaceInput(join, inner);
+                inner = child;
+                parent.replaceInput(child, join);
+            }
+        }
         MapJoin map = new MapJoin(outer, inner);
         join.getOutput().replaceInput(join, map);
     }
