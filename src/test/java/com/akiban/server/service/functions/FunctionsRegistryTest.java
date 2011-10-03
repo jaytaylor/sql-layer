@@ -15,10 +15,19 @@
 
 package com.akiban.server.service.functions;
 
+import com.akiban.server.aggregation.Aggregator;
+import com.akiban.server.aggregation.AggregatorFactory;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.types.AkType;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -26,14 +35,14 @@ public final class FunctionsRegistryTest {
     
     @Test
     public void findAggregatorFactory() {
-        FunctionsRegistry registry = registry(MockFinderTargets.GoodForAggregators.class);
-        assertEquals(MockFinderTargets.GoodForAggregators.expectedAggregatorFactories(), registry.getAllAggregators());
+        FunctionsRegistry registry = registry(Good.class);
+        assertEquals(Good.expectedAggregatorFactories(), registry.getAllAggregators());
     }
 
     @Test
     public void findExpressionComposer() {
-        FunctionsRegistry registry = registry(MockFinderTargets.GoodForAggregators.class);
-        assertEquals(MockFinderTargets.GoodForAggregators.expectedExpressionFactories(), registry.getAllComposers());
+        FunctionsRegistry registry = registry(Good.class);
+        assertEquals(Good.expectedExpressionFactories(), registry.getAllComposers());
     }
 
     // use in this class
@@ -55,5 +64,42 @@ public final class FunctionsRegistryTest {
         }
 
         private final List<Class<?>> classes;
+    }
+
+    public static class Good {
+
+        @Aggregate("foo")
+        public static AggregatorFactory get(AkType type) {
+            return type == AkType.LONG
+                    ? AGGREGATOR_FACTORY
+                    : null;
+        }
+
+        @Scalar("foo")
+        public static final ExpressionComposer EXPRESSION_COMPOSER = new ExpressionComposer() {
+            @Override
+            public Expression compose(List<? extends Expression> arguments) {
+                throw new UnsupportedOperationException();
+            }
+        };
+
+        static Map<String, Map<AkType, AggregatorFactory>> expectedAggregatorFactories() {
+            Map<String,Map<AkType,AggregatorFactory>> expected = new HashMap<String, Map<AkType, AggregatorFactory>>();
+            Map<AkType,AggregatorFactory> expectedInner = new EnumMap<AkType, AggregatorFactory>(AkType.class);
+            expectedInner.put(AkType.LONG, AGGREGATOR_FACTORY);
+            expected.put("foo", expectedInner);
+            return expected;
+        }
+
+        static Map<String,ExpressionComposer> expectedExpressionFactories() {
+            return Collections.singletonMap("foo", EXPRESSION_COMPOSER);
+        }
+
+        private static final AggregatorFactory AGGREGATOR_FACTORY = new AggregatorFactory() {
+            @Override
+            public Aggregator get() {
+                throw new UnsupportedOperationException();
+            }
+        };
     }
 }
