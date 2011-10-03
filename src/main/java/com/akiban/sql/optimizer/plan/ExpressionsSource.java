@@ -49,7 +49,8 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource
     // TODO: It might be interesting to note when it's also sorted for
     // WHERE x IN (...) ORDER BY x.
     public static enum DistinctState {
-        DISTINCT, DISTINCT_WITH_NULL, HAS_PARAMETERS, HAS_EXPRESSSIONS
+        DISTINCT, DISTINCT_WITH_NULL, HAS_PARAMETERS, HAS_EXPRESSSIONS,
+        NEED_DISTINCT
     }
 
     private DistinctState distinctState;
