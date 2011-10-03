@@ -1,0 +1,13 @@
+SelectQuery@64f007ad
+  ResultSet@4a8822a0[order_date, sku, quan]
+    MapJoin@507d811a()
+      Flatten@5fa6fb3e(user.orders INNER user.items)
+        BranchLookup@4bb8d481(user.customers -> user.customers)
+          IndexScan@538787fd(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith)
+          TableSource@246972f1(user.orders - TableGroupJoin@66f11de2(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+          TableSource@6f93ee4(user.items - TableGroupJoin@5fe1153a(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+      Project@2f995c9a[user.orders.order_date, user.items.sku, user.items.quan]
+        Select@7d8e9adf[]
+          Limit@3238c403(LIMIT 1)
+            Select@2cccbab7[user.items.quan == VALUES[0]]
+              ExpressionsSource@558fee4f[[50], [100]]

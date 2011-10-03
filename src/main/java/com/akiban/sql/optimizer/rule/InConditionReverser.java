@@ -50,7 +50,6 @@ public class InConditionReverser extends BaseRule
         // The ANY condition becomes the join condition for an
         // EXISTS-like semi-join with its source.
         ConditionExpression cond = (ConditionExpression)project.getFields().get(0);
-        select.getConditions().remove(any);
         PlanNode sinput = select.getInput();
         if (!((sinput instanceof Joinable) && (input instanceof Joinable)))
             return;
@@ -58,6 +57,7 @@ public class InConditionReverser extends BaseRule
         ConditionList conds = new ConditionList(1);
         conds.add(cond);
         join.setJoinConditions(conds);
+        select.getConditions().remove(any);
         select.replaceInput(sinput, join);
         if (input instanceof ExpressionsSource) {
             // If the source was VALUES, see if it's distinct. If so,
@@ -102,9 +102,18 @@ public class InConditionReverser extends BaseRule
         Subquery subquery = exists.getSubquery();
         PlanNode input = subquery.getInput();
         PlanNode sinput = select.getInput();
+        ConditionList conditions = null;
+        if (input instanceof Select) {
+            Select sinner = (Select)input;
+            conditions = sinner.getConditions();
+            input = sinner.getInput();
+        }
         if (!((sinput instanceof Joinable) && (input instanceof Joinable)))
             return;
         JoinNode join = new JoinNode((Joinable)sinput, (Joinable)input, JoinType.SEMI);
+        if (conditions != null)
+            join.setJoinConditions(conditions);
+        select.getConditions().remove(exists);
         select.replaceInput(sinput, join);
     }
     

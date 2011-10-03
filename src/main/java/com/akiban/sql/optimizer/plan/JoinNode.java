@@ -90,6 +90,10 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         this.joinConditions = joinConditions;
     }
 
+    public boolean hasJoinConditions() {
+        return ((joinConditions != null) && !joinConditions.isEmpty());
+    }
+
     public TableGroupJoin getGroupJoin() {
         return groupJoin;
     }

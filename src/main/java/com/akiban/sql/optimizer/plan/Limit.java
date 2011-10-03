@@ -31,6 +31,10 @@ public class Limit extends BasePlanWithInput
         this.limitIsParameter = limitIsParameter;
     }
 
+    public Limit(PlanNode input, int limit) {
+        this(input, 0, false, limit, false);
+    }
+
     public int getOffset() {
         return offset;
     }

@@ -426,7 +426,7 @@ public class BranchJoiner extends BaseRule
             if (idx <= 0) return;
             if (parent != null) {
                 joinTypes.set(idx - 1, parent.getJoinType());
-                if (parent.getJoinConditions() != null) {
+                if (parent.hasJoinConditions()) {
                     for (ConditionExpression cond : parent.getJoinConditions()) {
                         if (cond.getImplementation() !=
                             ConditionExpression.Implementation.GROUP_JOIN) {
