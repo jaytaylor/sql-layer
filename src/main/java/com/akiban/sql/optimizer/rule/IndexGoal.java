@@ -81,7 +81,7 @@ public class IndexGoal implements Comparator<IndexScan>
     }
 
     // Tables already bound outside.
-    private Set<TableSource> boundTables;
+    private Set<ColumnSource> boundTables;
 
     // All the conditions that might be indexable.
     private List<ConditionExpression> conditions;
@@ -103,8 +103,8 @@ public class IndexGoal implements Comparator<IndexScan>
     // All the columns besides those in conditions that will be needed.
     private RequiredColumns requiredColumns;
 
-    public IndexGoal(PlanNode plan,
-                     Set<TableSource> boundTables, 
+    public IndexGoal(BaseQuery query,
+                     Set<ColumnSource> boundTables, 
                      List<ConditionExpression> conditions,
                      AggregateSource grouping,
                      Sort ordering,
@@ -114,15 +114,15 @@ public class IndexGoal implements Comparator<IndexScan>
         this.grouping = grouping;
         this.ordering = ordering;
         
-        if ((plan instanceof UpdateStatement) ||
-            (plan instanceof DeleteStatement))
-          updateTarget = ((BaseUpdateStatement)plan).getTargetTable();
+        if ((query instanceof UpdateStatement) ||
+            (query instanceof DeleteStatement))
+          updateTarget = ((BaseUpdateStatement)query).getTargetTable();
 
         requiredColumns = new RequiredColumns(tables);
         Collection<PlanNode> orderings = (ordering == null) ? 
             Collections.<PlanNode>emptyList() : 
             Collections.<PlanNode>singletonList(ordering);
-        plan.accept(new RequiredColumnsFiller(requiredColumns, orderings, conditions));
+        query.accept(new RequiredColumnsFiller(requiredColumns, orderings, conditions));
     }
 
     /** Populate given index usage according to goal.

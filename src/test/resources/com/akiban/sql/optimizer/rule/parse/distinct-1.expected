@@ -3,6 +3,6 @@ SelectQuery@11568fb5
     Project@215b011c[user.child.name]
       ResultSet@62a2220f[user.child.name]
         Select@26a3960[user.parent.name != Smith]
-          JoinNode@bdccedd(INNER_JOIN[user.parent.id == user.child.pid])
+          JoinNode@bdccedd(INNER[user.parent.id == user.child.pid])
             TableSource@4d911540(user.parent)
             TableSource@700a4488(user.child)

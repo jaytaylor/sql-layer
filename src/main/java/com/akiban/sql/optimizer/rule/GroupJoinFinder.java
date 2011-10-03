@@ -18,12 +18,12 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.API.JoinType;
 
 import java.util.*;
 
@@ -90,8 +90,7 @@ public class GroupJoinFinder extends BaseRule
     protected void moveAndNormalizeWhereConditions(List<Joinable> islands) {
         for (Joinable island : islands) {
             if (island.getOutput() instanceof Select) {
-                List<ConditionExpression> conditions = 
-                    ((Select)island.getOutput()).getConditions();
+                ConditionList conditions = ((Select)island.getOutput()).getConditions();
                 moveInnerJoinConditions(island, conditions);
                 normalizeColumnComparisons(conditions);
             }
@@ -102,10 +101,10 @@ public class GroupJoinFinder extends BaseRule
     // So long as there are INNER joins, move their conditions up to
     // the top-level join.
     protected void moveInnerJoinConditions(Joinable joinable,
-                                           List<ConditionExpression> whereConditions) {
+                                           ConditionList whereConditions) {
         if (joinable.isInnerJoin()) {
             JoinNode join = (JoinNode)joinable;
-            List<ConditionExpression> joinConditions = join.getJoinConditions();
+            ConditionList joinConditions = join.getJoinConditions();
             if (joinConditions != null) {
                 whereConditions.addAll(joinConditions);
                 joinConditions.clear();
@@ -119,7 +118,7 @@ public class GroupJoinFinder extends BaseRule
     // the form <col> <op> <expr>, with the child on the left in the
     // case of two columns, which is what we may then recognize as a
     // group join.
-    protected void normalizeColumnComparisons(List<ConditionExpression> conditions) {
+    protected void normalizeColumnComparisons(ConditionList conditions) {
         if (conditions == null) return;
         for (ConditionExpression cond : conditions) {
             if (cond instanceof ComparisonCondition) {
@@ -234,7 +233,7 @@ public class GroupJoinFinder extends BaseRule
     protected Joinable constructInnerJoins(List<? extends Joinable> joinables) {
         Joinable result = joinables.get(0);
         for (int i = 1; i < joinables.size(); i++) {
-            result = new JoinNode(result, joinables.get(i), JoinType.INNER_JOIN);
+            result = new JoinNode(result, joinables.get(i), JoinType.INNER);
         }
         return result;
     }
@@ -270,7 +269,7 @@ public class GroupJoinFinder extends BaseRule
                     List<ComparisonCondition> joinConditions = tableJoin.getConditions();
                     // Move down from WHERE conditions to join conditions.
                     if (output.getJoinConditions() == null)
-                        output.setJoinConditions(new ArrayList<ConditionExpression>());
+                        output.setJoinConditions(new ConditionList());
                     output.getJoinConditions().addAll(joinConditions);
                     conditions.removeAll(joinConditions);
                 }

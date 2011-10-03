@@ -3,7 +3,7 @@ SelectQuery@14acfcd
     Project@cb78915[user.customers.name, user.orders.order_date]
       Select@19113f8[EXISTS(Subquery@626bd9e0)]
         TableJoins@7e266b44(TableGroup@100bac2(customers))
-          JoinNode@ab54eb(INNER_JOIN[user.orders.cid == user.customers.cid] - TableGroupJoin@542529(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+          JoinNode@ab54eb(INNER/GROUP[user.orders.cid == user.customers.cid] - TableGroupJoin@542529(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
             TableSource@53ab04(user.customers - TableGroup@100bac2(customers))
             TableSource@e51b2c(user.orders - TableGroupJoin@542529(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
 

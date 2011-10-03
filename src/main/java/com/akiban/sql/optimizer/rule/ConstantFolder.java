@@ -385,12 +385,12 @@ public class ConstantFolder extends BaseRule
                 if (!checkConditions(join.getJoinConditions())) {
                     // Join cannot be satified.
                     switch (join.getJoinType()) {
-                    case INNER_JOIN:
+                    case INNER:
                         return null;
-                    case LEFT_JOIN:
+                    case LEFT:
                         eliminateSources(right);
                         return left;
-                    case RIGHT_JOIN:
+                    case RIGHT:
                         eliminateSources(left);
                         return right;
                     }
@@ -430,7 +430,7 @@ public class ConstantFolder extends BaseRule
          * Only valid when conditions are being tested, not when used
          * as a value.
          */
-        protected boolean checkConditions(List<ConditionExpression> conditions) {
+        protected boolean checkConditions(ConditionList conditions) {
             if (conditions == null) return true;
             int i = 0;
             while (i < conditions.size()) {
@@ -584,11 +584,11 @@ public class ConstantFolder extends BaseRule
         }
 
         protected SubqueryEmptiness isEmptySubquery(Subquery subquery) {
-            PlanNode node = subquery;
-            while ((node instanceof Subquery) ||
-                   (node instanceof ResultSet) ||
-                   (node instanceof Project))
-                node = ((BasePlanWithInput)node).getInput();
+            PlanNode node = subquery.getQuery();
+            if (node instanceof ResultSet)
+                node = ((ResultSet)node).getInput();
+            if (node instanceof Project)
+                node = ((Project)node).getInput();
             if ((node instanceof Select) &&
                 ((Select)node).getConditions().isEmpty())
                 node = ((BasePlanWithInput)node).getInput();
@@ -608,10 +608,9 @@ public class ConstantFolder extends BaseRule
         // If the inside of this subquery returns a single column (in
         // an obvious to work out way), get it.
         protected ExpressionNode getSubqueryColumn(Subquery subquery) {
-            PlanNode node = subquery;
-            while ((node instanceof Subquery) ||
-                   (node instanceof ResultSet))
-                node = ((BasePlanWithInput)node).getInput();
+            PlanNode node = subquery.getQuery();
+            if (node instanceof ResultSet)
+                node = ((ResultSet)node).getInput();
             if (node instanceof Project) {
                 List<ExpressionNode> cols = ((Project)node).getFields();
                 if (cols.size() == 1)

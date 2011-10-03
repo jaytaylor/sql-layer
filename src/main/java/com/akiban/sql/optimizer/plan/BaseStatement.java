@@ -17,30 +17,10 @@ package com.akiban.sql.optimizer.plan;
 
 /** A top-level (executable) query or statement.
  */
-public class BaseStatement extends BasePlanNode
+public class BaseStatement extends BaseQuery
 {
-    private PlanNode query;
-
     protected BaseStatement(PlanNode query) {
-        this.query = query;
-    }
-
-    public PlanNode getQuery() {
-        return query;
-    }
-
-    @Override
-    public boolean accept(PlanVisitor v) {
-        if (v.visitEnter(this)) {
-            query.accept(v);
-        }
-        return v.visitLeave(this);
-    }
-    
-    @Override
-    protected void deepCopy(DuplicateMap map) {
-        super.deepCopy(map);
-        query = (PlanNode)query.duplicate(map);
+        super(query);
     }
 
 }

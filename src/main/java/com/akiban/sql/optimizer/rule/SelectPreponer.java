@@ -35,7 +35,6 @@ public class SelectPreponer extends BaseRule
 {
     static class TableOriginFinder implements PlanVisitor, ExpressionVisitor {
         List<PlanNode> origins = new ArrayList<PlanNode>();
-        Map<PlanNode,PlanNode> nestings;
 
         public void find(PlanNode root) {
             root.accept(this);
@@ -43,10 +42,6 @@ public class SelectPreponer extends BaseRule
 
         public List<PlanNode> getOrigins() {
             return origins;
-        }
-
-        public Map<PlanNode,PlanNode> getNestings() {
-            return nestings;
         }
 
         @Override
@@ -77,12 +72,6 @@ public class SelectPreponer extends BaseRule
                     origins.add(n);
                 }
             }
-            else if (n instanceof Product) {
-                if (nestings == null)
-                    nestings = new HashMap<PlanNode,PlanNode>();
-                for (PlanNode subplan : ((Product)n).getSubplans())
-                    nestings.put(subplan, n);
-            }
             return true;
         }
 
@@ -107,17 +96,15 @@ public class SelectPreponer extends BaseRule
         TableOriginFinder finder = new TableOriginFinder();
         finder.find(plan.getPlan());
         for (PlanNode origin : finder.getOrigins()) {
-            new Preponer(finder.getNestings()).pullToward(origin);
+            new Preponer().pullToward(origin);
         }
     }
     
     static class Preponer {
-        Map<PlanNode,PlanNode> nestings;
         Map<TableSource,PlanNode> loaders;
         Map<ExpressionNode,PlanNode> indexColumns;
         
-        public Preponer(Map<PlanNode,PlanNode> nestings) {
-            this.nestings = nestings;
+        public Preponer() {
         }
 
         protected void pullToward(PlanNode node) {
@@ -175,7 +162,7 @@ public class SelectPreponer extends BaseRule
 
         // Have a straight path to these conditions and know where
         // tables came from.  See what can be moved back there.
-        protected void moveConditions(List<ConditionExpression> conditions) {
+        protected void moveConditions(ConditionList conditions) {
             Iterator<ConditionExpression> iter = conditions.iterator();
             while (iter.hasNext()) {
                 ConditionExpression condition = iter.next();
@@ -210,18 +197,14 @@ public class SelectPreponer extends BaseRule
             if (after instanceof Select)
                 select = (Select)after;
             else {
-                select = new Select(before, new ArrayList<ConditionExpression>(1));
+                select = new Select(before, new ConditionList(1));
                 after.replaceInput(before, select);
             }
             select.getConditions().add(condition);
         }
 
-        // Like PlanNode.getOutput(), except that it jumps up to Products, etc.
         protected PlanNode getOutput(PlanNode input) {
-            PlanNode output = input.getOutput();
-            if ((output == null) && (nestings != null))
-                output = nestings.get(input);
-            return output;
+            return input.getOutput();
         }
 
     }

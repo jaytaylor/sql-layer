@@ -15,16 +15,31 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.qp.operator.API.JoinType;
+import com.akiban.server.error.AkibanInternalException;
 
 import java.util.*;
 
 /** A join between two tables / subjoins. */
 public class JoinNode extends BaseJoinable implements PlanWithInput
 {
+    public static enum JoinType {
+        INNER,
+        LEFT,
+        RIGHT,
+        FULL_OUTER,
+        // These are beyond what flatten supports, used to represent EXISTS (sometimes).
+        SEMI,
+        ANTI
+    }
+    public static enum Implementation {
+        GROUP,
+        NESTED_LOOPS,
+        MERGE                   // TODO: Not implemented. Probably needs thought.
+    }
     private Joinable left, right;
     private JoinType joinType;
-    private List<ConditionExpression> joinConditions;
+    private Implementation implementation;
+    private ConditionList joinConditions;
     private TableGroupJoin groupJoin;
 
     public JoinNode(Joinable left, Joinable right, JoinType joinType) {
@@ -65,13 +80,13 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
 
     @Override
     public boolean isInnerJoin() {
-        return (joinType == JoinType.INNER_JOIN);
+        return (joinType == JoinType.INNER);
     }
 
-    public List<ConditionExpression> getJoinConditions() {
+    public ConditionList getJoinConditions() {
         return joinConditions;
     }
-    public void setJoinConditions(List<ConditionExpression> joinConditions) {
+    public void setJoinConditions(ConditionList joinConditions) {
         this.joinConditions = joinConditions;
     }
 
@@ -80,6 +95,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
     }
     public void setGroupJoin(TableGroupJoin groupJoin) {
         this.groupJoin = groupJoin;
+        this.implementation = Implementation.GROUP;
     }
 
     /** Get the condition that implements groupJoin. */
@@ -91,19 +107,31 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         return null;
     }
 
+    public Implementation getImplementation() {
+        return implementation;
+    }
+    public void setImplementation(Implementation implementation) {
+        this.implementation = implementation;
+    }
+
     /** Reverse operands and outer join direction if necessary. */
     public void reverse() {
+        switch (joinType) {
+        case INNER:
+        case FULL_OUTER:
+            break;
+        case LEFT:
+            joinType = JoinType.RIGHT;
+            break;
+        case RIGHT:
+            joinType = JoinType.LEFT;
+            break;
+        default:
+            throw new AkibanInternalException("Cannot reverse " + joinType + " join");
+        }
         Joinable temp = left;
         left = right;
         right = temp;
-        switch (joinType) {
-        case LEFT_JOIN:
-            joinType = JoinType.RIGHT_JOIN;
-            break;
-        case RIGHT_JOIN:
-            joinType = JoinType.LEFT_JOIN;
-            break;
-        }
     }
 
     @Override
@@ -146,6 +174,10 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         StringBuilder str = new StringBuilder(super.summaryString());
         str.append("(");
         str.append(joinType);
+        if (implementation != null) {
+            str.append("/");
+            str.append(implementation);
+        }
         if (joinConditions != null)
             str.append(joinConditions.toString());
         if (groupJoin != null) {
@@ -161,7 +193,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         super.deepCopy(map);
         left = (Joinable)left.duplicate(map);
         right = (Joinable)right.duplicate(map);
-        joinConditions = duplicateList(joinConditions, map);
+        joinConditions = joinConditions.duplicate(map);
     }
 
 }

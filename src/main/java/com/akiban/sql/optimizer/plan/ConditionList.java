@@ -15,35 +15,30 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
-/** A marker node around some subquery.
+/** A conjunction of boolean conditions used for WHERE / HAVING / ON / ...
  */
-public class Subquery extends BaseQuery
+public class ConditionList extends ArrayList<ConditionExpression>
 {
-    private Set<ColumnSource> outerTables;
-
-    public Subquery(PlanNode inside) {
-        super(inside);
+    public ConditionList() {
+        super();
     }
 
-    @Override
-    public Set<ColumnSource> getOuterTables() {
-        if (outerTables != null)
-            return outerTables;
-        else
-            return super.getOuterTables();
+    public ConditionList(int size) {
+        super(size);
     }
 
-    public void setOuterTables(Set<ColumnSource> outerTables) {
-        this.outerTables = outerTables;
+    public ConditionList(Collection<? extends ConditionExpression> list) {
+        super(list);
     }
 
-    @Override
-    protected void deepCopy(DuplicateMap map) {
-        super.deepCopy(map);
-        if (outerTables != null)
-            outerTables = duplicateSet(outerTables, map);
+    public ConditionList duplicate(DuplicateMap map) {
+        ConditionList copy = new ConditionList(size());
+        for (ConditionExpression cond : this) {
+            copy.add((ConditionExpression)cond.duplicate(map));
+        }
+        return copy;
     }
-
 }
