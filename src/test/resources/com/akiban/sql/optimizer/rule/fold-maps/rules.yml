@@ -6,6 +6,5 @@
 - com.akiban.sql.optimizer.rule.IndexPicker
 - com.akiban.sql.optimizer.rule.NestedLoopMapper
 - com.akiban.sql.optimizer.rule.BranchJoiner
-#- com.akiban.sql.optimizer.rule.SelectPreponer
+- com.akiban.sql.optimizer.rule.SelectPreponer
 - com.akiban.sql.optimizer.rule.MapFolder
-- com.akiban.sql.optimizer.rule.OperatorAssembler

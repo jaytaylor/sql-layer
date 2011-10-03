@@ -216,6 +216,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleAncestorLookup((AncestorLookup)node);
             else if (node instanceof BranchLookup)
                 return assembleBranchLookup((BranchLookup)node);
+            else if (node instanceof MapJoin)
+                return assembleMapJoin((MapJoin)node);
             else if (node instanceof Product)
                 return assembleProduct((Product)node);
             else if (node instanceof AggregateSource)
@@ -399,6 +401,17 @@ public class OperatorAssembler extends BaseRule
             stream.rowType = null;
             stream.unknownTypesPresent = true;
             stream.fieldOffsets = null;
+            return stream;
+        }
+
+        protected RowStream assembleMapJoin(MapJoin mapJoin) {
+            RowStream ostream = assembleStream(mapJoin.getOuter());
+            pushBoundRow(ostream.fieldOffsets);
+            RowStream stream = assembleStream(mapJoin.getInner());
+            stream.operator = API.map_NestedLoops(ostream.operator, 
+                                                  stream.operator,
+                                                  currentBindingPosition());
+            popBoundRow();
             return stream;
         }
 

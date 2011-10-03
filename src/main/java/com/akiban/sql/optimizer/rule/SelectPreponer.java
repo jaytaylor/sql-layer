@@ -139,7 +139,8 @@ public class SelectPreponer extends BaseRule
                     }
                     sawJoin = true;
                 }
-                else if (node instanceof Product) {
+                else if ((node instanceof Product) ||
+                         (node instanceof MapJoin)) {
                     // Only inner right now.
                     sawJoin = true;
                 }

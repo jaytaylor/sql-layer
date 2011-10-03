@@ -15,8 +15,6 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import static com.akiban.sql.optimizer.rule.IndexPicker.TableJoinsFinder;
-
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
@@ -28,6 +26,48 @@ import java.util.*;
  * and join them together with Flatten, Product, etc. */
 public class BranchJoiner extends BaseRule 
 {
+    static class TableJoinsFinder implements PlanVisitor, ExpressionVisitor {
+        List<TableJoins> result = new ArrayList<TableJoins>();
+
+        public List<TableJoins> find(PlanNode root) {
+            root.accept(this);
+            return result;
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visit(PlanNode n) {
+            if (n instanceof TableJoins) {
+                result.add((TableJoins)n);
+            }
+            return true;
+        }
+
+        @Override
+        public boolean visitEnter(ExpressionNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(ExpressionNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visit(ExpressionNode n) {
+            return true;
+        }
+    }
+
     @Override
     public void apply(PlanContext planContext) {
         List<TableJoins> groups = new TableJoinsFinder().find(planContext.getPlan());
@@ -333,7 +373,6 @@ public class BranchJoiner extends BaseRule
             // Need a product of several branches.
             List<PlanNode> subplans = new ArrayList<PlanNode>(nbranches + 1);
             subplans.add(input);
-            input = new Product(subplans);
 
             List<TableNode> branchpoints = 
                 new ArrayList<TableNode>(branching.getSideBranches().keySet());
@@ -351,6 +390,8 @@ public class BranchJoiner extends BaseRule
                                           subbranch, branchpoint.getParent());
                 subplans.add(subplan);
             }
+
+            input = new Product(subplans);
         }
         return input;
     }
