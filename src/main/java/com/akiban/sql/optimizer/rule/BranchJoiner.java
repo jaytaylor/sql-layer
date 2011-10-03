@@ -139,11 +139,13 @@ public class BranchJoiner extends BaseRule
         // Load the main branch.
         List<TableNode> mainBranchNodes;
         List<TableSource> mainBranchSources;
+        descendants.retainAll(branching.getMainBranchTableSources());
         if (descendants.isEmpty()) {
             mainBranchNodes = branching.getMainBranchTableNodes();
             mainBranchSources = branching.getMainBranchTableSources();
         }
         else {
+            Collections.sort(descendants, tableSourceById);
             scan = new BranchLookup(scan, indexTableNode, 
                                     indexTableNode, descendants);
             // Only need the rest.
@@ -230,6 +232,7 @@ public class BranchJoiner extends BaseRule
         public void addSideBranchTable(TableSource table) {
             TableNode branchPoint = getBranchPoint(table.getTable());
             assert (branchPoint != null);
+            addMainBranchTable(branchPoint.getParent());
             List<TableSource> entry = sideBranches.get(branchPoint);
             if (entry == null) {
                 entry = new ArrayList<TableSource>();
