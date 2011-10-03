@@ -178,26 +178,48 @@ public class IndexPicker extends BaseRule
 
         protected void pickIndexes(JoinNode join) {
             join.setImplementation(JoinNode.Implementation.NESTED_LOOPS);
-
-            boolean twoTablesInner = false;
-            switch (join.getJoinType()) {
-            case INNER:
-                twoTablesInner = ((join.getLeft() instanceof TableJoins) && 
-                                  (join.getRight() instanceof TableJoins));
-                break;
-            case RIGHT:
-                join.reverse();
-            }
-
-            if (!twoTablesInner) {
-                pickIndexes(join.getLeft());
-                pickIndexes(join.getRight());
-                return;
-            }
-
-            // TODO: Better to find all the INNER joins beneath this
-            // and do them all at once, not a pair at a time.
             
+            Joinable left = join.getLeft();
+            Joinable right = join.getRight();
+
+            boolean tryReverse = false, twoTablesInner = false;
+            if (join.getReverseHook() == null) {
+                switch (join.getJoinType()) {
+                case INNER:
+                    twoTablesInner = ((left instanceof TableJoins) && 
+                                      (right instanceof TableJoins));
+                    tryReverse = twoTablesInner;
+                    break;
+                case RIGHT:
+                    join.reverse();
+                }
+            }
+            else {
+                tryReverse = join.getReverseHook().canReverse(join);
+            }
+
+            if (tryReverse) {
+                if (twoTablesInner) {
+                    if (pickIndexesTablesInner(join))
+                        return;
+                }
+                if ((left instanceof TableJoins) &&
+                    (right instanceof ColumnSource)) {
+                    if (pickIndexesTableValues(join))
+                        return;
+                }
+            }
+
+            // Default is just to do each in the given order.
+            pickIndexes(left);
+            pickIndexes(right);
+        }
+
+        // Pick indexes for two tables. See which one gets a better
+        // initial index.
+        // TODO: Better to find all the INNER joins beneath this and
+        // do them all at once, not a pair at a time.
+        protected boolean pickIndexesTablesInner(JoinNode join) {
             TableJoins left = (TableJoins)join.getLeft();
             TableJoins right = (TableJoins)join.getRight();
             IndexGoal lgoal = determineIndexGoal(left);
@@ -221,6 +243,36 @@ public class IndexPicker extends BaseRule
             // Commit to the left choice and redo the right with it bound.
             pickedIndex(left, lgoal, lindex);
             pickIndexes(right);
+            return true;
+        }
+
+        // Pick indexes for table and VALUES (or generally not tables).
+        // Put the VALUES outside if the join condition ends up indexed.
+        protected boolean pickIndexesTableValues(JoinNode join) {
+            TableJoins left = (TableJoins)join.getLeft();
+            ColumnSource right = (ColumnSource)join.getRight();
+
+            boundTables.add(right);
+            IndexGoal lgoal = determineIndexGoal(left);
+            IndexScan lindex = pickBestIndex(left, lgoal);
+            boundTables.remove(right);
+            
+            if (lindex == null) 
+                return false;
+
+            boolean found = false;
+            for (ConditionExpression joinCondition : join.getJoinConditions()) {
+                if (lindex.getConditions().contains(joinCondition)) {
+                    found = true;
+                }
+            }
+            if (!found) 
+                return false;
+
+            // Put the VALUES outside and commit to that.
+            join.reverse();
+            pickedIndex(left, lgoal, lindex);
+            return true;
         }
     }
 
