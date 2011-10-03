@@ -21,6 +21,9 @@ import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 /** Take a map join node and push enough into the inner loop that the
@@ -28,6 +31,13 @@ import java.util.*;
  */
 public class MapFolder extends BaseRule
 {
+    private static final Logger logger = LoggerFactory.getLogger(MapFolder.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
     static class MapJoinsFinder implements PlanVisitor, ExpressionVisitor {
         List<MapJoin> result = new ArrayList<MapJoin>();
 

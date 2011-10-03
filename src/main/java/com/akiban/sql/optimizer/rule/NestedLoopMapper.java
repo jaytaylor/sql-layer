@@ -21,6 +21,9 @@ import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 /** Convert nested loop join into map.
@@ -30,6 +33,13 @@ import java.util.*;
  */
 public class NestedLoopMapper extends BaseRule
 {
+    private static final Logger logger = LoggerFactory.getLogger(NestedLoopMapper.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
     static class NestedLoopsJoinsFinder implements PlanVisitor, ExpressionVisitor {
         List<JoinNode> result = new ArrayList<JoinNode>();
 

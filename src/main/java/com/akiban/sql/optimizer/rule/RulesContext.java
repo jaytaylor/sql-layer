@@ -17,6 +17,8 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.PlanContext;
 
+import org.slf4j.Logger;
+
 import java.util.List;
 
 /** The context / owner of a {@link PlanContext}, shared among several of them. */
@@ -30,13 +32,22 @@ public class RulesContext
     }
 
     public void applyRules(PlanContext plan) {
+        boolean logged = false;
         for (BaseRule rule : rules) {
+            Logger logger = rule.getLogger();
+            boolean debug = logger.isDebugEnabled();
+            if (debug && !logged) {
+                logger.debug("Before {}:\n{}", rule.getName(), plan.getPlan());
+            }
             beginRule(rule);
             try {
                 rule.apply(plan);
             }
             finally {
                 endRule(rule);
+            }
+            if (logged = debug) {
+                logger.debug("After {}:\n{}", rule.getName(), plan.getPlan());
             }
         }
     }

@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import org.slf4j.Logger;
+
 import com.akiban.server.service.EventTypes;
 
 import com.akiban.sql.optimizer.plan.PlanContext;
@@ -23,9 +25,15 @@ public abstract class BaseRule
 {
     private final String traceName;
 
-    public BaseRule() {
-        traceName = EventTypes.OPTIMIZE + ": " + getClass().getSimpleName();
+    protected BaseRule() {
+        traceName = EventTypes.OPTIMIZE + ": " + getName();
     }
+
+    protected String getName() {
+        return getClass().getSimpleName();
+    }
+
+    protected abstract Logger getLogger();
 
     public abstract void apply(PlanContext plan);
 }

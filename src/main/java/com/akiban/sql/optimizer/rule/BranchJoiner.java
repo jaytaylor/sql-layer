@@ -20,12 +20,22 @@ import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 /** Having sources table groups from indexes, get rows with XxxLookup
  * and join them together with Flatten, Product, etc. */
 public class BranchJoiner extends BaseRule 
 {
+    private static final Logger logger = LoggerFactory.getLogger(BranchJoiner.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
     static class TableJoinsFinder implements PlanVisitor, ExpressionVisitor {
         List<TableJoins> result = new ArrayList<TableJoins>();
 

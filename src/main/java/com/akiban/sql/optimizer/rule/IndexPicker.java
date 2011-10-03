@@ -22,11 +22,21 @@ import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 /** A goal for indexing: conditions on joined tables and ordering / grouping. */
 public class IndexPicker extends BaseRule
 {
+    private static final Logger logger = LoggerFactory.getLogger(IndexPicker.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
     @Override
     public void apply(PlanContext planContext) {
         BaseQuery query = (BaseQuery)planContext.getPlan();
