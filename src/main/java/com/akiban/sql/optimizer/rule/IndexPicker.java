@@ -203,10 +203,11 @@ public class IndexPicker extends BaseRule
                     if (pickIndexesTablesInner(join))
                         return;
                 }
-                if ((left instanceof TableJoins) &&
-                    (right instanceof ColumnSource)) {
+                if (right instanceof ColumnSource) {
                     if (pickIndexesTableValues(join))
                         return;
+                    left = join.getLeft();
+                    right = join.getRight();
                 }
             }
 
@@ -249,7 +250,7 @@ public class IndexPicker extends BaseRule
         // Pick indexes for table and VALUES (or generally not tables).
         // Put the VALUES outside if the join condition ends up indexed.
         protected boolean pickIndexesTableValues(JoinNode join) {
-            TableJoins left = (TableJoins)join.getLeft();
+            TableJoins left = leftOfValues(join);
             ColumnSource right = (ColumnSource)join.getRight();
 
             boundTables.add(right);
@@ -268,11 +269,54 @@ public class IndexPicker extends BaseRule
             }
             if (!found) 
                 return false;
-
-            // Put the VALUES outside and commit to that.
+            
+            // Put the VALUES outside and commit to that in the simple case.
             join.reverse();
+            if (left != join.getRight())
+                return false;
             pickedIndex(left, lgoal, lindex);
             return true;
+        }
+
+        // Get the table joins that seems to be most interestingly
+        // joined with a VALUES.
+        // TODO: Not very general.
+        protected TableJoins leftOfValues(JoinNode join) {
+            Joinable left = join.getLeft();
+            if (left instanceof TableJoins)
+                return (TableJoins)left;
+            Collection<TableSource> tables = new ArrayList<TableSource>();
+            for (ConditionExpression joinCondition : join.getJoinConditions()) {
+                if (joinCondition instanceof ComparisonCondition) {
+                    ExpressionNode lop = ((ComparisonCondition)joinCondition).getLeft();
+                    if (lop.isColumn()) {
+                        ColumnSource table = ((ColumnExpression)lop).getTable();
+                        if (table instanceof TableSource)
+                            tables.add((TableSource)table);
+                    }
+                }
+            }
+            if (tables.isEmpty())
+                return null;
+            return findTableSource(left, tables);
+        }
+        
+        protected TableJoins findTableSource(Joinable joinable,
+                                             Collection<TableSource> tables) {
+            if (joinable instanceof TableJoins) {
+                TableJoins tjoins = (TableJoins)joinable;
+                for (TableSource table : tables) {
+                    if (tjoins.getTables().contains(table))
+                        return tjoins;
+                }
+            }
+            else if (joinable instanceof JoinNode) {
+                JoinNode join = (JoinNode)joinable;
+                TableJoins result = findTableSource(join.getLeft(), tables);
+                if (result != null) return result;
+                return findTableSource(join.getRight(), tables);
+            }
+            return null;
         }
     }
 

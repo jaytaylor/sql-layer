@@ -6,4 +6,6 @@ in-subquery: IN SELECT to semi-join.
 
 not-index: IN remains as semi-join.
 
+two-groups: Product join with IN.
+
 use-index: IN uses group index.
