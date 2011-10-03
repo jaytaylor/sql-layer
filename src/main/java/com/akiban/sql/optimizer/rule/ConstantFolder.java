@@ -38,12 +38,14 @@ public class ConstantFolder extends BaseRule
     }
 
     static class Folder implements PlanVisitor, ExpressionRewriteVisitor {
+        private final ExpressionAssembler expressionAssembler;
         private Set<ColumnSource> eliminatedSources = new HashSet<ColumnSource>();
         private Set<AggregateSource> changedAggregates = null;
         private enum State { FOLDING, AGGREGATES };
         private State state;
         private boolean changed;
-        private final ExpressionAssembler expressionAssembler;
+        private Map<ConditionExpression,Boolean> topLevelConditions = 
+            new IdentityHashMap<ConditionExpression,Boolean>();
 
         public Folder(RulesContext rulesContext) {
             this.expressionAssembler = new ExpressionAssembler(rulesContext);
@@ -55,6 +57,7 @@ public class ConstantFolder extends BaseRule
         public boolean foldConstants(PlanNode plan) {
             state = State.FOLDING;
             changed = false;
+            topLevelConditions.clear();
             plan.accept(this);
             return changed;
         }
@@ -79,6 +82,11 @@ public class ConstantFolder extends BaseRule
 
         @Override
         public boolean visit(PlanNode n) {
+            if (n instanceof Select) {
+                for (ConditionExpression condition : ((Select)n).getConditions()) {
+                    topLevelConditions.put(condition, Boolean.TRUE);
+                }
+            }
             return true;
         }
 
@@ -511,6 +519,10 @@ public class ConstantFolder extends BaseRule
             return false;
         }
 
+        protected boolean isTopLevelCondition(ConditionExpression cond) {
+            return (topLevelConditions.get(cond) == Boolean.TRUE);
+        }
+
         protected ExpressionNode subqueryValueExpression(SubqueryValueExpression expr) {
             SubqueryEmptiness empty = isEmptySubquery(expr.getSubquery());
             if (empty == SubqueryEmptiness.EMPTY) {
@@ -569,6 +581,19 @@ public class ConstantFolder extends BaseRule
                 // Constant true: if it's known non-empty, that's what
                 // is returned.
                 return inner;
+            }
+            InCondition in = InCondition.of(cond);
+            if (in != null) {
+                in.dedup(isTopLevelCondition(cond));
+                if (in.isEmpty())
+                    return new BooleanConstantExpression(Boolean.FALSE,
+                                                         cond.getSQLtype(), 
+                                                         cond.getSQLsource());
+                else if (in.isSingleton()) {
+                    ComparisonCondition comp = in.getCondition();
+                    comp.setRight(in.getSingleton());
+                    return comp;
+                }
             }
             return cond;
         }
@@ -684,4 +709,67 @@ public class ConstantFolder extends BaseRule
             return node;
         }
     }
+
+    // Recognize and improve IN conditions with a list (or VALUES).
+    // This currently only recognizes the one operand LHS version, but
+    // is easily extended to the row constructor form once the parser
+    // supports that.
+    protected static class InCondition {
+        private ExpressionsSource expressions;
+        private ComparisonCondition comparison;
+
+        private InCondition(ExpressionsSource expressions,
+                            ComparisonCondition comparison) {
+            this.expressions = expressions;
+            this.comparison = comparison;
+        }
+
+        public boolean isEmpty() {
+            return expressions.getExpressions().isEmpty();
+        }
+
+        public boolean isSingleton() {
+            return (expressions.getExpressions().size() == 1);
+        }
+        
+        public ExpressionNode getSingleton() {
+            return expressions.getExpressions().get(0).get(0);
+        }
+
+        public ComparisonCondition getCondition() {
+            return comparison;
+        }
+
+        // Recognize the form of IN we support improving.
+        public static InCondition of(AnyCondition any) {
+            Subquery subquery = any.getSubquery();
+            PlanNode input = subquery.getInput();
+            if (!(input instanceof Project))
+                return null;
+            Project project = (Project)input;
+            input = project.getInput();
+            if (!(input instanceof ExpressionsSource))
+                return null;
+            ExpressionsSource expressions = (ExpressionsSource)input;
+            if (project.getFields().size() != 1)
+                return null;
+            ExpressionNode cond = project.getFields().get(0);
+            if (!(cond instanceof ComparisonCondition))
+                return null;
+            ComparisonCondition comp = (ComparisonCondition)cond;
+            if (!(comp.getRight().isColumn() &&
+                  (((ColumnExpression)comp.getRight()).getTable() == expressions)))
+                return null;
+            List<List<ExpressionNode>> rows = expressions.getExpressions();
+            if (!(rows.isEmpty() ||
+                  (rows.get(0).size() == 1)))
+                return null;
+            return new InCondition(expressions, comp);
+        }
+
+        public void dedup(boolean topLevel) {
+        }
+
+    }
+
 }
