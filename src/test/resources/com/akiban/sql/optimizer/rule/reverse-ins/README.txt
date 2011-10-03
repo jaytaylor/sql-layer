@@ -1,3 +1,5 @@
+count-two-groups: Aggregate after two groups with IN.
+
 exists: EXISTS to semi-join.
 
 in-params: IN list with parameters.

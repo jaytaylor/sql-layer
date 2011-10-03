@@ -96,6 +96,7 @@ public class MapFolder extends BaseRule
           parent = child.getOutput();
         } while (!((parent instanceof ResultSet) ||
                    (parent instanceof AggregateSource) ||
+                   (parent instanceof MapJoin) ||
                    (child instanceof Project)));
         if (child != map) {
           map.getOutput().replaceInput(map, map.getInner());
