@@ -12,10 +12,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+
 package com.akiban.server.error;
 
-public class MetaModelVersionMismatchException extends InvalidOperationException {
-    public MetaModelVersionMismatchException () {
-        super (ErrorCode.METAMODEL_MISMATCH);
+public class QueryCanceledException extends InvalidOperationException
+{
+    public QueryCanceledException()
+    {
+        super(ErrorCode.QUERY_CANCELED);
     }
 }

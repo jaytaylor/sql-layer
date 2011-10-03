@@ -21,6 +21,7 @@ import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API.JoinType;
 
@@ -266,12 +267,12 @@ public class GroupJoinFinder extends BaseRule
             if ((output != null) && (tableJoin != null)) {
                 output.setGroupJoin(tableJoin);
                 if (conditions == whereConditions) {
-                    ConditionExpression condition = tableJoin.getCondition();
-                    // Move down from WHERE conditions to join condition.
+                    List<ComparisonCondition> joinConditions = tableJoin.getConditions();
+                    // Move down from WHERE conditions to join conditions.
                     if (output.getJoinConditions() == null)
                         output.setJoinConditions(new ArrayList<ConditionExpression>());
-                    output.getJoinConditions().add(condition);
-                    conditions.remove(condition);
+                    output.getJoinConditions().addAll(joinConditions);
+                    conditions.removeAll(joinConditions);
                 }
             }
         }
@@ -295,36 +296,76 @@ public class GroupJoinFinder extends BaseRule
         if (groupJoin == null) return null;
         TableNode parentNode = childNode.getTree().getNode(groupJoin.getParent());
         if (parentNode == null) return null;
-        ComparisonCondition groupJoinCondition = null;
-        TableSource parentTable = null;
+        List<JoinColumn> joinColumns = groupJoin.getJoinColumns();
+        int ncols = joinColumns.size();
+        Map<TableSource,List<ComparisonCondition>> parentTables = 
+          new HashMap<TableSource,List<ComparisonCondition>>();
         for (ConditionExpression condition : conditions) {
             if (condition instanceof ComparisonCondition) {
                 ComparisonCondition ccond = (ComparisonCondition)condition;
                 ExpressionNode left = ccond.getLeft();
                 ExpressionNode right = ccond.getRight();
-                if (left.isColumn() && right.isColumn() &&
-                    (((ColumnExpression)left).getTable() == childTable)) {
-                    ColumnSource rightSource = ((ColumnExpression)right).getTable();
+                if (left.isColumn() && right.isColumn()) {
+                  ColumnExpression lcol = (ColumnExpression)left;
+                  ColumnExpression rcol = (ColumnExpression)right;
+                  if (lcol.getTable() == childTable) {
+                    ColumnSource rightSource = rcol.getTable();
                     if (rightSource instanceof TableSource) {
-                        TableSource rightTable = (TableSource)rightSource;
-                        if (rightTable.getTable() == parentNode) {
-                            if (groupJoinCondition == null) {
-                                groupJoinCondition = ccond;
-                                parentTable = rightTable;
+                      TableSource rightTable = (TableSource)rightSource;
+                      if (rightTable.getTable() == parentNode) {
+                        for (int i = 0; i < ncols; i++) {
+                          JoinColumn joinColumn = joinColumns.get(i);
+                          if ((joinColumn.getChild() == lcol.getColumn()) &&
+                              (joinColumn.getParent() == rcol.getColumn())) {
+                            List<ComparisonCondition> entry = 
+                              parentTables.get(rightTable);
+                            if (entry == null) {
+                              entry = new ArrayList<ComparisonCondition>(Collections.<ComparisonCondition>nCopies(ncols, null));
+                              parentTables.put(rightTable, entry);
                             }
-                            else {
-                                // TODO: What we need is something
-                                // earlier to decide that the primary
-                                // keys are equated and so share the
-                                // references somehow.
-                                throw new UnsupportedSQLException("Found two possible parent joins", ccond.getSQLsource());
-                            }
+                            entry.set(i, ccond);
+                          }
                         }
+                      }
                     }
+                  }
                 }
             }
         }
-        if (groupJoinCondition == null) return null;
+        TableSource parentTable = null;
+        List<ComparisonCondition> groupJoinConditions = null;
+        for (Map.Entry<TableSource,List<ComparisonCondition>> entry : parentTables.entrySet()) {
+          boolean found = true;
+          for (ComparisonCondition elem : entry.getValue()) {
+            if (elem == null) {
+              found = false;
+              break;
+            }
+          }
+          if (found) {
+            if (parentTable == null) {
+              parentTable = entry.getKey();
+              groupJoinConditions = entry.getValue();
+            }
+            else {
+              // TODO: What we need is something
+              // earlier to decide that the primary
+              // keys are equated and so share the
+              // references somehow.
+              ConditionExpression c1 = groupJoinConditions.get(0);
+              ConditionExpression c2 = entry.getValue().get(0);
+              if (conditions.indexOf(c1) > conditions.indexOf(c2)) {
+                // Make the order predictable for tests.
+                ConditionExpression temp = c1;
+                c1 = c2;
+                c2 = temp;
+              }
+              throw new UnsupportedSQLException("Found two possible parent joins", 
+                                                c2.getSQLsource());
+            }
+          }
+        }
+        if (parentTable == null) return null;
         TableGroup group = parentTable.getGroup();
         if (group == null) {
             group = childTable.getGroup();
@@ -335,7 +376,7 @@ public class GroupJoinFinder extends BaseRule
             group.merge(childTable.getGroup());
         }
         return new TableGroupJoin(group, parentTable, childTable, 
-                                  groupJoinCondition, groupJoin);
+                                  groupJoinConditions, groupJoin);
     }
 
     protected void findSingleGroups(Joinable joinable) {

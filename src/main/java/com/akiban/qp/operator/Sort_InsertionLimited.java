@@ -112,6 +112,7 @@ class Sort_InsertionLimited extends Operator
         @Override
         public Row next()
         {
+            adapter.checkQueryCancelation();
             switch (state) {
             case FILLING:
                 {
@@ -181,11 +182,13 @@ class Sort_InsertionLimited extends Operator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
+            this.adapter = adapter;
             this.input = input;
         }
 
         // Object state
 
+        private final StoreAdapter adapter;
         private final Cursor input;
         private State state;
         private Bindings bindings;
