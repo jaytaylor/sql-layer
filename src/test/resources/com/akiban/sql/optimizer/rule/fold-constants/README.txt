@@ -19,6 +19,18 @@ impossible-in: Condition built from IN cannot possibly be true.
 
 impossible-is-null: A NOT NULL column cannot satisfy IS NULL.
 
+in-duplicates: IN list with duplicate literals.
+
+in-expressions: IN list with expressions.
+
+in-literals: IN list with just literals.
+
+in-non-top-level: IN list inside complex condition.
+
+in-nulls: IN list with nulls.
+
+in-singleton: IN list with single value after folding.
+
 logical-functions: NOT TRUE is FALSE, TRUE AND X is X, FALSE AND X is FALSE, 
                    X OR FALSE is X.
 
