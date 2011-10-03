@@ -22,6 +22,7 @@ import com.akiban.sql.optimizer.plan.*;
 
 import static com.akiban.server.expression.std.Expressions.*;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.rowtype.RowType;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
@@ -39,17 +40,33 @@ public class ExpressionAssembler
                                   rulesContext).getExpressionRegistry();
     }
 
-    public static interface ColumnExpressionToIndex {
+    public interface ColumnExpressionToIndex {
         /** Return the field position of the given column in the target row. */
         public int getIndex(ColumnExpression column);
+
+        /** Return the row type that the index goes with. */
+        public RowType getRowType();
     }
     
+    public interface ColumnExpressionContext {
+        /** Get the current input row if any. */
+        public ColumnExpressionToIndex getCurrentRow();
+
+        /** Get list (deepest first) of rows from nested loops. */
+        public List<ColumnExpressionToIndex> getBoundRows();
+
+        /** Get the index offset to be used for the deepest nested loop.
+         * Normally this is the number of parameters to the query.
+         */
+        public int getBindingsOffset();
+    }
+
     public Expression assembleExpression(ExpressionNode node,
-                                         ColumnExpressionToIndex fieldOffsets) {
+                                         ColumnExpressionContext columnContext) {
         if (node instanceof ConstantExpression)
             return literal(((ConstantExpression)node).getValue());
         else if (node instanceof ColumnExpression)
-            return field(((ColumnExpression)node).getColumn(), fieldOffsets.getIndex((ColumnExpression)node));
+            return assembleColumnExpression((ColumnExpression)node, columnContext);
         else if (node instanceof ParameterExpression)
             return variable(node.getAkType(), ((ParameterExpression)node).getPosition());
         else if (node instanceof BooleanOperationExpression)
@@ -57,18 +74,18 @@ public class ExpressionAssembler
         else if (node instanceof CastExpression)
             // TODO: Need actual cast.
             return assembleExpression(((CastExpression)node).getOperand(),
-                                      fieldOffsets);
+                                      columnContext);
         else if (node instanceof ComparisonCondition) {
             ComparisonCondition cond = (ComparisonCondition)node;
-            return compare(assembleExpression(cond.getLeft(), fieldOffsets),
+            return compare(assembleExpression(cond.getLeft(), columnContext),
                            cond.getOperation(),
-                           assembleExpression(cond.getRight(), fieldOffsets));
+                           assembleExpression(cond.getRight(), columnContext));
         }
         else if (node instanceof FunctionExpression) {
             FunctionExpression funcNode = (FunctionExpression) node;
             List<Expression> children = new ArrayList<Expression>();
             for (ExpressionNode operand : funcNode.getOperands()) {
-                children.add(assembleExpression(operand, fieldOffsets));
+                children.add(assembleExpression(operand, columnContext));
             }
             return expressionRegistry.composer(funcNode.getFunction()).compose(children);
         }
@@ -83,8 +100,30 @@ public class ExpressionAssembler
             throw new UnsupportedSQLException("Unknown expression", node.getSQLsource());
     }
 
+    public Expression assembleColumnExpression(ColumnExpression column,
+                                               ColumnExpressionContext columnContext) {
+        ColumnExpressionToIndex currentRow = columnContext.getCurrentRow();
+        if (currentRow != null) {
+            int fieldIndex = currentRow.getIndex(column);
+            if (fieldIndex >= 0)
+                return field(currentRow.getRowType(), fieldIndex);
+        }
+        
+        List<ColumnExpressionToIndex> boundRows = columnContext.getBoundRows();
+        for (int rowIndex = boundRows.size() - 1; rowIndex >= 0; rowIndex--) {
+            ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
+            if (boundRow == null) continue;
+            int fieldIndex = boundRow.getIndex(column);
+            if (fieldIndex >= 0) {
+                rowIndex += columnContext.getBindingsOffset();
+                return boundField(boundRow.getRowType(), rowIndex, fieldIndex);
+            }
+        }
+        throw new AkibanInternalException("Column not found " + column);
+    }
+
     public Expression assembleSubqueryExpression(SubqueryExpression node,
-                                                 ColumnExpressionToIndex fieldOffsets,
+                                                 ColumnExpressionContext columnContext,
                                                  Operator subquery) {
         if (node instanceof SubqueryValueExpression)
             throw new UnsupportedSQLException("subquery as expression", 
