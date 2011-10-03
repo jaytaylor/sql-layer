@@ -17,6 +17,7 @@ package com.akiban.sql.pg;
 
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.sql.StandardException;
 
@@ -147,7 +148,9 @@ public class PostgresOperatorCompiler extends OperatorCompiler
                 columnNames.add(resultColumn.getName());
                 columnTypes.add(resultColumn.getType());
             }
-            return new PostgresOperatorStatement((Operator)result.getResultOperator(),
+            Operator resultOperator = (Operator)result.getResultOperator();
+            RowType resultRowType = resultOperator.rowType();
+            return new PostgresOperatorStatement(resultOperator, resultRowType,
                                                  columnNames, columnTypes,
                                                  parameterTypes,
                                                  result.getOffset(),
