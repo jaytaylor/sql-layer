@@ -4,16 +4,6 @@ select-0: single column of primary key match
 
 select-1: all fields of single table
 
-select-10: group index for condition and ordering
-
-select-11: group index ordering only
-
-select-12: group index ordering with limit
-
-select-13: sorting without limit
-
-select-13l: sorting with limit
-
 select-1c: sorted covering index
 
 select-1n: name column
@@ -45,6 +35,18 @@ select-7: index one branch, product both
 select-8: constant in select list
 
 select-9: LEFT join group index
+
+select-10: group index for condition and ordering
+
+select-11: group index ordering only
+
+select-12: group index ordering with limit
+
+select-13: sorting without limit
+
+select-13l: sorting with limit
+
+select-14: IN using index
 
 types: select all typed fields
 
