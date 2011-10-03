@@ -365,24 +365,11 @@ public enum ErrorCode {
     private String formattedValue; 
     private static ResourceBundle resourceBundle = ResourceBundle.getBundle("com.akiban.server.error.error_code");
 
-/*
-    static short computeShort(int groupValue, int subCode) {
-        if (groupValue < 0 || groupValue > 31) {
-            throw new RuntimeException("invalid group value: " + groupValue);
-        }
-        if (subCode < 0 || subCode > 999) {
-            throw new RuntimeException("invalid subcode value: " + subCode);
-        }
-        return (short) (groupValue * 1000 + subCode);
-    }
-*/
     private ErrorCode(String code, String subCode, Importance importance, 
             Class<? extends InvalidOperationException> exception) {
         this.code = code;
         this.subcode = subCode;
-        //this.value = computeShort(groupValue, subCode);
         this.importance = importance;
-        //this.message = message;
         this.exceptionClass = exception;
         this.formattedValue = this.code + this.subcode; 
     }
@@ -396,10 +383,6 @@ public enum ErrorCode {
         }
         throw new RuntimeException(String.format("Invalid code value: %s", value));
     }
-
-    //public short getShort() {
-    //    return value;
-    //}
 
     public Importance getImportance() {
         return importance;
