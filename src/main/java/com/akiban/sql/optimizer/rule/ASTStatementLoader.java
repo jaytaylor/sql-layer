@@ -19,6 +19,7 @@ import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode;
+import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 import static com.akiban.sql.optimizer.plan.PlanContext.*;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
@@ -33,8 +34,6 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
-
-import com.akiban.qp.operator.API.JoinType;
 
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ParseException;
@@ -323,9 +322,9 @@ public class ASTStatementLoader extends BaseRule
                 if (joins == null)
                     joins = toJoinNode(fromTable, true);
                 else
-                    joins = joinNodes(joins, toJoinNode(fromTable, true), JoinType.INNER_JOIN);
+                    joins = joinNodes(joins, toJoinNode(fromTable, true), JoinType.INNER);
             }
-            List<ConditionExpression> conditions = toConditions(selectNode.getWhereClause());
+            ConditionList conditions = toConditions(selectNode.getWhereClause());
             if (hasAggregateFunction(conditions))
                 throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
                                                   selectNode.getWhereClause());
@@ -352,21 +351,21 @@ public class ASTStatementLoader extends BaseRule
                 JoinType joinType;
                 switch (joinNode.getNodeType()) {
                 case NodeTypes.JOIN_NODE:
-                    joinType = JoinType.INNER_JOIN;
+                    joinType = JoinType.INNER;
                     break;
                 case NodeTypes.HALF_OUTER_JOIN_NODE:
                     if (((HalfOuterJoinNode)joinNode).isRightOuterJoin())
-                        joinType = JoinType.RIGHT_JOIN;
+                        joinType = JoinType.RIGHT;
                     else
-                        joinType = JoinType.LEFT_JOIN;
+                        joinType = JoinType.LEFT;
                     break;
                 default:
                     throw new UnsupportedSQLException("Unsupported join type", joinNode);
                 }
                 JoinNode join = joinNodes(toJoinNode((FromTable)joinNode.getLeftResultSet(),
-                                                     required && (joinType != JoinType.RIGHT_JOIN)),
+                                                     required && (joinType != JoinType.RIGHT)),
                                           toJoinNode((FromTable)joinNode.getRightResultSet(),
-                                                     required && (joinType != JoinType.LEFT_JOIN)),
+                                                     required && (joinType != JoinType.LEFT)),
                                           joinType);
                 join.setJoinConditions(toConditions(joinNode.getJoinClause()));
                 result = join;
@@ -392,9 +391,9 @@ public class ASTStatementLoader extends BaseRule
         }
 
         /** Add a set of conditions to input. */
-        protected List<ConditionExpression> toConditions(ValueNode cnfClause)
+        protected ConditionList toConditions(ValueNode cnfClause)
                 throws StandardException {
-            List<ConditionExpression> conditions = new ArrayList<ConditionExpression>();
+            ConditionList conditions = new ConditionList();
             while (cnfClause != null) {
                 if (cnfClause.isBooleanTrue()) break;
                 if (!(cnfClause instanceof AndNode))
@@ -547,7 +546,7 @@ public class ASTStatementLoader extends BaseRule
             Comparison comp = Comparison.EQ;
             ExpressionNode operand = null;
             boolean needOperand = false;
-            List<ConditionExpression> innerConds = null;
+            ConditionList innerConds = null;
             switch (subqueryNode.getSubqueryType()) {
             case EXISTS:
                 break;
@@ -661,7 +660,7 @@ public class ASTStatementLoader extends BaseRule
                                                 subqueryNode.getType(), subqueryNode);
             }
             if (negate) {
-                List <ConditionExpression> operands = new ArrayList<ConditionExpression>(1);
+                List<ConditionExpression> operands = new ArrayList<ConditionExpression>(1);
                 operands.add(condition);
                 condition = new LogicalFunctionCondition("not", 
                                                          operands,

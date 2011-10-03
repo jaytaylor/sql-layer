@@ -18,8 +18,7 @@ package com.akiban.sql.optimizer.rule;
 import static com.akiban.sql.optimizer.rule.IndexPicker.TableJoinsFinder;
 
 import com.akiban.sql.optimizer.plan.*;
-
-import com.akiban.qp.operator.API.JoinType;
+import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
@@ -360,8 +359,8 @@ public class BranchJoiner extends BaseRule
                                     List<TableSource> flattenSources) {
         List<JoinType> joinTypes = 
             new ArrayList<JoinType>(Collections.nCopies(flattenSources.size() - 1,
-                                                        JoinType.INNER_JOIN));
-        List<ConditionExpression> joinConditions = new ArrayList<ConditionExpression>(0);
+                                                        JoinType.INNER));
+        ConditionList joinConditions = new ConditionList(0);
         copyJoins(joins, null, flattenSources, joinTypes, joinConditions);
         if (!joinConditions.isEmpty())
             input = new Select(input, joinConditions);
@@ -376,7 +375,7 @@ public class BranchJoiner extends BaseRule
     protected void copyJoins(Joinable joinable, JoinNode parent, 
                              List<TableSource> branch, 
                              List<JoinType> joinTypes,
-                             List<ConditionExpression> joinConditions) {
+                             ConditionList joinConditions) {
         if (joinable.isTable()) {
             TableSource table = (TableSource)joinable;
             int idx = branch.indexOf(table);
@@ -398,8 +397,8 @@ public class BranchJoiner extends BaseRule
         else if (joinable.isJoin()) {
             JoinNode join = (JoinNode)joinable;
             switch (join.getJoinType()) {
-            case INNER_JOIN:
-            case LEFT_JOIN:
+            case INNER:
+            case LEFT:
                 break;
             default:
                 throw new UnsupportedSQLException("Join too complex: " + join, null);

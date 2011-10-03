@@ -18,7 +18,7 @@ package com.akiban.sql.optimizer.rule;
 import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
 import com.akiban.qp.operator.Operator;
-import static com.akiban.server.expression.std.Expressions.*;
+import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.LiteralExpression;
 
 import com.akiban.server.aggregation.AggregatorRegistry;
@@ -37,7 +37,7 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
 import com.akiban.qp.operator.UndefBindings;
-import static com.akiban.qp.operator.API.*;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.Row;
@@ -134,7 +134,7 @@ public class OperatorAssembler extends BaseRule
                 int nfields = stream.rowType.nFields();
                 inserts = new ArrayList<Expression>(nfields);
                 for (int i = 0; i < nfields; i++) {
-                    inserts.add(field(stream.rowType, i));
+                    inserts.add(Expressions.field(stream.rowType, i));
                 }
             }
             // Have a list of expressions in the order specified.
@@ -150,9 +150,9 @@ public class OperatorAssembler extends BaseRule
                 row[column.getPosition()] = inserts.get(i);
             }
             inserts = Arrays.asList(row);
-            stream.operator = project_Table(stream.operator, stream.rowType,
-                                            targetRowType, inserts);
-            UpdatePlannable plan = insert_Default(stream.operator);
+            stream.operator = API.project_Table(stream.operator, stream.rowType,
+                                                targetRowType, inserts);
+            UpdatePlannable plan = API.insert_Default(stream.operator);
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
@@ -177,19 +177,19 @@ public class OperatorAssembler extends BaseRule
             updates = Arrays.asList(row);
             UpdateFunction updateFunction = 
                 new ExpressionRowUpdateFunction(updates, targetRowType);
-            UpdatePlannable plan = update_Default(stream.operator, updateFunction);
+            UpdatePlannable plan = API.update_Default(stream.operator, updateFunction);
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
         protected PhysicalUpdate deleteStatement(DeleteStatement deleteStatement) {
             RowStream stream = assembleQuery(deleteStatement.getQuery());
             assert (stream.rowType == tableRowType(deleteStatement.getTargetTable()));
-            UpdatePlannable plan = delete_Default(stream.operator);
+            UpdatePlannable plan = API.delete_Default(stream.operator);
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
         protected Operator assembleSubquery(Subquery subquery) {
-            RowStream stream = assembleQuery(subquery.getInput());
+            RowStream stream = assembleQuery(subquery.getQuery());
             return stream.operator;
         }
 
@@ -237,10 +237,10 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleIndexScan(IndexScan indexScan) {
             RowStream stream = new RowStream();
             IndexRowType indexRowType = schema.indexRowType(indexScan.getIndex());
-            stream.operator = indexScan_Default(indexRowType, 
-                                                indexScan.isReverseScan(),
-                                                assembleIndexKeyRange(indexScan, null),
-                                                tableRowType(indexScan.getLeafMostTable()));
+            stream.operator = API.indexScan_Default(indexRowType, 
+                                                    indexScan.isReverseScan(),
+                                                    assembleIndexKeyRange(indexScan, null),
+                                                    tableRowType(indexScan.getLeafMostTable()));
             stream.rowType = indexRowType;
             stream.fieldOffsets = new IndexFieldOffsets(indexScan);
             return stream;
@@ -249,7 +249,7 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleGroupScan(GroupScan groupScan) {
             RowStream stream = new RowStream();
             GroupTable groupTable = groupScan.getGroup().getGroup().getGroupTable();
-            stream.operator = groupScan_Default(groupTable);
+            stream.operator = API.groupScan_Default(groupTable);
             stream.unknownTypesPresent = true;
             return stream;
         }
@@ -266,7 +266,7 @@ public class OperatorAssembler extends BaseRule
                 rows.add(new ExpressionRow(stream.rowType, UndefBindings.only(),
                                            expressions));
             }
-            stream.operator = valuesScan_Default(rows, stream.rowType);
+            stream.operator = API.valuesScan_Default(rows, stream.rowType);
             return stream;
         }
 
@@ -283,10 +283,10 @@ public class OperatorAssembler extends BaseRule
                     rowType = tableRowType(table);
                     fieldOffsets = new ColumnSourceFieldOffsets(table);
                 }
-                stream.operator = select_HKeyOrdered(stream.operator,
-                                                     rowType,
-                                                     assembleExpression(condition, 
-                                                                        fieldOffsets));
+                stream.operator = API.select_HKeyOrdered(stream.operator,
+                                                         rowType,
+                                                         assembleExpression(condition, 
+                                                                            fieldOffsets));
             }
             return stream;
         }
@@ -310,17 +310,32 @@ public class OperatorAssembler extends BaseRule
                     tableNode = tableNodes.get(i);
                     tableRowType = tableRowType(tableNode);
                     flattened.addTable(tableRowType, flatten.getTableSources().get(i));
-                    stream.operator = flatten_HKeyOrdered(stream.operator, 
-                                                          stream.rowType,
-                                                          tableRowType,
-                                                          flatten.getJoinTypes().get(i-1));
+                    API.JoinType flattenType = null;
+                    switch (flatten.getJoinTypes().get(i-1)) {
+                    case INNER:
+                        flattenType = API.JoinType.INNER_JOIN;
+                        break;
+                    case LEFT:
+                        flattenType = API.JoinType.LEFT_JOIN;
+                        break;
+                    case RIGHT:
+                        flattenType = API.JoinType.RIGHT_JOIN;
+                        break;
+                    case FULL_OUTER:
+                        flattenType = API.JoinType.FULL_JOIN;
+                        break;
+                    }
+                    stream.operator = API.flatten_HKeyOrdered(stream.operator, 
+                                                              stream.rowType,
+                                                              tableRowType,
+                                                              flattenType);
                     stream.rowType = stream.operator.rowType();
                 }
                 stream.fieldOffsets = flattened;
             }
             if (stream.unknownTypesPresent) {
-                stream.operator = filter_Default(stream.operator,
-                                                 Collections.singletonList(stream.rowType));
+                stream.operator = API.filter_Default(stream.operator,
+                                                     Collections.singletonList(stream.rowType));
                 stream.unknownTypesPresent = false;
             }
             return stream;
@@ -330,22 +345,22 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleStream(ancestorLookup.getInput());
             GroupTable groupTable = ancestorLookup.getDescendant().getGroup().getGroupTable();
             RowType inputRowType = stream.rowType; // The index row type.
-            LookupOption flag = LookupOption.DISCARD_INPUT;
+            API.LookupOption flag = API.LookupOption.DISCARD_INPUT;
             if (!(inputRowType instanceof IndexRowType)) {
                 // Getting from branch lookup.
                 inputRowType = tableRowType(ancestorLookup.getDescendant());
-                flag = LookupOption.KEEP_INPUT;
+                flag = API.LookupOption.KEEP_INPUT;
             }
             List<RowType> ancestorTypes = 
                 new ArrayList<RowType>(ancestorLookup.getAncestors().size());
             for (TableNode table : ancestorLookup.getAncestors()) {
                 ancestorTypes.add(tableRowType(table));
             }
-            stream.operator = ancestorLookup_Default(stream.operator,
-                                                     groupTable,
-                                                     inputRowType,
-                                                     ancestorTypes,
-                                                     flag);
+            stream.operator = API.ancestorLookup_Default(stream.operator,
+                                                         groupTable,
+                                                         inputRowType,
+                                                         ancestorTypes,
+                                                         flag);
             stream.rowType = null;
             stream.fieldOffsets = null;
             return stream;
@@ -357,26 +372,26 @@ public class OperatorAssembler extends BaseRule
             if (branchLookup.getInput() != null) {
                 stream = assembleStream(branchLookup.getInput());
                 RowType inputRowType = stream.rowType; // The index row type.
-                LookupOption flag = LookupOption.DISCARD_INPUT;
+                API.LookupOption flag = API.LookupOption.DISCARD_INPUT;
                 if (!(inputRowType instanceof IndexRowType)) {
                     // Getting from ancestor lookup.
                     inputRowType = tableRowType(branchLookup.getSource());
-                    flag = LookupOption.KEEP_INPUT;
+                    flag = API.LookupOption.KEEP_INPUT;
                 }
-                stream.operator = branchLookup_Default(stream.operator, 
-                                                       groupTable, 
-                                                       inputRowType,
-                                                       tableRowType(branchLookup.getBranch()), 
-                                                       flag);
+                stream.operator = API.branchLookup_Default(stream.operator, 
+                                                           groupTable, 
+                                                           inputRowType,
+                                                           tableRowType(branchLookup.getBranch()), 
+                                                           flag);
             }
             else {
                 stream = new RowStream();
-                LookupOption flag = LookupOption.KEEP_INPUT;
-                stream.operator = branchLookup_Nested(groupTable, 
-                                                      tableRowType(branchLookup.getSource()),
-                                                      tableRowType(branchLookup.getBranch()), 
-                                                      flag,
-                                                      bindingPosition());
+                API.LookupOption flag = API.LookupOption.KEEP_INPUT;
+                stream.operator = API.branchLookup_Nested(groupTable, 
+                                                          tableRowType(branchLookup.getSource()),
+                                                          tableRowType(branchLookup.getBranch()), 
+                                                          flag,
+                                                          bindingPosition());
                 
             }
             stream.rowType = null;
@@ -395,11 +410,11 @@ public class OperatorAssembler extends BaseRule
                     pstream.rowType = stream.rowType;
                 }
                 else {
-                    pstream.operator = product_NestedLoops(pstream.operator,
-                                                           stream.operator,
-                                                           pstream.rowType,
-                                                           stream.rowType,
-                                                           bindingPosition());
+                    pstream.operator = API.product_NestedLoops(pstream.operator,
+                                                               stream.operator,
+                                                               pstream.rowType,
+                                                               stream.rowType,
+                                                               bindingPosition());
                     pstream.rowType = pstream.operator.rowType();
                 }
                 if (stream.fieldOffsets instanceof ColumnSourceFieldOffsets) {
@@ -439,7 +454,7 @@ public class OperatorAssembler extends BaseRule
                     aggregateSource.getAggregates().get(0);
                 if ((aggr1.getOperand() == null) &&
                     (aggr1.getFunction().equals("COUNT"))) {
-                    stream.operator = count_Default(stream.operator, stream.rowType);
+                    stream.operator = API.count_Default(stream.operator, stream.rowType);
                     stream.rowType = stream.operator.rowType();
                     stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource);
                     return stream;
@@ -457,12 +472,12 @@ public class OperatorAssembler extends BaseRule
                 if (aggr.getOperand() != null)
                   operand = assembleExpression(aggr.getOperand(), stream.fieldOffsets);
                 else
-                  operand = literal(1L); // Anything non-null will do.
+                  operand = Expressions.literal(1L); // Anything non-null will do.
                 expressions.add(operand);
                 aggregatorNames.add(aggr.getFunction());
             }
-            stream.operator = project_Default(stream.operator, stream.rowType, 
-                                              expressions);
+            stream.operator = API.project_Default(stream.operator, stream.rowType, 
+                                                  expressions);
             stream.rowType = stream.operator.rowType();
             switch (aggregateSource.getImplementation()) {
             case PRESORTED:
@@ -471,26 +486,27 @@ public class OperatorAssembler extends BaseRule
             default:
                 {
                     // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
-                    Ordering ordering = ordering();
+                    API.Ordering ordering = API.ordering();
                     for (int i = 0; i < nkeys; i++) {
-                        ordering.append(field(stream.rowType, i), true);
+                        ordering.append(Expressions.field(stream.rowType, i), true);
                     }
-                    stream.operator = sort_Tree(stream.operator, stream.rowType, 
-                                                ordering);
+                    stream.operator = API.sort_Tree(stream.operator, stream.rowType, 
+                                                    ordering);
                 }
             }
-            stream.operator = aggregate_Partial(stream.operator, nkeys,
-                    rulesContext.getAggregatorRegistry(), aggregatorNames);
+            stream.operator = API.aggregate_Partial(stream.operator, nkeys,
+                                                    rulesContext.getAggregatorRegistry(),
+                                                    aggregatorNames);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource);
             return stream;
         }
 
         protected RowStream assembleDistinct(Distinct distinct) {
             RowStream stream = assembleStream(distinct.getInput());
-            stream.operator = aggregate_Partial(stream.operator,
-                                                stream.rowType.nFields(),
-                                                null,
-                                                Collections.<String>emptyList());
+            stream.operator = API.aggregate_Partial(stream.operator,
+                                                    stream.rowType.nFields(),
+                                                    null,
+                                                    Collections.<String>emptyList());
             // TODO: Probably want separate Distinct operator so that
             // row type does not change.
             stream.rowType = stream.operator.rowType();
@@ -502,7 +518,7 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleSort(Sort sort) {
             RowStream stream = assembleStream(sort.getInput());
-            Ordering ordering = ordering();
+            API.Ordering ordering = API.ordering();
             for (OrderByExpression orderBy : sort.getOrderBy()) {
                 ordering.append(assembleExpression(orderBy.getExpression(),
                                                    stream.fieldOffsets),
@@ -519,10 +535,10 @@ public class OperatorAssembler extends BaseRule
                 // TODO: Also if input is VALUES, whose size we know in advance.
             }
             if ((maxrows >= 0) && (maxrows <= INSERTION_SORT_MAX_LIMIT))
-                stream.operator = sort_InsertionLimited(stream.operator, stream.rowType,
-                                                        ordering, maxrows);
+                stream.operator = API.sort_InsertionLimited(stream.operator, stream.rowType,
+                                                            ordering, maxrows);
             else
-                stream.operator = sort_Tree(stream.operator, stream.rowType, ordering);
+                stream.operator = API.sort_Tree(stream.operator, stream.rowType, ordering);
             return stream;
         }
 
@@ -531,18 +547,18 @@ public class OperatorAssembler extends BaseRule
             int nlimit = limit.getLimit();
             if ((nlimit < 0) && !limit.isLimitParameter())
                 nlimit = Integer.MAX_VALUE; // Slight disagreement in saying unlimited.
-            stream.operator = limit_Default(stream.operator, 
-                                            limit.getOffset(), limit.isOffsetParameter(),
-                                            nlimit, limit.isLimitParameter());
+            stream.operator = API.limit_Default(stream.operator, 
+                                                limit.getOffset(), limit.isOffsetParameter(),
+                                                nlimit, limit.isLimitParameter());
             return stream;
         }
 
         protected RowStream assembleProject(Project project) {
             RowStream stream = assembleStream(project.getInput());
-            stream.operator = project_Default(stream.operator,
-                                              stream.rowType,
-                                              assembleExpressions(project.getFields(),
-                                                                  stream.fieldOffsets));
+            stream.operator = API.project_Default(stream.operator,
+                                                  stream.rowType,
+                                                  assembleExpressions(project.getFields(),
+                                                                      stream.fieldOffsets));
             stream.rowType = stream.operator.rowType();
             // TODO: If Project were a ColumnSource, could use it to
             // calculate intermediate results and change downstream

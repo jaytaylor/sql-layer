@@ -15,7 +15,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.qp.operator.API.JoinType;
+import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -61,7 +61,7 @@ public class Flatten extends BasePlanWithInput
         Set<TableSource> result = new HashSet<TableSource>();
         for (int i = 0; i < tableSources.size(); i++) {
             if (i > 0) {
-                if (joinTypes.get(i-1) != JoinType.INNER_JOIN)
+                if (joinTypes.get(i-1) != JoinType.INNER)
                     break;
             }
             TableSource table = tableSources.get(i);

@@ -23,6 +23,7 @@ import com.akiban.sql.parser.ValueNode;
  */
 public class IfElseExpression extends BaseExpression
 {
+    // TODO: Make this ConditionList. Need parser to put into CNF.
     private ConditionExpression testCondition;
     private ExpressionNode thenExpression, elseExpression;
     
