@@ -15,9 +15,11 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
+
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
-import com.akiban.sql.optimizer.plan.*;
 
 import java.util.*;
 
@@ -768,6 +770,9 @@ public class ConstantFolder extends BaseRule
         }
 
         public void dedup(boolean topLevel) {
+            if (expressions.getDistinctState() != null)
+                return;
+
             List<List<ExpressionNode>> rows = expressions.getExpressions();
             List<List<ExpressionNode>> constants = new ArrayList<List<ExpressionNode>>();
             List<ExpressionNode> constantNull = null;
@@ -807,12 +812,25 @@ public class ConstantFolder extends BaseRule
             // A top-level condition does not need to worry about the
             // difference between false and unknown and so can discard
             // NULL elements.
-            if (!topLevel && (constantNull != null))
+            if (topLevel)
+                constantNull = null;
+            if (constantNull != null)
                 rows.add(constantNull);
             if (parameters != null)
                 rows.addAll(parameters);
             if (others != null)
                 rows.addAll(others);
+
+            DistinctState distinct;
+            if (others != null)
+                distinct = DistinctState.HAS_EXPRESSSIONS;
+            else if (parameters != null)
+                distinct = DistinctState.HAS_PARAMETERS;
+            else if (constantNull != null)
+                distinct = DistinctState.DISTINCT_WITH_NULL;
+            else
+                distinct = DistinctState.DISTINCT;
+            expressions.setDistinctState(distinct);
         }
 
         public int compare(List<ExpressionNode> r1, List<ExpressionNode> r2) {
