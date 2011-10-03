@@ -269,6 +269,8 @@ public class OperatorAssembler extends BaseRule
                                            expressions));
             }
             stream.operator = API.valuesScan_Default(rows, stream.rowType);
+            stream.fieldOffsets = new ColumnSourceFieldOffsets(expressionsSource, 
+                                                               stream.rowType);
             return stream;
         }
 

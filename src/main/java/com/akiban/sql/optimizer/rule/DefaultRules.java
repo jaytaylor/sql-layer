@@ -28,6 +28,7 @@ public class DefaultRules
         new ConstantFolder(),
         new OuterJoinPromoter(),
         new GroupJoinFinder(),
+        new InConditionReverser(),
         new IndexPicker(),
         new NestedLoopMapper(),
         new BranchJoiner(),
