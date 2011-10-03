@@ -184,7 +184,7 @@ public class Reader
         final int currentVersion = MetaModel.only().getModelVersion();
         final int sourceVersion = source.readVersion();
         if (sourceVersion != currentVersion) {
-            throw new MetaModelVersionMismatchException(currentVersion, sourceVersion);
+            throw new MetaModelVersionMismatchException();
         }
     }
 

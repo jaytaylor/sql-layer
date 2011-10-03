@@ -31,7 +31,7 @@ final class Limit_Default extends Operator
 
     @Override
     protected Cursor cursor(StoreAdapter adapter) {
-        return new Execution(inputOperator.cursor(adapter));
+        return new Execution(adapter, inputOperator.cursor(adapter));
     }
 
     // Plannable interface
@@ -142,6 +142,7 @@ final class Limit_Default extends Operator
 
         @Override
         public Row next() {
+            adapter.checkQueryCancelation();
             Row row;
             while (skipLeft > 0) {
                 if ((row = input.next()) == null) {
@@ -167,12 +168,14 @@ final class Limit_Default extends Operator
         }
 
         // Execution interface
-        Execution(Cursor input) {
+        Execution(StoreAdapter adapter, Cursor input) {
             super(input);
+            this.adapter = adapter;
         }
 
         // class state
 
+        private final StoreAdapter adapter;
         private int skipLeft, limitLeft;
     }
 }

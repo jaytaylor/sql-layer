@@ -163,6 +163,7 @@ class Flatten_HKeyOrdered extends Operator
         @Override
         public Row next()
         {
+            adapter.checkQueryCancelation();
             Row outputRow = pending.take();
             Row inputRow;
             while (outputRow == null && (((inputRow = input.next()) != null) || parent.isHolding())) {

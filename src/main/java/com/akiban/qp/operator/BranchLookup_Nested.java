@@ -192,6 +192,7 @@ public class BranchLookup_Nested extends Operator
         @Override
         public Row next()
         {
+            adapter.checkQueryCancelation();
             Row row;
             if (keepInput && inputPrecedesBranch && inputRow.isHolding()) {
                 row = inputRow.get();
@@ -223,12 +224,14 @@ public class BranchLookup_Nested extends Operator
 
         Execution(StoreAdapter adapter)
         {
+            this.adapter = adapter;
             this.cursor = adapter.newGroupCursor(groupTable);
             this.hKey = adapter.newHKey(outputRowType);
         }
 
         // Object state
 
+        private final StoreAdapter adapter;
         private final GroupCursor cursor;
         private final HKey hKey;
         private ShareHolder<Row> inputRow = new ShareHolder<Row>();

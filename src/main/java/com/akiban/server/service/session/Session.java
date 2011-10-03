@@ -28,6 +28,7 @@ public final class Session
     private final Map<Key<?>,Object> map = new HashMap<Key<?>, Object>();
     private final SessionEventListener listener;
     private final long sessionId = idGenerator.getAndIncrement();
+    private volatile boolean cancelCurrentQuery = false;
 
     Session(SessionEventListener listener) {
         this.listener = listener;
@@ -107,6 +108,16 @@ public final class Session
         // Later, we'll close any "resource" that is added to the session.
         //
         map.clear();
+    }
+
+    public void cancelCurrentQuery(boolean cancel)
+    {
+        cancelCurrentQuery = cancel;
+    }
+
+    public boolean isCurrentQueryCanceled()
+    {
+        return cancelCurrentQuery;
     }
 
     @SuppressWarnings("unused") // for <T> parameter; it's only useful for compile-time checking

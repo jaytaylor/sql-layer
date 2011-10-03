@@ -16,6 +16,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.aggregation.AggregatorRegistry;
+import com.akiban.server.error.*;
 import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.store.Store;
@@ -30,13 +31,6 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoTransactionInProgressException;
-import com.akiban.server.error.ParseException;
-import com.akiban.server.error.PersistItErrorException;
-import com.akiban.server.error.TransactionInProgressException;
-import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.EventTypes;
 import com.akiban.server.service.session.Session;
@@ -207,46 +201,22 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                         processTerminate();
                         break;
                     }
-                }
-                catch (InvalidOperationException ex) {
+                } catch (QueryCanceledException ex) {
+                    // Make sure that query cancelation flag is cleared for the next message.
+                    session.cancelCurrentQuery(false);
+                    logger.warn(ex.getMessage());
+                    logger.debug("StackTrace: {}", ex);
+                    String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
+                    sendErrorResponse(type, ex, ErrorCode.QUERY_CANCELED, message);
+                } catch (InvalidOperationException ex) {
                     logger.warn("Error in query: {}",ex.getMessage());
                     logger.debug("StackTrace: {}", ex);
-                    if (type.errorMode() == PostgresMessages.ErrorMode.NONE ) throw ex;
-                    else {
-                        messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
-                        messenger.write('S');
-                        messenger.writeString("ERROR");
-                        messenger.write('C');
-                        messenger.writeString(ex.getCode().getFormattedValue());
-                        messenger.write('M');
-                        messenger.writeString(ex.getShortMessage());
-                        messenger.write(0);
-                        messenger.sendMessage(true);
-                    }
-                    if (type.errorMode() == PostgresMessages.ErrorMode.EXTENDED)
-                        ignoreUntilSync = true;
-                    else
-                        readyForQuery();
-                } catch (Exception e) {
-                    final String message = (e.getMessage() == null ? e.getClass().toString() : e.getMessage()); 
-                    logger.warn("Unexpected error in query", e);
-                    logger.debug("Stack Trace: {}", e);
-                    if (type.errorMode() == PostgresMessages.ErrorMode.NONE) throw e;
-                    else {
-                        messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
-                        messenger.write('S');
-                        messenger.writeString("ERROR");
-                        messenger.write('C');
-                        messenger.writeString(ErrorCode.UNEXPECTED_EXCEPTION.getFormattedValue());
-                        messenger.write('M');
-                        messenger.writeString(message);
-                        messenger.write(0);
-                        messenger.sendMessage(true);
-                    }
-                    if (type.errorMode() == PostgresMessages.ErrorMode.EXTENDED)
-                        ignoreUntilSync = true;
-                    else
-                        readyForQuery();
+                    sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
+                } catch (Exception ex) {
+                    logger.warn("Unexpected error in query", ex);
+                    logger.debug("Stack Trace: {}", ex);
+                    String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
+                    sendErrorResponse(type, ex, ErrorCode.UNEXPECTED_EXCEPTION, message);
                 }
                 finally {
                     sessionTracer.endEvent();
@@ -260,6 +230,27 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             }
             server.removeConnection(pid);
         }
+    }
+
+    private void sendErrorResponse(PostgresMessages type, Exception exception, ErrorCode errorCode, String message)
+        throws Exception
+    {
+        if (type.errorMode() == PostgresMessages.ErrorMode.NONE) throw exception;
+        else {
+            messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
+            messenger.write('S');
+            messenger.writeString("ERROR");
+            messenger.write('C');
+            messenger.writeString(errorCode.getFormattedValue());
+            messenger.write('M');
+            messenger.writeString(message);
+            messenger.write(0);
+            messenger.sendMessage(true);
+        }
+        if (type.errorMode() == PostgresMessages.ErrorMode.EXTENDED)
+            ignoreUntilSync = true;
+        else
+            readyForQuery();
     }
 
     protected void readyForQuery() throws IOException {
@@ -314,9 +305,16 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         int pid = messenger.readInt();
         int secret = messenger.readInt();
         PostgresServerConnection connection = server.getConnection(pid);
-        if ((connection != null) && (secret == connection.secret))
-            // No easy way to signal in another thread.
+        if ((connection != null) && (secret == connection.secret)) {
+            // A running query checks session state for query cancelation during Cursor.next() calls. If the
+            // query is stuck in a blocking operation, then thread interruption should unstick it. Either way,
+            // the query should eventually throw QueryCanceledException which will be caught by topLevel().
+            connection.session.cancelCurrentQuery(true);
+            if (connection.thread != null) {
+                connection.thread.interrupt();
+            }
             connection.messenger.setCancel(true);
+        }
         stop();                                         // That's all for this connection.
     }
 

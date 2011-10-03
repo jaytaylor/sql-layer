@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.akiban.ais.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -279,11 +280,13 @@ public class IndexDDL
         }.save(ais);
     }
     
-    private static void addTable (AISBuilder builder, AkibanInformationSchema ais, final TableName tableName) {
+    private static void addTable (AISBuilder builder, AkibanInformationSchema ais, TableName tableName) {
+        final UserTable userTable = ais.getUserTable(tableName);
+        final GroupTable groupTable = userTable.getGroup().getGroupTable();
         new TableSubsetWriter(new AISTarget(builder.akibanInformationSchema())) {
             @Override
             public boolean shouldSaveTable(Table table) {
-                return table.getName().equals(tableName);
+                return table == userTable || table == groupTable;
             }
         }.save(ais);
     }
