@@ -15,8 +15,6 @@
 
 package com.akiban.server.error;
 
-import com.akiban.qp.operator.QueryCanceledException;
-
 import java.util.ResourceBundle;
 
 /**

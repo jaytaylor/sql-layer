@@ -15,8 +15,8 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.operator.QueryCanceledException;
 import com.akiban.server.aggregation.AggregatorRegistry;
+import com.akiban.server.error.*;
 import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.store.Store;
@@ -31,13 +31,6 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoTransactionInProgressException;
-import com.akiban.server.error.ParseException;
-import com.akiban.server.error.PersistItErrorException;
-import com.akiban.server.error.TransactionInProgressException;
-import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.EventTypes;
 import com.akiban.server.service.session.Session;
@@ -211,17 +204,18 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 } catch (QueryCanceledException ex) {
                     // Make sure that query cancelation flag is cleared for the next message.
                     session.cancelCurrentQuery(false);
-                    logger.warn("Error in query: {}",ex.getMessage());
+                    logger.warn(ex.getMessage());
                     logger.debug("StackTrace: {}", ex);
-                    sendErrorResponse(type, ex, ErrorCode.QUERY_CANCELED, "Query canceled by user");
+                    String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
+                    sendErrorResponse(type, ex, ErrorCode.QUERY_CANCELED, message);
                 } catch (InvalidOperationException ex) {
                     logger.warn("Error in query: {}",ex.getMessage());
                     logger.debug("StackTrace: {}", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
                 } catch (Exception ex) {
-                    final String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
                     logger.warn("Unexpected error in query", ex);
                     logger.debug("Stack Trace: {}", ex);
+                    String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
                     sendErrorResponse(type, ex, ErrorCode.UNEXPECTED_EXCEPTION, message);
                 }
                 finally {
@@ -316,7 +310,9 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             // query is stuck in a blocking operation, then thread interruption should unstick it. Either way,
             // the query should eventually throw QueryCanceledException which will be caught by topLevel().
             connection.session.cancelCurrentQuery(true);
-            connection.thread.interrupt();
+            if (connection.thread != null) {
+                connection.thread.interrupt();
+            }
             connection.messenger.setCancel(true);
         }
         stop();                                         // That's all for this connection.

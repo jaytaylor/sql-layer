@@ -13,10 +13,12 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.operator;
+package com.akiban.server.error;
 
-public class QueryCanceledException extends RuntimeException
+public class QueryCanceledException extends InvalidOperationException
 {
     public QueryCanceledException()
-    {}
+    {
+        super(ErrorCode.QUERY_CANCELED);
+    }
 }

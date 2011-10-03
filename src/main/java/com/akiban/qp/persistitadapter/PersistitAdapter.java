@@ -31,6 +31,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;

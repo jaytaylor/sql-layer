@@ -189,39 +189,4 @@ public class TableSubsetWriterTest {
         }
         assertNotNull("t.__akiban_c exists", groupTable);
     }
-
-/*
-    @Test
-    public void bug857741()
-    {
-        AISBuilder builder = new AISBuilder();
-        builder.setTableIdOffset(1);
-        builder.userTable("schema", "customer");
-        builder.column("schema", "customer", "cid", 0, "int", null, null, false, true, null, null);
-        builder.column("schema", "customer", "name", 1, "int", null, null, true, false, null, null);
-        builder.column("schema", "customer", "dob", 2, "int", null, null, true, false, null, null);
-        builder.index("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, "cid", 0, true, null);
-        builder.userTable("schema", "orders");
-        builder.column("schema", "orders", "oid", 0, "int", null, null, false, true, null, null);
-        builder.column("schema", "orders", "cid", 1, "int", null, null, false, false, null, null);
-        builder.column("schema", "orders", "order_date", 2, "int", null, null, false, false, null, null);
-        builder.index("schema", "orders", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "orders", Index.PRIMARY_KEY_CONSTRAINT, "oid", 0, true, null);
-        builder.joinTables("co", "schema", "customer", "schema", "orders");
-        builder.joinColumns("co", "schema", "customer", "cid", "schema", "orders", "cid");
-        builder.basicSchemaIsComplete();
-        builder.createGroup("group", "schema", "__akiban_customer");
-        builder.addJoinToGroup("group", "co", 0);
-        builder.groupingIsComplete();
-        AkibanInformationSchema ais = builder.akibanInformationSchema();
-        ais.checkIntegrity();
-        AISBuilder indexBuilder = new AISBuilder();
-        builder.groupIndex("group", "name_date", false);
-        builder.groupIndexColumn("group", "name_date", "schema", "customer", "name", 0);
-        builder.groupIndexColumn("group", "name_date", "schema", "orders", "order_date", 1);
-        builder.index("schema", "customer", "idx_pad_2", false, Index.KEY_CONSTRAINT);
-        builder.indexColumn("schema", "customer", "idx_pad_2", "name", 0, true, null);
-    }
-*/
 }
