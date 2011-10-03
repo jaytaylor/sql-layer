@@ -714,7 +714,7 @@ public class ConstantFolder extends BaseRule
     // This currently only recognizes the one operand LHS version, but
     // is easily extended to the row constructor form once the parser
     // supports that.
-    protected static class InCondition {
+    protected static class InCondition implements Comparator<List<ExpressionNode>> {
         private ExpressionsSource expressions;
         private ComparisonCondition comparison;
 
@@ -768,6 +768,57 @@ public class ConstantFolder extends BaseRule
         }
 
         public void dedup(boolean topLevel) {
+            List<List<ExpressionNode>> rows = expressions.getExpressions();
+            List<List<ExpressionNode>> constants = new ArrayList<List<ExpressionNode>>();
+            List<ExpressionNode> constantNull = null;
+            List<List<ExpressionNode>> parameters = null;
+            List<List<ExpressionNode>> others = null;
+            for (List<ExpressionNode> row : rows) {
+                ExpressionNode col = row.get(0);
+                if (col instanceof ConstantExpression) {
+                    ConstantExpression constant = (ConstantExpression)col;
+                    if (constant.getValue() == null)
+                        constantNull = row;
+                    else
+                        constants.add(row);
+                }
+                else if (col instanceof ParameterExpression) {
+                    if (parameters == null)
+                        parameters = new ArrayList<List<ExpressionNode>>();
+                    parameters.add(row);
+                }
+                else {
+                    if (others == null)
+                        others = new ArrayList<List<ExpressionNode>>();
+                    others.add(row);
+                }
+            }
+            if (constants.size() > 1)
+                Collections.sort(constants, this);
+            rows.clear();
+            List<ExpressionNode> lastRow = null;
+            for (List<ExpressionNode> row : constants) {
+                if ((lastRow == null) ||
+                    (compare(lastRow, row) != 0)) {
+                    rows.add(row);
+                    lastRow = row;
+                }
+            }
+            // A top-level condition does not need to worry about the
+            // difference between false and unknown and so can discard
+            // NULL elements.
+            if (!topLevel && (constantNull != null))
+                rows.add(constantNull);
+            if (parameters != null)
+                rows.addAll(parameters);
+            if (others != null)
+                rows.addAll(others);
+        }
+
+        public int compare(List<ExpressionNode> r1, List<ExpressionNode> r2) {
+            Comparable o1 = (Comparable)((ConstantExpression)r1.get(0)).getValue();
+            Comparable o2 = (Comparable)((ConstantExpression)r2.get(0)).getValue();
+            return o1.compareTo(o2);
         }
 
     }
