@@ -48,6 +48,8 @@ select-13l: sorting with limit
 
 select-14: IN using index
 
+select-14n: IN not using index
+
 types: select all typed fields
 
 types_a_date: match literal
