@@ -341,7 +341,8 @@ public enum ErrorCode {
     TOO_MANY_ROWS_UPDATED   ("57", "004", Importance.DEBUG, TooManyRowsUpdatedException.class),  
     INSERT_NULL_CHECK       ("57", "005", Importance.DEBUG, InsertNullCheckFailedException.class),
 
-    
+    // Class 58 - Query canceled by user
+    QUERY_CANCELED          ("58", "000", Importance.ERROR, QueryCanceledException.class),    
     // Class 70 - Unknown errors 
     UNKNOWN                 ("70", "000", Importance.ERROR, null),
     UNEXPECTED_EXCEPTION    ("70", "001", Importance.ERROR, null),
