@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.error.IndexTableNotInGroupException;
 import com.akiban.server.error.IndistinguishableIndexException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchGroupException;
@@ -260,6 +261,10 @@ public class IndexDDL
             Column tableCol = ais.getUserTable(columnTable).getColumn(columnName); 
             if (tableCol == null) {
                 throw new NoSuchColumnException (col.getColumnName());
+            }
+            
+            if (ais.getGroup(groupName) != ais.getUserTable(columnTable).getGroup()) {
+                throw new IndexTableNotInGroupException(indexName, columnName, columnTable.getTableName());
             }
             
             builder.groupIndexColumn(groupName, indexName, schemaName, columnTable.getTableName(), columnName, i);

@@ -100,8 +100,6 @@ public class IndexDDLIT extends PostgresServerITBase {
         createJoinedTables();
         
         connection.createStatement().execute(sql);
-        
-        
     }
        
     @Test
@@ -141,6 +139,17 @@ public class IndexDDLIT extends PostgresServerITBase {
         connection.createStatement().execute(sql);
     }
 
+    @Test (expected=PSQLException.class)
+    public void createGroupIndexCrossGroup() throws SQLException {
+        createTable();
+        String sql1 = "CREATE TABLE test.t2 (c1 integer not null primary key, " +
+        " c2 integer, c3 integer, c4 integer, c5 integer)";
+        connection.createStatement().execute(sql1);
+        
+        String sql2 = "CREATE INDEX index16 on test.t2 (test.t1.c1, test.t2.c1)";
+        connection.createStatement().execute(sql2);
+    }
+    
     @Test
     public void dropIndexSimple() throws SQLException {
         String sql = "CREATE INDEX test114 on test.t1 (test.t1.c1, t1.c2, c3)";
