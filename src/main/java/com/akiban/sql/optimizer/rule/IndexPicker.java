@@ -98,16 +98,24 @@ public class IndexPicker extends BaseRule
 
         protected IndexGoal determineIndexGoal(PlanNode input, 
                                                Collection<TableSource> tables) {
-            List<ConditionExpression> conditions;
+            List<ConditionList> conditionSources = new ArrayList<ConditionList>();
             Sort ordering = null;
             AggregateSource grouping = null;
-            do {
+            while (true) {
                 input = input.getOutput();
-            } while (input instanceof Joinable);
-            if (input instanceof Select)
-                conditions = ((Select)input).getConditions();
-            else
-                return null;
+                if (!(input instanceof Joinable))
+                    break;
+                if (input instanceof JoinNode) {
+                    ConditionList conds = ((JoinNode)input).getJoinConditions();
+                    if ((conds != null) && !conds.isEmpty())
+                        conditionSources.add(conds);
+                }
+            }
+            if (input instanceof Select) {
+                ConditionList conds = ((Select)input).getConditions();
+                if (!conds.isEmpty())
+                    conditionSources.add(conds);
+            }
             input = input.getOutput();
             if (input instanceof Sort) {
                 ordering = (Sort)input;
@@ -133,8 +141,12 @@ public class IndexPicker extends BaseRule
                     }
                 }
             }
+            if (conditionSources.isEmpty() &&
+                (ordering == null) &&
+                (grouping == null))
+                return null;
             return new IndexGoal(query, boundTables, 
-                                 conditions, grouping, ordering, tables);
+                                 conditionSources, grouping, ordering, tables);
         }
 
         protected IndexScan pickBestIndex(TableJoins tableJoins, IndexGoal goal) {
