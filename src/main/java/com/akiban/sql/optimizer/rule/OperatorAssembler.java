@@ -810,6 +810,7 @@ public class OperatorAssembler extends BaseRule
 
             @Override
             public List<ColumnExpressionToIndex> getBoundRows() {
+                ensureBoundRows();
                 return boundRows;
             }
 
