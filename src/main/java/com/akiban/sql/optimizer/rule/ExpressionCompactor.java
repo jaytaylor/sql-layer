@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.plan.BooleanOperationExpression.Operation;
 
 import com.akiban.server.expression.std.Comparison;
 
@@ -46,6 +47,8 @@ public class ExpressionCompactor extends BaseRule
 
     @Override
     public boolean visitLeave(PlanNode n) {
+        if (n instanceof Select)
+            compactConditions(((Select)n).getConditions());
         return true;
     }
 
@@ -66,6 +69,90 @@ public class ExpressionCompactor extends BaseRule
         return expr;
     }
 
+    protected void compactConditions(ConditionList conditions) {
+        if (conditions.size() <= 1)
+            return;
+
+        Map<TableSource,List<ConditionExpression>> byTable = 
+            new HashMap<TableSource,List<ConditionExpression>>();
+        for (ConditionExpression condition : conditions) {
+            TableSource table = SelectPreponer.getSingleTableConditionTable(condition);
+            List<ConditionExpression> entry = byTable.get(table);
+            if (entry == null) {
+                entry = new ArrayList<ConditionExpression>();
+                byTable.put(table, entry);
+            }
+            entry.add(condition);
+        }
+        conditions.clear();
+        List<TableSource> tables = new ArrayList<TableSource>(byTable.keySet());
+        Collections.sort(tables, tableSourceById);
+        for (TableSource table : tables) {
+            List<ConditionExpression> entry = byTable.get(table);
+            ConditionExpression condition;
+            int size = entry.size();
+            if (size == 1)
+                condition = entry.get(0);
+            else {
+                Collections.sort(entry, conditionBySelectivity);
+                condition = entry.get(--size);
+                while (size > 0) {
+                    condition = new BooleanOperationExpression(Operation.AND,
+                                                               entry.get(--size),
+                                                               condition,
+                                                               null, null);
+                }
+            }
+            conditions.add(condition);
+        }
+    }
+
+    static final Comparator<TableSource> tableSourceById = 
+        new Comparator<TableSource>() {
+        @Override
+        public int compare(TableSource t1, TableSource t2) {
+            if (t1 == null) {
+                if (t2 == null)
+                    return 0;
+                else
+                    return +1;
+            }
+            else if (t2 == null)
+                return -1;
+            else
+                return t1.getTable().getTable().getTableId().compareTo(t2.getTable().getTable().getTableId());
+        }
+    };
+
+    static final Comparator<ConditionExpression> conditionBySelectivity = 
+        new Comparator<ConditionExpression>() {
+        @Override
+        public int compare(ConditionExpression c1, ConditionExpression c2) {
+            return conditionSelectivity(c1) - conditionSelectivity(c2);
+        }
+    };
+
+    protected static int conditionSelectivity(ConditionExpression condition) {
+        if (condition instanceof ComparisonCondition) {
+            switch (((ComparisonCondition)condition).getOperation()) {
+            case EQ:
+                return 1;
+            case NE:
+                return 3;
+            default:
+                return 2;
+            }
+        }
+        else if (condition instanceof FunctionExpression) {
+            String fname = ((FunctionExpression)condition).getFunction();
+            if ("isNullOp".equals(fname))
+                return 1;
+        }
+        else if (condition instanceof SubqueryExpression)
+            return 10;
+        return 5;
+    }
+        
     protected ExpressionNode anyCondition(AnyCondition any) {
         Subquery subquery = any.getSubquery();
         PlanNode input = subquery.getInput();

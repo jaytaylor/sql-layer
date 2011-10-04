@@ -18,6 +18,8 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
+import com.akiban.server.types.AkType;
+
 /** An operation on Boolean expressions.
  */
 public class BooleanOperationExpression extends BaseExpression 
@@ -34,7 +36,7 @@ public class BooleanOperationExpression extends BaseExpression
                                       ConditionExpression left, 
                                       ConditionExpression right, 
                                       DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+        super(sqlType, AkType.BOOL, sqlSource);
         this.operation = operation;
         this.left = left;
         this.right = right;
