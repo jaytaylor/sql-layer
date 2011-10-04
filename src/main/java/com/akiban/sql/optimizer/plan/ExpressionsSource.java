@@ -46,6 +46,21 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource
         return result;
     }
 
+    // TODO: It might be interesting to note when it's also sorted for
+    // WHERE x IN (...) ORDER BY x.
+    public static enum DistinctState {
+        DISTINCT, DISTINCT_WITH_NULL, HAS_PARAMETERS, HAS_EXPRESSSIONS
+    }
+
+    private DistinctState distinctState;
+
+    public DistinctState getDistinctState() {
+        return distinctState;
+    }
+    public void setDistinctState(DistinctState distinctState) {
+        this.distinctState = distinctState;
+    }
+
     @Override
     public String getName() {
         return "VALUES";
