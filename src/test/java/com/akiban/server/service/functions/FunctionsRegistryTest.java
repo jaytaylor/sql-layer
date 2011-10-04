@@ -38,12 +38,16 @@ public final class FunctionsRegistryTest {
     public void findAggregatorFactory() {
         FunctionsRegistry registry = registry(Good.class);
         assertEquals(expectedAggregatorFactories(), registry.getAllAggregators());
+        assertEquals("foo", AGGREGATOR_FACTORY, registry.get("foo", AkType.LONG));
+        assertEquals("FOO", AGGREGATOR_FACTORY, registry.get("FOO", AkType.LONG));
     }
 
     @Test
     public void findExpressionComposer() {
         FunctionsRegistry registry = registry(Good.class);
         assertEquals(expectedExpressionFactories(), registry.getAllComposers());
+        assertEquals("foo", GOOD_EXPRESSION_COMPOSER, registry.composer("foo"));
+        assertEquals("FOO", GOOD_EXPRESSION_COMPOSER, registry.composer("FOO"));
     }
 
     @Test(expected = FunctionsRegistry.FunctionsRegistryException.class)

@@ -130,6 +130,7 @@ public final class FunctionsRegistry implements AggregatorRegistry, ExpressionRe
     }
 
     private static <V> V getSafe(Map<String, ? extends V> map, String key) {
+        key = normalize(key);
         return getSafe(map, key, key);
     }
 
@@ -142,10 +143,14 @@ public final class FunctionsRegistry implements AggregatorRegistry, ExpressionRe
     }
     
     private static String nameIsAvailable(Map<String,?> map, String name) {
-        name = name.toLowerCase();
+        name = normalize(name);
         if (map.containsKey(name))
             complain("duplicate expression name: " + name);
         return name;
+    }
+
+    private static String normalize(String in) {
+        return in.toLowerCase();
     }
 
     private static void validate(Method method) {
