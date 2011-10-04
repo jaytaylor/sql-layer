@@ -101,11 +101,6 @@ public final class FunctionsRegistryTest {
         registry(AggThrowsException.class);
     }
 
-    @Test(expected = FunctionsRegistry.FunctionsRegistryException.class)
-    public void classNotPublic() {
-        registry(ClassNotPublic.class);
-    }
-
     // use in this class
 
     private static FunctionsRegistry registry(Class<?>... classes) {
@@ -170,11 +165,6 @@ public final class FunctionsRegistryTest {
 
         @Scalar("FOO") @SuppressWarnings("unused") // note, should be converted to lowercase
         public static final ExpressionComposer COMPOSER = GOOD_EXPRESSION_COMPOSER;
-    }
-
-    // bad class
-
-    static class ClassNotPublic {
     }
 
     // bad scalars
