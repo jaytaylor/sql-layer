@@ -88,16 +88,6 @@ final class GlobularFunctionsClassFinder implements FunctionsClassFinder {
         return Pattern.compile(from);
     }
 
-    // used in this class
-    private static void glob(List<Class<?>> out, String[] segments, int offset) {
-        if (segments.length - 1 == offset) {
-            // class glob segment
-        }
-        else {
-
-        }
-    }
-
     // object state
 
     private final String configFile;
