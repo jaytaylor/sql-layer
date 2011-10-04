@@ -596,7 +596,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             // There is an "options" property that psql allows in the
             // connect string, but no way to pass it to the JDBC
             // driver. So have to use what's available.
-            if (!"old-optimizer".equals(properties.getProperty("user"))) {
+            if ("old-optimizer".equals(properties.getProperty("user"))) {
                 logger.info("Using old optimizer!");
                 PostgresOperatorCompiler_Old oc = new PostgresOperatorCompiler_Old(this);
                 schema = oc.getSchema();
