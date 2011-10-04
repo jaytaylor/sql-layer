@@ -21,6 +21,9 @@ import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 /** Evaluate as much as possible at generate time. 
@@ -31,6 +34,13 @@ import java.util.*;
  */
 public class ConstantFolder extends BaseRule 
 {
+    private static final Logger logger = LoggerFactory.getLogger(ConstantFolder.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
     @Override
     public void apply(PlanContext planContext) {
         PlanNode plan = planContext.getPlan();

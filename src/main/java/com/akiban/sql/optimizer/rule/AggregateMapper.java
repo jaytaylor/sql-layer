@@ -22,6 +22,9 @@ import com.akiban.sql.types.TypeId;
 
 import com.akiban.sql.optimizer.plan.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 /** Resolve aggregate functions and group by expressions to output
@@ -29,6 +32,13 @@ import java.util.*;
  */
 public class AggregateMapper extends BaseRule
 {
+    private static final Logger logger = LoggerFactory.getLogger(AggregateMapper.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
     @Override
     public void apply(PlanContext plan) {
         Collector c = new Collector();

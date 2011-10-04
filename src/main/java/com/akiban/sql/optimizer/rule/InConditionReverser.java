@@ -23,11 +23,21 @@ import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 /** Turn a top-level IN condition into a semi-join and allow it to be reversed. */
 public class InConditionReverser extends BaseRule
 {
+    private static final Logger logger = LoggerFactory.getLogger(InConditionReverser.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
     @Override
     public void apply(PlanContext planContext) {
         List<TopLevelSubqueryCondition> conds = 

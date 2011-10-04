@@ -25,12 +25,22 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.UserTable;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 /** Use join conditions to identify which tables are part of the same group.
  */
 public class GroupJoinFinder extends BaseRule
 {
+    private static final Logger logger = LoggerFactory.getLogger(GroupJoinFinder.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
     static class JoinIslandFinder implements PlanVisitor, ExpressionVisitor {
         List<Joinable> result = new ArrayList<Joinable>();
 

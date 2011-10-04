@@ -57,10 +57,20 @@ import com.akiban.ais.model.GroupTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 public class OperatorAssembler extends BaseRule
 {
+    private static final Logger logger = LoggerFactory.getLogger(OperatorAssembler.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
     @Override
     public void apply(PlanContext plan) {
         new Assembler(plan).apply();

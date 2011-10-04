@@ -20,6 +20,9 @@ import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 /** Turn outer joins where the optional side of the join has a WHERE
@@ -28,6 +31,13 @@ import java.util.*;
  */
 public class OuterJoinPromoter extends BaseRule
 {
+    private static final Logger logger = LoggerFactory.getLogger(OuterJoinPromoter.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
     static class WhereFinder implements PlanVisitor, ExpressionVisitor {
         List<Select> result = new ArrayList<Select>();
 
