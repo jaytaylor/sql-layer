@@ -46,9 +46,10 @@ public class RulesContext
             finally {
                 endRule(rule);
             }
-            if (logged = debug) {
+            if (debug) {
                 logger.debug("After {}:\n{}", rule.getName(), plan.getPlan());
             }
+            logged = debug;
         }
     }
 
