@@ -112,7 +112,8 @@ public final class FunctionsRegistryTest {
         return new FunctionsRegistry(new InternalClassFinder(classes));
     }
 
-    private static AggregatorFactory aggregatorFactoryMethod(AkType type) {
+    private static AggregatorFactory aggregatorFactoryMethod(String name, AkType type) {
+        assert name != null;
         return type == AkType.LONG ? AGGREGATOR_FACTORY : null;
     }
 
@@ -162,12 +163,12 @@ public final class FunctionsRegistryTest {
     // good example
 
     public static class Good {
-        @Aggregate("foo")
-        public static AggregatorFactory get(AkType type) {
-            return aggregatorFactoryMethod(type);
+        @Aggregate("FOO") // note, should be converted to lowercase
+        public static AggregatorFactory get(String name, AkType type) {
+            return aggregatorFactoryMethod(name, type);
         }
 
-        @Scalar("foo") @SuppressWarnings("unused")
+        @Scalar("FOO") @SuppressWarnings("unused") // note, should be converted to lowercase
         public static final ExpressionComposer COMPOSER = GOOD_EXPRESSION_COMPOSER;
     }
 
@@ -211,50 +212,50 @@ public final class FunctionsRegistryTest {
     // bad aggregates
 
     public static class AggNotStatic {
-        @Aggregate("foo")
-        public AggregatorFactory get(AkType type) {
-            return aggregatorFactoryMethod(type);
+        @Aggregate("foo") @SuppressWarnings("unused")
+        public AggregatorFactory get(String name, AkType type) {
+            return null;
         }
     }
 
     public static class AggNotPublic {
         @Aggregate("foo") @SuppressWarnings("unused")
-        static AggregatorFactory get(AkType type) {
-            return aggregatorFactoryMethod(type);
+        static AggregatorFactory get(String name, AkType type) {
+            return null;
         }
     }
 
     public static class AggWrongReturnValue {
         @Aggregate("foo") @SuppressWarnings("unused")
-        public Boolean get(AkType type) {
+        public Boolean get(String name, AkType type) {
             return null;
         }
     }
 
     public static class AggWrongArgs {
         @Aggregate("foo") @SuppressWarnings("unused")
-        public Boolean get(AkType type, Integer i) {
+        public Boolean get(String name, AkType type, Integer i) {
             return null;
         }
     }
 
     public static class AggDuplicateA {
         @Aggregate("foo") @SuppressWarnings("unused")
-        public static AggregatorFactory getA(AkType type) {
-            return aggregatorFactoryMethod(type);
+        public static AggregatorFactory getA(String name, AkType type) {
+            return null;
         }
     }
 
     public static class AggDuplicateB {
         @Aggregate("foo") @SuppressWarnings("unused")
-        public static AggregatorFactory getA(AkType type) {
-            return aggregatorFactoryMethod(type);
+        public static AggregatorFactory getA(String name, AkType type) {
+            return null;
         }
     }
 
     public static class AggThrowsException {
         @Aggregate("foo") @SuppressWarnings("unused")
-        public static AggregatorFactory get(AkType type) {
+        public static AggregatorFactory get(String name, AkType type) {
             throw new UnsupportedOperationException();
         }
     }

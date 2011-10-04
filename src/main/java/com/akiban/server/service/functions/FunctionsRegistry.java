@@ -22,6 +22,7 @@ import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.types.AkType;
+import com.google.inject.Singleton;
 
 import javax.inject.Inject;
 import java.lang.reflect.Field;
@@ -34,6 +35,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
+@Singleton
 public final class FunctionsRegistry implements AggregatorRegistry, ExpressionRegistry {
 
     // AggregatorRegistry interface
@@ -63,6 +65,8 @@ public final class FunctionsRegistry implements AggregatorRegistry, ExpressionRe
         Map<String,Map<AkType,AggregatorFactory>> aggregators = new HashMap<String, Map<AkType, AggregatorFactory>>();
         Map<String,ExpressionComposer> composers = new HashMap<String, ExpressionComposer>();
         for (Class<?> cls : finder.findClasses()) {
+            if (!Modifier.isPublic(cls.getModifiers()))
+                complain(cls + " must be public");
             findComposers(composers, cls);
             findAggregators(aggregators, cls);
         }
@@ -90,10 +94,11 @@ public final class FunctionsRegistry implements AggregatorRegistry, ExpressionRe
             if (annotation != null) {
                 validate(method);
                 Map<AkType, AggregatorFactory> innerMap = new EnumMap<AkType, AggregatorFactory>(AkType.class);
-                composers.put(nameIsAvailable(composers, annotation.value()), innerMap);
+                String name = nameIsAvailable(composers, annotation.value());
+                composers.put(name, innerMap);
                 for (AkType akType : AkType.values()) {
                     try {
-                        AggregatorFactory factory = (AggregatorFactory) method.invoke(null, akType);
+                        AggregatorFactory factory = (AggregatorFactory) method.invoke(null, name, akType);
                         if (factory != null)
                             innerMap.put(akType, factory);
                     } catch (Exception e) {
@@ -137,6 +142,7 @@ public final class FunctionsRegistry implements AggregatorRegistry, ExpressionRe
     }
     
     private static String nameIsAvailable(Map<String,?> map, String name) {
+        name = name.toLowerCase();
         if (map.containsKey(name))
             complain("duplicate expression name: " + name);
         return name;
@@ -174,7 +180,7 @@ public final class FunctionsRegistry implements AggregatorRegistry, ExpressionRe
 
     // class state
 
-    private static final Class<?>[] AGGREGATE_FACTORY_PROVIDER_PARAMS = { AkType.class };
+    private static final Class<?>[] AGGREGATE_FACTORY_PROVIDER_PARAMS = { String.class, AkType.class };
 
     // nested classes
 
