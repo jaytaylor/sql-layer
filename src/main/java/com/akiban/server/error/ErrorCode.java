@@ -116,8 +116,8 @@ public enum ErrorCode {
     TABLE_BAD_SUBQUERY      (3, 28, Importance.DEBUG, TableIsBadSubqueryException.class),
     WRONG_FUNCTION_ARITY    (3, 29, Importance.DEBUG, WrongExpressionArityException.class),
     NO_SUCH_FUNCTION        (3, 31, Importance.DEBUG, NoSuchFunctionException.class),
-    ORDER_BY_NON_INTEGER_CONSTANT(3, 32, Importance.DEBUG, OrderByNonIntegerConstant.class),
-    ORDER_BY_INTEGER_OUT_OF_RANGE(3, 34, Importance.DEBUG, OrderByIntegerOutOfRange.class),
+    ORDER_GROUP_BY_NON_INTEGER_CONSTANT(3, 32, Importance.DEBUG, OrderGroupByNonIntegerConstant.class),
+    ORDER_GROUP_BY_INTEGER_OUT_OF_RANGE(3, 34, Importance.DEBUG, OrderGroupByIntegerOutOfRange.class),
     NEGATIVE_LIMIT          (3, 35, Importance.DEBUG, NegativeLimitException.class),
     DIVIDE_BY_ZERO          (3, 36, Importance.DEBUG, DivisionByZeroException.class),
     
