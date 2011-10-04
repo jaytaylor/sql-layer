@@ -21,6 +21,7 @@ import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.optimizer.plan.*;
 
 import static com.akiban.server.expression.std.Expressions.*;
+import com.akiban.server.expression.std.InExpression;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 
@@ -121,11 +122,10 @@ public class ExpressionAssembler
         }
         else if (node instanceof InListCondition) {
             InListCondition inList = (InListCondition)node;
-            Expression expr = assembleExpression(inList.getOperand(), columnContext);
-            List<Expression> list = assembleExpressions(inList.getExpressions(),
-                                                        columnContext);
-            throw new UnsupportedSQLException("IN as function",
-                                              node.getSQLsource());
+            Expression lhs = assembleExpression(inList.getOperand(), columnContext);
+            List<Expression> rhs = assembleExpressions(inList.getExpressions(),
+                                                       columnContext);
+            return new InExpression(lhs, rhs);
         }
         else if (node instanceof AggregateFunctionExpression)
             throw new UnsupportedSQLException("Aggregate used as regular function", 
