@@ -52,9 +52,9 @@ public final class FunctionsRegistry implements AggregatorRegistry, ExpressionRe
     }
 
     // FunctionsRegistry interface
-    @Inject
+    @Inject @SuppressWarnings("unused") // guice will use this
     public FunctionsRegistry() {
-        this(new DummyFunctionsClassFinder());
+        this(new GlobularFunctionsClassFinder());
     }
 
     // for use in this package

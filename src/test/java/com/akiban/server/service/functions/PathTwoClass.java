@@ -15,18 +15,5 @@
 
 package com.akiban.server.service.functions;
 
-import com.akiban.server.expression.std.BoolLogicExpression;
-import com.akiban.server.expression.std.LongOps;
-
-import java.util.ArrayList;
-import java.util.List;
-
-final class DummyFunctionsClassFinder implements FunctionsClassFinder {
-    @Override
-    public List<Class<?>> findClasses() {
-        List<Class<?>> result = new ArrayList<Class<?>>();
-        result.add(LongOps.class);
-        result.add(BoolLogicExpression.class);
-        return result;
-    }
+public final class PathTwoClass {
 }
