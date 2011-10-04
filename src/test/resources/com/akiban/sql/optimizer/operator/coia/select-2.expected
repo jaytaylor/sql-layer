@@ -1,9 +1,0 @@
-project([Field(1), Field(8), Field(5)])
-  Product_ByRun(flatten(user.customers, user.addresses) x flatten(user.customers, user.orders))
-    Filter_Default([flatten(user.customers, user.addresses), flatten(user.customers, user.orders)])
-      Flatten_HKeyOrdered(user.customers INNER user.orders)
-        Flatten_HKeyOrdered(user.customers KEEP INNER user.addresses)
-          BranchLookup_Default(_akiban_customers user.addresses -> user.orders limit NO LIMIT)
-            AncestorLookup_Default(Index(user.addresses.state[IndexColumn(state)]) -> [user.customers, user.addresses])
-              IndexScan_Default(Index(user.addresses.state[IndexColumn(state)]) (>=UnboundExpressions[Literal(MA)],<=UnboundExpressions[Literal(MA)]))
-[name:varchar(32)[VARCHAR], order_date:date[DATE], city:varchar(100)[VARCHAR]]

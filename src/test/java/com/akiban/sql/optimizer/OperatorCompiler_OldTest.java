@@ -15,30 +15,32 @@
 
 package com.akiban.sql.optimizer;
 
-import com.akiban.server.aggregation.AggregatorRegistry;
-import com.akiban.server.aggregation.DummyAggregatorRegistry;
-import com.akiban.server.expression.ExpressionRegistry;
-import com.akiban.server.expression.std.StandardExpressionRegistry;
-import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
+import com.akiban.sql.NamedParamsTestBase;
+
+import com.akiban.sql.optimizer.simplified.SimplifiedQuery;
+
+import com.akiban.server.rowdata.RowDef;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.SQLParser;
-
-import com.akiban.sql.optimizer.plan.BasePlannable;
-import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
-import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
-import com.akiban.sql.optimizer.rule.RulesTestHelper;
+import com.akiban.sql.pg.PostgresSessionTracer;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
 import com.akiban.junit.Parameterization;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import static junit.framework.Assert.*;
 
+import com.akiban.ais.ddl.SchemaDef;
+import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.UserTable;
+import com.akiban.server.TableStatus;
+import com.akiban.server.rowdata.RowDef;
 
 import org.junit.Before;
 
@@ -49,15 +51,15 @@ import java.io.FileFilter;
 import java.io.IOException;
 
 @RunWith(NamedParameterizedRunner.class)
-public class OperatorCompilerTest extends NamedParamsTestBase 
+public class OperatorCompiler_OldTest extends NamedParamsTestBase
                                   implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
-        new File(OptimizerTestBase.RESOURCE_DIR, "operator");
+        new File(OptimizerTestBase.RESOURCE_DIR, "operator-old");
     
     protected File schemaFile, indexFile;
     protected SQLParser parser;
-    protected OperatorCompiler compiler;
+    protected OperatorCompiler_Old compiler;
 
     @Before
     public void makeCompiler() throws Exception {
@@ -65,11 +67,10 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         AkibanInformationSchema ais = OptimizerTestBase.parseSchema(schemaFile);
         if (indexFile != null)
             OptimizerTestBase.loadGroupIndexes(ais, indexFile);
-        compiler = TestOperatorCompiler.create(parser, ais, "user",
-                new StandardExpressionRegistry(), new DummyAggregatorRegistry());
+        compiler = TestOperatorCompiler.create(parser, ais, "user");
     }
 
-    static class TestResultColumn extends PhysicalResultColumn {
+    static class TestResultColumn extends OperatorCompiler_Old.ResultColumnBase {
         private String type;
 
         public TestResultColumn(String name, String type) {
@@ -87,34 +88,41 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         }
     }
     
-    public static class TestOperatorCompiler extends OperatorCompiler {
-        public static OperatorCompiler create(SQLParser parser, 
+    public static class TestOperatorCompiler extends OperatorCompiler_Old {
+        public static OperatorCompiler_Old create(SQLParser parser, 
                                               AkibanInformationSchema ais, 
-                                              String defaultSchemaName,
-                                              ExpressionRegistry expressionRegistry,
-                                              AggregatorRegistry aggregatorRegistry
-                                              ) {
-            RulesTestHelper.ensureRowDefs(ais);
-            return new TestOperatorCompiler(parser, ais, "user", expressionRegistry, aggregatorRegistry);
+                                              String defaultSchemaName) {
+            // This just needs to be enough to keep from UserTableRowType
+            // constructor from getting NPE.
+            for (UserTable userTable : ais.getUserTables().values()) {
+                int tableId = userTable.getTableId();
+                TableStatus ts = new TableStatus(tableId);
+                ts.setOrdinal(tableId);
+                new RowDef(userTable, ts);
+            }
+            return new TestOperatorCompiler(parser, ais, "user");
         }
 
         private TestOperatorCompiler(SQLParser parser, 
                                      AkibanInformationSchema ais, 
-                                     String defaultSchemaName,
-                                     ExpressionRegistry expressionRegistry,
-                                     AggregatorRegistry aggregatorRegistry) {
-            super(parser, ais, defaultSchemaName, expressionRegistry, aggregatorRegistry);
+                                     String defaultSchemaName) {
+            super(parser, ais, defaultSchemaName);
         }
 
         @Override
-        public PhysicalResultColumn getResultColumn(ResultField field) {
-            String type = String.valueOf(field.getSQLtype());
-            Column column = field.getAIScolumn();
-            if (column != null) {
-                type = column.getTypeDescription() +
+        public ResultColumnBase getResultColumn(SimplifiedQuery.SimpleSelectColumn selectColumn) {
+            String name = selectColumn.getName();
+            String type = String.valueOf(selectColumn.getType());
+            if (selectColumn.getExpression().isColumn()) {
+                Column column = ((SimplifiedQuery.ColumnExpression)
+                                 selectColumn.getExpression()).getColumn();
+                if (selectColumn.isNameDefaulted())
+                    // Prefer the case stored in AIS to parser's standardized form.
+                    name = column.getName();
+                type = column.getTypeDescription() + 
                     "[" + column.getType().encoding() + "]";
             }
-            return new TestResultColumn(field.getName(), type);
+            return new TestResultColumn(name, type);
         }
     }
 
@@ -144,7 +152,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         return namedCases(result);
     }
 
-    public OperatorCompilerTest(String caseName, File schemaFile, File indexFile,
+    public OperatorCompiler_OldTest(String caseName, File schemaFile, File indexFile,
                                 String sql, String expected, String error) {
         super(caseName, sql, expected, error);
         this.schemaFile = schemaFile;
@@ -159,8 +167,10 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     @Override
     public String generateResult() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
-        BasePlannable result = compiler.compile((DMLStatementNode)stmt, 
-                                                parser.getParameterList());
+        OperatorCompiler_Old.Result result = 
+            compiler.compile(new PostgresSessionTracer(1, false),
+                             (DMLStatementNode)stmt,
+                             parser.getParameterList());
         return result.toString();
     }
 

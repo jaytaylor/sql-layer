@@ -1,4 +1,0 @@
-Delete_Default(Filter_Default([user.items]))
-  Filter_Default([user.items])
-    Select_HKeyOrdered(user.items, Field(3) == Literal(0))
-      GroupScan_Default(full scan on _akiban_customers NO LIMIT)

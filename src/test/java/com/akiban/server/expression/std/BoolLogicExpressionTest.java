@@ -111,58 +111,5 @@ public final class BoolLogicExpressionTest {
     private static final Expression TRUE = LiteralExpression.forBool(true);
     private static final Expression FALSE = LiteralExpression.forBool(false);
     private static final Expression NULL = LiteralExpression.forBool(null);
-    private static final Expression ERR = new Expression() {
-        @Override
-        public boolean isConstant() {
-            return false;
-        }
-
-        @Override
-        public boolean needsBindings() {
-            return false;
-        }
-
-        @Override
-        public boolean needsRow() {
-            return false;
-        }
-
-        @Override
-        public ExpressionEvaluation evaluation() {
-            return KILLER;
-        }
-
-        @Override
-        public AkType valueType() {
-            return AkType.BOOL;
-        }
-    };
-
-    private static final ExpressionEvaluation KILLER = new ExpressionEvaluation() {
-        @Override
-        public void of(Row row) {
-        }
-
-        @Override
-        public void of(Bindings bindings) {
-        }
-
-        @Override
-        public ValueSource eval() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void acquire() {
-        }
-
-        @Override
-        public boolean isShared() {
-            return false;
-        }
-
-        @Override
-        public void release() {
-        }
-    };
+    private static final Expression ERR = ExplodingExpression.of(AkType.BOOL);
 }

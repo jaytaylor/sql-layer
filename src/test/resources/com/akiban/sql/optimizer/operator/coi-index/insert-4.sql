@@ -1,1 +1,0 @@
-insert into orders (oid, cid) select 205, cid from customers where name = 'Jones'
