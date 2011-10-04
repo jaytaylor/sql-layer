@@ -24,6 +24,7 @@ import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.util.ArgumentValidation;
 
 import java.util.EnumMap;
 import java.util.Iterator;
@@ -45,6 +46,7 @@ public final class CompareExpression extends AbstractTwoArgExpression {
 
     public CompareExpression(List<? extends Expression> children, Comparison comparison) {
         super(AkType.BOOL, children);
+        ArgumentValidation.isEQ("comparison operands", children.size(), 2);
         this.comparison = comparison;
         AkType type = childrenType(children);
         assert type != null;
@@ -62,25 +64,6 @@ public final class CompareExpression extends AbstractTwoArgExpression {
 
 
     // for use in this class
-
-    private static AkType childrenType(List<? extends Expression> children) {
-        Iterator<? extends Expression> iter = children.iterator();
-        if (!iter.hasNext())
-            throw new IllegalArgumentException("Comparison must take exatly two children expressions; none provided");
-        AkType type = iter.next().valueType();
-        while(iter.hasNext()) { // should only be once, but AbstractTwoArgExpression will check that
-            AkType childType = iter.next().valueType();
-            if (type == AkType.NULL) {
-                type = childType;
-            }
-            // TODO put this back in when we get casting expressions. Until then, Extractors will do their job.
-//            else if (childType != AkType.NULL && !type.equals(childType)) {
-//                throw new IllegalArgumentException("Comparison's children must all have same type. First child was "
-//                        + type + ", but then saw " + childType);
-//            }
-        }
-        return type;
-    }
 
     private static Map<AkType,CompareOp> createCompareOpsMap() {
         Map<AkType,CompareOp> map = new EnumMap<AkType, CompareOp>(AkType.class);
