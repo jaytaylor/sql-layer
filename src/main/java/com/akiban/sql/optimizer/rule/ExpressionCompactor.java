@@ -17,6 +17,8 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.*;
 
+import com.akiban.server.expression.std.Comparison;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +61,43 @@ public class ExpressionCompactor extends BaseRule
 
     @Override
     public ExpressionNode visit(ExpressionNode expr) {
+        if (expr instanceof AnyCondition)
+            return anyCondition((AnyCondition)expr);
         return expr;
+    }
+
+    protected ExpressionNode anyCondition(AnyCondition any) {
+        Subquery subquery = any.getSubquery();
+        PlanNode input = subquery.getInput();
+        if (!(input instanceof Project))
+            return any;
+        Project project = (Project)input;
+        input = project.getInput();
+        if (!(input instanceof ExpressionsSource))
+            return any;
+        ExpressionsSource esource = (ExpressionsSource)input;
+        if (project.getFields().size() != 1)
+            return any;
+        ExpressionNode cond = project.getFields().get(0);
+        if (!(cond instanceof ComparisonCondition))
+            return any;
+        ComparisonCondition comp = (ComparisonCondition)cond;
+        if (!(comp.getRight().isColumn() &&
+              (comp.getOperation() == Comparison.EQ) &&
+              (((ColumnExpression)comp.getRight()).getTable() == esource)))
+            return any;
+        List<List<ExpressionNode>> rows = esource.getExpressions();
+        List<ExpressionNode> expressions = new ArrayList<ExpressionNode>(rows.size());
+        for (List<ExpressionNode> row : rows) {
+            if (row.size() != 1)
+                return any;
+            expressions.add(row.get(0));
+        }
+        if (expressions.isEmpty()) 
+            return any;
+        ExpressionNode operand = comp.getLeft();
+        return new InListCondition(operand, expressions,
+                                   any.getSQLtype(), any.getSQLsource());
     }
 
 }

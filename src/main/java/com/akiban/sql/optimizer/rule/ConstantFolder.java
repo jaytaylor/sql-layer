@@ -18,6 +18,8 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
 
+import com.akiban.server.expression.std.Comparison;
+
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 
@@ -770,6 +772,7 @@ public class ConstantFolder extends BaseRule
                 return null;
             ComparisonCondition comp = (ComparisonCondition)cond;
             if (!(comp.getRight().isColumn() &&
+                  (comp.getOperation() == Comparison.EQ) &&
                   (((ColumnExpression)comp.getRight()).getTable() == expressions)))
                 return null;
             List<List<ExpressionNode>> rows = expressions.getExpressions();
