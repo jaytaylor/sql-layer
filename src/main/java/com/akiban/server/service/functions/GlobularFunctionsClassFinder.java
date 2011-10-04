@@ -69,7 +69,7 @@ final class GlobularFunctionsClassFinder implements FunctionsClassFinder {
     // GlobularFunctionsClassFinder interface
 
     public GlobularFunctionsClassFinder() {
-        this("functionspath.txt");
+        this("functionpath.txt");
     }
 
     // used for testing

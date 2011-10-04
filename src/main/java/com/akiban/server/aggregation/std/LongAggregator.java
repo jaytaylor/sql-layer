@@ -45,7 +45,7 @@ public final class LongAggregator implements Aggregator {
         };
     }
 
-    @Aggregate("min")
+    @Aggregate("max")
     public static AggregatorFactory maxes(final String name, final AkType type) {
         return new AggregatorFactory() {
             @Override

@@ -66,7 +66,7 @@ public final class FunctionsRegistry implements AggregatorRegistry, ExpressionRe
         Map<String,ExpressionComposer> composers = new HashMap<String, ExpressionComposer>();
         for (Class<?> cls : finder.findClasses()) {
             if (!Modifier.isPublic(cls.getModifiers()))
-                complain(cls + " must be public");
+                continue;
             findComposers(composers, cls);
             findAggregators(aggregators, cls);
         }
