@@ -30,10 +30,10 @@ import java.io.File;
 import java.util.Collection;
 
 @RunWith(NamedParameterizedRunner.class)
-public class PostgresServerSelect_NewIT extends PostgresServerSelectIT
+public class PostgresServerSelect_OldIT extends PostgresServerSelectIT
 {
     public static final File RESOURCE_DIR = 
-        new File(PostgresServerITBase.RESOURCE_DIR, "select-new");
+        new File(PostgresServerITBase.RESOURCE_DIR, "select-old");
 
     @Override
     protected Connection openConnection() throws Exception {
@@ -43,7 +43,7 @@ public class PostgresServerSelect_NewIT extends PostgresServerSelectIT
         }
         String url = String.format(CONNECTION_URL, port);
         Class.forName(DRIVER_NAME);
-        return DriverManager.getConnection(url, "new-optimizer", USER_PASSWORD);
+        return DriverManager.getConnection(url, "old-optimizer", USER_PASSWORD);
     }
 
     @Override
@@ -56,7 +56,7 @@ public class PostgresServerSelect_NewIT extends PostgresServerSelectIT
         return NamedParamsTestBase.namedCases(TestBase.sqlAndExpectedAndParams(RESOURCE_DIR));
     }
 
-    public PostgresServerSelect_NewIT(String caseName, String sql, 
+    public PostgresServerSelect_OldIT(String caseName, String sql, 
                                   String expected, String error,
                                   String[] params) {
         super(caseName, sql, expected, error, params);

@@ -30,10 +30,10 @@ import java.io.File;
 import java.util.Collection;
 
 @RunWith(NamedParameterizedRunner.class)
-public class PostgresServerUpdate_NewIT extends PostgresServerUpdateIT
+public class PostgresServerMultipleUpdate_OldIT extends PostgresServerMultipleUpdateIT
 {
     public static final File RESOURCE_DIR = 
-        new File(PostgresServerITBase.RESOURCE_DIR, "update-new");
+        new File(PostgresServerITBase.RESOURCE_DIR, "multiple-update-old");
 
     @Override
     protected Connection openConnection() throws Exception {
@@ -43,7 +43,7 @@ public class PostgresServerUpdate_NewIT extends PostgresServerUpdateIT
         }
         String url = String.format(CONNECTION_URL, port);
         Class.forName(DRIVER_NAME);
-        return DriverManager.getConnection(url, "new-optimizer", USER_PASSWORD);
+        return DriverManager.getConnection(url, "old-optimizer", USER_PASSWORD);
     }
 
     @Override
@@ -53,13 +53,12 @@ public class PostgresServerUpdate_NewIT extends PostgresServerUpdateIT
 
     @TestParameters
     public static Collection<Parameterization> queries() throws Exception {
-        return NamedParamsTestBase.namedCases(TestBase.sqlAndExpectedAndParams(RESOURCE_DIR));
+        return NamedParamsTestBase.namedCases(TestBase.sqlAndExpected(RESOURCE_DIR));
     }
 
-    public PostgresServerUpdate_NewIT(String caseName, String sql, 
-                                  String expected, String error,
-                                  String[] params) {
-        super(caseName, sql, expected, error, params);
+    public PostgresServerMultipleUpdate_OldIT(String caseName, String sql, 
+                                          String expected, String error) {
+        super(caseName, sql, expected, error);
     }
 
 }
