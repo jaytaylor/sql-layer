@@ -15,32 +15,30 @@
 
 package com.akiban.sql.optimizer;
 
-import com.akiban.sql.TestBase;
+import com.akiban.server.aggregation.AggregatorRegistry;
+import com.akiban.server.aggregation.DummyAggregatorRegistry;
+import com.akiban.server.expression.ExpressionRegistry;
+import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.sql.NamedParamsTestBase;
-
-import com.akiban.sql.optimizer.simplified.SimplifiedQuery;
-
-import com.akiban.server.rowdata.RowDef;
+import com.akiban.sql.TestBase;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.pg.PostgresSessionTracer;
+
+import com.akiban.sql.optimizer.plan.BasePlannable;
+import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
+import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
+import com.akiban.sql.optimizer.rule.RulesTestHelper;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
 import com.akiban.junit.Parameterization;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static junit.framework.Assert.*;
 
-import com.akiban.ais.ddl.SchemaDef;
-import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.TableStatus;
-import com.akiban.server.rowdata.RowDef;
 
 import org.junit.Before;
 
@@ -51,7 +49,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 
 @RunWith(NamedParameterizedRunner.class)
-public class OperatorCompilerTest extends NamedParamsTestBase
+public class OperatorCompilerTest extends NamedParamsTestBase 
                                   implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
@@ -67,10 +65,11 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         AkibanInformationSchema ais = OptimizerTestBase.parseSchema(schemaFile);
         if (indexFile != null)
             OptimizerTestBase.loadGroupIndexes(ais, indexFile);
-        compiler = TestOperatorCompiler.create(parser, ais, "user");
+        compiler = TestOperatorCompiler.create(parser, ais, "user",
+                new FunctionsRegistry(), new DummyAggregatorRegistry());
     }
 
-    static class TestResultColumn extends OperatorCompiler.ResultColumnBase {
+    static class TestResultColumn extends PhysicalResultColumn {
         private String type;
 
         public TestResultColumn(String name, String type) {
@@ -91,38 +90,31 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     public static class TestOperatorCompiler extends OperatorCompiler {
         public static OperatorCompiler create(SQLParser parser, 
                                               AkibanInformationSchema ais, 
-                                              String defaultSchemaName) {
-            // This just needs to be enough to keep from UserTableRowType
-            // constructor from getting NPE.
-            for (UserTable userTable : ais.getUserTables().values()) {
-                int tableId = userTable.getTableId();
-                TableStatus ts = new TableStatus(tableId);
-                ts.setOrdinal(tableId);
-                new RowDef(userTable, ts);
-            }
-            return new TestOperatorCompiler(parser, ais, "user");
+                                              String defaultSchemaName,
+                                              ExpressionRegistry expressionRegistry,
+                                              AggregatorRegistry aggregatorRegistry
+                                              ) {
+            RulesTestHelper.ensureRowDefs(ais);
+            return new TestOperatorCompiler(parser, ais, "user", expressionRegistry, aggregatorRegistry);
         }
 
         private TestOperatorCompiler(SQLParser parser, 
                                      AkibanInformationSchema ais, 
-                                     String defaultSchemaName) {
-            super(parser, ais, defaultSchemaName);
+                                     String defaultSchemaName,
+                                     ExpressionRegistry expressionRegistry,
+                                     AggregatorRegistry aggregatorRegistry) {
+            super(parser, ais, defaultSchemaName, expressionRegistry, aggregatorRegistry);
         }
 
         @Override
-        public ResultColumnBase getResultColumn(SimplifiedQuery.SimpleSelectColumn selectColumn) {
-            String name = selectColumn.getName();
-            String type = String.valueOf(selectColumn.getType());
-            if (selectColumn.getExpression().isColumn()) {
-                Column column = ((SimplifiedQuery.ColumnExpression)
-                                 selectColumn.getExpression()).getColumn();
-                if (selectColumn.isNameDefaulted())
-                    // Prefer the case stored in AIS to parser's standardized form.
-                    name = column.getName();
-                type = column.getTypeDescription() + 
+        public PhysicalResultColumn getResultColumn(ResultField field) {
+            String type = String.valueOf(field.getSQLtype());
+            Column column = field.getAIScolumn();
+            if (column != null) {
+                type = column.getTypeDescription() +
                     "[" + column.getType().encoding() + "]";
             }
-            return new TestResultColumn(name, type);
+            return new TestResultColumn(field.getName(), type);
         }
     }
 
@@ -167,10 +159,8 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     @Override
     public String generateResult() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
-        OperatorCompiler.Result result = 
-            compiler.compile(new PostgresSessionTracer(1, false),
-                             (DMLStatementNode)stmt,
-                             parser.getParameterList());
+        BasePlannable result = compiler.compile((DMLStatementNode)stmt, 
+                                                parser.getParameterList());
         return result.toString();
     }
 

@@ -57,10 +57,20 @@ import com.akiban.ais.model.GroupTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 public class OperatorAssembler extends BaseRule
 {
+    private static final Logger logger = LoggerFactory.getLogger(OperatorAssembler.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
     @Override
     public void apply(PlanContext plan) {
         new Assembler(plan).apply();
@@ -108,8 +118,8 @@ public class OperatorAssembler extends BaseRule
                 // VALUES results in column1, column2, ...
                 resultColumns = getResultColumns(stream.rowType.nFields());
             }
-            return new PhysicalSelect(stream.operator, resultColumns,
-                                      getParameterTypes());
+            return new PhysicalSelect(stream.operator, stream.rowType,
+                                      resultColumns, getParameterTypes());
         }
 
         protected PhysicalUpdate insertStatement(InsertStatement insertStatement) {
@@ -216,6 +226,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleAncestorLookup((AncestorLookup)node);
             else if (node instanceof BranchLookup)
                 return assembleBranchLookup((BranchLookup)node);
+            else if (node instanceof MapJoin)
+                return assembleMapJoin((MapJoin)node);
             else if (node instanceof Product)
                 return assembleProduct((Product)node);
             else if (node instanceof AggregateSource)
@@ -267,6 +279,8 @@ public class OperatorAssembler extends BaseRule
                                            expressions));
             }
             stream.operator = API.valuesScan_Default(rows, stream.rowType);
+            stream.fieldOffsets = new ColumnSourceFieldOffsets(expressionsSource, 
+                                                               stream.rowType);
             return stream;
         }
 
@@ -399,6 +413,17 @@ public class OperatorAssembler extends BaseRule
             stream.rowType = null;
             stream.unknownTypesPresent = true;
             stream.fieldOffsets = null;
+            return stream;
+        }
+
+        protected RowStream assembleMapJoin(MapJoin mapJoin) {
+            RowStream ostream = assembleStream(mapJoin.getOuter());
+            pushBoundRow(ostream.fieldOffsets);
+            RowStream stream = assembleStream(mapJoin.getInner());
+            stream.operator = API.map_NestedLoops(ostream.operator, 
+                                                  stream.operator,
+                                                  currentBindingPosition());
+            popBoundRow();
             return stream;
         }
 
@@ -795,6 +820,7 @@ public class OperatorAssembler extends BaseRule
 
             @Override
             public List<ColumnExpressionToIndex> getBoundRows() {
+                ensureBoundRows();
                 return boundRows;
             }
 

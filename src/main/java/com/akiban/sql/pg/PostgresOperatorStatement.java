@@ -36,6 +36,7 @@ import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
 public class PostgresOperatorStatement extends PostgresBaseStatement
 {
     private Operator resultOperator;
+    private RowType resultRowType;
     private int offset = 0;
     private int limit = -1;
 
@@ -43,6 +44,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire shared lock");
 
     public PostgresOperatorStatement(Operator resultOperator,
+                                     RowType resultRowType,
                                      List<String> columnNames,
                                      List<PostgresType> columnTypes,
                                      PostgresType[] parameterTypes,
@@ -50,6 +52,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                                      int limit) {
         super(columnNames, columnTypes, parameterTypes);
         this.resultOperator = resultOperator;
+        this.resultRowType = resultRowType;
         this.offset = offset;
         this.limit = limit;
     }
@@ -59,7 +62,6 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
         Session session = server.getSession();
-        RowType resultRowType = resultOperator.rowType();
         int nskip = offset;
         if (limit > 0) {
             if ((maxrows <= 0) || (maxrows > limit))
@@ -137,12 +139,13 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         private boolean defaultColumnBinary;
 
         public BoundStatement(Operator resultOperator,
+                              RowType resultRowType,
                               List<String> columnNames,
                               List<PostgresType> columnTypes,
                               int offset, int limit,
                               Bindings bindings,
                               boolean[] columnBinary, boolean defaultColumnBinary) {
-            super(resultOperator, columnNames, columnTypes, 
+            super(resultOperator, resultRowType, columnNames, columnTypes, 
                   null, offset, limit);
             this.bindings = bindings;
             this.columnBinary = columnBinary;
@@ -176,7 +179,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         Bindings bindings = getBindings();
         if (parameters != null)
             bindings = getParameterBindings(parameters);
-        return new BoundStatement(resultOperator,
+        return new BoundStatement(resultOperator, resultRowType,
                                   getColumnNames(), getColumnTypes(),
                                   offset, limit, bindings, 
                                   columnBinary, defaultColumnBinary);

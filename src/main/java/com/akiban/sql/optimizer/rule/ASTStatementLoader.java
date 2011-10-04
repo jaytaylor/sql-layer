@@ -41,12 +41,22 @@ import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.error.OrderByNonIntegerConstant;
 import com.akiban.server.error.OrderByIntegerOutOfRange;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 /** Turn a parsed SQL AST into this package's format.
  */
 public class ASTStatementLoader extends BaseRule
 {
+    private static final Logger logger = LoggerFactory.getLogger(ASTStatementLoader.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
     public static final WhiteboardMarker<AST> MARKER = 
         new DefaultWhiteboardMarker<AST>();
 

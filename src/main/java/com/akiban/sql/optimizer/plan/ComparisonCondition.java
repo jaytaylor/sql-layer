@@ -41,11 +41,22 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
     public Comparison getOperation() {
         return operation;
     }
+    public void setComparison(Comparison operation) {
+        this.operation = operation;
+    }
+
     public ExpressionNode getLeft() {
         return left;
     }
+    public void setLeft(ExpressionNode left) {
+        this.left = left;
+    }
+
     public ExpressionNode getRight() {
         return right;
+    }
+    public void setRight(ExpressionNode right) {
+        this.right = right;
     }
 
     @Override

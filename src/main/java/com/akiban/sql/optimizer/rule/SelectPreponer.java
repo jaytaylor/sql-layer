@@ -17,6 +17,9 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 /** Move WHERE clauses closer to their table origin.
@@ -33,6 +36,13 @@ import java.util.*;
 // recognize joins of such filtered tables.
 public class SelectPreponer extends BaseRule
 {
+    private static final Logger logger = LoggerFactory.getLogger(SelectPreponer.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
     static class TableOriginFinder implements PlanVisitor, ExpressionVisitor {
         List<PlanNode> origins = new ArrayList<PlanNode>();
 
@@ -139,7 +149,8 @@ public class SelectPreponer extends BaseRule
                     }
                     sawJoin = true;
                 }
-                else if (node instanceof Product) {
+                else if ((node instanceof Product) ||
+                         (node instanceof MapJoin)) {
                     // Only inner right now.
                     sawJoin = true;
                 }
