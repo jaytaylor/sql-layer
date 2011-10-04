@@ -54,6 +54,7 @@ class Update_Default implements UpdatePlannable {
         try {
             Row oldRow;
             while ((oldRow = inputCursor.next()) != null) {
+                adapter.checkQueryCancelation();
                 ++seen;
                 if (updateFunction.rowIsSelected(oldRow)) {
                     Row newRow = updateFunction.evaluate(oldRow, bindings);

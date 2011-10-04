@@ -29,6 +29,7 @@ import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Target;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
+import com.akiban.util.Command;
 
 public class Writer
 {
@@ -181,20 +182,17 @@ public class Writer
         final Collection<GroupTable> groupTables = getGroupTables(ais);
         final Collection<UserTable> userTables = getUserTables(ais);
         final Collection<Join> joins = getJoins(ais);
-        try {
-            target.deleteAll();
-            saveVersion(version);
-            saveTypes(types);
-            saveGroups(groups);
-            saveTables(groupTables, userTables);
-            saveColumns(groupTables, userTables);
-            saveJoins(joins);
-            saveJoinColumns(joins);
-            saveIndexes(groups, groupTables, userTables);
-            saveIndexColumns(groups, groupTables, userTables);
-        } finally {
-            target.close();
-        }
+        target.deleteAll();
+        saveVersion(version);
+        saveTypes(types);
+        saveGroups(groups);
+        saveTables(groupTables, userTables);
+        saveColumns(groupTables, userTables);
+        saveJoins(joins);
+        saveJoinColumns(joins);
+        saveIndexes(groups, groupTables, userTables);
+        saveIndexColumns(groups, groupTables, userTables);
+        target.close();
     }
 
     private final Target target;
