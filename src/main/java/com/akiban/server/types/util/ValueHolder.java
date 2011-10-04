@@ -353,28 +353,28 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         }
     }
 
-    private void putRaw(AkType newType, long value) {
+    public void putRaw(AkType newType, long value) {
         checkRawPut(newType);
         type = newType;
         longVal = value;
         stateType = StateType.LONG_VAL;
     }
 
-    private void putRaw(AkType newType, double value) {
+    public void putRaw(AkType newType, double value) {
         checkRawPut(newType);
         type = newType;
         doubleVal = value;
         stateType = StateType.DOUBLE_VAL;
     }
 
-    private void putRaw(AkType newType, float value) {
+    public void putRaw(AkType newType, float value) {
         checkRawPut(newType);
         type = newType;
         floatVal = value;
         stateType = StateType.FLOAT_VAL;
     }
-    
-    private void putRaw(AkType newType, Object value) {
+
+    public void putRaw(AkType newType, Object value) {
         checkRawPut(newType);
         if (value == null) {
             putRawNull();
@@ -386,7 +386,7 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         }
     }
 
-    private void putRawNull() {
+    public void putRawNull() {
         type = AkType.NULL;
         stateType = StateType.NULL_VAL;
     }
