@@ -29,7 +29,7 @@ public final class TypedNullExpression implements Expression {
 
     @Override
     public boolean isConstant() {
-        return false;
+        return true;
     }
 
     @Override
