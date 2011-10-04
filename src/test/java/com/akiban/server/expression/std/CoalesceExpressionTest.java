@@ -46,6 +46,10 @@ public final class CoalesceExpressionTest extends ComposedExpressionTestBase {
     }
 
     @Test
+    public void typedNull() {
+        check(NullValueSource.only(), AkType.LONG, litNull(AkType.LONG));
+    }
+    @Test
     public void heterogeneousInputs() {
         check(new ValueHolder(AkType.VARCHAR, "3"), litNull(), litNull(AkType.VARCHAR), lit(3), lit("hello"));
     }
@@ -68,12 +72,16 @@ public final class CoalesceExpressionTest extends ComposedExpressionTestBase {
     }
 
     // for use in this class
-    private void check(ValueSource expected, Expression... children) {
+    private void check(ValueSource expected, AkType expectedType, Expression... children) {
         Expression coalesceExpression = new CoalesceExpression(Arrays.asList(children));
-        assertEquals(expected.getConversionType(), coalesceExpression.valueType());
+        assertEquals(expectedType, coalesceExpression.valueType());
         ValueHolder expectedHolder = new ValueHolder(expected);
         ValueHolder actualHolder = new ValueHolder(coalesceExpression.evaluation().eval());
         assertEquals(expectedHolder, actualHolder);
+    }
+
+    private void check(ValueSource expected, Expression... children) {
+        check(expected, expected.getConversionType(), children);
     }
 
     private Expression lit(String string) {
