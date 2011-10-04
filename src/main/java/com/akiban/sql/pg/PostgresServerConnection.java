@@ -604,10 +604,10 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 explainer = new PostgresExplainStatementGenerator_Old(this);
             }
             else {
-                PostgresOperatorCompiler_New nc = new PostgresOperatorCompiler_New(this);
+                PostgresOperatorCompiler nc = new PostgresOperatorCompiler(this);
                 schema = nc.getSchema();
                 compiler = nc;
-                explainer = new PostgresExplainStatementGenerator_New(this);
+                explainer = new PostgresExplainStatementGenerator(this);
             }
             final Store store = reqs.store();
             final PersistitStore persistitStore;

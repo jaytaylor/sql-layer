@@ -17,7 +17,7 @@ package com.akiban.sql.pg;
 
 import com.akiban.server.error.UnableToExplainException;
 import com.akiban.server.error.UnsupportedExplainException;
-import com.akiban.sql.optimizer.OperatorCompiler_New;
+import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 
 import com.akiban.sql.parser.DMLStatementNode;
@@ -29,12 +29,12 @@ import com.akiban.sql.parser.ParameterNode;
 import java.util.List;
 
 /** SQL statement to explain another one. */
-public class PostgresExplainStatementGenerator_New extends PostgresBaseStatementGenerator
+public class PostgresExplainStatementGenerator extends PostgresBaseStatementGenerator
 {
-    private OperatorCompiler_New compiler;
+    private OperatorCompiler compiler;
 
-    public PostgresExplainStatementGenerator_New(PostgresServerSession server) {
-        compiler = (OperatorCompiler_New)server.getAttribute("compiler");
+    public PostgresExplainStatementGenerator(PostgresServerSession server) {
+        compiler = (OperatorCompiler)server.getAttribute("compiler");
     }
 
     @Override

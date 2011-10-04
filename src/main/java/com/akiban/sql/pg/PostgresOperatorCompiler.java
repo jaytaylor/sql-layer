@@ -17,7 +17,7 @@ package com.akiban.sql.pg;
 
 import com.akiban.sql.StandardException;
 
-import com.akiban.sql.optimizer.OperatorCompiler_New;
+import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
@@ -44,14 +44,14 @@ import java.util.*;
 /**
  * Compile SQL SELECT statements into operator trees if possible.
  */
-public class PostgresOperatorCompiler_New extends OperatorCompiler_New
+public class PostgresOperatorCompiler extends OperatorCompiler
                                       implements PostgresStatementGenerator
 {
-    private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorCompiler_New.class);
+    private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorCompiler.class);
 
     private SessionTracer tracer;
 
-    public PostgresOperatorCompiler_New(PostgresServerSession server) {
+    public PostgresOperatorCompiler(PostgresServerSession server) {
         super(server.getParser(), server.getAIS(), server.getDefaultSchemaName(),
                 server.expressionFactory(), server.aggregatorRegistry());
 

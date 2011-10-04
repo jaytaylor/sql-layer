@@ -42,7 +42,7 @@ import java.util.List;
  * Compile SQL statements into operator trees.
  */ 
 // TODO: Temporary name during transition.
-public class OperatorCompiler_New extends SchemaRulesContext
+public class OperatorCompiler extends SchemaRulesContext
 {
     protected SQLParserContext parserContext;
     protected NodeFactory nodeFactory;
@@ -51,7 +51,7 @@ public class OperatorCompiler_New extends SchemaRulesContext
     protected BooleanNormalizer booleanNormalizer;
     protected SubqueryFlattener subqueryFlattener;
 
-    public OperatorCompiler_New(SQLParser parser, 
+    public OperatorCompiler(SQLParser parser, 
                             AkibanInformationSchema ais, String defaultSchemaName,
                             ExpressionRegistry expressionRegistry,
                             AggregatorRegistry aggregatorRegistry) {

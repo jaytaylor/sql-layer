@@ -49,15 +49,15 @@ import java.io.FileFilter;
 import java.io.IOException;
 
 @RunWith(NamedParameterizedRunner.class)
-public class OperatorCompiler_NewTest extends NamedParamsTestBase 
-                                      implements TestBase.GenerateAndCheckResult
+public class OperatorCompilerTest extends NamedParamsTestBase 
+                                  implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
-        new File(OptimizerTestBase.RESOURCE_DIR, "operator-new");
+        new File(OptimizerTestBase.RESOURCE_DIR, "operator");
     
     protected File schemaFile, indexFile;
     protected SQLParser parser;
-    protected OperatorCompiler_New compiler;
+    protected OperatorCompiler compiler;
 
     @Before
     public void makeCompiler() throws Exception {
@@ -87,8 +87,8 @@ public class OperatorCompiler_NewTest extends NamedParamsTestBase
         }
     }
     
-    public static class TestOperatorCompiler extends OperatorCompiler_New {
-        public static OperatorCompiler_New create(SQLParser parser, 
+    public static class TestOperatorCompiler extends OperatorCompiler {
+        public static OperatorCompiler create(SQLParser parser, 
                                               AkibanInformationSchema ais, 
                                               String defaultSchemaName,
                                               ExpressionRegistry expressionRegistry,
@@ -144,7 +144,7 @@ public class OperatorCompiler_NewTest extends NamedParamsTestBase
         return namedCases(result);
     }
 
-    public OperatorCompiler_NewTest(String caseName, File schemaFile, File indexFile,
+    public OperatorCompilerTest(String caseName, File schemaFile, File indexFile,
                                 String sql, String expected, String error) {
         super(caseName, sql, expected, error);
         this.schemaFile = schemaFile;
