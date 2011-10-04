@@ -17,8 +17,11 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types.util.ValueHolder;
 
 import java.util.List;
 
@@ -30,7 +33,7 @@ public final class CoalesceExpression extends AbstractCompositeExpression {
 
     @Override
     public ExpressionEvaluation evaluation() {
-        return new InnerEvaluation(childrenEvaluations());
+        return new InnerEvaluation(valueType(), childrenEvaluations());
     }
 
     public CoalesceExpression(List<? extends Expression> children) {
@@ -43,14 +46,29 @@ public final class CoalesceExpression extends AbstractCompositeExpression {
         public ValueSource eval() {
             for (ExpressionEvaluation childEvaluation : children()) {
                 ValueSource childSource = childEvaluation.eval();
-                if (!childSource.isNull())
-                    return childSource;
+                if (!childSource.isNull()) {
+                    return type.equals(childSource.getConversionType())
+                            ? childSource
+                            : Converters.convert(childSource, holder());
+                }
             }
             return NullValueSource.only();
         }
 
-        private InnerEvaluation(List<? extends ExpressionEvaluation> children) {
+        private InnerEvaluation(AkType type, List<? extends ExpressionEvaluation> children) {
             super(children);
+            this.type = type;
         }
+
+        private ValueHolder holder() {
+            if (holder == null) {
+                holder = new ValueHolder();
+                holder.expectType(type);
+            }
+            return holder;
+        }
+
+        private final AkType type;
+        private ValueHolder holder;
     }
 }

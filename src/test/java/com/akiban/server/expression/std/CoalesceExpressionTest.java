@@ -31,7 +31,9 @@ import static org.junit.Assert.assertEquals;
 public final class CoalesceExpressionTest extends ComposedExpressionTestBase {
 
     @Test
-    public void hmm, I need to merge from trunk
+    public void smoke() {
+        check(new ValueHolder(AkType.LONG, 5), litNull(), litNull(), lit(5), ExplodingExpression.of(AkType.LONG));
+    }
 
     @Test
     public void onlyNotNull() {
@@ -41,6 +43,11 @@ public final class CoalesceExpressionTest extends ComposedExpressionTestBase {
     @Test
     public void onlyNull() {
         check(NullValueSource.only(), LiteralExpression.forNull());
+    }
+
+    @Test
+    public void heterogeneousInputs() {
+        check(new ValueHolder(AkType.VARCHAR, "3"), litNull(), litNull(AkType.VARCHAR), lit(3), lit("hello"));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -62,8 +69,10 @@ public final class CoalesceExpressionTest extends ComposedExpressionTestBase {
 
     // for use in this class
     private void check(ValueSource expected, Expression... children) {
+        Expression coalesceExpression = new CoalesceExpression(Arrays.asList(children));
+        assertEquals(expected.getConversionType(), coalesceExpression.valueType());
         ValueHolder expectedHolder = new ValueHolder(expected);
-        ValueHolder actualHolder = new ValueHolder(new CoalesceExpression(Arrays.asList(children)).evaluation().eval());
+        ValueHolder actualHolder = new ValueHolder(coalesceExpression.evaluation().eval());
         assertEquals(expectedHolder, actualHolder);
     }
 
@@ -77,5 +86,9 @@ public final class CoalesceExpressionTest extends ComposedExpressionTestBase {
 
     private Expression litNull() {
         return LiteralExpression.forNull();
+    }
+
+    private Expression litNull(AkType type) {
+        return TypedNullExpression.of(type);
     }
 }
