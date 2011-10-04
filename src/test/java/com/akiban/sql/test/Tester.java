@@ -344,7 +344,7 @@ public class Tester
                 }
                 else if ("-operators-old".equals(arg))
                     tester.addAction(Action.OPERATORS_OLD);
-                else if ("-operators-new".equals(arg))
+                else if ("-operators".equals(arg))
                     tester.addAction(Action.OPERATORS);
                 else if ("-repeat".equals(arg))
                     tester.setRepeat(Integer.parseInt(args[i++]));
