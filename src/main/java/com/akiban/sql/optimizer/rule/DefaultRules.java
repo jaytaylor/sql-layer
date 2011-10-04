@@ -34,6 +34,7 @@ public class DefaultRules
         new BranchJoiner(),
         new SelectPreponer(),
         new MapFolder(),
+        new ExpressionCompactor(),
         new OperatorAssembler()
      );
 
