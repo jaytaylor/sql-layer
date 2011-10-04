@@ -21,7 +21,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.sql.StandardException;
 
-import com.akiban.sql.optimizer.OperatorCompiler;
+import com.akiban.sql.optimizer.OperatorCompiler_Old;
 import com.akiban.sql.optimizer.simplified.SimplifiedQuery.ColumnExpression;
 import com.akiban.sql.optimizer.simplified.SimplifiedQuery.SimpleExpression;
 import com.akiban.sql.optimizer.simplified.SimplifiedQuery.SimpleSelectColumn;
@@ -45,12 +45,12 @@ import java.util.*;
 /**
  * Compile SQL SELECT statements into operator trees if possible.
  */
-public class PostgresOperatorCompiler extends OperatorCompiler
+public class PostgresOperatorCompiler_Old extends OperatorCompiler_Old
                                       implements PostgresStatementGenerator
 {
-    private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorCompiler.class);
+    private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorCompiler_Old.class);
 
-    public PostgresOperatorCompiler(PostgresServerSession server) {
+    public PostgresOperatorCompiler_Old(PostgresServerSession server) {
         super(server.getParser(), server.getAIS(), server.getDefaultSchemaName());
 
         server.setAttribute("aisBinder", binder);

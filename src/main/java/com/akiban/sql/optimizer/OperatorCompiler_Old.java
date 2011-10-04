@@ -61,7 +61,7 @@ import java.util.*;
 /**
  * Compile SQL statements into operator trees.
  */ 
-public class OperatorCompiler
+public class OperatorCompiler_Old
 {
     protected SQLParserContext parserContext;
     protected NodeFactory nodeFactory;
@@ -72,7 +72,7 @@ public class OperatorCompiler
     protected Grouper grouper;
     protected Schema schema;
 
-    public OperatorCompiler(SQLParser parser, 
+    public OperatorCompiler_Old(SQLParser parser, 
                             AkibanInformationSchema ais, String defaultSchemaName) {
         parserContext = parser;
         nodeFactory = parserContext.getNodeFactory();
@@ -210,7 +210,7 @@ public class OperatorCompiler
         case NodeTypes.UPDATE_NODE:
         case NodeTypes.INSERT_NODE:
         case NodeTypes.DELETE_NODE:
-            return CUDCompiler.compileStatement(tracer, this, stmt, params);
+            return CUDCompiler_Old.compileStatement(tracer, this, stmt, params);
         default:
             throw new UnsupportedSQLException (stmt.statementToString(), stmt);
         }

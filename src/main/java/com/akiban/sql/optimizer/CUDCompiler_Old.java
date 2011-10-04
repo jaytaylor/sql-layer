@@ -39,7 +39,7 @@ import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.types.AkType;
-import com.akiban.sql.optimizer.OperatorCompiler.Result;
+import com.akiban.sql.optimizer.OperatorCompiler_Old.Result;
 import com.akiban.sql.optimizer.simplified.SimplifiedDeleteStatement;
 import com.akiban.sql.optimizer.simplified.SimplifiedInsertStatement;
 import com.akiban.sql.optimizer.simplified.SimplifiedTableStatement;
@@ -62,11 +62,11 @@ import com.akiban.sql.parser.UpdateNode;
  * @author tjoneslo
  *
  */
-public class CUDCompiler {
-    private CUDCompiler () {
+public class CUDCompiler_Old {
+    private CUDCompiler_Old () {
     }
     
-    public static Result compileStatement (SessionTracer tracer, OperatorCompiler compiler, 
+    public static Result compileStatement (SessionTracer tracer, OperatorCompiler_Old compiler, 
             DMLStatementNode stmtNode, List<ParameterNode> params) {
         
         SimplifiedTableStatement tableStmt = generateStatement(compiler, stmtNode);
@@ -83,7 +83,7 @@ public class CUDCompiler {
     }
     
 
-    private static SimplifiedTableStatement generateStatement (OperatorCompiler compiler, DMLStatementNode stmtNode) {
+    private static SimplifiedTableStatement generateStatement (OperatorCompiler_Old compiler, DMLStatementNode stmtNode) {
         SimplifiedTableStatement tableStatement;
         
         switch (stmtNode.getNodeType()) {
@@ -132,7 +132,7 @@ public class CUDCompiler {
         return plan;
     }
     
-    private static Operator resultsOperator (SessionTracer tracer, OperatorCompiler compiler, SimplifiedTableStatement stmt,
+    private static Operator resultsOperator (SessionTracer tracer, OperatorCompiler_Old compiler, SimplifiedTableStatement stmt,
             DMLStatementNode stmtNode, List<ParameterNode> params) {
 
         if (stmt.getValues() != null) {
@@ -143,7 +143,7 @@ public class CUDCompiler {
         }
     }
 
-    private static Operator values_Default(OperatorCompiler compiler, SimplifiedTableStatement stmt) {
+    private static Operator values_Default(OperatorCompiler_Old compiler, SimplifiedTableStatement stmt) {
 
         List<List<SimpleExpression>>values = stmt.getValues();
         Deque<ExpressionRow> exprRowList = new ArrayDeque<ExpressionRow>(values.size());
@@ -170,7 +170,7 @@ public class CUDCompiler {
         
     }
 
-    private static List<Expression> generateExpressions(OperatorCompiler compiler, SimplifiedTableStatement stmt) {
+    private static List<Expression> generateExpressions(OperatorCompiler_Old compiler, SimplifiedTableStatement stmt) {
         UserTableRowType targetRowType = compiler.tableRowType(stmt.getTargetTable());
         
         Map<TableNode,Integer> tableOffsets = new HashMap<TableNode,Integer>(1);

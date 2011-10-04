@@ -51,15 +51,15 @@ import java.io.FileFilter;
 import java.io.IOException;
 
 @RunWith(NamedParameterizedRunner.class)
-public class OperatorCompilerTest extends NamedParamsTestBase
+public class OperatorCompiler_OldTest extends NamedParamsTestBase
                                   implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
-        new File(OptimizerTestBase.RESOURCE_DIR, "operator");
+        new File(OptimizerTestBase.RESOURCE_DIR, "operator-old");
     
     protected File schemaFile, indexFile;
     protected SQLParser parser;
-    protected OperatorCompiler compiler;
+    protected OperatorCompiler_Old compiler;
 
     @Before
     public void makeCompiler() throws Exception {
@@ -70,7 +70,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         compiler = TestOperatorCompiler.create(parser, ais, "user");
     }
 
-    static class TestResultColumn extends OperatorCompiler.ResultColumnBase {
+    static class TestResultColumn extends OperatorCompiler_Old.ResultColumnBase {
         private String type;
 
         public TestResultColumn(String name, String type) {
@@ -88,8 +88,8 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         }
     }
     
-    public static class TestOperatorCompiler extends OperatorCompiler {
-        public static OperatorCompiler create(SQLParser parser, 
+    public static class TestOperatorCompiler extends OperatorCompiler_Old {
+        public static OperatorCompiler_Old create(SQLParser parser, 
                                               AkibanInformationSchema ais, 
                                               String defaultSchemaName) {
             // This just needs to be enough to keep from UserTableRowType
@@ -152,7 +152,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         return namedCases(result);
     }
 
-    public OperatorCompilerTest(String caseName, File schemaFile, File indexFile,
+    public OperatorCompiler_OldTest(String caseName, File schemaFile, File indexFile,
                                 String sql, String expected, String error) {
         super(caseName, sql, expected, error);
         this.schemaFile = schemaFile;
@@ -167,7 +167,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     @Override
     public String generateResult() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
-        OperatorCompiler.Result result = 
+        OperatorCompiler_Old.Result result = 
             compiler.compile(new PostgresSessionTracer(1, false),
                              (DMLStatementNode)stmt,
                              parser.getParameterList());
