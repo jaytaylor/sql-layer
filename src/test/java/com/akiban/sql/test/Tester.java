@@ -16,7 +16,7 @@
 package com.akiban.sql.test;
 
 import com.akiban.server.aggregation.DummyAggregatorRegistry;
-import com.akiban.server.expression.std.StandardExpressionRegistry;
+import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.compiler.BooleanNormalizer;
 import com.akiban.sql.optimizer.AISBinder;
@@ -237,7 +237,7 @@ public class Tester
         if (actions.contains(Action.OPERATORS))
             operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, "user");
         if (actions.contains(Action.OPERATORS_NEW))
-            operatorCompiler_New = OperatorCompiler_NewTest.TestOperatorCompiler.create(parser, ais, "user", new StandardExpressionRegistry(), new DummyAggregatorRegistry());
+            operatorCompiler_New = OperatorCompiler_NewTest.TestOperatorCompiler.create(parser, ais, "user", new FunctionsRegistry(), new DummyAggregatorRegistry());
         if (actions.contains(Action.PLAN))
             rulesContext = new RulesTestContext(ais, planRules);
     }
