@@ -51,9 +51,9 @@ public final class InExpressionTest {
         return params;
     }
 
-    public InExpressionTest(List<Expression> expressions, Boolean expected) {
+    public InExpressionTest(Expression lhs, List<Expression> rhs, Boolean expected) {
         this.expected = expected;
-        this.inExpression = new InExpression(expressions);
+        this.inExpression = new InExpression(lhs, rhs);
     }
     
     @Test
@@ -66,10 +66,8 @@ public final class InExpressionTest {
     // for use in this class
 
     private static void addTo(Collection<Parameterization> out, Expression lhs, Boolean result, Expression... rhs) {
-        List<Expression> expressions = new ArrayList<Expression>();
-        expressions.add(lhs);
-        Collections.addAll(expressions, rhs);
-        Parameterization param = Parameterization.create(lhs + " IN " + Arrays.asList(rhs), expressions, result);
+        List<Expression> rhsList = Arrays.asList(rhs);
+        Parameterization param = Parameterization.create(lhs + " IN " + rhsList, lhs, rhsList, result);
         out.add(param);
     }
 

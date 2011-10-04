@@ -24,6 +24,7 @@ import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ArgumentValidation;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -38,8 +39,17 @@ public final class InExpression extends AbstractCompositeExpression {
         return new InnerEvaluation(childrenEvaluations());
     }
 
-    public InExpression(List<? extends Expression> children) {
-        super(AkType.BOOL, children);
+    public InExpression(Expression lhs, List<? extends Expression> rhs) {
+        super(AkType.BOOL, combine(lhs, rhs));
+        if (rhs.isEmpty())
+            throw new IllegalArgumentException("rhs cannot be empty");
+    }
+
+    private static List<? extends Expression> combine(Expression head, List<? extends Expression> tail) {
+        List<Expression> list = new ArrayList<Expression>();
+        list.add(head);
+        list.addAll(tail);
+        return list;
     }
 
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation {
