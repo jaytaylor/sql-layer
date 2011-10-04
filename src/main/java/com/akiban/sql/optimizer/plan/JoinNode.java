@@ -90,6 +90,10 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         this.joinConditions = joinConditions;
     }
 
+    public boolean hasJoinConditions() {
+        return ((joinConditions != null) && !joinConditions.isEmpty());
+    }
+
     public TableGroupJoin getGroupJoin() {
         return groupJoin;
     }
@@ -114,8 +118,26 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         this.implementation = implementation;
     }
 
+    // TODO: Maybe it would be better to move this to MapJoin and
+    // convert over sooner.  See how other kinds of joins work out.
+    public static interface JoinReverseHook {
+        public boolean canReverse(JoinNode join);
+        public void beforeReverse(JoinNode join);
+    }
+
+    private JoinReverseHook reverseHook;
+
+    public JoinReverseHook getReverseHook() {
+        return reverseHook;
+    }
+    public void setReverseHook(JoinReverseHook reverseHook) {
+        this.reverseHook = reverseHook;
+    }
+
     /** Reverse operands and outer join direction if necessary. */
     public void reverse() {
+        if (reverseHook != null)
+            reverseHook.beforeReverse(this);
         switch (joinType) {
         case INNER:
         case FULL_OUTER:

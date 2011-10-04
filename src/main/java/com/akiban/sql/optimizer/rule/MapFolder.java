@@ -79,8 +79,15 @@ public class MapFolder extends BaseRule
     }
 
     protected void fold(MapJoin map) {
-        if (map.getJoinType() != JoinType.INNER)
-            throw new UnsupportedSQLException("non-INNER complex join", null);
+        switch (map.getJoinType()) {
+        case INNER:
+            break;
+        case SEMI:
+            map.setInner(new Limit(map.getInner(), 1));
+            break;
+        default:
+            throw new UnsupportedSQLException("non-INNER complex join " + map, null);
+        }
 
         PlanWithInput parent = map;
         PlanNode child;
@@ -89,6 +96,7 @@ public class MapFolder extends BaseRule
           parent = child.getOutput();
         } while (!((parent instanceof ResultSet) ||
                    (parent instanceof AggregateSource) ||
+                   (parent instanceof MapJoin) ||
                    (child instanceof Project)));
         if (child != map) {
           map.getOutput().replaceInput(map, map.getInner());

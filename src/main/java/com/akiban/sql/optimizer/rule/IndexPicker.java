@@ -98,16 +98,24 @@ public class IndexPicker extends BaseRule
 
         protected IndexGoal determineIndexGoal(PlanNode input, 
                                                Collection<TableSource> tables) {
-            List<ConditionExpression> conditions;
+            List<ConditionList> conditionSources = new ArrayList<ConditionList>();
             Sort ordering = null;
             AggregateSource grouping = null;
-            do {
+            while (true) {
                 input = input.getOutput();
-            } while (input instanceof Joinable);
-            if (input instanceof Select)
-                conditions = ((Select)input).getConditions();
-            else
-                return null;
+                if (!(input instanceof Joinable))
+                    break;
+                if (input instanceof JoinNode) {
+                    ConditionList conds = ((JoinNode)input).getJoinConditions();
+                    if ((conds != null) && !conds.isEmpty())
+                        conditionSources.add(conds);
+                }
+            }
+            if (input instanceof Select) {
+                ConditionList conds = ((Select)input).getConditions();
+                if (!conds.isEmpty())
+                    conditionSources.add(conds);
+            }
             input = input.getOutput();
             if (input instanceof Sort) {
                 ordering = (Sort)input;
@@ -133,8 +141,12 @@ public class IndexPicker extends BaseRule
                     }
                 }
             }
+            if (conditionSources.isEmpty() &&
+                (ordering == null) &&
+                (grouping == null))
+                return null;
             return new IndexGoal(query, boundTables, 
-                                 conditions, grouping, ordering, tables);
+                                 conditionSources, grouping, ordering, tables);
         }
 
         protected IndexScan pickBestIndex(TableJoins tableJoins, IndexGoal goal) {
@@ -166,26 +178,49 @@ public class IndexPicker extends BaseRule
 
         protected void pickIndexes(JoinNode join) {
             join.setImplementation(JoinNode.Implementation.NESTED_LOOPS);
-
-            boolean twoTablesInner = false;
-            switch (join.getJoinType()) {
-            case INNER:
-                twoTablesInner = ((join.getLeft() instanceof TableJoins) && 
-                                  (join.getRight() instanceof TableJoins));
-                break;
-            case RIGHT:
-                join.reverse();
-            }
-
-            if (!twoTablesInner) {
-                pickIndexes(join.getLeft());
-                pickIndexes(join.getRight());
-                return;
-            }
-
-            // TODO: Better to find all the INNER joins beneath this
-            // and do them all at once, not a pair at a time.
             
+            Joinable left = join.getLeft();
+            Joinable right = join.getRight();
+
+            boolean tryReverse = false, twoTablesInner = false;
+            if (join.getReverseHook() == null) {
+                switch (join.getJoinType()) {
+                case INNER:
+                    twoTablesInner = ((left instanceof TableJoins) && 
+                                      (right instanceof TableJoins));
+                    tryReverse = twoTablesInner;
+                    break;
+                case RIGHT:
+                    join.reverse();
+                }
+            }
+            else {
+                tryReverse = join.getReverseHook().canReverse(join);
+            }
+
+            if (tryReverse) {
+                if (twoTablesInner) {
+                    if (pickIndexesTablesInner(join))
+                        return;
+                }
+                if (right instanceof ColumnSource) {
+                    if (pickIndexesTableValues(join))
+                        return;
+                    left = join.getLeft();
+                    right = join.getRight();
+                }
+            }
+
+            // Default is just to do each in the given order.
+            pickIndexes(left);
+            pickIndexes(right);
+        }
+
+        // Pick indexes for two tables. See which one gets a better
+        // initial index.
+        // TODO: Better to find all the INNER joins beneath this and
+        // do them all at once, not a pair at a time.
+        protected boolean pickIndexesTablesInner(JoinNode join) {
             TableJoins left = (TableJoins)join.getLeft();
             TableJoins right = (TableJoins)join.getRight();
             IndexGoal lgoal = determineIndexGoal(left);
@@ -209,6 +244,79 @@ public class IndexPicker extends BaseRule
             // Commit to the left choice and redo the right with it bound.
             pickedIndex(left, lgoal, lindex);
             pickIndexes(right);
+            return true;
+        }
+
+        // Pick indexes for table and VALUES (or generally not tables).
+        // Put the VALUES outside if the join condition ends up indexed.
+        protected boolean pickIndexesTableValues(JoinNode join) {
+            TableJoins left = leftOfValues(join);
+            ColumnSource right = (ColumnSource)join.getRight();
+
+            boundTables.add(right);
+            IndexGoal lgoal = determineIndexGoal(left);
+            IndexScan lindex = pickBestIndex(left, lgoal);
+            boundTables.remove(right);
+            
+            if (lindex == null) 
+                return false;
+
+            boolean found = false;
+            for (ConditionExpression joinCondition : join.getJoinConditions()) {
+                if (lindex.getConditions().contains(joinCondition)) {
+                    found = true;
+                }
+            }
+            if (!found) 
+                return false;
+            
+            // Put the VALUES outside and commit to that in the simple case.
+            join.reverse();
+            if (left != join.getRight())
+                return false;
+            pickedIndex(left, lgoal, lindex);
+            return true;
+        }
+
+        // Get the table joins that seems to be most interestingly
+        // joined with a VALUES.
+        // TODO: Not very general.
+        protected TableJoins leftOfValues(JoinNode join) {
+            Joinable left = join.getLeft();
+            if (left instanceof TableJoins)
+                return (TableJoins)left;
+            Collection<TableSource> tables = new ArrayList<TableSource>();
+            for (ConditionExpression joinCondition : join.getJoinConditions()) {
+                if (joinCondition instanceof ComparisonCondition) {
+                    ExpressionNode lop = ((ComparisonCondition)joinCondition).getLeft();
+                    if (lop.isColumn()) {
+                        ColumnSource table = ((ColumnExpression)lop).getTable();
+                        if (table instanceof TableSource)
+                            tables.add((TableSource)table);
+                    }
+                }
+            }
+            if (tables.isEmpty())
+                return null;
+            return findTableSource(left, tables);
+        }
+        
+        protected TableJoins findTableSource(Joinable joinable,
+                                             Collection<TableSource> tables) {
+            if (joinable instanceof TableJoins) {
+                TableJoins tjoins = (TableJoins)joinable;
+                for (TableSource table : tables) {
+                    if (tjoins.getTables().contains(table))
+                        return tjoins;
+                }
+            }
+            else if (joinable instanceof JoinNode) {
+                JoinNode join = (JoinNode)joinable;
+                TableJoins result = findTableSource(join.getLeft(), tables);
+                if (result != null) return result;
+                return findTableSource(join.getRight(), tables);
+            }
+            return null;
         }
     }
 

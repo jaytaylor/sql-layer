@@ -1,0 +1,7 @@
+PhysicalSelect[order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT]]
+  Map_NestedLoops
+    ValuesScan_Default[ExpressionRow[Literal(1234)], ExpressionRow[Literal(4567)]]
+    project([Field(2), Field(5), Field(6)])
+      Flatten_HKeyOrdered(user.orders INNER user.items)
+        AncestorLookup_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) -> [user.orders, user.items])
+          IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) (>=UnboundExpressions[Literal(Smith), Bound(0,Field(0))],<=UnboundExpressions[Literal(Smith), Bound(0,Field(0))]))

@@ -82,6 +82,8 @@ public class NestedLoopMapper extends BaseRule
         for (JoinNode join : joins) {
             MapJoin map = new MapJoin(join.getJoinType(), 
                                       join.getLeft(), join.getRight());
+            if (join.hasJoinConditions())
+                map.setInner(new Select(map.getInner(), join.getJoinConditions()));
             join.getOutput().replaceInput(join, map);
             maps.add(map);
         }
