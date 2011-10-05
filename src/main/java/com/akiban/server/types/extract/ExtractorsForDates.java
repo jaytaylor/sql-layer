@@ -15,6 +15,7 @@
 
 package com.akiban.server.types.extract;
 
+import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceIsNullException;
@@ -44,12 +45,16 @@ abstract class ExtractorsForDates extends LongExtractor {
             // YYYY-MM-DD
             final String values[] = string.split("-");
             long y = 0, m = 0, d = 0;
-            switch(values.length) {
-            case 3: d = Integer.parseInt(values[2]); // fall
-            case 2: m = Integer.parseInt(values[1]); // fall
-            case 1: y = Integer.parseInt(values[0]); break;
-            default:
-                throw new IllegalArgumentException("Invalid date string");
+            try {
+                switch(values.length) {
+                case 3: d = Integer.parseInt(values[2]); // fall
+                case 2: m = Integer.parseInt(values[1]); // fall
+                case 1: y = Integer.parseInt(values[0]); break;
+                default:
+                    throw new InvalidDateFormatException ("date", string);
+                }
+            } catch (NumberFormatException ex) {
+                throw new InvalidDateFormatException ("date", string);
             }
             return d + m*32 + y*512;
         }
@@ -78,25 +83,29 @@ abstract class ExtractorsForDates extends LongExtractor {
         public long getLong(String string) {
             final String parts[] = string.split(" ");
             if(parts.length != 2) {
-                throw new IllegalArgumentException("Invalid DATETIME string");
+                throw new InvalidDateFormatException ("date time", string);
             }
 
             final String dateParts[] = parts[0].split("-");
             if(dateParts.length != 3) {
-                throw new IllegalArgumentException("Invalid DATE portion");
+                throw new InvalidDateFormatException ("date", parts[0]);
             }
 
             final String timeParts[] = parts[1].split(":");
             if(timeParts.length != 3) {
-                throw new IllegalArgumentException("Invalid TIME portion");
+                throw new InvalidDateFormatException ("time", parts[1]);
             }
 
+            try {
             return  Long.parseLong(dateParts[0]) * DATETIME_YEAR_SCALE +
                     Long.parseLong(dateParts[1]) * DATETIME_MONTH_SCALE +
                     Long.parseLong(dateParts[2]) * DATETIME_DAY_SCALE +
                     Long.parseLong(timeParts[0]) * DATETIME_HOUR_SCALE +
                     Long.parseLong(timeParts[1]) * DATETIME_MIN_SCALE +
                     Long.parseLong(timeParts[2]) * DATETIME_SEC_SCALE;
+            } catch (NumberFormatException ex) {
+                throw new InvalidDateFormatException ("date time", string);
+            }
         }
 
         @Override
@@ -137,12 +146,16 @@ abstract class ExtractorsForDates extends LongExtractor {
             int seconds = 0;
             int offset = 0;
             final String values[] = string.split(":");
-            switch(values.length) {
-            case 3: hours   = Integer.parseInt(values[offset++]); // fall
-            case 2: minutes = Integer.parseInt(values[offset++]); // fall
-            case 1: seconds = Integer.parseInt(values[offset]);   break;
-            default:
-                throw new IllegalArgumentException("Invalid TIME string");
+            try {
+                switch(values.length) {
+                case 3: hours   = Integer.parseInt(values[offset++]); // fall
+                case 2: minutes = Integer.parseInt(values[offset++]); // fall
+                case 1: seconds = Integer.parseInt(values[offset]);   break;
+                default:
+                    throw new InvalidDateFormatException ("time", string);
+                }
+            } catch (NumberFormatException ex) {
+                throw new InvalidDateFormatException ("time", string);
             }
             minutes += seconds/60;
             seconds %= 60;
@@ -177,7 +190,7 @@ abstract class ExtractorsForDates extends LongExtractor {
             try {
                 return timestampFormat().parse(string).getTime() / 1000;
             } catch(ParseException e) {
-                throw new IllegalArgumentException(e);
+                throw new InvalidDateFormatException ("timestamp", string);                
             }
         }
 
@@ -201,8 +214,12 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long getLong(String string) {
-            long value = Long.parseLong(string);
-            return value == 0 ? 0 : (value - 1900);
+            try {
+                long value = Long.parseLong(string);
+                return value == 0 ? 0 : (value - 1900);
+            } catch (NumberFormatException ex) {
+                throw new InvalidDateFormatException ("year", string);
+            }
         }
 
         @Override

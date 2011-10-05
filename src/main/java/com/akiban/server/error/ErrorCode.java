@@ -107,7 +107,8 @@ public enum ErrorCode {
         // SubClass 004 - null value not allowed
         // SubClass 005 - error in assignment
         // SubClass 006 - invalid interval format
-        // SubClass 007 - invalid datetime format    
+        // SubClass 007 - invalid datetime format 
+    INVALID_DATE_FORMAT     ("22", "007", Importance.DEBUG, InvalidDateFormatException.class),
         // SubClass 008 - datetime field overflow 
         // SubClass 009 - invalid time zone displacement value
 
@@ -125,13 +126,14 @@ public enum ErrorCode {
         // SubClass 010 - invalid indicator parameter value    
         // SubClass 011 - substring error
         // SubClass 012 - division by zero
-    DIVIDE_BY_ZERO          ("22", "021", Importance.DEBUG, DivisionByZeroException.class),
+    DIVIDE_BY_ZERO          ("22", "012", Importance.DEBUG, DivisionByZeroException.class),
         // SubClass 013 - invalid preceding or following size in window function
     
         // SubClass 014 - invalid argument for NTILE function
         // SubClass 015 - interval field overflow 
         // SubClass 016 - invalid argument for NTH_VALUE function
         // SubClass 018 - invalid character value for cast
+    INVALID_CHAR_TO_NUM     ("22", "018", Importance.DEBUG, InvalidCharToNumException.class),
         // SubClass 019 - invalid escape character
         // SubClass 01B - invalid regular expression
         // SubClass 01C - null row not permitted in table
