@@ -15,12 +15,13 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import static com.akiban.sql.optimizer.rule.IndexPicker.TableJoinsFinder;
-
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
 import com.akiban.server.error.UnsupportedSQLException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -28,6 +29,55 @@ import java.util.*;
  * and join them together with Flatten, Product, etc. */
 public class BranchJoiner extends BaseRule 
 {
+    private static final Logger logger = LoggerFactory.getLogger(BranchJoiner.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
+    static class TableJoinsFinder implements PlanVisitor, ExpressionVisitor {
+        List<TableJoins> result = new ArrayList<TableJoins>();
+
+        public List<TableJoins> find(PlanNode root) {
+            root.accept(this);
+            return result;
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visit(PlanNode n) {
+            if (n instanceof TableJoins) {
+                result.add((TableJoins)n);
+            }
+            return true;
+        }
+
+        @Override
+        public boolean visitEnter(ExpressionNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(ExpressionNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visit(ExpressionNode n) {
+            return true;
+        }
+    }
+
     @Override
     public void apply(PlanContext planContext) {
         List<TableJoins> groups = new TableJoinsFinder().find(planContext.getPlan());
@@ -139,11 +189,13 @@ public class BranchJoiner extends BaseRule
         // Load the main branch.
         List<TableNode> mainBranchNodes;
         List<TableSource> mainBranchSources;
+        descendants.retainAll(branching.getMainBranchTableSources());
         if (descendants.isEmpty()) {
             mainBranchNodes = branching.getMainBranchTableNodes();
             mainBranchSources = branching.getMainBranchTableSources();
         }
         else {
+            Collections.sort(descendants, tableSourceById);
             scan = new BranchLookup(scan, indexTableNode, 
                                     indexTableNode, descendants);
             // Only need the rest.
@@ -230,6 +282,7 @@ public class BranchJoiner extends BaseRule
         public void addSideBranchTable(TableSource table) {
             TableNode branchPoint = getBranchPoint(table.getTable());
             assert (branchPoint != null);
+            addMainBranchTable(branchPoint.getParent());
             List<TableSource> entry = sideBranches.get(branchPoint);
             if (entry == null) {
                 entry = new ArrayList<TableSource>();
@@ -330,7 +383,6 @@ public class BranchJoiner extends BaseRule
             // Need a product of several branches.
             List<PlanNode> subplans = new ArrayList<PlanNode>(nbranches + 1);
             subplans.add(input);
-            input = new Product(subplans);
 
             List<TableNode> branchpoints = 
                 new ArrayList<TableNode>(branching.getSideBranches().keySet());
@@ -348,6 +400,8 @@ public class BranchJoiner extends BaseRule
                                           subbranch, branchpoint.getParent());
                 subplans.add(subplan);
             }
+
+            input = new Product(subplans);
         }
         return input;
     }
@@ -382,7 +436,7 @@ public class BranchJoiner extends BaseRule
             if (idx <= 0) return;
             if (parent != null) {
                 joinTypes.set(idx - 1, parent.getJoinType());
-                if (parent.getJoinConditions() != null) {
+                if (parent.hasJoinConditions()) {
                     for (ConditionExpression cond : parent.getJoinConditions()) {
                         if (cond.getImplementation() !=
                             ConditionExpression.Implementation.GROUP_JOIN) {

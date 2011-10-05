@@ -85,6 +85,8 @@ public class IndexGoal implements Comparator<IndexScan>
 
     // All the conditions that might be indexable.
     private List<ConditionExpression> conditions;
+    // Where they came from.
+    private List<ConditionList> conditionSources;
 
     // If both grouping and ordering are present, they must be
     // compatible. Something satisfying the ordering would also handle
@@ -105,15 +107,24 @@ public class IndexGoal implements Comparator<IndexScan>
 
     public IndexGoal(BaseQuery query,
                      Set<ColumnSource> boundTables, 
-                     List<ConditionExpression> conditions,
+                     List<ConditionList> conditionSources,
                      AggregateSource grouping,
                      Sort ordering,
                      Collection<TableSource> tables) {
         this.boundTables = boundTables;
-        this.conditions = conditions;
+        this.conditionSources = conditionSources;
         this.grouping = grouping;
         this.ordering = ordering;
         
+        if (conditionSources.size() == 1)
+            conditions = conditionSources.get(0);
+        else {
+            conditions = new ArrayList<ConditionExpression>();
+            for (ConditionList cs : conditionSources) {
+                conditions.addAll(cs);
+            }
+        }
+            
         if ((query instanceof UpdateStatement) ||
             (query instanceof DeleteStatement))
           updateTarget = ((BaseUpdateStatement)query).getTargetTable();
@@ -583,12 +594,10 @@ public class IndexGoal implements Comparator<IndexScan>
     public void installUpstream(IndexScan index) {
         if (index.getConditions() != null) {
             for (ConditionExpression condition : index.getConditions()) {
-                // TODO: This depends on conditions being the original
-                // from the Select, and not some copy merged with join
-                // conditions, etc. When it is, more work will be
-                // needed to track down where to remove, though
-                // setting the implementation may be enough.
-                conditions.remove(condition);
+                for (ConditionList conditionSource : conditionSources) {
+                    if (conditionSource.remove(condition))
+                        break;
+                }
                 if (condition instanceof ComparisonCondition) {
                     ((ComparisonCondition)condition).setImplementation(ConditionExpression.Implementation.INDEX);
                 }

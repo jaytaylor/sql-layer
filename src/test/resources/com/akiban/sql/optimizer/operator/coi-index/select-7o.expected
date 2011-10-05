@@ -1,5 +1,0 @@
-project([Field(4)])
-  Flatten_HKeyOrdered(user.customers INNER user.orders)
-    AncestorLookup_Default(Index(user.orders.order_date[IndexColumn(order_date)]) -> [user.customers, user.orders])
-      IndexScan_Default(Index(user.orders.order_date[IndexColumn(order_date)]) (>UnboundExpressions[Literal(1029665)],))
-[order_date:date[DATE]]

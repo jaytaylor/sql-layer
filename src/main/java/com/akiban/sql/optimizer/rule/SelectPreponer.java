@@ -17,6 +17,9 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 /** Move WHERE clauses closer to their table origin.
@@ -33,6 +36,13 @@ import java.util.*;
 // recognize joins of such filtered tables.
 public class SelectPreponer extends BaseRule
 {
+    private static final Logger logger = LoggerFactory.getLogger(SelectPreponer.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
     static class TableOriginFinder implements PlanVisitor, ExpressionVisitor {
         List<PlanNode> origins = new ArrayList<PlanNode>();
 
@@ -139,7 +149,8 @@ public class SelectPreponer extends BaseRule
                     }
                     sawJoin = true;
                 }
-                else if (node instanceof Product) {
+                else if ((node instanceof Product) ||
+                         (node instanceof MapJoin)) {
                     // Only inner right now.
                     sawJoin = true;
                 }
@@ -212,20 +223,27 @@ public class SelectPreponer extends BaseRule
     /** If this condition involves only a single table, return it. */
     // TODO: Lots of room for improvement here, even with that simple contract.
     public static TableSource getSingleTableConditionTable(ConditionExpression condition) {
-        if (!(condition instanceof ComparisonCondition))
-            return null;
-        ComparisonCondition comp = (ComparisonCondition)condition;
-        ExpressionNode left = comp.getLeft();
-        ExpressionNode right = comp.getRight();
-        if (!(left.isColumn()))
-            return null;
-        ColumnSource table = null;
-        table = ((ColumnExpression)left).getTable();
-        if (!(table instanceof TableSource))
-            return null;
-        if (!isConstant(right))
-            return null;
-        return (TableSource)table;
+        if (condition instanceof ComparisonCondition) {
+            ComparisonCondition comp = (ComparisonCondition)condition;
+            ExpressionNode left = comp.getLeft();
+            ExpressionNode right = comp.getRight();
+            if (!(left.isColumn()))
+                return null;
+            ColumnSource table = null;
+            table = ((ColumnExpression)left).getTable();
+            if (!(table instanceof TableSource))
+                return null;
+            if (!isConstant(right))
+                return null;
+            return (TableSource)table;
+        }
+        else if (condition instanceof BooleanOperationExpression) {
+            BooleanOperationExpression bexpr = (BooleanOperationExpression)condition;
+            TableSource left = getSingleTableConditionTable(bexpr.getLeft());
+            TableSource right = getSingleTableConditionTable(bexpr.getRight());
+            if (left == right) return left;
+        }
+        return null;
     }
 
     // TODO: Column from outer table okay, too. Need general predicate for that.

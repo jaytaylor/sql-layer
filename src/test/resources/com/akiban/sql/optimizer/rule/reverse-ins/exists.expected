@@ -1,0 +1,12 @@
+SelectQuery@6f93ee4
+  ResultSet@558fee4f[order_date]
+    MapJoin@d325aef()
+      Flatten@64f007ad(user.orders)
+        BranchLookup@4a8822a0(user.customers -> user.customers)
+          IndexScan@2f995c9a(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith)
+          TableSource@59e3bddb(user.orders - TableGroupJoin@7d8e9adf(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+      Project@5c66b06b[user.orders.order_date]
+        Select@59c87031[]
+          Limit@1d59e6df(LIMIT 1)
+            Select@79444986[user.items.oid == user.orders.oid]
+              IndexScan@72373a9c(Index(user.items.sku[IndexColumn(sku)]), covering/NONE, =1234)

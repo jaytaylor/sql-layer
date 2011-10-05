@@ -1,1 +1,0 @@
-Unsupported ORDER BY: no suitable index on [items.sku, orders.order_date]
