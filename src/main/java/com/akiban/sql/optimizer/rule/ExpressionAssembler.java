@@ -21,6 +21,7 @@ import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.optimizer.plan.*;
 
 import static com.akiban.server.expression.std.Expressions.*;
+import com.akiban.server.expression.std.InExpression;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 
@@ -28,6 +29,7 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /** Turn {@link ExpressionNode} into {@link Expression}. */
@@ -69,8 +71,13 @@ public class ExpressionAssembler
             return assembleColumnExpression((ColumnExpression)node, columnContext);
         else if (node instanceof ParameterExpression)
             return variable(node.getAkType(), ((ParameterExpression)node).getPosition());
-        else if (node instanceof BooleanOperationExpression)
-            throw new UnsupportedSQLException("NIY", null);
+        else if (node instanceof BooleanOperationExpression) {
+            BooleanOperationExpression bexpr = (BooleanOperationExpression)node;
+            return expressionRegistry
+                .composer(bexpr.getOperation().getFunctionName())
+                .compose(Arrays.asList(assembleExpression(bexpr.getLeft(), columnContext),
+                                       assembleExpression(bexpr.getRight(), columnContext)));
+        }
         else if (node instanceof CastExpression)
             // TODO: Need actual cast.
             return assembleExpression(((CastExpression)node).getOperand(),
@@ -82,15 +89,30 @@ public class ExpressionAssembler
                            assembleExpression(cond.getRight(), columnContext));
         }
         else if (node instanceof FunctionExpression) {
-            FunctionExpression funcNode = (FunctionExpression) node;
-            List<Expression> children = new ArrayList<Expression>();
-            for (ExpressionNode operand : funcNode.getOperands()) {
-                children.add(assembleExpression(operand, columnContext));
-            }
-            return expressionRegistry.composer(funcNode.getFunction()).compose(children);
+            FunctionExpression funcNode = (FunctionExpression)node;
+            return expressionRegistry
+                .composer(funcNode.getFunction())
+                .compose(assembleExpressions(funcNode.getOperands(), columnContext));
         }
-        else if (node instanceof IfElseExpression)
-            throw new UnsupportedSQLException("NIY", node.getSQLsource());
+        else if (node instanceof IfElseExpression) {
+            IfElseExpression ifElse = (IfElseExpression)node;
+            // TODO: Is this right?
+            return expressionRegistry
+                .composer("ifThenElse")
+                .compose(Arrays.asList(assembleExpression(ifElse.getTestCondition(), 
+                                                          columnContext),
+                                       assembleExpression(ifElse.getThenExpression(), 
+                                                          columnContext),
+                                       assembleExpression(ifElse.getElseExpression(), 
+                                                          columnContext)));
+        }
+        else if (node instanceof InListCondition) {
+            InListCondition inList = (InListCondition)node;
+            Expression lhs = assembleExpression(inList.getOperand(), columnContext);
+            List<Expression> rhs = assembleExpressions(inList.getExpressions(),
+                                                       columnContext);
+            return new InExpression(lhs, rhs);
+        }
         else if (node instanceof AggregateFunctionExpression)
             throw new UnsupportedSQLException("Aggregate used as regular function", 
                                               node.getSQLsource());
@@ -138,7 +160,14 @@ public class ExpressionAssembler
             throw new UnsupportedSQLException("Unknown subquery", node.getSQLsource());
     }
 
-    
+    protected List<Expression> assembleExpressions(List<ExpressionNode> expressions,
+                                                   ColumnExpressionContext columnContext) {
+        List<Expression> result = new ArrayList<Expression>(expressions.size());
+        for (ExpressionNode expr : expressions) {
+            result.add(assembleExpression(expr, columnContext));
+        }
+        return result;
+    }
 
     public ConstantExpression evalNow(ExpressionNode node) {
         if (node instanceof ConstantExpression)
