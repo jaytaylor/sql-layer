@@ -18,7 +18,6 @@ package com.akiban.server.expression.std;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.types.ValueSource;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -78,14 +77,6 @@ public abstract class AbstractCompositeExpressionEvaluation implements Expressio
 
     protected final List<? extends ExpressionEvaluation> children() {
         return children;
-    }
-
-    protected final List<? extends ValueSource> childrenSources() {
-        List<ValueSource> result = new ArrayList<ValueSource>();
-        for (ExpressionEvaluation evaluation : children()) {
-            result.add(evaluation.eval());
-        }
-        return result;
     }
 
     // object state

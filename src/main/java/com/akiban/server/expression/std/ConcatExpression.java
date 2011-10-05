@@ -15,12 +15,14 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.Quote;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.util.AkibanAppender;
 
 import java.util.List;
 
@@ -37,26 +39,53 @@ public final class ConcatExpression extends AbstractCompositeExpression {
 
     @Override
     public boolean isConstant() {
+        boolean foundNonConst = false;
         for (Expression child : children()) {
-            if (!child.isConstant())
-                return false;
-            if (child.evaluation().eval().isNull())
+            if (!child.isConstant()) {
+                if (shortCircuitLazily)
+                    return foundNonConst;
+                foundNonConst = true;
+            }
+            else if (child.evaluation().eval().isNull())
                 return true;
         }
-        return true;
+        return ! foundNonConst;
+    }
+
+    /**
+     * <p>Creates a CONCAT with a given aggressiveness of short-circuiting for const evaluation.</p>
+     * <p>CONCAT is NULL if any of its arguments are NULL, so the default behavior of this expression
+     * (which is {@code shortCircuitAggressively == true} is such that the whole expression isConstant if <em>any</em>
+     * of its inputs is a const NULL. This is contrary to the standard behavior of composed expressions, which
+     * is that the expression isConstant only if <em>all</em> of its inputs are</p>
+     * <p>That's fine, except that it causes all of ComposedExpressionTestBase's tests to fail. Those tests give us
+     * other useful tests, so rather than throw them out, we can turn our isConstant computation lazy. If this argument
+     * is {@code false}, the expression will compute isConstant in the usual fashion.</p>
+     * @param children the inputs
+     * @param shortCircuitAggressively if true (default behavior), any const NULL will cause this expression to
+     * become a const NULL.
+     */
+    ConcatExpression(List<? extends Expression> children, boolean shortCircuitAggressively) {
+        super(AkType.VARCHAR, children);
+        this.shortCircuitLazily = ! shortCircuitAggressively;
     }
 
     public ConcatExpression(List<? extends Expression> children) {
-        super(AkType.VARCHAR, children);
+        this(children, true);
     }
+
+    private final boolean shortCircuitLazily;
 
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation {
         @Override
         public ValueSource eval() {
             StringBuilder sb = new StringBuilder();
-            for (ValueSource childSource : childrenSources()) {
+            AkibanAppender appender = AkibanAppender.of(sb);
+            for (ExpressionEvaluation childEvaluation : children()) {
+                ValueSource childSource = childEvaluation.eval();
                 if (childSource.isNull())
                     return NullValueSource.only();
+                childSource.appendAsString(appender, Quote.NONE);
             }
             return new ValueHolder(AkType.VARCHAR, sb.toString());
         }
