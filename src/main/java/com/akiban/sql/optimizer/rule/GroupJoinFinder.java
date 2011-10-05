@@ -252,19 +252,30 @@ public class GroupJoinFinder extends BaseRule
                                      return compareTableSources(t1, t2);
                                  }
                              });
-            joinables.add(constructInnerJoins(group));
+            joinables.add(constructLeftInnerJoins(group));
         }
         joinables.addAll(nonTables);
         if (joinables.size() > 1)
-            return constructInnerJoins(joinables);
+            return constructRightInnerJoins(joinables);
         else
             return joinables.get(0);
     }
 
-    protected Joinable constructInnerJoins(List<? extends Joinable> joinables) {
+    // Group flattening is left-recursive.
+    protected Joinable constructLeftInnerJoins(List<? extends Joinable> joinables) {
         Joinable result = joinables.get(0);
         for (int i = 1; i < joinables.size(); i++) {
             result = new JoinNode(result, joinables.get(i), JoinType.INNER);
+        }
+        return result;
+    }
+
+    // Nested loop joins are right-recursive.
+    protected Joinable constructRightInnerJoins(List<? extends Joinable> joinables) {
+        int size = joinables.size();
+        Joinable result = joinables.get(--size);
+        while (size > 0) {
+            result = new JoinNode(joinables.get(--size), result, JoinType.INNER);
         }
         return result;
     }
