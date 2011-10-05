@@ -216,12 +216,13 @@ public class GroupJoinFinder extends BaseRule
 
     // Make inner joins into a tree of group-tree / non-table.
     protected Joinable orderInnerJoins(List<Joinable> joinables) {
-        Map<Group,List<TableSource>> groups = new HashMap<Group,List<TableSource>>();
+        Map<TableGroup,List<TableSource>> groups = 
+            new HashMap<TableGroup,List<TableSource>>();
         List<Joinable> nonTables = new ArrayList<Joinable>();
         for (Joinable joinable : joinables) {
             if (joinable instanceof TableSource) {
                 TableSource table = (TableSource)joinable;
-                Group group = table.getTable().getGroup();
+                TableGroup group = table.getGroup();
                 List<TableSource> entry = groups.get(group);
                 if (entry == null) {
                     entry = new ArrayList<TableSource>();
@@ -234,13 +235,17 @@ public class GroupJoinFinder extends BaseRule
         }
         joinables.clear();
         // Make order of groups predictable.
-        List<Group> keys = new ArrayList(groups.keySet());
-        Collections.sort(keys, new Comparator<Group>() {
-                                 public int compare(Group g1, Group g2) {
-                                     return g1.getName().compareTo(g2.getName());
+        List<TableGroup> keys = new ArrayList(groups.keySet());
+        Collections.sort(keys, new Comparator<TableGroup>() {
+                                 public int compare(TableGroup tg1, TableGroup tg2) {
+                                     Group g1 = tg1.getGroup();
+                                     Group g2 = tg2.getGroup();
+                                     if (g1 != g2)
+                                         return g1.getName().compareTo(g2.getName());
+                                     return tg1.getMinOrdinal() - tg2.getMinOrdinal();
                                  }
                              });
-        for (Group gkey : keys) {
+        for (TableGroup gkey : keys) {
             List<TableSource> group = groups.get(gkey);
             Collections.sort(group, new Comparator<TableSource>() {
                                  public int compare(TableSource t1, TableSource t2) {
@@ -535,14 +540,16 @@ public class GroupJoinFinder extends BaseRule
         TableNode t1 = ts1.getTable();
         UserTable ut1 = t1.getTable();
         Group g1 = ut1.getGroup();
+        TableGroup tg1 = ts1.getGroup();
         TableNode t2 = ts2.getTable();
         UserTable ut2 = t2.getTable();
         Group g2 = ut2.getGroup();
-        if (g1 == g2) {
-            return t1.getOrdinal() - t2.getOrdinal();
-        }
-        else
+        TableGroup tg2 = ts2.getGroup();
+        if (g1 != g2)
             return g1.getName().compareTo(g2.getName());
+        if (tg1 == tg2)         // Including null because not yet computed.
+            return t1.getOrdinal() - t2.getOrdinal();
+        return tg1.getMinOrdinal() - tg2.getMinOrdinal();
     }
 
     // Return size of directly-reachable subtree of all inner joins.

@@ -64,6 +64,16 @@ public class TableGroup extends BasePlanElement
         }
     }
 
+    public int getMinOrdinal() {
+        int min = Integer.MAX_VALUE;
+        for (TableSource table : tables) {
+            int ordinal = table.getTable().getOrdinal();
+            if (min > ordinal)
+                min = ordinal;
+        }
+        return min;
+    }
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16) +
