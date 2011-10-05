@@ -48,7 +48,7 @@ final class GlobularFunctionsClassFinder implements FunctionsClassFinder {
             for (String include : includes) {
                 int lastDot = include.lastIndexOf(".");
                 String packageName = lastDot < 0 ? "." : include.substring(0, lastDot);
-                String dir = packageName.replace(".", "/");
+                String dir = packageName.replace(".", "/") + "/";
                 Pattern pattern = compilePattern(lastDot < 0 ? include : include.substring(lastDot+1));
                 List<String> dirContents = Strings.dumpURLs(
                         // we have to get the union of all classes in all resources. If we were to only get
