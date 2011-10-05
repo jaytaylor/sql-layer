@@ -17,6 +17,7 @@ package com.akiban.server.expression.std;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.BooleanExtractor;
@@ -65,8 +66,12 @@ public final class BoolLogicExpression extends AbstractTwoArgExpression {
             return a || b;
         }
     };
-    static final ExpressionComposer andComposer = new InternalComposer(andLogic);
-    static final ExpressionComposer orComposer = new InternalComposer(orLogic);
+
+    @Scalar("and")
+    public static final ExpressionComposer andComposer = new InternalComposer(andLogic);
+
+    @Scalar("or")
+    public static final ExpressionComposer orComposer = new InternalComposer(orLogic);
 
     // nested classes
 

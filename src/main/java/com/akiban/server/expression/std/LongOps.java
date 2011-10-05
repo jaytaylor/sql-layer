@@ -18,34 +18,39 @@ package com.akiban.server.expression.std;
 import com.akiban.server.error.DivisionByZeroException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 
 import java.util.List;
 
 public class LongOps {
 
-    public static LongOpForLong LONG_MULTIPLY = new LongOpForLong('*') {
+    @Scalar("times")
+    public static final LongOpForLong LONG_MULTIPLY = new LongOpForLong('*') {
         @Override
         public long evaluate(long one, long two) {
             return one * two;
         }
     };
 
-    public static LongOpForLong LONG_SUBTRACT = new LongOpForLong('-') {
+    @Scalar("minus")
+    public static final LongOpForLong LONG_SUBTRACT = new LongOpForLong('-') {
         @Override
         public long evaluate(long one, long two) {
             return one - two;
         }
     };
 
-    public static LongOpForLong LONG_ADD = new LongOpForLong('+') {
+    @Scalar("plus")
+    public static final LongOpForLong LONG_ADD = new LongOpForLong('+') {
         @Override
         public long evaluate(long one, long two) {
             return one + two;
         }
     };
 
-    public static LongOpForLong LONG_DIVIDE = new LongOpForLong('/') {
+    @Scalar("divide")
+    public static final LongOpForLong LONG_DIVIDE = new LongOpForLong('/') {
         @Override
         public long evaluate(long one, long two) {
             if (two == 0)
