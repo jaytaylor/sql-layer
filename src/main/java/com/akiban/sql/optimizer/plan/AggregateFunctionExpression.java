@@ -108,7 +108,8 @@ public class AggregateFunctionExpression extends BaseExpression
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        operand = (ExpressionNode)operand.duplicate(map);
+        if (operand != null)
+            operand = (ExpressionNode)operand.duplicate(map);
     }
 
 }

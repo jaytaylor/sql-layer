@@ -831,6 +831,12 @@ public class ASTStatementLoader extends BaseRule
         /** Translate expression to intermediate form. */
         protected ExpressionNode toExpression(ValueNode valueNode)
                 throws StandardException {
+            return toExpression(valueNode, null);
+        }
+
+        protected ExpressionNode toExpression(ValueNode valueNode,
+                                              List<ExpressionNode> projects)
+                throws StandardException {
             if (valueNode == null) {
                 return new ConstantExpression(null, AkType.NULL);
             }
@@ -840,6 +846,14 @@ public class ASTStatementLoader extends BaseRule
                 if (cb == null)
                     throw new UnsupportedSQLException("Unsupported column", valueNode);
                 Joinable joinNode = joinNodes.get(cb.getFromTable());
+                if ((joinNode == null) &&
+                    (cb.getFromTable() == null) &&
+                    (projects != null) &&
+                    (cb.getResultColumn() != null)) {
+                    // Alias: clone result column expression.
+                    ExpressionNode project = projects.get(cb.getResultColumn().getColumnPosition()-1);
+                    return (ExpressionNode)project.duplicate();
+                }
                 if (!(joinNode instanceof ColumnSource))
                     throw new UnsupportedSQLException("Unsupported column", valueNode);
                 Column column = cb.getColumn();
@@ -1025,12 +1039,17 @@ public class ASTStatementLoader extends BaseRule
             throw new UnsupportedSQLException(errmsg, value);
         }
 
-        /** Value for ORDER / GROUP BY. Can also be an ordinal index into the projects.*/
+        /** Value for ORDER / GROUP BY.
+         * Can be:<ul>
+         * <li>ordinary expression</li>
+         * <li>ordinal index into the projects</li>
+         * <li>alias of one of the projects</li></ul>
+         */
         protected ExpressionNode toOrderGroupBy(ValueNode valueNode,
                                                 List<ExpressionNode> projects,
                                                 String which)
                 throws StandardException {
-            ExpressionNode expression = toExpression(valueNode);
+            ExpressionNode expression = toExpression(valueNode, projects);
             if (expression.isConstant()) {
                 Object value = ((ConstantExpression)expression).getValue();
                 if (value instanceof Long) {

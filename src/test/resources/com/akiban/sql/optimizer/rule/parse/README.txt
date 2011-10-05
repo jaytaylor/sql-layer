@@ -22,6 +22,12 @@ distinct-1: DISTINCT qualification
 
 exists-1: EXISTS condition
 
+group-by-1: GROUP BY expression
+
+group-by-2: GROUP BY ordinal
+
+group-by-3: GROUP BY (and ORDER BY) alias
+
 having-1: HAVING condition
 
 in-1: IN with literals 
