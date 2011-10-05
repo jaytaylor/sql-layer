@@ -850,9 +850,8 @@ public class ASTStatementLoader extends BaseRule
                     (cb.getFromTable() == null) &&
                     (projects != null) &&
                     (cb.getResultColumn() != null)) {
-                    // Alias: clone result column expression.
-                    ExpressionNode project = projects.get(cb.getResultColumn().getColumnPosition()-1);
-                    return (ExpressionNode)project.duplicate();
+                    // Alias: use result column expression.
+                    return projects.get(cb.getResultColumn().getColumnPosition()-1);
                 }
                 if (!(joinNode instanceof ColumnSource))
                     throw new UnsupportedSQLException("Unsupported column", valueNode);
@@ -1056,7 +1055,7 @@ public class ASTStatementLoader extends BaseRule
                     int i = ((Long)value).intValue();
                     if ((i <= 0) || (i > projects.size()))
                         throw new OrderGroupByIntegerOutOfRange(which, i, projects.size());
-                    expression = (ExpressionNode)projects.get(i-1).duplicate();
+                    expression = (ExpressionNode)projects.get(i-1);
                 }
                 else
                     throw new OrderGroupByNonIntegerConstant(which, expression.getSQLsource());
