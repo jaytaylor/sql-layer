@@ -381,6 +381,7 @@ public class API
         public String toString()
         {
             StringBuilder buffer = new StringBuilder();
+            buffer.append('(');
             for (int i = 0; i < expressions.size(); i++) {
                 if (i > 0) {
                     buffer.append(", ");
@@ -389,7 +390,32 @@ public class API
                 buffer.append(' ');
                 buffer.append(directions.get(i) ? "ASC" : "DESC");
             }
+            buffer.append(')');
             return buffer.toString();
+        }
+
+        public String directionsToString()
+        {
+            String directionsString;
+            boolean allAscending = true;
+            for (Boolean direction : directions) {
+                allAscending = allAscending && direction;
+            }
+            if (allAscending) {
+                directionsString = "";
+            } else {
+                StringBuilder buffer = new StringBuilder();
+                buffer.append('(');
+                for (int i = 0; i < expressions.size(); i++) {
+                    if (i > 0) {
+                        buffer.append(", ");
+                    }
+                    buffer.append(directions.get(i) ? "ASC" : "DESC");
+                }
+                buffer.append(')');
+                directionsString = buffer.toString();
+            }
+            return directionsString;
         }
 
         public int sortFields()

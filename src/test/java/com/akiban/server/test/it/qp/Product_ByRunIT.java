@@ -127,7 +127,7 @@ public class Product_ByRunIT extends OperatorITBase
         Operator flattenCO =
             flatten_HKeyOrdered(
                 branchLookup_Default(
-                    indexScan_Default(customerNameIndexRowType, false, null),
+                    indexScan_Default(customerNameIndexRowType, false),
                     coi,
                     customerNameIndexRowType,
                     customerRowType,
@@ -152,7 +152,7 @@ public class Product_ByRunIT extends OperatorITBase
             flatten_HKeyOrdered(
                 filter_Default(
                     branchLookup_Default(
-                        indexScan_Default(customerNameIndexRowType, false, null),
+                        indexScan_Default(customerNameIndexRowType, false),
                         coi,
                         customerNameIndexRowType,
                         customerRowType,
@@ -190,7 +190,7 @@ public class Product_ByRunIT extends OperatorITBase
             flatten_HKeyOrdered(
                 filter_Default(
                     branchLookup_Default(
-                        indexScan_Default(orderSalesmanIndexRowType, false, null),
+                        indexScan_Default(orderSalesmanIndexRowType, false),
                         coi,
                         orderSalesmanIndexRowType,
                         customerRowType,

@@ -122,7 +122,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
     {
         Operator plan =
             map_NestedLoops(
-                indexScan_Default(itemOidIndexRowType, false, null),
+                indexScan_Default(itemOidIndexRowType, false),
                 ancestorLookup_Nested(coi, itemOidIndexRowType, Collections.singleton(itemRowType), 0),
                 0);
         RowBase[] expected = new RowBase[]{

@@ -133,7 +133,7 @@ public class Product3WayIT extends OperatorITBase
             flatten_HKeyOrdered(
                 branchLookup_Default(
                     ancestorLookup_Default(
-                        indexScan_Default(aValueIndexRowType, false, null),
+                        indexScan_Default(aValueIndexRowType, false),
                         rabc,
                         aValueIndexRowType,
                         Collections.singleton(rRowType),
@@ -220,7 +220,7 @@ public class Product3WayIT extends OperatorITBase
         Operator RA =
             flatten_HKeyOrdered(
                 ancestorLookup_Default(
-                    indexScan_Default(aValueIndexRowType, false, null),
+                    indexScan_Default(aValueIndexRowType, false),
                     rabc,
                     aValueIndexRowType,
                     Arrays.asList(aRowType, rRowType),
@@ -282,7 +282,7 @@ public class Product3WayIT extends OperatorITBase
         Operator RA =
             flatten_HKeyOrdered(
                 ancestorLookup_Default(
-                    indexScan_Default(aValueIndexRowType, false, null),
+                    indexScan_Default(aValueIndexRowType, false),
                     rabc,
                     aValueIndexRowType,
                     Arrays.asList(aRowType, rRowType),
@@ -342,7 +342,7 @@ public class Product3WayIT extends OperatorITBase
     {
         Operator rScan =
             ancestorLookup_Default(
-                indexScan_Default(rValueIndexRowType, false, null),
+                indexScan_Default(rValueIndexRowType, false),
                 rabc,
                 rValueIndexRowType,
                 Arrays.asList(rRowType),
@@ -414,7 +414,7 @@ public class Product3WayIT extends OperatorITBase
         Operator flattenRA =
             flatten_HKeyOrdered(
                 ancestorLookup_Default(
-                    indexScan_Default(aValueIndexRowType, false, null),
+                    indexScan_Default(aValueIndexRowType, false),
                     rabc,
                     aValueIndexRowType,
                     Arrays.asList(aRowType, rRowType),

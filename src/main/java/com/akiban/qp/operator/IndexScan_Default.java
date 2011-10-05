@@ -33,7 +33,8 @@ class IndexScan_Default extends Operator
     @Override
     public String toString()
     {
-        return String.format("%s(%s %s %s)", getClass().getSimpleName(), index, indexKeyRange, ordering);
+        return String.format("%s(%s %s%s)", getClass().getSimpleName(),
+                             index, indexKeyRange, ordering.directionsToString());
     }
 
     // Operator interface

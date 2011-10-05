@@ -43,7 +43,7 @@ class MixedOrderScanStateRestOfKey extends MixedOrderScanState
             // Restore exchange key to where it was before exploring this subtree. But also attach one
             // more key segment since SortCursorMixedOrder is going to cut one.
             subtreeRootKey.copyTo(cursor.exchange.getKey());
-            cursor.exchange.append(Key.AFTER);
+            cursor.exchange.getKey().append(Key.AFTER);
         }
         return more;
     }
