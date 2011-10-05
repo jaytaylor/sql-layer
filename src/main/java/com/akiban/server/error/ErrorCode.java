@@ -18,237 +18,370 @@ package com.akiban.server.error;
 import java.util.ResourceBundle;
 
 /**
- * The error codes that are part of the AkSserver's public API.
- *
- * <p>Each enum below has a unique, short-typed value. That value consists of two components, a group and a subcode.
- * The group is a number 0 &lt;= G &lt;= 31, and the subcode is a number 0 &lt;= N &lt;= 999. They are combined to create
- * a number <tt>GGNNN</tt>, where the <tt>NNN</tt> is 0-padded.</p>
- *
- * <p>Groups are organized as such:
- * <ul>
- *  <li><b>0</b>: Generic errors, when we don't know what went wrong</li>
- *  <li><b>1-19</b>: User errors; the user tried to do something that's not allowed</li>
- *  <li><b>21-29</b>: Client errors; the client broke the API</li>
- *  <li><b>30</b>: Server errors, like if a transaction couldn't be committed</li>
- *  <li><b>31</b>: Bad server errors, like data corruption.</li>
- * </ul>
- * </p>
- *
- * <p>Within a group, "real" errors &mdash; those we expect to be there forever &mdash; count up from 0, and
- * "temporarily unsupported" errors &mdash; when we explicitly catch something that we don't support but plan to
- * eventually &mdash; count up from 900.</p>
- *
- * <p>These conventions let users quickly identify the nature of the error by looking at the group and the hundreds
- * digit of the subcode.</p>
+ * The error codes that are part of the Akiban Server's public API. 
+ * 
+ * From the SQL Standard, the SQLSTATE (ErrorCodes) are a 2 character class value
+ * followed by a 3 character sub-class value. These characters are either digits or
+ * upper-case latin characters. (0-9 or A-Z). 
+ * 
+ * Class values that begin with 0 through 4 or A through H are defined by the standard.
+ * Class values that begin with 5 through 9 or I through Z are implementation defined
+ * errors, i.e. specific to the Akiban implementation.
+ *  
+ * The subclass '000' means no subclass to the given SQLSTATE class
+ * 
+ * Sub-class values that begin with 0-4 or A-H are defined by either the SQL standard, or
+ * another standard. Sub-class values beginning with 5-9 or I-Z are implementation defined 
+ * subclasses. 
+ * 
+ * The SQLCODE encompasses more than errors, though most of the SQLCODES do indicate errors or
+ * exceptions. The ErrorCode implements the errors and exceptions, but not any of the non-error
+ * SQLCODES.  
+ * 
+ * The specific division between a class and a subclass is not made clear by the standard. 
+ * 
  */
 public enum ErrorCode {
-    // Generic codes
-    UNKNOWN                 (0, 0, Importance.ERROR, null),
-    UNEXPECTED_EXCEPTION    (0, 1, Importance.ERROR, null),
-    UNSUPPORTED_OPERATION   (0, 900, Importance.ERROR, null),
-
-    // AkSserver and Head are out of sync
-    SERVER_SHUTDOWN         (1, 0, Importance.DEBUG, null),
-    STALE_AIS               (1, 1, Importance.TRACE, OldAISException.class),
-    METAMODEL_MISMATCH      (1, 2, Importance.ERROR, MetaModelVersionMismatchException.class),
-
-    // DDL errors
-    PARSE_EXCEPTION         (2, 0, Importance.DEBUG, ParseException.class),
-    UNSUPPORTED_CHARSET     (2, 1, Importance.DEBUG, UnsupportedCharsetException.class), 
-    PROTECTED_TABLE         (2, 2, Importance.DEBUG, ProtectedTableDDLException.class), 
-    JOIN_TO_PROTECTED_TABLE (2, 3, Importance.DEBUG, JoinToProtectedTableException.class), 
-    JOIN_TO_UNKNOWN_TABLE   (2, 4, Importance.DEBUG, JoinToUnknownTableException.class),  
-    JOIN_TO_WRONG_COLUMNS   (2, 5, Importance.DEBUG, JoinToWrongColumnsException.class), 
-    DUPLICATE_TABLE         (2, 6, Importance.DEBUG, DuplicateTableNameException.class), 
-    UNSUPPORTED_DROP        (2, 7, Importance.DEBUG, UnsupportedDropException.class),
-    UNSUPPORTED_DATA_TYPE   (2, 8, Importance.DEBUG, UnsupportedDataTypeException.class),
-    JOIN_TO_MULTIPLE_PARENTS(2, 9, Importance.DEBUG, JoinToMultipleParentsException.class), 
-    UNSUPPORTED_INDEX_DATA_TYPE(2, 10, Importance.DEBUG, UnsupportedIndexDataTypeException.class),
-    UNSUPPORTED_INDEX_SIZE  (2, 11, Importance.DEBUG, UnsupportedIndexSizeException.class),
-    DUPLICATE_COLUMN        (2, 12, Importance.DEBUG, DuplicateColumnNameException.class),
-    DUPLICATE_GROUP         (2, 13, Importance.DEBUG, DuplicateGroupNameException.class), 
-    REFERENCED_TABLE        (2, 14, Importance.DEBUG, ReferencedTableException.class),  
-    DROP_INDEX_NOT_ALLOWED  (2, 15, Importance.DEBUG, DropIndexNotAllowedException.class), //NOT USED
-    FK_DDL_VIOLATION        (2, 16, Importance.DEBUG, ForeignConstraintDDLException.class),
-    PROTECTED_INDEX         (2, 17, Importance.DEBUG, ProtectedIndexException.class),
-    BRANCHING_GROUP_INDEX   (2, 18, Importance.DEBUG, BranchingGroupIndexException.class),
-    WRONG_NAME_FORMAT       (2, 19, Importance.DEBUG, WrongNameFormatException.class),
-    DUPLICATE_VIEW          (2, 20, Importance.DEBUG, DuplicateViewException.class),
-    UNDEFINED_VIEW          (2, 21, Importance.DEBUG, UndefinedViewException.class),
-    SUBQUERY_ONE_COLUMN     (2, 22, Importance.DEBUG, SubqueryOneColumnException.class),
-    DUPLICATE_SCHEMA        (2, 23, Importance.DEBUG, DuplicateSchemaException.class),
-    DROP_SCHEMA_NOT_ALLOWED (2, 24, Importance.DEBUG, DropSchemaNotAllowedException.class),
-    WRONG_TABLE_FOR_INDEX   (2, 25, Importance.DEBUG, WrongTableForIndexException.class),
-    MISSING_DDL_PARAMETERS  (2, 26, Importance.DEBUG, MissingDDLParametersException.class),
-    INDEX_COL_NOT_IN_GROUP  (2, 27, Importance.DEBUG, IndexColNotInGroupException.class),
-    INDEX_TABLE_NOT_IN_GROUP(2, 28, Importance.DEBUG, IndexTableNotInGroupException.class),
-    INDISTINGUISHABLE_INDEX (2, 29, Importance.DEBUG, IndistinguishableIndexException.class),
     
-    // DML errors
-    NO_REFERENCED_ROW       (3, 0, Importance.DEBUG, null),
-    DUPLICATE_KEY           (3, 1, Importance.DEBUG, DuplicateKeyException.class),
-    NO_SUCH_TABLE           (3, 2, Importance.DEBUG, NoSuchTableException.class), 
-
-    NO_INDEX                (3, 4, Importance.DEBUG, NoSuchIndexException.class),
-    NO_SUCH_RECORD          (3, 5, Importance.DEBUG, null),
-    FK_CONSTRAINT_VIOLATION (3, 6, Importance.DEBUG, ForeignKeyConstraintDMLException.class),
-    UNSUPPORTED_MODIFICATION(3, 7, Importance.DEBUG, null),
-
-    TABLEDEF_MISMATCH       (3, 9, Importance.DEBUG, TableDefinitionMismatchException.class), 
-    NO_SUCH_ROW             (3, 10, Importance.DEBUG,  NoSuchRowException.class),
-    CONCURRENT_MODIFICATION (3, 11, Importance.DEBUG, ConcurrentScanAndUpdateException.class), 
-    TABLE_DEFINITION_CHANGED(3, 12, Importance.DEBUG, TableDefinitionChangedException.class),
-    NO_SUCH_GROUP           (3, 13, Importance.DEBUG, NoSuchGroupException.class), 
-    NO_SUCH_TABLEDEF        (3, 14, Importance.DEBUG, RowDefNotFoundException.class), 
-    NO_ROWS_UPDATED         (3, 15, Importance.DEBUG, NoRowsUpdatedException.class),    
-    TOO_MANY_ROWS_UPDATED   (3, 16, Importance.DEBUG, TooManyRowsUpdatedException.class),  
-    NO_SUCH_TABLEID         (3, 17, Importance.DEBUG, NoSuchTableIdException.class),
-    SCAN_RETRY_ABANDONDED   (3, 18, Importance.ERROR, ScanRetryAbandonedException.class),
-    NO_TRANSACTION          (3, 19, Importance.DEBUG, NoTransactionInProgressException.class),
-    TRANSACTION_IN_PROGRESS (3, 20, Importance.DEBUG, TransactionInProgressException.class),
-    SELECT_EXISTS_ERROR     (3, 21, Importance.DEBUG, SelectExistsErrorException.class),
-    AMBIGUOUS_COLUMN_NAME   (3, 22, Importance.DEBUG, AmbiguousColumNameException.class),
-    UNABLE_TO_EXPLAIN       (3, 23, Importance.DEBUG, UnableToExplainException.class),
-    SUBQUERY_RESULT_FAIL    (3, 24, Importance.DEBUG, SubqueryResultsSetupException.class),
-    JOIN_NODE_ERROR         (3, 25, Importance.DEBUG, JoinNodeAdditionException.class),
-    MULTIPLE_JOINS          (3, 26, Importance.DEBUG, MultipleJoinsToTableException.class),
-    VIEW_BAD_SUBQUERY       (3, 27, Importance.DEBUG, ViewHasBadSubqueryException.class),
-    TABLE_BAD_SUBQUERY      (3, 28, Importance.DEBUG, TableIsBadSubqueryException.class),
-    WRONG_FUNCTION_ARITY    (3, 29, Importance.DEBUG, WrongExpressionArityException.class),
-    NO_SUCH_FUNCTION        (3, 31, Importance.DEBUG, NoSuchFunctionException.class),
-    ORDER_BY_NON_INTEGER_CONSTANT(3, 32, Importance.DEBUG, OrderByNonIntegerConstant.class),
-    ORDER_BY_INTEGER_OUT_OF_RANGE(3, 34, Importance.DEBUG, OrderByIntegerOutOfRange.class),
-    NEGATIVE_LIMIT          (3, 35, Importance.DEBUG, NegativeLimitException.class),
-    DIVIDE_BY_ZERO          (3, 36, Importance.DEBUG, DivisionByZeroException.class),
+    // Class 00 - successful completion
+    SUCCESSFUL_COMPLETION ("00", "000", Importance.TRACE, null),
     
-    ROW_OUTPUT              (4, 11, Importance.DEBUG, RowOutputException.class), 
-    AIS_MYSQL_SQL_EXCEPTION (4, 12, Importance.DEBUG, AisSQLErrorException.class),
-    AIS_CSV_ERROR           (4, 13, Importance.DEBUG, AisCSVErrorException.class),
-
-    INSERT_NULL_CHECK       (5, 01, Importance.DEBUG, InsertNullCheckFailedException.class),
+    // Class 01 - warning
+    // No Warnings defined
     
-    // Messaging errors
-    MALFORMED_REQUEST       (21, 0, Importance.ERROR, null), 
-    QUERY_CANCELED          (21, 1, Importance.ERROR, null),
-    BAD_STATISTICS_TYPE     (21, 4, Importance.ERROR, BadStatisticsTypeException.class),
+    // Class 02 - No data found
+    NO_DATA_FOUND           ("02", "000", Importance.DEBUG, null),
+    
+    // Class 07 - dynamic SQL error
+        // SubClass 001 - using clause does not match dynamic parameter specifications
+        // SubClass 002 - using clause does not match target specifications
+        // SubClass 003 - cursor specification cannot be executed
+        // SubClass 004 - using clause required for dynamic parameters
+        // SubClass 005 - prepared statement not a cursor specification
+        // SubClass 006 - restricted data type attribute violation
+        // SubClass 007 - using clause required for result fields
+        // SubClass 008 - invalid descriptor count
+        // SubClass 009 - invalid descriptor index
+        // SubClass 00B - data type transform function violation
+        // SubClass 00C - undefined DATA value    
+        // SubClass 00D - invalid DATA target
+        // SubClass 00E - invalid LEVEL value
+        // SubClass 00F - invalid DATETIME_INTERVAL_CODE
+    // Class 08 - connection exception
+        // SubClass 001 - SQL-client unable to establish SQL-connection
+        // SubClass 002 - connection name in use
+        // SubClass 003 - connection does not exist
+        // SubClass 004 - SQL-server rejected establishment of SQL-connection
+        // SubClass 006 - connection failure
+        // SubClass 007 - transaction resolution unknown    
+    // Class 09 - triggered action exception
+    // Class 0A - feature not supported
+    UNSUPPORTED_SQL         ("0A", "500", Importance.ERROR, UnsupportedSQLException.class),
+    UNSUPPORTED_PARAMETERS  ("0A", "501", Importance.ERROR, UnsupportedParametersException.class),
+    UNSUPPORTED_EXPLAIN     ("0A", "502", Importance.ERROR, UnsupportedExplainException.class),
+    UNSUPPORTED_CREATE_SELECT ("0A", "503", Importance.ERROR, UnsupportedCreateSelectException.class),
+    UNSUPPORTED_FK_INDEX    ("0A", "504", Importance.ERROR, UnsupportedFKIndexException.class),
+    UNSUPPORTED_CHECK       ("0A", "505", Importance.ERROR, UnsupportedCheckConstraintException.class),
+    UNSUPPORTED_GROUP_UNIQUE("0A", "506", Importance.DEBUG, UnsupportedUniqueGroupIndexException.class),
+    UNSUPPORTED_INDEX_PREFIX("0A", "507", Importance.ERROR, UnsupportedIndexPrefixException.class),
+    SELECT_EXISTS_ERROR     ("0A", "508", Importance.DEBUG, SelectExistsErrorException.class),    
+    
+    // Class 0D - invalid target type specification
+    // Class 0E - invalid schema name list specification
+    // Class 0F - locator exception
+    // Class 0L - invalid grantor 
+    // Class 0M - invalid SQL-invoked procedure reference
+    // Class 0P - invalid role specification
+    // Class 0S - invalid transform group name specification
+    // Class 0T - target table disagrees with cursor definition
+    // Class 0U - attempt to assign to non-updatable column
+    // Class 0V - attempt to assign to ordering column
+    // Class 0W - prohibited statement encountered during trigger execution
+    // Class 0Z - diagnostics exceptions
+    
+    // Class 21 - cardinality violation
+    // Class 22 - data exception
+        // SubClass 001 - string data, right truncation
+        // SubClass 002 - null value, no indicator parameter 
+        // SubClass 003 - numeric value out of range
+        // SubClass 004 - null value not allowed
+        // SubClass 005 - error in assignment
+        // SubClass 006 - invalid interval format
+        // SubClass 007 - invalid datetime format    
+        // SubClass 008 - datetime field overflow 
+        // SubClass 009 - invalid time zone displacement value
 
+        // SubClass 00B - escape character conflict
+        // SubClass 00C - invalid use of escape character
+        // SubClass 00D - invalid escape octet
+        // SubClass 00E - null value in array target
+        // SubClass 00F - zero-length character string
+    
+        // SubClass 00G - most specific type mismatch
+        // SubClass 00H - sequence generator limit exceeded    
+        // SubClass 00P - interval value out of range
+        // SubClass 00Q - multiset value overflow
+    
+        // SubClass 010 - invalid indicator parameter value    
+        // SubClass 011 - substring error
+        // SubClass 012 - division by zero
+    DIVIDE_BY_ZERO          ("22", "021", Importance.DEBUG, DivisionByZeroException.class),
+        // SubClass 013 - invalid preceding or following size in window function
+    
+        // SubClass 014 - invalid argument for NTILE function
+        // SubClass 015 - interval field overflow 
+        // SubClass 016 - invalid argument for NTH_VALUE function
+        // SubClass 018 - invalid character value for cast
+        // SubClass 019 - invalid escape character
+        // SubClass 01B - invalid regular expression
+        // SubClass 01C - null row not permitted in table
+    
+        // SubClass 01E - invalid argument for natural logarithm
+        // SubClass 01F - invalid argument for power function
+        // SubClass 01G - invalid argument for width bucket function
+        // SubClass 01H - invalid row version
+
+        // SubClass 01U - attempt to replace a zero-length string
+        // SubClass 01W - invalid row count in fetch first clause
+        // SubClass 01X - invalid row count in result offset clause
+    
+        // SubClass 021 - character not in repertoire
+        // SubClass 022 - indicator overflow 
+        // SubClass 023 - invalid parameter value
+        // SubClass 024 - unterminated C string
+        // SubClass 025 - invalid escape sequence
+        // SubClass 026 - string data, length mismatch
+        // SubClass 027 - trim error
+    
+        // SubClass 029 - noncharacter in UCS string
+        // SubClass 02D - null value substituted for mutator subject parameter
+    
+        // SubClass 02E - array element error 
+        // SubClass 02F - array data, right truncation    
+        // SubClass 02G - invalid repeat argument in a sample clause
+        // SubClass 02H - invalid sample size 02H
+    TABLE_DEFINITION_CHANGED("22", "501", Importance.DEBUG, TableDefinitionChangedException.class),
+    NEGATIVE_LIMIT          ("22", "502", Importance.DEBUG, NegativeLimitException.class),
+
+    // Class 23 - integrity constraint violation
+    DUPLICATE_KEY           ("23", "501", Importance.DEBUG, DuplicateKeyException.class),
+    FK_CONSTRAINT_VIOLATION ("23", "502", Importance.DEBUG, ForeignKeyConstraintDMLException.class),
+    // Class 24 - invalid cursor state
+    CURSOR_IS_FINISHED      ("24", "501", Importance.ERROR, CursorIsFinishedException.class), 
+    CURSOR_IS_UNKNOWN       ("24", "502", Importance.ERROR, CursorIsUnknownException.class),
+    NO_ACTIVE_CURSOR        ("24", "503", Importance.ERROR, NoActiveCursorException.class),
+    CURSOR_CLOSE_BAD        ("24", "504", Importance.ERROR, CursorCloseBadException.class),
+    
+
+    // Class 25 - invalid transaction state
+        // SubClass 001 - active SQL-transaction
+        // SubClass 002 - branch transaction already active
+    TRANSACTION_IN_PROGRESS ("25", "002", Importance.DEBUG, TransactionInProgressException.class),
+        // SubClass 003 - inappropriate access mode for branch transaction
+        // SubClass 004 - inappropriate isolation level for branch transaction
+        // SubClass 005 - no active SQL-transaction for branch transaction
+    NO_TRANSACTION          ("25", "005", Importance.DEBUG, NoTransactionInProgressException.class),
+        // SubClass 006 - read-only SQL-transaction
+        // SubClass 007 - schema and data statement mixing not supported
+        // SubClass 008 - held cursor requires same isolation level
+    // Class 26 - invalid SQL statement name
+    // Class 27 - triggered data change violation 
+    // Class 28 - invalid authorization specification
+    // Class 2C - invalid character set name 
+    UNSUPPORTED_CHARSET     ("2C", "000", Importance.DEBUG, UnsupportedCharsetException.class),
+    // Class 2D - invalid transaction termination
+    // Class 2E - invalid connection name
+    // Class 2F - SQL routine exception
+    // Class 2H - invalid collation name
+    
+    
+    // Class 30 - invalid SQL statement identifier
+    // Class 33 - invalid SQL descriptor name
+    // Class 34 - invalid cursor name
+    // Class 35 - invalid condition number
+    // Class 36 - cursor sensitivity exception
+    // Class 38 - external routine exception
+    // Class 39 - external routine invocation
+    // Class 3B - savepoint exception
+    // Class 3C - ambiguous cursor name
+    // Class 3D - invalid catalog name
+    // Class 3F - invalid schema name
+    NO_SUCH_SCHEMA          ("3F", "000", Importance.DEBUG, NoSuchSchemaException.class),
+    
+    // Class 40 - transaction rollback
+
+    // Class 42 - syntax error or access rule violation
+    // These exceptions are re-thrown errors from the parser and from the
+    // AISBinder, ASTStatementLoader, BasicDDLFunctions, or BasicDMLFunctions
+    PARSE_EXCEPTION         ("42", "000", Importance.DEBUG, ParseException.class),
+    NO_SUCH_TABLE           ("42", "501", Importance.DEBUG, NoSuchTableException.class), 
+    NO_INDEX                ("42", "502", Importance.DEBUG, NoSuchIndexException.class),
+    NO_SUCH_GROUP           ("42", "503", Importance.DEBUG, NoSuchGroupException.class), 
+    NO_SUCH_TABLEDEF        ("42", "504", Importance.DEBUG, RowDefNotFoundException.class), 
+    NO_SUCH_TABLEID         ("42", "505", Importance.DEBUG, NoSuchTableIdException.class),
+    AMBIGUOUS_COLUMN_NAME   ("42", "506", Importance.DEBUG, AmbiguousColumNameException.class),
+    SUBQUERY_RESULT_FAIL    ("42", "507", Importance.DEBUG, SubqueryResultsSetupException.class),
+    JOIN_NODE_ERROR         ("42", "508", Importance.DEBUG, JoinNodeAdditionException.class),
+    MULTIPLE_JOINS          ("42", "509", Importance.DEBUG, MultipleJoinsToTableException.class),
+    VIEW_BAD_SUBQUERY       ("42", "50A", Importance.DEBUG, ViewHasBadSubqueryException.class),
+    TABLE_BAD_SUBQUERY      ("42", "50B", Importance.DEBUG, TableIsBadSubqueryException.class),
+    WRONG_FUNCTION_ARITY    ("42", "50C", Importance.DEBUG, WrongExpressionArityException.class),
+    NO_SUCH_FUNCTION        ("42", "50D", Importance.DEBUG, NoSuchFunctionException.class),
+    ORDER_BY_NON_INTEGER_CONSTANT("42", "50E", Importance.DEBUG, OrderByNonIntegerConstant.class),
+    ORDER_BY_INTEGER_OUT_OF_RANGE("42", "50F", Importance.DEBUG, OrderByIntegerOutOfRange.class),
+ 
+
+    // Class 44 - with check option violation
+    
+
+    // Class 50 - DDL definition failure
+    PROTECTED_TABLE         ("50", "002", Importance.DEBUG, ProtectedTableDDLException.class), 
+    JOIN_TO_PROTECTED_TABLE ("50", "003", Importance.DEBUG, JoinToProtectedTableException.class), 
+    JOIN_TO_UNKNOWN_TABLE   ("50", "004", Importance.DEBUG, JoinToUnknownTableException.class),  
+    JOIN_TO_WRONG_COLUMNS   ("50", "005", Importance.DEBUG, JoinToWrongColumnsException.class), 
+    DUPLICATE_TABLE         ("50", "006", Importance.DEBUG, DuplicateTableNameException.class), 
+    UNSUPPORTED_DROP        ("50", "007", Importance.DEBUG, UnsupportedDropException.class),
+    UNSUPPORTED_DATA_TYPE   ("50", "008", Importance.DEBUG, UnsupportedDataTypeException.class),
+    JOIN_TO_MULTIPLE_PARENTS("50", "009", Importance.DEBUG, JoinToMultipleParentsException.class), 
+    UNSUPPORTED_INDEX_DATA_TYPE("50", "00A", Importance.DEBUG, UnsupportedIndexDataTypeException.class),
+    UNSUPPORTED_INDEX_SIZE  ("50", "00B", Importance.DEBUG, UnsupportedIndexSizeException.class),
+    DUPLICATE_COLUMN        ("50", "00C", Importance.DEBUG, DuplicateColumnNameException.class),
+    DUPLICATE_GROUP         ("50", "00D", Importance.DEBUG, DuplicateGroupNameException.class), 
+    REFERENCED_TABLE        ("50", "00E", Importance.DEBUG, ReferencedTableException.class),  
+    DROP_INDEX_NOT_ALLOWED  ("50", "00F", Importance.DEBUG, DropIndexNotAllowedException.class),
+    FK_DDL_VIOLATION        ("50", "00G", Importance.DEBUG, ForeignConstraintDDLException.class),
+    PROTECTED_INDEX         ("50", "00H", Importance.DEBUG, ProtectedIndexException.class),
+    BRANCHING_GROUP_INDEX   ("50", "00I", Importance.DEBUG, BranchingGroupIndexException.class),
+    WRONG_NAME_FORMAT       ("50", "00J", Importance.DEBUG, WrongNameFormatException.class),
+    DUPLICATE_VIEW          ("50", "00K", Importance.DEBUG, DuplicateViewException.class),
+    UNDEFINED_VIEW          ("50", "00L", Importance.DEBUG, UndefinedViewException.class),
+    SUBQUERY_ONE_COLUMN     ("50", "00M", Importance.DEBUG, SubqueryOneColumnException.class),
+    DUPLICATE_SCHEMA        ("50", "00N", Importance.DEBUG, DuplicateSchemaException.class),
+    DROP_SCHEMA_NOT_ALLOWED ("50", "00O", Importance.DEBUG, DropSchemaNotAllowedException.class),
+    WRONG_TABLE_FOR_INDEX   ("50", "00P", Importance.DEBUG, WrongTableForIndexException.class),
+    MISSING_DDL_PARAMETERS  ("50", "00Q", Importance.DEBUG, MissingDDLParametersException.class),
+    INDEX_COL_NOT_IN_GROUP  ("50", "00R", Importance.DEBUG, IndexColNotInGroupException.class),
+    INDEX_TABLE_NOT_IN_GROUP("50", "00S", Importance.DEBUG, IndexTableNotInGroupException.class),
+    INDISTINGUISHABLE_INDEX ("50", "00T", Importance.DEBUG, IndistinguishableIndexException.class),
     // AIS Validation errors, Attempts to modify and build an AIS failed
     // due to missing or invalid information.
-    VALIDATION_FAILURE      (22, 0, Importance.DEBUG, null),
-    INTERNAL_REFERENCES_BROKEN(22, 1, Importance.DEBUG, null),
-    GROUP_MULTIPLE_ROOTS (22,  2, Importance.DEBUG, GroupHasMultipleRootsException.class),
-    JOIN_TYPE_MISMATCH   (22,  3, Importance.DEBUG, JoinColumnTypesMismatchException.class),
-    PK_NULL_COLUMN       (22,  4, Importance.DEBUG, PrimaryKeyNullColumnException.class),
-    DUPLICATE_INDEXES    (22,  5, Importance.DEBUG, DuplicateIndexException.class),
-    MISSING_PRIMARY_KEY  (22,  6, Importance.DEBUG, NoPrimaryKeyException.class),
-    DUPLICATE_TABLEID    (22,  7, Importance.DEBUG, DuplicateTableIdException.class),
-    JOIN_COLUMN_MISMATCH (22,  8, Importance.DEBUG, JoinColumnMismatchException.class),
-    INDEX_LACKS_COLUMNS  (22,  9, Importance.DEBUG, IndexLacksColumnsException.class),
-    NO_SUCH_COLUMN       (22, 10, Importance.DEBUG, NoSuchColumnException.class),
-    DUPLICATE_INDEX_TREENAME (22, 11, Importance.DEBUG, DuplicateIndexTreeNamesException.class),
-    DUPLICATE_TABLE_TREENAME (22, 12, Importance.DEBUG, DuplicateTableTreeNamesException.class),
-    TABLE_NOT_IN_GROUP   (22, 13, Importance.DEBUG, TableNotInGroupException.class),
-    NAME_IS_NULL         (22, 14, Importance.DEBUG, NameIsNullException.class),
-    DUPLICATE_INDEX_COLUMN (22, 15, Importance.DEBUG, DuplicateIndexColumnException.class),
-    COLUMN_POS_ORDERED   (22, 16, Importance.DEBUG, ColumnPositionNotOrderedException.class),
-    TABLE_COL_IN_GROUP   (22, 17, Importance.DEBUG, TableColumnNotInGroupException.class),
-    GROUP_MISSING_COL    (22, 18, Importance.DEBUG, GroupMissingTableColumnException.class),
-    GROUP_MISSING_INDEX  (22, 19, Importance.DEBUG, GroupMissingIndexException.class),
-    TREENAME_MISMATCH    (22, 20, Importance.DEBUG, TreeNameMismatchException.class),
-    NULL_REFERENCE       (22, 21, Importance.DEBUG, AISNullReferenceException.class),
-    BAD_AIS_REFERENCE    (22, 22, Importance.DEBUG, BadAISReferenceException.class),
-    BAD_INTERNAL_SETTING (22, 23, Importance.DEBUG, BadAISInternalSettingException.class),
-    TYPES_ARE_STATIC     (22, 24, Importance.DEBUG, TypesAreStaticException.class),
-    
-    // Bad Type errors
-    UNKNOWN_TYPE_SIZE    (22, 200, Importance.DEBUG, UnknownTypeSizeException.class),
-    UNKNOWN_TYPE         (22, 201, Importance.DEBUG, UnknownDataTypeException.class),
-    INCONVERTIBLE_TYPES  (22, 202, Importance.DEBUG, InconvertibleTypesException.class),
-    
-    // Session state errors 
-    NO_SUCH_SCHEMA          (23,  1, Importance.DEBUG, NoSuchSchemaException.class),
-    // Unsupported Features Errors, Should be empty, but isn't
-    UNSUPPORTED_SQL         (28, 0, Importance.ERROR, UnsupportedSQLException.class),
-    UNSUPPORTED_PARAMETERS  (28, 1, Importance.ERROR, UnsupportedParametersException.class),
-    UNSUPPORTED_EXPLAIN     (28, 2, Importance.ERROR, UnsupportedExplainException.class),
-    UNSUPPORTED_CREATE_SELECT (28, 3, Importance.ERROR, UnsupportedCreateSelectException.class),
-    UNSUPPORTED_FK_INDEX    (28, 4, Importance.ERROR, UnsupportedFKIndexException.class),
-    UNSUPPORTED_CHECK       (28, 5, Importance.ERROR, UnsupportedCheckConstraintException.class),
-    UNSUPPORTED_GROUP_UNIQUE(28, 6, Importance.DEBUG, UnsupportedUniqueGroupIndexException.class),
-    UNSUPPORTED_INDEX_PREFIX(28, 7, Importance.ERROR, UnsupportedIndexPrefixException.class),
-    
-    // Configuration, Startup, & Shutdown errors
-    SERVICE_NOT_STARTED  (29, 1, Importance.ERROR, ServiceNotStartedException.class),
-    SERVICE_ALREADY_STARTED (29, 2, Importance.ERROR, ServiceStartupException.class),
-    SERVICE_CIRC_DEPEND  (29, 3, Importance.ERROR, CircularDependencyException.class),
-    BAD_ADMIN_DIRECTORY  (29, 4, Importance.ERROR, BadAdminDirectoryException.class),
-    ZOOKEEPER_INIT_FAIL  (29, 5, Importance.ERROR, ZooKeeperInitFailureException.class),
-    CONFIG_LOAD_FAILED   (29, 6, Importance.ERROR, ConfigurationPropertiesLoadException.class),
-    THREAD_START_INTR    (29, 7, Importance.ERROR, ThreadStartInterruptedException.class),
-    THREAD_STOP_INTR     (29, 8, Importance.DEBUG, ThreadStopInterruptedException.class),
-    NET_START_IO_ERROR   (29, 9, Importance.ERROR, NetworkStartIOException.class),
-    NET_STOP_IO_ERROR    (29, 10, Importance.ERROR, NetworkStopIOException.class),
-    TAP_BEAN_FAIL        (29, 11, Importance.ERROR, TapBeanFailureException.class),
-    SET_FILTER_FAIL      (29, 12, Importance.ERROR, DisplayFilterSetException.class),
-    SCHEMA_LOAD_IO_ERROR (29, 13, Importance.ERROR, SchemaLoadIOException.class),
-    QUERY_LOG_CLOSE_FAIL (29, 14, Importance.ERROR, QueryLogCloseException.class),
-    INVALID_PORT         (29, 15, Importance.ERROR, InvalidPortException.class), 
-    
-    // AkSserver errors
-    MULTIGENERATIONAL_TABLE(30, 900, Importance.ERROR, null),
+    GROUP_MULTIPLE_ROOTS    ("50", "010", Importance.DEBUG, GroupHasMultipleRootsException.class),
+    JOIN_TYPE_MISMATCH      ("50", "011", Importance.DEBUG, JoinColumnTypesMismatchException.class),
+    PK_NULL_COLUMN          ("50", "012", Importance.DEBUG, PrimaryKeyNullColumnException.class),
+    DUPLICATE_INDEXES       ("50", "013", Importance.DEBUG, DuplicateIndexException.class),
+    MISSING_PRIMARY_KEY     ("50", "014", Importance.DEBUG, NoPrimaryKeyException.class),
+    DUPLICATE_TABLEID       ("50", "015", Importance.DEBUG, DuplicateTableIdException.class),
+    JOIN_COLUMN_MISMATCH    ("50", "016", Importance.DEBUG, JoinColumnMismatchException.class),
+    INDEX_LACKS_COLUMNS     ("50", "017", Importance.DEBUG, IndexLacksColumnsException.class),
+    NO_SUCH_COLUMN          ("50", "018", Importance.DEBUG, NoSuchColumnException.class),
+    DUPLICATE_INDEX_TREENAME("50", "019", Importance.DEBUG, DuplicateIndexTreeNamesException.class),
+    DUPLICATE_TABLE_TREENAME("50", "01A", Importance.DEBUG, DuplicateTableTreeNamesException.class),
+    TABLE_NOT_IN_GROUP      ("50", "01B", Importance.DEBUG, TableNotInGroupException.class),
+    NAME_IS_NULL            ("50", "01C", Importance.DEBUG, NameIsNullException.class),
+    DUPLICATE_INDEX_COLUMN  ("50", "01D", Importance.DEBUG, DuplicateIndexColumnException.class),
+    COLUMN_POS_ORDERED      ("50", "01E", Importance.DEBUG, ColumnPositionNotOrderedException.class),
+    TABLE_COL_IN_GROUP      ("50", "01F", Importance.DEBUG, TableColumnNotInGroupException.class),
+    GROUP_MISSING_COL       ("50", "01G", Importance.DEBUG, GroupMissingTableColumnException.class),
+    GROUP_MISSING_INDEX     ("50", "01H", Importance.DEBUG, GroupMissingIndexException.class),
+    TREENAME_MISMATCH       ("50", "01I", Importance.DEBUG, TreeNameMismatchException.class),
+    NULL_REFERENCE          ("50", "01J", Importance.DEBUG, AISNullReferenceException.class),
+    BAD_AIS_REFERENCE       ("50", "01L", Importance.DEBUG, BadAISReferenceException.class),
+    BAD_INTERNAL_SETTING    ("50", "01M", Importance.DEBUG, BadAISInternalSettingException.class),
+    TYPES_ARE_STATIC        ("50", "01N", Importance.DEBUG, TypesAreStaticException.class),
 
-    // Bad AkSserver errors
-    INTERNAL_ERROR      (31, 0, Importance.ERROR, null),
-    INTERNAL_CORRUPTION (31, 1, Importance.ERROR, RowDataCorruptionException.class),
-    AIS_TOO_LARGE       (31, 2, Importance.ERROR, AISTooLargeException.class),
-    CURSOR_IS_FINISHED  (31, 3, Importance.ERROR, CursorIsFinishedException.class), 
-    CURSOR_IS_UNKNOWN   (31, 4, Importance.ERROR, CursorIsUnknownException.class),
-    NO_ACTIVE_CURSOR    (31, 5, Importance.ERROR, NoActiveCursorException.class),
-    CURSOR_CLOSE_BAD    (31, 6, Importance.ERROR, CursorCloseBadException.class),
-    PERSISTIT_ERROR     (31, 7, Importance.ERROR, PersistItErrorException.class),
-    INVALID_VOLUME      (31, 8, Importance.ERROR, InvalidVolumeException.class),
-    TABLE_NOT_BOUND     (31, 9, Importance.ERROR, TableNotBoundException.class),
+    // Class 51 - Internal problems created by user configuration
+    STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),
+    METAMODEL_MISMATCH      ("51", "002", Importance.ERROR, MetaModelVersionMismatchException.class),
+    // Messaging errors
+    MALFORMED_REQUEST       ("51", "010", Importance.ERROR, null), 
+    BAD_STATISTICS_TYPE     ("51", "011", Importance.ERROR, BadStatisticsTypeException.class),
+    
+    // Class 52 - Configuration & startup errors
+    SERVICE_NOT_STARTED     ("52", "001", Importance.ERROR, ServiceNotStartedException.class),
+    SERVICE_ALREADY_STARTED ("52", "002", Importance.ERROR, ServiceStartupException.class),
+    SERVICE_CIRC_DEPEND     ("52", "003", Importance.ERROR, CircularDependencyException.class),
+    BAD_ADMIN_DIRECTORY     ("52", "004", Importance.ERROR, BadAdminDirectoryException.class),
+    ZOOKEEPER_INIT_FAIL     ("52", "005", Importance.ERROR, ZooKeeperInitFailureException.class),
+    CONFIG_LOAD_FAILED      ("52", "006", Importance.ERROR, ConfigurationPropertiesLoadException.class),
+    THREAD_START_INTR       ("52", "007", Importance.ERROR, ThreadStartInterruptedException.class),
+    THREAD_STOP_INTR        ("52", "008", Importance.DEBUG, ThreadStopInterruptedException.class),
+    NET_START_IO_ERROR      ("52", "009", Importance.ERROR, NetworkStartIOException.class),
+    NET_STOP_IO_ERROR       ("52", "00A", Importance.ERROR, NetworkStopIOException.class),
+    TAP_BEAN_FAIL           ("52", "00B", Importance.ERROR, TapBeanFailureException.class),
+    SET_FILTER_FAIL         ("52", "00C", Importance.ERROR, DisplayFilterSetException.class),
+    SCHEMA_LOAD_IO_ERROR    ("52", "00D", Importance.ERROR, SchemaLoadIOException.class),
+    QUERY_LOG_CLOSE_FAIL    ("52", "00E", Importance.ERROR, QueryLogCloseException.class),
+    INVALID_PORT            ("52", "00F", Importance.ERROR, InvalidPortException.class), 
+    INVALID_VOLUME          ("52", "010", Importance.ERROR, InvalidVolumeException.class),
+
+    // Class 53 - Internal error 
+    INTERNAL_ERROR          ("53", "000", Importance.ERROR, null),
+    INTERNAL_CORRUPTION     ("53", "001", Importance.ERROR, RowDataCorruptionException.class),
+    AIS_TOO_LARGE           ("53", "002", Importance.ERROR, AISTooLargeException.class),
+    PERSISTIT_ERROR         ("53", "003", Importance.ERROR, PersistItErrorException.class),
+    TABLE_NOT_BOUND         ("53", "004", Importance.ERROR, TableNotBoundException.class),
+    ROW_OUTPUT              ("53", "005", Importance.DEBUG, RowOutputException.class),    
+    SCAN_RETRY_ABANDONDED   ("53", "006", Importance.ERROR, ScanRetryAbandonedException.class),
+    AIS_MYSQL_SQL_EXCEPTION ("53", "007", Importance.DEBUG, AisSQLErrorException.class),
+    AIS_CSV_ERROR           ("53", "008", Importance.DEBUG, AisCSVErrorException.class),
+    TABLEDEF_MISMATCH       ("53", "009", Importance.DEBUG, TableDefinitionMismatchException.class), 
+    
+    // Class 55 - Type conversion errors
+    UNKNOWN_TYPE            ("55", "001", Importance.DEBUG, UnknownDataTypeException.class),    
+    UNKNOWN_TYPE_SIZE       ("55", "002", Importance.DEBUG, UnknownTypeSizeException.class),
+    INCONVERTIBLE_TYPES     ("55", "003", Importance.DEBUG, InconvertibleTypesException.class),
+
+    // Class 56 - Explain query errors
+    UNABLE_TO_EXPLAIN       ("56", "000", Importance.DEBUG, UnableToExplainException.class),
+
+    // Class 57 - Insert, Update, Delete processing exceptions
+    NO_SUCH_ROW             ("57", "001", Importance.DEBUG,  NoSuchRowException.class),
+    CONCURRENT_MODIFICATION ("57", "002", Importance.DEBUG, ConcurrentScanAndUpdateException.class),
+    NO_ROWS_UPDATED         ("57", "003", Importance.DEBUG, NoRowsUpdatedException.class),    
+    TOO_MANY_ROWS_UPDATED   ("57", "004", Importance.DEBUG, TooManyRowsUpdatedException.class),  
+    INSERT_NULL_CHECK       ("57", "005", Importance.DEBUG, InsertNullCheckFailedException.class),
+
+    // Class 58 - Query canceled by user
+    QUERY_CANCELED          ("58", "000", Importance.ERROR, QueryCanceledException.class),    
+    // Class 70 - Unknown errors 
+    UNKNOWN                 ("70", "000", Importance.ERROR, null),
+    UNEXPECTED_EXCEPTION    ("70", "001", Importance.ERROR, null),
+    UNSUPPORTED_OPERATION   ("70", "002", Importance.ERROR, null),
+    UNSUPPORTED_MODIFICATION("70", "003", Importance.DEBUG, UnsupportedModificationException.class),
+    
+    // Generic codes - all unused. 
+    // AkSserver and Head are out of sync
+    //SERVER_SHUTDOWN         (1, 0, Importance.DEBUG, null),
+    // DML errors
+    // AkSserver errors
+    //MULTIGENERATIONAL_TABLE(30, 900, Importance.ERROR, null),
     ;
 
-    private final short value;
+    private final String code;
+    private final String subcode; 
+    
     private final Importance importance;
-    //private final String message; 
     private final Class<? extends InvalidOperationException> exceptionClass;
     private String formattedValue; 
     private static ResourceBundle resourceBundle = ResourceBundle.getBundle("com.akiban.server.error.error_code");
 
-    
-    static short computeShort(int groupValue, int subCode) {
-        if (groupValue < 0 || groupValue > 31) {
-            throw new RuntimeException("invalid group value: " + groupValue);
-        }
-        if (subCode < 0 || subCode > 999) {
-            throw new RuntimeException("invalid subcode value: " + subCode);
-        }
-        return (short) (groupValue * 1000 + subCode);
-    }
-    
-    private ErrorCode(int groupValue, int subCode, Importance importance, 
+    private ErrorCode(String code, String subCode, Importance importance, 
             Class<? extends InvalidOperationException> exception) {
-        this.value = computeShort(groupValue, subCode);
+        this.code = code;
+        this.subcode = subCode;
         this.importance = importance;
-        //this.message = message;
         this.exceptionClass = exception;
-        this.formattedValue = String.format("%02d%03d", groupValue, subCode); 
+        this.formattedValue = this.code + this.subcode; 
     }
 
-    public static ErrorCode valueOf(short value)
+    public static ErrorCode valueOfCode(String value)
     {
         for (ErrorCode e : values()) {
-            if (e.getShort() == value) {
+            if (e.getFormattedValue().equals(value)) {
                 return e;
             }
         }
         throw new RuntimeException(String.format("Invalid code value: %s", value));
-    }
-
-    public short getShort() {
-        return value;
     }
 
     public Importance getImportance() {
@@ -263,6 +396,14 @@ public enum ErrorCode {
     }
     public String getFormattedValue() {
         return formattedValue;
+    }
+    
+    public String getCode() { 
+        return code;
+    }
+    
+    public String getSubCode() {
+        return subcode;
     }
 
     public static enum Importance {
