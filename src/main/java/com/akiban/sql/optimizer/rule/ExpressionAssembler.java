@@ -29,6 +29,7 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /** Turn {@link ExpressionNode} into {@link Expression}. */
@@ -72,26 +73,10 @@ public class ExpressionAssembler
             return variable(node.getAkType(), ((ParameterExpression)node).getPosition());
         else if (node instanceof BooleanOperationExpression) {
             BooleanOperationExpression bexpr = (BooleanOperationExpression)node;
-            List<Expression> children = new ArrayList<Expression>(2);
-            children.add(assembleExpression(bexpr.getLeft(), columnContext));
-            children.add(assembleExpression(bexpr.getRight(), columnContext));
-            String function;
-            switch (bexpr.getOperation()) {
-            case AND:
-                function = "and";
-                break;
-            case OR:
-                function = "or";
-                break;
-            case NOT:
-                function = "not";
-                break;
-            default:
-                assert false;
-                function = "unknown";
-                break;
-            }
-            return expressionRegistry.composer(function).compose(children);
+            return expressionRegistry
+                .composer(bexpr.getOperation().getFunctionName())
+                .compose(Arrays.asList(assembleExpression(bexpr.getLeft(), columnContext),
+                                       assembleExpression(bexpr.getRight(), columnContext)));
         }
         else if (node instanceof CastExpression)
             // TODO: Need actual cast.
@@ -105,20 +90,21 @@ public class ExpressionAssembler
         }
         else if (node instanceof FunctionExpression) {
             FunctionExpression funcNode = (FunctionExpression)node;
-            List<Expression> children = new ArrayList<Expression>();
-            for (ExpressionNode operand : funcNode.getOperands()) {
-                children.add(assembleExpression(operand, columnContext));
-            }
-            return expressionRegistry.composer(funcNode.getFunction()).compose(children);
+            return expressionRegistry
+                .composer(funcNode.getFunction())
+                .compose(assembleExpressions(funcNode.getOperands(), columnContext));
         }
         else if (node instanceof IfElseExpression) {
             IfElseExpression ifElse = (IfElseExpression)node;
-            List<Expression> children = new ArrayList<Expression>(3);
-            children.add(assembleExpression(ifElse.getTestCondition(), columnContext));
-            children.add(assembleExpression(ifElse.getThenExpression(), columnContext));
-            children.add(assembleExpression(ifElse.getElseExpression(), columnContext));
             // TODO: Is this right?
-            return expressionRegistry.composer("ifThenElse").compose(children);
+            return expressionRegistry
+                .composer("ifThenElse")
+                .compose(Arrays.asList(assembleExpression(ifElse.getTestCondition(), 
+                                                          columnContext),
+                                       assembleExpression(ifElse.getThenExpression(), 
+                                                          columnContext),
+                                       assembleExpression(ifElse.getElseExpression(), 
+                                                          columnContext)));
         }
         else if (node instanceof InListCondition) {
             InListCondition inList = (InListCondition)node;
