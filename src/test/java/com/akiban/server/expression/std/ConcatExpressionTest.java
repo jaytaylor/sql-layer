@@ -44,7 +44,9 @@ public final class ConcatExpressionTest extends ComposedExpressionTestBase {
 
     @Test
     public void allNumbers() {
-        concatAndCheck("123.0", lit(1), lit(2), lit(3.0));
+        Expression concat = concat(lit(1), lit(2), lit(3.0));
+        assertTrue("concat should be const", concat.isConstant());
+        check("123.0", concat);
     }
 
     @Test
@@ -52,6 +54,11 @@ public final class ConcatExpressionTest extends ComposedExpressionTestBase {
         Expression concat = concat(lit(3), nonConst(3), constNull(AkType.VARCHAR));
         assertTrue("concat should be const", concat.isConstant());
         check(null, concat);
+    }
+
+    @Test
+    public void noChildren() {
+        concatAndCheck("");
     }
 
     // ComposedExpressionTestBase
