@@ -27,10 +27,10 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static com.akiban.server.expression.std.ExprUtil.*;
 
 @RunWith(NamedParameterizedRunner.class)
 public final class InExpressionTest {
@@ -69,18 +69,6 @@ public final class InExpressionTest {
         List<Expression> rhsList = Arrays.asList(rhs);
         Parameterization param = Parameterization.create(lhs + " IN " + rhsList, lhs, rhsList, result);
         out.add(param);
-    }
-
-    private static Expression lit(long value) {
-        return new LiteralExpression(AkType.LONG, value);
-    }
-
-    private static Expression lit(String value) {
-        return new LiteralExpression(AkType.VARCHAR, value);
-    }
-
-    private static Expression litNull() {
-        return LiteralExpression.forNull();
     }
 
     // object state

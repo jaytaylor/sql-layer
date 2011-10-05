@@ -29,8 +29,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 
-import static com.akiban.server.types.AkType.*;
 import static com.akiban.server.expression.std.Comparison.*;
+import static com.akiban.server.expression.std.ExprUtil.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -47,18 +47,18 @@ public final class CompareExpressionTest {
         param(pb, litNull(), litNull(), NULL);
 
         // longs
-        param(pb, litNull(), lit(LONG, 5), NULL);
-        param(pb, lit(LONG, 5), litNull(), NULL);
-        param(pb, lit(LONG, 5), lit(LONG, 5), LE, EQ, GE);
-        param(pb, lit(LONG, 4), lit(LONG, 5), LE, LT, NE);
-        param(pb, lit(LONG, 5), lit(LONG, 4), GE, GT, NE);
+        param(pb, litNull(), lit(5), NULL);
+        param(pb, lit(5), litNull(), NULL);
+        param(pb, lit(5), lit(5), LE, EQ, GE);
+        param(pb, lit(4), lit(5), LE, LT, NE);
+        param(pb, lit(5), lit(4), GE, GT, NE);
 
         // doubles
-        param(pb, litNull(), lit(DOUBLE, 5.0), NULL);
-        param(pb, lit(DOUBLE, 5.0), litNull(), NULL);
-        param(pb, lit(DOUBLE, 5.0), lit(DOUBLE, 5.0), LE, EQ, GE);
-        param(pb, lit(DOUBLE, 4.0), lit(DOUBLE, 5.0), LE, LT, NE);
-        param(pb, lit(DOUBLE, 5.0), lit(DOUBLE, 4.0), GE, GT, NE);
+        param(pb, litNull(), lit(5.0), NULL);
+        param(pb, lit(5.0), litNull(), NULL);
+        param(pb, lit(5.0), lit(5.0), LE, EQ, GE);
+        param(pb, lit(4.0), lit(5.0), LE, LT, NE);
+        param(pb, lit(5.0), lit(4.0), GE, GT, NE);
         
         // String
         param(pb, litNull(), lit("alpha"), NULL);
@@ -88,32 +88,10 @@ public final class CompareExpressionTest {
         }
     }
 
-    private static Expression lit(AkType type, long value) {
-        assert type.underlyingType() == UnderlyingType.LONG_AKTYPE : type.underlyingType();
-        return new LiteralExpression(type, value);
-    }
-
-    private static Expression lit(AkType type, double value) {
-        assert type.underlyingType() == UnderlyingType.DOUBLE_AKTYPE : type.underlyingType();
-        return new LiteralExpression(type, value);
-    }
-
-    private static Expression lit(String value) {
-        return new LiteralExpression(AkType.VARCHAR, value);
-    }
-
-    private static Expression lit(boolean value) {
-        return new LiteralExpression(AkType.BOOL, value);
-    }
-
-    private static Expression litNull() {
-        return LiteralExpression.forNull();
-    }
-
     @Test
     public void test() {
         Expression compareExpression = new CompareExpression(Arrays.asList(left, right), comparison);
-        assertEquals("compareExpression type", BOOL, compareExpression.valueType());
+        assertEquals("compareExpression type", AkType.BOOL, compareExpression.valueType());
         assertFalse("compareExpression needs row", compareExpression.needsRow());
         assertFalse("compareExpression needs bindings", compareExpression.needsBindings());
         ExpressionEvaluation evaluation = compareExpression.evaluation();

@@ -28,6 +28,8 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
+import static com.akiban.server.expression.std.ExprUtil.*;
+
 public final class CoalesceExpressionTest extends ComposedExpressionTestBase {
 
     @Test
@@ -82,21 +84,5 @@ public final class CoalesceExpressionTest extends ComposedExpressionTestBase {
 
     private void check(ValueSource expected, Expression... children) {
         check(expected, expected.getConversionType(), children);
-    }
-
-    private Expression lit(String string) {
-        return new LiteralExpression(AkType.VARCHAR, string);
-    }
-
-    private Expression lit(long value) {
-        return new LiteralExpression(AkType.LONG, value);
-    }
-
-    private Expression litNull() {
-        return LiteralExpression.forNull();
-    }
-
-    private Expression litNull(AkType type) {
-        return TypedNullExpression.of(type);
     }
 }
