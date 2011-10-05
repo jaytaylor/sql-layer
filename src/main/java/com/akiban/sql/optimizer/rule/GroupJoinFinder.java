@@ -45,8 +45,9 @@ public class GroupJoinFinder extends BaseRule
     public void apply(PlanContext plan) {
         List<JoinIsland> islands = new JoinIslandFinder().find(plan.getPlan());
         moveAndNormalizeWhereConditions(islands);
-        reorderJoins(islands);
         findGroupJoins(islands);
+        reorderJoins(islands);
+        moveJoinConditions(islands);
         isolateGroups(islands);
     }
     
@@ -101,6 +102,7 @@ public class GroupJoinFinder extends BaseRule
         Joinable root;
         PlanWithInput output;
         ConditionList whereConditions;
+        List<TableGroupJoin> whereJoins;
 
         public JoinIsland(Joinable root, PlanWithInput output) {
             this.root = root;
@@ -176,7 +178,7 @@ public class GroupJoinFinder extends BaseRule
         }
     }
 
-    // Second pass: put adjacent inner joined tables together in
+    // Third pass: put adjacent inner joined tables together in
     // left-deep ascending-ordinal order. E.g. (CO)I.
     protected void reorderJoins(List<JoinIsland> islands) {
         for (JoinIsland island : islands) {
@@ -262,10 +264,12 @@ public class GroupJoinFinder extends BaseRule
         return result;
     }
 
-    // Third pass: find join conditions corresponding to group joins.
+    // Second pass: find join conditions corresponding to group joins.
     protected void findGroupJoins(List<JoinIsland> islands) {
         for (JoinIsland island : islands) {
-            findGroupJoins(island.root, null, island.whereConditions);
+            List<TableGroupJoin> whereJoins = new ArrayList<TableGroupJoin>();
+            findGroupJoins(island.root, null, island.whereConditions, whereJoins);
+            island.whereJoins = whereJoins;
         }
         for (JoinIsland island : islands) {
             findSingleGroups(island.root);
@@ -273,7 +277,8 @@ public class GroupJoinFinder extends BaseRule
     }
 
     protected void findGroupJoins(Joinable joinable, JoinNode output,
-                                  ConditionList whereConditions) {
+                                  ConditionList whereConditions,
+                                  List<TableGroupJoin> whereJoins) {
         if (joinable.isTable()) {
             TableSource table = (TableSource)joinable;
             ConditionList conditions = null;
@@ -284,16 +289,11 @@ public class GroupJoinFinder extends BaseRule
             if (conditions == null)
                 conditions = whereConditions;
             TableGroupJoin tableJoin = findParentJoin(table, conditions);
-            if ((output != null) && (tableJoin != null)) {
-                output.setGroupJoin(tableJoin);
-                if (conditions == whereConditions) {
-                    List<ComparisonCondition> joinConditions = tableJoin.getConditions();
-                    // Move down from WHERE conditions to join conditions.
-                    if (output.getJoinConditions() == null)
-                        output.setJoinConditions(new ConditionList());
-                    output.getJoinConditions().addAll(joinConditions);
-                    conditions.removeAll(joinConditions);
-                }
+            if (tableJoin != null) {
+                if (conditions == whereConditions)
+                    whereJoins.add(tableJoin); // Position after reordering.
+                else
+                    output.setGroupJoin(tableJoin);
             }
         }
         else if (joinable.isJoin()) {
@@ -301,8 +301,8 @@ public class GroupJoinFinder extends BaseRule
             Joinable right = join.getRight();
             if (!join.isInnerJoin())
                 whereConditions = null;
-            findGroupJoins(join.getLeft(), join, whereConditions);
-            findGroupJoins(join.getRight(), join, whereConditions);
+            findGroupJoins(join.getLeft(), join, whereConditions, whereJoins);
+            findGroupJoins(join.getRight(), join, whereConditions, whereJoins);
         }
     }
 
@@ -414,7 +414,43 @@ public class GroupJoinFinder extends BaseRule
         }
     }
 
-    // Fourth pass: wrap contiguous group joins in separate joinable.
+    // Fourth pass: move the WHERE conditions back to their actual
+    // joins, which may be different from the ones they were on in the
+    // original query.
+    protected void moveJoinConditions(List<JoinIsland> islands) {
+        for (JoinIsland island : islands) {
+            if (!island.whereJoins.isEmpty())
+                moveJoinConditions(island.root, null, 
+                                   island.whereConditions, island.whereJoins);
+        }        
+    }
+
+    protected void moveJoinConditions(Joinable joinable, JoinNode output,
+                                      ConditionList whereConditions,
+                                      List<TableGroupJoin> whereJoins) {
+        if (joinable.isTable()) {
+            if (output != null) {
+                TableSource table = (TableSource)joinable;
+                TableGroupJoin tableJoin = table.getParentJoin();
+                if (whereJoins.contains(tableJoin)) {
+                    output.setGroupJoin(tableJoin);
+                    List<ComparisonCondition> joinConditions = tableJoin.getConditions();
+                    // Move down from WHERE conditions to join conditions.
+                    if (output.getJoinConditions() == null)
+                        output.setJoinConditions(new ConditionList());
+                    output.getJoinConditions().addAll(joinConditions);
+                    whereConditions.removeAll(joinConditions);
+                }
+            }
+        }
+        else if (joinable.isJoin()) {
+            JoinNode join = (JoinNode)joinable;
+            moveJoinConditions(join.getLeft(), join, whereConditions, whereJoins);
+            moveJoinConditions(join.getRight(), join, whereConditions, whereJoins);
+        }
+    }
+
+    // Fifth pass: wrap contiguous group joins in separate joinable.
     // We have done out best with the inner joins to make this possible,
     // but some outer joins may require that a TableGroup be broken up into
     // multiple TableJoins.
