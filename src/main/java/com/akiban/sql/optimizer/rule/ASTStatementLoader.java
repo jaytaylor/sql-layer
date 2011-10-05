@@ -474,6 +474,11 @@ public class ASTStatementLoader extends BaseRule
                                                            condition.getType(), condition));
                 }
                 break;
+            case NodeTypes.CAST_NODE:
+                conditions.add(new BooleanCastExpression(toExpression(((CastNode)condition)
+                                                                      .getCastOperand()),
+                                                         condition.getType(), condition));
+                break;
             case NodeTypes.JAVA_TO_SQL_VALUE_NODE:
                 conditions.add((ConditionExpression)
                                toExpression(((JavaToSQLValueNode)condition).getJavaValueNode(), 
