@@ -34,7 +34,7 @@ public final class CoalesceExpressionTest extends ComposedExpressionTestBase {
 
     @Test
     public void smoke() {
-        check(new ValueHolder(AkType.LONG, 5), constNull(), constNull(), lit(5), ExplodingExpression.of(AkType.LONG));
+        check(new ValueHolder(AkType.LONG, 5), constNull(), constNull(), lit(5), exploding(AkType.LONG));
     }
 
     @Test

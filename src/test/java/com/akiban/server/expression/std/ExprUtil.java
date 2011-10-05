@@ -15,9 +15,12 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
 
 final class ExprUtil {
 
@@ -51,6 +54,10 @@ final class ExprUtil {
 
     public static Expression nonConstNull(AkType type) {
         return new TypedNullExpression(type, false);
+    }
+
+    public static Expression exploding(AkType type) {
+        return new ExplodingExpression(type);
     }
 
     private ExprUtil() {}
@@ -100,5 +107,77 @@ final class ExprUtil {
 
         private final AkType type;
         private final boolean isConst;
+    }
+
+    private static final class ExplodingExpression implements Expression {
+
+        @Override
+        public boolean isConstant() {
+            return false;
+        }
+
+        @Override
+        public boolean needsBindings() {
+            return false;
+        }
+
+        @Override
+        public boolean needsRow() {
+            return false;
+        }
+
+        @Override
+        public ExpressionEvaluation evaluation() {
+            return KILLER;
+        }
+
+        @Override
+        public AkType valueType() {
+            return type;
+        }
+
+        @Override
+        public String toString() {
+            return "EXPLODING(" + type + ')';
+        }
+
+        ExplodingExpression(AkType type) {
+            this.type = type;
+        }
+
+        private final AkType type;
+
+        private static final ExpressionEvaluation KILLER = new ExpressionEvaluation() {
+            @Override
+            public void of(Row row) {
+            }
+
+            @Override
+            public void of(Bindings bindings) {
+            }
+
+            @Override
+            public ValueSource eval() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void acquire() {
+            }
+
+            @Override
+            public boolean isShared() {
+                return false;
+            }
+
+            @Override
+            public void release() {
+            }
+
+            @Override
+            public String toString() {
+                return "EXPLOSION_EVAL";
+            }
+        };
     }
 }

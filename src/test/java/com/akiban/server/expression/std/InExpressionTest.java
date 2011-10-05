@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import static com.akiban.server.expression.std.ExprUtil.exploding;
 import static org.junit.Assert.assertEquals;
 import static com.akiban.server.expression.std.ExprUtil.*;
 
@@ -41,12 +42,12 @@ public final class InExpressionTest {
     public static Collection<Parameterization> params() {
         List<Parameterization> params = new ArrayList<Parameterization>();
 
-        addTo(params, lit(5), true, lit(3), lit(4), lit(5), ERR);
+        addTo(params, lit(5), true, lit(3), lit(4), lit(5), exploding(AkType.VARCHAR));
         addTo(params, lit(5), false, lit(3));
         addTo(params, lit(3), true, lit("3"));
         addTo(params, lit(5), null, lit(3), constNull());
         addTo(params, lit(5), true, constNull(), lit(5));
-        addTo(params, constNull(), null, ERR);
+        addTo(params, constNull(), null, exploding(AkType.VARCHAR));
 
         return params;
     }
@@ -75,8 +76,4 @@ public final class InExpressionTest {
     
     private final Boolean expected;
     private final Expression inExpression;
-    
-    // class state
-
-    private static final Expression ERR = ExplodingExpression.of(AkType.VARCHAR);
 }
