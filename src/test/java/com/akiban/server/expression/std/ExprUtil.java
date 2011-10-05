@@ -16,6 +16,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 
 final class ExprUtil {
@@ -32,17 +33,72 @@ final class ExprUtil {
         return new LiteralExpression(AkType.LONG, value);
     }
 
-    public static Expression litNull(AkType type) {
-        return TypedNullExpression.ofConst(type);
-    }
-
-    public static Expression litNull() {
-        return LiteralExpression.forNull();
-    }
-
     public static Expression lit(boolean value) {
         return new LiteralExpression(AkType.BOOL, value);
     }
 
+    public static Expression constNull() {
+        return constNull(AkType.NULL);
+    }
+
+    public static Expression nonConstNull() {
+        return nonConstNull(AkType.NULL);
+    }
+
+    public static Expression constNull(AkType type) {
+        return new TypedNullExpression(type, true);
+    }
+
+    public static Expression nonConstNull(AkType type) {
+        return new TypedNullExpression(type, false);
+    }
+
     private ExprUtil() {}
+
+    private static final class TypedNullExpression implements Expression {
+
+        // TypedNullExpression interface
+
+        @Override
+        public boolean isConstant() {
+            return isConst;
+        }
+
+        @Override
+        public boolean needsBindings() {
+            return false;
+        }
+
+        @Override
+        public boolean needsRow() {
+            return false;
+        }
+
+        @Override
+        public ExpressionEvaluation evaluation() {
+            return LiteralExpression.forNull().evaluation();
+        }
+
+        @Override
+        public AkType valueType() {
+            return type;
+        }
+
+        // object interface
+
+        @Override
+        public String toString() {
+            return "NULL(type=" + type + ')';
+        }
+
+        // use in this class
+
+        TypedNullExpression(AkType type, boolean isConst) {
+            this.type = type;
+            this.isConst = isConst;
+        }
+
+        private final AkType type;
+        private final boolean isConst;
+    }
 }

@@ -44,9 +44,9 @@ public final class InExpressionTest {
         addTo(params, lit(5), true, lit(3), lit(4), lit(5), ERR);
         addTo(params, lit(5), false, lit(3));
         addTo(params, lit(3), true, lit("3"));
-        addTo(params, lit(5), null, lit(3), litNull());
-        addTo(params, lit(5), true, litNull(), lit(5));
-        addTo(params, litNull(), null, ERR);
+        addTo(params, lit(5), null, lit(3), constNull());
+        addTo(params, lit(5), true, constNull(), lit(5));
+        addTo(params, constNull(), null, ERR);
 
         return params;
     }

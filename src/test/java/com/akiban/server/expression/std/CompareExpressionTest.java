@@ -44,32 +44,32 @@ public final class CompareExpressionTest {
         ParameterizationBuilder pb = new ParameterizationBuilder();
 
         // null to null
-        param(pb, litNull(), litNull(), NULL);
+        param(pb, constNull(), constNull(), NULL);
 
         // longs
-        param(pb, litNull(), lit(5), NULL);
-        param(pb, lit(5), litNull(), NULL);
+        param(pb, constNull(), lit(5), NULL);
+        param(pb, lit(5), constNull(), NULL);
         param(pb, lit(5), lit(5), LE, EQ, GE);
         param(pb, lit(4), lit(5), LE, LT, NE);
         param(pb, lit(5), lit(4), GE, GT, NE);
 
         // doubles
-        param(pb, litNull(), lit(5.0), NULL);
-        param(pb, lit(5.0), litNull(), NULL);
+        param(pb, constNull(), lit(5.0), NULL);
+        param(pb, lit(5.0), constNull(), NULL);
         param(pb, lit(5.0), lit(5.0), LE, EQ, GE);
         param(pb, lit(4.0), lit(5.0), LE, LT, NE);
         param(pb, lit(5.0), lit(4.0), GE, GT, NE);
         
         // String
-        param(pb, litNull(), lit("alpha"), NULL);
-        param(pb, lit("beta"), litNull(), NULL);
+        param(pb, constNull(), lit("alpha"), NULL);
+        param(pb, lit("beta"), constNull(), NULL);
         param(pb, lit("aaa"), lit("aaa"), LE, EQ, GE);
         param(pb, lit("aa"), lit("aaa"), LE, LT, NE);
         param(pb, lit("aaa"), lit("aa"), GE, GT, NE);
 
         // bools
-        param(pb, litNull(), lit(true), NULL);
-        param(pb, lit(true), litNull(), NULL);
+        param(pb, constNull(), lit(true), NULL);
+        param(pb, lit(true), constNull(), NULL);
         param(pb, lit(true), lit(true), LE, EQ, GE);
         param(pb, lit(false), lit(false), LE, EQ, GE);
         param(pb, lit(false), lit(true), LE, LT, NE);

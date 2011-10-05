@@ -34,7 +34,7 @@ public final class CoalesceExpressionTest extends ComposedExpressionTestBase {
 
     @Test
     public void smoke() {
-        check(new ValueHolder(AkType.LONG, 5), litNull(), litNull(), lit(5), ExplodingExpression.of(AkType.LONG));
+        check(new ValueHolder(AkType.LONG, 5), constNull(), constNull(), lit(5), ExplodingExpression.of(AkType.LONG));
     }
 
     @Test
@@ -49,11 +49,11 @@ public final class CoalesceExpressionTest extends ComposedExpressionTestBase {
 
     @Test
     public void typedNull() {
-        check(NullValueSource.only(), AkType.LONG, litNull(AkType.LONG));
+        check(NullValueSource.only(), AkType.LONG, constNull(AkType.LONG));
     }
     @Test
     public void heterogeneousInputs() {
-        check(new ValueHolder(AkType.VARCHAR, "3"), litNull(), litNull(AkType.VARCHAR), lit(3), lit("hello"));
+        check(new ValueHolder(AkType.VARCHAR, "3"), constNull(), constNull(AkType.VARCHAR), lit(3), lit("hello"));
     }
 
     @Test(expected = IllegalArgumentException.class)
