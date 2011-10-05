@@ -26,7 +26,17 @@ public class BooleanOperationExpression extends BaseExpression
                                         implements ConditionExpression
 {
     public static enum Operation {
-        AND, OR, NOT
+        AND("and"), OR("or"), NOT("not");
+
+        private String functionName;
+        
+        Operation(String functionName) {
+            this.functionName = functionName;
+        }
+
+        public String getFunctionName() {
+            return functionName;
+        }
     }
 
     private Operation operation;
