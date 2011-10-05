@@ -53,7 +53,6 @@ public class TapTest {
         for (int i = 0; i < threads.length; i++) {
             threads[i].join();
         }
-        System.out.println(Tap.report());
         final TapReport report = tap.getReport();
         final Tap.PerThread.PerThreadTapReport pttr = (Tap.PerThread.PerThreadTapReport) report;
         final Map<String, TapReport> map = pttr.getTapReportMap();

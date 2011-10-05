@@ -22,7 +22,7 @@ import junit.framework.TestCase;
 
 public class RowDefTest extends TestCase {
 
-    private final static boolean VERBOSE = true;
+    private final static boolean VERBOSE = false;
 
     private final static String[][] TEST_CASES = new String[][] {
             {
