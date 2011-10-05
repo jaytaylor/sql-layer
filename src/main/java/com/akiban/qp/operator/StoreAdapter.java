@@ -28,7 +28,10 @@ public abstract class StoreAdapter
 {
     public abstract GroupCursor newGroupCursor(GroupTable groupTable);
 
-    public abstract Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange, UserTable innerJoinUntil);
+    public abstract Cursor newIndexCursor(Index index,
+                                          IndexKeyRange keyRange,
+                                          API.Ordering ordering,
+                                          UserTable innerJoinUntil);
 
     public abstract HKey newHKey(RowType rowType);
 

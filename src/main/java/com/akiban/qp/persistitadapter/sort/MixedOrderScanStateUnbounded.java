@@ -16,11 +16,26 @@
 package com.akiban.qp.persistitadapter.sort;
 
 import com.persistit.Key;
+import com.persistit.exception.PersistitException;
 
-public class SortCursorDescending extends SortCursorUnidirectional
+class MixedOrderScanStateUnbounded extends MixedOrderScanState
 {
-    public SortCursorDescending(RowGenerator rowGenerator)
+    @Override
+    public boolean startScan() throws PersistitException
     {
-        super(rowGenerator, Key.AFTER, Key.LT);
+        Key.Direction direction;
+        if (ascending) {
+            cursor.exchange.append(Key.BEFORE);
+            direction = Key.GT;
+        } else {
+            cursor.exchange.append(Key.AFTER);
+            direction = Key.LT;
+        }
+        return cursor.exchange.traverse(direction, false);
+    }
+
+    public MixedOrderScanStateUnbounded(SortCursorMixedOrder cursor, int field) throws PersistitException
+    {
+        super(cursor, field, cursor.ordering().ascending(field));
     }
 }

@@ -17,10 +17,15 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.StoreAdapterRuntimeException;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.persistitadapter.sort.RowGenerator;
+import com.akiban.qp.persistitadapter.sort.SortCursor;
+import com.akiban.qp.persistitadapter.sort.SortCursorAscending;
+import com.akiban.qp.persistitadapter.sort.SortCursorDescending;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.util.ShareHolder;
@@ -28,6 +33,7 @@ import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
+import sun.nio.cs.Surrogate;
 
 class PersistitIndexCursor implements Cursor
 {
@@ -37,32 +43,23 @@ class PersistitIndexCursor implements Cursor
     public void open(Bindings bindings)
     {
         assert exchange == null;
-        exchange = adapter.takeExchange(indexRowType.index()).clear().append(boundary);
-        if (keyRange != null) {
-            indexFilter = adapter.filterFactory.computeIndexFilter(exchange.getKey(), index(), keyRange, bindings);
-        }
+        exchange = adapter.takeExchange(indexRowType.index());
+        sortCursor = SortCursor.create(keyRange, ordering, new IndexScanRowGenerator());
+        sortCursor.open(bindings);
     }
 
     @Override
     public Row next()
     {
-        final boolean isTableIndex = index().isTableIndex();
+        Row next;
         try {
             boolean needAnother;
             do {
-                if (exchange != null &&
-                    (indexFilter == null
-                     ? exchange.traverse(direction, true)
-                     : exchange.traverse(direction, indexFilter, FETCH_NO_BYTES))) {
-                    if (isTableIndex || exchange.fetch().getValue().getInt() >= minimumDepth) {
-                        // The value of a group index is the depth at which it's defined, as an int.
-                        // See OperatorStoreGIHandler, search for "Description of group index entry values"
-                        unsharedRow().get().copyFromExchange(exchange);
-                        needAnother = false;
-                    }
-                    else {
-                        needAnother = true;
-                    }
+                if ((next = sortCursor.next()) != null) {
+                    needAnother = !(isTableIndex ||
+                                    // The value of a group index is the depth at which it's defined, as an int.
+                                    // See OperatorStoreGIHandler, search for "Description of group index entry values"
+                                    exchange.fetch().getValue().getInt() >= minimumDepth);
                 } else {
                     close();
                     needAnother = false;
@@ -71,7 +68,7 @@ class PersistitIndexCursor implements Cursor
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }
-        return exchange == null ? null : row.get();
+        return next;
     }
 
     @Override
@@ -80,7 +77,6 @@ class PersistitIndexCursor implements Cursor
         if (exchange != null) {
             adapter.returnExchange(exchange);
             exchange = null;
-            indexFilter = null;
             row.release();
         }
     }
@@ -89,23 +85,18 @@ class PersistitIndexCursor implements Cursor
 
     PersistitIndexCursor(PersistitAdapter adapter,
                          IndexRowType indexRowType,
-                         boolean reverse,
                          IndexKeyRange keyRange,
+                         API.Ordering ordering,
                          UserTable innerJoinUntil)
         throws PersistitException
     {
         this.keyRange = keyRange;
+        this.ordering = ordering;
         this.adapter = adapter;
         this.indexRowType = indexRowType;
         this.row = new ShareHolder<PersistitIndexRow>(adapter.newIndexRow(indexRowType));
+        this.isTableIndex = indexRowType.index().isTableIndex();
         this.minimumDepth = innerJoinUntil.getDepth();
-        if (reverse) {
-            boundary = Key.AFTER;
-            direction = Key.LT;
-        } else {
-            boundary = Key.BEFORE;
-            direction = Key.GT;
-        }
     }
 
     // For use by this class
@@ -123,26 +114,48 @@ class PersistitIndexCursor implements Cursor
         return indexRowType.index();
     }
 
-    PersistitAdapter adapter() {
-        return adapter;
-    }
-
-    Exchange exchange() {
-        return exchange;
-    }
-
     // Object state
 
     private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
     private final ShareHolder<PersistitIndexRow> row;
-    private final Key.EdgeValue boundary;
-    private final Key.Direction direction;
     private final IndexKeyRange keyRange;
+    private final API.Ordering ordering;
+    private final boolean isTableIndex;
     private final int minimumDepth;
     private Exchange exchange;
-    private KeyFilter indexFilter;
+    private SortCursor sortCursor;
 
-    // consts
-    private static final int FETCH_NO_BYTES = 0;
+    // Inner classes
+
+    private class IndexScanRowGenerator implements RowGenerator
+    {
+        @Override
+        public Row row() throws PersistitException
+        {
+            unsharedRow().get().copyFromExchange(exchange);
+            return row.get();
+        }
+
+        @Override
+        public void close()
+        {
+            PersistitIndexCursor.this.close();
+        }
+
+        @Override
+        public Exchange exchange()
+        {
+            return PersistitIndexCursor.this.exchange;
+        }
+
+        @Override
+        public KeyFilter keyFilter(Bindings bindings)
+        {
+            return
+                keyRange.unbounded()
+                ? null
+                : adapter.filterFactory.computeIndexFilter(exchange.getKey(), index(), keyRange, bindings);
+        }
+    }
 }

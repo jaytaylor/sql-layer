@@ -69,6 +69,7 @@ public class OperatorITBase extends ITBase
             "schema", "item",
             "iid int not null key",
             "oid int",
+            "index(oid, iid)",
             "constraint __akiban_io foreign key __akiban_io(oid) references order(oid)");
         address = createTable(
             "schema", "address",
@@ -85,6 +86,7 @@ public class OperatorITBase extends ITBase
         customerNameIndexRowType = indexType(customer, "name");
         orderSalesmanIndexRowType = indexType(order, "salesman");
         itemOidIndexRowType = indexType(item, "oid");
+        itemOidIidIndexRowType = indexType(item, "oid", "iid");
         itemIidIndexRowType = indexType(item, "iid");
         customerCidIndexRowType = indexType(customer, "cid");
         addressAddressIndexRowType = indexType(address, "address");
@@ -316,6 +318,7 @@ public class OperatorITBase extends ITBase
     protected IndexRowType customerNameIndexRowType;
     protected IndexRowType orderSalesmanIndexRowType;
     protected IndexRowType itemOidIndexRowType;
+    protected IndexRowType itemOidIidIndexRowType;
     protected IndexRowType itemIidIndexRowType;
     protected IndexRowType addressAddressIndexRowType;
     protected GroupTable coi;

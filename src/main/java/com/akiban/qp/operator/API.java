@@ -27,6 +27,7 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.types.AkType;
 
 import java.util.*;
@@ -191,22 +192,44 @@ public class API
 
     // IndexScan
 
+    /** @deprecated */
     public static Operator indexScan_Default(IndexRowType indexType)
     {
-        return indexScan_Default(indexType, false, null, indexType.tableType());
+        return indexScan_Default(indexType, false, new IndexKeyRange(indexType, null, false, null, false));
     }
 
+    /** @deprecated */
+    public static Operator indexScan_Default(IndexRowType indexType, boolean reverse)
+    {
+        return indexScan_Default(indexType, reverse, new IndexKeyRange(indexType, null, false, null, false));
+    }
+
+    /** @deprecated */
     public static Operator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
     {
         return indexScan_Default(indexType, reverse, indexKeyRange, indexType.tableType());
     }
 
+    /** @deprecated */
     public static Operator indexScan_Default(IndexRowType indexType,
-                                                     boolean reverse,
-                                                     IndexKeyRange indexKeyRange,
-                                                     UserTableRowType innerJoinUntilRowType)
+                                             boolean reverse,
+                                             IndexKeyRange indexKeyRange,
+                                             UserTableRowType innerJoinUntilRowType)
     {
-        return new IndexScan_Default(indexType, reverse, indexKeyRange, innerJoinUntilRowType);
+        Ordering ordering = new Ordering();
+        int fields = indexType.nFields();
+        for (int f = 0; f < fields; f++) {
+            ordering.append(new FieldExpression(indexType, 0), !reverse);
+        }
+        return indexScan_Default(indexType, indexKeyRange, ordering, innerJoinUntilRowType);
+    }
+
+    public static Operator indexScan_Default(IndexRowType indexType,
+                                             IndexKeyRange indexKeyRange,
+                                             Ordering ordering,
+                                             UserTableRowType innerJoinUntilRowType)
+    {
+        return new IndexScan_Default(indexType, indexKeyRange, ordering, innerJoinUntilRowType);
     }
 
     // Select

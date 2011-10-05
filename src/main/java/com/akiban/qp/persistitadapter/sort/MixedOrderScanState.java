@@ -15,12 +15,25 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.persistit.Key;
+import com.persistit.exception.PersistitException;
 
-public class SortCursorDescending extends SortCursorUnidirectional
+abstract class MixedOrderScanState
 {
-    public SortCursorDescending(RowGenerator rowGenerator)
+    public abstract boolean startScan() throws PersistitException;
+
+    public boolean advance() throws PersistitException
     {
-        super(rowGenerator, Key.AFTER, Key.LT);
+        return ascending ? cursor.exchange.next(false) : cursor.exchange.previous(false);
     }
+
+    protected MixedOrderScanState(SortCursorMixedOrder cursor, int field, boolean ascending) throws PersistitException
+    {
+        this.cursor = cursor;
+        this.field = field;
+        this.ascending = ascending;
+    }
+
+    protected final SortCursorMixedOrder cursor;
+    protected final int field;
+    protected final boolean ascending;
 }

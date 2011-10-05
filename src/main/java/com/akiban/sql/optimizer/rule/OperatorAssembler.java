@@ -624,9 +624,11 @@ public class OperatorAssembler extends BaseRule
             List<ExpressionNode> equalityComparands = index.getEqualityComparands();
             ExpressionNode lowComparand = index.getLowComparand();
             ExpressionNode highComparand = index.getHighComparand();
+            IndexRowType indexRowType = getIndexRowType(index);
             if ((equalityComparands == null) &&
-                (lowComparand == null) && (highComparand == null))
-                return new IndexKeyRange(null, false, null, false);
+                (lowComparand == null) && (highComparand == null)) {
+                return new IndexKeyRange(indexRowType, null, false, null, false);
+            }
 
             int nkeys = index.getIndex().getColumns().size();
             Expression[] keys = new Expression[nkeys];
@@ -641,7 +643,7 @@ public class OperatorAssembler extends BaseRule
 
             if ((lowComparand == null) && (highComparand == null)) {
                 IndexBound eq = getIndexBound(index.getIndex(), keys, kidx);
-                return new IndexKeyRange(eq, true, eq, true);
+                return new IndexKeyRange(indexRowType, eq, true, eq, true);
             }
             else {
                 Expression[] lowKeys = null, highKeys = null;
@@ -667,7 +669,7 @@ public class OperatorAssembler extends BaseRule
                 }
                 IndexBound lo = getIndexBound(index.getIndex(), lowKeys, lidx);
                 IndexBound hi = getIndexBound(index.getIndex(), highKeys, hidx);
-                return new IndexKeyRange(lo, lowInc, hi, highInc);
+                return new IndexKeyRange(indexRowType, lo, lowInc, hi, highInc);
             }
         }
 
@@ -682,7 +684,11 @@ public class OperatorAssembler extends BaseRule
         protected ValuesRowType valuesRowType(AkType[] fields) {
             return schema.newValuesType(fields);
         }
-    
+
+        protected IndexRowType getIndexRowType(IndexScan index) {
+            return schema.indexRowType(index.getIndex());
+        }
+
         /** Return an index bound for the given index and expressions.
          * @param index the index in use
          * @param keys {@link Expression}s for index lookup key

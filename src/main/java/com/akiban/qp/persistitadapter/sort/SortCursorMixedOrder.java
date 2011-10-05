@@ -15,22 +15,32 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.persistitadapter.PersistitAdapterException;
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.persistitadapter.PersistitAdapterException;
 import com.akiban.qp.row.Row;
-import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
-class SortCursorMixedOrder extends SortCursor
+public abstract class SortCursorMixedOrder extends SortCursor
 {
     // Cursor interface
 
     @Override
     public void open(Bindings bindings)
     {
+        this.bindings = bindings;
         exchange.clear();
         try {
+            // TODO: This should be done in the constructor, once bindings are available that early.
+            for (int f = 0; f < sortFields; f++) {
+                this.scanStates[f] = createScanState(this, f);
+            }
+            if (sortFields < keyFields) {
+                this.scanStates[sortFields] = new MixedOrderScanStateRestOfKey(this, sortFields);
+            }
+            // TODO: ------------------------------------------------------------------------------------
+            computeBoundaries();
             repositionExchange(0);
         } catch (PersistitException e) {
             close();
@@ -45,7 +55,7 @@ class SortCursorMixedOrder extends SortCursor
         try {
             if (more) {
                 next = row();
-                advance(lastField);
+                advance(lastKeyField);
             } else {
                 close();
             }
@@ -56,30 +66,52 @@ class SortCursorMixedOrder extends SortCursor
         return next;
     }
 
-    // SortCursorAscending interface
+    // SortCursorMixedOrder interface
 
-    public SortCursorMixedOrder(RowGenerator rowGenerator, API.Ordering ordering)
+    public abstract MixedOrderScanState createScanState(SortCursorMixedOrder cursor, int field) throws PersistitException;
+
+    public abstract void computeBoundaries();
+
+    // For use by subclasses
+
+    protected SortCursorMixedOrder(RowGenerator rowGenerator, IndexKeyRange keyRange, API.Ordering ordering)
     {
         super(rowGenerator);
-        int sortFields = ordering.sortFields();
-        lastField = sortFields - 1;
-        scanStates = new ScanState[sortFields];
-        try {
-            for (int f = 0; f < sortFields; f++) {
-                scanStates[f] = new ScanState(ordering.ascending(f), f);
-            }
-        } catch (PersistitException e) {
-            throw new PersistitAdapterException(e);
-        }
+        this.keyRange = keyRange;
+        this.ordering = ordering;
+        sortFields = ordering.sortFields();
+        keyFields =
+            keyRange == null
+            ? sortFields
+            : keyRange.indexRowType().index().indexRowComposition().getLength();
+        lastKeyField = keyFields - 1;
+        scanStates = new MixedOrderScanState[keyFields];
+    }
+
+    // For use by this package
+
+    IndexKeyRange keyRange()
+    {
+        return keyRange;
+    }
+
+    Bindings bindings()
+    {
+        return bindings;
+    }
+
+    API.Ordering ordering()
+    {
+        return ordering;
     }
 
     // For use by this class
 
     private void advance(int field) throws PersistitException
     {
-        ScanState scanState = scanStates[field];
+        MixedOrderScanState scanState = scanStates[field];
         if (scanState.advance()) {
-            if (field < lastField) {
+            if (field < lastKeyField) {
                 repositionExchange(field + 1);
             }
         } else {
@@ -94,45 +126,20 @@ class SortCursorMixedOrder extends SortCursor
 
     private void repositionExchange(int field) throws PersistitException
     {
-        for (int f = field; f < scanStates.length; f++) {
-            scanStates[f].startScan();
+        more = true;
+        for (int f = field; more && f < scanStates.length; f++) {
+            more = scanStates[f].startScan();
         }
     }
 
     // Object state
 
-    private final int lastField;
-    private final ScanState[] scanStates;
+    protected final IndexKeyRange keyRange;
+    protected final API.Ordering ordering;
+    protected final int sortFields; // Number of fields controlling output order.
+    protected final int keyFields; // Number of fields in the key. keyFields >= sortFields.
+    protected final int lastKeyField;
+    protected final MixedOrderScanState[] scanStates;
+    protected Bindings bindings;
     private boolean more;
-
-    // Inner classes
-
-    private class ScanState
-    {
-        public void startScan() throws PersistitException
-        {
-            if (ascending) {
-                exchange.append(Key.BEFORE);
-                more = exchange.next(false);
-            } else {
-                exchange.append(Key.AFTER);
-                more = exchange.previous(false);
-            }
-        }
-
-        public boolean advance() throws PersistitException
-        {
-            return ascending ? exchange.next(false) : exchange.previous(false);
-        }
-
-        public ScanState(boolean ascending, int field) throws PersistitException
-        {
-            this.ascending = ascending;
-            this.field = field;
-            startScan();
-        }
-
-        private final int field;
-        private final boolean ascending;
-    }
 }

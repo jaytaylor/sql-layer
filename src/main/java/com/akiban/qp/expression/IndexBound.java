@@ -16,6 +16,9 @@
 package com.akiban.qp.expression;
 
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
 
 public class IndexBound
@@ -25,7 +28,7 @@ public class IndexBound
         return String.valueOf(unboundExpressions);
     }
 
-    public BoundExpressions boundExpressions(Bindings bindings)
+    public RowBase boundExpressions(Bindings bindings)
     {
         return unboundExpressions.get(bindings);
     }
@@ -35,7 +38,12 @@ public class IndexBound
         return columnSelector;
     }
 
-    public IndexBound(BoundExpressions row, ColumnSelector columnSelector)
+    public IndexRowType indexRowType()
+    {
+        return (IndexRowType) unboundExpressions.rowType();
+    }
+
+    public IndexBound(RowBase row, ColumnSelector columnSelector)
     {
         this(new PreBoundExpressions(row), columnSelector);
     }
@@ -53,22 +61,31 @@ public class IndexBound
 
     // nested classes
 
-    private static class PreBoundExpressions implements UnboundExpressions {
+    private static class PreBoundExpressions implements UnboundExpressions
+    {
+        @Override
+        public String toString()
+        {
+            return String.valueOf(row);
+        }
 
         @Override
-        public BoundExpressions get(Bindings bindings) {
-            return expressions;
+        public RowBase get(Bindings bindings)
+        {
+            return row;
         }
 
         @Override
-        public String toString() {
-            return String.valueOf(expressions);
+        public RowType rowType()
+        {
+            return row.rowType();
         }
 
-        public PreBoundExpressions(BoundExpressions expressions) {
-            this.expressions = expressions;
+        public PreBoundExpressions(RowBase row)
+        {
+            this.row = row;
         }
 
-        private final BoundExpressions expressions;
+        private final RowBase row;
     }
 }

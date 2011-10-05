@@ -33,7 +33,7 @@ class IndexScan_Default extends Operator
     @Override
     public String toString()
     {
-        return String.format("%s(%s %s%s)", getClass().getSimpleName(), index, indexKeyRange, reverse ? " reverse" : "");
+        return String.format("%s(%s %s %s)", getClass().getSimpleName(), index, indexKeyRange, ordering);
     }
 
     // Operator interface
@@ -46,6 +46,7 @@ class IndexScan_Default extends Operator
 
     // IndexScan_Default interface
 
+    /** @deprecated */
     public IndexScan_Default(IndexRowType indexType,
                              boolean reverse,
                              IndexKeyRange indexKeyRange,
@@ -53,7 +54,43 @@ class IndexScan_Default extends Operator
     {
         ArgumentValidation.notNull("indexType", indexType);
         this.index = indexType.index();
-        this.reverse = reverse;
+        // this.reverse = reverse;
+        this.ordering = null;
+        this.indexKeyRange = indexKeyRange;
+        if (index.isTableIndex()) {
+            ArgumentValidation.isEQ(
+                    "group index table", this.index.leafMostTable(),
+                    "rootmost existing row type", innerJoinUntilRowType.userTable()
+            );
+        }
+        else {
+            GroupIndex tableIndex = (GroupIndex)this.index;
+            boolean rootmostRowTypeInSegment = false;
+            for (
+                    UserTable branchTable=tableIndex.leafMostTable();
+                    branchTable!= null && !branchTable.equals(tableIndex.rootMostTable().parentTable());
+                    branchTable = branchTable.parentTable()
+            ) {
+                if (branchTable.equals(innerJoinUntilRowType.userTable())) {
+                    rootmostRowTypeInSegment = true;
+                    break;
+                }
+            }
+            if (!rootmostRowTypeInSegment) {
+                throw new IllegalArgumentException(innerJoinUntilRowType + " not in branch for " + tableIndex);
+            }
+        }
+        this.innerJoinUntilRowType = innerJoinUntilRowType;
+    }
+
+    public IndexScan_Default(IndexRowType indexType,
+                             IndexKeyRange indexKeyRange,
+                             API.Ordering ordering,
+                             UserTableRowType innerJoinUntilRowType)
+    {
+        ArgumentValidation.notNull("indexType", indexType);
+        this.index = indexType.index();
+        this.ordering = ordering;
         this.indexKeyRange = indexKeyRange;
         if (index.isTableIndex()) {
             ArgumentValidation.isEQ(
@@ -88,7 +125,7 @@ class IndexScan_Default extends Operator
     // Object state
 
     private final Index index;
-    private final boolean reverse;
+    private final API.Ordering ordering;
     private final IndexKeyRange indexKeyRange;
     private final UserTableRowType innerJoinUntilRowType;
 
@@ -131,7 +168,7 @@ class IndexScan_Default extends Operator
 
         Execution(StoreAdapter adapter)
         {
-            this.cursor = adapter.newIndexCursor(index, reverse, indexKeyRange, innerJoinUntilRowType.userTable());
+            this.cursor = adapter.newIndexCursor(index, indexKeyRange, ordering, innerJoinUntilRowType.userTable());
         }
 
         // Object state

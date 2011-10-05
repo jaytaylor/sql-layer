@@ -17,9 +17,11 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.server.api.dml.SetColumnSelector;
+import com.akiban.server.expression.std.FieldExpression;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -59,6 +61,69 @@ public class IndexScanIT extends OperatorITBase
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, indexKeyRange(218, true, 219, true));
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{};
+        compareRenderedHKeys(expected, cursor);
+    }
+
+    // The next three tests are light tests of unbounded multi-column index scanning, including mixed-mode.
+    // A more serious test of index scans with mixed-mode and bounds is in IndexScanComplexIT
+
+    @Test
+    public void testFullScan()
+    {
+        Operator indexScan = indexScan_Default(itemIidIndexRowType);
+        Cursor cursor = cursor(indexScan, adapter);
+        String[] expected = new String[]{
+            hkey(1, 11, 111),
+            hkey(1, 11, 112),
+            hkey(1, 12, 121),
+            hkey(1, 12, 122),
+            hkey(2, 21, 211),
+            hkey(2, 21, 212),
+            hkey(2, 22, 221),
+            hkey(2, 22, 222),
+        };
+        compareRenderedHKeys(expected, cursor);
+    }
+
+    @Test
+    public void testFullScanReverse()
+    {
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true);
+        Cursor cursor = cursor(indexScan, adapter);
+        String[] expected = new String[]{
+            hkey(2, 22, 222),
+            hkey(2, 22, 221),
+            hkey(2, 21, 212),
+            hkey(2, 21, 211),
+            hkey(1, 12, 122),
+            hkey(1, 12, 121),
+            hkey(1, 11, 112),
+            hkey(1, 11, 111),
+        };
+        compareRenderedHKeys(expected, cursor);
+    }
+
+    @Test
+    public void testMixedMode()
+    {
+        API.Ordering ordering = new API.Ordering();
+        ordering.append(new FieldExpression(itemOidIidIndexRowType, 0), true);
+        ordering.append(new FieldExpression(itemOidIidIndexRowType, 1), false);
+        Operator indexScan = indexScan_Default(itemOidIidIndexRowType,
+                                               new IndexKeyRange(itemOidIidIndexRowType, null, false, null, false),
+                                               ordering,
+                                               itemOidIidIndexRowType.tableType());
+        Cursor cursor = cursor(indexScan, adapter);
+        String[] expected = new String[]{
+            hkey(1, 11, 112),
+            hkey(1, 11, 111),
+            hkey(1, 12, 122),
+            hkey(1, 12, 121),
+            hkey(2, 21, 212),
+            hkey(2, 21, 211),
+            hkey(2, 22, 222),
+            hkey(2, 22, 221),
+        };
         compareRenderedHKeys(expected, cursor);
     }
 
@@ -390,7 +455,7 @@ public class IndexScanIT extends OperatorITBase
 
     private IndexKeyRange indexKeyRange(int lo, boolean loInclusive, int hi, boolean hiInclusive)
     {
-        return new IndexKeyRange(bound(lo), loInclusive, bound(hi), hiInclusive);
+        return new IndexKeyRange(itemIidIndexRowType, bound(lo), loInclusive, bound(hi), hiInclusive);
     }
 
     private IndexBound bound(int iid)

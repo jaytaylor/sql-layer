@@ -13,20 +13,18 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.row;
+package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.ValueSource;
+import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.row.Row;
+import com.persistit.Exchange;
+import com.persistit.KeyFilter;
+import com.persistit.exception.PersistitException;
 
-public interface RowBase
+public interface RowGenerator
 {
-    RowType rowType();
-    HKey hKey();
-    boolean ancestorOf(RowBase that);
-    int runId();
-    void runId(int runId);
-    Row subRow(RowType subRowType);
-    ValueSource eval(int index);
-
-    final int UNDEFINED_RUN_ID = -1;
+    Row row() throws PersistitException; // row your boat, gently down the stream, merrily, merrily, merrily, merrily, life is but a dream.
+    void close();
+    Exchange exchange();
+    KeyFilter keyFilter(Bindings bindings);
 }

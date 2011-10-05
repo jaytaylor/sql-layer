@@ -18,6 +18,7 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -67,8 +68,10 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
                 ? null
                 : new IndexBound(new NewRowBackedIndexRow(queryRootType, new LegacyRowWrapper(end), predicateIndex),
                                  indexSelectorFromTableSelector(predicateIndex, endColumns));
+            IndexRowType indexRowType = schema.indexRowType(predicateIndex);
             indexKeyRange = new IndexKeyRange
-                (lo,
+                (indexRowType,
+                 lo,
                  lo != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0,
                  hi,
                  hi != null && (scanFlags & (SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_END_EXCLUSIVE)) == 0);

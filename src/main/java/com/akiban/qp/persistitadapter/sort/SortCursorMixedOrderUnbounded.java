@@ -15,12 +15,27 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.persistit.Key;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.operator.API;
+import com.persistit.exception.PersistitException;
 
-public class SortCursorDescending extends SortCursorUnidirectional
+class SortCursorMixedOrderUnbounded extends SortCursorMixedOrder
 {
-    public SortCursorDescending(RowGenerator rowGenerator)
+    // SortCursorMixedOrder interface
+
+    @Override
+    public MixedOrderScanState createScanState(SortCursorMixedOrder cursor, int field) throws PersistitException
     {
-        super(rowGenerator, Key.AFTER, Key.LT);
+        return new MixedOrderScanStateUnbounded(cursor, field);
+    }
+
+    @Override
+    public void computeBoundaries()
+    {
+    }
+
+    public SortCursorMixedOrderUnbounded(RowGenerator rowGenerator, IndexKeyRange keyRange, API.Ordering ordering)
+    {
+        super(rowGenerator, keyRange, ordering);
     }
 }

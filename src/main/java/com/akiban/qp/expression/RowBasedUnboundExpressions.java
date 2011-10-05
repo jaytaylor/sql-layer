@@ -16,27 +16,38 @@
 package com.akiban.qp.expression;
 
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.types.ValueSource;
 
 import java.util.List;
 
-public final class RowBasedUnboundExpressions implements UnboundExpressions {
+public final class RowBasedUnboundExpressions implements UnboundExpressions
+{
     @Override
-    public BoundExpressions get(Bindings bindings) {
-        return new ExpressionsAndBindings(rowType, expressions, bindings);
-    }
-
-    @Override
-    public String toString() {
+    public String toString()
+    {
         return "UnboundExpressions" + expressions;
     }
 
-    public RowBasedUnboundExpressions(RowType rowType, List<Expression> expressions) {
+    @Override
+    public Row get(Bindings bindings)
+    {
+        return new ExpressionRow(rowType, bindings, expressions);
+    }
+
+    @Override
+    public RowType rowType()
+    {
+        return rowType;
+    }
+
+    public RowBasedUnboundExpressions(RowType rowType, List<Expression> expressions)
+    {
         for (Expression expression : expressions) {
-            if (expression == null)
+            if (expression == null) {
                 throw new IllegalArgumentException();
+            }
         }
         this.expressions = expressions;
         this.rowType = rowType;
@@ -44,18 +55,4 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
 
     private final List<Expression> expressions;
     private final RowType rowType;
-
-    private static class ExpressionsAndBindings implements BoundExpressions {
-
-        @Override
-        public ValueSource eval(int index) {
-            return expressionRow.eval(index);
-        }
-
-        ExpressionsAndBindings(RowType rowType, List<Expression> expressions, Bindings bindings) {
-            expressionRow = new ExpressionRow(rowType, bindings, expressions);
-        }
-
-        private final ExpressionRow expressionRow;
-    }
 }

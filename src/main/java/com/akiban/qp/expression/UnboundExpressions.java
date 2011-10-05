@@ -16,7 +16,10 @@
 package com.akiban.qp.expression;
 
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.RowType;
 
 public interface UnboundExpressions {
-    BoundExpressions get(Bindings bindings);
+    RowBase get(Bindings bindings);
+    RowType rowType();
 }

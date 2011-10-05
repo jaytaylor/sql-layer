@@ -15,14 +15,18 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.server.PersistitValueValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.sql.optimizer.plan.Sort;
 import com.persistit.Exchange;
+import com.persistit.exception.PersistitException;
 
-abstract class SortCursor implements Cursor
+public abstract class SortCursor implements Cursor
 {
     // Cursor interface
 
@@ -30,6 +34,31 @@ abstract class SortCursor implements Cursor
     public final void close()
     {
         rowGenerator.close();
+    }
+
+    // SortCursor interface
+
+    public static SortCursor create(IndexKeyRange keyRange, API.Ordering ordering, RowGenerator rowGenerator)
+    {
+        boolean allAscending = true;
+        boolean allDescending = true;
+        for (int i = 0; i < ordering.sortFields(); i++) {
+            if (ordering.ascending(i)) {
+                allDescending = false;
+            } else {
+                allAscending = false;
+            }
+        }
+        return
+            allAscending ?
+            new SortCursorAscending(rowGenerator) :
+            allDescending ?
+            new SortCursorDescending(rowGenerator) :
+            // keyRange == null occurs when Sorter is used, (to sort an arbitrary input stream). There is no
+            // IndexRowType in that case, so an IndexKeyRange can't be created.
+            keyRange == null || keyRange.unbounded() ?
+            new SortCursorMixedOrderUnbounded(rowGenerator, keyRange, ordering) :
+            new SortCursorMixedOrderBounded(rowGenerator, keyRange, ordering);
     }
 
     // For use by subclasses
@@ -40,7 +69,7 @@ abstract class SortCursor implements Cursor
         this.exchange = rowGenerator.exchange();
     }
 
-    protected Row row()
+    protected Row row() throws PersistitException
     {
         return rowGenerator.row();
     }
@@ -48,5 +77,5 @@ abstract class SortCursor implements Cursor
     // Object state
 
     protected final Exchange exchange;
-    private final RowGenerator rowGenerator;
+    protected final RowGenerator rowGenerator;
 }

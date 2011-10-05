@@ -743,9 +743,10 @@ public class OperatorCompiler
 
         // Generate key range bounds.
         public IndexKeyRange getIndexKeyRange() {
+            IndexRowType indexRowType = schema.indexRowType(index);
             if ((equalityConditions == null) &&
                 (lowCondition == null) && (highCondition == null))
-                return new IndexKeyRange(null, false, null, false);
+                return new IndexKeyRange(indexRowType, null, false, null, false);
 
             List<IndexColumn> indexColumns = index.getColumns();
             int nkeys = indexColumns.size();
@@ -764,7 +765,7 @@ public class OperatorCompiler
 
             if ((lowCondition == null) && (highCondition == null)) {
                 IndexBound eq = getIndexBound(index, keys, kidx);
-                return new IndexKeyRange(eq, true, eq, true);
+                return new IndexKeyRange(indexRowType, eq, true, eq, true);
             }
             else {
                 Expression[] lowKeys = null, highKeys = null;
@@ -790,7 +791,7 @@ public class OperatorCompiler
                 }
                 IndexBound lo = getIndexBound(index, lowKeys, lidx);
                 IndexBound hi = getIndexBound(index, highKeys, hidx);
-                return new IndexKeyRange(lo, lowInc, hi, highInc);
+                return new IndexKeyRange(indexRowType, lo, lowInc, hi, highInc);
             }
         }
     }

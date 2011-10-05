@@ -35,6 +35,7 @@ import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
 import com.persistit.Exchange;
 import com.persistit.Key;
+import com.persistit.KeyFilter;
 import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
@@ -102,22 +103,7 @@ public class Sorter
 
     private Cursor cursor()
     {
-        boolean allAscending = true;
-        boolean allDescending = true;
-        for (int i = 0; i < ordering.sortFields(); i++) {
-            if (ordering.ascending(i)) {
-                allDescending = false;
-            } else {
-                allAscending = false;
-            }
-        }
-        RowGenerator rowGenerator = new SorterRowGenerator();
-        SortCursor cursor =
-            allAscending ?
-            new SortCursorAscending(rowGenerator) :
-            allDescending ?
-            new SortCursorDescending(rowGenerator) :
-            new SortCursorMixedOrder(rowGenerator, ordering);
+        SortCursor cursor = SortCursor.create(null, ordering, new SorterRowGenerator());
         cursor.open(bindings);
         return cursor;
     }
@@ -201,6 +187,13 @@ public class Sorter
         public Exchange exchange()
         {
             return exchange;
+        }
+
+        @Override
+        public KeyFilter keyFilter(Bindings bindings)
+        {
+            // Sorter does a complete sort, so a KeyFilter isn't needed.
+            return null;
         }
 
         SorterRowGenerator()

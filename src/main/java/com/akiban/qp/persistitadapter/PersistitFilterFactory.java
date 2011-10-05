@@ -18,9 +18,9 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.row.RowBase;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
@@ -92,7 +92,7 @@ class PersistitFilterFactory
         return KeyFilter.termFromKeySegments(key, key, keyRange.loInclusive(), keyRange.hiInclusive());
     }
 
-    private void appendKeyField(PersistitKeyValueTarget target, Column column, int position, BoundExpressions row)
+    private void appendKeyField(PersistitKeyValueTarget target, Column column, int position, RowBase row)
     {
         target.expectingType(column);
         ValueSource source = row.eval(position);

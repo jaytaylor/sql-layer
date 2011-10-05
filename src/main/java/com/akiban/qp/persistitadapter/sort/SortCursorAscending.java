@@ -15,48 +15,12 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.qp.persistitadapter.PersistitAdapterException;
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ValuesHolderRow;
-import com.akiban.server.PersistitValueValueSource;
-import com.akiban.server.types.util.ValueHolder;
 import com.persistit.Key;
-import com.persistit.exception.PersistitException;
 
-class SortCursorAscending extends SortCursor
+public class SortCursorAscending extends SortCursorUnidirectional
 {
-    // Cursor interface
-
-    @Override
-    public void open(Bindings bindings)
-    {
-        exchange.clear();
-        exchange.append(Key.BEFORE);
-    }
-
-    @Override
-    public Row next()
-    {
-        Row next = null;
-        try {
-            if (exchange.next(true)) {
-                next = row();
-            } else {
-                close();
-            }
-        } catch (PersistitException e) {
-            close();
-            throw new PersistitAdapterException(e);
-        }
-        return next;
-    }
-
-    // SortCursorAscending interface
-
     public SortCursorAscending(RowGenerator rowGenerator)
     {
-        super(rowGenerator);
+        super(rowGenerator, Key.BEFORE, Key.GT);
     }
 }
