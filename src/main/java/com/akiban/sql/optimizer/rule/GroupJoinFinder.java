@@ -72,12 +72,9 @@ public class GroupJoinFinder extends BaseRule
         public boolean visit(PlanNode n) {
             if (n instanceof Joinable) {
                 Joinable joinable = (Joinable)n;
-                PlanNode output = joinable.getOutput();
+                PlanWithInput output = joinable.getOutput();
                 if (!(output instanceof Joinable)) {
-                    ConditionList whereConditions = null;
-                    if (output instanceof Select)
-                        whereConditions = ((Select)output).getConditions();
-                    result.add(new JoinIsland(joinable, whereConditions));
+                    result.add(new JoinIsland(joinable, output));
                 }
             }
             return true;
@@ -102,11 +99,14 @@ public class GroupJoinFinder extends BaseRule
     // A subtree of joins.
     static class JoinIsland {
         Joinable root;
+        PlanWithInput output;
         ConditionList whereConditions;
 
-        public JoinIsland(Joinable root, ConditionList whereConditions) {
+        public JoinIsland(Joinable root, PlanWithInput output) {
             this.root = root;
-            this.whereConditions = whereConditions;
+            this.output = output;
+            if (output instanceof Select)
+                whereConditions = ((Select)output).getConditions();
         }
     }
 
@@ -182,7 +182,7 @@ public class GroupJoinFinder extends BaseRule
         for (JoinIsland island : islands) {
             Joinable nroot = reorderJoins(island.root);            
             if (island.root != nroot) {
-                island.root.getOutput().replaceInput(island.root, nroot);
+                island.output.replaceInput(island.root, nroot);
                 island.root = nroot;
             }
         }
@@ -273,10 +273,10 @@ public class GroupJoinFinder extends BaseRule
     }
 
     protected void findGroupJoins(Joinable joinable, JoinNode output,
-                                  List<ConditionExpression> whereConditions) {
+                                  ConditionList whereConditions) {
         if (joinable.isTable()) {
             TableSource table = (TableSource)joinable;
-            List<ConditionExpression> conditions = null;
+            ConditionList conditions = null;
             if (output != null)
                 conditions = output.getJoinConditions();
             if ((conditions != null) && conditions.isEmpty())
@@ -309,7 +309,7 @@ public class GroupJoinFinder extends BaseRule
     // Find a condition among the given conditions that matches the
     // parent join for the given table.
     protected TableGroupJoin findParentJoin(TableSource childTable,
-                                            List<ConditionExpression> conditions) {
+                                            ConditionList conditions) {
         if (conditions == null) return null;
         TableNode childNode = childTable.getTable();
         Join groupJoin = childNode.getTable().getParentJoin();
@@ -423,7 +423,7 @@ public class GroupJoinFinder extends BaseRule
             TableGroup group = isolateGroups(island.root);
             if (group != null) {
                 Joinable nroot = getTableJoins(island.root, group);
-                island.root.getOutput().replaceInput(island.root, nroot);
+                island.output.replaceInput(island.root, nroot);
                 island.root = nroot;
             }
         }
