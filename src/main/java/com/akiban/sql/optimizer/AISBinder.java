@@ -119,12 +119,21 @@ public class AISBinder implements Visitor
 
         switch (node.getNodeType()) {
         case NodeTypes.CURSOR_NODE:
-        case NodeTypes.FROM_SUBQUERY:
-        case NodeTypes.SUBQUERY_NODE:
         case NodeTypes.DELETE_NODE:
         case NodeTypes.INSERT_NODE:
         case NodeTypes.UPDATE_NODE:
-            pushBindingContext();
+            pushBindingContext(((DMLStatementNode)node).getResultSetNode());
+            break;
+        case NodeTypes.FROM_SUBQUERY:
+            pushBindingContext(((FromSubquery)node).getSubquery());
+            break;
+        case NodeTypes.SUBQUERY_NODE:
+            pushBindingContext(((SubqueryNode)node).getResultSet());
+            break;
+        case NodeTypes.ORDER_BY_LIST:
+        case NodeTypes.GROUP_BY_LIST:
+            getBindingContext().resultColumnsAvailable = true;
+            break;
         }
 
         return first;
@@ -139,6 +148,10 @@ public class AISBinder implements Visitor
         case NodeTypes.INSERT_NODE:
         case NodeTypes.UPDATE_NODE:
             popBindingContext();
+            break;
+        case NodeTypes.ORDER_BY_LIST:
+        case NodeTypes.GROUP_BY_LIST:
+            getBindingContext().resultColumnsAvailable = false;
             break;
         }
     }
@@ -519,8 +532,19 @@ public class AISBinder implements Visitor
                     }
                 }
             }
-            if (columnBinding == null)
-                throw new NoSuchColumnException (columnName);
+            if (columnBinding == null) {
+                if (getBindingContext().resultColumnsAvailable) {
+                    ResultColumnList resultColumns = getBindingContext().resultColumns;
+                    if (resultColumns != null) {
+                        ResultColumn resultColumn = resultColumns.getResultColumn(columnName);
+                        if (resultColumn != null) {
+                            columnBinding = new ColumnBinding(null, resultColumn);
+                        }
+                    }
+                }
+                if (columnBinding == null)
+                    throw new NoSuchColumnException (columnName);
+            }
         }
         columnReference.setUserData(columnBinding);
     }
@@ -851,7 +875,7 @@ public class AISBinder implements Visitor
     }
 
     protected void unionNode(UnionNode node) {
-        pushBindingContext();
+        pushBindingContext(null);
         try {
             node.getLeftResultSet().accept(this);
             // TODO: This isn't really correct, but it's where the names come from.
@@ -862,7 +886,7 @@ public class AISBinder implements Visitor
                                                              node.getLeftResultSet().toString());
         }
         popBindingContext();
-        pushBindingContext();
+        pushBindingContext(null);
         try {
             node.getRightResultSet().accept(this);
         }
@@ -876,15 +900,20 @@ public class AISBinder implements Visitor
     protected static class BindingContext {
         Collection<FromTable> tables = new ArrayList<FromTable>();
         Map<String,FromTable> correlationNames = new HashMap<String,FromTable>();
+        ResultColumnList resultColumns;
+        boolean resultColumnsAvailable;
     }
 
     protected BindingContext getBindingContext() {
         return bindingContexts.peek();
     }
-    protected void pushBindingContext() {
+    protected void pushBindingContext(ResultSetNode resultSet) {
         BindingContext next = new BindingContext();
         if (!bindingContexts.empty()) {
             next.correlationNames.putAll(bindingContexts.peek().correlationNames);
+        }
+        if (resultSet != null) {
+            next.resultColumns = resultSet.getResultColumns();
         }
         bindingContexts.push(next);
     }

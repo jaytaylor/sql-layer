@@ -229,8 +229,8 @@ public enum ErrorCode {
     TABLE_BAD_SUBQUERY      ("42", "50B", Importance.DEBUG, TableIsBadSubqueryException.class),
     WRONG_FUNCTION_ARITY    ("42", "50C", Importance.DEBUG, WrongExpressionArityException.class),
     NO_SUCH_FUNCTION        ("42", "50D", Importance.DEBUG, NoSuchFunctionException.class),
-    ORDER_BY_NON_INTEGER_CONSTANT("42", "50E", Importance.DEBUG, OrderByNonIntegerConstant.class),
-    ORDER_BY_INTEGER_OUT_OF_RANGE("42", "50F", Importance.DEBUG, OrderByIntegerOutOfRange.class),
+    ORDER_GROUP_BY_NON_INTEGER_CONSTANT("42", "50E", Importance.DEBUG, OrderGroupByNonIntegerConstant.class),
+    ORDER_GROUP_BY_INTEGER_OUT_OF_RANGE("42", "50F", Importance.DEBUG, OrderGroupByIntegerOutOfRange.class),
  
 
     // Class 44 - with check option violation

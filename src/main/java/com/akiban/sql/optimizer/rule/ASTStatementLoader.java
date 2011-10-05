@@ -38,8 +38,8 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ParseException;
 import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.error.OrderByNonIntegerConstant;
-import com.akiban.server.error.OrderByIntegerOutOfRange;
+import com.akiban.server.error.OrderGroupByNonIntegerConstant;
+import com.akiban.server.error.OrderGroupByIntegerOutOfRange;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -234,18 +234,7 @@ public class ASTStatementLoader extends BaseRule
             List<OrderByExpression> sorts = new ArrayList<OrderByExpression>();
             if (orderByList != null) {
                 for (OrderByColumn orderByColumn : orderByList) {
-                    ExpressionNode expression = toExpression(orderByColumn.getExpression());
-                    if (expression.isConstant()) {
-                        Object value = ((ConstantExpression)expression).getValue();
-                        if (value instanceof Long) {
-                            int i = ((Long)value).intValue();
-                            if ((i <= 0) || (i > results.size()))
-                                throw new OrderByIntegerOutOfRange(i, results.size());
-                            expression = projects.get(i-1);
-                        }
-                        else
-                            throw new OrderByNonIntegerConstant(expression.getSQLsource());
-                    }
+                    ExpressionNode expression = toOrderGroupBy(orderByColumn.getExpression(), projects, "ORDER");
                     sorts.add(new OrderByExpression(expression,
                                                     orderByColumn.isAscending()));
                 }
@@ -258,7 +247,7 @@ public class ASTStatementLoader extends BaseRule
                 (selectNode.getHavingClause() != null) ||
                 hasAggregateFunction(projects) ||
                 hasAggregateFunctionA(sorts)) {
-                query = toAggregateSource(query, selectNode.getGroupByList());
+                query = toAggregateSource(query, selectNode.getGroupByList(), projects);
                 query = new Select(query, toConditions(selectNode.getHavingClause()));
             }
 
@@ -842,6 +831,12 @@ public class ASTStatementLoader extends BaseRule
         /** Translate expression to intermediate form. */
         protected ExpressionNode toExpression(ValueNode valueNode)
                 throws StandardException {
+            return toExpression(valueNode, null);
+        }
+
+        protected ExpressionNode toExpression(ValueNode valueNode,
+                                              List<ExpressionNode> projects)
+                throws StandardException {
             if (valueNode == null) {
                 return new ConstantExpression(null, AkType.NULL);
             }
@@ -851,6 +846,13 @@ public class ASTStatementLoader extends BaseRule
                 if (cb == null)
                     throw new UnsupportedSQLException("Unsupported column", valueNode);
                 Joinable joinNode = joinNodes.get(cb.getFromTable());
+                if ((joinNode == null) &&
+                    (cb.getFromTable() == null) &&
+                    (projects != null) &&
+                    (cb.getResultColumn() != null)) {
+                    // Alias: use result column expression.
+                    return projects.get(cb.getResultColumn().getColumnPosition()-1);
+                }
                 if (!(joinNode instanceof ColumnSource))
                     throw new UnsupportedSQLException("Unsupported column", valueNode);
                 Column column = cb.getColumn();
@@ -1036,6 +1038,31 @@ public class ASTStatementLoader extends BaseRule
             throw new UnsupportedSQLException(errmsg, value);
         }
 
+        /** Value for ORDER / GROUP BY.
+         * Can be:<ul>
+         * <li>ordinary expression</li>
+         * <li>ordinal index into the projects</li>
+         * <li>alias of one of the projects</li></ul>
+         */
+        protected ExpressionNode toOrderGroupBy(ValueNode valueNode,
+                                                List<ExpressionNode> projects,
+                                                String which)
+                throws StandardException {
+            ExpressionNode expression = toExpression(valueNode, projects);
+            if (expression.isConstant()) {
+                Object value = ((ConstantExpression)expression).getValue();
+                if (value instanceof Long) {
+                    int i = ((Long)value).intValue();
+                    if ((i <= 0) || (i > projects.size()))
+                        throw new OrderGroupByIntegerOutOfRange(which, i, projects.size());
+                    expression = (ExpressionNode)projects.get(i-1);
+                }
+                else
+                    throw new OrderGroupByNonIntegerConstant(which, expression.getSQLsource());
+            }
+            return expression;
+        }
+
         /** Construct an aggregating node.
          * This only sets the skeleton with the group by fields. Later,
          * aggregate functions from the result columns, HAVING & ORDER BY
@@ -1043,12 +1070,14 @@ public class ASTStatementLoader extends BaseRule
          * reflect this.
          */
         protected AggregateSource toAggregateSource(PlanNode input,
-                                                    GroupByList groupByList)
+                                                    GroupByList groupByList,
+                                                    List<ExpressionNode> projects)
                 throws StandardException {
             List<ExpressionNode> groupBy = new ArrayList<ExpressionNode>();
             if (groupByList != null) {
                 for (GroupByColumn groupByColumn : groupByList) {
-                    groupBy.add(toExpression(groupByColumn.getColumnExpression()));
+                    groupBy.add(toOrderGroupBy(groupByColumn.getColumnExpression(),
+                                               projects, "GROUP"));
                 }
             }
             return new AggregateSource(input, groupBy);

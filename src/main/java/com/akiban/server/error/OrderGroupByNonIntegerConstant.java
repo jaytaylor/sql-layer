@@ -19,8 +19,8 @@ import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.QueryTreeNode;
 import com.akiban.sql.unparser.NodeToString;
 
-public final class OrderByNonIntegerConstant extends BaseSQLException {
-    public OrderByNonIntegerConstant(QueryTreeNode sql) {
-        super(ErrorCode.ORDER_BY_NON_INTEGER_CONSTANT, sql);
+public final class OrderGroupByNonIntegerConstant extends BaseSQLException {
+    public OrderGroupByNonIntegerConstant(String which, QueryTreeNode sql) {
+        super(ErrorCode.ORDER_GROUP_BY_NON_INTEGER_CONSTANT, which, sql);
     }
 }
