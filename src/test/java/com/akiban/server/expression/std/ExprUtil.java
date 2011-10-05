@@ -24,7 +24,6 @@ final class ExprUtil {
         return new LiteralExpression(AkType.VARCHAR, string);
     }
 
-
     public static Expression lit(double value) {
         return new LiteralExpression(AkType.DOUBLE, value);
     }
@@ -34,7 +33,7 @@ final class ExprUtil {
     }
 
     public static Expression litNull(AkType type) {
-        return TypedNullExpression.of(type);
+        return TypedNullExpression.ofConst(type);
     }
 
     public static Expression litNull() {

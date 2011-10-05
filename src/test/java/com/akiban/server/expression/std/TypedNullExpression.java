@@ -23,13 +23,17 @@ public final class TypedNullExpression implements Expression {
 
     // TypedNullExpression interface
 
-    public static Expression of(AkType type) {
-        return new TypedNullExpression(type);
+    public static Expression ofConst(AkType type) {
+        return new TypedNullExpression(type, true);
+    }
+
+    public static Expression nonConst(AkType type) {
+        return new TypedNullExpression(type, false);
     }
 
     @Override
     public boolean isConstant() {
-        return true;
+        return isConst;
     }
 
     @Override
@@ -59,12 +63,13 @@ public final class TypedNullExpression implements Expression {
         return "NULL(type=" + type + ')';
     }
 
-
     // use in this class
 
-    private TypedNullExpression(AkType type) {
+    private TypedNullExpression(AkType type, boolean isConst) {
         this.type = type;
+        this.isConst = isConst;
     }
 
     private final AkType type;
+    private final boolean isConst;
 }
