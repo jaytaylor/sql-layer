@@ -41,10 +41,19 @@ public class GroupJoinFinder extends BaseRule
         return logger;
     }
 
+    @Override
+    public void apply(PlanContext plan) {
+        List<JoinIsland> islands = new JoinIslandFinder().find(plan.getPlan());
+        moveAndNormalizeWhereConditions(islands);
+        reorderJoins(islands);
+        findGroupJoins(islands);
+        isolateGroups(islands);
+    }
+    
     static class JoinIslandFinder implements PlanVisitor, ExpressionVisitor {
-        List<Joinable> result = new ArrayList<Joinable>();
+        List<JoinIsland> result = new ArrayList<JoinIsland>();
 
-        public List<Joinable> find(PlanNode root) {
+        public List<JoinIsland> find(PlanNode root) {
             root.accept(this);
             return result;
         }
@@ -62,9 +71,14 @@ public class GroupJoinFinder extends BaseRule
         @Override
         public boolean visit(PlanNode n) {
             if (n instanceof Joinable) {
-                Joinable j = (Joinable)n;
-                if (!(j.getOutput() instanceof Joinable))
-                    result.add(j);
+                Joinable joinable = (Joinable)n;
+                PlanNode output = joinable.getOutput();
+                if (!(output instanceof Joinable)) {
+                    ConditionList whereConditions = null;
+                    if (output instanceof Select)
+                        whereConditions = ((Select)output).getConditions();
+                    result.add(new JoinIsland(joinable, whereConditions));
+                }
             }
             return true;
         }
@@ -85,26 +99,27 @@ public class GroupJoinFinder extends BaseRule
         }
     }
 
-    @Override
-    public void apply(PlanContext plan) {
-        List<Joinable> islands = new JoinIslandFinder().find(plan.getPlan());
-        moveAndNormalizeWhereConditions(islands);
-        reorderJoins(islands);
-        findGroupJoins(islands);
-        isolateGroups(islands);
+    // A subtree of joins.
+    static class JoinIsland {
+        Joinable root;
+        ConditionList whereConditions;
+
+        public JoinIsland(Joinable root, ConditionList whereConditions) {
+            this.root = root;
+            this.whereConditions = whereConditions;
+        }
     }
-    
+
     // First pass: find all the WHERE conditions above inner joins
     // and put given join condition up there, since it's equivalent.
     // While there, normalize comparisons.
-    protected void moveAndNormalizeWhereConditions(List<Joinable> islands) {
-        for (Joinable island : islands) {
-            if (island.getOutput() instanceof Select) {
-                ConditionList conditions = ((Select)island.getOutput()).getConditions();
-                moveInnerJoinConditions(island, conditions);
-                normalizeColumnComparisons(conditions);
+    protected void moveAndNormalizeWhereConditions(List<JoinIsland> islands) {
+        for (JoinIsland island : islands) {
+            if (island.whereConditions != null) {
+                moveInnerJoinConditions(island.root, island.whereConditions);
+                normalizeColumnComparisons(island.whereConditions);
             }
-            normalizeColumnComparisons(island);
+            normalizeColumnComparisons(island.root);
         }
     }
 
@@ -163,15 +178,14 @@ public class GroupJoinFinder extends BaseRule
 
     // Second pass: put adjacent inner joined tables together in
     // left-deep ascending-ordinal order. E.g. (CO)I.
-    protected void reorderJoins(List<Joinable> islands) {
-        for (int i = 0; i < islands.size(); i++) {
-            Joinable island = islands.get(i);
-            Joinable nisland = reorderJoins(island);
-            if (island != nisland) {
-                island.getOutput().replaceInput(island, nisland);
-                islands.set(i, nisland);
+    protected void reorderJoins(List<JoinIsland> islands) {
+        for (JoinIsland island : islands) {
+            Joinable nroot = reorderJoins(island.root);            
+            if (island.root != nroot) {
+                island.root.getOutput().replaceInput(island.root, nroot);
+                island.root = nroot;
             }
-        }        
+        }
     }
 
     protected Joinable reorderJoins(Joinable joinable) {
@@ -249,15 +263,12 @@ public class GroupJoinFinder extends BaseRule
     }
 
     // Third pass: find join conditions corresponding to group joins.
-    protected void findGroupJoins(List<Joinable> islands) {
-        for (Joinable island : islands) {
-            List<ConditionExpression> whereConditions = null;
-            if (island.getOutput() instanceof Select)
-                whereConditions = ((Select)island.getOutput()).getConditions();
-            findGroupJoins(island, null, whereConditions);
+    protected void findGroupJoins(List<JoinIsland> islands) {
+        for (JoinIsland island : islands) {
+            findGroupJoins(island.root, null, island.whereConditions);
         }
-        for (Joinable island : islands) {
-            findSingleGroups(island);
+        for (JoinIsland island : islands) {
+            findSingleGroups(island.root);
         }
     }
 
@@ -407,15 +418,13 @@ public class GroupJoinFinder extends BaseRule
     // We have done out best with the inner joins to make this possible,
     // but some outer joins may require that a TableGroup be broken up into
     // multiple TableJoins.
-    protected void isolateGroups(List<Joinable> islands) {
-        for (int i = 0; i < islands.size(); i++) {
-            Joinable island = islands.get(i);
-            TableGroup group = isolateGroups(island);
+    protected void isolateGroups(List<JoinIsland> islands) {
+        for (JoinIsland island : islands) {
+            TableGroup group = isolateGroups(island.root);
             if (group != null) {
-                PlanWithInput output = island.getOutput();
-                Joinable nisland = getTableJoins(island, group);
-                output.replaceInput(island, nisland);
-                islands.set(i, nisland);
+                Joinable nroot = getTableJoins(island.root, group);
+                island.root.getOutput().replaceInput(island.root, nroot);
+                island.root = nroot;
             }
         }
     }
