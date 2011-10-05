@@ -18,6 +18,8 @@ package com.akiban.server.types.extract;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.akiban.server.error.InvalidDateFormatException;
+
 public class TimeExtractorTest extends LongExtractorTestBase {
     public TimeExtractorTest() {
         super(ExtractorsForDates.TIME,
@@ -44,17 +46,17 @@ public class TimeExtractorTest extends LongExtractorTestBase {
         Assert.assertEquals("-00:10:02", encodeAndDecode("-10:02"));
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=InvalidDateFormatException.class)
     public void invalidNumber() {
         encodeAndDecode("20111zebra");
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=InvalidDateFormatException.class)
     public void noNumbers() {
         encodeAndDecode("zebra");
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=InvalidDateFormatException.class)
     public void tooManyParts() {
         encodeAndDecode("01:02:03:04");
     }

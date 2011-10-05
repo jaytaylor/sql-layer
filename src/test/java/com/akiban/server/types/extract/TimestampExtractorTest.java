@@ -17,6 +17,8 @@ package com.akiban.server.types.extract;
 
 import org.junit.Test;
 
+import com.akiban.server.error.InvalidDateFormatException;
+
 public class TimestampExtractorTest extends LongExtractorTestBase {
     public TimestampExtractorTest() {
         super(ExtractorsForDates.TIMESTAMP,
@@ -35,12 +37,12 @@ public class TimestampExtractorTest extends LongExtractorTestBase {
     }
 
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=InvalidDateFormatException.class)
     public void invalidNumber() {
         encodeAndDecode("20111zebra");
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=InvalidDateFormatException.class)
     public void noNumbers() {
         encodeAndDecode("zebra");
     }

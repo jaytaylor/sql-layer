@@ -17,7 +17,6 @@ package com.akiban.server.types.extract;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueSourceIsNullException;
 
 public final class BooleanExtractor extends AbstractExtractor {
 

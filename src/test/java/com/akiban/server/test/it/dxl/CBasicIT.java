@@ -22,6 +22,7 @@ import com.akiban.server.TableStatistics;
 import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.api.dml.scan.*;
 import com.akiban.server.error.CursorIsFinishedException;
+import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchRowException;
 import com.akiban.server.error.OldAISException;
@@ -379,7 +380,7 @@ public final class CBasicIT extends ITBase {
         expectRows(new ScanAllRequest(tableId, ColumnSet.ofPositions(0)), createNewRow(tableId, 1L) );
     }
 
-    @Test(expected=TableDefinitionMismatchException.class)
+    @Test(expected=InvalidCharToNumException.class)
     public void updateOldNewHasWrongType() throws InvalidOperationException {
         final int tableId;
         try {
@@ -399,7 +400,7 @@ public final class CBasicIT extends ITBase {
             dml().updateRow(
                     session(), createNewRow(tableId, 0, "hello world"),
                     createNewRow(tableId, "zero", "1234"), null);
-        } catch (TableDefinitionMismatchException e) {
+        } catch (InvalidCharToNumException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
             expectRows(request, createNewRow(tableId, 0L, "hello world") );
             throw e;
@@ -407,7 +408,7 @@ public final class CBasicIT extends ITBase {
         fail("expected exception. rows are now: " + scanAll(new ScanAllRequest(tableId, null)));
     }
 
-    @Test(expected=TableDefinitionMismatchException.class)
+    @Test(expected=InvalidCharToNumException.class)
     public void insertHasWrongType() throws InvalidOperationException {
         final int tableId;
         try {

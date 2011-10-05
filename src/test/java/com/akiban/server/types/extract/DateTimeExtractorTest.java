@@ -16,6 +16,9 @@
 package com.akiban.server.types.extract;
 
 import org.junit.Test;
+
+import com.akiban.server.error.InvalidDateFormatException;
+
 import java.math.BigInteger;
 
 public class DateTimeExtractorTest extends LongExtractorTestBase {
@@ -31,47 +34,47 @@ public class DateTimeExtractorTest extends LongExtractorTestBase {
     }
 
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=InvalidDateFormatException.class)
     public void datePartNotNumber() {
         encodeAndDecode("2011-01-01zebra 00:00:00");
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=InvalidDateFormatException.class)
     public void timePartNotNumber() {
         encodeAndDecode("2011-01-01 00:00:00zebra");
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=InvalidDateFormatException.class)
     public void partialDatePart() {
         encodeAndDecode("2011-01 00:00:00");
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=InvalidDateFormatException.class)
     public void partialTimePart() {
         encodeAndDecode("2011-01-01 00:00");
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=InvalidDateFormatException.class)
     public void noNumbers() {
         encodeAndDecode("zebra");
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=InvalidDateFormatException.class)
     public void tooManyDateParts() {
         encodeAndDecode("2000-01-01-01 00:00:00");
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=InvalidDateFormatException.class)
     public void tooManyTimeParts() {
         encodeAndDecode("2000-01-01 00:00:00:00");
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=InvalidDateFormatException.class)
     public void onlyDatePart() {
         encodeAndDecode("2000-01-01");
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=InvalidDateFormatException.class)
     public void onlyTimePart() {
         encodeAndDecode("10:11:12");
     }
