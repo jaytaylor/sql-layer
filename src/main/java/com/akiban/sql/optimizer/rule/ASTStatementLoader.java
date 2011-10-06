@@ -474,6 +474,12 @@ public class ASTStatementLoader extends BaseRule
                                                            condition.getType(), condition));
                 }
                 break;
+            case NodeTypes.CAST_NODE:
+                assert condition.getType().getTypeId().isBooleanTypeId();
+                conditions.add(new BooleanCastExpression(toExpression(((CastNode)condition)
+                                                                      .getCastOperand()),
+                                                         condition.getType(), condition));
+                break;
             case NodeTypes.JAVA_TO_SQL_VALUE_NODE:
                 conditions.add((ConditionExpression)
                                toExpression(((JavaToSQLValueNode)condition).getJavaValueNode(), 
@@ -910,8 +916,24 @@ public class ASTStatementLoader extends BaseRule
             else if (valueNode instanceof BinaryOperatorNode) {
                 BinaryOperatorNode binary = (BinaryOperatorNode)valueNode;
                 List<ExpressionNode> operands = new ArrayList<ExpressionNode>(2);
-                operands.add(toExpression(binary.getLeftOperand()));
-                operands.add(toExpression(binary.getRightOperand()));
+                int nodeType = valueNode.getNodeType();
+                switch (nodeType) {
+                case NodeTypes.CONCATENATION_OPERATOR_NODE:
+                    // Operator is binary but function is nary: collapse.
+                    while (true) {
+                        operands.add(toExpression(binary.getLeftOperand()));
+                        ValueNode right = binary.getRightOperand();
+                        if (right.getNodeType() != nodeType) {
+                            operands.add(toExpression(right));
+                            break;
+                        }
+                        binary = (BinaryOperatorNode)right;
+                    }
+                    break;
+                default:
+                    operands.add(toExpression(binary.getLeftOperand()));
+                    operands.add(toExpression(binary.getRightOperand()));
+                }
                 return new FunctionExpression(binary.getMethodName(),
                                               operands,
                                               binary.getType(), binary);

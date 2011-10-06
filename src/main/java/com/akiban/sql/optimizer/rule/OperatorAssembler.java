@@ -496,14 +496,20 @@ public class OperatorAssembler extends BaseRule
             for (AggregateFunctionExpression aggr : aggregateSource.getAggregates()) {
                 // Should have been split up by now.
                 assert !aggr.isDistinct();
+                String function = aggr.getFunction();
                 Expression operand;
-                if (aggr.getOperand() != null)
+                if (aggr.getOperand() != null) {
                   operand = assembleExpression(aggr.getOperand(), stream.fieldOffsets);
-                else
+                }
+                else {
                   operand = Expressions.literal(1L); // Anything non-null will do.
+                  if ("COUNT".equals(function))
+                      function = "COUNT(*)";
+                }
                 expressions.add(operand);
-                aggregatorNames.add(aggr.getFunction());
+                aggregatorNames.add(function);
             }
+            // TODO: This is happening too late for a nested loop join.
             stream.operator = API.project_Default(stream.operator, stream.rowType, 
                                                   expressions);
             stream.rowType = stream.operator.rowType();

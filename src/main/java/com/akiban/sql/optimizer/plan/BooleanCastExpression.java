@@ -13,20 +13,23 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.akiban.sql.optimizer.plan;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.aggregation.DummyAggregatorRegistry;
-import com.akiban.server.service.functions.FunctionsRegistry;
+import com.akiban.server.types.AkType;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ValueNode;
 
-import java.util.List;
-
-public class RulesTestContext extends SchemaRulesContext
+public class BooleanCastExpression extends CastExpression
+                                   implements ConditionExpression
 {
-    public RulesTestContext(AkibanInformationSchema ais, List<BaseRule> rules) {
-        super(ais, 
-              new FunctionsRegistry(), new DummyAggregatorRegistry(),
-              rules);
-        RulesTestHelper.ensureRowDefs(ais);
+    public BooleanCastExpression(ExpressionNode inner, 
+                                 DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        super(inner, sqlType, AkType.BOOL, sqlSource);
     }
+    
+    @Override
+    public Implementation getImplementation() {
+        return Implementation.NORMAL;
+    }
+
 }

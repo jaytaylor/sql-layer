@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.server.types.AkType;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
@@ -27,6 +28,12 @@ public class CastExpression extends BaseExpression
     public CastExpression(ExpressionNode inner, 
                           DataTypeDescriptor sqlType, ValueNode sqlSource) {
         super(sqlType, sqlSource);
+        this.inner = inner;
+    }
+
+    public CastExpression(ExpressionNode inner, 
+                          DataTypeDescriptor sqlType, AkType akType, ValueNode sqlSource) {
+        super(sqlType, akType, sqlSource);
         this.inner = inner;
     }
 

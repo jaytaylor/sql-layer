@@ -28,11 +28,13 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
+import static com.akiban.server.expression.std.ExprUtil.*;
+
 public final class CoalesceExpressionTest extends ComposedExpressionTestBase {
 
     @Test
     public void smoke() {
-        check(new ValueHolder(AkType.LONG, 5), litNull(), litNull(), lit(5), ExplodingExpression.of(AkType.LONG));
+        check(new ValueHolder(AkType.LONG, 5), constNull(), constNull(), lit(5), exploding(AkType.LONG));
     }
 
     @Test
@@ -47,11 +49,11 @@ public final class CoalesceExpressionTest extends ComposedExpressionTestBase {
 
     @Test
     public void typedNull() {
-        check(NullValueSource.only(), AkType.LONG, litNull(AkType.LONG));
+        check(NullValueSource.only(), AkType.LONG, constNull(AkType.LONG));
     }
     @Test
     public void heterogeneousInputs() {
-        check(new ValueHolder(AkType.VARCHAR, "3"), litNull(), litNull(AkType.VARCHAR), lit(3), lit("hello"));
+        check(new ValueHolder(AkType.VARCHAR, "3"), constNull(), constNull(AkType.VARCHAR), lit(3), lit("hello"));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -82,21 +84,5 @@ public final class CoalesceExpressionTest extends ComposedExpressionTestBase {
 
     private void check(ValueSource expected, Expression... children) {
         check(expected, expected.getConversionType(), children);
-    }
-
-    private Expression lit(String string) {
-        return new LiteralExpression(AkType.VARCHAR, string);
-    }
-
-    private Expression lit(long value) {
-        return new LiteralExpression(AkType.LONG, value);
-    }
-
-    private Expression litNull() {
-        return LiteralExpression.forNull();
-    }
-
-    private Expression litNull(AkType type) {
-        return TypedNullExpression.of(type);
     }
 }

@@ -27,10 +27,11 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
+import static com.akiban.server.expression.std.ExprUtil.exploding;
 import static org.junit.Assert.assertEquals;
+import static com.akiban.server.expression.std.ExprUtil.*;
 
 @RunWith(NamedParameterizedRunner.class)
 public final class InExpressionTest {
@@ -41,12 +42,12 @@ public final class InExpressionTest {
     public static Collection<Parameterization> params() {
         List<Parameterization> params = new ArrayList<Parameterization>();
 
-        addTo(params, lit(5), true, lit(3), lit(4), lit(5), ERR);
+        addTo(params, lit(5), true, lit(3), lit(4), lit(5), exploding(AkType.VARCHAR));
         addTo(params, lit(5), false, lit(3));
         addTo(params, lit(3), true, lit("3"));
-        addTo(params, lit(5), null, lit(3), litNull());
-        addTo(params, lit(5), true, litNull(), lit(5));
-        addTo(params, litNull(), null, ERR);
+        addTo(params, lit(5), null, lit(3), constNull());
+        addTo(params, lit(5), true, constNull(), lit(5));
+        addTo(params, constNull(), null, exploding(AkType.VARCHAR));
 
         return params;
     }
@@ -71,24 +72,8 @@ public final class InExpressionTest {
         out.add(param);
     }
 
-    private static Expression lit(long value) {
-        return new LiteralExpression(AkType.LONG, value);
-    }
-
-    private static Expression lit(String value) {
-        return new LiteralExpression(AkType.VARCHAR, value);
-    }
-
-    private static Expression litNull() {
-        return LiteralExpression.forNull();
-    }
-
     // object state
     
     private final Boolean expected;
     private final Expression inExpression;
-    
-    // class state
-
-    private static final Expression ERR = ExplodingExpression.of(AkType.VARCHAR);
 }
