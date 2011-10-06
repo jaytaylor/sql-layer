@@ -29,7 +29,11 @@ public abstract class BaseRule
         traceName = EventTypes.OPTIMIZE + ": " + getName();
     }
 
-    protected String getName() {
+    public String getTraceName() {
+        return traceName;
+    }
+
+    public String getName() {
         return getClass().getSimpleName();
     }
 

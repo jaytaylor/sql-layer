@@ -44,20 +44,24 @@ final class ExprUtil {
         return constNull(AkType.NULL);
     }
 
-    public static Expression nonConstNull() {
-        return nonConstNull(AkType.NULL);
-    }
-
     public static Expression constNull(AkType type) {
-        return new TypedNullExpression(type, true);
+        return new TypedNullExpression(type);
     }
 
     public static Expression nonConstNull(AkType type) {
-        return new TypedNullExpression(type, false);
+        return nonConst(constNull(type));
     }
 
     public static Expression exploding(AkType type) {
         return new ExplodingExpression(type);
+    }
+
+    public static Expression nonConst(long value) {
+        return nonConst(lit(value));
+    }
+
+    private static Expression nonConst(Expression expression) {
+        return new NonConstWrapper(expression);
     }
 
     private ExprUtil() {}
@@ -68,7 +72,7 @@ final class ExprUtil {
 
         @Override
         public boolean isConstant() {
-            return isConst;
+            return true;
         }
 
         @Override
@@ -100,13 +104,11 @@ final class ExprUtil {
 
         // use in this class
 
-        TypedNullExpression(AkType type, boolean isConst) {
+        TypedNullExpression(AkType type) {
             this.type = type;
-            this.isConst = isConst;
         }
 
         private final AkType type;
-        private final boolean isConst;
     }
 
     private static final class ExplodingExpression implements Expression {
@@ -179,5 +181,44 @@ final class ExprUtil {
                 return "EXPLOSION_EVAL";
             }
         };
+    }
+
+    private static final class NonConstWrapper implements Expression {
+
+        @Override
+        public boolean isConstant() {
+            return false;
+        }
+
+        @Override
+        public boolean needsBindings() {
+            return delegate.needsBindings();
+        }
+
+        @Override
+        public boolean needsRow() {
+            return delegate.needsRow();
+        }
+
+        @Override
+        public ExpressionEvaluation evaluation() {
+            return delegate.evaluation();
+        }
+
+        @Override
+        public AkType valueType() {
+            return delegate.valueType();
+        }
+
+        @Override
+        public String toString() {
+            return "NonConst(" + delegate.toString() + ')';
+        }
+
+        private NonConstWrapper(Expression delegate) {
+            this.delegate = delegate;
+        }
+
+        private final Expression delegate;
     }
 }
