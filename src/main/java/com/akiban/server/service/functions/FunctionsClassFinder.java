@@ -15,8 +15,8 @@
 
 package com.akiban.server.service.functions;
 
-import java.util.List;
+import java.util.Collection;
 
 interface FunctionsClassFinder {
-    List<Class<?>> findClasses();
+    Collection<Class<?>> findClasses();
 }

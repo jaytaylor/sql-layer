@@ -18,6 +18,9 @@ package com.akiban.server.service.functions;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -29,6 +32,13 @@ public final class GlobularFunctionsClassFinderTest {
         List<Class<?>> expected = new ArrayList<Class<?>>();
         expected.add(PathOneClass.class);
         expected.add(PathTwoClass.class);
-        assertEquals(expected, finder.findClasses());
+        List<Class<?>> actual = new ArrayList<Class<?>>(finder.findClasses());
+        Collections.sort(actual, new Comparator<Class<?>>() {
+            @Override
+            public int compare(Class<?> o1, Class<?> o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
+        assertEquals(expected, actual);
     }
 }
