@@ -1,0 +1,2 @@
+com.akiban.server.expression.std.*
+com.akiban.server.aggregation.std.*

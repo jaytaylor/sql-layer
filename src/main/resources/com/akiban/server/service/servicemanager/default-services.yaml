@@ -14,8 +14,8 @@
     com.akiban.server.store.Store : com.akiban.qp.persistitadapter.OperatorStore
     com.akiban.sql.pg.PostgresService : com.akiban.sql.pg.PostgresServerManager
     com.akiban.server.service.instrumentation.InstrumentationService : com.akiban.server.service.instrumentation.InstrumentationServiceImpl
-    com.akiban.server.aggregation.AggregatorRegistry : com.akiban.server.aggregation.std.StandardAggregatorRegistry
-    com.akiban.server.expression.ExpressionRegistry : com.akiban.server.expression.std.StandardExpressionRegistry
+    com.akiban.server.aggregation.AggregatorRegistry : com.akiban.server.service.functions.FunctionsRegistryImpl
+    com.akiban.server.expression.ExpressionRegistry : com.akiban.server.service.functions.FunctionsRegistryImpl
 
 # This binding is really just a crutch while we move away from the static SMI.get() pattern
 - bind:

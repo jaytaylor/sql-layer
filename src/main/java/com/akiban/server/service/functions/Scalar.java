@@ -13,31 +13,15 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.akiban.server.service.functions;
 
-import org.slf4j.Logger;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import com.akiban.server.service.EventTypes;
-
-import com.akiban.sql.optimizer.plan.PlanContext;
-
-public abstract class BaseRule
-{
-    private final String traceName;
-
-    protected BaseRule() {
-        traceName = EventTypes.OPTIMIZE + ": " + getName();
-    }
-
-    public String getTraceName() {
-        return traceName;
-    }
-
-    public String getName() {
-        return getClass().getSimpleName();
-    }
-
-    protected abstract Logger getLogger();
-
-    public abstract void apply(PlanContext plan);
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+public @interface Scalar {
+    String value();
 }

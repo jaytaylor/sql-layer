@@ -17,13 +17,9 @@ package com.akiban.server.expression.std;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,7 +28,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(NamedParameterizedRunner.class)
 public final class BoolLogicExpressionTest {
@@ -111,5 +106,5 @@ public final class BoolLogicExpressionTest {
     private static final Expression TRUE = LiteralExpression.forBool(true);
     private static final Expression FALSE = LiteralExpression.forBool(false);
     private static final Expression NULL = LiteralExpression.forBool(null);
-    private static final Expression ERR = ExplodingExpression.of(AkType.BOOL);
+    private static final Expression ERR = ExprUtil.exploding(AkType.BOOL);
 }

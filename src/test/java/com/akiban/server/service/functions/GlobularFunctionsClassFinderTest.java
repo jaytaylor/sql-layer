@@ -13,31 +13,22 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.akiban.server.service.functions;
 
-import org.slf4j.Logger;
+import org.junit.Test;
 
-import com.akiban.server.service.EventTypes;
+import java.util.ArrayList;
+import java.util.List;
 
-import com.akiban.sql.optimizer.plan.PlanContext;
+import static org.junit.Assert.assertEquals;
 
-public abstract class BaseRule
-{
-    private final String traceName;
-
-    protected BaseRule() {
-        traceName = EventTypes.OPTIMIZE + ": " + getName();
+public final class GlobularFunctionsClassFinderTest {
+    @Test
+    public void findClasses() {
+        FunctionsClassFinder finder = new GlobularFunctionsClassFinder("testfunctionpath.txt");
+        List<Class<?>> expected = new ArrayList<Class<?>>();
+        expected.add(PathOneClass.class);
+        expected.add(PathTwoClass.class);
+        assertEquals(expected, finder.findClasses());
     }
-
-    public String getTraceName() {
-        return traceName;
-    }
-
-    public String getName() {
-        return getClass().getSimpleName();
-    }
-
-    protected abstract Logger getLogger();
-
-    public abstract void apply(PlanContext plan);
 }

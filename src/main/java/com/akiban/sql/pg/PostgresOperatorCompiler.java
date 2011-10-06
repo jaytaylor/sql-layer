@@ -23,6 +23,7 @@ import com.akiban.sql.optimizer.plan.PhysicalSelect;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.PhysicalUpdate;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
+import com.akiban.sql.optimizer.rule.BaseRule;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.SQLParser;
@@ -170,6 +171,16 @@ public class PostgresOperatorCompiler extends OperatorCompiler
                                                  // TODO: Assumes Limit operator used.
                                                  0, -1);
         }
+    }
+
+    @Override
+    public void beginRule(BaseRule rule) {
+        tracer.beginEvent(rule.getTraceName());
+    }
+
+    @Override
+    public void endRule(BaseRule rule) {
+        tracer.endEvent();
     }
 
 }

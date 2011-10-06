@@ -13,31 +13,17 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.akiban.server.service.functions;
 
-import org.slf4j.Logger;
+import com.akiban.server.types.AkType;
 
-import com.akiban.server.service.EventTypes;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import com.akiban.sql.optimizer.plan.PlanContext;
-
-public abstract class BaseRule
-{
-    private final String traceName;
-
-    protected BaseRule() {
-        traceName = EventTypes.OPTIMIZE + ": " + getName();
-    }
-
-    public String getTraceName() {
-        return traceName;
-    }
-
-    public String getName() {
-        return getClass().getSimpleName();
-    }
-
-    protected abstract Logger getLogger();
-
-    public abstract void apply(PlanContext plan);
+public interface FunctionsRegistryMXBean {
+    List<String> getScalars();
+    List<String> getAggregates();
+    Map<String,Set<AkType>> getAggregatesWithTypes();
 }

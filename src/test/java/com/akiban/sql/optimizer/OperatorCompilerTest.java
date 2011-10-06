@@ -18,7 +18,7 @@ package com.akiban.sql.optimizer;
 import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.aggregation.DummyAggregatorRegistry;
 import com.akiban.server.expression.ExpressionRegistry;
-import com.akiban.server.expression.std.StandardExpressionRegistry;
+import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
 
@@ -66,7 +66,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         if (indexFile != null)
             OptimizerTestBase.loadGroupIndexes(ais, indexFile);
         compiler = TestOperatorCompiler.create(parser, ais, "user",
-                new StandardExpressionRegistry(), new DummyAggregatorRegistry());
+                new FunctionsRegistryImpl(), new DummyAggregatorRegistry());
     }
 
     static class TestResultColumn extends PhysicalResultColumn {
