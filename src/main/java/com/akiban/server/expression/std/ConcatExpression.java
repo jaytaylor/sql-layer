@@ -17,7 +17,9 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.Quote;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
@@ -27,6 +29,18 @@ import com.akiban.util.AkibanAppender;
 import java.util.List;
 
 public final class ConcatExpression extends AbstractCompositeExpression {
+
+    @Scalar("concatenate")
+    public static final ExpressionComposer COMPOSER = new ExpressionComposer() {
+        @Override
+        public Expression compose(List<? extends Expression> arguments) {
+            return new ConcatExpression(arguments);
+        }
+    };
+    
+    @Scalar("concat")
+    public static final ExpressionComposer COMPOSER_ALIAS = COMPOSER;
+
     @Override
     protected void describe(StringBuilder sb) {
         sb.append("CONCAT");
