@@ -62,7 +62,6 @@ public final class FunctionsRegistry implements AggregatorRegistry, ExpressionRe
     // for use in this package
 
     FunctionsRegistry(FunctionsClassFinder finder) {
-//        System.out.println("STARTING FUNCTIONS REGISTRY");
         Map<String,Map<AkType,AggregatorFactory>> aggregators = new HashMap<String, Map<AkType, AggregatorFactory>>();
         Map<String,ExpressionComposer> composers = new HashMap<String, ExpressionComposer>();
         for (Class<?> cls : finder.findClasses()) {
