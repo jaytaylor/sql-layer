@@ -258,6 +258,10 @@ public class IndexDDL
 
             final String columnName = col.getColumnName(); 
 
+            if (ais.getUserTable(columnTable) == null) {
+                throw new NoSuchTableException(columnTable);
+            }
+            
             Column tableCol = ais.getUserTable(columnTable).getColumn(columnName); 
             if (tableCol == null) {
                 throw new NoSuchColumnException (col.getColumnName());

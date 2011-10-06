@@ -141,6 +141,13 @@ public class IndexDDLIT extends PostgresServerITBase {
         connection.createStatement().execute(sql);
     }
 
+    @Test (expected=PSQLException.class)
+    public void createIndexErrorTableCol() throws SQLException {
+        String sql = "CREATE INDEX test13 on test.t1 (t1.c1, t.c1)";
+        createJoinedTables();
+        connection.createStatement().execute(sql);
+    }
+
     @Test
     public void dropIndexSimple() throws SQLException {
         String sql = "CREATE INDEX test114 on test.t1 (test.t1.c1, t1.c2, c3)";
