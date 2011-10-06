@@ -18,7 +18,10 @@ package com.akiban.qp.rowtype;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.types.AkType;
+
+import java.util.List;
 
 public class IndexRowType extends RowType
 {
@@ -39,8 +42,9 @@ public class IndexRowType extends RowType
     }
 
     @Override
-    public AkType typeAt(int index) {
-        return this.index.getColumns().get(index).getColumn().getType().akType();
+    public AkType typeAt(int index)
+    {
+        return akTypes[index];
     }
 
     @Override
@@ -70,6 +74,11 @@ public class IndexRowType extends RowType
         }
         this.tableType = tableType;
         this.index = index;
+        List<IndexColumn> indexColumns = index.getColumns();
+        akTypes = new AkType[indexColumns.size()];
+        for (int i = 0; i < indexColumns.size(); i++) {
+            akTypes[i] = indexColumns.get(i).getColumn().getType().akType();
+        }
     }
 
     // Object state
@@ -77,4 +86,5 @@ public class IndexRowType extends RowType
     // If index is a GroupIndex, then tableType.userTable() is the leafmost table of the GroupIndex.
     private final UserTableRowType tableType;
     private final Index index;
+    private final AkType[] akTypes;
 }
