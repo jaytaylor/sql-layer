@@ -475,6 +475,7 @@ public class ASTStatementLoader extends BaseRule
                 }
                 break;
             case NodeTypes.CAST_NODE:
+                assert condition.getType().getTypeId().isBooleanTypeId();
                 conditions.add(new BooleanCastExpression(toExpression(((CastNode)condition)
                                                                       .getCastOperand()),
                                                          condition.getType(), condition));
