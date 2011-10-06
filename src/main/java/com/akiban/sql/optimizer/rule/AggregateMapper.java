@@ -112,6 +112,9 @@ public class AggregateMapper extends BaseRule
                 else if (n instanceof Project) {
                     remap(((Project)n).getFields());
                 }
+                else if (n instanceof Limit) {
+                    // Understood not but mapped.
+                }
                 else
                     break;
             }
