@@ -33,6 +33,7 @@ public class DefaultRules
         new NestedLoopMapper(),
         new BranchJoiner(),
         new SelectPreponer(),
+        new AggregateSplitter(),
         new MapFolder(),
         new ExpressionCompactor(),
         new OperatorAssembler()
