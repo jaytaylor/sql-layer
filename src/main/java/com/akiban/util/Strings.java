@@ -22,12 +22,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.JarURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.Formatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.jar.JarEntry;
 
 /**
  * String utils.
@@ -101,17 +105,27 @@ public abstract class Strings {
         if (is == null) {
             throw new FileNotFoundException("For class " + forClass + ": " + path);
         }
-        try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-            List<String> ret = new ArrayList<String>();
-            String line;
-            while ((line=reader.readLine()) != null) {
-                ret.add(line);
+        return readStream(is);
+    }
+
+    public static List<String> dumpURLs(Enumeration<URL> urls) throws IOException {
+        List<String> result = new ArrayList<String>();
+        while (urls.hasMoreElements()) {
+            URL next = urls.nextElement();
+            boolean readAsStream = true;
+            if ("jar".equals(next.getProtocol())) {
+                JarURLConnection connection = (JarURLConnection)next.openConnection();
+                if (connection.getJarEntry().isDirectory()) {
+                    readJarConnectionTo(connection, result);
+                    readAsStream = false;
+                }
             }
-            return ret;
-        } finally {
-            is.close();
+            if (readAsStream) {
+                InputStream is = next.openStream();
+                readStreamTo(is, result);
+            }
         }
+        return result;
     }
 
     @SuppressWarnings("unused") // primarily useful in debuggers
@@ -172,5 +186,35 @@ public abstract class Strings {
         }
 
         return new WrappingByteSource().wrap(ret, 0, resultIndex);
+    }
+
+    private static List<String> readStream(InputStream is) throws IOException {
+        List<String> result = new ArrayList<String>();
+        readStreamTo(is, result);
+        return result;
+    }
+
+    private static void readStreamTo(InputStream is, List<String> outList) throws IOException {
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            String line;
+            while ((line=reader.readLine()) != null) {
+                outList.add(line);
+            }
+        } finally {
+            is.close();
+        }
+    }
+
+    private static void readJarConnectionTo(JarURLConnection connection, List<String> result) throws IOException {
+        assert connection.getJarEntry().isDirectory() : "not a dir: " + connection.getJarEntry();
+        // put into entries only the children of the connection's entry, and trim off the entry prefix
+        String base = connection.getEntryName();
+        Enumeration<JarEntry> enumeration = connection.getJarFile().entries();
+        while (enumeration.hasMoreElements()) {
+            JarEntry entry = enumeration.nextElement();
+            if (entry.getName().startsWith(base))
+                result.add(entry.getName().substring(base.length()));
+        }
     }
 }

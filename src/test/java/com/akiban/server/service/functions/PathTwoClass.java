@@ -13,20 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.akiban.server.service.functions;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.aggregation.DummyAggregatorRegistry;
-import com.akiban.server.service.functions.FunctionsRegistry;
-
-import java.util.List;
-
-public class RulesTestContext extends SchemaRulesContext
-{
-    public RulesTestContext(AkibanInformationSchema ais, List<BaseRule> rules) {
-        super(ais, 
-              new FunctionsRegistry(), new DummyAggregatorRegistry(),
-              rules);
-        RulesTestHelper.ensureRowDefs(ais);
-    }
+public final class PathTwoClass {
 }

@@ -16,6 +16,8 @@
 package com.akiban.server.aggregation.std;
 
 import com.akiban.server.aggregation.Aggregator;
+import com.akiban.server.aggregation.AggregatorFactory;
+import com.akiban.server.service.functions.Aggregate;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
@@ -25,7 +27,39 @@ import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ArgumentValidation;
 
-final class LongAggregator implements Aggregator {
+@SuppressWarnings("unused")
+public final class LongAggregator implements Aggregator {
+
+    @Aggregate("min")
+    public static AggregatorFactory mins(final String name, final AkType type) {
+        return new AggregatorFactory() {
+            @Override
+            public Aggregator get() {
+                return new LongAggregator(minProcessor, type);
+            }
+
+            @Override
+            public String toString() {
+                return name;
+            }
+        };
+    }
+
+    @Aggregate("max")
+    public static AggregatorFactory maxes(final String name, final AkType type) {
+        return new AggregatorFactory() {
+            @Override
+            public Aggregator get() {
+                return new LongAggregator(maxProcessor, type);
+            }
+
+            @Override
+            public String toString() {
+                return name;
+            }
+        };
+    }
+
     @Override
     public AkType outputType() {
         return type;
@@ -59,8 +93,25 @@ final class LongAggregator implements Aggregator {
     private long value;
     private boolean sawAny = false;
 
+    // class state
+
+    private static LongProcessor minProcessor = new LongProcessor() {
+        @Override
+        public long process(long oldState, long input) {
+            return Math.min(oldState, input);
+        }
+    };
+
+    private static LongProcessor maxProcessor = new LongProcessor() {
+        @Override
+        public long process(long oldState, long input) {
+            return Math.max(oldState, input);
+        }
+    };
+
+
     // subclasses
-    public interface LongProcessor {
+    private interface LongProcessor {
         long process(long oldState, long input);
     }
 }
