@@ -21,7 +21,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -29,16 +31,9 @@ public final class GlobularFunctionsClassFinderTest {
     @Test
     public void findClasses() {
         FunctionsClassFinder finder = new GlobularFunctionsClassFinder("testfunctionpath.txt");
-        List<Class<?>> expected = new ArrayList<Class<?>>();
+        Set<Class<?>> expected = new HashSet<Class<?>>();
         expected.add(PathOneClass.class);
         expected.add(PathTwoClass.class);
-        List<Class<?>> actual = new ArrayList<Class<?>>(finder.findClasses());
-        Collections.sort(actual, new Comparator<Class<?>>() {
-            @Override
-            public int compare(Class<?> o1, Class<?> o2) {
-                return o1.getName().compareTo(o2.getName());
-            }
-        });
-        assertEquals(expected, actual);
+        assertEquals(expected, finder.findClasses());
     }
 }
