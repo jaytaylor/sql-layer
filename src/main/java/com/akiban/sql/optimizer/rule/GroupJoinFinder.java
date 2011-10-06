@@ -236,22 +236,10 @@ public class GroupJoinFinder extends BaseRule
         joinables.clear();
         // Make order of groups predictable.
         List<TableGroup> keys = new ArrayList(groups.keySet());
-        Collections.sort(keys, new Comparator<TableGroup>() {
-                                 public int compare(TableGroup tg1, TableGroup tg2) {
-                                     Group g1 = tg1.getGroup();
-                                     Group g2 = tg2.getGroup();
-                                     if (g1 != g2)
-                                         return g1.getName().compareTo(g2.getName());
-                                     return tg1.getMinOrdinal() - tg2.getMinOrdinal();
-                                 }
-                             });
+        Collections.sort(keys, tableGroupComparator);
         for (TableGroup gkey : keys) {
             List<TableSource> group = groups.get(gkey);
-            Collections.sort(group, new Comparator<TableSource>() {
-                                 public int compare(TableSource t1, TableSource t2) {
-                                     return compareTableSources(t1, t2);
-                                 }
-                             });
+            Collections.sort(group, tableSourceComparator);
             joinables.add(constructLeftInnerJoins(group));
         }
         joinables.addAll(nonTables);
@@ -522,6 +510,23 @@ public class GroupJoinFinder extends BaseRule
             tableJoins.addTable((TableSource)joinable);
         }
     }
+
+    static final Comparator<TableGroup> tableGroupComparator = new Comparator<TableGroup>() {
+        @Override
+        public int compare(TableGroup tg1, TableGroup tg2) {
+            Group g1 = tg1.getGroup();
+            Group g2 = tg2.getGroup();
+            if (g1 != g2)
+                return g1.getName().compareTo(g2.getName());
+            return tg1.getMinOrdinal() - tg2.getMinOrdinal();
+        }
+    };
+
+    static final Comparator<TableSource> tableSourceComparator = new Comparator<TableSource>() {
+        public int compare(TableSource t1, TableSource t2) {
+            return compareTableSources(t1, t2);
+        }
+    };
 
     protected static int compareColumnSources(ColumnSource c1, ColumnSource c2) {
         if (c1 instanceof TableSource) {

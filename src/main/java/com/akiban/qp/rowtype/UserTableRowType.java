@@ -15,6 +15,7 @@
 
 package com.akiban.qp.rowtype;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
@@ -23,6 +24,7 @@ import com.akiban.util.FilteringIterator;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 public class UserTableRowType extends RowType
 {
@@ -43,8 +45,9 @@ public class UserTableRowType extends RowType
     }
 
     @Override
-    public AkType typeAt(int index) {
-        return table.getColumn(index).getType().akType();
+    public AkType typeAt(int index)
+    {
+        return akTypes[index];
     }
 
     @Override
@@ -99,6 +102,11 @@ public class UserTableRowType extends RowType
         super(schema, table.getTableId());
         this.table = table;
         typeComposition(new TypeComposition(this, table));
+        List<Column> columns = table.getColumns();
+        akTypes = new AkType[columns.size()];
+        for (int i = 0; i < columns.size(); i++) {
+            akTypes[i] = table.getColumn(i).getType().akType();
+        }
     }
 
     // Object state
@@ -106,4 +114,5 @@ public class UserTableRowType extends RowType
     private final UserTable table;
     // Type of indexRowTypes is ArrayList, not List, to make it clear that null values are permitted.
     private final ArrayList<IndexRowType> indexRowTypes = new ArrayList<IndexRowType>();
+    private final AkType[] akTypes;
 }
