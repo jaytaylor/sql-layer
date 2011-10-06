@@ -17,7 +17,9 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
@@ -32,6 +34,13 @@ import java.util.List;
 import java.util.Map;
 
 public final class CompareExpression extends AbstractTwoArgExpression {
+
+    @Scalar("equals") public static final ExpressionComposer EQ_COMPOSER = new InnerComposer(Comparison.EQ);
+    @Scalar("greaterOrEquals") public static final ExpressionComposer GE_COMPOSER = new InnerComposer(Comparison.GE);
+    @Scalar("greaterThan") public static final ExpressionComposer GT_COMPOSER = new InnerComposer(Comparison.GT);
+    @Scalar("lessOrEquals") public static final ExpressionComposer LE_COMPOSER = new InnerComposer(Comparison.LE);
+    @Scalar("lessThan") public static final ExpressionComposer LT_COMPOSER = new InnerComposer(Comparison.LT);
+    @Scalar("notEquals") public static final ExpressionComposer NE_COMPOSER = new InnerComposer(Comparison.NE);
 
     // AbstractTwoArgExpression interface
     @Override
@@ -192,5 +201,18 @@ public final class CompareExpression extends AbstractTwoArgExpression {
         private final Comparison comparison;
         private final CompareOp op;
         private final ValueHolder scratch;
+    }
+
+    private static final class InnerComposer implements ExpressionComposer {
+        @Override
+        public Expression compose(List<? extends Expression> arguments) {
+            return new CompareExpression(arguments, comparison);
+        }
+
+        private InnerComposer(Comparison comparison) {
+            this.comparison = comparison;
+        }
+
+        private final Comparison comparison;
     }
 }
