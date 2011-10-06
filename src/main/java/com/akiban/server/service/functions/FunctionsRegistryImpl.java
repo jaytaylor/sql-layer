@@ -133,6 +133,8 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
                 String name = nameIsAvailable(composers, annotation.value());
                 composers.put(name, innerMap);
                 for (AkType akType : AkType.values()) {
+                    if (akType == AkType.UNSUPPORTED)
+                        continue;
                     try {
                         AggregatorFactory factory = (AggregatorFactory) method.invoke(null, name, akType);
                         if (factory != null)
