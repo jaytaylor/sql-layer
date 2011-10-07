@@ -61,9 +61,7 @@ public final class ShareHolder<T extends Shareable> {
 
     @Override
     public String toString() {
-        if (held != null)
-            return "Holder(" + held + ')';
-        return "Holder( empty )";
+        return held == null ? null : held.toString();
     }
 
     // object state
