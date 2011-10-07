@@ -230,6 +230,12 @@ public class IndexGoal implements Comparator<IndexScan>
             int idx = 0;
             for (OrderByExpression targetColumn : ordering.getOrderBy()) {
                 ExpressionNode targetExpression = targetColumn.getExpression();
+                if (targetExpression.isColumn() &&
+                    (grouping != null)) {
+                    if (((ColumnExpression)targetExpression).getTable() == grouping) {
+                        targetExpression = grouping.getGroupBy().get(((ColumnExpression)targetExpression).getPosition());
+                    }
+                }
                 OrderByExpression indexColumn = null;
                 if (idx < indexOrdering.size())
                     indexColumn = indexOrdering.get(idx);
