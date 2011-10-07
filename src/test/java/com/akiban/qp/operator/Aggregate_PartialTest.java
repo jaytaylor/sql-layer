@@ -47,7 +47,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-public final class AggregateOperatorTest {
+public final class Aggregate_PartialTest {
 
     @Test
     public void simpleNoGroupBy() {
