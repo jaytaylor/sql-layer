@@ -221,7 +221,7 @@ public final class TestCase<T> {
         case U_INT: source.getUInt(); break;
         case VARBINARY: source.getVarBinary(); break;
         case YEAR: source.getYear(); break;
-        case BOOL: source.getYear(); break;
+        case BOOL: source.getBool(); break;
         default: throw new UnsupportedOperationException(type().name());
         }
     }
