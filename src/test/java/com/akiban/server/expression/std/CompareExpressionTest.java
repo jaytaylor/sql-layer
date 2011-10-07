@@ -24,7 +24,6 @@ import com.akiban.server.types.ValueSource;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -90,7 +89,7 @@ public final class CompareExpressionTest {
 
     @Test
     public void test() {
-        Expression compareExpression = new CompareExpression(Arrays.asList(left, right), comparison);
+        Expression compareExpression = new CompareExpression(left, comparison, right);
         assertEquals("compareExpression type", AkType.BOOL, compareExpression.valueType());
         assertFalse("compareExpression needs row", compareExpression.needsRow());
         assertFalse("compareExpression needs bindings", compareExpression.needsBindings());

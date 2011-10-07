@@ -17,24 +17,18 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.types.AkType;
+import com.akiban.server.expression.ExpressionComposer;
 
 import java.util.List;
 
-public abstract class AbstractTwoArgExpression extends AbstractCompositeExpression {
+abstract class BinaryComposer implements ExpressionComposer {
 
-    protected final Expression left() {
-        return children().get(0);
-    }
+    protected abstract Expression compose(Expression first, Expression second);
 
-    protected final Expression right() {
-        return children().get(1);
-    }
-
-    protected AbstractTwoArgExpression(AkType type, List<? extends Expression> children) {
-        super(type, children);
-        if (children().size() != 2) {
-            throw new WrongExpressionArityException(2, children().size());
-        }
+    @Override
+    public Expression compose(List<? extends Expression> arguments) {
+        if (arguments.size() != 2)
+            throw new WrongExpressionArityException(2, arguments.size());
+        return compose(arguments.get(0), arguments.get(1));
     }
 }
