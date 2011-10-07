@@ -473,46 +473,17 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleAggregateSource(AggregateSource aggregateSource) {
             RowStream stream = assembleStream(aggregateSource.getInput());
-            int nkeys = aggregateSource.getGroupBy().size();
-            int naggs = aggregateSource.getAggregates().size();
+            int nkeys = aggregateSource.getNGroupBy();
             // TODO: Temporary until aggregate_Partial fully functional.
-            if ((nkeys == 0) && (naggs == 1)) {
-                AggregateFunctionExpression aggr1 = 
-                    aggregateSource.getAggregates().get(0);
-                if ((aggr1.getOperand() == null) &&
-                    (aggr1.getFunction().equals("COUNT"))) {
-                    stream.operator = API.count_Default(stream.operator, stream.rowType);
-                    stream.rowType = stream.operator.rowType();
-                    stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource, 
-                                                                       stream.rowType);
-                    return stream;
-                }
+            if (!aggregateSource.isProjectSplitOff()) {
+                assert ((nkeys == 0) &&
+                        (aggregateSource.getNAggregates() == 1));
+                stream.operator = API.count_Default(stream.operator, stream.rowType);
+                stream.rowType = stream.operator.rowType();
+                stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource, 
+                                                                   stream.rowType);
+                return stream;
             }
-            List<Expression> expressions = new ArrayList<Expression>(nkeys + naggs);
-            List<String> aggregatorNames = new ArrayList<String>(naggs);
-            for (ExpressionNode groupBy : aggregateSource.getGroupBy()) {
-                expressions.add(assembleExpression(groupBy, stream.fieldOffsets));
-            }
-            for (AggregateFunctionExpression aggr : aggregateSource.getAggregates()) {
-                // Should have been split up by now.
-                assert !aggr.isDistinct();
-                String function = aggr.getFunction();
-                Expression operand;
-                if (aggr.getOperand() != null) {
-                  operand = assembleExpression(aggr.getOperand(), stream.fieldOffsets);
-                }
-                else {
-                  operand = Expressions.literal(1L); // Anything non-null will do.
-                  if ("COUNT".equals(function))
-                      function = "COUNT(*)";
-                }
-                expressions.add(operand);
-                aggregatorNames.add(function);
-            }
-            // TODO: This is happening too late for a nested loop join.
-            stream.operator = API.project_Default(stream.operator, stream.rowType, 
-                                                  expressions);
-            stream.rowType = stream.operator.rowType();
             switch (aggregateSource.getImplementation()) {
             case PRESORTED:
             case UNGROUPED:
@@ -530,7 +501,7 @@ public class OperatorAssembler extends BaseRule
             }
             stream.operator = API.aggregate_Partial(stream.operator, nkeys,
                                                     rulesContext.getAggregatorRegistry(),
-                                                    aggregatorNames);
+                                                    aggregateSource.getAggregateFunctions());
             stream.rowType = stream.operator.rowType();
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource,
                                                                stream.rowType);
