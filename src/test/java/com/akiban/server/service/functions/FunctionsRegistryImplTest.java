@@ -27,8 +27,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -148,15 +150,15 @@ public final class FunctionsRegistryImplTest {
 
     private static class InternalClassFinder implements FunctionsClassFinder {
         private InternalClassFinder(Class<?>... classes) {
-            this.classes = Arrays.asList(classes);
+            this.classes = new HashSet<Class<?>>(Arrays.asList(classes));
         }
 
         @Override
-        public List<Class<?>> findClasses() {
+        public Set<Class<?>> findClasses() {
             return classes;
         }
 
-        private final List<Class<?>> classes;
+        private final Set<Class<?>> classes;
     }
 
     // good example

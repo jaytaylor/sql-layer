@@ -15,6 +15,9 @@
 
 package com.akiban.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -112,6 +115,7 @@ public abstract class Strings {
         List<String> result = new ArrayList<String>();
         while (urls.hasMoreElements()) {
             URL next = urls.nextElement();
+            LOG.debug("reading URL: {}", next);
             boolean readAsStream = true;
             if ("jar".equals(next.getProtocol())) {
                 JarURLConnection connection = (JarURLConnection)next.openConnection();
@@ -217,4 +221,6 @@ public abstract class Strings {
                 result.add(entry.getName().substring(base.length()));
         }
     }
+
+    private static final Logger LOG = LoggerFactory.getLogger(Strings.class);
 }
