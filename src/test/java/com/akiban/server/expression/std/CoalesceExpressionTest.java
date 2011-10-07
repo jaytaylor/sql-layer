@@ -16,6 +16,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
@@ -24,7 +25,6 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -69,8 +69,8 @@ public final class CoalesceExpressionTest extends ComposedExpressionTestBase {
     }
 
     @Override
-    protected Expression getExpression(List<? extends Expression> children) {
-        return new CoalesceExpression(children);
+    protected ExpressionComposer getComposer() {
+        return CoalesceExpression.COMPOSER;
     }
 
     // for use in this class

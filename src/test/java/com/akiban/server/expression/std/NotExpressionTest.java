@@ -15,11 +15,9 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.extract.Extractors;
 import org.junit.Test;
-
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -48,9 +46,8 @@ public final class NotExpressionTest extends ComposedExpressionTestBase {
     }
 
     @Override
-    protected Expression getExpression(List<? extends Expression> children) {
-        assert children.size() == 1 : children;
-        return new NotExpression(children.get(0));
+    protected ExpressionComposer getComposer() {
+        return NotExpression.COMPOSER;
     }
 
     // private

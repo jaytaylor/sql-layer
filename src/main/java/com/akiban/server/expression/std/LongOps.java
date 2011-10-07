@@ -17,11 +17,8 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.error.DivisionByZeroException;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
-
-import java.util.List;
 
 public class LongOps {
 
@@ -61,11 +58,11 @@ public class LongOps {
 
     private LongOps() {}
 
-    static abstract class LongOpForLong implements LongOp, ExpressionComposer {
+    static abstract class LongOpForLong extends BinaryComposer implements LongOp {
 
         @Override
-        public Expression compose(List<? extends Expression> arguments) {
-            return new LongOpExpression(this, arguments);
+        protected Expression compose(Expression first, Expression second) {
+            return new LongOpExpression(first, this, second);
         }
 
         @Override

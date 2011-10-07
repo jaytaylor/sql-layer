@@ -26,14 +26,12 @@ import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueHolder;
-import com.akiban.util.ArgumentValidation;
 
 import java.util.EnumMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public final class CompareExpression extends AbstractTwoArgExpression {
+public final class CompareExpression extends AbstractBinaryExpression {
 
     @Scalar("equals") public static final ExpressionComposer EQ_COMPOSER = new InnerComposer(Comparison.EQ);
     @Scalar("greaterOrEquals") public static final ExpressionComposer GE_COMPOSER = new InnerComposer(Comparison.GE);
@@ -53,11 +51,10 @@ public final class CompareExpression extends AbstractTwoArgExpression {
         return new InnerEvaluation(childrenEvaluations(), comparison, op);
     }
 
-    public CompareExpression(List<? extends Expression> children, Comparison comparison) {
-        super(AkType.BOOL, children);
-        ArgumentValidation.isEQ("comparison operands", children.size(), 2);
+    public CompareExpression(Expression lhs, Comparison comparison, Expression rhs) {
+        super(AkType.BOOL, lhs, rhs);
         this.comparison = comparison;
-        AkType type = childrenType(children);
+        AkType type = childrenType(children());
         assert type != null;
         this.op = readOnlyCompareOps.get(type);
         if (this.op == null)
@@ -203,10 +200,11 @@ public final class CompareExpression extends AbstractTwoArgExpression {
         private final ValueHolder scratch;
     }
 
-    private static final class InnerComposer implements ExpressionComposer {
+    private static final class InnerComposer extends BinaryComposer {
+
         @Override
-        public Expression compose(List<? extends Expression> arguments) {
-            return new CompareExpression(arguments, comparison);
+        protected Expression compose(Expression first, Expression second) {
+            return new CompareExpression(first, comparison, second);
         }
 
         private InnerComposer(Comparison comparison) {

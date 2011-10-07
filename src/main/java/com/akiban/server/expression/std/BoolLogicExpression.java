@@ -26,7 +26,7 @@ import com.akiban.server.types.util.BoolValueSource;
 
 import java.util.List;
 
-public final class BoolLogicExpression extends AbstractTwoArgExpression {
+public final class BoolLogicExpression extends AbstractBinaryExpression {
 
     // AbstractTwoArgExpression interface
 
@@ -42,8 +42,8 @@ public final class BoolLogicExpression extends AbstractTwoArgExpression {
 
     // private ctor -- the composers will be exposed as package-private
 
-    private BoolLogicExpression(BooleanLogic logic, List<? extends Expression> children) {
-        super(AkType.BOOL, children);
+    private BoolLogicExpression(Expression lhs, BooleanLogic logic, Expression rhs) {
+        super(AkType.BOOL, lhs, rhs);
         this.logic = logic;
     }
 
@@ -93,11 +93,10 @@ public final class BoolLogicExpression extends AbstractTwoArgExpression {
         private final String name;
     }
 
-    private static class InternalComposer implements ExpressionComposer {
-
+    private static class InternalComposer extends BinaryComposer{
         @Override
-        public Expression compose(List<? extends Expression> arguments) {
-            return new BoolLogicExpression(logic, arguments);
+        protected Expression compose(Expression first, Expression second) {
+            return new BoolLogicExpression(first, logic, second);
         }
 
         private InternalComposer(BooleanLogic logic) {
