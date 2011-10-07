@@ -159,7 +159,7 @@ final class Aggregate_Partial extends Operator
                     }
                     else if (noGroupBy()) {
                         cursorState = CursorState.CLOSING;
-                        return createNullOutput();
+                        return createEmptyOutput();
                     }
                     else {
                         close();
@@ -214,11 +214,11 @@ final class Aggregate_Partial extends Operator
             return outputRow;
         }
 
-        private Row createNullOutput() {
+        private Row createEmptyOutput() {
             assert noGroupBy() : "shouldn't be creating null output row when I have a grouping";
             ValuesHolderRow outputRow = unsharedOutputRow();
             for (int i = 0; i < outputRow.rowType().nFields(); ++i) {
-                outputRow.holderAt(i).putNull();
+                outputRow.holderAt(i).copyFrom(aggregators.get(i).emptyValue());
             }
             return outputRow;
         }

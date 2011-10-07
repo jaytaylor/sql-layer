@@ -57,6 +57,12 @@ public final class CountAggregator implements Aggregator {
         Converters.convert(holder, output);
     }
 
+    @Override
+    public ValueSource emptyValue() {
+        return EMPTY_VALUE;
+    }
+
+
     // use in this package
 
     CountAggregator(boolean countStar) {
@@ -69,6 +75,10 @@ public final class CountAggregator implements Aggregator {
     private final boolean countStar;
     private final ValueHolder holder;
     private long count;
+
+    // class state
+
+    private static final ValueSource EMPTY_VALUE = new ValueHolder(AkType.LONG, 0);
 
     // nested class
 

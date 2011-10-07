@@ -23,4 +23,5 @@ public interface Aggregator {
     AkType outputType();
     void input(ValueSource input);
     void output(ValueTarget output);
+    ValueSource emptyValue();
 }
