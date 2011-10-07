@@ -22,6 +22,7 @@ import com.akiban.server.types.ValueSource;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static com.akiban.server.expression.std.ExprUtil.*;
 import static org.junit.Assert.assertEquals;
@@ -70,7 +71,12 @@ public final class ConcatExpressionTest extends ComposedExpressionTestBase {
 
     @Override
     protected ExpressionComposer getComposer() {
-        return ConcatExpression.COMPOSER_ALIAS;
+        return new ExpressionComposer() {
+            @Override
+            public Expression compose(List<? extends Expression> arguments) {
+                return new ConcatExpression(arguments, false);
+            }
+        };
     }
 
     // use in this class

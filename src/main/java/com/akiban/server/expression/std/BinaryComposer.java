@@ -15,9 +15,9 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.util.ArgumentValidation;
 
 import java.util.List;
 
@@ -27,7 +27,8 @@ abstract class BinaryComposer implements ExpressionComposer {
 
     @Override
     public Expression compose(List<? extends Expression> arguments) {
-        ArgumentValidation.isEQ("arguments size", arguments.size(), 2);
+        if (arguments.size() != 2)
+            throw new WrongExpressionArityException(2, arguments.size());
         return compose(arguments.get(0), arguments.get(1));
     }
 }
