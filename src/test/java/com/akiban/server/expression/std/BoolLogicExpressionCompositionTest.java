@@ -16,13 +16,11 @@ package com.akiban.server.expression.std;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
-import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 
 @RunWith(NamedParameterizedRunner.class)
 public final class BoolLogicExpressionCompositionTest extends ComposedExpressionTestBase {
@@ -41,8 +39,8 @@ public final class BoolLogicExpressionCompositionTest extends ComposedExpression
     }
 
     @Override
-    protected Expression getExpression(List<? extends Expression> children) {
-        return composer.compose(children);
+    protected ExpressionComposer getComposer() {
+        return composer;
     }
 
     public BoolLogicExpressionCompositionTest(ExpressionComposer composer) {

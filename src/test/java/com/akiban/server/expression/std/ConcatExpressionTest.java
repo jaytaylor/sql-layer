@@ -16,12 +16,12 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.List;
 
 import static com.akiban.server.expression.std.ExprUtil.*;
 import static org.junit.Assert.assertEquals;
@@ -69,8 +69,8 @@ public final class ConcatExpressionTest extends ComposedExpressionTestBase {
     }
 
     @Override
-    protected Expression getExpression(List<? extends Expression> children) {
-        return new ConcatExpression(children, false);
+    protected ExpressionComposer getComposer() {
+        return ConcatExpression.COMPOSER_ALIAS;
     }
 
     // use in this class

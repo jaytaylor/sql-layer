@@ -20,6 +20,7 @@ import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.error.DivisionByZeroException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
@@ -28,7 +29,6 @@ import com.akiban.server.types.util.ValueHolder;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -140,7 +140,7 @@ public final class LongOpExpressionTest extends ComposedExpressionTestBase {
     }
 
     @Override
-    protected Expression getExpression(List<? extends Expression> children) {
-        return LongOps.LONG_SUBTRACT.compose(children);
+    protected ExpressionComposer getComposer() {
+        return LongOps.LONG_SUBTRACT;
     }
 }
