@@ -50,6 +50,8 @@ select-14: IN using index
 
 select-14n: IN not using index
 
+select-15: aggregation with GROUP BY
+
 types: select all typed fields
 
 types_a_date: match literal
