@@ -19,6 +19,7 @@ import com.akiban.server.aggregation.Aggregator;
 import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.service.functions.Aggregate;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;
@@ -76,6 +77,11 @@ public final class LongAggregator implements Aggregator {
         assert sawAny : "didn't see any input rows!";
         Converters.convert(new ValueHolder(type, value), output);
         this.value = processor.initialValue();
+    }
+
+    @Override
+    public ValueSource emptyValue() {
+        return NullValueSource.only();
     }
 
     protected LongAggregator(LongProcessor processor, AkType type) {
