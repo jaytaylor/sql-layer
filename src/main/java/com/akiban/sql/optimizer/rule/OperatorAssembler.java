@@ -242,6 +242,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleProject((Project)node);
             else if (node instanceof ExpressionsSource)
                 return assembleExpressionsSource((ExpressionsSource)node);
+            else if (node instanceof NullSource)
+                return assembleNullSource((NullSource)node);
             else
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }
@@ -282,6 +284,10 @@ public class OperatorAssembler extends BaseRule
             stream.fieldOffsets = new ColumnSourceFieldOffsets(expressionsSource, 
                                                                stream.rowType);
             return stream;
+        }
+
+        protected RowStream assembleNullSource(NullSource node) {
+            return assembleExpressionsSource(new ExpressionsSource(Collections.<List<ExpressionNode>>emptyList()));
         }
 
         protected RowStream assembleSelect(Select select) {
