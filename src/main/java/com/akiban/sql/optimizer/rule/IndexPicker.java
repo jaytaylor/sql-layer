@@ -143,7 +143,10 @@ public class IndexPicker extends BaseRule
                     if (grouping != null) {
                         List<ExpressionNode> groupBy = grouping.getGroupBy();
                         for (OrderByExpression orderBy : ordering.getOrderBy()) {
-                            if (!groupBy.contains(orderBy.getExpression())) {
+                            ExpressionNode orderByExpr = orderBy.getExpression();
+                            if (!((orderByExpr.isColumn() &&
+                                   (((ColumnExpression)orderByExpr).getTable() == grouping)) ||
+                                  groupBy.contains(orderByExpr))) {
                                 ordering = null;
                                 break;
                             }
