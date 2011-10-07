@@ -499,19 +499,19 @@ public class IndexGoal implements Comparator<IndexScan>
 
         @Override
         public boolean visitEnter(ExpressionNode n) {
-            if (exclude(n))
+            if (!excludeNode && exclude(n))
                 excludeDepth++;
             return visit(n);
         }
         @Override
         public boolean visitLeave(ExpressionNode n) {
-            if (exclude(n))
+            if (!excludeNode && exclude(n))
                 excludeDepth--;
             return true;
         }
         @Override
         public boolean visit(ExpressionNode n) {
-            if (excludeDepth == 0) {
+            if (!excludeNode && (excludeDepth == 0)) {
                 if (n instanceof ColumnExpression)
                     requiredColumns.require((ColumnExpression)n);
             }
@@ -526,8 +526,6 @@ public class IndexGoal implements Comparator<IndexScan>
         
         // Should this expression be excluded from requirement?
         protected boolean exclude(ExpressionNode expr) {
-            if (excludeNode)
-                return true;
             return (((excludedExpressions != null) &&
                      (excludedExpressions.get(expr) != null)) ||
                     // Group join conditions are handled specially.
