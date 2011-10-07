@@ -38,8 +38,8 @@ final class LongOpExpression extends AbstractTwoArgExpression {
         return new InnerEvaluation(longOp, childrenEvaluations());
     }
 
-    public LongOpExpression(LongOp longOp, List<? extends Expression> children) {
-        super(longOp.opType(), children);
+    public LongOpExpression(Expression lhs, LongOp longOp, Expression rhs) {
+        super(longOp.opType(), lhs, rhs);
         this.longOp = longOp;
     }
 

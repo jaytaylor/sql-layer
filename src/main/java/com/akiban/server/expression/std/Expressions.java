@@ -35,7 +35,7 @@ public class Expressions
 
     public static Expression compare(Expression left, Comparison comparison, Expression right)
     {
-        return new CompareExpression(Arrays.asList(left, right), comparison);
+        return new CompareExpression(left, comparison, right);
     }
 
     public static Expression field(RowType rowType, int position)
