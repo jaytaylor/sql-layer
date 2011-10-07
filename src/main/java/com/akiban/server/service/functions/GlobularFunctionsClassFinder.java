@@ -19,6 +19,7 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.util.Strings;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -64,7 +65,7 @@ final class GlobularFunctionsClassFinder implements FunctionsClassFinder {
                     }
                 }
             }
-            return results;
+            return new ArrayList<Class<?>>(new HashSet<Class<?>>(results));
         } catch (Exception e) {
             throw new AkibanInternalException("while looking for classes that contain functions", e);
         }

@@ -219,6 +219,9 @@ public class BranchLookup_Default extends Operator
             if (LOG.isDebugEnabled()) {
                 LOG.debug("BranchLookup_Default: {}", lookupRow.get());
             }
+            if (nextRow == null) {
+                close();
+            }
             return nextRow;
         }
 

@@ -122,6 +122,7 @@ class Product_NestedLoops extends Operator
         {
             this.bindings = bindings;
             this.outerInput.open(bindings);
+            this.closed = false;
         }
 
         @Override
