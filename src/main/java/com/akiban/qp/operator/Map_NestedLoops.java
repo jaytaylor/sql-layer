@@ -118,6 +118,7 @@ class Map_NestedLoops extends Operator
         {
             this.bindings = bindings;
             this.outerInput.open(bindings);
+            this.closed = false;
         }
 
         @Override
@@ -207,7 +208,7 @@ class Map_NestedLoops extends Operator
         private void closeOuter()
         {
             outerRow.release();
-            outerRow.release();
+            outerJoinRow.release();
             outerInput.close();
         }
 

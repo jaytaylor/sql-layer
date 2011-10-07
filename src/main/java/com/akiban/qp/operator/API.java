@@ -181,18 +181,18 @@ public class API
     // AncestorLookup
 
     public static Operator ancestorLookup_Default(Operator inputOperator,
-                                                          GroupTable groupTable,
-                                                          RowType rowType,
-                                                          Collection<? extends RowType> ancestorTypes,
-                                                          LookupOption flag)
+                                                  GroupTable groupTable,
+                                                  RowType rowType,
+                                                  Collection<? extends RowType> ancestorTypes,
+                                                  LookupOption flag)
     {
         return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, flag);
     }
 
     public static Operator ancestorLookup_Nested(GroupTable groupTable,
-                                                         RowType rowType,
-                                                         Collection<? extends RowType> ancestorTypes,
-                                                         int hKeyBindingPosition)
+                                                 RowType rowType,
+                                                 Collection<? extends RowType> ancestorTypes,
+                                                 int hKeyBindingPosition)
     {
         return new AncestorLookup_Nested(groupTable, rowType, ancestorTypes, hKeyBindingPosition);
     }
@@ -285,17 +285,17 @@ public class API
     // Map
 
     public static Operator map_NestedLoops(Operator outerInput,
-                                                   Operator innerInput,
-                                                   int inputBindingPosition)
+                                           Operator innerInput,
+                                           int inputBindingPosition)
     {
         return new Map_NestedLoops(outerInput, innerInput, null, null, inputBindingPosition);
     }
 
     public static Operator map_NestedLoops(Operator outerInput,
-                                                   Operator innerInput,
-                                                   RowType outerJoinRowType,
-                                                   List<Expression> outerJoinRowExpressions,
-                                                   int inputBindingPosition)
+                                           Operator innerInput,
+                                           RowType outerJoinRowType,
+                                           List<Expression> outerJoinRowExpressions,
+                                           int inputBindingPosition)
     {
         return new Map_NestedLoops(outerInput,
                                    innerInput,
