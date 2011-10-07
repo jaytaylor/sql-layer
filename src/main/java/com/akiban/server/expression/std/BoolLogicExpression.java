@@ -26,7 +26,7 @@ import com.akiban.server.types.util.BoolValueSource;
 
 import java.util.List;
 
-public final class BoolLogicExpression extends AbstractTwoArgExpression {
+public final class BoolLogicExpression extends AbstractBinaryExpression {
 
     // AbstractTwoArgExpression interface
 

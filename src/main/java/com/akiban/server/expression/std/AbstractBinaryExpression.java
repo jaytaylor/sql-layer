@@ -21,7 +21,7 @@ import com.akiban.server.types.AkType;
 
 import java.util.List;
 
-public abstract class AbstractTwoArgExpression extends AbstractCompositeExpression {
+public abstract class AbstractBinaryExpression extends AbstractCompositeExpression {
 
     protected final Expression left() {
         return children().get(0);
@@ -31,7 +31,7 @@ public abstract class AbstractTwoArgExpression extends AbstractCompositeExpressi
         return children().get(1);
     }
 
-    protected AbstractTwoArgExpression(AkType type, Expression first, Expression second) {
+    protected AbstractBinaryExpression(AkType type, Expression first, Expression second) {
         super(type, first, second);
         if (children().size() != 2) {
             throw new WrongExpressionArityException(2, children().size());

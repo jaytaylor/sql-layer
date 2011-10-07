@@ -31,7 +31,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-public final class CompareExpression extends AbstractTwoArgExpression {
+public final class CompareExpression extends AbstractBinaryExpression {
 
     @Scalar("equals") public static final ExpressionComposer EQ_COMPOSER = new InnerComposer(Comparison.EQ);
     @Scalar("greaterOrEquals") public static final ExpressionComposer GE_COMPOSER = new InnerComposer(Comparison.GE);
