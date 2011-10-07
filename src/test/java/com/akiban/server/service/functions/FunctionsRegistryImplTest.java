@@ -27,16 +27,18 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
-public final class FunctionsRegistryTest {
+public final class FunctionsRegistryImplTest {
     
     @Test
     public void findAggregatorFactory() {
-        FunctionsRegistry registry = registry(Good.class);
+        FunctionsRegistryImpl registry = registry(Good.class);
         assertEquals(expectedAggregatorFactories(), registry.getAllAggregators());
         assertEquals("foo", AGGREGATOR_FACTORY, registry.get("foo", AkType.LONG));
         assertEquals("FOO", AGGREGATOR_FACTORY, registry.get("FOO", AkType.LONG));
@@ -44,58 +46,58 @@ public final class FunctionsRegistryTest {
 
     @Test
     public void findExpressionComposer() {
-        FunctionsRegistry registry = registry(Good.class);
+        FunctionsRegistryImpl registry = registry(Good.class);
         assertEquals(expectedExpressionFactories(), registry.getAllComposers());
         assertEquals("foo", GOOD_EXPRESSION_COMPOSER, registry.composer("foo"));
         assertEquals("FOO", GOOD_EXPRESSION_COMPOSER, registry.composer("FOO"));
     }
 
-    @Test(expected = FunctionsRegistry.FunctionsRegistryException.class)
+    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
     public void scalarWrongType() {
         registry(ScalarWrongType.class);
     }
 
-    @Test(expected = FunctionsRegistry.FunctionsRegistryException.class)
+    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
     public void scalarNotPublic() {
         registry(ScalarNotPublic.class);
     }
 
-    @Test(expected = FunctionsRegistry.FunctionsRegistryException.class)
+    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
     public void scalarNotFinal() {
         registry(ScalarNotFinal.class);
     }
 
-    @Test(expected = FunctionsRegistry.FunctionsRegistryException.class)
+    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
     public void scalarNotStatic() {
         registry(ScalarNotStatic.class);
     }
 
-    @Test(expected = FunctionsRegistry.FunctionsRegistryException.class)
+    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
     public void scalarDuplicate() {
         registry(ScalarDuplicateA.class, ScalarDuplicateB.class);
     }
 
-    @Test(expected = FunctionsRegistry.FunctionsRegistryException.class)
+    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
     public void aggregateNotStatic() {
         registry(AggNotStatic.class);
     }
 
-    @Test(expected = FunctionsRegistry.FunctionsRegistryException.class)
+    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
     public void aggregateNotPublic() {
         registry(AggNotPublic.class);
     }
 
-    @Test(expected = FunctionsRegistry.FunctionsRegistryException.class)
+    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
     public void aggregateWrongRetValue() {
         registry(AggWrongReturnValue.class);
     }
 
-    @Test(expected = FunctionsRegistry.FunctionsRegistryException.class)
+    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
     public void aggregateWrongArgs() {
         registry(AggWrongArgs.class);
     }
 
-    @Test(expected = FunctionsRegistry.FunctionsRegistryException.class)
+    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
     public void aggregateDuplicateName() {
         registry(AggDuplicateA.class, AggDuplicateB.class);
     }
@@ -107,8 +109,8 @@ public final class FunctionsRegistryTest {
 
     // use in this class
 
-    private static FunctionsRegistry registry(Class<?>... classes) {
-        return new FunctionsRegistry(new InternalClassFinder(classes));
+    private static FunctionsRegistryImpl registry(Class<?>... classes) {
+        return new FunctionsRegistryImpl(new InternalClassFinder(classes));
     }
 
     private static AggregatorFactory aggregatorFactoryMethod(String name, AkType type) {
@@ -148,15 +150,15 @@ public final class FunctionsRegistryTest {
 
     private static class InternalClassFinder implements FunctionsClassFinder {
         private InternalClassFinder(Class<?>... classes) {
-            this.classes = Arrays.asList(classes);
+            this.classes = new HashSet<Class<?>>(Arrays.asList(classes));
         }
 
         @Override
-        public List<Class<?>> findClasses() {
+        public Set<Class<?>> findClasses() {
             return classes;
         }
 
-        private final List<Class<?>> classes;
+        private final Set<Class<?>> classes;
     }
 
     // good example

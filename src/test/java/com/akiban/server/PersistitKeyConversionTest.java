@@ -30,6 +30,7 @@ import com.persistit.Persistit;
 
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.Iterator;
 
 public final class PersistitKeyConversionTest extends ConversionTestBase {
 
@@ -42,7 +43,8 @@ public final class PersistitKeyConversionTest extends ConversionTestBase {
         // Persistit truncates trailing 0s from BigDecimals, which reduces their precision.
         // This is wrong, but that's what we have to deal with. So we'll ignore all such test cases.
         ToObjectValueTarget valueTarget = new ToObjectValueTarget();
-        for (Parameterization param : params) {
+        for (Iterator<Parameterization> iterator = params.iterator(); iterator.hasNext(); ) {
+            Parameterization param = iterator.next();
             ConversionSuite<?> paramSuite = (ConversionSuite<?>) param.getArgsAsList().get(0);
             int indexWithinSuite = (Integer) param.getArgsAsList().get(1);
             TestCase<?> testCase = paramSuite.testCaseAt(indexWithinSuite);
@@ -52,7 +54,7 @@ public final class PersistitKeyConversionTest extends ConversionTestBase {
                 BigDecimal expected = (BigDecimal) valueTarget.lastConvertedValue();
                 String asString = expected.toPlainString();
                 if (asString.contains(".") && asString.charAt(asString.length() - 1) == '0') {
-                    param.setExpectedToPass(false);
+                    iterator.remove();
                 }
             }
         }

@@ -19,6 +19,7 @@ import com.akiban.server.aggregation.Aggregator;
 import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.service.functions.Aggregate;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;
@@ -75,6 +76,12 @@ public final class LongAggregator implements Aggregator {
     public void output(ValueTarget output) {
         assert sawAny : "didn't see any input rows!";
         Converters.convert(new ValueHolder(type, value), output);
+        this.value = processor.initialValue();
+    }
+
+    @Override
+    public ValueSource emptyValue() {
+        return NullValueSource.only();
     }
 
     protected LongAggregator(LongProcessor processor, AkType type) {
@@ -84,6 +91,7 @@ public final class LongAggregator implements Aggregator {
         }
         this.extractor = Extractors.getLongExtractor(this.type);
         this.processor = processor;
+        this.value = this.processor.initialValue();
         ArgumentValidation.notNull("processor", this.processor);
     }
 
@@ -100,6 +108,11 @@ public final class LongAggregator implements Aggregator {
         public long process(long oldState, long input) {
             return Math.min(oldState, input);
         }
+
+        @Override
+        public long initialValue() {
+            return Long.MAX_VALUE;
+        }
     };
 
     private static LongProcessor maxProcessor = new LongProcessor() {
@@ -107,11 +120,17 @@ public final class LongAggregator implements Aggregator {
         public long process(long oldState, long input) {
             return Math.max(oldState, input);
         }
+
+        @Override
+        public long initialValue() {
+            return Long.MIN_VALUE;
+        }
     };
 
 
     // subclasses
     private interface LongProcessor {
+        long initialValue();
         long process(long oldState, long input);
     }
 }

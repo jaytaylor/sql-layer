@@ -13,15 +13,23 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.aggregation;
+package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueTarget;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ValueNode;
 
-public interface Aggregator {
-    AkType outputType();
-    void input(ValueSource input);
-    void output(ValueTarget output);
-    ValueSource emptyValue();
+public class BooleanCastExpression extends CastExpression
+                                   implements ConditionExpression
+{
+    public BooleanCastExpression(ExpressionNode inner, 
+                                 DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        super(inner, sqlType, AkType.BOOL, sqlSource);
+    }
+    
+    @Override
+    public Implementation getImplementation() {
+        return Implementation.NORMAL;
+    }
+
 }

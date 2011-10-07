@@ -26,7 +26,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.aggregation.Aggregator;
 import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.error.InconvertibleTypesException;
-import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
@@ -130,18 +129,18 @@ public final class AggregateOperatorTest {
     }
 
     @Test
-    public void noInputRowsWithGroupBy() {
+    public void noInputRowsNoGroupBy() {
         TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG));
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
         Operator plan = new Aggregate_Partial(input, 0, Collections.singletonList(TEST_AGGREGATOR), rowType);
         Deque<Row> expected = new RowsBuilder(AkType.VARCHAR)
-                .row(ValueHolder.holdingNull())
+                .row(new ValueHolder(AkType.VARCHAR, EMPTY))
                 .rows();
         check(plan, expected);
     }
 
     @Test
-    public void noInputRowsNoGroupBy() {
+    public void noInputRowsWithGroupBy() {
         TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.LONG));
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
         Operator plan = new Aggregate_Partial(input, 1, Collections.singletonList(TEST_AGGREGATOR), rowType);
@@ -369,6 +368,7 @@ public final class AggregateOperatorTest {
 
     // const
 
+    private static final String EMPTY = "empty";
     private static final TestAdapter ADAPTER = new TestAdapter();
     private static final AggregatorFactory TEST_AGGREGATOR = new AggregatorFactory() {
         @Override
@@ -404,6 +404,11 @@ public final class AggregateOperatorTest {
             }
             result.setLength(0);
             Converters.convert(new ValueHolder(AkType.VARCHAR, asString), output);
+        }
+
+        @Override
+        public ValueSource emptyValue() {
+            return new ValueHolder(AkType.VARCHAR, EMPTY);
         }
 
         private StringBuilder result = new StringBuilder();

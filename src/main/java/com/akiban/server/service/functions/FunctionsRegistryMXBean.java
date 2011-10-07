@@ -13,15 +13,17 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.aggregation;
+package com.akiban.server.service.functions;
 
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueTarget;
 
-public interface Aggregator {
-    AkType outputType();
-    void input(ValueSource input);
-    void output(ValueTarget output);
-    ValueSource emptyValue();
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+public interface FunctionsRegistryMXBean {
+    List<String> getScalars();
+    List<String> getAggregates();
+    Map<String,Set<AkType>> getAggregatesWithTypes();
 }

@@ -17,10 +17,13 @@ package com.akiban.server.service.functions;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.util.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,9 +45,9 @@ final class GlobularFunctionsClassFinder implements FunctionsClassFinder {
     // FunctionsClassFinder interface
 
     @Override
-    public List<Class<?>> findClasses() {
+    public Set<Class<?>> findClasses() {
         try {
-            List<Class<?>> results = new ArrayList<Class<?>>();
+            Set<Class<?>> results = new HashSet<Class<?>>();
             List<String> includes = Strings.dumpResource(GlobularFunctionsClassFinder.class, configFile);
             for (String include : includes) {
                 int lastDot = include.lastIndexOf(".");
@@ -61,11 +64,13 @@ final class GlobularFunctionsClassFinder implements FunctionsClassFinder {
                     if (matcher.matches()) {
                         String className = packageName + "." + matcher.group(1);
                         Class<?> theClass = GlobularFunctionsClassFinder.class.getClassLoader().loadClass(className);
-                        results.add(theClass);
+                        if (!results.add(theClass)) {
+                            LOG.warn("ignoring duplicate class while looking for functions: {}", theClass);
+                        }
                     }
                 }
             }
-            return new ArrayList<Class<?>>(new HashSet<Class<?>>(results));
+            return new HashSet<Class<?>>(results);
         } catch (Exception e) {
             throw new AkibanInternalException("while looking for classes that contain functions", e);
         }
@@ -92,4 +97,7 @@ final class GlobularFunctionsClassFinder implements FunctionsClassFinder {
     // object state
 
     private final String configFile;
+
+    // class tate
+    private static final Logger LOG = LoggerFactory.getLogger(GlobularFunctionsClassFinder.class);
 }

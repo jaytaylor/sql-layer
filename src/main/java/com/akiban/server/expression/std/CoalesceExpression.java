@@ -16,7 +16,9 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
@@ -26,6 +28,15 @@ import com.akiban.server.types.util.ValueHolder;
 import java.util.List;
 
 public final class CoalesceExpression extends AbstractCompositeExpression {
+
+    @Scalar("coalesce")
+    public static final ExpressionComposer COMPOSER = new ExpressionComposer() {
+        @Override
+        public Expression compose(List<? extends Expression> arguments) {
+            return new CoalesceExpression(arguments);
+        }
+    };
+
     @Override
     protected void describe(StringBuilder sb) {
         sb.append("COALESCE");
