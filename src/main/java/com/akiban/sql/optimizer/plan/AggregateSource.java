@@ -56,6 +56,13 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
         return position;
     }
 
+    public ExpressionNode getField(int position) {
+        if (position < groupBy.size())
+            return groupBy.get(position);
+        else
+            return aggregates.get(position - groupBy.size());
+    }
+
     public Implementation getImplementation() {
         return implementation;
     }
