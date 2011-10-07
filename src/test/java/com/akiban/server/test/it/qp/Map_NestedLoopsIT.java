@@ -233,7 +233,8 @@ public class Map_NestedLoopsIT extends OperatorITBase
     }
 
     @Test
-    public void testBug869396()
+    // Inspired by bug 869396
+    public void testIndexScanUnderMapNestedLoopsUsedAsInnerLoopOfAnotherMapNestedLoops()
     {
         RowType cidValueRowType = schema.newValuesType(AkType.INT);
         IndexBound cidBound =

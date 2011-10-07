@@ -20,7 +20,6 @@ import com.akiban.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -70,7 +69,7 @@ final class GlobularFunctionsClassFinder implements FunctionsClassFinder {
                     }
                 }
             }
-            return new HashSet<Class<?>>(results);
+            return results;
         } catch (Exception e) {
             throw new AkibanInternalException("while looking for classes that contain functions", e);
         }
