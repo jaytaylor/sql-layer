@@ -38,7 +38,6 @@ import org.junit.Test;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
@@ -47,7 +46,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-public final class AggregateOperatorTest {
+public final class Aggregate_PartialTest {
 
     @Test
     public void simpleNoGroupBy() {
@@ -78,6 +77,27 @@ public final class AggregateOperatorTest {
                 .row(1L, "10, 11")
                 .row(2L, "12")
                 .row(3L, "13")
+                .rows();
+        check(plan, expected);
+    }
+
+    /**
+     * Situation like <tt>SELECT name FROM customers GROUP BY name</tt>. In this case, all of the columns are
+     * GROUP BY, and there's no aggregator.
+     */
+    @Test
+    public void groupByWithoutAggregators() {
+        TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG)
+                .row(1L)
+                .row(2L)
+                .row(3L)
+        );
+        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
+        Operator plan = new Aggregate_Partial(input, 1, Collections.<AggregatorFactory>emptyList(), rowType);
+        Deque<Row> expected = new RowsBuilder(AkType.LONG)
+                .row(1L)
+                .row(2L)
+                .row(3L)
                 .rows();
         check(plan, expected);
     }
