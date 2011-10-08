@@ -31,6 +31,8 @@ in-nulls: IN list with nulls.
 
 in-singleton: IN list with single value after folding.
 
+is-conditions: IS TRUE / FALSE / NULL.
+
 logical-functions: NOT TRUE is FALSE, TRUE AND X is X, FALSE AND X is FALSE, 
                    X OR FALSE is X.
 

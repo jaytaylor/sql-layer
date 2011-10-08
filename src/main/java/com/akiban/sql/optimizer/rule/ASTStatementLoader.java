@@ -406,6 +406,9 @@ public class ASTStatementLoader extends BaseRule
             return conditions;
         }
 
+        /** Fill the given list with conditions from given AST node.
+         * Takes a list because BETWEEN generates <em>two</em> conditions.
+         */
         protected void addCondition(List<ConditionExpression> conditions, 
                                     ValueNode condition)
                 throws StandardException {
@@ -781,6 +784,34 @@ public class ASTStatementLoader extends BaseRule
                                                         condition.getType(), condition));
         }
 
+        /** Is this a boolean condition used as a normal value? */
+        protected boolean isConditionExpression(ValueNode value)
+                throws StandardException {
+            switch (value.getNodeType()) {
+            case NodeTypes.BINARY_EQUALS_OPERATOR_NODE:
+            case NodeTypes.BINARY_GREATER_THAN_OPERATOR_NODE:
+            case NodeTypes.BINARY_GREATER_EQUALS_OPERATOR_NODE:
+            case NodeTypes.BINARY_LESS_THAN_OPERATOR_NODE:
+            case NodeTypes.BINARY_LESS_EQUALS_OPERATOR_NODE:
+            case NodeTypes.BINARY_NOT_EQUALS_OPERATOR_NODE:
+            case NodeTypes.BETWEEN_OPERATOR_NODE:
+            case NodeTypes.IN_LIST_OPERATOR_NODE:
+            case NodeTypes.LIKE_OPERATOR_NODE:
+            case NodeTypes.IS_NULL_NODE:
+            case NodeTypes.IS_NOT_NULL_NODE:
+            case NodeTypes.IS_NODE:
+            case NodeTypes.OR_NODE:
+            case NodeTypes.AND_NODE:
+            case NodeTypes.NOT_NODE:
+                return true;
+            case NodeTypes.SUBQUERY_NODE:
+                return (((SubqueryNode)value).getSubqueryType() != 
+                        SubqueryNode.SubqueryType.EXPRESSION);
+            default:
+                return false;
+            }
+        }
+
         /** Get given condition as a single node. */
         protected ConditionExpression toCondition(ValueNode condition)
                 throws StandardException {
@@ -930,6 +961,9 @@ public class ASTStatementLoader extends BaseRule
                                                        operand,
                                                        aggregateNode.isDistinct(),
                                                        type, valueNode);
+            }
+            else if (isConditionExpression(valueNode)) {
+                return toCondition(valueNode);
             }
             else if (valueNode instanceof UnaryOperatorNode) {
                 UnaryOperatorNode unary = (UnaryOperatorNode)valueNode;

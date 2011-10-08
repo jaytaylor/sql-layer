@@ -153,7 +153,27 @@ public class ConstantFolder extends BaseRule
                 return new BooleanConstantExpression(null, 
                                                      cond.getSQLtype(), 
                                                      cond.getSQLsource());
+            if (isIdempotentEquality(cond)) {
+                if ((cond.getLeft().getSQLtype() != null) &&
+                    !cond.getLeft().getSQLtype().isNullable()) {
+                    return new BooleanConstantExpression(Boolean.TRUE, 
+                                                         cond.getSQLtype(), 
+                                                         cond.getSQLsource());
+                }
+            }
             return cond;
+        }
+        
+        protected boolean isIdempotentEquality(ComparisonCondition cond) {
+            if (cond.getOperation() != Comparison.EQ)
+                return false;
+            ExpressionNode left = cond.getLeft();
+            if (!left.equals(cond.getRight()))
+                return false;
+            if ((left instanceof FunctionExpression) &&
+                !isIdempotent((FunctionExpression)left))
+                return false;
+            return true;
         }
 
         protected ExpressionNode castExpression(CastExpression cast) {
@@ -185,7 +205,7 @@ public class ConstantFolder extends BaseRule
                     break;
                 }
             }
-            if (allConstant && !isVolatile(fun))
+            if (allConstant && isIdempotent(fun))
                 return evalNow(fun);
             // All the functions that treat NULL specially are caught before we get here.
             if (anyNull)
@@ -248,14 +268,14 @@ public class ConstantFolder extends BaseRule
             return lfun;
         }
 
-        protected boolean isVolatile(FunctionExpression fun) {
+        protected boolean isIdempotent(FunctionExpression fun) {
             // TODO: Nice to get this from some functions repository
             // associated with their implementations.
             String fname = fun.getFunction();
-            return ("currentDate".equals(fname) ||
-                    "currentTime".equals(fname) ||
-                    "currentTimestamp".equals(fname) ||
-                    "RAND".equals(fname));
+            return !("currentDate".equals(fname) ||
+                     "currentTime".equals(fname) ||
+                     "currentTimestamp".equals(fname) ||
+                     "RAND".equals(fname));
         }
 
         protected ExpressionNode isNullExpression(FunctionExpression fun) {
@@ -272,8 +292,10 @@ public class ConstantFolder extends BaseRule
         }
 
         protected ExpressionNode isTrueExpression(FunctionExpression fun) {
-            ConditionExpression operand = (ConditionExpression)fun.getOperands().get(0);
-            if (isFalseOrUnknown(operand))
+            ExpressionNode operand = fun.getOperands().get(0);
+            if (isConstant(operand) != Constantness.VARIABLE)
+                return evalNow(fun);
+            else if (isFalseOrUnknown((ConditionExpression)operand))
                 return new BooleanConstantExpression(Boolean.FALSE, 
                                                      fun.getSQLtype(), 
                                                      fun.getSQLsource());
@@ -282,8 +304,10 @@ public class ConstantFolder extends BaseRule
         }
 
         protected ExpressionNode isFalseExpression(FunctionExpression fun) {
-            ConditionExpression operand = (ConditionExpression)fun.getOperands().get(0);
-            if (isTrueOrUnknown(operand))
+            ExpressionNode operand = fun.getOperands().get(0);
+            if (isConstant(operand) != Constantness.VARIABLE)
+                return evalNow(fun);
+            else if (isTrueOrUnknown((ConditionExpression)operand))
                 return new BooleanConstantExpression(Boolean.FALSE, 
                                                      fun.getSQLtype(), 
                                                      fun.getSQLsource());
@@ -519,6 +543,9 @@ public class ConstantFolder extends BaseRule
                     return isFalseOrUnknown(lfun.getOperand());
                 }
             }
+            else if (expr instanceof ComparisonCondition) {
+                return isIdempotentEquality((ComparisonCondition)expr);
+            }
             return false;
         }
 
@@ -553,7 +580,6 @@ public class ConstantFolder extends BaseRule
                     // E.g., NULL IN (SELECT ...)
                     return isFalseOrUnknown((ConditionExpression)inner);
             }
-            // TODO: More? Column = itself?
             return false;
         }
 
