@@ -30,6 +30,9 @@ public final class BooleanExtractor extends AbstractExtractor {
         case BOOL:      return source.getBool();
         case VARCHAR:   return getBoolean(source.getString());
         case TEXT:      return getBoolean(source.getText());
+        case LONG:      return l2b(source.getLong());
+        case INT:       return l2b(source.getInt());
+        case U_INT:     return l2b(source.getUInt());
         default: throw unsupportedConversion(type);
         }
     }
@@ -46,5 +49,9 @@ public final class BooleanExtractor extends AbstractExtractor {
 
     BooleanExtractor() {
         super(AkType.BOOL);
+    }
+
+    private boolean l2b(long value) {
+        return value != 0;
     }
 }
