@@ -74,6 +74,14 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
         return position;
     }
 
+    public ExpressionNode getField(int position) {
+        assert !projectSplitOff;
+        if (position < nGroupBy)
+            return groupBy.get(position);
+        else
+            return aggregates.get(position - nGroupBy);
+    }
+
     public int getNGroupBy() {
         return nGroupBy;
     }
