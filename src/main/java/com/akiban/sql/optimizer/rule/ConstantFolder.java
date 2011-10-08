@@ -167,6 +167,10 @@ public class ConstantFolder extends BaseRule
             String fname = fun.getFunction();
             if ("isNullOp".equals(fname))
                 return isNullExpression(fun);
+            else if ("isTrue".equals(fname))
+                return isTrueExpression(fun);
+            else if ("isFalse".equals(fname))
+                return isFalseExpression(fun);
             else if ("COALESCE".equals(fname))
                 return coalesceExpression(fun);
 
@@ -265,6 +269,26 @@ public class ConstantFolder extends BaseRule
                                                      fun.getSQLtype(), 
                                                      fun.getSQLsource());
             return fun;
+        }
+
+        protected ExpressionNode isTrueExpression(FunctionExpression fun) {
+            ConditionExpression operand = (ConditionExpression)fun.getOperands().get(0);
+            if (isFalseOrUnknown(operand))
+                return new BooleanConstantExpression(Boolean.FALSE, 
+                                                     fun.getSQLtype(), 
+                                                     fun.getSQLsource());
+            else
+                return fun;
+        }
+
+        protected ExpressionNode isFalseExpression(FunctionExpression fun) {
+            ConditionExpression operand = (ConditionExpression)fun.getOperands().get(0);
+            if (isTrueOrUnknown(operand))
+                return new BooleanConstantExpression(Boolean.FALSE, 
+                                                     fun.getSQLtype(), 
+                                                     fun.getSQLsource());
+            else
+                return fun;
         }
 
         protected ExpressionNode coalesceExpression(FunctionExpression fun) {

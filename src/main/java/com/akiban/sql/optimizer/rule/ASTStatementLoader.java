@@ -459,6 +459,11 @@ public class ASTStatementLoader extends BaseRule
                                      (UnaryOperatorNode)condition);
                 break;
 
+            case NodeTypes.IS_NODE:
+                addIsCondition(conditions,
+                               (IsNode)condition);
+                break;
+
             case NodeTypes.OR_NODE:
             case NodeTypes.AND_NODE:
             case NodeTypes.NOT_NODE:
@@ -706,6 +711,27 @@ public class ASTStatementLoader extends BaseRule
             conditions.add(new FunctionCondition(ternary.getMethodName(),
                                                  operands,
                                                  ternary.getType(), ternary));
+        }
+
+        protected void addIsCondition(List<ConditionExpression> conditions,
+                                      IsNode is)
+                throws StandardException {
+            List<ExpressionNode> operands = new ArrayList<ExpressionNode>(1);
+            operands.add(toExpression(is.getLeftOperand()));
+            String function;
+            if (((Boolean)((ConstantNode)is.getRightOperand()).getValue()).booleanValue())
+                function = "isTrue";
+            else
+                function = "isFalse";
+            FunctionCondition cond = new FunctionCondition(function, operands,
+                                                           is.getType(), is);
+            if (is.isNegated()) {
+                List<ConditionExpression> noperands = new ArrayList<ConditionExpression>(1);
+                noperands.add(cond);
+                cond = new LogicalFunctionCondition("not", noperands,
+                                                    is.getType(), is);
+            }
+            conditions.add(cond);
         }
 
         protected void addLogicalFunctionCondition(List<ConditionExpression> conditions, 
