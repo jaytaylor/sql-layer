@@ -107,7 +107,7 @@ final class Aggregate_Partial extends Operator
     // private methods
 
     private void validate() {
-        ArgumentValidation.isBetween("inputsIndex", 0, inputsIndex, inputOperator.rowType().nFields());
+        ArgumentValidation.isBetween("inputsIndex", 0, inputsIndex, inputOperator.rowType().nFields()+1);
         if (inputsIndex + aggregatorFactories.size() != inputOperator.rowType().nFields()) {
             throw new IllegalArgumentException(
                     String.format("inputsIndex(=%d) + aggregatorNames.size(=%d) != inputRowType.nFields(=%d)",

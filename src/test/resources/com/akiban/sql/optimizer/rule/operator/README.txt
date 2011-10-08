@@ -2,6 +2,10 @@ aggregate-1: call basic aggregate functions
 
 aggregate-2: COUNT(*)
 
+aggregate-2s: Should get same ORDER BY for free.
+
+aggregate-2n: Need sort for different ORDER BY.
+
 aggregate-3: no GROUP BY
 
 delete-1: single column condition

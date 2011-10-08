@@ -164,7 +164,8 @@ public final class Converters {
                 LONG
         );
         builder.legalConversions(BOOL,
-                VARCHAR
+                VARCHAR,
+                LONG
         );
 
         return builder.result();

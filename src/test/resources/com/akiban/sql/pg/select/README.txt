@@ -56,6 +56,10 @@ select-16: aggregation matching no rows, with GROUP BY
 
 select-17: aggregation matching no rows, no GROUP BY
 
+select-18a: int (1) as boolean in WHERE
+
+select-18n: int (0) as boolean in WHERE
+
 types: select all typed fields
 
 types_a_date: match literal
