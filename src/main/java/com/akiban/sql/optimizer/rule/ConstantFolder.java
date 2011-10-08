@@ -186,7 +186,9 @@ public class ConstantFolder extends BaseRule
         protected ExpressionNode functionExpression(FunctionExpression fun) {
             String fname = fun.getFunction();
             if ("isNullOp".equals(fname))
-                return isNullExpression(fun);
+                return isNullExpression(fun, false);
+            if ("isNotNull".equals(fname))
+                return isNullExpression(fun, true);
             else if ("isTrue".equals(fname))
                 return isTrueExpression(fun);
             else if ("isFalse".equals(fname))
@@ -278,14 +280,15 @@ public class ConstantFolder extends BaseRule
                      "RAND".equals(fname));
         }
 
-        protected ExpressionNode isNullExpression(FunctionExpression fun) {
+        protected ExpressionNode isNullExpression(FunctionExpression fun,
+                                                  boolean not) {
             ExpressionNode operand = fun.getOperands().get(0);
             if (isConstant(operand) != Constantness.VARIABLE)
                 return evalNow(fun);
             // pkey IS NULL is FALSE, for instance.
             if ((operand.getSQLtype() != null) &&
                 !operand.getSQLtype().isNullable())
-                return new BooleanConstantExpression(Boolean.FALSE, 
+                return new BooleanConstantExpression(not, 
                                                      fun.getSQLtype(), 
                                                      fun.getSQLsource());
             return fun;
@@ -340,13 +343,13 @@ public class ConstantFolder extends BaseRule
         }
 
         protected ExpressionNode ifElseExpression(IfElseExpression cond) {
-            Constantness c = isConstant(cond.getTestCondition());
-            if (c == Constantness.VARIABLE)
-                return cond;    // TODO: isFalseOrUnknown?
-            if (((ConstantExpression)cond.getTestCondition()).getValue() == Boolean.TRUE)
+            boolean keep = checkConditions(cond.getTestConditions());
+            if (!keep)
+                return cond.getElseExpression();
+            else if (cond.getTestConditions().isEmpty())
                 return cond.getThenExpression();
             else
-                return cond.getElseExpression();
+                return cond;
         }
 
         protected ExpressionNode columnExpression(ColumnExpression col) {

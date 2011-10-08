@@ -1051,7 +1051,7 @@ public class ASTStatementLoader extends BaseRule
             }
             else if (valueNode instanceof ConditionalNode) {
                 ConditionalNode cond = (ConditionalNode)valueNode;
-                return new IfElseExpression(toCondition(cond.getTestCondition()),
+                return new IfElseExpression(toConditions(cond.getTestCondition()),
                                             toExpression(cond.getThenNode()),
                                             toExpression(cond.getElseNode()),
                                             cond.getType(), cond);

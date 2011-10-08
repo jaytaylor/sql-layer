@@ -1,3 +1,7 @@
+case-1: CASE condition already worked out.
+
+case-2: CASE only partially worked out.
+
 counts: COUNT(NOT NULL column) turns into COUNT(*) but not NULL.
 
 extra-true: true conditions are ignored in WHERE clause.
