@@ -89,8 +89,10 @@ public final class Aggregate_PartialTest {
     public void groupByWithoutAggregators() {
         TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG)
                 .row(1L)
+                .row(1L)
                 .row(2L)
                 .row(3L)
+                .row(1L)
         );
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
         Operator plan = new Aggregate_Partial(input, 1, Collections.<AggregatorFactory>emptyList(), rowType);
@@ -98,6 +100,7 @@ public final class Aggregate_PartialTest {
                 .row(1L)
                 .row(2L)
                 .row(3L)
+                .row(1L)
                 .rows();
         check(plan, expected);
     }
