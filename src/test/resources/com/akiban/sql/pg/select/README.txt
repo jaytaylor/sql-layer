@@ -60,6 +60,8 @@ select-18a: int (1) as boolean in WHERE
 
 select-18n: int (0) as boolean in WHERE
 
+select-19: group index with one inequality
+
 types: select all typed fields
 
 types_a_date: match literal
