@@ -667,14 +667,14 @@ public class OperatorAssembler extends BaseRule
                 Expression[] lowKeys = null, highKeys = null;
                 boolean lowInc = false, highInc = false;
                 int lidx = kidx, hidx = kidx;
-                if (lowComparand != null) {
+                if ((lidx > 0) || (lowComparand != null)) {
                     lowKeys = keys;
-                    if (highComparand != null) {
+                    if ((hidx > 0) || (highComparand != null)) {
                         highKeys = new Expression[nkeys];
-                        System.arraycopy(keys, 0, highKeys, 0, kidx);
+                        System.arraycopy(keys, 0, highKeys, 0, nkeys);
                     }
                 }
-                else if (highComparand != null) {
+                else if ((hidx > 0) || (highComparand != null)) {
                     highKeys = keys;
                 }
                 if (lowComparand != null) {
