@@ -60,7 +60,7 @@ public final class Aggregate_PartialTest {
         Deque<Row> expected = new RowsBuilder(AkType.VARCHAR)
                 .row("1, 2, 3")
                 .rows();
-        check(plan, expected);
+        OperatorTestHelper.check(plan, expected);
     }
 
     @Test
@@ -78,7 +78,7 @@ public final class Aggregate_PartialTest {
                 .row(2L, "12")
                 .row(3L, "13")
                 .rows();
-        check(plan, expected);
+        OperatorTestHelper.check(plan, expected);
     }
 
     /**
@@ -102,7 +102,7 @@ public final class Aggregate_PartialTest {
                 .row(3L)
                 .row(1L)
                 .rows();
-        check(plan, expected);
+        OperatorTestHelper.check(plan, expected);
     }
 
     @Test
@@ -128,7 +128,7 @@ public final class Aggregate_PartialTest {
                 .row(null, "13, 14")
                 .row(1L, "15, 16")
                 .rows();
-        check(plan, expected);
+        OperatorTestHelper.check(plan, expected);
     }
 
     @Test
@@ -148,7 +148,7 @@ public final class Aggregate_PartialTest {
                 .row(2L, "bravo", "4")
                 .row(2L, "charlie", "5")
                 .rows();
-        check(plan, expected);
+        OperatorTestHelper.check(plan, expected);
     }
 
     @Test
@@ -159,7 +159,7 @@ public final class Aggregate_PartialTest {
         Deque<Row> expected = new RowsBuilder(AkType.VARCHAR)
                 .row(new ValueHolder(AkType.VARCHAR, EMPTY))
                 .rows();
-        check(plan, expected);
+        OperatorTestHelper.check(plan, expected);
     }
 
     @Test
@@ -168,7 +168,7 @@ public final class Aggregate_PartialTest {
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
         Operator plan = new Aggregate_Partial(input, 1, Collections.singletonList(TEST_AGGREGATOR), rowType);
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR).rows();
-        check(plan, expected);
+        OperatorTestHelper.check(plan, expected);
     }
 
     @Test
@@ -212,7 +212,7 @@ public final class Aggregate_PartialTest {
         Collections.swap(expectedFull, 2, 3);
 
         // Finally, check
-        check(plan, expectedFull);
+        OperatorTestHelper.check(plan, expectedFull);
     }
 
     @Test(expected = InconvertibleTypesException.class)
@@ -227,7 +227,7 @@ public final class Aggregate_PartialTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        execute(plan);
+        OperatorTestHelper.execute(plan);
     }
 
     @Test(expected = NullPointerException.class)
@@ -302,41 +302,6 @@ public final class Aggregate_PartialTest {
         new Aggregate_Partial(input, 2, Collections.singletonList(TEST_AGGREGATOR), rowType);
     }
 
-    private static void check(Operator plan, Collection<Row> expecteds) {
-        List<Row> actuals = execute(plan);
-        if (expecteds.size() != actuals.size()) {
-            assertEquals("output", Strings.join(expecteds), Strings.join(actuals));
-            assertEquals("size (expecteds=" + expecteds+", actuals=" + actuals + ')', expecteds.size(), actuals.size());
-        }
-        int rowCount = 0;
-        try {
-            Iterator<Row> expectedsIter = expecteds.iterator();
-            for (Row actual : actuals) {
-                Row expected = expectedsIter.next();
-                for (int i = 0; i < plan.rowType().nFields(); ++i) {
-                    ValueHolder actualHolder = new ValueHolder(actual.eval(i));
-                    ValueHolder expectedHolder = new ValueHolder(expected.eval(i));
-
-                    if (!expectedHolder.equals(actualHolder)) {
-                        assertEquals(
-                                String.format("row[%d] field[%d]", rowCount, i),
-                                str(expecteds),
-                                str(actuals)
-                        );
-                        assertEquals(String.format("row[%d] field[%d]", rowCount, i), expectedHolder, actualHolder);
-                        throw new AssertionError("should have failed by now!");
-                    }
-                }
-                ++rowCount;
-            }
-        }
-        finally {
-            for (Row actual : actuals) {
-                actual.release();
-            }
-        }
-    }
-
     private static <R extends Row,C extends Collection<? super Row>>
     C shuffle(Collection<? extends R> first, Collection<? extends R> second, C output)
     {
@@ -357,25 +322,6 @@ public final class Aggregate_PartialTest {
         return output;
     }
 
-    private static String str(Collection<? extends Row> rows) {
-        return Strings.join(rows);
-    }
-
-    private static List<Row> execute(Operator plan) {
-        List<Row> rows = new ArrayList<Row>();
-        Cursor cursor = plan.cursor(ADAPTER);
-        cursor.open(UndefBindings.only());
-        try {
-            for(Row row = cursor.next(); row != null; row = cursor.next()) {
-                row.acquire();
-                rows.add(row);
-            }
-            return rows;
-        } finally {
-            cursor.close();
-        }
-    }
-
     private ValueHolder wrapBytes(int... bytes) {
         byte[] asBytes = new byte[bytes.length];
         for (int i=0; i < bytes.length; ++i) {
@@ -392,7 +338,6 @@ public final class Aggregate_PartialTest {
     // const
 
     private static final String EMPTY = "empty";
-    private static final TestAdapter ADAPTER = new TestAdapter();
     private static final AggregatorFactory TEST_AGGREGATOR = new AggregatorFactory() {
         @Override
         public Aggregator get() {
@@ -435,60 +380,5 @@ public final class Aggregate_PartialTest {
         }
 
         private StringBuilder result = new StringBuilder();
-    }
-
-    private static class TestAdapter extends StoreAdapter
-    {
-        @Override
-        public GroupCursor newGroupCursor(GroupTable groupTable)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange, UserTable innerJoinUntil)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public HKey newHKey(RowType rowType)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void updateRow(Row oldRow, Row newRow, Bindings bindings)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void writeRow(Row newRow, Bindings bindings)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void deleteRow(Row oldRow, Bindings bindings)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Cursor sort(Cursor input, RowType rowType, API.Ordering ordering, Bindings bindings)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void checkQueryCancelation()
-        {
-        }
-
-        public TestAdapter()
-        {
-            super(null);
-        }
     }
 }
