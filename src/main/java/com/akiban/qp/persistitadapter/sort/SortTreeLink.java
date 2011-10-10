@@ -13,12 +13,12 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
 
-class TemporaryTableTreeLink implements TreeLink
+class SortTreeLink implements TreeLink
 {
     // TreeLink interface
 
@@ -46,9 +46,9 @@ class TemporaryTableTreeLink implements TreeLink
         return cache;
     }
 
-    // TemporaryTableTreeLink interface
+    // SortTreeLink interface
 
-    public TemporaryTableTreeLink(String tableName)
+    public SortTreeLink(String tableName)
     {
         this.tableName = tableName;
     }

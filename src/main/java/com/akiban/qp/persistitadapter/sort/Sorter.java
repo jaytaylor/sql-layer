@@ -27,6 +27,7 @@ import com.akiban.server.PersistitValueValueTarget;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.std.LiteralExpression;
+import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
@@ -37,6 +38,8 @@ import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public class Sorter
 {
     public Sorter(PersistitAdapter adapter, Cursor input, RowType rowType, API.Ordering ordering, Bindings bindings)
@@ -46,7 +49,8 @@ public class Sorter
         this.rowType = rowType;
         this.ordering = ordering.copy();
         this.bindings = bindings;
-        this.exchange = adapter.takeExchangeForSorting();
+        this.exchange = adapter.takeExchangeForSorting
+            (new SortTreeLink(SORT_TREE_NAME_PREFIX + SORTER_ID_GENERATOR.getAndIncrement()));
         this.key = exchange.getKey();
         this.keyTarget = new PersistitKeyValueTarget();
         this.keyTarget.attach(this.key);
@@ -149,6 +153,8 @@ public class Sorter
 
     private static final Logger LOG = LoggerFactory.getLogger(Sorter.class);
     private static final Expression DUMMY_EXPRESSION = LiteralExpression.forNull();
+    private static final String SORT_TREE_NAME_PREFIX = "sort.";
+    private static final AtomicLong SORTER_ID_GENERATOR = new AtomicLong(0);
 
     // Object state
 
