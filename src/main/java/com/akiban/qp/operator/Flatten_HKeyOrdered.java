@@ -105,6 +105,7 @@ class Flatten_HKeyOrdered extends Operator
         ArgumentValidation.notNull("parentType", parentType);
         ArgumentValidation.notNull("childType", childType);
         ArgumentValidation.notNull("flattenType", joinType);
+        ArgumentValidation.isTrue("parentType really is parent of childType", parentType.parentOf(childType));
         assert parentType != null;
         assert childType != null;
         this.inputOperator = inputOperator;
