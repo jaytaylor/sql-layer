@@ -125,7 +125,12 @@ public final class CompareExpression extends AbstractBinaryExpression {
             public int compare(ValueSource a, ValueSource b) {
                 long aLong = Extractors.getLongExtractor(type).getLong(a);
                 long bLong = Extractors.getLongExtractor(type).getLong(b);
-                return (int)(aLong - bLong);
+                if (aLong < bLong)
+                    return -1;
+                else if (aLong > bLong)
+                    return +1;
+                else
+                    return 0;
             }
         };
     }
