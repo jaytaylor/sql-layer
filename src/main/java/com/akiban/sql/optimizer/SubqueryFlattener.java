@@ -295,16 +295,16 @@ public class SubqueryFlattener
     // stronger condition of something not in the subquery.
     protected boolean isUniqueSubquery(SelectNode selectNode, ValueNode parentOperand)
             throws StandardException {
-        FromList fromList = selectNode.getFromList();
+        List<FromTable> fromList = new ArrayList<FromTable>();
+        if (!innerJoinedFromTables(selectNode.getFromList(), fromList))
+            return false;
         AndNode whereConditions = (AndNode)selectNode.getWhereClause();
         boolean anyStronger = false;
         boolean[] results = new boolean[2];
         for (FromTable fromTable : fromList) {
             TableBinding binding = (TableBinding)fromTable.getUserData();
-            if (binding == null) continue;
-            Table table = binding.getTable();
             boolean anyIndex = false;
-            for (Index index : table.getIndexes()) {
+            for (Index index : binding.getTable().getIndexes()) {
                 if (!index.isUnique()) continue;
                 boolean allColumns = true, allStronger = true;
                 for (IndexColumn indexColumn : index.getColumns()) {
@@ -339,11 +339,46 @@ public class SubqueryFlattener
         return anyStronger;
     }
 
+    // Get all the inner joined tables. Return false for any other
+    // kind of join or anything not a table.
+    protected boolean innerJoinedFromTables(FromList fromList, 
+                                            List<FromTable> intoList)
+            throws StandardException {
+        for (FromTable fromTable : fromList) {
+            if (!innerJoinedFromTables(fromTable, intoList))
+                return false;
+        }
+        return true;
+    }
+
+    protected boolean innerJoinedFromTables(ResultSetNode fromTable, 
+                                            List<FromTable> intoList)
+            throws StandardException {
+        switch (fromTable.getNodeType()) {
+        case NodeTypes.JOIN_NODE:
+            {
+                JoinNode joinNode = (JoinNode)fromTable;
+                return (innerJoinedFromTables(joinNode.getLeftResultSet(),
+                                              intoList) &&
+                        innerJoinedFromTables(joinNode.getRightResultSet(),
+                                              intoList));
+            }
+        case NodeTypes.FROM_BASE_TABLE:
+            if (fromTable.getUserData() != null) {
+                intoList.add((FromBaseTable)fromTable);
+                return true;
+            }
+            /* else falls through */
+        default:
+            return false;
+        }
+    }
+
     // Does this column appear in an equality condition, either in the
     // where clause or because of the parent RHS, that is free of the given tables.
     // results[0] is true if free of the specific table.
     // results[1] is true if free of all the tables.
-    protected void findColumnCondition(FromList fromList, FromTable fromTable, 
+    protected void findColumnCondition(List<FromTable> fromList, FromTable fromTable, 
                                        Column column, 
                                        AndNode whereConditions, ValueNode parentOperand,
                                        boolean[] results)
@@ -400,10 +435,10 @@ public class SubqueryFlattener
         enum Found { NOT_FOUND, FOUND_FROM_LIST, FOUND_TABLE };
 
         protected Found found;
-        private FromList fromList;
+        private List<FromTable> fromList;
         private FromTable fromTable;
 
-        public FromTableBindingVisitor(FromList fromList, FromTable fromTable) {
+        public FromTableBindingVisitor(List<FromTable> fromList, FromTable fromTable) {
             this.found = Found.NOT_FOUND;
             this.fromList = fromList;
             this.fromTable = fromTable;
