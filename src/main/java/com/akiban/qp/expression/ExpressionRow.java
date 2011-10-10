@@ -66,6 +66,19 @@ public class ExpressionRow extends AbstractRow
         throw new UnsupportedOperationException();        
     }
 
+    @Override
+    public void release() {
+    }
+
+    @Override
+    public boolean isShared() {
+        return false;
+    }
+
+    @Override
+    public void acquire() {
+    }
+
     /* Object */
 
     @Override
