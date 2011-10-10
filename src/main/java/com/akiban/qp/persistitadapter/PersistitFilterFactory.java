@@ -45,7 +45,7 @@ class PersistitFilterFactory
 
         List<IndexColumn> indexColumns = index.getColumns();
         int ncols = indexColumns.size();
-        int maxlo = 0, maxhi = 0;
+        int maxlo = -1, maxhi = -1;
         for (int i = 0; i < ncols; ++i) {
           if ((keyRange.lo() != null) && 
               keyRange.lo().columnSelector().includesColumn(i))
