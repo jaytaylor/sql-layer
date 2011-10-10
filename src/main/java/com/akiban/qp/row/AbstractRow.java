@@ -56,7 +56,7 @@ public abstract class AbstractRow implements Row
     // Row interface
 
     @Override
-    public final void acquire()
+    public void acquire()
     {
         assert references >= 0 : this;
         beforeAcquire();
@@ -64,14 +64,14 @@ public abstract class AbstractRow implements Row
     }
 
     @Override
-    public final boolean isShared()
+    public boolean isShared()
     {
         assert references >= 0 : this;
         return references > 1;
     }
 
     @Override
-    public final void release()
+    public void release()
     {
         assert references > 0 : this;
         --references;
