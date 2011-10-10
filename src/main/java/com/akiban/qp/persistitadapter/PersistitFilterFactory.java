@@ -44,9 +44,22 @@ class PersistitFilterFactory
         target.attach(key);
 
         List<IndexColumn> indexColumns = index.getColumns();
-        KeyFilter.Term[] terms = new KeyFilter.Term[indexColumns.size()];
-        for (int i = 0; i < indexColumns.size(); ++i) {
-            terms[i] = computeKeyFilterTerm(target, key, indexColumns.get(i).getColumn(), i, keyRange, bindings);
+        int ncols = indexColumns.size();
+        int maxlo = 0, maxhi = 0;
+        for (int i = 0; i < ncols; ++i) {
+          if ((keyRange.lo() != null) && 
+              keyRange.lo().columnSelector().includesColumn(i))
+            maxlo = i;
+          if ((keyRange.hi() != null) && 
+              keyRange.hi().columnSelector().includesColumn(i))
+            maxhi = i;
+        }
+        KeyFilter.Term[] terms = new KeyFilter.Term[ncols];
+        for (int i = 0; i < ncols; ++i) {
+            terms[i] = computeKeyFilterTerm(target, key, indexColumns.get(i).getColumn(),
+                                            i, keyRange, bindings,
+                                            (i < maxlo) || ((i == maxlo) && keyRange.loInclusive()),
+                                            (i < maxhi) || ((i == maxhi) && keyRange.hiInclusive()));
         }
         key.clear();
         KeyFilter keyFilter = new KeyFilter(terms, terms.length, Integer.MAX_VALUE);
@@ -64,8 +77,9 @@ class PersistitFilterFactory
     // For use by this class
 
     // Returns a KeyFilter term if the specified field of either the start or
-    private KeyFilter.Term computeKeyFilterTerm(PersistitKeyValueTarget tuple, Key key, Column column, int position,
-                                                IndexKeyRange keyRange, Bindings bindings)
+    private KeyFilter.Term computeKeyFilterTerm(PersistitKeyValueTarget tuple, Key key, Column column, 
+                                                int position, IndexKeyRange keyRange, Bindings bindings,
+                                                boolean loInclusive, boolean hiInclusive)
     {
         boolean hasStart = (keyRange.lo() != null) && keyRange.lo().columnSelector().includesColumn(position);
         boolean hasEnd = (keyRange.hi() != null) && keyRange.hi().columnSelector().includesColumn(position);
@@ -89,7 +103,7 @@ class PersistitFilterFactory
         // Tricky: termFromKeySegments reads successive key segments when
         // called this way.
         //
-        return KeyFilter.termFromKeySegments(key, key, keyRange.loInclusive(), keyRange.hiInclusive());
+        return KeyFilter.termFromKeySegments(key, key, loInclusive, hiInclusive);
     }
 
     private void appendKeyField(PersistitKeyValueTarget target, Column column, int position, BoundExpressions row)
