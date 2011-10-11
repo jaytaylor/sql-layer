@@ -55,8 +55,4 @@ public final class BindableRowsBuilder {
 
     private final RowType rowType;
     private final List<List<? extends Expression>> expressionsList = new ArrayList<List<? extends Expression>>();
-
-    public interface ExpressionCreator<T> {
-        Expression getFrom(T input);
-    }
 }
