@@ -109,6 +109,7 @@ public class ColumnBinding
 
     @Override
     public boolean equals(Object obj) {
+        if (this == obj) return true;
         if (!(obj instanceof ColumnBinding)) return false;
         ColumnBinding other = (ColumnBinding)obj;
         return ((fromTable == other.fromTable) &&
