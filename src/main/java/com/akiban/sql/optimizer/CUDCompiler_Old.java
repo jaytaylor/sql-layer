@@ -21,6 +21,7 @@ import static com.akiban.qp.operator.API.update_Default;
 import static com.akiban.qp.operator.API.valuesScan_Default;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
@@ -31,7 +32,7 @@ import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.BindableRowsBuilder;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.rowtype.ValuesRowType;
@@ -157,7 +158,7 @@ public class CUDCompiler_Old {
         Arrays.fill(types, AkType.NULL);
         ValuesRowType rowType = compiler.valuesRowType(types);
 
-        BindableRowsBuilder builder = new BindableRowsBuilder(rowType);
+        List<BindableRow> bindableRows = new ArrayList<BindableRow>();
         for (List<SimpleExpression> row : values) {
             Expression[] expressions = new Expression[row.size()];
             int i = 0;
@@ -165,9 +166,9 @@ public class CUDCompiler_Old {
                 expressions[i] = expr.generateExpression(stmt.getFieldOffset());
                 i++;
             }
-            builder.add(Arrays.asList(expressions));
+            bindableRows.add(BindableRow.of(rowType, Arrays.asList(expressions)));
         }
-        return valuesScan_Default(builder.get(), rowType);
+        return valuesScan_Default(bindableRows, rowType);
         
     }
 

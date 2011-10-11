@@ -44,8 +44,8 @@ public class ValuesScan_Default extends Operator
         return getClass().getSimpleName()  + rows;
     }
 
-    public ValuesScan_Default (Collection<? extends BindableRow> bindableExpressions, RowType rowType) {
-        this.rows = new ArrayList<BindableRow>(bindableExpressions);
+    public ValuesScan_Default (Collection<? extends BindableRow> bindableRows, RowType rowType) {
+        this.rows = new ArrayList<BindableRow>(bindableRows);
         this.rowType = rowType;
     }
 
