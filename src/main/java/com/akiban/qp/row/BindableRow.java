@@ -20,7 +20,6 @@ import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.types.util.ValueHolder;
 
 import java.util.List;
 
