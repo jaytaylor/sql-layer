@@ -16,7 +16,7 @@
 package com.akiban.qp.operator;
 
 import com.akiban.qp.row.AbstractRow;
-import com.akiban.qp.row.BindableExpressions;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -40,14 +40,6 @@ public final class RowsBuilder {
 
     public Deque<Row> rows() {
         return rows;
-    }
-
-    public Deque<BindableExpressions> bindableRows() {
-        Deque<BindableExpressions> bindableRows = new ArrayDeque<BindableExpressions>();
-        for (Row row : rows) {
-            bindableRows.add(BindableExpressions.of(row));
-        }
-        return bindableRows;
     }
 
     public RowType rowType() {

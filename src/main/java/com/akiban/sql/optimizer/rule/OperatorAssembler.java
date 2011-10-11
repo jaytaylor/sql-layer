@@ -18,11 +18,10 @@ package com.akiban.sql.optimizer.rule;
 import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.ExpressionsBuffer;
+import com.akiban.qp.row.BindableRowsBuilder;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.LiteralExpression;
 
-import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.server.expression.Expression;
@@ -37,20 +36,16 @@ import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
-import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.*;
 
-import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.expression.UnboundExpressions;
-
-import com.akiban.server.aggregation.Aggregator;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
@@ -62,7 +57,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.logging.StreamHandler;
 
 public class OperatorAssembler extends BaseRule
 {
@@ -273,15 +267,15 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleExpressionsSource(ExpressionsSource expressionsSource) {
             RowStream stream = new RowStream();
             stream.rowType = valuesRowType(expressionsSource.getFieldTypes());
-            ExpressionsBuffer buffer = new ExpressionsBuffer(stream.rowType);
+            BindableRowsBuilder builder = new BindableRowsBuilder(stream.rowType);
             for (List<ExpressionNode> exprs : expressionsSource.getExpressions()) {
                 List<Expression> expressions = new ArrayList<Expression>(exprs.size());
                 for (ExpressionNode expr : exprs) {
                     expressions.add(assembleExpression(expr, stream.fieldOffsets));
                 }
-                buffer.add(expressions);
+                builder.add(expressions);
             }
-            stream.operator = API.valuesScan_Default(buffer.get(), stream.rowType);
+            stream.operator = API.valuesScan_Default(builder.get(), stream.rowType);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(expressionsSource, 
                                                                stream.rowType);
             return stream;

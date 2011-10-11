@@ -23,9 +23,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public final class ExpressionsBuffer {
+public final class BindableRowsBuilder {
 
-    public ExpressionsBuffer add(List<? extends Expression> expressions) {
+    public BindableRowsBuilder add(List<? extends Expression> expressions) {
         // validate inputs
         if (expressions.size() != rowType.nFields())
             throw new IllegalArgumentException(expressions + " has wrong number of values for " + rowType);
@@ -41,15 +41,15 @@ public final class ExpressionsBuffer {
         return this;
     }
 
-    public Collection<BindableExpressions> get() {
-        List<BindableExpressions> result = new ArrayList<BindableExpressions>();
+    public Collection<BindableRow> get() {
+        List<BindableRow> result = new ArrayList<BindableRow>();
         for (List<? extends Expression> expressionsRow : expressionsList) {
-            result.add(BindableExpressions.of(rowType, expressionsRow));
+            result.add(BindableRow.of(rowType, expressionsRow));
         }
         return result;
     }
 
-    public ExpressionsBuffer(RowType rowType) {
+    public BindableRowsBuilder(RowType rowType) {
         this.rowType = rowType;
     }
 

@@ -15,7 +15,6 @@
 
 package com.akiban.qp.row;
 
-import com.akiban.ais.ddl.SqlTextTarget;
 import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.rowtype.RowType;
@@ -24,8 +23,11 @@ import com.akiban.server.types.util.ValueHolder;
 
 import java.util.List;
 
-public abstract class BindableExpressions {
-    public static BindableExpressions of(RowType rowType, List<? extends Expression> expressions) {
+public abstract class BindableRow {
+
+    // BindableRow class interface
+
+    public static BindableRow of(RowType rowType, List<? extends Expression> expressions) {
         for (Expression expression : expressions) {
             if (expression.needsBindings())
                 return new BindingExpressions(rowType, expressions);
@@ -33,29 +35,24 @@ public abstract class BindableExpressions {
         return new NonbindingExpressions(rowType, expressions);
     }
 
-    public static BindableExpressions of(Row row) {
-        return new Delegating(row.rowType(), row);
+    public static BindableRow of(Row row) {
+        return new Delegating(row);
     }
+
+    // BindableRow instance interface
 
     public abstract Row bind(Bindings bindings);
 
-    private BindableExpressions(RowType rowType) {
-        this.rowType = rowType;
-    }
-
-    // common state
-    protected final RowType rowType;
-
     // nested classes
 
-    private static class BindingExpressions extends BindableExpressions {
+    private static class BindingExpressions extends BindableRow {
         @Override
         public Row bind(Bindings bindings) {
             return new ExpressionRow(rowType, bindings, expressions);
         }
 
         private BindingExpressions(RowType rowType, List<? extends Expression> expressions) {
-            super(rowType);
+            this.rowType = rowType;
             this.expressions = expressions;
             for (Expression expression : expressions) {
                 if (expression.needsRow()) {
@@ -65,16 +62,16 @@ public abstract class BindableExpressions {
         }
 
         private final List<? extends Expression> expressions;
+        private final RowType rowType;
     }
 
-    private static class NonbindingExpressions extends BindableExpressions {
+    private static class NonbindingExpressions extends BindableRow {
         @Override
         public Row bind(Bindings bindings) {
             return row;
         }
 
         private NonbindingExpressions(RowType rowType, List<? extends Expression> expressions) {
-            super(rowType);
             ValuesHolderRow holdersRow = new ValuesHolderRow(rowType);
             for (int i=0; i < expressions.size(); ++i) {
                 Expression expression = expressions.get(i);
@@ -96,14 +93,13 @@ public abstract class BindableExpressions {
         private final Row row;
     }
 
-    private static class Delegating extends BindableExpressions {
+    private static class Delegating extends BindableRow {
         @Override
         public Row bind(Bindings bindings) {
             return row;
         }
 
-        private Delegating(RowType rowType, Row row) {
-            super(rowType);
+        private Delegating(Row row) {
             this.row = row;
         }
 

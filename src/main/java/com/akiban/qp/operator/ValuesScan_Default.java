@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
-import com.akiban.qp.row.BindableExpressions;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
@@ -44,21 +44,21 @@ public class ValuesScan_Default extends Operator
         return getClass().getSimpleName()  + rows;
     }
 
-    public ValuesScan_Default (Collection<? extends BindableExpressions> bindableExpressions, RowType rowType) {
-        this.rows = new ArrayList<BindableExpressions>(bindableExpressions);
+    public ValuesScan_Default (Collection<? extends BindableRow> bindableExpressions, RowType rowType) {
+        this.rows = new ArrayList<BindableRow>(bindableExpressions);
         this.rowType = rowType;
     }
 
-    private final Collection<? extends BindableExpressions> rows;
+    private final Collection<? extends BindableRow> rows;
     private final RowType rowType;
     
     private static class Execution implements Cursor
     {
-        private final Collection<? extends BindableExpressions> rows;
-        private Iterator<? extends BindableExpressions> iter;
+        private final Collection<? extends BindableRow> rows;
+        private Iterator<? extends BindableRow> iter;
         private Bindings bindings;
 
-        public Execution (Collection<? extends BindableExpressions> rows) {
+        public Execution (Collection<? extends BindableRow> rows) {
             this.rows = rows;
         }
 
