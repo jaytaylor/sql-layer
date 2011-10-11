@@ -428,7 +428,9 @@ public class Sort_TreeIT extends OperatorITBase
             row(itemRowType, 112L, 11L),
             row(itemRowType, 111L, 11L),
         };
-        compareRows(expected, cursor(plan, adapter));
+        for (int i = 0; i < 10; i++) {
+            compareRows(expected, cursor(plan, adapter));
+        }
     }
 
     private Ordering ordering(Object... objects)
