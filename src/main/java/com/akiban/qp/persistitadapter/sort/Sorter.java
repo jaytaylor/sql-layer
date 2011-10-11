@@ -74,16 +74,16 @@ public class Sorter
     void close()
     {
         try {
-            exchange.removeAll();
+            exchange.removeTree();
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
+        } finally {
+            adapter.returnExchange(exchange);
         }
-        adapter.returnExchange(exchange);
     }
 
     private void loadTree() throws PersistitException
     {
-        exchange.removeAll(); // In case cleanup was somehow avoided on previous sort.
         try {
             Row row;
             while ((row = input.next()) != null) {
@@ -96,9 +96,6 @@ public class Sorter
             LOG.error("Caught exception while loading tree for sort", e);
             exchange.removeAll();
             throw e;
-        } finally {
-            exchange.getValue().setStreamMode(false);
-            adapter.returnExchange(exchange);
         }
     }
 
@@ -113,6 +110,7 @@ public class Sorter
                 allAscending = false;
             }
         }
+        exchange.clear();
         SortCursor cursor = allAscending ? new SortCursorAscending(this) :
                             allDescending ? new SortCursorDescending(this) : new SortCursorMixedOrder(this);
         cursor.open(bindings);
