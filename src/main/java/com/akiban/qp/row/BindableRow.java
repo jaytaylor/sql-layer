@@ -17,6 +17,7 @@ package com.akiban.qp.row;
 
 import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.util.ValueHolder;
@@ -32,7 +33,7 @@ public abstract class BindableRow {
             if (expression.needsBindings())
                 return new BindingExpressions(rowType, expressions);
         }
-        return new NonbindingExpressions(rowType, expressions);
+        return of(new ExpressionRow(rowType, UndefBindings.only(), expressions));
     }
 
     public static BindableRow of(Row row) {
@@ -63,34 +64,6 @@ public abstract class BindableRow {
 
         private final List<? extends Expression> expressions;
         private final RowType rowType;
-    }
-
-    private static class NonbindingExpressions extends BindableRow {
-        @Override
-        public Row bind(Bindings bindings) {
-            return row;
-        }
-
-        private NonbindingExpressions(RowType rowType, List<? extends Expression> expressions) {
-            ValuesHolderRow holdersRow = new ValuesHolderRow(rowType);
-            for (int i=0; i < expressions.size(); ++i) {
-                Expression expression = expressions.get(i);
-                ValueHolder holder = holdersRow.holderAt(i);
-                if (expression.valueType() != rowType.typeAt(i)) {
-                    throw new IllegalArgumentException(
-                            "expressions[" + i + "] should have been type " + rowType.typeAt(i)
-                                    + ", but was " + expression.valueType() + ": " + expressions);
-                }
-                if (expression.needsBindings())
-                    throw new IllegalArgumentException("expressions[" + i +"] needs bindings: " + expressions);
-                if (expression.needsRow())
-                    throw new IllegalArgumentException("expressions[" + i +"] needs a row: " + expressions);
-                holder.copyFrom(expression.evaluation().eval());
-            }
-            this.row = holdersRow;
-        }
-
-        private final Row row;
     }
 
     private static class Delegating extends BindableRow {
