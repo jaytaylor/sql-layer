@@ -14,13 +14,14 @@
  */
 package com.akiban.qp.operator;
 
-import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Deque;
 import java.util.Iterator;
 
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.util.ArgumentValidation;
 
 public class ValuesScan_Default extends Operator
 {
@@ -34,7 +35,7 @@ public class ValuesScan_Default extends Operator
 
     @Override
     protected Cursor cursor(StoreAdapter adapter) {
-        return new Execution();
+        return new Execution(rows);
     }
     
     @Override
@@ -43,29 +44,34 @@ public class ValuesScan_Default extends Operator
         return getClass().getSimpleName()  + rows;
     }
 
-    public ValuesScan_Default (Collection<? extends Row> rows, RowType rowType) {
-        this.rows = new ArrayDeque<Row> (rows);
+    public ValuesScan_Default (Collection<? extends BindableRow> bindableRows, RowType rowType) {
+        this.rows = new ArrayList<BindableRow>(bindableRows);
         this.rowType = rowType;
     }
 
-    private final Deque<Row> rows;
+    private final Collection<? extends BindableRow> rows;
     private final RowType rowType;
     
-    private class Execution implements Cursor
+    private static class Execution implements Cursor
     {
-        private Iterator<Row> i; 
-        public Execution () {
+        private final Collection<? extends BindableRow> rows;
+        private Iterator<? extends BindableRow> iter;
+        private Bindings bindings;
+
+        public Execution (Collection<? extends BindableRow> rows) {
+            this.rows = rows;
         }
 
         @Override
         public void close() {
-            i = null;
+            iter = null;
+            bindings = null;
         }
 
         @Override
         public Row next() {
-            if (i != null && i.hasNext()) {
-                return i.next();
+            if (iter != null && iter.hasNext()) {
+                return iter.next().bind(bindings);
             } else {
                 return null;
             }
@@ -73,7 +79,9 @@ public class ValuesScan_Default extends Operator
 
         @Override
         public void open(Bindings bindings) {
-            i = rows.iterator();
+            ArgumentValidation.notNull("bindings", bindings);
+            this.bindings = bindings;
+            iter = rows.iterator();
         }
     }
 }

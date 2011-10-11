@@ -16,6 +16,7 @@
 package com.akiban.qp.operator;
 
 import com.akiban.qp.row.AbstractRow;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;

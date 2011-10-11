@@ -18,10 +18,10 @@ package com.akiban.sql.optimizer.rule;
 import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.LiteralExpression;
 
-import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.server.expression.Expression;
@@ -36,20 +36,16 @@ import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
-import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.*;
 
-import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.expression.UnboundExpressions;
-
-import com.akiban.server.aggregation.Aggregator;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
@@ -271,16 +267,15 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleExpressionsSource(ExpressionsSource expressionsSource) {
             RowStream stream = new RowStream();
             stream.rowType = valuesRowType(expressionsSource.getFieldTypes());
-            List<Row> rows = new ArrayList<Row>(expressionsSource.getExpressions().size());
+            List<BindableRow> bindableRows = new ArrayList<BindableRow>();
             for (List<ExpressionNode> exprs : expressionsSource.getExpressions()) {
                 List<Expression> expressions = new ArrayList<Expression>(exprs.size());
                 for (ExpressionNode expr : exprs) {
                     expressions.add(assembleExpression(expr, stream.fieldOffsets));
                 }
-                rows.add(new ExpressionRow(stream.rowType, UndefBindings.only(),
-                                           expressions));
+                bindableRows.add(BindableRow.of(stream.rowType, expressions));
             }
-            stream.operator = API.valuesScan_Default(rows, stream.rowType);
+            stream.operator = API.valuesScan_Default(bindableRows, stream.rowType);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(expressionsSource, 
                                                                stream.rowType);
             return stream;
