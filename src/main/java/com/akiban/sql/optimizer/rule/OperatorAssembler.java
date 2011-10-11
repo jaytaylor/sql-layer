@@ -18,6 +18,7 @@ package com.akiban.sql.optimizer.rule;
 import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.row.ExpressionsBuffer;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.LiteralExpression;
 
@@ -61,6 +62,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.logging.StreamHandler;
 
 public class OperatorAssembler extends BaseRule
 {
@@ -271,16 +273,15 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleExpressionsSource(ExpressionsSource expressionsSource) {
             RowStream stream = new RowStream();
             stream.rowType = valuesRowType(expressionsSource.getFieldTypes());
-            List<Row> rows = new ArrayList<Row>(expressionsSource.getExpressions().size());
+            ExpressionsBuffer buffer = new ExpressionsBuffer(stream.rowType);
             for (List<ExpressionNode> exprs : expressionsSource.getExpressions()) {
                 List<Expression> expressions = new ArrayList<Expression>(exprs.size());
                 for (ExpressionNode expr : exprs) {
                     expressions.add(assembleExpression(expr, stream.fieldOffsets));
                 }
-                rows.add(new ExpressionRow(stream.rowType, UndefBindings.only(),
-                                           expressions));
+                buffer.add(expressions);
             }
-            stream.operator = API.valuesScan_Default(rows, stream.rowType);
+            stream.operator = API.valuesScan_Default(buffer.get(), stream.rowType);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(expressionsSource, 
                                                                stream.rowType);
             return stream;

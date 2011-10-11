@@ -32,6 +32,7 @@ import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.row.ExpressionsBuffer;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.rowtype.ValuesRowType;
@@ -157,6 +158,7 @@ public class CUDCompiler_Old {
         Arrays.fill(types, AkType.NULL);
         ValuesRowType rowType = compiler.valuesRowType(types);
 
+        ExpressionsBuffer buffer = new ExpressionsBuffer(rowType);
         for (List<SimpleExpression> row : values) {
             Expression[] expressions = new Expression[row.size()];
             int i = 0;
@@ -164,9 +166,9 @@ public class CUDCompiler_Old {
                 expressions[i] = expr.generateExpression(stmt.getFieldOffset());
                 i++;
             }
-            exprRowList.add(new ExpressionRow(rowType, UndefBindings.only(), Arrays.asList(expressions)));
+            buffer.add(Arrays.asList(expressions));
         }
-        return valuesScan_Default (exprRowList, rowType);
+        return valuesScan_Default (buffer.get(), rowType);
         
     }
 

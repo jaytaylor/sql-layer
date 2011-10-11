@@ -18,6 +18,7 @@ package com.akiban.qp.operator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.row.BindableExpressions;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -128,7 +129,7 @@ public class API
         );
     }
 
-    public static Operator valuesScan_Default (Collection<? extends Row> rows, RowType rowType)
+    public static Operator valuesScan_Default (Collection<? extends BindableExpressions> rows, RowType rowType)
     {
         return new ValuesScan_Default (rows, rowType);
     }

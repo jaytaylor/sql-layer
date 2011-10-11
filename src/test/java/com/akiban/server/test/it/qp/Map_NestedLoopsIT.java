@@ -22,6 +22,7 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.row.BindableExpressions;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
@@ -36,8 +37,11 @@ import com.akiban.server.types.AkType;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.expression.std.Expressions.*;
@@ -249,7 +253,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
         Operator plan =
             map_NestedLoops(
                 valuesScan_Default(
-                    Arrays.asList(intRow(cidValueRowType, 1),
+                        bindableExpressions(intRow(cidValueRowType, 1),
                                   intRow(cidValueRowType, 2),
                                   intRow(cidValueRowType, 3),
                                   intRow(cidValueRowType, 4),
@@ -275,5 +279,13 @@ public class Map_NestedLoopsIT extends OperatorITBase
         return new ExpressionRow(rowType,
                                  UndefBindings.only(),
                                  Arrays.asList((Expression) new LiteralExpression(AkType.INT, x)));
+    }
+
+    private Collection<? extends BindableExpressions> bindableExpressions(Row... rows) {
+        List<BindableExpressions> result = new ArrayList<BindableExpressions>();
+        for (Row row : rows) {
+            result.add(BindableExpressions.of(row));
+        }
+        return result;
     }
 }
