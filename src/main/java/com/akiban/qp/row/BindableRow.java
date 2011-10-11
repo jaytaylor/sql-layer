@@ -20,6 +20,7 @@ import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
+import com.akiban.util.ArgumentValidation;
 
 import java.util.List;
 
@@ -28,20 +29,35 @@ public abstract class BindableRow {
     // BindableRow class interface
 
     public static BindableRow of(RowType rowType, List<? extends Expression> expressions) {
+        ArgumentValidation.isEQ("rowType fields", rowType.nFields(), "expressions.size", expressions.size());
         for (Expression expression : expressions) {
-            if (expression.needsBindings())
+            if (!expression.isConstant())
                 return new BindingExpressions(rowType, expressions);
         }
-        return of(new ExpressionRow(rowType, UndefBindings.only(), expressions));
+        // all expressions are const; put them into a ValuesHolderRow
+        ValuesHolderRow holderRow = new ValuesHolderRow(rowType);
+        int i = 0;
+        for (Expression expression : expressions) {
+            holderRow.holderAt(i++).copyFrom(expression.evaluation().eval());
+        }
+        return new Delegating(holderRow);
     }
 
     public static BindableRow of(Row row) {
-        return new Delegating(row);
+        return new Delegating(strictCopy(row));
     }
 
     // BindableRow instance interface
 
     public abstract Row bind(Bindings bindings);
+
+    private static Row strictCopy(Row input) {
+        ValuesHolderRow copy = new ValuesHolderRow(input.rowType());
+        for (int i=0; i < input.rowType().nFields(); ++i) {
+            copy.holderAt(i).copyFrom(input.eval(i));
+        }
+        return copy;
+    }
 
     // nested classes
 
