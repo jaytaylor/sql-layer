@@ -270,9 +270,9 @@ public class Map_NestedLoopsIT extends OperatorITBase
         compareRows(expected, cursor(plan, adapter));
     }
 
-    private Row intRow(RowType cidValueRowType, int x)
+    private Row intRow(RowType rowType, int x)
     {
-        return new ExpressionRow(cidValueRowType,
+        return new ExpressionRow(rowType,
                                  UndefBindings.only(),
                                  Arrays.asList((Expression) new LiteralExpression(AkType.INT, x)));
     }

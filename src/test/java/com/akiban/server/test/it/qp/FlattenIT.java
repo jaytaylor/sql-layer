@@ -88,12 +88,87 @@ public class FlattenIT extends OperatorITBase
                             EnumSet.noneOf(FlattenOption.class));
     }
 
-    // TODO: Test parent/child relationship between parentType, childType:
-    // TODO: - Unrelated
-    // TODO: - parent = child
-    // TODO: - parent is parent of child (OK)
-    // TODO: - parent is ancestor of child
-    // TODO: - child is parent of parent
+    @Test(expected = IllegalArgumentException.class)
+    public void testParentChild_Unrelated()
+    {
+        flatten_HKeyOrdered(groupScan_Default(coi),
+                            addressRowType,
+                            orderRowType,
+                            INNER_JOIN,
+                            EnumSet.noneOf(FlattenOption.class));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testParentChild_SameType()
+    {
+        flatten_HKeyOrdered(groupScan_Default(coi),
+                            orderRowType,
+                            orderRowType,
+                            INNER_JOIN,
+                            EnumSet.noneOf(FlattenOption.class));
+    }
+
+    @Test
+    public void testParentChild_BaseTables()
+    {
+        flatten_HKeyOrdered(groupScan_Default(coi),
+                            customerRowType,
+                            orderRowType,
+                            INNER_JOIN,
+                            EnumSet.noneOf(FlattenOption.class));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testParentChild_UpsideDown()
+    {
+        flatten_HKeyOrdered(groupScan_Default(coi),
+                            orderRowType,
+                            customerRowType,
+                            INNER_JOIN,
+                            EnumSet.noneOf(FlattenOption.class));
+    }
+
+    @Test
+    public void testParentChild_FlattenedParent()
+    {
+        Operator co =
+            flatten_HKeyOrdered(groupScan_Default(coi),
+                               customerRowType,
+                               orderRowType,
+                               INNER_JOIN,
+                               EnumSet.noneOf(FlattenOption.class));
+        flatten_HKeyOrdered(groupScan_Default(coi),
+                           co.rowType(),
+                           itemRowType,
+                           INNER_JOIN,
+                           EnumSet.noneOf(FlattenOption.class));
+    }
+
+    @Test
+    public void testParentChild_FlattenedChild()
+    {
+        Operator oi =
+            flatten_HKeyOrdered(groupScan_Default(coi),
+                               orderRowType,
+                               itemRowType,
+                               INNER_JOIN,
+                               EnumSet.noneOf(FlattenOption.class));
+        flatten_HKeyOrdered(groupScan_Default(coi),
+                           customerRowType,
+                           oi.rowType(),
+                           INNER_JOIN,
+                           EnumSet.noneOf(FlattenOption.class));
+    }
+
+    @Test
+    public void testParentChild_GrandParent()
+    {
+        flatten_HKeyOrdered(groupScan_Default(coi),
+                           customerRowType,
+                           itemRowType,
+                           INNER_JOIN,
+                           EnumSet.noneOf(FlattenOption.class));
+    }
 
     @Test(expected = IllegalArgumentException.class)
     public void nullJoinType()

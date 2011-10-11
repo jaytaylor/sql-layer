@@ -15,16 +15,22 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.LiteralExpression;
+import com.akiban.server.types.AkType;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import static com.akiban.server.expression.std.Expressions.field;
@@ -396,6 +402,35 @@ public class Sort_TreeIT extends OperatorITBase
         compareRows(expected, cursor);
     }
 
+    // Inspired by bug 871310
+    @Test
+    public void testReusedSort()
+    {
+        Expression iidField = field(itemRowType, 0);
+        Expression oidField = field(itemRowType, 1);
+        Operator plan =
+            sort_Tree(
+                sort_Tree(
+                    filter_Default(
+                        groupScan_Default(coi),
+                        Collections.singleton(itemRowType)),
+                    itemRowType,
+                    ordering(iidField, true, oidField, true)),
+                itemRowType,
+                ordering(oidField, false, iidField, false));
+        RowBase[] expected = new RowBase[]{
+            row(itemRowType, 222L, 22L),
+            row(itemRowType, 221L, 22L),
+            row(itemRowType, 212L, 21L),
+            row(itemRowType, 211L, 21L),
+            row(itemRowType, 122L, 12L),
+            row(itemRowType, 121L, 12L),
+            row(itemRowType, 112L, 11L),
+            row(itemRowType, 111L, 11L),
+        };
+        compareRows(expected, cursor(plan, adapter));
+    }
+
     private Ordering ordering(Object... objects)
     {
         Ordering ordering = API.ordering();
@@ -408,4 +443,10 @@ public class Sort_TreeIT extends OperatorITBase
         return ordering;
     }
 
+    private Row intRow(RowType rowType, int x)
+    {
+        return new ExpressionRow(rowType,
+                                 UndefBindings.only(),
+                                 Arrays.asList((Expression) new LiteralExpression(AkType.INT, x)));
+    }
 }
