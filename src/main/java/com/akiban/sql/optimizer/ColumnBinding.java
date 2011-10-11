@@ -88,6 +88,7 @@ public class ColumnBinding
         }
     }
 
+    @Override
     public String toString() {
         StringBuffer result = new StringBuffer();
         if (resultColumn != null) {
@@ -105,4 +106,24 @@ public class ColumnBinding
         }
         return result.toString();
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof ColumnBinding)) return false;
+        ColumnBinding other = (ColumnBinding)obj;
+        return ((fromTable == other.fromTable) &&
+                (column == other.column) &&
+                (resultColumn == other.resultColumn));
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = fromTable.hashCode();
+        if (column != null)
+            hash += column.hashCode();
+        if (resultColumn != null)
+            hash += resultColumn.hashCode();
+        return hash;
+    }
+
 }
