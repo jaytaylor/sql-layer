@@ -76,6 +76,14 @@ public abstract class BindableRow {
             }
         }
 
+        // object interface
+
+
+        @Override
+        public String toString() {
+            return "Bindable" + expressions;
+        }
+
         private final List<? extends Expression> expressions;
         private final RowType rowType;
     }
@@ -84,6 +92,11 @@ public abstract class BindableRow {
         @Override
         public Row bind(Bindings bindings) {
             return row;
+        }
+
+        @Override
+        public String toString() {
+            return String.valueOf(row);
         }
 
         private Delegating(Row row) {
