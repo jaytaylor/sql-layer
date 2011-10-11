@@ -1,0 +1,1 @@
+SELECT name FROM customers WHERE cid IN (1000, 999, ?)

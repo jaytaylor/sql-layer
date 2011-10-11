@@ -81,7 +81,7 @@ public class ValuesScan_Default extends Operator
         public void open(Bindings bindings) {
             ArgumentValidation.notNull("bindings", bindings);
             this.bindings = bindings;
-
+            this.bindings = UndefBindings.only(); // TODO remove once the test is verified to fail
             iter = rows.iterator();
         }
     }
