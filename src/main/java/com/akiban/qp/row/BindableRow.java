@@ -17,6 +17,7 @@ package com.akiban.qp.row;
 
 import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.util.ArgumentValidation;
@@ -48,7 +49,7 @@ public abstract class BindableRow {
 
     // BindableRow instance interface
 
-    public abstract Row bind(Bindings bindings);
+    public abstract Row bind(Bindings bindings, StoreAdapter adapter);
 
     private static Row strictCopy(Row input) {
         ValuesHolderRow copy = new ValuesHolderRow(input.rowType());
@@ -62,8 +63,8 @@ public abstract class BindableRow {
 
     private static class BindingExpressions extends BindableRow {
         @Override
-        public Row bind(Bindings bindings) {
-            return new ExpressionRow(rowType, bindings, expressions);
+        public Row bind(Bindings bindings, StoreAdapter adapter) {
+            return new ExpressionRow(rowType, bindings, adapter, expressions);
         }
 
         private BindingExpressions(RowType rowType, List<? extends Expression> expressions) {
@@ -90,7 +91,7 @@ public abstract class BindableRow {
 
     private static class Delegating extends BindableRow {
         @Override
-        public Row bind(Bindings bindings) {
+        public Row bind(Bindings bindings, StoreAdapter adapter) {
             return row;
         }
 

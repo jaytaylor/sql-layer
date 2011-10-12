@@ -136,7 +136,7 @@ class Project_Default extends Operator
             if ((inputRow = input.next()) != null) {
                 projectedRow =
                     inputRow.rowType() == rowType
-                    ? new ProjectedRow(projectType, inputRow, bindings, projections)
+                    ? new ProjectedRow(projectType, inputRow, bindings, adapter, projections)
                     : inputRow;
             }
             return projectedRow;

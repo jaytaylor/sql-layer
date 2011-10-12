@@ -16,7 +16,8 @@
 package com.akiban.qp.expression;
 
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.StoreAdapter;
 
 public interface UnboundExpressions {
-    BoundExpressions get(Bindings bindings);
+    BoundExpressions get(Bindings bindings, StoreAdapter adapter);
 }
