@@ -17,15 +17,6 @@ package com.akiban.sql.optimizer.rule;
 
 import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.BindableRow;
-import com.akiban.server.expression.std.Expressions;
-import com.akiban.server.expression.std.LiteralExpression;
-
-import com.akiban.server.error.UnsupportedSQLException;
-
-import com.akiban.server.expression.Expression;
-import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
@@ -36,9 +27,22 @@ import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
-import com.akiban.qp.operator.API;
+import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.UnsupportedSQLException;
+
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.expression.std.LiteralExpression;
+import com.akiban.server.expression.subquery.AnySubqueryExpression;
+import com.akiban.server.expression.subquery.ExistsSubqueryExpression;
+import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
+import com.akiban.server.types.AkType;
+
 import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.UpdateFunction;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.*;
 
@@ -607,9 +611,23 @@ public class OperatorAssembler extends BaseRule
             if (fieldOffsets != null)
                 outerRowType = fieldOffsets.getRowType();
             pushBoundRow(fieldOffsets);
-            RowStream stream = assembleQuery(sexpr.getSubquery().getQuery());
+            PlanNode subquery = sexpr.getSubquery().getQuery();
+            ExpressionNode expression = null;
+            if ((sexpr instanceof AnyCondition) ||
+                (sexpr instanceof SubqueryValueExpression)) {
+                if (!(subquery instanceof Project))
+                    throw new AkibanInternalException("subquery does not have project");
+                Project project = (Project)subquery;
+                subquery = project.getInput();
+                expression = project.getFields().get(0);
+            }
+            RowStream stream = assembleQuery(subquery);
+            Expression innerExpression = null;
+            if (expression != null)
+                innerExpression = assembleExpression(expression, stream.fieldOffsets);
             Expression result = assembleSubqueryExpression(sexpr, 
                                                            stream.operator,
+                                                           innerExpression,
                                                            outerRowType,
                                                            stream.rowType,
                                                            currentBindingPosition());
@@ -617,22 +635,25 @@ public class OperatorAssembler extends BaseRule
             return result;
         }
 
-        protected Expression assembleSubqueryExpression(SubqueryExpression node,
-                                                        Operator subquery,
+        protected Expression assembleSubqueryExpression(SubqueryExpression sexpr,
+                                                        Operator operator,
+                                                        Expression innerExpression,
                                                         RowType outerRowType,
                                                         RowType innerRowType,
                                                         int bindingPosition) {
-            if (node instanceof SubqueryValueExpression)
-                throw new UnsupportedSQLException("subquery as expression", 
-                                                  node.getSQLsource());
-            else if (node instanceof ExistsCondition)
-                throw new UnsupportedSQLException("EXISTS as expression", 
-                                                  node.getSQLsource());
-            else if (node instanceof AnyCondition)
-                throw new UnsupportedSQLException("ANY as expression", 
-                                                  node.getSQLsource());
+            if (sexpr instanceof ExistsCondition)
+                return new ExistsSubqueryExpression(operator, outerRowType,
+                                                    innerRowType, bindingPosition);
+            else if (sexpr instanceof AnyCondition)
+                return new AnySubqueryExpression(operator, innerExpression,
+                                                 outerRowType, innerRowType,
+                                                 bindingPosition);
+            else if (sexpr instanceof SubqueryValueExpression)
+                return new ScalarSubqueryExpression(operator, innerExpression,
+                                                    outerRowType, innerRowType,
+                                                    bindingPosition);
             else
-                throw new UnsupportedSQLException("Unknown subquery", node.getSQLsource());
+                throw new UnsupportedSQLException("Unknown subquery", sexpr.getSQLsource());
         }
 
         // Get a list of result columns based on ResultSet expression names.
