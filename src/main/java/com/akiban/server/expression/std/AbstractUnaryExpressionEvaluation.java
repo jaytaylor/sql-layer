@@ -16,6 +16,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.ValueSource;
@@ -29,6 +30,10 @@ public abstract class AbstractUnaryExpressionEvaluation implements ExpressionEva
     @Override
     public void of(Bindings bindings) {
         operandEvaluation.of(bindings);
+    }
+
+    @Override
+    public void of(StoreAdapter adapter) {
     }
 
     @Override
