@@ -72,7 +72,7 @@ public class OperatorAssembler extends BaseRule
         new Assembler(plan).apply();
     }
 
-    static class Assembler {
+    static class Assembler implements SubqueryOperatorAssembler {
         private PlanContext planContext;
         private SchemaRulesContext rulesContext;
         private Schema schema;
@@ -595,24 +595,44 @@ public class OperatorAssembler extends BaseRule
         // Assemble an expression against the given row offsets.
         protected Expression assembleExpression(ExpressionNode expr,
                                                 ColumnExpressionToIndex fieldOffsets) {
-            if (expr instanceof SubqueryExpression) { 
-                SubqueryExpression sexpr = (SubqueryExpression)expr;
-                RowType outerRowType = null;
-                if (fieldOffsets != null)
-                    outerRowType = fieldOffsets.getRowType();
-                pushBoundRow(fieldOffsets);
-                RowStream stream = assembleQuery(sexpr.getSubquery().getQuery());
-                Expression result = expressionAssembler
-                    .assembleSubqueryExpression(sexpr, 
-                                                stream.operator,
-                                                outerRowType,
-                                                stream.rowType,
-                                                currentBindingPosition());
-                popBoundRow();
-                return result;
-            }
             ColumnExpressionContext context = getColumnExpressionContext(fieldOffsets);
-            return expressionAssembler.assembleExpression(expr, context);
+            return expressionAssembler.assembleExpression(expr, context, this);
+        }
+
+        @Override
+        // Called back to deal with subqueries.
+        public Expression assembleSubqueryExpression(SubqueryExpression sexpr) {
+            ColumnExpressionToIndex fieldOffsets = columnBoundRows.current;
+            RowType outerRowType = null;
+            if (fieldOffsets != null)
+                outerRowType = fieldOffsets.getRowType();
+            pushBoundRow(fieldOffsets);
+            RowStream stream = assembleQuery(sexpr.getSubquery().getQuery());
+            Expression result = assembleSubqueryExpression(sexpr, 
+                                                           stream.operator,
+                                                           outerRowType,
+                                                           stream.rowType,
+                                                           currentBindingPosition());
+            popBoundRow();
+            return result;
+        }
+
+        protected Expression assembleSubqueryExpression(SubqueryExpression node,
+                                                        Operator subquery,
+                                                        RowType outerRowType,
+                                                        RowType innerRowType,
+                                                        int bindingPosition) {
+            if (node instanceof SubqueryValueExpression)
+                throw new UnsupportedSQLException("subquery as expression", 
+                                                  node.getSQLsource());
+            else if (node instanceof ExistsCondition)
+                throw new UnsupportedSQLException("EXISTS as expression", 
+                                                  node.getSQLsource());
+            else if (node instanceof AnyCondition)
+                throw new UnsupportedSQLException("ANY as expression", 
+                                                  node.getSQLsource());
+            else
+                throw new UnsupportedSQLException("Unknown subquery", node.getSQLsource());
         }
 
         // Get a list of result columns based on ResultSet expression names.
