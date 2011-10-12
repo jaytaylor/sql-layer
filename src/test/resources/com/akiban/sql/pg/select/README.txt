@@ -62,6 +62,14 @@ select-18n: int (0) as boolean in WHERE
 
 select-19: group index with one inequality
 
+select-20: IN with parameter
+
+select-21: subquery for value
+
+select-22: EXISTS as expression (extra OR prevents unnesting)
+
+select-23: IN / ANY as expression
+
 types: select all typed fields
 
 types_a_date: match literal
