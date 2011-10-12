@@ -22,6 +22,7 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.BoolValueSource;
 
@@ -56,9 +57,11 @@ public final class ScalarSubqueryExpression extends SubqueryExpression {
     private static final class InnerEvaluation extends SubqueryExpressionEvaluation {
         @Override
         public ValueSource eval() {
-            expressionEvaluation.of(bindings());
             open();
             Row row = next();
+            if (row == null)
+                return NullValueSource.only();
+            expressionEvaluation.of(bindings());
             expressionEvaluation.of(row);
             ValueSource result = expressionEvaluation.eval();
             // TODO: Is it legit to close it and still hang on to result?
