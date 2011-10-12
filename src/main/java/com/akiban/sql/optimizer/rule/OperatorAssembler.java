@@ -615,6 +615,8 @@ public class OperatorAssembler extends BaseRule
             ExpressionNode expression = null;
             if ((sexpr instanceof AnyCondition) ||
                 (sexpr instanceof SubqueryValueExpression)) {
+                if (subquery instanceof ResultSet)
+                    subquery = ((ResultSet)subquery).getInput();
                 if (!(subquery instanceof Project))
                     throw new AkibanInternalException("subquery does not have project");
                 Project project = (Project)subquery;
