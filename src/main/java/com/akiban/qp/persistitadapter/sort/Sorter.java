@@ -73,12 +73,16 @@ public class Sorter
 
     void close()
     {
-        try {
-            exchange.removeTree();
-        } catch (PersistitException e) {
-            throw new PersistitAdapterException(e);
-        } finally {
-            adapter.returnExchange(exchange);
+        if (exchange != null) {
+            try {
+                exchange.removeTree();
+            } catch (PersistitException e) {
+                throw new PersistitAdapterException(e);
+            } finally {
+                // Don't return the exchange. TreeServiceImpl caches it for the tree, and we're done with the tree.
+                // THIS CAUSES A LEAK OF EXCHANGES: adapter.returnExchange(exchange);
+                exchange = null;
+            }
         }
     }
 
@@ -161,7 +165,6 @@ public class Sorter
     final RowType rowType;
     final API.Ordering ordering;
     final Bindings bindings;
-    final Exchange exchange;
     final Key key;
     final Value value;
     final PersistitKeyValueTarget keyTarget;
@@ -169,5 +172,6 @@ public class Sorter
     final int rowFields;
     // TODO: Horrible hack. When we switch from qp.Expression to server.Expression, use Expression.valueType()
     final AkType fieldTypes[];
+    Exchange exchange;
     long rowCount = 0;
 }
