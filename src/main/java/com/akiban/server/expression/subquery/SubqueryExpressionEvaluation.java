@@ -16,6 +16,7 @@
 package com.akiban.server.expression.subquery;
 
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
@@ -25,6 +26,13 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.ExpressionEvaluation;
 
 public abstract class SubqueryExpressionEvaluation implements ExpressionEvaluation {
+
+    @Override
+    public void of(StoreAdapter adapter) {
+        // TODO: This is a wrapping cursor. Is that all right? 
+        // Need protected access for Operator.cursor().
+        this.cursor = API.cursor(subquery, adapter);
+    }
 
     @Override
     public void of(Bindings bindings) {
@@ -82,21 +90,20 @@ public abstract class SubqueryExpressionEvaluation implements ExpressionEvaluati
         cursor.close();
     }
 
-    protected SubqueryExpressionEvaluation(Operator subquery, StoreAdapter adapter,
+    protected SubqueryExpressionEvaluation(Operator subquery,
                                            RowType outerRowType, RowType innerRowType, 
                                            int bindingPosition) {
-        // TODO: This is a wrapping cursor. Is that right? Need
-        // protected access for Operator.cursor.
-        this.cursor = API.cursor(subquery, adapter);
+        this.subquery = subquery;
         this.outerRowType = outerRowType;
         this.innerRowType = innerRowType;
         this.bindingPosition = bindingPosition;
     }
 
-    private final Cursor cursor;
+    private final Operator subquery;
     private final RowType outerRowType;
     private final RowType innerRowType;
     private final int bindingPosition;
+    private Cursor cursor;
     private Bindings bindings;
     private Row outerRow;
 

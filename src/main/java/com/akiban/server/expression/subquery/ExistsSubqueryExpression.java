@@ -16,7 +16,6 @@
 package com.akiban.server.expression.subquery;
 
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
@@ -28,8 +27,7 @@ public final class ExistsSubqueryExpression extends SubqueryExpression {
 
     @Override
     public ExpressionEvaluation evaluation() {
-        return new InnerEvaluation(subquery(), null, // TODO: adapter?
-                                   outerRowType(), innerRowType(),
+        return new InnerEvaluation(subquery(), outerRowType(), innerRowType(),
                                    bindingPosition());
     }
 
@@ -57,10 +55,10 @@ public final class ExistsSubqueryExpression extends SubqueryExpression {
             return BoolValueSource.of(!empty);
         }
 
-        private InnerEvaluation(Operator subquery, StoreAdapter adapter,
+        private InnerEvaluation(Operator subquery,
                                 RowType outerRowType, RowType innerRowType, 
                                 int bindingPosition) {
-            super(subquery, adapter, outerRowType, innerRowType, bindingPosition);
+            super(subquery, outerRowType, innerRowType, bindingPosition);
         }
     }
 

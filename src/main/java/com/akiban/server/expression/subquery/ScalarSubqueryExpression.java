@@ -16,7 +16,6 @@
 package com.akiban.server.expression.subquery;
 
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
@@ -30,8 +29,7 @@ public final class ScalarSubqueryExpression extends SubqueryExpression {
 
     @Override
     public ExpressionEvaluation evaluation() {
-        return new InnerEvaluation(subquery(), null, // TODO: adapter?
-                                   expression.evaluation(),
+        return new InnerEvaluation(subquery(), expression.evaluation(),
                                    outerRowType(), innerRowType(),
                                    bindingPosition());
     }
@@ -68,11 +66,11 @@ public final class ScalarSubqueryExpression extends SubqueryExpression {
             return result;
         }
 
-        private InnerEvaluation(Operator subquery, StoreAdapter adapter,
+        private InnerEvaluation(Operator subquery,
                                 ExpressionEvaluation expressionEvaluation, 
                                 RowType outerRowType, RowType innerRowType, 
                                 int bindingPosition) {
-            super(subquery, adapter, outerRowType, innerRowType, bindingPosition);
+            super(subquery, outerRowType, innerRowType, bindingPosition);
             this.expressionEvaluation = expressionEvaluation;
         }
 
