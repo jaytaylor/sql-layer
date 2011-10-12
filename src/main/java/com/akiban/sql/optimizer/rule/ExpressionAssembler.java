@@ -145,8 +145,10 @@ public class ExpressionAssembler
     }
 
     public Expression assembleSubqueryExpression(SubqueryExpression node,
-                                                 ColumnExpressionContext columnContext,
-                                                 Operator subquery) {
+                                                 Operator subquery,
+                                                 RowType outerRowType,
+                                                 RowType innerRowType,
+                                                 int bindingPosition) {
         if (node instanceof SubqueryValueExpression)
             throw new UnsupportedSQLException("subquery as expression", 
                                               node.getSQLsource());

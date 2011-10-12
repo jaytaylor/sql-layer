@@ -194,11 +194,6 @@ public class OperatorAssembler extends BaseRule
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
-        protected Operator assembleSubquery(Subquery subquery) {
-            RowStream stream = assembleQuery(subquery.getQuery());
-            return stream.operator;
-        }
-
         // Assemble the top-level query. If there is a ResultSet at
         // the top, it is not handled here, since its meaning is
         // different for the different statement types.
@@ -600,14 +595,23 @@ public class OperatorAssembler extends BaseRule
         // Assemble an expression against the given row offsets.
         protected Expression assembleExpression(ExpressionNode expr,
                                                 ColumnExpressionToIndex fieldOffsets) {
-            ColumnExpressionContext context = getColumnExpressionContext(fieldOffsets);
             if (expr instanceof SubqueryExpression) { 
                 SubqueryExpression sexpr = (SubqueryExpression)expr;
-                Operator subquery = assembleSubquery(sexpr.getSubquery());
-                return expressionAssembler.assembleSubqueryExpression(sexpr, 
-                                                                      context, 
-                                                                      subquery);
+                RowType outerRowType = null;
+                if (fieldOffsets != null)
+                    outerRowType = fieldOffsets.getRowType();
+                pushBoundRow(fieldOffsets);
+                RowStream stream = assembleQuery(sexpr.getSubquery().getQuery());
+                Expression result = expressionAssembler
+                    .assembleSubqueryExpression(sexpr, 
+                                                stream.operator,
+                                                outerRowType,
+                                                stream.rowType,
+                                                currentBindingPosition());
+                popBoundRow();
+                return result;
             }
+            ColumnExpressionContext context = getColumnExpressionContext(fieldOffsets);
             return expressionAssembler.assembleExpression(expr, context);
         }
 
