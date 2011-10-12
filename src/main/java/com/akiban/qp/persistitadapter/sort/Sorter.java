@@ -127,6 +127,8 @@ public class Sorter
         int sortFields = ordering.sortFields() - 1; // Don't include the artificial count field
         for (int i = 0; i < sortFields; i++) {
             ExpressionEvaluation evaluation = ordering.evaluation(i);
+            evaluation.of(adapter);
+            evaluation.of(bindings);
             evaluation.of(row);
             ValueSource keySource = evaluation.eval();
             // TODO: When ordering has server expressions instead of qp expressions: ordering.type(i));

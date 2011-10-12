@@ -448,7 +448,7 @@ public class Sort_TreeIT extends OperatorITBase
     private Row intRow(RowType rowType, int x)
     {
         return new ExpressionRow(rowType,
-                                 UndefBindings.only(),
+                                 UndefBindings.only(), null,
                                  Arrays.asList((Expression) new LiteralExpression(AkType.INT, x)));
     }
 }

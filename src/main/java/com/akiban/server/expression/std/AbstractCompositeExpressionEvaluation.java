@@ -44,6 +44,9 @@ public abstract class AbstractCompositeExpressionEvaluation implements Expressio
 
     @Override
     public void of(StoreAdapter adapter) {
+        for (ExpressionEvaluation child : children) {
+            child.of(adapter);
+        }
     }
 
     public AbstractCompositeExpressionEvaluation(List<? extends ExpressionEvaluation> children) {

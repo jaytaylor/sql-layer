@@ -35,7 +35,7 @@ public class ValuesScan_Default extends Operator
 
     @Override
     protected Cursor cursor(StoreAdapter adapter) {
-        return new Execution(rows);
+        return new Execution(adapter, rows);
     }
     
     @Override
@@ -54,11 +54,13 @@ public class ValuesScan_Default extends Operator
     
     private static class Execution implements Cursor
     {
+        private final StoreAdapter adapter;
         private final Collection<? extends BindableRow> rows;
         private Iterator<? extends BindableRow> iter;
         private Bindings bindings;
 
-        public Execution (Collection<? extends BindableRow> rows) {
+        public Execution (StoreAdapter adapter, Collection<? extends BindableRow> rows) {
+            this.adapter = adapter;
             this.rows = rows;
         }
 
@@ -71,7 +73,7 @@ public class ValuesScan_Default extends Operator
         @Override
         public Row next() {
             if (iter != null && iter.hasNext()) {
-                return iter.next().bind(bindings);
+                return iter.next().bind(bindings, adapter);
             } else {
                 return null;
             }

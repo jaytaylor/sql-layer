@@ -79,6 +79,7 @@ public final class BoundFieldExpression implements Expression {
 
         @Override
         public void of(StoreAdapter adapter) {
+            fieldExpressionEvaluation.of(adapter);
         }
 
         @Override

@@ -120,7 +120,7 @@ class Sort_InsertionLimited extends Operator
                     Row row;
                     while ((row = input.next()) != null) {
                         assert row.rowType() == sortType : row;
-                        Holder holder = new Holder(count++, row, bindings);
+                        Holder holder = new Holder(count++, row, bindings, adapter);
                         if (sorted.size() < limit) {
                             // Still room: add it in.
                             boolean added = sorted.add(holder);
@@ -208,7 +208,7 @@ class Sort_InsertionLimited extends Operator
         private ToObjectValueTarget target = new ToObjectValueTarget();
         private Comparable[] values;
 
-        public Holder(int index, Row arow, Bindings bindings) {
+        public Holder(int index, Row arow, Bindings bindings, StoreAdapter adapter) {
             this.index = index;
 
             row = new ShareHolder<Row>();
@@ -219,6 +219,7 @@ class Sort_InsertionLimited extends Operator
                 ExpressionEvaluation evaluation = ordering.evaluation(i);
                 evaluation.of(arow);
                 evaluation.of(bindings);
+                evaluation.of(adapter);
                 ValueSource valueSource = evaluation.eval();
                 // TODO: Use ordering.type(i)) once qp expressions are gone. (Actually, valuesource's type should
                 // TODO: always work, but still...)

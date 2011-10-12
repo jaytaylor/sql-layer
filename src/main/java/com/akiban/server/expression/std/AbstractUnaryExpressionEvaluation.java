@@ -34,6 +34,7 @@ public abstract class AbstractUnaryExpressionEvaluation implements ExpressionEva
 
     @Override
     public void of(StoreAdapter adapter) {
+        operandEvaluation.of(adapter);
     }
 
     @Override

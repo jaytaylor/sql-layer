@@ -16,6 +16,7 @@
 package com.akiban.qp.expression;
 
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.api.dml.ColumnSelector;
 
 public class IndexBound
@@ -25,9 +26,9 @@ public class IndexBound
         return String.valueOf(unboundExpressions);
     }
 
-    public BoundExpressions boundExpressions(Bindings bindings)
+    public BoundExpressions boundExpressions(Bindings bindings, StoreAdapter adapter)
     {
-        return unboundExpressions.get(bindings);
+        return unboundExpressions.get(bindings, adapter);
     }
 
     public ColumnSelector columnSelector()
@@ -56,7 +57,7 @@ public class IndexBound
     private static class PreBoundExpressions implements UnboundExpressions {
 
         @Override
-        public BoundExpressions get(Bindings bindings) {
+        public BoundExpressions get(Bindings bindings, StoreAdapter adapter) {
             return expressions;
         }
 
