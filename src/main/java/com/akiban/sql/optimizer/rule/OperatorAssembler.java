@@ -634,6 +634,7 @@ public class OperatorAssembler extends BaseRule
                                                            stream.rowType,
                                                            currentBindingPosition());
             popBoundRow();
+            columnBoundRows.current = fieldOffsets;
             return result;
         }
 
