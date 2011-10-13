@@ -66,6 +66,11 @@ public abstract class RowType
         return that.typeComposition != null && this.typeComposition.isAncestorOf(that.typeComposition);
     }
 
+    public final boolean parentOf(RowType that)
+    {
+        return that.typeComposition != null && this.typeComposition.isParentOf(that.typeComposition);
+    }
+
     public abstract int nFields();
 
     public abstract AkType typeAt(int index);

@@ -1,3 +1,3 @@
 Insert_Default(project to table user.customers ([Field(1), Field(0)]))
   project to table user.customers ([Field(1), Field(0)])
-    ValuesScan_Default[ExpressionRow[Literal(Brown), Literal(4)], ExpressionRow[Literal(Williams), Literal(5)]]
+    ValuesScan_Default[ValuesHolderRow[Brown, 4], ValuesHolderRow[Williams, 5]]

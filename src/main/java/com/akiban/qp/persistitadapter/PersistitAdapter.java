@@ -210,9 +210,9 @@ public class PersistitAdapter extends StoreAdapter
         return transact(persistit.getExchange(session, index));
     }
 
-    public Exchange takeExchangeForSorting()
+    public Exchange takeExchangeForSorting(TreeLink treeLink)
     {
-        return treeService.getExchange(session, sortTreeLink);
+        return treeService.getExchange(session, treeLink);
     }
 
     private Exchange transact(Exchange exchange)
@@ -275,19 +275,13 @@ public class PersistitAdapter extends StoreAdapter
         this.session = session;
         this.treeService = treeService;
         this.filterFactory = new PersistitFilterFactory(this, hook);
-        this.sortTreeLink = new TemporaryTableTreeLink(SORT_TREE_NAME_PREFIX + session.sessionId());
     }
-
-    // Class state
-
-    private static final String SORT_TREE_NAME_PREFIX = "sort.";
 
     // Object state
 
     private final AtomicBoolean transactional = new AtomicBoolean(false);
     private final Map<Exchange, Transaction> transactionsMap = new HashMap<Exchange, Transaction>();
     private final TreeService treeService;
-    private final TreeLink sortTreeLink;
     final PersistitStore persistit;
     final Session session;
     final PersistitFilterFactory filterFactory;
