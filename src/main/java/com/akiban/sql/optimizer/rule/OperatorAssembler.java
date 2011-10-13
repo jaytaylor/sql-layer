@@ -485,7 +485,10 @@ public class OperatorAssembler extends BaseRule
                                                                    stream.rowType);
                 return stream;
             }
-            switch (aggregateSource.getImplementation()) {
+            AggregateSource.Implementation impl = aggregateSource.getImplementation();
+            if (impl == null)
+              impl = AggregateSource.Implementation.SORT;
+            switch (impl) {
             case PRESORTED:
             case UNGROUPED:
                 break;
