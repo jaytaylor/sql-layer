@@ -51,6 +51,7 @@ public final class CompareExpressionTest {
         param(pb, lit(5), lit(5), LE, EQ, GE);
         param(pb, lit(4), lit(5), LE, LT, NE);
         param(pb, lit(5), lit(4), GE, GT, NE);
+        param(pb, lit(20081012000000L), lit(20110504000000L), LE, LT, NE);
 
         // doubles
         param(pb, constNull(), lit(5.0), NULL);

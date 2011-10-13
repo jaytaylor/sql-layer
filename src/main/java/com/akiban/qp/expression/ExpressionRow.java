@@ -31,10 +31,10 @@ import com.akiban.server.types.FromObjectValueSource;
 public class ExpressionRow extends AbstractRow
 {
     private RowType rowType;
-    private List<Expression> expressions;
+    private List<? extends Expression> expressions;
     private List<ExpressionEvaluation> evaluations;
 
-    public ExpressionRow(RowType rowType, Bindings bindings, List<Expression> expressions) {
+    public ExpressionRow(RowType rowType, Bindings bindings, List<? extends Expression> expressions) {
         this.rowType = rowType;
         this.expressions = expressions;
         this.evaluations = new ArrayList<ExpressionEvaluation>(expressions.size());
@@ -64,6 +64,19 @@ public class ExpressionRow extends AbstractRow
     @Override
     public HKey hKey() {
         throw new UnsupportedOperationException();        
+    }
+
+    @Override
+    public void release() {
+    }
+
+    @Override
+    public boolean isShared() {
+        return false;
+    }
+
+    @Override
+    public void acquire() {
     }
 
     /* Object */
