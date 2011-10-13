@@ -36,6 +36,7 @@ import com.akiban.server.service.EventTypes;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 
+import com.akiban.util.Tap;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
@@ -55,6 +56,8 @@ import java.util.*;
 public class PostgresServerConnection implements PostgresServerSession, Runnable
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresServerConnection.class);
+    private static final Tap.InOutTap READ_MESSAGE = Tap.createTimer("PostgresServerConnection: read message");
+    private static final Tap.InOutTap PROCESS_MESSAGE = Tap.createTimer("PostgresServerConnection: process message");
 
     private final PostgresServer server;
     private final PostgresServiceRequirements reqs;
@@ -158,7 +161,10 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         boolean startupComplete = false;
         try {
             while (running) {
+                READ_MESSAGE.in();
                 PostgresMessages type = messenger.readMessage(startupComplete);
+                READ_MESSAGE.out();
+                PROCESS_MESSAGE.in();
                 if (ignoreUntilSync) {
                     if ((type != PostgresMessages.EOF_TYPE) && (type != PostgresMessages.SYNC_TYPE))
                         continue;
@@ -221,6 +227,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 finally {
                     sessionTracer.endEvent();
                 }
+                PROCESS_MESSAGE.out();
             }
         }
         finally {
