@@ -16,6 +16,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.AkibanInternalException;
@@ -95,6 +96,10 @@ public final class FieldExpression implements Expression {
 
         @Override
         public void of(Bindings bindings) {
+        }
+
+        @Override
+        public void of(StoreAdapter adapter) {
         }
 
         @Override

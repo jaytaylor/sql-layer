@@ -169,7 +169,9 @@ class Map_NestedLoops extends Operator
             } else {
                 this.outerJoinRowEvaluations = new ArrayList<ExpressionEvaluation>();
                 for (Expression outerJoinRowExpression : outerJoinRowExpressions) {
-                    outerJoinRowEvaluations.add(outerJoinRowExpression.evaluation());
+                    ExpressionEvaluation eval = outerJoinRowExpression.evaluation();
+                    eval.of(adapter);
+                    outerJoinRowEvaluations.add(eval);
                 }
             }
         }

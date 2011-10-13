@@ -141,6 +141,7 @@ class Select_HKeyOrdered extends Operator
             this.adapter = adapter;
             this.input = input;
             this.evaluation = predicate.evaluation();
+            evaluation.of(adapter);
         }
 
         // Object state

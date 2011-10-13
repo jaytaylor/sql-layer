@@ -27,7 +27,6 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.aggregation.Aggregators;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 
 import java.util.*;
@@ -379,12 +378,11 @@ public class API
 
         public int sortFields()
         {
-            return evaluations.size();
+            return expressions.size();
         }
 
-        public ExpressionEvaluation evaluation(int i)
-        {
-            return evaluations.get(i);
+        public Expression expression(int i) {
+            return expressions.get(i);
         }
 
         public AkType type(int i)
@@ -400,7 +398,6 @@ public class API
         public void append(Expression expression, boolean ascending)
         {
             expressions.add(expression);
-            evaluations.add(expression.evaluation());
             directions.add(ascending);
         }
 
@@ -408,14 +405,12 @@ public class API
         {
             Ordering copy = new Ordering();
             copy.expressions.addAll(expressions);
-            copy.evaluations.addAll(evaluations);
             copy.directions.addAll(directions);
             return copy;
         }
 
         private final List<com.akiban.server.expression.Expression> expressions =
             new ArrayList<com.akiban.server.expression.Expression>();
-        private final List<ExpressionEvaluation> evaluations = new ArrayList<ExpressionEvaluation>();
         private final List<Boolean> directions = new ArrayList<Boolean>(); // true: ascending, false: descending
     }
 

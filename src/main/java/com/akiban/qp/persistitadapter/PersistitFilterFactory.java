@@ -71,6 +71,7 @@ class PersistitFilterFactory
 
     PersistitFilterFactory(PersistitAdapter adapter, InternalHook hook)
     {
+        this.adapter = adapter;
         this.hook = hook;
     }
 
@@ -89,13 +90,13 @@ class PersistitFilterFactory
         key.clear();
         key.reset();
         if (hasStart) {
-            appendKeyField(tuple, column, position, keyRange.lo().boundExpressions(bindings));
+            appendKeyField(tuple, column, position, keyRange.lo().boundExpressions(bindings, adapter));
         } else {
             key.append(Key.BEFORE);
             key.setEncodedSize(key.getEncodedSize() + 1);
         }
         if (hasEnd) {
-            appendKeyField(tuple, column, position, keyRange.hi().boundExpressions(bindings));
+            appendKeyField(tuple, column, position, keyRange.hi().boundExpressions(bindings, adapter));
         } else {
             key.append(Key.AFTER);
         }
@@ -116,5 +117,6 @@ class PersistitFilterFactory
 
     // Object state
 
+    private final PersistitAdapter adapter;
     private final InternalHook hook;
 }
