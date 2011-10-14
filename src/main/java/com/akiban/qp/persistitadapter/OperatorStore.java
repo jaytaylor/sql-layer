@@ -121,9 +121,19 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                         oldRowData, OperatorStoreGIHandler.forTable(adapter, userTable),
                         OperatorStoreGIHandler.Action.DELETE
                 );
+                maintainGroupIndexes(
+                        session, ais, adapter,
+                        newRowData, OperatorStoreGIHandler.forTable(adapter, userTable),
+                        OperatorStoreGIHandler.Action.DELETE
+                );
 
                 runCursor(oldRowData, rowDef, updateOp, adapter);
 
+                maintainGroupIndexes(
+                        session, ais, adapter,
+                        oldRowData, OperatorStoreGIHandler.forTable(adapter, userTable),
+                        OperatorStoreGIHandler.Action.STORE
+                );
                 maintainGroupIndexes(
                         session, ais, adapter,
                         newRowData, OperatorStoreGIHandler.forTable(adapter, userTable),
