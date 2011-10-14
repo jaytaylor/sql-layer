@@ -265,19 +265,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         this.treeService = treeService;
     }
 
-    @Override
-    public void stop() {
-        super.stop();
-        OperatorStoreGIHandler.setGiHandlerHook(null);
-        System.out.println(countingHook.report());
-    }
-
-    @Override
-    public void start() {
-        super.start();
-        OperatorStoreGIHandler.setGiHandlerHook(countingHook);
-    }
-
     public PersistitStore getPersistitStore() {
         return super.getDelegate();
     }
