@@ -24,11 +24,13 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.util.Strings;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
+@Ignore
 public final class MaintenancePlanCreatorTest {
 
     @Test
