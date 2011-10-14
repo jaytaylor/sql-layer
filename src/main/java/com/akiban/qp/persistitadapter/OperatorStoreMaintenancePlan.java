@@ -15,126 +15,69 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.expression.IndexBound;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.expression.RowBasedUnboundExpressions;
+import com.akiban.qp.expression.UnboundExpressions;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.NoLimit;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.FlattenedRow;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.FlattenedRowType;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.server.api.dml.ConstantColumnSelector;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.VariableExpression;
 
 import java.util.*;
 
 final class OperatorStoreMaintenancePlan {
 
-    public Operator rootOperator() {
-        return rootOperator;
+    public Operator rootOperator(OperatorStoreGIHandler.Action action) {
+        switch (action) {
+        case STORE:
+        case BULK_ADD:
+            return storePlan;
+        case DELETE:
+            return deletePlan;
+        default: throw new AssertionError(action.name());
+        }
     }
 
-    public RowType flattenedAncestorRowType() {
-        return flattenedAncestorRowType;
-    }
-
-    public Operator siblingsLookup() {
-        return siblingsFinder;
-    }
-
-    public Row flattenLeft(Row row) {
-        // validations, validations...
-        if (flattenedAncestorRowType == null) {
-            assert flatteningTypes == null : flatteningTypes;
-            throw new IllegalStateException("no flattened row defined");
+    public boolean usePKs(OperatorStoreGIHandler.Action action) {
+        switch (action) {
+        case STORE:
+        case BULK_ADD:
+            return usePksStore;
+        case DELETE:
+            return usePksDelete;
+        default: throw new AssertionError(action.name());
         }
-        assert (flatteningTypes != null) && !flatteningTypes.isEmpty() : "flatteningTypes: " + flatteningTypes;
-        if (!row.rowType().equals(flattenedAncestorRowType)) {
-            throw new IllegalArgumentException(String.format(
-                    "row(%s) is of type %s; required %s", row, row.rowType(), flattenedAncestorRowType()
-            ));
-        }
-
-        // finally :-)
-        Row result = row;
-        for (FlattenedRowType flattenedRowType : flatteningTypes) {
-            result = new FlattenedRow(flattenedRowType, result, null, row.hKey());
-        }
-        return result;
     }
 
     public OperatorStoreMaintenancePlan(BranchTables branchTables,
                                         GroupIndex groupIndex,
                                         UserTableRowType rowType)
     {
-        PlanCreationStruct struct = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType);
-        this.rootOperator = struct.rootOperator;
-        this.flattenedAncestorRowType = struct.flattenedParentRowType;
-        this.flatteningTypes = flatteningRowTypes(struct);
-        this.siblingsFinder = createSiblingsFinder(groupIndex, branchTables, rowType);
+        PlanCreationStruct plan = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType, true);
+        this.storePlan = plan.rootOperator;
+        this.usePksStore = plan.usePKs;
+        plan = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType, false);
+        this.deletePlan = plan.rootOperator;
+        this.usePksDelete = plan.usePKs;
     }
 
-    private Operator createSiblingsFinder(GroupIndex groupIndex, BranchTables branchTables, UserTableRowType rowType) {
-        UserTable parentUserTable = rowType.userTable().parentTable();
-        if (parentUserTable == null) {
-            return null;
-        }
-        final GroupTable groupTable = groupIndex.getGroup().getGroupTable();
-        final RowType parentRowType = branchTables.parentRowType(rowType);
-        assert parentRowType != null;
-
-        Operator plan = API.groupScan_Default(
-                groupTable,
-                NoLimit.instance(),
-                HKEY_BINDING_POSITION,
-                false
-        );
-        plan = API.ancestorLookup_Default(plan, groupTable, rowType, Collections.singleton(parentRowType), API.LookupOption.DISCARD_INPUT);
-        plan = API.branchLookup_Default(plan, groupTable, parentRowType, rowType, API.LookupOption.DISCARD_INPUT);
-        plan = API.filter_Default(plan, removeDescendentTypes(rowType));
-        plan = API.limit_Default(plan, 2);
-        return plan;
-    }
-
-    private Set<RowType> removeDescendentTypes(RowType type)
-    {
-        Set<RowType> keepTypes = type.schema().userTableTypes();
-        keepTypes.removeAll(Schema.descendentTypes(type, keepTypes));
-        return keepTypes;
-    }
-
-    private List<FlattenedRowType> flatteningRowTypes(PlanCreationStruct struct) {
-        if (struct.flattenedParentRowType == null) {
-            return null;
-        }
-        List<FlattenedRowType> result = new ArrayList<FlattenedRowType>();
-
-        for(RowType rowType = struct.rootOperator.rowType();
-            rowType instanceof FlattenedRowType;
-            rowType = ((FlattenedRowType)rowType).parentType())
-        {
-            result.add((FlattenedRowType)rowType);
-        }
-        Collections.reverse(result);
-
-        RowType ancestorType = struct.flattenedParentRowType;
-        if (ancestorType instanceof FlattenedRowType) {
-            FlattenedRowType asFlattened = (FlattenedRowType) ancestorType;
-            int ancestorTypeIndex = result.indexOf(asFlattened);
-            assert ancestorTypeIndex >= 0 : String.format("%s not found in %s", ancestorType, result);
-            while (ancestorTypeIndex-- >= 0) {
-                result.remove(0);
-            }
-        }
-        return result;
-    }
-
-    private final Operator rootOperator;
-    private final RowType flattenedAncestorRowType;
-    private final List<FlattenedRowType> flatteningTypes;
-    private final Operator siblingsFinder;
+    private final Operator storePlan;
+    private final Operator deletePlan;
+    private final boolean usePksStore;
+    private final boolean usePksDelete;
 
     // for use by unit tests
     static PlanCreationStruct createGroupIndexMaintenancePlan(
@@ -145,8 +88,13 @@ final class OperatorStoreMaintenancePlan {
         return createGroupIndexMaintenancePlan(
                 new BranchTables(schema, groupIndex),
                 groupIndex,
-                rowType
+                rowType,
+                true // TODO
         );
+    }
+
+    enum Relationship {
+        PARENT, ID, CHILD
     }
 
     // for use in this class
@@ -154,7 +102,8 @@ final class OperatorStoreMaintenancePlan {
     private static PlanCreationStruct createGroupIndexMaintenancePlan(
             BranchTables branchTables,
             GroupIndex groupIndex,
-            UserTableRowType rowType)
+            UserTableRowType rowType,
+            boolean forStoring)
     {
         if (branchTables.isEmpty()) {
             throw new RuntimeException("group index has empty branch: " + groupIndex);
@@ -164,27 +113,79 @@ final class OperatorStoreMaintenancePlan {
         }
 
         PlanCreationStruct result = new PlanCreationStruct();
-
-        boolean deep = !branchTables.leafMost().equals(rowType);
-        Operator plan = API.groupScan_Default(
-                groupIndex.getGroup().getGroupTable(),
-                NoLimit.instance(),
-                HKEY_BINDING_POSITION,
-                deep
-        );
-        if (branchTables.fromRoot().size() == 1) {
-            result.rootOperator = plan;
+        // compute if this is a no-op
+        if (!forStoring && rowType.userTable().getDepth() == 0 && rowType != branchTables.rootMost()) {
             return result;
         }
-        if (!branchTables.fromRoot().get(0).equals(rowType)) {
-            plan = API.ancestorLookup_Default(
-                    plan,
-                    groupIndex.getGroup().getGroupTable(),
-                    rowType,
-                    ancestors(rowType, branchTables.fromRoot()),
-                    API.LookupOption.KEEP_INPUT
-            );
+
+        Schema schema = rowType.schema();
+
+        final Relationship scanFrom;
+        // this is a cleanup scan
+        int index = branchTables.fromRootMost().indexOf(rowType);
+        if (index < 0) {
+            // incoming row is above the GI, so look downward
+            scanFrom = Relationship.CHILD;
         }
+        else {
+            // incoming row is within the GI; look rootward, and search on the row's FK.
+            int indexWithinGI = branchTables.fromRootMost().indexOf(rowType) - 1;
+            scanFrom = indexWithinGI < 0
+                    ? Relationship.ID
+                    : Relationship.PARENT;
+        }
+
+
+        final UserTableRowType startFromRowType;
+        TableIndex startFromIndex;
+        final boolean usePKs;
+
+        switch (scanFrom) {
+        case PARENT:
+            usePKs = false;
+            startFromRowType = schema.userTableRowType(rowType.userTable().parentTable());
+            startFromIndex = startFromRowType.userTable().getPrimaryKey().getIndex();
+            break;
+        case ID:
+            usePKs = true;
+            startFromRowType = rowType;
+            startFromIndex = startFromRowType.userTable().getPrimaryKey().getIndex();
+            break;
+        case CHILD:
+            usePKs = true;
+            int idIndex = branchTables.fromRoot().indexOf(rowType);
+            startFromRowType = branchTables.fromRoot().get(idIndex+1);
+            startFromIndex = fkIndex(startFromRowType.userTable(), rowType.userTable());
+            break;
+        default:
+            throw new AssertionError(scanFrom.name());
+        }
+
+        result.usePKs = usePKs;
+
+        UserTable startFrom = startFromRowType.userTable();
+//        TableIndex startIndex = scanPK
+//                ? startFrom.getPrimaryKey().getIndex()
+//                : fkIndex(startFromRowType.userTable(), rowType.userTable());
+        List<Expression> pkExpressions = new ArrayList<Expression>(startFromIndex.getColumns().size());
+        for (int i=0; i < startFrom.getPrimaryKey().getColumns().size(); ++i) {
+            int fieldPos = i + 1; // position 0 is already claimed in OperatorStore
+            Column col = startFrom.getPrimaryKey().getColumns().get(i);
+            Expression pkField = new VariableExpression(col.getType().akType(), fieldPos);
+            pkExpressions.add(pkField);
+        }
+        UnboundExpressions unboundExpressions = new RowBasedUnboundExpressions(startFromRowType, pkExpressions);
+        IndexBound bound = new IndexBound(unboundExpressions, ConstantColumnSelector.ALL_ON);
+        IndexKeyRange range = new IndexKeyRange(bound, true, bound, true);
+
+        // "boilerplate"
+
+        Operator plan;
+        IndexRowType pkRowType = schema.indexRowType(startFromIndex);
+        plan = API.indexScan_Default(pkRowType, false, range);
+        UserTableRowType branchFrom;
+        branchFrom = branchTables.allTablesForBranch.get(0);
+        plan = API.branchLookup_Default(plan, startFrom.getGroup().getGroupTable(), pkRowType, branchFrom, API.LookupOption.DISCARD_INPUT);
 
         RowType parentRowType = null;
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;
@@ -219,6 +220,33 @@ final class OperatorStoreMaintenancePlan {
         }
         result.rootOperator = plan;
         return result;
+    }
+
+    /**
+     * Given a table with a FK column and a table with a PK column, gets the index from the FK table that
+     * connects to the PK table.
+     * @param fkTable the child table
+     * @param pkTable the 
+     * @return
+     */
+    private static TableIndex fkIndex(UserTable fkTable, UserTable pkTable) {
+        if (fkTable.getParentJoin() == null || fkTable.getParentJoin().getParent() != pkTable)
+            throw new IllegalArgumentException(pkTable + " is not a parent of " + fkTable);
+        List<Column> fkIndexCols = new ArrayList<Column>();
+        for(JoinColumn joinColumn : fkTable.getParentJoin().getJoinColumns()) {
+            fkIndexCols.add(joinColumn.getChild());
+        }
+        List<Column> candidateIndexColumns = new ArrayList<Column>();
+        for (TableIndex index : fkTable.getIndexes()) {
+            for (IndexColumn indexCol : index.getColumns()) {
+                candidateIndexColumns.add(indexCol.getColumn());
+            }
+            if (candidateIndexColumns.equals(fkIndexCols)) {
+                return index;
+            }
+            candidateIndexColumns.clear();
+        }
+        throw new AssertionError("no index found for columns: " + fkIndexCols);
     }
 
     private static List<RowType> ancestors(RowType rowType, List<? extends RowType> branchTables) {
@@ -262,17 +290,6 @@ final class OperatorStoreMaintenancePlan {
             return onlyBranch.get(0);
         }
 
-        public UserTableRowType parentRowType(UserTableRowType rowType) {
-            UserTableRowType parentType = null;
-            for (UserTableRowType type : allTablesForBranch) {
-                if (type.equals(rowType)) {
-                    return parentType;
-                }
-                parentType = type;
-            }
-            throw new IllegalArgumentException(rowType + " not in branch: " + allTablesForBranch);
-        }
-
         public BranchTables(Schema schema, GroupIndex groupIndex) {
             List<UserTableRowType> localTables = new ArrayList<UserTableRowType>();
             UserTable rootmost = groupIndex.rootMostTable();
@@ -302,5 +319,6 @@ final class OperatorStoreMaintenancePlan {
     static class PlanCreationStruct {
         public Operator rootOperator;
         public RowType flattenedParentRowType;
+        public boolean usePKs;
     }
 }

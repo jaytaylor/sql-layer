@@ -89,15 +89,9 @@ class OperatorStoreGIHandler {
             break;
         case STORE:
             storeExchange(groupIndex, exchange);
-            if (nullOutHKey(nullPoint, groupIndex, row, key)) {
-                removeExchange(groupIndex, exchange);
-            }
             break;
         case DELETE:
             removeExchange(groupIndex, exchange);
-            if (nullOutHKey(nullPoint, groupIndex, row, key)) {
-                storeExchange(groupIndex, exchange);
-            }
             break;
         default:
             throw new UnsupportedOperationException(action.name());

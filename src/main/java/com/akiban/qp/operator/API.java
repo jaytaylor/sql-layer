@@ -16,6 +16,7 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
@@ -118,14 +119,24 @@ public class API
     }
 
     public static Operator groupScan_Default(GroupTable groupTable,
+                                             Limit limit,
+                                             int hKeyBindingPosition,
+                                             boolean deep,
+                                             UserTable hKeyType,
+                                             UserTable shortenUntil)
+    {
+        return new GroupScan_Default(
+                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hKeyBindingPosition, deep, hKeyType, shortenUntil),
+                limit
+        );
+    }
+
+    public static Operator groupScan_Default(GroupTable groupTable,
                                                      Limit limit,
                                                      int hKeyBindingPosition,
                                                      boolean deep)
     {
-        return new GroupScan_Default(
-                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hKeyBindingPosition, deep),
-                limit
-        );
+        return groupScan_Default(groupTable, limit, hKeyBindingPosition, deep, null, null);
     }
 
     public static Operator valuesScan_Default (Collection<? extends Row> rows, RowType rowType)
@@ -384,7 +395,7 @@ public class API
 
         public ExpressionEvaluation evaluation(int i)
         {
-            return evaluations.get(i);
+            return expressions.get(i).evaluation();
         }
 
         public AkType type(int i)
