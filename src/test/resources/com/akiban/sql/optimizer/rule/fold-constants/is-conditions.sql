@@ -1,0 +1,1 @@
+SELECT aid IS NULL, aid = aid, state = state, (state = state) IS FALSE, (F(NULL) IN (SELECT oid FROM orders)) IS TRUE FROM addresses

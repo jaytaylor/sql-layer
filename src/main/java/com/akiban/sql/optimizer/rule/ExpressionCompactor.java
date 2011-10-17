@@ -66,6 +66,8 @@ public class ExpressionCompactor extends BaseRule
     public ExpressionNode visit(ExpressionNode expr) {
         if (expr instanceof AnyCondition)
             return anyCondition((AnyCondition)expr);
+        if (expr instanceof IfElseExpression)
+            compactConditions(((IfElseExpression)expr).getTestConditions());
         return expr;
     }
 
