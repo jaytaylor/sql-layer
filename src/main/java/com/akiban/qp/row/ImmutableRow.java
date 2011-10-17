@@ -16,23 +16,12 @@
 package com.akiban.qp.row;
 
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types.ValueSource;
 
-public class ValuesHolderRow extends AbstractValuesHolderRow {
+import java.util.Iterator;
 
-    // ValuesHolderRow interface -- mostly just promoting visiblity
-
-    @Override
-    public void clear() {
-        super.clear();
-    }
-
-    @Override
-    public ValueHolder holderAt(int index) {
-        return super.holderAt(index);
-    }
-
-    public ValuesHolderRow(RowType rowType) {
-        super(rowType, true);
+public final class ImmutableRow extends AbstractValuesHolderRow {
+    public ImmutableRow(RowType rowType, Iterator<? extends ValueSource> initialValues) {
+        super(rowType, false, initialValues);
     }
 }
