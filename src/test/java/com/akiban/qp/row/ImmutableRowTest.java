@@ -81,6 +81,18 @@ public final class ImmutableRowTest {
         row.holderAt(0);
     }
 
+    @Test
+    public void aquire() {
+        Row row = new ImmutableRow(
+                rowType(AkType.VARCHAR),
+                Collections.singleton(new ValueHolder(AkType.VARCHAR, "1L")).iterator()
+        );
+        row.acquire();
+        row.acquire();
+        row.acquire();
+        assertEquals("isShared", false, row.isShared());
+    }
+
     private RowType rowType(AkType... types) {
         return new ValuesRowType(null, 1, types);
     }
