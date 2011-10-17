@@ -93,6 +93,14 @@ public final class ImmutableRowTest {
         assertEquals("isShared", false, row.isShared());
     }
 
+    @Test(expected = UnsupportedOperationException.class)
+    public void setRunId() {
+        new ImmutableRow(
+                rowType(AkType.VARCHAR),
+                Collections.singleton(new ValueHolder(AkType.VARCHAR, "1L")).iterator()
+        ).runId(1);
+    }
+
     private RowType rowType(AkType... types) {
         return new ValuesRowType(null, 1, types);
     }

@@ -21,6 +21,12 @@ import com.akiban.server.types.ValueSource;
 import java.util.Iterator;
 
 public final class ImmutableRow extends AbstractValuesHolderRow {
+
+    @Override
+    public void runId(int runId) {
+        throw new UnsupportedOperationException();
+    }
+
     public ImmutableRow(RowType rowType, Iterator<? extends ValueSource> initialValues) {
         super(rowType, false, initialValues);
     }
