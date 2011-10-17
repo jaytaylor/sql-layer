@@ -54,6 +54,8 @@ select-8: columns and literals
 
 select-9: test for bug 838907
 
+select-10: IN with order only index (cf. bug 876586)
+
 update-1: change column to literal
 
 update-2: change column to expression (column itself)
