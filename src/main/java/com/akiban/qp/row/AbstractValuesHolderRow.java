@@ -16,6 +16,7 @@
 package com.akiban.qp.row;
 
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 
@@ -79,10 +80,11 @@ class AbstractValuesHolderRow extends AbstractRow {
             if (i >= values.size())
                 throw new IllegalArgumentException("too many initial values: reached limit of " + values.size());
             ValueSource nextValue = initialValues.next();
-            if (nextValue.getConversionType() != rowType.typeAt(i))
+            AkType nextValueType = nextValue.getConversionType();
+            if (nextValueType != AkType.NULL && nextValueType != rowType.typeAt(i))
                 throw new IllegalArgumentException(
                         "value at index " + i + " expected type " + rowType.typeAt(i)
-                                + ", was " + nextValue.getConversionType() + ": " + nextValue);
+                                + ", was " + nextValueType + ": " + nextValue);
             values.get(i++).copyFrom(nextValue);
         }
         if (i != values.size())
