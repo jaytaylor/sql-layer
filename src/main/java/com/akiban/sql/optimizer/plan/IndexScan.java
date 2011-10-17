@@ -93,6 +93,9 @@ public class IndexScan extends BasePlanNode
     public List<ConditionExpression> getConditions() {
         return conditions;
     }
+    public boolean hasConditions() {
+        return ((conditions != null) && !conditions.isEmpty());
+    }
 
     public List<ExpressionNode> getEqualityComparands() {
         return equalityComparands;

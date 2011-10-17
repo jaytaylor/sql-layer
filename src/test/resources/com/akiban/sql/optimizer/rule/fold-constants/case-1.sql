@@ -1,0 +1,1 @@
+SELECT CASE WHEN F(NULL) THEN 'null' WHEN NAME IS NOT NULL THEN name ELSE 'default' END FROM customers

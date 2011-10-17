@@ -34,6 +34,21 @@ public class ConditionList extends ArrayList<ConditionExpression>
         super(list);
     }
 
+    public boolean accept(ExpressionVisitor v) {
+        for (ConditionExpression condition : this) {
+            if (!condition.accept(v)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void accept(ExpressionRewriteVisitor v) {
+        for (int i = 0; i < size(); i++) {
+            set(i, (ConditionExpression)get(i).accept(v));
+        }
+    }
+
     public ConditionList duplicate(DuplicateMap map) {
         ConditionList copy = new ConditionList(size());
         for (ConditionExpression cond : this) {
@@ -41,4 +56,5 @@ public class ConditionList extends ArrayList<ConditionExpression>
         }
         return copy;
     }
+
 }
