@@ -30,18 +30,18 @@ import com.akiban.server.error.IndexTableNotInGroupException;
 public class GroupIndex extends Index
 {
     public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
-                                    Boolean isUnique, String constraint)
+                                    Boolean isUnique, String constraint, String joinType)
     {
         ais.checkMutability();
-        GroupIndex index = new GroupIndex(group, indexName, indexId, isUnique, constraint);
+        GroupIndex index = new GroupIndex(group, indexName, indexId, isUnique, constraint, joinType);
         group.addIndex(index);
         return index;
     }
 
-    public GroupIndex(Group group, String indexName, Integer indexId, Boolean isUnique, String constraint)
+    public GroupIndex(Group group, String indexName, Integer indexId, Boolean isUnique, String constraint, String joinType)
     {
         // index checks index name. 
-        super(new TableName("", group.getName()), indexName, indexId, isUnique, constraint);
+        super(new TableName("", group.getName()), indexName, indexId, isUnique, constraint, joinType);
         this.group = group;
     }
 
