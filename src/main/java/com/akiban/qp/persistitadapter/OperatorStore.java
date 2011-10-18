@@ -318,44 +318,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                         groupIndex,
                         adapter.schema().userTableRowType(userTable)
                 );
-                Operator planOperator = plan.rootOperator(action);
-                if (planOperator == null)
-                    continue;
-
-                final List<Column> lookupCols;
-                if (plan.usePKs(action)) {
-                    // use PKs
-                    lookupCols = rowDataUTable.getPrimaryKey().getColumns();
-                }
-                else {
-                    // use FKs
-                    lookupCols = new ArrayList<Column>();
-                    for (JoinColumn joinColumn : rowDataUTable.getParentJoin().getJoinColumns()) {
-                        lookupCols.add(joinColumn.getChild());
-                    }
-                }
-
-                ArrayBindings bindings = new ArrayBindings(1);
-                bindings.set(OperatorStoreMaintenance.HKEY_BINDING_POSITION, persistitHKey);
-
-                // Copy the values into the array bindings
-                ToObjectValueTarget target = new ToObjectValueTarget();
-                RowDataValueSource source = new RowDataValueSource();
-                for (int i=0; i < lookupCols.size(); ++i) {
-                    int bindingsIndex = i+1;
-                    Column col = lookupCols.get(i);
-                    source.bind((FieldDef)col.getFieldDef(), rowData);
-                    target.expectType(col.getType().akType());
-                    bindings.set(bindingsIndex, Converters.convert(source, target).lastConvertedValue());
-                }
-
-                runMaintenancePlan(adapter,
-                        groupIndex,
-                        planOperator,
-                        bindings,
-                        handler,
-                        action
-                );
+                if (!plan.isNoop(action))
+                    plan.run(action, persistitHKey, rowData, adapter, handler);
             }
         } finally {
             adapter.returnExchange(hEx);

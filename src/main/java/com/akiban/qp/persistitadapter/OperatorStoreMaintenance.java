@@ -17,7 +17,6 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.TableIndex;
@@ -27,7 +26,12 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.expression.UnboundExpressions;
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.ArrayBindings;
+import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -35,12 +39,65 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.VariableExpression;
+import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDataValueSource;
+import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.types.conversion.Converters;
 
 import java.util.*;
 
 final class OperatorStoreMaintenance {
 
-    public Operator rootOperator(OperatorStoreGIHandler.Action action) {
+    public boolean isNoop(OperatorStoreGIHandler.Action action) {
+        return rootOperator(action) == null;
+    }
+
+    public void run(OperatorStoreGIHandler.Action action, PersistitHKey hKey, RowData forRow, StoreAdapter adapter, OperatorStoreGIHandler handler) {
+        Bindings bindings = new ArrayBindings(1);
+        Operator planOperator = rootOperator(action);
+        final List<Column> lookupCols;
+        UserTable userTable = rowType.userTable();
+        if (usePKs(action)) {
+            // use PKs
+            lookupCols = userTable.getPrimaryKey().getColumns();
+        }
+        else {
+            // use FKs
+            lookupCols = new ArrayList<Column>();
+            for (JoinColumn joinColumn : userTable.getParentJoin().getJoinColumns()) {
+                lookupCols.add(joinColumn.getChild());
+            }
+        }
+
+        bindings.set(OperatorStoreMaintenance.HKEY_BINDING_POSITION, hKey);
+
+        // Copy the values into the array bindings
+        ToObjectValueTarget target = new ToObjectValueTarget();
+        RowDataValueSource source = new RowDataValueSource();
+        for (int i=0; i < lookupCols.size(); ++i) {
+            int bindingsIndex = i+1;
+            Column col = lookupCols.get(i);
+            source.bind((FieldDef)col.getFieldDef(), forRow);
+            target.expectType(col.getType().akType());
+            bindings.set(bindingsIndex, Converters.convert(source, target).lastConvertedValue());
+        }
+
+        Cursor cursor = API.cursor(planOperator, adapter);
+        cursor.open(bindings);
+        try {
+            Row row;
+            while ((row = cursor.next()) != null) {
+                if (row.rowType().equals(planOperator.rowType())) {
+                    handler.handleRow(groupIndex, row, action);
+                }
+            }
+        } finally {
+            cursor.close();
+        }
+    }
+
+    private Operator rootOperator(OperatorStoreGIHandler.Action action) {
         switch (action) {
         case STORE:
         case BULK_ADD:
@@ -51,7 +108,7 @@ final class OperatorStoreMaintenance {
         }
     }
 
-    public boolean usePKs(OperatorStoreGIHandler.Action action) {
+    private boolean usePKs(OperatorStoreGIHandler.Action action) {
         switch (action) {
         case STORE:
         case BULK_ADD:
@@ -69,6 +126,8 @@ final class OperatorStoreMaintenance {
         PlanCreationStruct plan = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType, true);
         this.storePlan = plan.rootOperator;
         this.usePksStore = plan.usePKs;
+        this.rowType = rowType;
+        this.groupIndex = groupIndex;
         plan = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType, false);
         this.deletePlan = plan.rootOperator;
         this.usePksDelete = plan.usePKs;
@@ -76,8 +135,10 @@ final class OperatorStoreMaintenance {
 
     private final Operator storePlan;
     private final Operator deletePlan;
+    private final GroupIndex groupIndex;
     private final boolean usePksStore;
     private final boolean usePksDelete;
+    private final UserTableRowType rowType;
 
     // for use by unit tests
     static PlanCreationStruct createGroupIndexMaintenancePlan(
@@ -262,7 +323,7 @@ final class OperatorStoreMaintenance {
 
     // package consts
 
-    static final int HKEY_BINDING_POSITION = 0;
+    private static final int HKEY_BINDING_POSITION = 0;
 
     // nested classes
 
