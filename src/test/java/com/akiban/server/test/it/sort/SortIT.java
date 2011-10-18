@@ -23,10 +23,7 @@ import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.sort.Sorter;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ValuesHolderRow;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.test.it.ITBase;
@@ -45,14 +42,6 @@ public final class SortIT extends ITBase {
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         PersistitAdapter adapter = new PersistitAdapter(schema, persistitStore(), treeService(), session());
         TestOperator inputOperator = new TestOperator(rowsBuilder);
-
-        // confirm that our test operator works
-        Row[] expectedUnsorted = new RowsBuilder(AkType.VARCHAR)
-                .row(NullValueSource.only())
-                .row("beta")
-                .row("alpha")
-                .rows().toArray(new Row[3]);
-        compareRows(expectedUnsorted, API.cursor(inputOperator, adapter));
 
         Cursor inputCursor = API.cursor(inputOperator, adapter);
         inputCursor.open(UndefBindings.only());
