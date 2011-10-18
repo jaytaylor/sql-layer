@@ -15,6 +15,7 @@
 
 package com.akiban.server.test.it.keyupdate;
 
+import com.akiban.ais.model.Index;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
@@ -22,7 +23,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
     @Test
     public void leftGIPlaceholderNoOrphan() {
-        createGroupIndex(groupName, "name_when", "c.name, o.when");
+        groupIndex("name_when", "c.name, o.when");
         writeRows(
                 createNewRow(c, 1L, "Bergy")
         );
@@ -41,7 +42,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
     @Test
     public void leftGIPlaceholderWithOrphan() {
-        createGroupIndex(groupName, "name_when", "c.name, o.when");
+        groupIndex("name_when", "c.name, o.when");
         writeRows(
                 createNewRow(o, 10L, 1L, "01-01-2001")
         );
@@ -57,7 +58,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
     @Test
     public void deleteSecondOinCO() {
-        createGroupIndex(groupName, "name_when", "c.name, o.when");
+        groupIndex("name_when", "c.name, o.when");
         final NewRow customer, firstOrder, secondOrder;
         writeRows(
                 customer = createNewRow(c, 1L, "Joe"),
@@ -85,7 +86,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
     @Test
     public void coiGIsNoOrphan() {
-        createGroupIndex(groupName, "name_when_sku", "c.name, o.when, i.sku");
+        groupIndex("name_when_sku", "c.name, o.when, i.sku");
         // write write write
         writeRows(createNewRow(c, 1L, "Horton"));
         checkIndex(
@@ -173,7 +174,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 createNewRow(o, 11L, 1L, "01-01-2001"),
                 createNewRow(i, 101L, 11L, 1111)
         );
-        createGroupIndex(groupName, "name_when_sku", "c.name, o.when, i.sku");
+        groupIndex("name_when_sku", "c.name, o.when, i.sku");
         checkIndex("name_when_sku",
                 "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i)
         );
@@ -185,7 +186,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001")
         );
-        createGroupIndex(groupName, "name_when_sku", "c.name, o.when, i.sku");
+        groupIndex("name_when_sku", "c.name, o.when, i.sku");
         checkIndex("name_when_sku",
                 "Horton, 01-01-2001, null, 1, 11, null => " + depthOf(o)
         );
@@ -197,7 +198,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001")
         );
-        createGroupIndex(groupName, "when_sku", "o.when, i.sku");
+        groupIndex("when_sku", "o.when, i.sku");
         checkIndex("when_sku",
                 "01-01-2001, null, 1, 11, null => " + depthOf(o)
         );
@@ -206,7 +207,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void ihIndexNoOrphans() {
         String indexName = "sku_handling-instructions";
-        createGroupIndex(groupName, indexName, "i.sku, h.handling_instructions");
+        groupIndex(indexName, "i.sku, h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -232,7 +233,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void ihIndexOIsOrphaned() {
         String indexName = "sku_handling-instructions";
-        createGroupIndex(groupName, indexName, "i.sku, h.handling_instructions");
+        groupIndex(indexName, "i.sku, h.handling_instructions");
         writeRows(
                 createNewRow(o, 11L, 1L, "01-01-2001"),
                 createNewRow(i, 101L, 11L, 1111),
@@ -255,7 +256,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void ihIndexIIsOrphaned() {
         String indexName = "sku_handling-instructions";
-        createGroupIndex(groupName, indexName, "i.sku, h.handling_instructions");
+        groupIndex(indexName, "i.sku, h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(c, -1L, "Notroh"),
@@ -276,7 +277,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void ihIndexIIsOrphanedButCExists() {
         String indexName = "sku_handling-instructions";
-        createGroupIndex(groupName, indexName, "i.sku, h.handling_instructions");
+        groupIndex(indexName, "i.sku, h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(i, 101L, 11L, 1111),
@@ -296,7 +297,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void ihIndexHIsOrphaned() {
         String indexName = "sku_handling-instructions";
-        createGroupIndex(groupName, indexName, "i.sku, h.handling_instructions");
+        groupIndex(indexName, "i.sku, h.handling_instructions");
         writeRows(
                 createNewRow(h, 1001L, 101L, "handle with care")
         );
@@ -311,7 +312,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void adoptionChangesHKeyNoCustomer() {
         String indexName = "sku_handling-instructions";
-        createGroupIndex(groupName, indexName, "i.sku, h.handling_instructions");
+        groupIndex(indexName, "i.sku, h.handling_instructions");
         writeRows(
                 createNewRow(i, 101L, 11L, 1111),
                 createNewRow(h, 1001L, 101L, "handle with care")
@@ -330,7 +331,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void adoptionChangesHKeyWithC() {
         String indexName = "sku_handling-instructions";
-        createGroupIndex(groupName, indexName, "i.sku, h.handling_instructions");
+        groupIndex(indexName, "i.sku, h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(i, 101L, 11L, 1111),
@@ -349,8 +350,8 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
     @Test
     public void testTwoBranches() {
-        createGroupIndex(groupName, "when_name", "o.when, c.name");
-        createGroupIndex(groupName, "name_street", "c.name, a.street");
+        groupIndex("when_name", "o.when, c.name");
+        groupIndex("name_street", "c.name, a.street");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -379,7 +380,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void updateModifiesHKeyWithinBranch() {
         // branch is I-H, we're modifying the hkey of an H
-        createGroupIndex(groupName, "sku_handling", "i.sku, h.handling_instructions");
+        groupIndex("sku_handling", "i.sku, h.handling_instructions");
         writeRows(createNewRow(c, 1L, "Horton"));
         checkIndex("sku_handling");
 
@@ -422,7 +423,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void updateModifiesHKeyDirectlyAboveBranch() {
         // branch is I-H, we're modifying the hkey of an I
-        createGroupIndex(groupName, "sku_handling", "i.sku, h.handling_instructions");
+        groupIndex("sku_handling", "i.sku, h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -455,7 +456,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void updateModifiesHKeyHigherAboveBranch() {
         // branch is I-H, we're modifying the hkey of an O referenced by an I
-        createGroupIndex(groupName, "sku_handling", "i.sku, h.handling_instructions");
+        groupIndex("sku_handling", "i.sku, h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -488,7 +489,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void updateOrphansHKeyWithinBranch() {
         // branch is I-H, we're modifying the hkey of an H
-        createGroupIndex(groupName, "sku_handling", "i.sku, h.handling_instructions");
+        groupIndex("sku_handling", "i.sku, h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -520,7 +521,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void updateMovesHKeyWithinBranch() {
         // branch is I-H, we're modifying the hkey of an H
-        createGroupIndex(groupName, "sku_handling", "i.sku, h.handling_instructions");
+        groupIndex("sku_handling", "i.sku, h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -558,7 +559,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void updateOrphansHKeyDirectlyAboveBranch() {
         // branch is I-H, we're modifying the hkey of an I
-        createGroupIndex(groupName, "sku_handling", "i.sku, h.handling_instructions");
+        groupIndex("sku_handling", "i.sku, h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -591,7 +592,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void updateOrphansHKeyHigherAboveBranch() {
         // branch is I-H, we're modifying the hkey of an O referenced by an I
-        createGroupIndex(groupName, "sku_handling", "i.sku, h.handling_instructions");
+        groupIndex("sku_handling", "i.sku, h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -626,7 +627,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
      */
     @Test
     public void originallyOrphansHKeyHigherAboveBranch() {
-        createGroupIndex(groupName, "sku_handling", "i.sku, h.handling_instructions");
+        groupIndex("sku_handling", "i.sku, h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 6L, "01-01-2001"),
@@ -641,5 +642,9 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 "1111, don't break, 6, 11, 101, 1001 => " + depthOf(h),
                 "2222, null, 2, 12, 102, null => " + depthOf(i)
         );
+    }
+
+    public GroupIndexLjUpdateIT() {
+        super(Index.JoinType.LEFT);
     }
 }

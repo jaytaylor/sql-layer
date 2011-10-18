@@ -17,6 +17,7 @@ package com.akiban.server.test.it.keyupdate;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.store.IndexRecordVisitor;
 import com.akiban.server.test.it.ITBase;
@@ -96,7 +97,15 @@ public abstract class GIUpdateITBase extends ITBase {
         return String.format("%d (Integer)", userTable.getDepth());
     }
 
-    GIUpdateITBase() {}
+    void groupIndex(String indexName, String tableColumnPairs) {
+        createGroupIndex(groupName, indexName, tableColumnPairs, joinType);
+    }
+
+    GIUpdateITBase(Index.JoinType joinType) {
+        this.joinType = joinType;
+    }
+
+    private final Index.JoinType joinType;
 
     String groupName;
     Integer c;

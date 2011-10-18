@@ -21,8 +21,8 @@ import org.junit.Test;
 public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
 
     @Test
-    public void leftGIPlaceholderNoOrphan() {
-        createGroupIndex(groupName, "name_when", "c.name, o.when", Index.JoinType.RIGHT);
+    public void placeholderNoOrphan() {
+        groupIndex("name_when", "c.name, o.when");
         writeRows(
                 createNewRow(o, 10L, 1L, "01-01-2001")
         );
@@ -37,5 +37,9 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
                 "name_when",
                 "Bergy, 01-01-2001, 1, 10 => " + depthOf(o)
         );
+    }
+
+    public GroupIndexRjUpdateIT() {
+        super(Index.JoinType.RIGHT);
     }
 }
