@@ -270,7 +270,7 @@ final class OperatorStoreMaintenance {
      * connects to the PK table.
      * @param fkTable the child table
      * @param pkTable the 
-     * @return
+     * @return the fkTable's FK index
      */
     private static TableIndex fkIndex(UserTable fkTable, UserTable pkTable) {
         if (fkTable.getParentJoin() == null || fkTable.getParentJoin().getParent() != pkTable)
@@ -290,17 +290,6 @@ final class OperatorStoreMaintenance {
             candidateIndexColumns.clear();
         }
         throw new AssertionError("no index found for columns: " + fkIndexCols);
-    }
-
-    private static List<RowType> ancestors(RowType rowType, List<? extends RowType> branchTables) {
-        List<RowType> ancestors = new ArrayList<RowType>();
-        for(RowType ancestor : branchTables) {
-            if (ancestor.equals(rowType)) {
-                return ancestors;
-            }
-            ancestors.add(ancestor);
-        }
-        throw new RuntimeException(rowType + "not found in " + branchTables);
     }
 
     // package consts
@@ -323,10 +312,6 @@ final class OperatorStoreMaintenance {
 
         public boolean isEmpty() {
             return fromRootMost().isEmpty();
-        }
-
-        public UserTableRowType leafMost() {
-            return onlyBranch.get(onlyBranch.size() - 1);
         }
 
         public UserTableRowType rootMost() {
